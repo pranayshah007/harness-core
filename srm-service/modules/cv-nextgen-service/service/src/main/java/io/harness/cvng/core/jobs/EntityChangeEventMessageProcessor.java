@@ -54,7 +54,7 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     // Add the service for project level default deletion
     final List<Class<? extends PersistentEntity>> deleteEntitiesWithDefaultHandler =
         Arrays.asList(VerificationJob.class, Activity.class, ActivityBucket.class, MetricPack.class, HeatMap.class,
-            TimeSeriesThreshold.class, CVNGStepTask.class, UserJourney.class, Webhook.class, ServiceDependency.class,
+            TimeSeriesThreshold.class, CVNGStepTask.class, UserJourney.class, ServiceDependency.class,
             SLOHealthIndicator.class, SLOErrorBudgetReset.class, NotificationRule.class,
             EntityUnavailabilityStatuses.class, Downtime.class, SRMAnalysisStepExecutionDetail.class);
     ENTITIES_MAP = new LinkedHashMap<>();
@@ -70,5 +70,6 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     EXCEPTIONS = new HashSet<>();
     EXCEPTIONS.add(ServiceLevelIndicator.class);
     EXCEPTIONS.add(Annotation.class);
+    EXCEPTIONS.add(Webhook.class);
   }
 }

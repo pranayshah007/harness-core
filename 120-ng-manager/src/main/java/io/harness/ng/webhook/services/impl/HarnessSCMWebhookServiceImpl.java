@@ -21,6 +21,7 @@ import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessType;
 import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.delegate.beans.connector.scm.harness.HarnessJWTTokenSpecDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.git.GitClientHelper;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.BaseUrls;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;
@@ -57,7 +58,10 @@ public class HarnessSCMWebhookServiceImpl implements WebhookEventService {
   @Override
   public UpsertWebhookResponseDTO upsertWebhook(UpsertWebhookRequestDTO upsertWebhookRequestDTO) {
     UpsertWebhookResponseDTO upsertWebhookResponseDTO = null;
-    ScmConnector scmConnector = getDummyScmConnector(upsertWebhookRequestDTO.getRepoURL());
+    // upsertWebhookRequestDTO.getRepoURL() - this points to scoped repo name.
+    ScmConnector scmConnector =
+        getDummyScmConnector(upsertWebhookRequestDTO.getRepoURL(), upsertWebhookRequestDTO.getProjectIdentifier(),
+            upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getAccountIdentifier());
     try (AutoLogContext ignore1 = new NgAutoLogContext(upsertWebhookRequestDTO.getProjectIdentifier(),
              upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getAccountIdentifier(),
              AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
@@ -70,6 +74,7 @@ public class HarnessSCMWebhookServiceImpl implements WebhookEventService {
               //                  .secret(upsertWebhookRequestDTO.getWebhookSecretIdentifierRef())
               .build();
       CreateWebhookResponse createWebhookResponse = scmClient.upsertWebhook(scmConnector, gitWebhookDetails);
+
       UpsertWebhookResponseDTO response = UpsertWebhookResponseDTO.builder()
                                               .webhookResponse(createWebhookResponse.getWebhook())
                                               .error(createWebhookResponse.getError())
@@ -101,10 +106,12 @@ public class HarnessSCMWebhookServiceImpl implements WebhookEventService {
     return webhookUrl.toString();
   }
 
-  private ScmConnector getDummyScmConnector(String repoURL) {
+  private ScmConnector getDummyScmConnector(
+      String repoName, String projectIdentifier, String orgIdentifier, String accountId) {
+    // todo(abhinav): if org scope/account scope scm comes in we need to change here.
     return HarnessConnectorDTO.builder()
         .connectionType(GitConnectionType.REPO)
-        .url(repoURL)
+        .slug(GitClientHelper.convertToHarnessRepoName(accountId, orgIdentifier, projectIdentifier, repoName) + "/+")
         .apiAccess(getApiAccess())
         .apiUrl(baseUrls.getScmServiceBaseUrl())
         .build();

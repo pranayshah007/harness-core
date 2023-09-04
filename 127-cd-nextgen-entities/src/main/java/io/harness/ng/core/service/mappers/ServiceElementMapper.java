@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.service.mappers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
@@ -15,6 +16,10 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -22,10 +27,12 @@ import io.harness.ng.core.service.entity.ServiceBasicInfo;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 
 import lombok.experimental.UtilityClass;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ServiceElementMapper {
@@ -69,12 +76,47 @@ public class ServiceElementMapper {
                                                 .tags(convertToMap(serviceEntity.getTags()))
                                                 .version(serviceEntity.getVersion())
                                                 .yaml(serviceEntity.getYaml())
+                                                .entityGitDetails(getEntityGitDetails(serviceEntity))
+                                                .storeType(serviceEntity.getStoreType())
+                                                .fallbackBranch(serviceEntity.getFallBackBranch())
+                                                .connectorRef(serviceEntity.getConnectorRef())
+                                                .cacheResponseMetadataDTO(getCacheResponse(serviceEntity))
                                                 .build();
 
     if (includeVersionInfo && serviceEntity.getType() != null) {
       serviceResponseDTO.setV2Service(true);
     }
     return serviceResponseDTO;
+  }
+
+  public EntityGitDetails getEntityGitDetails(ServiceEntity serviceEntity) {
+    if (serviceEntity.getStoreType() == StoreType.REMOTE) {
+      EntityGitDetails entityGitDetails = GitAwareContextHelper.getEntityGitDetails(serviceEntity);
+
+      // add additional details from scm metadata
+      return GitAwareContextHelper.updateEntityGitDetailsFromScmGitMetadata(entityGitDetails);
+    }
+    return null; // Default if storeType is not remote
+  }
+
+  private CacheResponseMetadataDTO getCacheResponse(ServiceEntity serviceEntity) {
+    if (serviceEntity.getStoreType() == StoreType.REMOTE) {
+      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+
+      if (cacheResponse != null) {
+        return createCacheResponseMetadataDTO(cacheResponse);
+      }
+    }
+
+    return null;
+  }
+
+  private CacheResponseMetadataDTO createCacheResponseMetadataDTO(CacheResponse cacheResponse) {
+    return CacheResponseMetadataDTO.builder()
+        .cacheState(cacheResponse.getCacheState())
+        .ttlLeft(cacheResponse.getTtlLeft())
+        .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+        .build();
   }
 
   public ServiceResponseDTO writeAccessListDTO(ServiceEntity serviceEntity) {

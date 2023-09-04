@@ -6,6 +6,7 @@
  */
 
 package software.wings.service.impl;
+
 import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.AUTO_ACCEPT_SAML_ACCOUNT_INVITES;
@@ -20,6 +21,7 @@ import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_IP_ALLOWLIST;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_TRIGGERS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NG_USER_CLEANUP_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SYNC_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
@@ -95,6 +97,7 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
+import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
@@ -397,7 +400,29 @@ public class AccountServiceImpl implements AccountService {
       log.error(format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
     }
   }
-
+  private String publishAccountChangeEventViaEventFramework(
+      String accountId, String orgIdentifier, String projectIdentifier, String action) {
+    log.info("testDeletionLog: producing event to events framework for account {}, action {}", accountId, action);
+    try {
+      return eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of(EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                  EventsFrameworkMetadataConstants.PROJECT_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
+              .setData(ProjectEntityChangeDTO.newBuilder()
+                           .setAccountIdentifier(accountId)
+                           .setOrgIdentifier(orgIdentifier == null ? "" : orgIdentifier)
+                           .setIdentifier(projectIdentifier == null ? "" : projectIdentifier)
+                           .build()
+                           .toByteString())
+              .build());
+    } catch (Exception ex) {
+      log.error(format("Failed to publish account %s event for accountId %s , org %s , project %s via event framework.",
+          action, accountId, orgIdentifier, projectIdentifier));
+      throw new InvalidRequestException(
+          format("Failed to publish account %s event for accountId %s , org %s , project %s via event framework.",
+              action, accountId, orgIdentifier, projectIdentifier));
+    }
+  }
   private void publishAccountChangeEvent(Account account) {
     EventData eventData = EventData.builder().eventInfo(new AccountEntityEvent(account)).build();
     eventPublisher.publishEvent(
@@ -562,6 +587,9 @@ public class AccountServiceImpl implements AccountService {
       throw new AccountNotFoundException(
           "Account is not found for the given id:" + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
     }
+    if (featureFlagService.isEnabled(FeatureName.CDS_DISABLE_FIRST_GEN_CD, accountId)) {
+      account.isCrossGenerationAccessEnabled(false);
+    }
     LicenseUtils.decryptLicenseInfo(account, false);
     return account;
   }
@@ -599,6 +627,13 @@ public class AccountServiceImpl implements AccountService {
     log.info("Publish disable ip event for account" + accountId);
     publishAccountChangeEventViaEventFramework(accountId, DISABLE_IP_ALLOWLIST);
     return true;
+  }
+
+  @Override
+  public String disableTriggers(String accountId, String orgIdentifier, String projectIdentifier) {
+    log.info("Publish disable triggers event for account " + accountId + " orgIdentifier " + orgIdentifier
+        + " projectIdentifier " + projectIdentifier);
+    return publishAccountChangeEventViaEventFramework(accountId, orgIdentifier, projectIdentifier, DISABLE_TRIGGERS);
   }
 
   @Override
@@ -1291,30 +1326,6 @@ public class AccountServiceImpl implements AccountService {
     if (enabled.contains("ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM")) {
       setDefaultExperience(onPremAccount.get().getUuid(), DefaultExperience.NG);
     }
-  }
-
-  @Override
-  public List<AccountDTO> getAllAccounts() {
-    Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
-                               .project(ID_KEY2, true)
-                               .project(AccountKeys.accountName, true)
-                               .project(AccountKeys.companyName, true)
-                               .project(AccountKeys.defaultExperience, true)
-                               .project(AccountKeys.authenticationMechanism, true)
-                               .project(AccountKeys.nextGenEnabled, true)
-                               .project(AccountKeys.serviceAccountConfig, true)
-                               .project(AccountKeys.isProductLed, true)
-                               .project(AccountKeys.twoFactorAdminEnforced, true)
-                               .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
-                               .limit(NO_LIMIT);
-
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
-      for (Account account : iterator) {
-        accountDTOList.add(AccountMapper.toAccountDTO(account));
-      }
-    }
-    return accountDTOList;
   }
 
   @Override

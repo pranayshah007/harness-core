@@ -23,6 +23,7 @@ import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.lang.String.format;
@@ -454,6 +455,19 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     verify(istioTaskHelper, times(1))
         .updateDestinationRuleManifestFilesWithSubsets(kubernetesResources,
             asList(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable), kubernetesConfig, logCallback);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testUpdateDestinationRuleManifestFilesWithSubsetsWithoutFabric8() throws IOException {
+    List<KubernetesResource> kubernetesResources = Collections.emptyList();
+
+    k8sCanaryBaseHandler.updateDestinationRuleManifestFilesWithSubsets(kubernetesResources, null, logCallback);
+
+    verify(istioTaskHelper, times(1))
+        .updateDestinationRuleManifestFilesWithSubsets(kubernetesResources,
+            asList(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable), null, logCallback);
   }
 
   @Test

@@ -7,6 +7,7 @@ package git
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,8 @@ import (
 
 	"github.com/harness/harness-core/commons/go/lib/logs"
 	pb "github.com/harness/harness-core/product/ci/scm/proto"
+
+	"github.com/drone/go-scm/scm"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
@@ -473,6 +476,227 @@ func TestFindPR(t *testing.T) {
 	assert.NotNil(t, got.Pr, "no errors")
 	assert.Equal(t, got.Pr.Number, int64(1), "number: 1")
 	assert.Equal(t, got.Pr.Sha, "7044a8a032e85b6ab611033b2ac8af7ce85805b2", "sha: 7044a8a032e85b6ab611033b2ac8af7ce85805b2")
+}
+
+func TestFindPullRequestWithRetry(t *testing.T) {
+	responseCounter := 0
+	responses := []func(w http.ResponseWriter, r *http.Request){
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(500)
+		},
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			content, _ := os.ReadFile("testdata/find_pr.json")
+			fmt.Fprint(w, string(content))
+		},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		responses[responseCounter](w, r)
+		responseCounter++
+	}))
+	defer ts.Close()
+
+	in := &pb.FindPRRequest{
+		Slug:   "octocat/hello-world",
+		Number: 1,
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_Github{
+				Github: &pb.GithubProvider{
+					Provider: &pb.GithubProvider_AccessToken{
+						AccessToken: "token",
+					},
+				},
+			},
+			Endpoint: ts.URL,
+		},
+	}
+
+	config := zap.NewProductionConfig()
+	log, _ := config.Build()
+	got, err := FindPR(context.Background(), in, log.Sugar())
+	assert.Nil(t, err)
+	assert.Equal(t, got.Status, int32(200))
+	assert.NotNil(t, got.Pr)
+	assert.Equal(t, got.Pr.Number, int64(1), "number: 1")
+	assert.Equal(t, got.Pr.Sha, "7044a8a032e85b6ab611033b2ac8af7ce85805b2", "sha: 7044a8a032e85b6ab611033b2ac8af7ce85805b2")
+}
+
+func TestFindFilesInPRWithRetry(t *testing.T) {
+	responseCounter := 0
+	responses := []func(w http.ResponseWriter, r *http.Request){
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(500)
+		},
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			content, _ := os.ReadFile("testdata/pr_files.json")
+			fmt.Fprint(w, string(content))
+		},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		responses[responseCounter](w, r)
+		responseCounter++
+	}))
+	in := &pb.FindFilesInPRRequest{
+		Slug:   "tphoney/scm-test",
+		Number: int32(102),
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_Github{
+				Github: &pb.GithubProvider{
+					Provider: &pb.GithubProvider_AccessToken{
+						AccessToken: "token",
+					},
+				},
+			},
+			Endpoint: ts.URL,
+		},
+	}
+
+	config := zap.NewProductionConfig()
+	log, _ := config.Build()
+	got, err := FindFilesInPR(context.Background(), in, log.Sugar())
+	assert.Nil(t, err)
+	assert.NotNil(t, got)
+	assert.Equal(t, 4, len(got.Files), "4 files")
+	assert.True(t, got.Files[1].Added, "file 1 added")
+	assert.True(t, got.Files[2].Renamed, "file 2 renamed")
+	assert.True(t, got.Files[3].Deleted, "file deleted")
+	assert.Equal(t, int32(0), got.Pagination.Next, "No next page")
+}
+
+func TestListCommitsInPRWithRetry(t *testing.T) {
+	responseCounter := 0
+	responses := []func(w http.ResponseWriter, r *http.Request){
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(500)
+		},
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			content, _ := os.ReadFile("testdata/commits.json")
+			fmt.Fprint(w, string(content))
+		},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		responses[responseCounter](w, r)
+		responseCounter++
+	}))
+	in := &pb.ListCommitsInPRRequest{
+		Slug:   "tphoney/scm-test",
+		Number: 1234,
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_Github{
+				Github: &pb.GithubProvider{
+					Provider: &pb.GithubProvider_AccessToken{
+						AccessToken: "token",
+					},
+				},
+			},
+			Endpoint: ts.URL,
+		},
+	}
+
+	config := zap.NewProductionConfig()
+	log, _ := config.Build()
+	got, err := ListCommitsInPR(context.Background(), in, log.Sugar())
+	assert.Nil(t, err)
+	assert.Equal(t, len(got.Commits), 1)
+	assert.Equal(t, int32(0), got.Pagination.Next)
+}
+
+func TestGetLatestCommitBitbucketOnpremWithRetry(t *testing.T) {
+	responseCounter := 0
+	responses := []func(w http.ResponseWriter, r *http.Request){
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(500)
+		},
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			enc := json.NewEncoder(w)
+			enc.Encode([]scm.Commit{{Sha: "master"}})
+		},
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			content, _ := os.ReadFile("testdata/commit_bb_onprem.json")
+			fmt.Fprint(w, string(content))
+		},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		responses[responseCounter](w, r)
+		fmt.Println(responseCounter)
+		responseCounter++
+	}))
+
+	in := &pb.GetLatestCommitRequest{
+		Slug: "har/k8s-manifests",
+		Type: &pb.GetLatestCommitRequest_Branch{
+			Branch: "refs/head/master",
+		},
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_BitbucketServer{
+				BitbucketServer: &pb.BitbucketServerProvider{
+					Username:            "username",
+					PersonalAccessToken: "token",
+				},
+			},
+			Endpoint: ts.URL,
+		},
+	}
+
+	config := zap.NewProductionConfig()
+	log, _ := config.Build()
+	got, err := GetLatestCommit(context.Background(), in, log.Sugar())
+	assert.Nil(t, err, "no errors")
+	assert.NotNil(t, got.Commit.Sha, "There is a commit id")
+	assert.NotNil(t, got.Commit.Link, "There is a link")
+}
+
+func TestGetLatestCommitWithRetry(t *testing.T) {
+	responseCounter := 0
+	responses := []func(w http.ResponseWriter, r *http.Request){
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(500)
+		},
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			content, _ := os.ReadFile("testdata/commit.json")
+			fmt.Fprint(w, string(content))
+		},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		responses[responseCounter](w, r)
+		fmt.Println(responseCounter)
+		responseCounter++
+	}))
+	defer ts.Close()
+
+	in := &pb.GetLatestCommitRequest{
+		Slug: "tphonerry/scm-test",
+		Type: &pb.GetLatestCommitRequest_Branch{
+			Branch: "main",
+		},
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_Github{
+				Github: &pb.GithubProvider{
+					Provider: &pb.GithubProvider_AccessToken{
+						AccessToken: "token",
+					},
+				},
+			},
+			Endpoint: ts.URL,
+		},
+	}
+
+	config := zap.NewProductionConfig()
+	log, _ := config.Build()
+	got, err := GetLatestCommit(context.Background(), in, log.Sugar())
+	assert.Nil(t, err, "no errors")
+	assert.NotNil(t, got.Commit.Sha, "There is a commit id")
 }
 
 // func TestGetLatestCommitOnFileOnNonExistingFile(t *testing.T) {

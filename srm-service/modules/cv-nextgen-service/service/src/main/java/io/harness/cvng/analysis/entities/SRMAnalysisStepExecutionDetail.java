@@ -83,9 +83,10 @@ public class SRMAnalysisStepExecutionDetail
   String pipelineName;
   String stageStepId;
   String stageId;
+  String stageExecutionId;
+  String stepRuntimeId;
   String artifactType;
   String artifactTag;
-
   @FdIndex Long reportNotificationIteration;
 
   List<MonitoredServiceNotificationRule> notificationRulesSent;

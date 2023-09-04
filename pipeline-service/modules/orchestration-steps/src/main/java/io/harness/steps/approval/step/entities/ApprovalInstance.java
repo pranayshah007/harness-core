@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.approval.step.entities;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
@@ -27,15 +28,16 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
+import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance.CustomApprovalInstanceKeys;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance.HarnessApprovalInstanceKeys;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.yaml.core.timeout.Timeout;
@@ -77,6 +79,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 public abstract class ApprovalInstance implements PersistentEntity, PersistentRegularIterable {
   public static final long TTL_MONTHS = 6;
+  public static final long ASYNC_DELEGATE_TIMEOUT = 20000l;
+  public static final long APPROVAL_LEEWAY_IN_MILLIS = 30000l;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -90,6 +94,12 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
                  .field(ApprovalInstanceKeys.status)
                  .field(ApprovalInstanceKeys.type)
                  .descSortField(ApprovalInstanceKeys.nextIteration)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("status_type_nextIterations")
+                 .field(ApprovalInstanceKeys.status)
+                 .field(ApprovalInstanceKeys.type)
+                 .field(CustomApprovalInstanceKeys.nextIterations)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_status_type_nodeExecutionId")
@@ -157,7 +167,7 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
     return logContext;
   }
 
-  protected void updateFromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
+  protected void updateFromStepParameters(Ambiance ambiance, StepBaseParameters stepParameters) {
     if (stepParameters == null) {
       return;
     }
@@ -221,5 +231,14 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
       return FailureInfo.newBuilder().addFailureData(failureData).build();
     }
     return null;
+  }
+  public static ParameterField<Timeout> getTimeout(String fieldName, Object objectParameterField) {
+    if (objectParameterField instanceof String) {
+      return ParameterField.createValueField(Timeout.fromString(objectParameterField.toString()));
+    }
+    if (objectParameterField instanceof Timeout) {
+      return ParameterField.createValueField((Timeout) objectParameterField);
+    }
+    throw new IllegalArgumentException(String.format("Invalid value for %s", fieldName));
   }
 }

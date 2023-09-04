@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.container;
+
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 
 import io.harness.annotations.dev.CodePulse;
@@ -15,12 +16,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
-import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.encryption.Scope;
 import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -39,7 +40,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.container.execution.ContainerRunStepHelper;
-import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskChainExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepInfo;
@@ -56,7 +56,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
@@ -67,7 +66,6 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
   @Inject private ContainerRunStepHelper containerRunStepHelper;
   @Inject private OutcomeService outcomeService;
-  @Inject private ContainerStepCleanupHelper containerStepCleanupHelper;
   @Inject private ContainerStepRbacHelper containerStepRbacHelper;
   @Inject private ContainerStepExecutionResponseHelper executionResponseHelper;
 
@@ -113,14 +111,13 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
 
     CIInitializeTaskParams buildSetupTaskParams =
         containerStepInitHelper.getK8InitializeTaskParams(containerStepInfo, ambiance, logPrefix);
-
     String stageId = ambiance.getStageExecutionId();
-    List<TaskSelector> taskSelectors = new ArrayList<>();
 
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
     TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
-        taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+        TaskSelectorYaml.toTaskSelector(containerStepInfo.getDelegateSelectors()), Scope.PROJECT, EnvironmentType.ALL,
+        false, new ArrayList<>(), false, stageId);
 
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)

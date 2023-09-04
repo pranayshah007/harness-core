@@ -28,11 +28,13 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.approval.AbstractApprovalCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 import io.harness.steps.approval.step.servicenow.evaluation.ServiceNowCriteriaEvaluator;
@@ -56,6 +58,7 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
 
   @Builder
   public ServiceNowApprovalCallback(String approvalInstanceId) {
@@ -67,6 +70,10 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
     ServiceNowApprovalInstance instance = (ServiceNowApprovalInstance) approvalInstanceService.get(approvalInstanceId);
     try (AutoLogContext ignore = instance.autoLogContext()) {
       pushInternal(response, instance);
+    } finally {
+      if (ParameterField.isNotNull(instance.getRetryInterval())) {
+        resetNextIteration(instance);
+      }
     }
   }
 
@@ -170,5 +177,9 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
         ngErrorHelper.getErrorSummary(ex.getMessage()));
     logCallback.saveExecutionLog(LogHelper.color(errorMessage, LogColor.Red), LogLevel.ERROR);
     approvalInstanceService.finalizeStatus(instance.getId(), ApprovalStatus.FAILED, errorMessage);
+  }
+  private void resetNextIteration(ServiceNowApprovalInstance instance) {
+    approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
+    irregularApprovalInstanceHandler.wakeup();
   }
 }

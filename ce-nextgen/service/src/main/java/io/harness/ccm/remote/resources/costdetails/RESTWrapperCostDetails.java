@@ -148,8 +148,6 @@ public class RESTWrapperCostDetails {
       throw new InvalidArgumentsException(e.getMessage());
     }
 
-    log.info("Aggregations: {}", aggregationList);
-
     PerspectiveEntityStatsData perspectiveGridData = perspectivesQuery.perspectiveGrid(aggregationList, filters,
         groupBy, sortList, firstNonNull(limit, (int) DEFAULT_LIMIT), firstNonNull(offset, (int) DEFAULT_OFFSET), null,
         false, skipRoundOff != null && skipRoundOff, env);
@@ -314,7 +312,6 @@ public class RESTWrapperCostDetails {
     Integer limit = queryParams.getLimit();
     Integer offset = queryParams.getOffset();
     List<QLCEViewAggregation> aggregationList = RESTToGraphQLHelper.getAggregations(queryParams.getAggregations());
-    log.info("Aggregations : {}", aggregationList);
     List<QLCEViewSortCriteria> sortList = RESTToGraphQLHelper.getClusterCostSortingCriteria(queryParams.getSortOrder());
     List<QLCEViewFilterWrapper> filters;
     try {

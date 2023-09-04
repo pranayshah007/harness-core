@@ -48,4 +48,5 @@ public class TerragruntRollbackStepParameters implements SpecParameters {
   private ParameterField<String> provisionerIdentifier;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  List<TerragruntCliOptionFlag> commandFlags;
 }

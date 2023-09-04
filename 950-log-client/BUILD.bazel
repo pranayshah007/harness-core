@@ -22,6 +22,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/secret:module",
         "//980-commons/src/main/java/io/harness/security:module",
         "//980-commons/src/main/java/io/harness/serializer/kryo:module",
+        "//980-commons/src/main/java/io/harness/windows:module",
         "//980-commons/src/main/java/software/wings/beans:module",
         "//999-annotations:module",
         "@maven//:com_squareup_retrofit2_converter_jackson",

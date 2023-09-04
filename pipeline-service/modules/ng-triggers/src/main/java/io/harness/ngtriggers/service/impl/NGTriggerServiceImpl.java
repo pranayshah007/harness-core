@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.service.impl;
+
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -40,6 +41,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.PollingResponseDTO;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFieldException;
@@ -156,6 +158,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.util.CollectionUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
@@ -169,7 +172,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public static final int WEBHOOOk_POLLING_MIN_INTERVAL = 2;
   public static final int WEBHOOOk_POLLING_MAX_INTERVAL = 60;
   private static final long MIN_INTERVAL_MINUTES = 5;
-
+  private static final long MAX_DISABLE_BATCH_SIZE = 50;
   private final AccessControlClient accessControlClient;
   private final NGSettingsClient settingsClient;
   private final NGTriggerRepository ngTriggerRepository;
@@ -236,7 +239,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     if (ngTriggerEntity.getMetadata().getWebhook() != null
         && ngTriggerEntity.getMetadata().getWebhook().getGit() != null
         && Boolean.TRUE.equals(ngTriggerEntity.getMetadata().getWebhook().getGit().getIsHarnessScm())) {
-      // todo(abhinav): check what reponame is used
+      // todo(abhinav): if org level repos come we will need to change here to extract right repo name
       String repoName = ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName();
       String repositoryAccessControlResourceName = "REPOSITORY";
       String repositoryAccessControlPerms = "code_repo_edit";
@@ -318,9 +321,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                 ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
           log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
               ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
-          // TODO: (Vinicius) Set the status to PENDING here when ng-manager changes are deployed.
           updatePollingRegistrationStatus(
-              ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.SUCCESS);
+              ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.PENDING);
         }
       }
     } catch (Exception exception) {
@@ -352,8 +354,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
       if (shouldSubscribe) {
         List<PollingDocument> pollingDocuments = subscribePollingV2(ngTriggerEntity, pollingItems);
-        // TODO: (Vinicius) Set the status to PENDING here when ng-manager changes are deployed.
-        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.SUCCESS);
+        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.PENDING);
       } else if (unsubscribeSuccess) {
         // no subscription done, check if unsubscription worked.
         updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
@@ -458,7 +459,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments, StatusResult statusResult) {
     // change pollingDocId only if request was successful. Else, we dont know what happened.
     // In next trigger upsert, we will try again
-    if (statusResult == StatusResult.SUCCESS) {
+    if (statusResult == StatusResult.SUCCESS || statusResult == StatusResult.PENDING) {
       if (ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
         stampPollingInfoForMultiArtifactTrigger(ngTriggerEntity, pollingDocuments);
       } else {
@@ -555,6 +556,47 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           updatedTriggerEntity.getOrgIdentifier(), ex);
     }
     return updatedTriggerEntity;
+  }
+
+  @Override
+  public TriggerUpdateCount disableTriggers(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId).is(accountIdentifier);
+    if (isNotEmpty(orgIdentifier)) {
+      criteria.and(NGTriggerEntityKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      criteria.and(NGTriggerEntityKeys.projectIdentifier).is(projectIdentifier);
+    }
+    criteria.and(NGTriggerEntityKeys.deleted).is(false);
+    CloseableIterator<NGTriggerEntity> iterator = ngTriggerRepository.findAll(criteria);
+    List<NGTriggerEntity> toBeDisabledTriggers = new ArrayList<>();
+    long successfullyUpdated = 0;
+    long failedToUpdate = 0;
+    while (iterator.hasNext()) {
+      NGTriggerEntity ngTriggerEntity = iterator.next();
+      ngTriggerEntity.setEnabled(false);
+      ngTriggerElementMapper.updateEntityYmlWithEnabledValue(ngTriggerEntity);
+      toBeDisabledTriggers.add(ngTriggerEntity);
+
+      if (toBeDisabledTriggers.size() >= MAX_DISABLE_BATCH_SIZE) {
+        TriggerUpdateCount triggerUpdateCount = ngTriggerRepository.updateTriggerEnabled(toBeDisabledTriggers);
+        successfullyUpdated = successfullyUpdated + triggerUpdateCount.getSuccessCount();
+        failedToUpdate = failedToUpdate + triggerUpdateCount.getFailureCount();
+        toBeDisabledTriggers.clear();
+      }
+    }
+    if (EmptyPredicate.isNotEmpty(toBeDisabledTriggers)) {
+      TriggerUpdateCount triggerUpdateCount = ngTriggerRepository.updateTriggerEnabled(toBeDisabledTriggers);
+      successfullyUpdated = successfullyUpdated + triggerUpdateCount.getSuccessCount();
+      failedToUpdate = failedToUpdate + triggerUpdateCount.getFailureCount();
+    }
+
+    TriggerUpdateCount triggerUpdateCount =
+        TriggerUpdateCount.builder().successCount(successfullyUpdated).failureCount(failedToUpdate).build();
+    log.info("Successfully disabled {} and failed to disable {} triggers in account {}, org {}, project {}",
+        triggerUpdateCount.getSuccessCount(), triggerUpdateCount.getFailureCount(), accountIdentifier, orgIdentifier,
+        projectIdentifier);
+    return triggerUpdateCount;
   }
 
   @NotNull

@@ -22,6 +22,7 @@ import (
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
+	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
 )
@@ -53,7 +54,10 @@ func (b *pytestRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *pytestRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
-	return GetPythonTests(testGlobs)
+	if len(testGlobs) == 0 {
+		testGlobs = utils.PYTHON_TEST_PATTERN
+	}
+	return utils.GetTestsFromLocal(testGlobs, "py", utils.LangType_PYTHON)
 }
 
 func (b *pytestRunner) ReadPackages(files []types.File) []types.File {
@@ -76,18 +80,7 @@ func (b *pytestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	if len(tests) == 0 {
 		return "echo \"Skipping test run, received no tests to execute\"", nil
 	}
-	// Use only unique class
-	set := make(map[types.RunnableTest]interface{})
-	ut := []string{}
-	for _, t := range tests {
-		w := types.RunnableTest{Class: t.Class}
-		if _, ok := set[w]; ok {
-			// The test has already been added
-			continue
-		}
-		set[w] = struct{}{}
-		ut = append(ut, t.Class)
-	}
+	ut := utils.GetUniqueTestStrings(tests)
 
 	if ignoreInstr {
 		testStr := strings.Join(ut, " ")

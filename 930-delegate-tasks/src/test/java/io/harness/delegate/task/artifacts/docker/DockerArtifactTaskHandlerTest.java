@@ -112,7 +112,6 @@ public class DockerArtifactTaskHandlerTest extends CategoryTest {
         DockerArtifactDelegateRequest.builder()
             .imagePath("imagePath")
             .tag("tag")
-            .shouldFetchDockerV2DigestSHA256(true)
             .dockerConnectorDTO(DockerConnectorDTO.builder()
                                     .dockerRegistryUrl("URL")
                                     .auth(DockerAuthenticationDTO.builder()

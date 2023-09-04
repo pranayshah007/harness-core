@@ -45,7 +45,7 @@ public abstract class BasePluginCompatibleSerializer implements ProtobufStepSeri
     List<String> outputVarNames = getOutputVariables(pluginCompatibleStep);
 
     StepContext stepContext = StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build();
-    Map<String, String> envVarMap = pluginService.getPluginCompatibleEnvVariables(
+    Map<String, String> envVarMap = getPluginCompatibleEnvVariables(
         pluginCompatibleStep, identifier, timeout, ambiance, StageInfraDetails.Type.K8, true, true);
     envVarMap.put(DRONE_STAGE_MACHINE, podName);
     PluginStep pluginStep = PluginStep.newBuilder()
@@ -77,4 +77,11 @@ public abstract class BasePluginCompatibleSerializer implements ProtobufStepSeri
   public abstract List<String> getEntryPoint(PluginCompatibleStep pluginCompatibleStep, String accountId, OSType os);
 
   public abstract String getDelegateCallbackToken();
+
+  protected Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
+      long timeout, Ambiance ambiance, StageInfraDetails.Type infraType, boolean isMandatory,
+      boolean isContainerizedPlugin) {
+    return pluginService.getPluginCompatibleEnvVariables(
+        stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, true, true);
+  }
 }

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,6 +64,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
                                                                 .pipelineIdentifier(pipelineId)
                                                                 .runSequence(1)
                                                                 .planExecutionId(planId)
+                                                                .pipelineVersion("0")
                                                                 .build();
     PipelineExecutionSummaryDTO executionSummaryDTO =
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
@@ -81,6 +83,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
     assertThat(executionSummaryDTO.getGitDetails().getRootFolder()).isNull();
     assertThat(executionSummaryDTO.getStoreType()).isNull();
     assertThat(executionSummaryDTO.getConnectorRef()).isNull();
+    assertThat(executionSummaryDTO.getYamlVersion()).isEqualTo("0");
 
     entityGitDetails = EntityGitDetails.builder()
                            .branch(branch)
@@ -156,12 +159,14 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
                                                                 .executionInputConfigured(false)
                                                                 .planExecutionId(planId)
                                                                 .storeType(StoreType.INLINE)
+                                                                .pipelineVersion("1")
                                                                 .build();
     PipelineExecutionSummaryDTO executionSummaryDTO =
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
     assertThat(executionSummaryDTO.getStoreType()).isEqualTo(StoreType.INLINE);
     assertThat(executionSummaryDTO.getConnectorRef()).isNull();
     assertThat(executionSummaryDTO.getExecutionInputConfigured()).isEqualTo(false);
+    assertThat(executionSummaryDTO.getYamlVersion()).isEqualTo("1");
 
     executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
                                  .accountId(accountId)
@@ -176,6 +181,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
 
     executionSummaryDTO = PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
     assertThat(executionSummaryDTO.getExecutionInputConfigured()).isEqualTo(true);
+    assertThat(executionSummaryDTO.getYamlVersion()).isEqualTo("0");
   }
 
   @Test
@@ -402,5 +408,46 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
     assertThat(executionSummaryDTO).isNotNull();
     assertThat(executionSummaryDTO.getParentStageInfo()).isNotNull();
     assertEquals(executionSummaryDTO.getParentStageInfo(), pipelineStageInfo);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testToDtoForNotesExist() {
+    PipelineExecutionSummaryEntity executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                .accountId(accountId)
+                                                                .orgIdentifier(orgId)
+                                                                .projectIdentifier(projId)
+                                                                .pipelineIdentifier(pipelineId)
+                                                                .runSequence(1)
+                                                                .planExecutionId(planId)
+                                                                .notesExistForPlanExecutionId(true)
+                                                                .build();
+    PipelineExecutionSummaryDTO executionSummaryDTO =
+        PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
+    assertThat(executionSummaryDTO).isNotNull();
+    assertThat(executionSummaryDTO.getGitDetails()).isNull();
+    assertThat(executionSummaryDTO.isNotesExistForPlanExecutionId()).isTrue();
+    executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                 .accountId(accountId)
+                                 .orgIdentifier(orgId)
+                                 .projectIdentifier(projId)
+                                 .pipelineIdentifier(pipelineId)
+                                 .runSequence(1)
+                                 .planExecutionId(planId)
+                                 .notesExistForPlanExecutionId(false)
+                                 .build();
+    executionSummaryDTO = PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
+    assertThat(executionSummaryDTO.isNotesExistForPlanExecutionId()).isFalse();
+    executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                 .accountId(accountId)
+                                 .orgIdentifier(orgId)
+                                 .projectIdentifier(projId)
+                                 .pipelineIdentifier(pipelineId)
+                                 .runSequence(1)
+                                 .planExecutionId(planId)
+                                 .build();
+    executionSummaryDTO = PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
+    assertThat(executionSummaryDTO.isNotesExistForPlanExecutionId()).isFalse();
   }
 }

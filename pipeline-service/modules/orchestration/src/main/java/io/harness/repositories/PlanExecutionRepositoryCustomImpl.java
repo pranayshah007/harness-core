@@ -57,6 +57,10 @@ public class PlanExecutionRepositoryCustomImpl implements PlanExecutionRepositor
   }
 
   @Override
+  public void multiUpdatePlanExecution(Query query, Update updateOps) {
+    mongoTemplate.updateMulti(query, updateOps, PlanExecution.class);
+  }
+  @Override
   public PlanExecution getPlanExecutionWithProjections(String planExecutionId, List<String> excludedFieldNames) {
     Criteria criteria = Criteria.where(PlanExecutionKeys.uuid).is(planExecutionId);
     Query query = new Query(criteria);

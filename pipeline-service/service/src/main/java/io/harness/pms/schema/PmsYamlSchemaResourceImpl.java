@@ -31,7 +31,6 @@ import io.harness.yaml.schema.YamlSchemaResource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
-import java.io.IOException;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.NotSupportedException;
 import lombok.AllArgsConstructor;
@@ -88,21 +87,12 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
 
   private ResponseDTO<JsonNode> getStaticYamlSchemaFromResource(String accountIdentifier, String projectIdentifier,
       String orgIdentifier, String identifier, EntityType entityType, Scope scope) {
-    String filePath;
     switch (entityType) {
       case PIPELINES:
-        filePath = PIPELINE_JSON_PATH;
-        break;
+        return ResponseDTO.newResponse(schemaFetcher.fetchPipelineStaticYamlSchema());
       default:
         return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
     }
-
-    try {
-      return ResponseDTO.newResponse(schemaFetcher.fetchFile(filePath));
-    } catch (IOException ex) {
-      log.error("Not able to read json from {} path", filePath);
-    }
-    return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
   }
 
   private boolean validateOnPremOrCommunityEdition() {

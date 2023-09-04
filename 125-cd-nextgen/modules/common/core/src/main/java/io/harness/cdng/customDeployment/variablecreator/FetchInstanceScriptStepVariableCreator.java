@@ -9,7 +9,10 @@ package io.harness.cdng.customDeployment.variablecreator;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
@@ -17,6 +20,8 @@ import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
 import java.util.Collections;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @OwnedBy(CDP)
 public class FetchInstanceScriptStepVariableCreator extends GenericStepVariableCreator<FetchInstanceScriptStepNode> {
   @Override

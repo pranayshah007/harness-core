@@ -102,6 +102,7 @@ import io.harness.pms.event.entitycrud.PipelineEntityCRUDStreamListener;
 import io.harness.pms.event.entitycrud.ProjectEntityCrudStreamListener;
 import io.harness.pms.event.pollingevent.PollingEventStreamListener;
 import io.harness.pms.event.triggerwebhookevent.TriggerExecutionEventStreamListener;
+import io.harness.pms.events.base.PmsMessageListener;
 import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
@@ -338,7 +339,8 @@ public class PipelineServiceModule extends AbstractModule {
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(FeatureFlagModule.getInstance());
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
-        configuration.getOrchestrationVisualizationThreadPoolConfig()));
+        configuration.getOrchestrationVisualizationThreadPoolConfig(),
+        configuration.getGraphConsumerSleepIntervalMs()));
     install(PodCleanUpModule.getInstance(configuration.getPodCleanUpThreadPoolConfig()));
     install(PrimaryVersionManagerModule.getInstance());
     install(new DelegateServiceDriverGrpcClientModule(configuration.getManagerServiceSecret(),
@@ -546,11 +548,11 @@ public class PipelineServiceModule extends AbstractModule {
         .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
         .to(AccountEntityCrudStreamListener.class);
 
-    bind(MessageListener.class)
+    bind(PmsMessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.POLLING_EVENTS_STREAM))
         .to(PollingEventStreamListener.class);
 
-    bind(MessageListener.class)
+    bind(PmsMessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM))
         .to(TriggerExecutionEventStreamListener.class);
   }

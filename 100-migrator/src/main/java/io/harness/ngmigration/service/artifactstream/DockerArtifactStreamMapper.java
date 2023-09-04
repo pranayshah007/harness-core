@@ -31,7 +31,6 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +39,7 @@ public class DockerArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     DockerArtifactStream dockerArtifactStream = (DockerArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(dockerArtifactStream.getSettingId()).build())
@@ -50,7 +49,7 @@ public class DockerArtifactStreamMapper implements ArtifactStreamMapper {
         .spec(DockerHubArtifactConfig.builder()
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .imagePath(ParameterField.createValueField(dockerArtifactStream.getImageName()))
-                  .tag(ParameterField.createValueField("<+input>"))
+                  .tag(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }
@@ -64,7 +63,7 @@ public class DockerArtifactStreamMapper implements ArtifactStreamMapper {
   public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String connectorRef = getConnectorRef(migratedEntities, artifactStream);
-    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
     String imagePath = PLEASE_FIX_ME;
     if (artifactStream != null) {
       DockerArtifactStream dockerArtifactStream = (DockerArtifactStream) artifactStream;

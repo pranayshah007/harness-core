@@ -11,10 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -29,6 +26,7 @@ import io.harness.resourcegroup.ResourceGroupServiceConfig;
 import io.harness.resourcegroup.v1.remote.dto.ZendeskConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
+import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
@@ -65,7 +63,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Getter
 @Slf4j
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -126,7 +123,7 @@ public class PlatformConfiguration extends Configuration {
   @ConfigSecret
   private EventsFrameworkConfiguration eventsFrameworkConfiguration =
       EventsFrameworkConfiguration.builder().redisConfig(redisConfig).build();
-
+  @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
   public static final Collection<Class<?>> ALL_HARNESS_RESOURCES = getAllResources();
   public static final Collection<Class<?>> NOTIFICATION_SERVICE_RESOURCES = getNotificationServiceResourceClasses();
   public static final Collection<Class<?>> AUDIT_SERVICE_RESOURCES = getAuditServiceResourceClasses();

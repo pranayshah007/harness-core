@@ -52,7 +52,7 @@ public class WebhookEventStreamListenerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleMessage() {
     Message message = Message.newBuilder().build();
-    assertTrue(webhookEventStreamListener.handleMessage(message));
+    assertTrue(webhookEventStreamListener.handleMessage(message, System.currentTimeMillis()));
     message = Message.newBuilder()
                   .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
                                   .putMetadata(ENTITY_TYPE, PIPELINE_ENTITY)
@@ -60,7 +60,7 @@ public class WebhookEventStreamListenerTest extends CategoryTest {
                                   .setData(WebhookDTO.newBuilder().build().toByteString())
                                   .build())
                   .build();
-    webhookEventStreamListener.handleMessage(message);
+    webhookEventStreamListener.handleMessage(message, System.currentTimeMillis());
     verify(triggerWebhookExecutionServiceV2, times(1)).processEvent(any());
   }
 
@@ -69,7 +69,7 @@ public class WebhookEventStreamListenerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleMessageForGitlabTrigger() {
     Message message = Message.newBuilder().build();
-    assertTrue(webhookEventStreamListener.handleMessage(message));
+    assertTrue(webhookEventStreamListener.handleMessage(message, System.currentTimeMillis()));
     message = Message.newBuilder()
                   .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
                                   .putMetadata(ENTITY_TYPE, "trigger")
@@ -85,7 +85,7 @@ public class WebhookEventStreamListenerTest extends CategoryTest {
                                                .toByteString())
                                   .build())
                   .build();
-    webhookEventStreamListener.handleMessage(message);
+    webhookEventStreamListener.handleMessage(message, System.currentTimeMillis());
     verify(triggerWebhookExecutionServiceV2, times(1)).processEvent(any());
   }
 }

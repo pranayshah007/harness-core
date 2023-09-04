@@ -5,17 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static io.harness.govern.Switch.unhandled;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
-import io.harness.ci.integrationstage.DliteVmInitializeTaskParamsBuilder;
-import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
-import io.harness.ci.integrationstage.K8InitializeTaskParamsBuilder;
-import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.DliteVmInitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.DockerInitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.K8InitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.VmInitializeTaskParamsBuilder;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
@@ -36,7 +36,6 @@ public class BuildSetupUtils {
       InitializeStepInfo initializeStepInfo, Ambiance ambiance, String logPrefix) {
     switch (initializeStepInfo.getInfrastructure().getType()) {
       case KUBERNETES_DIRECT:
-      case KUBERNETES_HOSTED:
         return k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, logPrefix);
       case VM:
         return vmInitializeTaskParamsBuilder.getDirectVmInitializeTaskParams(initializeStepInfo, ambiance);

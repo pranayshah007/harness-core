@@ -149,7 +149,6 @@ public class SamlBasedAuthHandler implements AuthHandler {
           log.info(
               "SAMLFeature: fetched user with externalUserId for accountId {} and difference in userEmail in user object {}, new userID is {}, old user object {}, old user id {}",
               accountId, userByUserId.getEmail(), userByUserId.getUuid(), user.getEmail(), user.getUuid());
-          userByUserId.setEmail(user.getEmail());
           userByUserId.setAccounts(Stream.concat(user.getAccounts().stream(), userByUserId.getAccounts().stream())
                                        .distinct()
                                        .collect(Collectors.toList()));

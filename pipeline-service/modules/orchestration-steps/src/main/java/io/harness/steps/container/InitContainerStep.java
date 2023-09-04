@@ -6,13 +6,13 @@
  */
 
 package io.harness.steps.container;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
-import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
@@ -28,6 +28,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
+import io.harness.steps.container.utils.ContainerSpecUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.supplier.ThrowingSupplier;
@@ -40,7 +41,6 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
@@ -70,16 +70,17 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     String logPrefix = initialiseTaskUtils.getLogPrefix(ambiance, "STEP");
-    ContainerStepSpec containerStepInfo = (ContainerStepSpec) stepElementParameters.getSpec();
+    ContainerStepSpec containerStepSpec = (ContainerStepSpec) stepElementParameters.getSpec();
+
     CIInitializeTaskParams buildSetupTaskParams =
-        containerStepInitHelper.getK8InitializeTaskParams(containerStepInfo, ambiance, logPrefix);
+        containerStepInitHelper.getK8InitializeTaskParams(containerStepSpec, ambiance, logPrefix);
     String stageId = ambiance.getStageExecutionId();
-    List<TaskSelector> taskSelectors = new ArrayList<>();
 
     TaskData taskData = getTaskData(stepElementParameters, buildSetupTaskParams);
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
-        taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+        ContainerSpecUtils.getDelegateSelectors(containerStepSpec), Scope.PROJECT, EnvironmentType.ALL, false,
+        new ArrayList<>(), false, stageId);
   }
 
   @Override

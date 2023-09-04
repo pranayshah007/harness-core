@@ -196,6 +196,40 @@ public class ManifestMigrationService extends NgMigrationService {
     return YamlGenerationDetails.builder().yamlFileList(yamlFiles).build();
   }
 
+  private void validateAndFixTemplateManifests(List<ManifestFile> manifestFiles) {
+    for (ManifestFile manifestFile : manifestFiles) {
+      String[] lines = manifestFile.getFileContent().split("\n");
+      boolean inAnnotations = false;
+
+      for (int i = 0; i < lines.length; i++) {
+        String line = lines[i];
+
+        if (line.trim().equals("annotations:")) {
+          inAnnotations = true;
+          continue;
+        }
+
+        if (inAnnotations && line.length() > 2 && line.charAt(0) == ' ' && line.charAt(1) == ' ') {
+          lines[i] = line.replace(": true", ": \"true\"")
+                         .replace(": false", ": \"false\"")
+                         .replace(":true", ": \"true\"")
+                         .replace(":false", ": \"false\"")
+                         .replace(": 'true'", ": \"true\"")
+                         .replace(": 'false'", ": \"false\"")
+                         .replace(":'true'", ": \"true\"")
+                         .replace(":'false'", ": \"false\"");
+        }
+
+        // logic to satisfy PMD checks
+        if (line.length() <= 2 || !(line.charAt(0) == ' ' && line.charAt(1) == ' ')) {
+          inAnnotations = false;
+        }
+      }
+
+      manifestFile.setFileContent(String.join("\n", lines));
+    }
+  }
+
   private List<NGYamlFile> getYamlFilesForManifest(
       MigrationContext migrationContext, ApplicationManifest applicationManifest) {
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
@@ -203,6 +237,9 @@ public class ManifestMigrationService extends NgMigrationService {
     String envId = applicationManifest.getEnvId();
     List<ManifestFile> manifestFiles =
         applicationManifestService.listManifestFiles(applicationManifest.getUuid(), applicationManifest.getAppId());
+
+    validateAndFixTemplateManifests(manifestFiles);
+
     if (isEmpty(manifestFiles)) {
       return new ArrayList<>();
     }
@@ -250,8 +287,9 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
-    return true;
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
+    NGMigrationEntityType rootType = migrationContext.getRoot();
+    return NGMigrationEntityType.APPLICATION == rootType;
   }
 
   public List<ManifestConfigWrapper> getManifests(MigrationContext migrationContext, Set<CgEntityId> manifestEntityIds,

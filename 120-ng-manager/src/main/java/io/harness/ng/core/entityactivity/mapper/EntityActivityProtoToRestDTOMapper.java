@@ -63,7 +63,7 @@ public class EntityActivityProtoToRestDTOMapper {
             .activityStatusMessage(entityUsageActivityDetailProtoDTO.getActivityStatusMessage())
             .errors(getErrorsList(entityUsageActivityDetailProtoDTO.getErrorsList()))
             .errorSummary(entityUsageActivityDetailProtoDTO.getErrorSummary())
-            .status(getConnecitivityStatus(entityUsageActivityDetailProtoDTO.getStatus()))
+            .activityMetadata(entityUsageActivityDetailProtoDTO.getActivityMetadataMap())
             .usageDetail(entityUsageEventDetailProtoTORestMapper.getEventDetail(
                 entityUsageActivityDetailProtoDTO.getUsageDetail()))
             .build();

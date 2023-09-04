@@ -144,19 +144,19 @@ public class PipelineVariableCreatorTest extends CategoryTest {
     String propertiesExpressionPath = "pipeline.properties.ci.codebase.build";
     assertThat(yamlExtraProperties.getPropertiesList().contains(YamlProperties.newBuilder()
                                                                     .setFqn(propertiesExpressionPath + "."
-                                                                        + "build.type")
+                                                                        + "type")
                                                                     .build()));
     assertThat(yamlExtraProperties.getPropertiesList().contains(YamlProperties.newBuilder()
                                                                     .setFqn(propertiesExpressionPath + "."
-                                                                        + "build.spec.branch")
+                                                                        + "spec.branch")
                                                                     .build()));
     assertThat(yamlExtraProperties.getPropertiesList().contains(YamlProperties.newBuilder()
                                                                     .setFqn(propertiesExpressionPath + "."
-                                                                        + "build.spec.tag")
+                                                                        + "spec.tag")
                                                                     .build()));
     assertThat(yamlExtraProperties.getPropertiesList().contains(YamlProperties.newBuilder()
                                                                     .setFqn(propertiesExpressionPath + "."
-                                                                        + "build.spec.number")
+                                                                        + "spec.number")
                                                                     .build()));
   }
 

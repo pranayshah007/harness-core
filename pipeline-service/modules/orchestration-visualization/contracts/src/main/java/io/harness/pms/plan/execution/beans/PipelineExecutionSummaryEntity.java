@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.execution.beans;
-import static java.time.Duration.ofDays;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
@@ -41,6 +40,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.yaml.core.NGLabel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -48,7 +48,6 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import dev.morphia.annotations.Entity;
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.HashMap;
@@ -97,7 +96,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ChangeDataCapture(table = "runtime_inputs_info", dataStore = "pms-harness", fields = {}, handler = "RuntimeInputsInfo")
 @ChangeDataCapture(table = "stage_execution", dataStore = "pms-harness", fields = {}, handler = "ApprovalStage")
 public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware {
-  public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
 
   @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;
@@ -154,6 +152,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   ExecutionMode executionMode; // this is used to filter out rollback mode executions from executions list API
   RollbackExecutionInfo rollbackExecutionInfo;
+  Boolean notesExistForPlanExecutionId;
 
   // TTL index
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
@@ -323,5 +322,12 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   public String getRollbackModeExecutionId() {
     return rollbackExecutionInfo != null ? rollbackExecutionInfo.getRollbackModeExecutionId() : null;
+  }
+
+  public String getPipelineVersion() {
+    if (null == pipelineVersion || pipelineVersion.equals("0")) {
+      return PipelineVersion.V0;
+    }
+    return pipelineVersion;
   }
 }

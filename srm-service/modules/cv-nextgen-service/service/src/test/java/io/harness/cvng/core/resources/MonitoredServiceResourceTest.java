@@ -25,6 +25,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
@@ -38,6 +39,7 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHea
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -47,6 +49,7 @@ import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
@@ -61,11 +64,14 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.ws.rs.client.Entity;
@@ -89,7 +95,8 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVConfigService cvConfigService;
   @Inject NotificationRuleService notificationRuleService;
-
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
+  @Inject private HPersistence hPersistence;
   private MonitoredServiceDTO monitoredServiceDTO;
 
   @ClassRule
@@ -404,6 +411,38 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     assertThat(monitoredServiceDTO.getServiceRef()).isEqualTo("cvng_service_UxrHvd7oNa");
     assertThat(monitoredServiceDTO.getEnvironmentRefList())
         .isEqualTo(Collections.singletonList("org.cvng_env_prod_NWceMzD9XM"));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testSaveMonitoredService_defaultEnabled() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-default-enabled.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse = response.readEntity(new GenericType<>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getIdentifier()).isEqualTo("cvng_service_UxrHvd7oNa_cvng_env_prod_NWceMzD9XM");
+    assertThat(monitoredServiceDTO.getServiceRef()).isEqualTo("cvng_service_UxrHvd7oNa");
+    assertThat(monitoredServiceDTO.getEnvironmentRefList())
+        .isEqualTo(Collections.singletonList("cvng_env_prod_NWceMzD9XM"));
+    assertThat(monitoredServiceDTO.isEnabled()).isFalse();
+    assertThat(hPersistence.createQuery(MonitoredService.class).asList().get(0).isEnabled()).isFalse();
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier())
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .put(Entity.json(convertToJson(monitoredServiceYaml)));
+    restResponse = response.readEntity(new GenericType<>() {});
+    monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.isEnabled()).isFalse();
   }
 
   @Test
@@ -1085,6 +1124,32 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     assertThat(response.readEntity(String.class))
         .contains("\"field\":\"projectIdentifier\",\"message\":\"must not be null\"");
   }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMSSecondaryEvents() throws IOException {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(5, ChronoUnit.MINUTES);
+    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceDTO.getIdentifier(), "stepName",
+        builderFactory.getContext().getServiceEnvironmentParams(), Duration.ofDays(1), Optional.empty());
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                + "/secondary-events")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .queryParam("startTime", startTime.toEpochMilli())
+                            .queryParam("endTime", endTime.toEpochMilli())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"type\":\"SrmAnalysisImpact\"");
+  }
+
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)

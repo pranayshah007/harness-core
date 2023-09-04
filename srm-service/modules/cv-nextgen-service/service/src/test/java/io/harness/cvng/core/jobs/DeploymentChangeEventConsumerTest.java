@@ -74,6 +74,8 @@ public class DeploymentChangeEventConsumerTest extends CvNextGenTestBase {
     assertThat(harnessCDEventMetaData.getStatus()).isEqualTo(deploymentEventDTO.getDeploymentStatus());
     assertThat(harnessCDEventMetaData.getPipelineId())
         .isEqualTo(deploymentEventDTO.getExecutionDetails().getPipelineId());
+    assertThat(harnessCDEventMetaData.getRunSequence())
+        .isEqualTo(deploymentEventDTO.getExecutionDetails().getRunSequence());
     assertThat(harnessCDEventMetaData.getStageId()).isEqualTo(deploymentEventDTO.getExecutionDetails().getStageId());
     assertThat(harnessCDEventMetaData.getStageStepId())
         .isEqualTo(deploymentEventDTO.getExecutionDetails().getStageSetupId());

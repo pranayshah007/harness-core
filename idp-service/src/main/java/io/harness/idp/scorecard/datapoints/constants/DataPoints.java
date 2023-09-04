@@ -10,7 +10,26 @@ package io.harness.idp.scorecard.datapoints.constants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 @OwnedBy(HarnessTeam.IDP)
 public class DataPoints {
-  public static final String GITHUB_PR_MMTM = "github_pr_mmtm";
+  // Github
+  public static final String GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
+  public static final String GITHUB_IS_BRANCH_PROTECTED = "isBranchProtected";
+  public static final String GITHUB_IS_FILE_EXISTS = "isFileExists";
+
+  // Catalog
+  public static final String CATALOG_TECH_DOCS = "techDocsAnnotation";
+  public static final String CATALOG_PAGERDUTY = "pagerdutyAnnotation";
+  public static final String CATALOG_SPEC_OWNER = "specOwner";
+
+  // Harness
+  public static final String STO_ADDED_IN_PIPELINE = "stoStageAdded";
+  public static final String IS_POLICY_EVALUATION_SUCCESSFUL_IN_PIPELINE = "isPolicyEvaluationSuccessful";
+  public static final String PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS = "%ofCIPipelinePassingInPast7Days";
+  public static final String PIPELINE_TEST_FAILING_IN_CI_IS_ZERO = "noTestsFailingInCiPipeline";
+  public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
+  public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
 }

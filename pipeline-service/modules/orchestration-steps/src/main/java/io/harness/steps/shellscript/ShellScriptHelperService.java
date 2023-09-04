@@ -39,7 +39,8 @@ public interface ShellScriptHelperService {
   List<String> getOutputVars(Map<String, Object> outputVariables, Set<String> secretOutputVariables);
   List<String> getSecretOutputVars(Map<String, Object> outputVariables, Set<String> secretOutputVariables);
 
-  K8sInfraDelegateConfig getK8sInfraDelegateConfig(@Nonnull Ambiance ambiance, @Nonnull String shellScript);
+  K8sInfraDelegateConfig getK8sInfraDelegateConfig(
+      @Nonnull Ambiance ambiance, @Nonnull String shellScript, Boolean includeInfraSelectors);
 
   void prepareTaskParametersForExecutionTarget(@Nonnull Ambiance ambiance,
       @Nonnull ShellScriptStepParameters shellScriptStepParameters,
@@ -50,6 +51,8 @@ public interface ShellScriptHelperService {
   String getWorkingDirectory(
       ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate);
 
+  TaskParameters buildShellScriptTaskParametersNG(
+      @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters, String sessionTimeout);
   TaskParameters buildShellScriptTaskParametersNG(
       @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters);
 

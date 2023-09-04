@@ -9,11 +9,16 @@ package io.harness.logstreaming;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
+import static io.harness.windows.CmdUtils.WIN_RM_MARKER;
 
 import static org.apache.commons.lang3.StringUtils.replaceEach;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.logging.LogSanitizerHelper;
+import io.harness.windows.CmdUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +27,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Builder
 public class LogStreamingSanitizer {
   private final Set<String> secrets;
@@ -30,15 +37,26 @@ public class LogStreamingSanitizer {
   }
 
   public void sanitizeLogMessage(LogLine logLine) {
+    sanitizeLogMessage(logLine, null);
+  }
+
+  public void sanitizeLogMessage(LogLine logLine, Set<String> markers) {
     String sanitizedLogMessage = logLine.getMessage();
     if (isEmpty(sanitizedLogMessage)) {
       logLine.setMessage(sanitizedLogMessage);
       return;
     }
+
     if (!isEmpty(secrets)) {
+      boolean isWinRm = markers != null && markers.contains(WIN_RM_MARKER);
+      Set<String> allSecrets = isWinRm ? new HashSet<>(secrets) : secrets;
+      if (isWinRm) {
+        secrets.stream().map(CmdUtils::escapeEnvValueSpecialChars).collect(Collectors.toCollection(() -> allSecrets));
+      }
+
       ArrayList<String> secretMasks = new ArrayList<>();
       ArrayList<String> secretValues = new ArrayList<>();
-      for (String secret : secrets) {
+      for (String secret : allSecrets) {
         secretMasks.add(SECRET_MASK);
         secretValues.add(secret);
 

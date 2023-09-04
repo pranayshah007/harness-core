@@ -42,6 +42,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
@@ -64,6 +65,7 @@ import org.springframework.data.domain.Sort;
 @Path("/usage")
 @Produces("application/json")
 @NextGenManagerAuth
+@Tag(name = "Usage", description = "This contains APIs related to License Usage.")
 public class SRMLicenseUsageResource {
   @Inject LicenseUsageInterface licenseUsageInterface;
 
@@ -118,6 +120,7 @@ public class SRMLicenseUsageResource {
         ApiResponse(description = "Returns a list of active services Monitored")
       })
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  @Deprecated
   public ResponseDTO<Page<ActiveServiceMonitoredDTO>>
   listSRMActiveServicesMonitored(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                                      ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -139,6 +142,38 @@ public class SRMLicenseUsageResource {
         accountIdentifier, ModuleType.SRM, currentTsInMs, requestParams));
   }
 
+  @POST
+  @Path("/SRM/active-monitored-services")
+  @ApiOperation(value = "List Active Services in SRM Module", nickname = "listSRMActiveMonitoredServices")
+  @Operation(operationId = "listSRMActiveMonitoredServices",
+      summary =
+          "Returns a List of active monitored services along with identifier,Active Monitored Services Count and other details",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns a list of active monitored services")
+      })
+  @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  public ResponseDTO<Page<ActiveServiceDTO>>
+  listSRMActiveMonitoredServices(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                     ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue(
+          "0") int page,
+      @Parameter(description = SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("20")
+      @Max(50) int size, @Parameter(description = SORT_PARAM_MESSAGE) @QueryParam(SORT) List<String> sort,
+      @QueryParam(TIMESTAMP) @DefaultValue("0") long currentTsInMs,
+      @Valid @RequestBody(description = ACTIVE_SERVICES_MONITORED_FILTER_PARAM_MESSAGE)
+      ActiveServiceMonitoredFilterParams filterParams) {
+    currentTsInMs = fixOptionalCurrentTs(currentTsInMs);
+    Pageable pageRequest =
+        PageableUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, SERVICE_INSTANCE_ID));
+    DefaultPageableUsageRequestParams requestParams =
+        DefaultPageableUsageRequestParams.builder().filterParams(filterParams).pageRequest(pageRequest).build();
+
+    return ResponseDTO.newResponse((Page<ActiveServiceDTO>) licenseUsageInterface.listLicenseUsage(
+        accountIdentifier, ModuleType.SRM, currentTsInMs, requestParams));
+  }
+
   @GET
   @Path("/SRM/active-services-monitored/csv/download")
   @ApiOperation(
@@ -153,6 +188,38 @@ public class SRMLicenseUsageResource {
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
   public Response
   downloadActiveServiceMonitoredCSVReport(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                              ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @QueryParam(TIMESTAMP) @DefaultValue("0") long currentTsInMs) {
+    currentTsInMs = fixOptionalCurrentTs(currentTsInMs);
+    File file = licenseUsageInterface.getLicenseUsageCSVReport(accountIdentifier, ModuleType.SRM, currentTsInMs);
+
+    return Response
+        .ok(
+            (StreamingOutput) output
+            -> {
+              Files.copy(file.toPath(), output);
+              deleteFileIfExists(file.getPath());
+            },
+            APPLICATION_OCTET_STREAM)
+        .header(
+            "Content-Disposition", "attachment; filename=" + prepareCSVReportFileName(accountIdentifier, currentTsInMs))
+        .build();
+  }
+
+  @GET
+  @Path("/SRM/active-monitored-services/csv/download")
+  @ApiOperation(
+      value = "Download CSV Active Monitored Services report", nickname = "downloadActiveMonitoredServiceCSVReport")
+  @Operation(operationId = "downloadActiveMonitoredServiceCSVReport",
+      summary = "Download CSV Active Monitored Services report",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Download CSV Active Monitored Services report")
+      })
+  @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  public Response
+  downloadActiveMonitoredServiceCSVReport(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                                               ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @QueryParam(TIMESTAMP) @DefaultValue("0") long currentTsInMs) {
     currentTsInMs = fixOptionalCurrentTs(currentTsInMs);

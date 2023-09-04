@@ -16,8 +16,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.PmsCommonsTestBase;
@@ -29,7 +27,6 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.rule.Owner;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,25 +54,27 @@ public class PmsAbstractRedisConsumerTest extends PmsCommonsTestBase {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void shouldTestHandleMessageWithAmbiance() throws InterruptedException {
-    NoopPmsMessageListener messageListener =
-        spy(new NoopPmsMessageListener("RANDOM_SERVICE", eventHandler, MoreExecutors.newDirectExecutorService()));
+    NoopPmsMessageListener messageListener = spy(new NoopPmsMessageListener("RANDOM_SERVICE", eventHandler));
     client = mock(RedissonClient.class);
     stream = mock(RStream.class);
     doReturn(stream).when(client).getStream(any(), any());
+    CounterExecutorService ces1 = new CounterExecutorService();
     NoopPmsRedisConsumer redisConsumer =
-        new NoopPmsRedisConsumer(new NoopRedisConsumer("t", "g", client, 5), messageListener);
+        new NoopPmsRedisConsumer(new NoopRedisConsumer("t", "g", client, 5), messageListener, ces1);
     long startTimeMillis = System.currentTimeMillis();
     redisConsumer.pollAndProcessMessages();
     long endTimeMillis = System.currentTimeMillis();
-    verify(messageListener, times(2)).handleMessage(any());
+
+    assertThat(ces1.getCounter()).isEqualTo(2);
     // Since batchSize was 5 and 2 events were read. So thread will sleep for 200 ms.
     assertThat(endTimeMillis - startTimeMillis).isGreaterThanOrEqualTo(200L);
 
-    redisConsumer = new NoopPmsRedisConsumer(new NoopRedisConsumer("t", "g", client, 2), messageListener);
+    CounterExecutorService ces2 = new CounterExecutorService();
+    redisConsumer = new NoopPmsRedisConsumer(new NoopRedisConsumer("t", "g", client, 2), messageListener, ces2);
     startTimeMillis = System.currentTimeMillis();
     redisConsumer.pollAndProcessMessages();
     endTimeMillis = System.currentTimeMillis();
-    verify(messageListener, times(4)).handleMessage(any());
+    assertThat(ces2.getCounter()).isEqualTo(2);
     // Since batchSize was 2 and only 2 events were read. So thread will not sleep.
     assertThat(endTimeMillis - startTimeMillis).isLessThan(200L);
   }

@@ -461,7 +461,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TERRAFORM_PLUGIN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLUGIN, IdentifierRef.class,
       EntityYamlRootNames.IACM_TERRAFORM_PLUGIN),
-
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_APPROVAL(
       ModuleType.IACM, EntityTypeConstants.IACM_APPROVAL, IdentifierRef.class, EntityYamlRootNames.IACM_APPROVAL),
@@ -642,7 +641,17 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.AWS_CDK_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DEPLOY),
   @JsonProperty(EntityTypeConstants.AWS_CDK_DESTROY)
   AWS_CDK_DESTROY(
-      ModuleType.CD, EntityTypeConstants.AWS_CDK_DESTROY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DESTROY);
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_DESTROY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DESTROY),
+  @JsonProperty(EntityTypeConstants.IDP_SCORECARD)
+  IDP_SCORECARD(ModuleType.IDP, EntityTypeConstants.IDP_SCORECARD, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.IDP_CHECK)
+  IDP_CHECK(ModuleType.IDP, EntityTypeConstants.IDP_CHECK, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_ROLLBACK)
+  AWS_CDK_ROLLBACK(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.IACM)
+  IACM_COST_ESTIMATION(ModuleType.IACM, EntityTypeConstants.IACM_COST_ESTIMATION, IdentifierRef.class,
+      EntityYamlRootNames.IACM_COST_ESTIMATION);
 
   private final ModuleType moduleType;
   String yamlName;

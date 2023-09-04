@@ -61,8 +61,11 @@ public class BudgetServiceImpl implements BudgetService {
     budget.setParentBudgetGroupId(null);
     updateBudgetStartTime(budget);
     updateBudgetEndTime(budget);
-    updateBudgetCosts(budget);
-    updateBudgetHistory(budget);
+    budget.setLastMonthCost(0.0);
+    // This is sync cost update. Here we update both actual, forecasted costs
+    // as these cost are utilized at budget list page. But we are not updating
+    // last Period cost which we will update async which is event driven.
+    updateBudgetCosts(budget, true, false);
     return budgetDao.save(budget);
   }
 
@@ -115,11 +118,20 @@ public class BudgetServiceImpl implements BudgetService {
     updateBudgetParent(budget, oldBudget);
     updateBudgetDetails(budget, oldBudget);
     updateBudgetEndTime(budget);
-    updateBudgetCosts(budget);
+    budget.setLastMonthCost(oldBudget.getLastMonthCost());
+    // This is sync cost update. Here we update both actual, forecasted costs
+    // as these cost are utilized at budget list page. But we are not updating
+    // last Period cost which we will update async which is event driven.
+    updateBudgetCosts(budget, true, false);
     budgetDao.update(budgetId, budget);
     if (budget.getParentBudgetGroupId() != null && budget.getBudgetAmount() != oldBudget.getBudgetAmount()) {
       upwardCascadeBudgetAmount(budget, oldBudget);
     }
+  }
+
+  @Override
+  public void update(Budget budget) {
+    budgetDao.update(budget.getUuid(), budget);
   }
 
   @Override
@@ -276,9 +288,9 @@ public class BudgetServiceImpl implements BudgetService {
 
   // Methods for updating costs for budget
   @Override
-  public void updateBudgetCosts(Budget budget) {
+  public void updateBudgetCosts(Budget budget, boolean updateActualAndForecastedCost, boolean updateLastPeriodCost) {
     // If given budget is next-gen budget, update ng budget costs and return
-    if (updateNgBudgetCosts(budget)) {
+    if (updateNgBudgetCosts(budget, updateActualAndForecastedCost, updateLastPeriodCost)) {
       return;
     }
     double actualCost = 0.0D;
@@ -314,28 +326,38 @@ public class BudgetServiceImpl implements BudgetService {
     return ceViewService.getForecastCostForPerspective(budget.getAccountId(), budget.getScope().getEntityIds().get(0));
   }
 
-  private boolean updateNgBudgetCosts(Budget budget) {
+  private boolean updateNgBudgetCosts(
+      Budget budget, boolean updateActualAndForecastedCost, boolean updateLastPeriodCost) {
     try {
       if (budget.getPeriod() == BudgetPeriod.YEARLY && budget.getBudgetMonthlyBreakdown() != null
           && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == MONTHLY) {
-        Double[] lastPeriodCost = budgetCostService.getLastYearMonthlyCost(budget);
-        budget.getBudgetMonthlyBreakdown().setYearlyLastPeriodCost(lastPeriodCost);
-        budget.setLastMonthCost(sumOfMonthlyCost(lastPeriodCost));
+        if (updateLastPeriodCost) {
+          Double[] lastPeriodCost = budgetCostService.getLastYearMonthlyCost(budget);
+          budget.getBudgetMonthlyBreakdown().setYearlyLastPeriodCost(lastPeriodCost);
+          budget.setLastMonthCost(sumOfMonthlyCost(lastPeriodCost));
+        }
 
-        Double[] actualCost = budgetCostService.getActualMonthlyCost(budget);
-        budget.getBudgetMonthlyBreakdown().setActualMonthlyCost(actualCost);
-        budget.setActualCost(sumOfMonthlyCost(actualCost));
+        if (updateActualAndForecastedCost) {
+          Double[] actualCost = budgetCostService.getActualMonthlyCost(budget);
+          budget.getBudgetMonthlyBreakdown().setActualMonthlyCost(actualCost);
+          budget.setActualCost(sumOfMonthlyCost(actualCost));
 
-        Double[] forecastCost = budgetCostService.getForecastMonthlyCost(budget);
-        budget.getBudgetMonthlyBreakdown().setForecastMonthlyCost(forecastCost);
-        budget.setForecastCost(sumOfMonthlyCost(forecastCost));
+          Double[] forecastCost = budgetCostService.getForecastMonthlyCost(budget);
+          budget.getBudgetMonthlyBreakdown().setForecastMonthlyCost(forecastCost);
+          budget.setForecastCost(sumOfMonthlyCost(forecastCost));
+        }
       } else {
-        Double actualCost = budgetCostService.getActualCost(budget);
-        Double forecastCost = budgetCostService.getForecastCost(budget);
-        Double lastPeriodCost = budgetCostService.getLastPeriodCost(budget);
-        budget.setActualCost(actualCost);
-        budget.setForecastCost(forecastCost);
-        budget.setLastMonthCost(lastPeriodCost);
+        if (updateLastPeriodCost) {
+          Double lastPeriodCost = budgetCostService.getLastPeriodCost(budget);
+          budget.setLastMonthCost(lastPeriodCost);
+        }
+
+        if (updateActualAndForecastedCost) {
+          Double actualCost = budgetCostService.getActualCost(budget);
+          Double forecastCost = budgetCostService.getForecastCost(budget);
+          budget.setActualCost(actualCost);
+          budget.setForecastCost(forecastCost);
+        }
       }
       return true;
     } catch (Exception e) {

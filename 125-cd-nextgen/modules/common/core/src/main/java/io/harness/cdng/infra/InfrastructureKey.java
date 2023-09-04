@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.exception.UnexpectedException;
 import io.harness.steps.environment.EnvironmentOutcome;
@@ -20,7 +23,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.codec.binary.Hex;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDP)
 @UtilityClass
 public class InfrastructureKey {

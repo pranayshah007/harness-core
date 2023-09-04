@@ -9,7 +9,10 @@ package io.harness.pms.approval.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
-import static io.harness.pms.approval.ApprovalUtils.sendTaskIdProgressUpdate;
+import static io.harness.steps.approval.ApprovalUtils.JIRA_DELEGATE_TASK_NAME;
+import static io.harness.steps.approval.ApprovalUtils.sendTaskIdProgressUpdate;
+import static io.harness.steps.approval.ApprovalUtils.updateTaskId;
+import static io.harness.steps.approval.step.entities.ApprovalInstance.ASYNC_DELEGATE_TIMEOUT;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
@@ -32,6 +35,7 @@ import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.iterator.PersistenceIterator;
 import io.harness.jira.JiraActionNG;
 import io.harness.logging.AutoLogContext;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -51,6 +55,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
+import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance.ApprovalInstanceKeys;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
@@ -71,6 +77,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
@@ -84,6 +91,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
   private final String publisherName;
   private final PmsGitSyncHelper pmsGitSyncHelper;
+  private final ApprovalInstanceService approvalInstanceService;
 
   @Inject
   public JiraApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
@@ -92,7 +100,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
       @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, WaitNotifyEngine waitNotifyEngine,
       LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, PmsGitSyncHelper pmsGitSyncHelper,
-      JiraStepHelperService jiraStepHelperService) {
+      JiraStepHelperService jiraStepHelperService, ApprovalInstanceService approvalInstanceService) {
     this.ngDelegate2TaskExecutor = ngDelegate2TaskExecutor;
     this.connectorResourceClient = connectorResourceClient;
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
@@ -101,18 +109,20 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
     this.logStreamingStepClientFactory = logStreamingStepClientFactory;
     this.publisherName = publisherName;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
+    this.approvalInstanceService = approvalInstanceService;
   }
 
   @Override
-  public void handlePollingEvent(JiraApprovalInstance instance) {
+  public void handlePollingEvent(PersistenceIterator<ApprovalInstance> iterator, JiraApprovalInstance instance) {
     try (PmsGitSyncBranchContextGuard ignore1 =
              pmsGitSyncHelper.createGitSyncBranchContextGuard(instance.getAmbiance(), true);
          AutoLogContext ignore2 = instance.autoLogContext()) {
-      handlePollingEventInternal(instance);
+      handlePollingEventInternal(iterator, instance);
     }
   }
 
-  private void handlePollingEventInternal(JiraApprovalInstance instance) {
+  private void handlePollingEventInternal(
+      PersistenceIterator<ApprovalInstance> iterator, JiraApprovalInstance instance) {
     Ambiance ambiance = instance.getAmbiance();
     NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
 
@@ -143,11 +153,11 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
           String.format("Jira url: %s", jiraTaskNGParameters.getJiraConnectorDTO().getJiraUrl()));
 
       log.info("Queuing delegate task");
-      String taskName = "Jira Task: Get Issue";
-      String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters, taskName,
+      String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters, JIRA_DELEGATE_TASK_NAME,
           TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors()));
 
-      sendTaskIdProgressUpdate(taskId, taskName, instanceId, waitNotifyEngine);
+      sendTaskIdProgressUpdate(taskId, JIRA_DELEGATE_TASK_NAME, instanceId, waitNotifyEngine);
+      updateTaskId(instanceId, taskId, approvalInstanceService);
 
       log.info("Jira Approval Instance queued task with taskId - {}", taskId);
       logCallback.saveExecutionLog(String.format("Jira task: %s", taskId));
@@ -155,6 +165,9 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
       logCallback.saveExecutionLog(
           String.format("Error creating task for fetching jira issue: %s", ExceptionUtils.getMessage(ex)));
       log.warn("Error creating task for fetching jira issue while polling", ex);
+      if (iterator != null && ParameterField.isNotNull(instance.getRetryInterval())) {
+        resetNextIteration(iterator, instance);
+      }
     }
   }
 
@@ -209,7 +222,9 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
                 ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(jiraTaskNGParameters) == null
                         ? new byte[] {}
                         : referenceFalseKryoSerializer.asDeflatedBytes(jiraTaskNGParameters)))
-            .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(20).build())
+            .setExecutionTimeout(com.google.protobuf.Duration.newBuilder()
+                                     .setSeconds(TimeUnit.MILLISECONDS.toSeconds(ASYNC_DELEGATE_TIMEOUT))
+                                     .build())
             .setMode(TaskMode.ASYNC)
             .setParked(false)
             .setType(TaskType.newBuilder().setType(software.wings.beans.TaskType.JIRA_TASK_NG.name()).build())
@@ -248,6 +263,12 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
   private void validateField(String name, String value) {
     if (isBlank(value)) {
       throw new InvalidRequestException(format("Field %s can't be empty", name));
+    }
+  }
+  private void resetNextIteration(PersistenceIterator<ApprovalInstance> iterator, JiraApprovalInstance instance) {
+    approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
+    if (iterator != null) {
+      iterator.wakeup();
     }
   }
 }

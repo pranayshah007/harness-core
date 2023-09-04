@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.awssecretmanager;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
@@ -31,6 +32,7 @@ import lombok.Data;
 @ApiModel("AwsSMCredentialSpecManualConfig")
 @Schema(name = "AwsSMCredentialSpecManualConfig",
     description = "Returns secret reference access key and secret key of AWS Secret Manager.")
+@RecasterAlias("io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecManualConfigDTO")
 public class AwsSMCredentialSpecManualConfigDTO implements AwsSecretManagerCredentialSpecDTO {
   @SecretReference
   @ApiModelProperty(dataType = "string")

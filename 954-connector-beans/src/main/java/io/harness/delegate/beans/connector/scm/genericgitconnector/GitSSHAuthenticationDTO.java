@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.genericgitconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.delegate.beans.connector.scm.GitConfigConstants;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitAuthenticationOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitSSHAuthenticationOutcomeDTO;
@@ -28,6 +29,7 @@ import lombok.EqualsAndHashCode;
 @JsonTypeName(GitConfigConstants.SSH)
 @Schema(name = "GitSSHAuthentication",
     description = "This contains details of the Generic Git authentication information used via SSH connections")
+@RecasterAlias("io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthenticationDTO")
 public class GitSSHAuthenticationDTO extends GitAuthenticationDTO {
   @JsonProperty("sshKeyRef")
   @ApiModelProperty(dataType = "string")

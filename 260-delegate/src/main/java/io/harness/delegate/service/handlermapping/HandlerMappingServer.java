@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class HandlerMappingServer {
   private final ThreadPoolExecutor taskExecutor;
   private final AcquireTaskHelper acquireTaskHelper;
-  private final Context context;
+  private final Context context; // TODO: Don't inject context
   private final Map<String, Handler> handlersMap;
 
   @Inject
@@ -50,7 +50,7 @@ public class HandlerMappingServer {
     var handlerContext = context.deepCopy();
     handlerContext.set(Context.TASK_ID, taskPayload.getId());
     // TODO: add decrypted secrets here
-    handler.handle(taskPayload.getRunnerType(), taskPayload, context);
+    handler.handle(taskPayload.getRunnerType(), taskPayload, handlerContext);
     log.info("Finished executing handler {}", taskPayload.getEventType());
   }
 }

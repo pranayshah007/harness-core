@@ -47,7 +47,7 @@ public class UserGroupDTO {
   @Schema(description = "Identifier of the UserGroup.") @NotNull @EntityIdentifier String identifier;
 
   @Schema(description = "Name of the UserGroup.") @NotNull @NGEntityName String name;
-  @Schema(description = "List of users in the UserGroup.") List<String> users;
+  @Schema(description = "List of users ids in the UserGroup.") List<String> users;
   @Schema(description = "List of notification settings.") List<NotificationSettingConfigDTO> notificationConfigs;
 
   @Schema(description = "Specifies whether or not the userGroup is linked via SSO or not.") private boolean isSsoLinked;

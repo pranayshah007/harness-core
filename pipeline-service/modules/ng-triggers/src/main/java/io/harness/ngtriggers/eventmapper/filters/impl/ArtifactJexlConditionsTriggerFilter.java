@@ -130,16 +130,17 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
     ArtifactData artifactData = ArtifactData.newBuilder().putAllMetadata(metadata).setBuild(build).build();
     String jsonMetadata = "";
     jsonMetadata = JsonPipelineUtils.getJsonString(metadata);
-    return checkIfJexlConditionsMatch(artifactData, jsonMetadata, triggerJexlCondition);
+    return checkIfJexlConditionsMatch(artifactData, jsonMetadata, triggerJexlCondition, spec);
   }
 
-  public boolean checkIfJexlConditionsMatch(ArtifactData artifactData, String payload, String jexlExpression) {
+  public boolean checkIfJexlConditionsMatch(
+      ArtifactData artifactData, String payload, String jexlExpression, NGTriggerSpecV2 spec) {
     if (isBlank(jexlExpression)) {
       return true;
     }
 
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), payload);
+        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), payload, spec);
     Object result = triggerExpressionEvaluator.evaluateExpression(jexlExpression);
     if (result != null && Boolean.class.isAssignableFrom(result.getClass())) {
       return (Boolean) result;

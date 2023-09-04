@@ -6,6 +6,7 @@
  */
 
 package io.harness.yaml.core.failurestrategy.retry;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -23,8 +24,7 @@ import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Value;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)

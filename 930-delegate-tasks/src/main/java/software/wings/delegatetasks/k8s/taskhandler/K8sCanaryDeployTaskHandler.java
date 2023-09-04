@@ -105,6 +105,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
     canaryHandlerConfig.setReleaseName(k8sCanaryDeployTaskParameters.getReleaseName());
     canaryHandlerConfig.setManifestFilesDirectory(
         Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString());
+    canaryHandlerConfig.setUseDeclarativeRollback(k8sCanaryDeployTaskParameters.isUseDeclarativeRollback());
     releaseHandler = k8sTaskHelperBase.getReleaseHandler(k8sCanaryDeployTaskParameters.isUseDeclarativeRollback());
     final long timeoutInMillis = getTimeoutMillisFromMinutes(k8sTaskParameters.getTimeoutIntervalInMin());
 
@@ -257,7 +258,6 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
     canaryHandlerConfig.setKubernetesConfig(kubernetesConfig);
     canaryHandlerConfig.setClient(client);
     canaryHandlerConfig.setReleaseName(k8sCanaryDeployTaskParameters.getReleaseName());
-    canaryHandlerConfig.setUseDeclarativeRollback(k8sCanaryDeployTaskParameters.isUseDeclarativeRollback());
     try {
       k8sTaskHelperBase.deleteSkippedManifestFiles(
           canaryHandlerConfig.getManifestFilesDirectory(), executionLogCallback);

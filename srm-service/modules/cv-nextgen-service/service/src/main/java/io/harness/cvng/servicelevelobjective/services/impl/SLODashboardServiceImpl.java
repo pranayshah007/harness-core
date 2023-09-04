@@ -9,6 +9,7 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
 
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
@@ -98,6 +99,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private AnnotationService annotationService;
   @Inject private DowntimeService downtimeService;
   @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
+  @Inject private SRMAnalysisStepService srmAnalysisStepService;
 
   @Inject private Map<SecondaryEventsType, SecondaryEventDetailsService> secondaryEventsTypeToDetailsMapBinder;
 
@@ -621,6 +623,10 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                                             .endTime(instance.getEndTime())
                                             .build())
                                  .collect(Collectors.toList()));
+
+      secondaryEvents.addAll(srmAnalysisStepService.getSRMAnalysisStepExecutions(projectParams,
+          ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getMonitoredServiceRef(), startTime,
+          endTime));
     }
 
     // Adding error budget reset instances

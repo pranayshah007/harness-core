@@ -62,6 +62,7 @@ import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceSequence;
+import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.ServiceSequenceService;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -1369,6 +1370,11 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                 serviceDetailsDTOBuilder.frequencyChangeRate(changeRate);
               }
 
+              serviceDetailsDTOBuilder.connectorRef(service.getConnectorRef());
+              serviceDetailsDTOBuilder.storeType(service.getStoreType());
+              serviceDetailsDTOBuilder.entityGitDetails(ServiceElementMapper.getEntityGitDetails(service));
+              serviceDetailsDTOBuilder.fallbackBranch(service.getFallBackBranch());
+
               return serviceDetailsDTOBuilder.build();
             })
             .collect(Collectors.toList());
@@ -1956,7 +1962,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, ";
     totalBuildSqlBuilder.append(selectQuery)
         .append(String.format(
-            "time_bucket(%s, service_startts) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where sii.service_id is not null and ",
+            "time_bucket(%s, service_startts) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where pesi.accountid = sii.accountid AND sii.service_id is not null and ",
             bucketSizeInMS));
     if (accountIdentifier != null) {
       totalBuildSqlBuilder.append(String.format("pesi.accountid='%s'", accountIdentifier));

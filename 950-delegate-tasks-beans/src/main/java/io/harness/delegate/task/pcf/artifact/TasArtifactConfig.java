@@ -9,12 +9,15 @@ package io.harness.delegate.task.pcf.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(CDP)
 public interface TasArtifactConfig {
   ConnectorConfigDTO getConnectorConfig();

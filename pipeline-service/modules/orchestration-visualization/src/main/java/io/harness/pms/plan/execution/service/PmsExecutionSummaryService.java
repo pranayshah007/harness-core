@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.mongodb.core.query.Update;
@@ -22,6 +23,7 @@ public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void update(String planExecutionId, Update update);
   // Saves PipelineExecutionSummaryEntity in planExecutionsSummary collection in harness-pms db
+  void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId);
   PipelineExecutionSummaryEntity save(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity);
 
   /**
@@ -63,4 +65,11 @@ public interface PmsExecutionSummaryService {
    * @param planExecutionIds
    */
   void deleteAllSummaryForGivenPlanExecutionIds(Set<String> planExecutionIds);
+
+  /**
+   * Updates TTL all PipelineExecutionSummaryEntity and its related metadata
+   * @param planExecutionId Id of to be updated TTL planExecutions
+   * Uses - planExecutionId_unique idx
+   */
+  void updateTTL(String planExecutionId, Date ttlDate);
 }

@@ -86,6 +86,8 @@ public class AwsCdkDiffStepInfo extends AwsCdkBaseStepInfo implements CDAbstract
         .imagePullPolicy(getImagePullPolicy())
         .commandOptions(getCommandOptions())
         .appPath(getAppPath())
+        .resources(getResources())
+        .envVariables(getEnvVariables())
         .stackNames(getStackNames())
         .build();
   }

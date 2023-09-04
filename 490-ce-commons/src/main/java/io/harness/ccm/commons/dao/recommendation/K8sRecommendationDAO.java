@@ -161,7 +161,7 @@ public class K8sRecommendationDAO {
       @NonNull String accountId, @Nullable Condition condition, @NonNull Long offset, @NonNull Long limit) {
     return dslContext.selectFrom(CE_RECOMMENDATIONS)
         .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition())))
-        .orderBy(CE_RECOMMENDATIONS.MONTHLYSAVING.desc().nullsLast())
+        .orderBy(CE_RECOMMENDATIONS.MONTHLYSAVING.desc().nullsLast(), CE_RECOMMENDATIONS.ID.asc().nullsLast())
         .offset(offset)
         .limit(limit)
         .fetchInto(CeRecommendations.class);
@@ -450,6 +450,18 @@ public class K8sRecommendationDAO {
     return dslContext.deleteFrom(CE_RECOMMENDATIONS)
         .where(CE_RECOMMENDATIONS.ISVALID.eq(false),
             CE_RECOMMENDATIONS.UPDATEDAT.lessThan(toOffsetDateTime(Instant.now().minus(180, ChronoUnit.DAYS))));
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public List<CeRecommendations> getNodepoolsAlreadyUpdated(
+      @NonNull String accountId, @NonNull JobConstants jobConstants, List<String> clusterNames) {
+    return dslContext.selectFrom(CE_RECOMMENDATIONS)
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId))
+        .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.NODE_POOL.name()))
+        .and(CE_RECOMMENDATIONS.CLUSTERNAME.in(clusterNames))
+        .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
+            toOffsetDateTime(Instant.ofEpochMilli(jobConstants.getJobEndTime()))))
+        .fetchInto(CeRecommendations.class);
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)

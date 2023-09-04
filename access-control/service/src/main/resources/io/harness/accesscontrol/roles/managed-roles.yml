@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 56
+version: 58
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -150,7 +150,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
-        - code_commitCheck_report
+        - code_repo_reportCommitCheck
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
@@ -380,7 +380,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
-        - code_commitCheck_report
+        - code_repo_reportCommitCheck
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
@@ -658,7 +658,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
-        - code_commitCheck_report
+        - code_repo_reportCommitCheck
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
@@ -1013,7 +1013,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
-        - code_commitCheck_report
+        - code_repo_reportCommitCheck
       managed: true
       allowedScopeLevels:
         - account
@@ -1035,3 +1035,21 @@ roles:
         - account
         - organization
         - project
+    - identifier: _pipeline_allUsers_access_role
+      name: Pipeline Public Access Role
+      internal: true
+      allowedScopeLevels:
+        - project
+      managed: true
+      isPublic: true
+      permissions:
+        - core_pipeline_view
+    - identifier: _pipeline_allAuthenticatedUsers_access_role
+      name: Pipeline Authenticated Access Role
+      internal: true
+      allowedScopeLevels:
+        - project
+      managed: true
+      isPublic: true
+      permissions:
+        - core_pipeline_view

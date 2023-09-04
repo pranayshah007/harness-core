@@ -12,10 +12,10 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.ci.creator.variables.ActionStepVariableCreator;
-import io.harness.ci.creator.variables.PluginStepVariableCreator;
-import io.harness.ci.creator.variables.RunStepVariableCreator;
-import io.harness.ci.plan.creator.steps.CIStepsPlanCreator;
+import io.harness.ci.execution.creator.variables.ActionStepVariableCreator;
+import io.harness.ci.execution.creator.variables.PluginStepVariableCreator;
+import io.harness.ci.execution.creator.variables.RunStepVariableCreator;
+import io.harness.ci.execution.plan.creator.steps.CIStepsPlanCreator;
 import io.harness.ci.plancreator.ActionStepPlanCreator;
 import io.harness.ci.plancreator.PluginStepPlanCreator;
 import io.harness.ci.plancreator.RunStepPlanCreator;
@@ -31,6 +31,7 @@ import io.harness.iacm.plan.creator.filter.IACMStageFilterJsonCreator;
 import io.harness.iacm.plan.creator.stage.IACMStagePMSPlanCreator;
 import io.harness.iacm.plan.creator.stage.IACMStagePMSPlanCreatorV1;
 import io.harness.iacm.plan.creator.step.IACMApprovalStepVariableCreator;
+import io.harness.iacm.plan.creator.step.IACMCostEstimationStepVariableCreator;
 import io.harness.iacm.plan.creator.step.IACMPMSStepFilterJsonCreator;
 import io.harness.iacm.plan.creator.step.IACMPMSStepFilterJsonCreatorV1;
 import io.harness.iacm.plan.creator.step.IACMPluginStepPlanCretorV1;
@@ -109,6 +110,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     variableCreators.add(new PluginStepVariableCreator()); // variable creator for the plugin step
     variableCreators.add(new IACMTerraformPluginStepVariableCreator());
     variableCreators.add(new IACMApprovalStepVariableCreator());
+    variableCreators.add(new IACMCostEstimationStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
     variableCreators.add(new ActionStepVariableCreator()); // variable creator for the action step
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));

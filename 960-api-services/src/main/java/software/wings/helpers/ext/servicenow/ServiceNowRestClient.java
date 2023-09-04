@@ -87,6 +87,11 @@ public interface ServiceNowRestClient {
   Call<JsonNode> getIssue(@Header("Authorization") String authorization, @Path("ticketType") String ticketType,
       @Query("sysparm_query") String query, @Query("sysparm_display_value") String displayValue);
 
+  @GET("/api/now/table/{ticketType}")
+  Call<JsonNode> getIssueV2(@Header("Authorization") String authorization, @Path("ticketType") String ticketType,
+      @Query("sysparm_query") String query, @Query("sysparm_display_value") String displayValue,
+      @Query("sysparm_fields") String returnFields);
+
   @GET("api/now/doc/table/schema/{ticketType}")
   Call<JsonNode> getAdditionalFields(
       @Header("Authorization") String authorization, @Path("ticketType") String ticketType);
@@ -112,7 +117,8 @@ public interface ServiceNowRestClient {
   // Scripted API to list templates
   @GET("/api/x_harne_harness_ap/template/list")
   Call<JsonNode> getTemplateList(@Header("Authorization") String authorization, @Header("ticketType") String ticketType,
-      @Header("limit") int limit, @Header("offset") int offset, @Header("templateName") String templateName);
+      @Header("limit") int limit, @Header("offset") int offset, @Header("templateName") String templateName,
+      @Header("searchTerm") String searchTerm);
 
   // Scripted API to create ticket using template
   @POST("/api/x_harne_harness_ap/template/create")

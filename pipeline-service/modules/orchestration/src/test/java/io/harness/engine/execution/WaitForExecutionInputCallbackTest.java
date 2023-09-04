@@ -8,6 +8,7 @@
 package io.harness.engine.execution;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.VED;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -74,6 +75,18 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
     verify(executorService, times(1)).submit(any(Runnable.class));
   }
 
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testNotifyUnsettingResolvedParams() {
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("id").build();
+    doReturn(NodeExecution.builder().ambiance(ambiance).build()).when(nodeExecutionService).get(nodeExecutionId);
+    waitForExecutionInputCallback.notify(null);
+    verify(executorService, times(1)).submit(any(Runnable.class));
+    verify(nodeExecutionService, times(1))
+        .updateStatusWithOps(eq(nodeExecutionId), eq(Status.QUEUED), any(), eq(EnumSet.of(Status.INPUT_WAITING)));
+  }
+
   // TODO (prashant): Refactor this test, this test should be broken into at-least 3 diff tests
   @Test
   @Owner(developers = BRIJESH)
@@ -81,12 +94,10 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
   public void testNotifyTimeout() {
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("id").build();
     PlanNodeBuilder planNodeBuilder = PlanNode.builder();
-    doReturn(planNodeBuilder.build()).when(planService).fetchNode(any());
-    doReturn(NodeExecution.builder().planNode(planNodeBuilder.build()).ambiance(ambiance).build())
-        .when(nodeExecutionService)
-        .get(nodeExecutionId);
+    doReturn(planNodeBuilder.build()).when(planService).fetchNode(any(), any());
+    doReturn(NodeExecution.builder().ambiance(ambiance).build()).when(nodeExecutionService).get(nodeExecutionId);
 
-    doReturn(NodeExecution.builder().planNode(planNodeBuilder.build()).ambiance(ambiance).build())
+    doReturn(NodeExecution.builder().ambiance(ambiance).build())
         .when(nodeExecutionService)
         .updateStatusWithOps(any(), eq(Status.EXPIRED), any(), any());
 
@@ -96,23 +107,13 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
     verify(engine, times(1)).endNodeExecution(ambiance);
 
     // Testing the ProceedWithDefaultValues.
-    doReturn(
-        NodeExecution.builder()
-            .planNode(
-                planNodeBuilder
-                    .adviserObtainment(
-                        AdviserObtainment.newBuilder().setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE).build())
-                    .build())
-            .ambiance(ambiance)
-            .build())
-        .when(nodeExecutionService)
-        .get(nodeExecutionId);
+    doReturn(NodeExecution.builder().ambiance(ambiance).build()).when(nodeExecutionService).get(nodeExecutionId);
     doReturn(planNodeBuilder
                  .adviserObtainment(
                      AdviserObtainment.newBuilder().setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE).build())
                  .build())
         .when(planService)
-        .fetchNode(any());
+        .fetchNode(any(), any());
     waitForExecutionInputCallback.notifyTimeout(Map.of("key", ExecutionInputData.builder().build()));
     // It will remain 1. Because ProceedWithDefault adviser is present to NodeExecution will not be marked as expired.
     verify(nodeExecutionService, times(1))
@@ -120,18 +121,11 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
 
     ArgumentCaptor<FailureInfo> argumentCaptor = ArgumentCaptor.forClass(FailureInfo.class);
 
-    doReturn(NodeExecution.builder()
-                 .planNode(planNodeBuilder.clearAdviserObtainments()
-                               .adviserObtainment(AdviserObtainment.getDefaultInstance())
-                               .build())
-                 .ambiance(ambiance)
-                 .build())
-        .when(nodeExecutionService)
-        .get(nodeExecutionId);
+    doReturn(NodeExecution.builder().ambiance(ambiance).build()).when(nodeExecutionService).get(nodeExecutionId);
     doReturn(
         planNodeBuilder.clearAdviserObtainments().adviserObtainment(AdviserObtainment.getDefaultInstance()).build())
         .when(planService)
-        .fetchNode(any());
+        .fetchNode(any(), any());
     NodeExecution updatedNodeExecution = NodeExecution.builder().status(Status.EXPIRED).build();
     doReturn(updatedNodeExecution)
         .when(nodeExecutionService)

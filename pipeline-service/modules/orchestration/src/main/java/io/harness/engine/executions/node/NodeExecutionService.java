@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.node;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -18,6 +19,7 @@ import io.harness.plan.Node;
 import io.harness.pms.contracts.execution.Status;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -325,6 +327,12 @@ public interface NodeExecutionService {
   void deleteAllNodeExecutionAndMetadata(String planExecutionId);
 
   /**
+   * Updates TTL the nodeExecutions and its related metadata
+   * @param planExecutionId Id of to be deleted planExecution
+   */
+  void updateTTLForNodeExecution(String planExecutionId, Date ttlExpiryDate);
+
+  /**
    * Update Nodes for which the previousId was failed node execution and replace it with the
    * note execution which is being retried
    * Uses - previous_id_idx
@@ -346,6 +354,8 @@ public interface NodeExecutionService {
 
   List<NodeExecution> fetchStageExecutions(String planExecutionId);
 
+  List<NodeExecution> fetchStageExecutionsWithProjection(String planExecutionId, Set<String> fieldsToBeIncluded);
+
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<NodeExecution> fetchStrategyNodeExecutions(String planExecutionId, List<String> stageFQNs);
 
@@ -364,5 +374,5 @@ public interface NodeExecutionService {
   NodeExecution fetchNodeExecutionForPlanNodeAndRetriedId(
       String planExecutionId, String planNode, boolean oldRetry, List<String> retriedId);
 
-  List<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded);
+  CloseableIterator<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded);
 }

@@ -28,11 +28,13 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -121,6 +123,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -143,6 +146,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Inject private DowntimeService downtimeService;
   @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
   @Inject private AnnotationService annotationService;
+  @Inject private SRMAnalysisStepService srmAnalysisStepService;
   private Instant startTime;
   private Instant endTime;
   private String verificationTaskId;
@@ -151,6 +155,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Inject private Clock clock;
   @Inject private HPersistence hPersistence;
   private BuilderFactory builderFactory;
+  private ServiceEnvironmentParams serviceEnvironmentParams;
 
   private ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO;
   private AbstractServiceLevelObjective serviceLevelObjective;
@@ -171,6 +176,10 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     builderFactory = BuilderFactory.getDefault();
     builderFactory.getContext().setProjectIdentifier("project");
     builderFactory.getContext().setOrgIdentifier("orgIdentifier");
+    serviceEnvironmentParams = ServiceEnvironmentParams.builderWithProjectParams(builderFactory.getProjectParams())
+                                   .serviceIdentifier(builderFactory.getContext().getServiceIdentifier())
+                                   .environmentIdentifier(builderFactory.getContext().getEnvIdentifier())
+                                   .build();
     metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
 
@@ -2138,6 +2147,10 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     updateOperations.set(SLOErrorBudgetResetKeys.createdAt, (startTime + Duration.ofMinutes(2).toSeconds()) * 1000);
     hPersistence.update(sloErrorBudgetReset, updateOperations);
 
+    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, "stepName",
+        serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
+
     List<Annotation> annotations =
         annotationService.get(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
 
@@ -2155,19 +2168,23 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     List<SecondaryEventsResponse> secondaryEvents =
         sloDashboardService.getSecondaryEvents(builderFactory.getProjectParams(), startTime * 1000,
             (startTime + Duration.ofMinutes(10).toSeconds()) * 1000, serviceLevelObjectiveV2DTO.getIdentifier());
-    assertThat(secondaryEvents.size()).isEqualTo(4);
+    assertThat(secondaryEvents.size()).isEqualTo(5);
     assertThat(secondaryEvents.get(0).getType()).isEqualTo(SecondaryEventsType.DOWNTIME);
     assertThat(secondaryEvents.get(0).getStartTime()).isEqualTo(startTime);
 
-    assertThat(secondaryEvents.get(1).getType()).isEqualTo(SecondaryEventsType.ANNOTATION);
-    assertThat(secondaryEvents.get(1).getIdentifiers().get(0)).isEqualTo(annotations.get(0).getUuid());
+    assertThat(secondaryEvents.get(1).getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
+    assertThat(secondaryEvents.get(1).getStartTime()).isEqualTo(startTime);
+    assertThat(secondaryEvents.get(1).getIdentifiers().get(0)).isEqualTo(analysisExecutionDetailsId);
 
-    assertThat(secondaryEvents.get(2).getType()).isEqualTo(SecondaryEventsType.ERROR_BUDGET_RESET);
-    assertThat(secondaryEvents.get(2).getStartTime()).isEqualTo(startTime + Duration.ofMinutes(2).toSeconds());
-    assertThat(secondaryEvents.get(2).getIdentifiers().get(0)).isEqualTo(sloErrorBudgetReset.getUuid());
+    assertThat(secondaryEvents.get(2).getType()).isEqualTo(SecondaryEventsType.ANNOTATION);
+    assertThat(secondaryEvents.get(2).getIdentifiers().get(0)).isEqualTo(annotations.get(0).getUuid());
 
-    assertThat(secondaryEvents.get(3).getType()).isEqualTo(SecondaryEventsType.DATA_COLLECTION_FAILURE);
-    assertThat(secondaryEvents.get(3).getStartTime()).isEqualTo(startTime + Duration.ofMinutes(3).toSeconds());
+    assertThat(secondaryEvents.get(3).getType()).isEqualTo(SecondaryEventsType.ERROR_BUDGET_RESET);
+    assertThat(secondaryEvents.get(3).getStartTime()).isEqualTo(startTime + Duration.ofMinutes(2).toSeconds());
+    assertThat(secondaryEvents.get(3).getIdentifiers().get(0)).isEqualTo(sloErrorBudgetReset.getUuid());
+
+    assertThat(secondaryEvents.get(4).getType()).isEqualTo(SecondaryEventsType.DATA_COLLECTION_FAILURE);
+    assertThat(secondaryEvents.get(4).getStartTime()).isEqualTo(startTime + Duration.ofMinutes(3).toSeconds());
   }
 
   @Test

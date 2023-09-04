@@ -7,6 +7,7 @@
 
 package io.harness.ngtriggers.expressions.functors;
 
+import static io.harness.ngtriggers.Constants.CONNECTOR_REF;
 import static io.harness.ngtriggers.Constants.EVENT_PAYLOAD;
 import static io.harness.ngtriggers.Constants.HEADER;
 import static io.harness.ngtriggers.Constants.PAYLOAD;
@@ -29,6 +30,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
@@ -50,6 +52,10 @@ public class TriggerFunctor implements LateBindingValue {
                              -> new IllegalStateException(
                                  "No Metadata present for planExecution :" + ambiance.getPlanExecutionId()));
     Map<String, Object> jsonObject = TriggerHelper.buildJsonObjectFromAmbiance(metadata.getTriggerPayload());
+    if (null != metadata.getTriggerPayload()
+        && EmptyPredicate.isNotEmpty(metadata.getTriggerPayload().getConnectorRef())) {
+      jsonObject.put(CONNECTOR_REF, metadata.getTriggerPayload().getConnectorRef());
+    }
 
     if (EmptyPredicate.isNotEmpty(metadata.getTriggerHeader())) {
       jsonObject.put(HEADER, new TriggerHeaderBindingMap(metadata.getTriggerHeader()));
@@ -60,8 +66,12 @@ public class TriggerFunctor implements LateBindingValue {
       // payload
       try {
         jsonObject.put(PAYLOAD, JsonPipelineUtils.read(metadata.getTriggerJsonPayload(), HashMap.class));
-      } catch (IOException e) {
-        throw new InvalidRequestException("Event payload could not be converted to a hashmap");
+      } catch (IOException toHashMapEx) {
+        try {
+          jsonObject.put(PAYLOAD, JsonPipelineUtils.read(metadata.getTriggerJsonPayload(), List.class));
+        } catch (IOException toListEx) {
+          throw new InvalidRequestException("Event payload could not be converted to a hashmap or list");
+        }
       }
     }
     return jsonObject;

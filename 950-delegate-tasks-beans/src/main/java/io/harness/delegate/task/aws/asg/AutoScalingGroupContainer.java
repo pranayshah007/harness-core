@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.aws.asg;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -17,6 +18,7 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
+@RecasterAlias("io.harness.delegate.task.aws.asg.AutoScalingGroupContainer")
 public class AutoScalingGroupContainer {
   private String autoScalingGroupName;
   private String launchTemplateName;

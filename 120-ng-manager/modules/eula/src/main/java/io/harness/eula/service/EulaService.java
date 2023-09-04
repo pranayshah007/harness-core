@@ -17,14 +17,14 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 /**
- * Service allows Users to sign End Level User Agreements for an account.
+ * Service allows Users to sign End User License Agreements for an account.
  * Add different Agreements which needs to be signed with enum AgreementType
  * and stores all the signed agreements for an account in eula db.
  */
 @OwnedBy(PL)
 public interface EulaService {
   /**
-   * Signs an End Level User Agreement for an account.
+   * Signs an End User License Agreement for an account.
    *
    * @param eulaDTO containing accountId and agreementType to be signed
    * @return true, if agreement is signed successfully
@@ -32,7 +32,7 @@ public interface EulaService {
   boolean sign(@NotNull EulaDTO eulaDTO);
 
   /**
-   * Checks whether an End Level User Agreement is signed for an account and agreementType.
+   * Checks whether an End User License Agreement is signed for an account and agreementType.
    *
    * @param agreementType the agreementType
    * @param accountIdentifier the accountId

@@ -32,7 +32,6 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +40,7 @@ public class AzureArtifactsArtifactStreamMapper implements ArtifactStreamMapper 
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     AzureArtifactsArtifactStream azureArtifactsArtifactStream = (AzureArtifactsArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities
@@ -86,7 +85,7 @@ public class AzureArtifactsArtifactStreamMapper implements ArtifactStreamMapper 
       packageName = stream.getPackageName();
       packageType = stream.getProtocolType();
     }
-    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
 
     return AzureArtifactsRegistrySpec.builder()
         .packageType(packageType)

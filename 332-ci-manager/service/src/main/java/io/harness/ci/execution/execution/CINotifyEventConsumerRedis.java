@@ -5,9 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.CI_ORCHESTRATION_NOTIFY_EVENT;
+import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,6 +19,7 @@ import io.harness.queue.QueueController;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 
 @Singleton
@@ -26,7 +28,7 @@ public final class CINotifyEventConsumerRedis extends PmsAbstractRedisConsumer<C
   @Inject
   public CINotifyEventConsumerRedis(@Named(CI_ORCHESTRATION_NOTIFY_EVENT) Consumer redisConsumer,
       CINotifyEventMessageListener messageListener, @Named("ciEventsCache") Cache<String, Integer> eventsCache,
-      QueueController queueController) {
-    super(redisConsumer, messageListener, eventsCache, queueController);
+      QueueController queueController, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(redisConsumer, messageListener, eventsCache, queueController, executorService);
   }
 }

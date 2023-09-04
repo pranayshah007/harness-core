@@ -11,13 +11,17 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.collation.CollationLocale;
 import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
@@ -51,6 +55,8 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @Data
 @Builder
@@ -61,7 +67,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("io.harness.ng.core.service.entity.ServiceEntity")
 @ChangeDataCapture(table = "services", dataStore = "ng-harness", fields = {}, handler = "Services")
 @ChangeDataCapture(table = "tags_info_ng", dataStore = "ng-harness", fields = {}, handler = "TagsInfoNGCD")
-public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
+public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware, GitSyncableEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -127,6 +133,7 @@ public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
+  @Wither @Setter @NonFinal String fallBackBranch;
 
   public String fetchNonEmptyYaml() {
     if (EmptyPredicate.isEmpty(yaml)) {
@@ -151,5 +158,20 @@ public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
   @Override
   public void setData(String data) {
     this.yaml = data;
+  }
+
+  @Override
+  public String getUuid() {
+    return id;
+  }
+
+  @Override
+  public String getInvalidYamlString() {
+    return yaml;
+  }
+
+  @Override
+  public String getAccountIdentifier() {
+    return accountId;
   }
 }

@@ -21,7 +21,7 @@ public enum DelegateMetric {
       "task_completed", "Number of tasks completed", DelegateMetricType.COUNT, DELEGATE_NAME_LABEL, TASK_TYPE_LABEL),
   TASK_FAILED("task_failed", "Number of tasks failed", DelegateMetricType.COUNT, DELEGATE_NAME_LABEL, TASK_TYPE_LABEL),
   TASK_REJECTED("task_rejected", "Number of tasks rejected due to high load on delegate", DelegateMetricType.COUNT,
-      DELEGATE_NAME_LABEL, TASK_TYPE_LABEL),
+      DELEGATE_NAME_LABEL),
   DELEGATE_CONNECTED("delegate_connected", "Delegate connected", DelegateMetricType.GAUGE, DELEGATE_NAME_LABEL),
   RESOURCE_CONSUMPTION_ABOVE_THRESHOLD("delegate_resource_consumption_above_threshold",
       "Delegate resource consumption reached more than threshold", DelegateMetricType.GAUGE, DELEGATE_NAME_LABEL);

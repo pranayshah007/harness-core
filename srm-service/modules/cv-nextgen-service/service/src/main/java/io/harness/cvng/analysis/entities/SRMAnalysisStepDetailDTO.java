@@ -7,9 +7,14 @@
 
 package io.harness.cvng.analysis.entities;
 
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL_FORMAT;
+
+import io.harness.cvng.beans.change.HarnessCDEventMetadata.VerifyStepSummary;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +26,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SRMAnalysisStepDetailDTO {
+  @NotNull String accountId;
+  @NotNull String orgIdentifier;
+  @NotNull String projectIdentifier;
   @NotNull private long analysisStartTime;
   @NotNull private long analysisEndTime;
 
@@ -29,13 +37,17 @@ public class SRMAnalysisStepDetailDTO {
   @NotNull private SRMAnalysisStatus analysisStatus;
 
   @NotNull private String monitoredServiceIdentifier;
-  @NotNull private String serviceIdentifier;
+  private String serviceIdentifier;
   String serviceName;
   @NotNull private String envIdentifier;
   String environmentName;
 
   @NotNull private String executionDetailIdentifier;
   @NotNull private String stepName;
+  @NotNull String stageStepId;
+  @NotNull String planExecutionId;
+  private String pipelinePath;
+  List<VerifyStepSummary> verifyStepSummaries;
 
   public static SRMAnalysisStepDetailDTO getDTOFromEntity(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
     return SRMAnalysisStepDetailDTO.builder()
@@ -47,7 +59,18 @@ public class SRMAnalysisStepDetailDTO {
         .analysisEndTime(stepExecutionDetail.getAnalysisEndTime())
         .analysisDuration(stepExecutionDetail.getAnalysisDuration())
         .executionDetailIdentifier(stepExecutionDetail.getUuid())
+        .accountId(stepExecutionDetail.getAccountId())
+        .orgIdentifier(stepExecutionDetail.getOrgIdentifier())
+        .projectIdentifier(stepExecutionDetail.getProjectIdentifier())
         .stepName(stepExecutionDetail.getStepName())
+        .stageStepId(stepExecutionDetail.getStageStepId())
+        .planExecutionId(stepExecutionDetail.getPlanExecutionId())
+        .pipelinePath(String.format(PIPELINE_URL_FORMAT, stepExecutionDetail.getAccountId(),
+                          stepExecutionDetail.getOrgIdentifier(), stepExecutionDetail.getProjectIdentifier(),
+                          stepExecutionDetail.getPipelineId(), stepExecutionDetail.getPlanExecutionId(),
+                          stepExecutionDetail.getStageStepId())
+            + "&step=" + Optional.ofNullable(stepExecutionDetail.getStepRuntimeId()).orElse("")
+            + "&stageExecId=" + Optional.ofNullable(stepExecutionDetail.getStageExecutionId()).orElse(""))
         .build();
   }
 }

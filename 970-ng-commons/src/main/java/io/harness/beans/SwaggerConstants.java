@@ -54,7 +54,9 @@ public interface SwaggerConstants {
   String STAGE_WHEN_CLASSPATH = "io.harness.when.beans.StageWhenCondition";
   String STEP_WHEN_CLASSPATH = "io.harness.when.beans.StepWhenCondition";
   String STRATEGY_CLASSPATH = "io.harness.plancreator.strategy.StrategyConfig";
+  String GITOPS_AGENT_DETAILS_CLASSPATH = "io.harness.cdng.gitops.syncstep.AgentApplicationTargets";
   String GITOPS_AGENT_DETAILS_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.syncstep.AgentApplicationTargets;";
+  String GITOPS_HELM_PARAMS_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppHelmParams;";
 
   String RESIZE_STRATEGY_TAS_CLASSPATH = "io.harness.delegate.beans.pcf.TasResizeStrategyType";
 }

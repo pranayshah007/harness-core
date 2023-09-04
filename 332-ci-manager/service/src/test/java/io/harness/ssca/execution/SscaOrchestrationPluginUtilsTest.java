@@ -12,6 +12,7 @@ import static io.harness.ssca.execution.SscaOrchestrationPluginUtils.getSscaOrch
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.COSIGN_PASSWORD;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.COSIGN_PRIVATE_KEY;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_FORMAT;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_MODE;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMDESTINATION;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMSOURCE;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_TOOL;
@@ -24,6 +25,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.category.element.UnitTests;
+import io.harness.ci.execution.integrationstage.K8InitializeTaskUtils;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
@@ -33,6 +35,8 @@ import io.harness.rule.Owner;
 import io.harness.ssca.beans.Attestation;
 import io.harness.ssca.beans.attestation.AttestationType;
 import io.harness.ssca.beans.attestation.CosignAttestation;
+import io.harness.ssca.beans.ingestion.SbomFile;
+import io.harness.ssca.beans.mode.SbomModeType;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
@@ -49,10 +53,13 @@ import com.google.inject.Inject;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.SSCA)
 public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
+
+  @Mock private K8InitializeTaskUtils k8InitializeTaskUtils;
 
   @Test
   @Owner(developers = INDER)
@@ -81,7 +88,8 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
     Map<String, String> sscaEnvVarMap =
         sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance, Type.K8);
     assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
-    assertThat(sscaEnvVarMap).hasSize(9);
+    assertThat(sscaEnvVarMap).hasSize(10);
+    assertThat(sscaEnvVarMap.get(PLUGIN_MODE)).isEqualTo(SbomModeType.GENERATION.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_TOOL)).isEqualTo(SbomOrchestrationToolType.SYFT.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_FORMAT)).isEqualTo(SyftOrchestrationFormat.SPDX_JSON.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_SBOMSOURCE)).isEqualTo("image:tag");
@@ -137,6 +145,7 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
     long expressionFunctorToken = 12345;
     SscaOrchestrationStepInfo stepInfo =
         SscaOrchestrationStepInfo.builder()
+            .mode(SbomModeType.GENERATION)
             .tool(SbomOrchestrationTool.builder()
                       .type(SbomOrchestrationToolType.SYFT)
                       .sbomOrchestrationSpec(
@@ -164,16 +173,52 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
     Map<String, String> sscaEnvVarMap =
         sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance, Type.VM);
     assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
-    assertThat(sscaEnvVarMap).hasSize(11);
+    assertThat(sscaEnvVarMap).hasSize(12);
     assertThat(sscaEnvVarMap.get(PLUGIN_TOOL)).isEqualTo(SbomOrchestrationToolType.SYFT.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_FORMAT)).isEqualTo(SyftOrchestrationFormat.SPDX_JSON.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_SBOMSOURCE)).isEqualTo("image:tag");
     assertThat(sscaEnvVarMap.get(PLUGIN_TYPE)).isEqualTo("Orchestrate");
+    assertThat(sscaEnvVarMap.get(PLUGIN_MODE)).isEqualTo("generation");
     assertThat(sscaEnvVarMap.get(PLUGIN_SBOMDESTINATION)).isEqualTo("harness/sbom");
     assertThat(sscaEnvVarMap.get(SKIP_NORMALISATION)).isEqualTo("true");
     assertThat(sscaEnvVarMap.get(COSIGN_PASSWORD))
         .isEqualTo(NGVariablesUtils.fetchSecretExpressionWithExpressionToken("account.test", expressionFunctorToken));
     assertThat(sscaEnvVarMap.get(COSIGN_PRIVATE_KEY))
         .isEqualTo(NGVariablesUtils.fetchSecretExpressionWithExpressionToken("key", expressionFunctorToken));
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetSscaOrcherstrationIngestionStepEnvVariables() {
+    SscaOrchestrationStepInfo stepInfo =
+        SscaOrchestrationStepInfo.builder()
+            .mode(SbomModeType.INGESTION)
+            .ingestion(SbomFile.builder().file(ParameterField.createValueField("/path/to/sbom")).build())
+            .source(SbomSource.builder()
+                        .type(SbomSourceType.IMAGE)
+                        .sbomSourceSpec(ImageSbomSource.builder()
+                                            .image(ParameterField.createValueField("image:tag"))
+                                            .connector(ParameterField.createValueField("conn1"))
+                                            .build())
+                        .build())
+            .build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", "accountId")
+                            .putSetupAbstractions("orgIdentifier", "orgIdentifier")
+                            .putSetupAbstractions("projectIdentifier", "projectIdentifier")
+                            .build();
+    Map<String, String> sscaEnvVarMap =
+        sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance, Type.K8);
+    assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
+    assertThat(sscaEnvVarMap).hasSize(8);
+    assertThat(sscaEnvVarMap.get(PLUGIN_MODE)).isEqualTo(SbomModeType.INGESTION.toString());
+    assertThat(sscaEnvVarMap.get(PLUGIN_SBOMSOURCE)).isEqualTo("image:tag");
+    assertThat(sscaEnvVarMap.get(PLUGIN_TYPE)).isEqualTo("Orchestrate");
+    assertThat(sscaEnvVarMap.get(PLUGIN_SBOMDESTINATION)).isEqualTo("/path/to/sbom");
+    assertThat(sscaEnvVarMap.get(SKIP_NORMALISATION)).isEqualTo("true");
+
+    k8InitializeTaskUtils.removeEnvVarsWithSecretRef(sscaEnvVarMap);
+    assertThat(sscaEnvVarMap).hasSize(8);
   }
 }

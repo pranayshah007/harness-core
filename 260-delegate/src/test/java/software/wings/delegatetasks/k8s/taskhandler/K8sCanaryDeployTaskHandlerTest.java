@@ -14,6 +14,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -155,8 +156,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     when(k8sTaskHelper.renderTemplate(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(Collections.emptyList());
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(Collections.emptyList());
-    when(istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any())).thenReturn(null);
-    when(istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any())).thenReturn(null);
+    doNothing().when(istioTaskHelper).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    doNothing().when(istioTaskHelper).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
 
     k8sCanaryDeployTaskHandler.init(canaryDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(0)).dryRunManifests(any(), any(), any(), any(), anyBoolean());
@@ -183,8 +184,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     when(containerDeploymentDelegateHelper.getKubernetesConfig(any(), eq(false)))
         .thenReturn(KubernetesConfig.builder().build());
     doNothing().when(k8sTaskHelperBase).deleteSkippedManifestFiles(any(), any());
-    when(istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any())).thenReturn(null);
-    when(istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any())).thenReturn(null);
+    doNothing().when(istioTaskHelper).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    doNothing().when(istioTaskHelper).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
 
     k8sCanaryDeployTaskHandler.init(canaryDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any());
@@ -694,5 +695,51 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
       assertThat(canaryDeployResponse.getCanaryWorkload())
           .endsWith(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR);
     }
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testInheritManifestsHasDeclarativeRollbackSet() throws Exception {
+    K8sCanaryDeployTaskHandler handler = spy(k8sCanaryDeployTaskHandler);
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory("./working-dir")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("kubeconfig")
+                                                      .build();
+    K8sCanaryDeployTaskParameters k8sCanaryDeployTaskParameters =
+        K8sCanaryDeployTaskParameters.builder()
+            .inheritManifests(true)
+            .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
+            .k8sTaskType(K8sTaskType.CANARY_DEPLOY)
+            .useDeclarativeRollback(true)
+            .build();
+
+    handler.executeTaskInternal(k8sCanaryDeployTaskParameters, k8sDelegateTaskParams);
+
+    assertThat(handler.getCanaryHandlerConfig().isUseDeclarativeRollback()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testInheritManifestsDoesNotDeclarativeRollbackSet() throws Exception {
+    K8sCanaryDeployTaskHandler handler = spy(k8sCanaryDeployTaskHandler);
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory("./working-dir")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("kubeconfig")
+                                                      .build();
+    K8sCanaryDeployTaskParameters k8sCanaryDeployTaskParameters =
+        K8sCanaryDeployTaskParameters.builder()
+            .inheritManifests(true)
+            .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
+            .k8sTaskType(K8sTaskType.CANARY_DEPLOY)
+            .useDeclarativeRollback(false)
+            .build();
+
+    handler.executeTaskInternal(k8sCanaryDeployTaskParameters, k8sDelegateTaskParams);
+
+    assertThat(handler.getCanaryHandlerConfig().isUseDeclarativeRollback()).isFalse();
   }
 }

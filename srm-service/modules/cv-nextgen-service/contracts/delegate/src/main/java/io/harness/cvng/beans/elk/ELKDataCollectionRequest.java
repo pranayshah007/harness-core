@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CV;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO;
-import io.harness.delegate.beans.cvng.elk.elkUtils;
+import io.harness.delegate.beans.cvng.elk.ElkUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.HashMap;
@@ -31,7 +31,7 @@ public abstract class ELKDataCollectionRequest extends DataCollectionRequest<ELK
   }
   @Override
   public Map<String, String> collectionHeaders() {
-    return elkUtils.collectionHeaders(getConnectorConfigDTO());
+    return ElkUtils.collectionHeaders(getConnectorConfigDTO());
   }
 
   @Override

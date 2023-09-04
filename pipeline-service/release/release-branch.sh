@@ -174,6 +174,19 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
         echo "Pipeline file was not updated"
     fi
 
+    # Updating static-schema for trigger.json
+    TRIGGER_JSON="pipeline-service/service/src/main/resources/static-schema/trigger.json"
+    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/trigger.json" ${TRIGGER_JSON}
+    trigger_curl_result=$?
+
+    # Check the return values in if-else conditions
+    if [ $trigger_curl_result -eq 0 ]; then
+        git add ${TRIGGER_JSON}
+        echo "Trigger file was updated"
+    else
+        echo "Trigger file was not updated"
+    fi
+
     # Continue with the rest of the script
     echo "Curl commands completed"
 
@@ -200,6 +213,19 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
         echo "Pipeline file was updated"
     else
         echo "Pipeline file was not updated"
+    fi
+
+    # Updating static-schema for trigger.json in branch cut branch
+    TRIGGER_JSON="pipeline-service/service/src/main/resources/static-schema/trigger.json"
+    perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/trigger.json" ${TRIGGER_JSON}
+    trigger_curl_result=$?
+
+    # Check the return values in if-else conditions
+    if [ $trigger_curl_result -eq 0 ]; then
+        git add ${TRIGGER_JSON}
+        echo "Trigger file was updated"
+    else
+        echo "Trigger file was not updated"
     fi
 
     # Continue with the rest of the script

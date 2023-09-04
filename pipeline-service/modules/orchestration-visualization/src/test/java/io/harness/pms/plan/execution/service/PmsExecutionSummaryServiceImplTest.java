@@ -32,7 +32,6 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
-import io.harness.plan.PlanNode;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -53,8 +52,11 @@ import io.harness.utils.OrchestrationVisualisationTestHelper;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -133,7 +135,6 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
                     .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build())
                     .build())
             .stepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
-            .planNode(PlanNode.builder().build())
             .build();
     pmsExecutionSummaryService.updateStrategyPlanNode("planExecution", nodeExecution, update);
     verify(pmsGraphStepDetailsService, times(1)).fetchConcurrentChildInstance(nodeExecution.getUuid());
@@ -187,7 +188,6 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     nodeExecutions.add(NodeExecution.builder()
                            .uuid("nodeExecutionId1")
                            .endTs(1000L)
-                           .planNode(PlanNode.builder().build())
                            .status(Status.SUCCEEDED)
                            .nodeId("stageNodeIdWithoutStrategy")
                            .parentId("parentNodeExecutionId")
@@ -198,7 +198,6 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     nodeExecutions.add(NodeExecution.builder()
                            .uuid("nodeExecutionId2")
                            .endTs(1000L)
-                           .planNode(PlanNode.builder().build())
                            .status(Status.SUCCEEDED)
                            .nodeId(stageSetupIdForStrategy)
                            .parentId(strategyNodeExecutionId)
@@ -363,6 +362,34 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
   }
 
   @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testUpdateTTLAllSummaryForGivenPlanExecutionIds() {
+    String projectId = "projectId";
+    String planExecutionId = "planExecutionId";
+    String accountId = "accountId";
+    String orgId = "orgId";
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                        .planExecutionId(planExecutionId)
+                                                                        .accountId(accountId)
+                                                                        .orgIdentifier(orgId)
+                                                                        .projectIdentifier(projectId)
+                                                                        .build();
+
+    pmsExecutionSummaryRepository.save(pipelineExecutionSummaryEntity);
+    on(pmsExecutionSummaryService).set("pmsExecutionSummaryRepository", pmsExecutionSummaryRepository);
+
+    Date ttlDate = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    pmsExecutionSummaryService.updateTTL(planExecutionId, ttlDate);
+
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryWithProjections =
+        pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(
+            planExecutionId, Sets.newHashSet(PlanExecutionSummaryKeys.accountId, PlanExecutionSummaryKeys.validUntil));
+
+    assertThat(pipelineExecutionSummaryWithProjections.getValidUntil()).isEqualTo(ttlDate);
+  }
+
+  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testHandleNodeExecutionUpdateFromGraphUpdateForPRBStage() {
@@ -390,5 +417,34 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     String expectedKey = "layoutNodeMap.prevStageNodeId.edgeLayoutList.nextIds";
     assertThat(setObjects).containsKey(expectedKey);
     assertThat(setObjects.get(expectedKey)).isEqualTo(Collections.singletonList("nodeId"));
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testUpdateNotesForExecutionSummaryForGivenPlanExecutionIds() {
+    String projectId = "projectId";
+    String planExecutionId = "planExecutionId";
+    String accountId = "accountId";
+    String orgId = "orgId";
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                        .planExecutionId(planExecutionId)
+                                                                        .accountId(accountId)
+                                                                        .orgIdentifier(orgId)
+                                                                        .projectIdentifier(projectId)
+                                                                        .build();
+
+    pmsExecutionSummaryRepository.save(pipelineExecutionSummaryEntity);
+    on(pmsExecutionSummaryService).set("pmsExecutionSummaryRepository", pmsExecutionSummaryRepository);
+
+    Date ttlDate = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    pmsExecutionSummaryService.updateTTL(planExecutionId, ttlDate);
+    pmsExecutionSummaryService.updateNotes(planExecutionId, true);
+
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryWithProjections =
+        pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(planExecutionId,
+            Sets.newHashSet(PlanExecutionSummaryKeys.accountId, PlanExecutionSummaryKeys.notesExistForPlanExecutionId));
+
+    assertThat(pipelineExecutionSummaryWithProjections.getNotesExistForPlanExecutionId()).isTrue();
   }
 }

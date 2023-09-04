@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer;
+package io.harness.ci.execution.serializer;
 
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_BUILD_STATUS;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_STATUS;
@@ -166,7 +166,7 @@ public class SerializerUtils {
     String cmd;
     CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
     if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
-      cmd = "set -xe; ";
+      cmd = "set -e; ";
     } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
       cmd = "$ErrorActionPreference = 'Stop' \n";
     } else if (shellType == CIShellType.PYTHON) {

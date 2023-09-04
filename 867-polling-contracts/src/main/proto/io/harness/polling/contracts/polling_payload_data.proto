@@ -71,6 +71,7 @@ message HttpHelmPayload {
 message EcrPayload {
   string imagePath = 1;
   string region = 2;
+  string registryId = 3;
 }
 
 message GcsHelmPayload {
@@ -133,6 +134,7 @@ message ArtifactoryRegistryPayload {
   string repositoryFormat = 3;
   string artifactPath = 4;
   string repositoryUrl = 5;
+  string artifactFilter = 6;
 }
 
 message AcrPayload {

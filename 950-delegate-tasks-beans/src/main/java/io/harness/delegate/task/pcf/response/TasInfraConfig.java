@@ -6,15 +6,18 @@
  */
 package io.harness.delegate.task.pcf.response;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)

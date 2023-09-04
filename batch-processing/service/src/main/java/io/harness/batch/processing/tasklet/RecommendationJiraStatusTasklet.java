@@ -160,6 +160,11 @@ public class RecommendationJiraStatusTasklet implements Tasklet {
       }
       try {
         String status = serviceNowUtils.getStatus(serviceNowTicketNG);
+        if (!serviceNowUtils.isTicketActive(serviceNowTicketNG)) {
+          k8sRecommendationDAO.updateRecommendationState(recommendation.getId(), RecommendationState.APPLIED);
+          log.info("Recommendation {} APPLIED", recommendation.getId());
+        }
+
         if (!Objects.equals(recommendation.getServicenowstatus(), status)) {
           // updates in timescale
           k8sRecommendationDAO.updateServicenowDetailsInTimescale(recommendation.getId(),

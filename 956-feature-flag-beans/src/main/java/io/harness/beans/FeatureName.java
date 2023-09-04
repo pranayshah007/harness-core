@@ -12,11 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.annotations.dev.HarnessTeam.SPG;
 
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureFlag.Scope;
 
 import lombok.Getter;
@@ -25,13 +22,6 @@ import lombok.Getter;
  * delete the feature name.
  */
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_AMI_ASG,
-        HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY,
-        HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_COMMON_STEPS,
-        HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_TRIGGERS,
-        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_GITOPS,
-        HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   // Sorted using https://github.com/google/keep-sorted/blob/main/README.md
@@ -68,7 +58,6 @@ public enum FeatureName {
       "Enable build credit dashboard in UI, FF will be removed once the Free credits allocation for all users are introduced",
       HarnessTeam.GTM),
   BYPASS_HELM_FETCH,
-  CCM_AS_DRY_RUN("Dry Run functionality of the AutoStopping Rules", HarnessTeam.CE),
   CCM_BUDGET_CASCADES("Enable to allow nested budgets for Financial Management", HarnessTeam.CE),
   CCM_CLUSTER_ORCH("Show/ Hide navigation link for cluster orchestrator page", HarnessTeam.CE),
   CCM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
@@ -144,6 +133,7 @@ public enum FeatureName {
       "This FF will use helm get manifest instead of helm template output to find managed workloads for Native Helm steady state check for NG",
       HarnessTeam.CDP),
   CDS_HTTP_STEP_NG_CERTIFICATE("Allow enforce SSL/TLS certificate in NG HTTP step", HarnessTeam.CDC),
+  CDS_JIRA_TRANSITION_LIST("Have Jira status and transitions support", HarnessTeam.CDC),
   CDS_K8S_HELM_INSTANCE_SYNC_V2_NG(
       "FF for enabling Instance Sync V2 for K8s and Native Helm swimlanes in NG", HarnessTeam.CDP),
   CDS_K8S_SERVICE_HOOKS_NG("Enables Service hooks support for K8s/Native Helm Services", HarnessTeam.CDP),
@@ -158,7 +148,6 @@ public enum FeatureName {
   CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
   CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN(
       "Enable the check if Vault secret manager is read only", HarnessTeam.CDP),
-  CDS_OPA_TEMPLATE_GOVERNANCE("Added OPA support for template service ", HarnessTeam.CDC),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CDS_PAUSE_JIRA_APPROVAL_CG("Pause CG Jira Approval", HarnessTeam.CDC),
@@ -186,9 +175,6 @@ public enum FeatureName {
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_SSH_CLIENT("Enable SSH new implementation via SSH Client", HarnessTeam.CDP),
   CDS_SSH_SSHJ("Enable SSH for Vault flow via SSHJ", HarnessTeam.CDP),
-  CDS_STAGE_EXECUTION_DATA_SYNC(
-      "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
-      HarnessTeam.CDC),
   CDS_SUPPORT_EXPRESSION_REMOTE_TERRAFORM_VAR_FILES_NG(
       "FF to support expressions in remote terraform var files", HarnessTeam.CDP),
   CDS_SUPPORT_HPA_AND_PDB_NG(
@@ -200,9 +186,6 @@ public enum FeatureName {
   CDS_TERRAFORM_CONFIG_INSPECT_V1_2(
       "Enables usage of terraform-config-inspect v1.2 built from commit 7c9946b1df498f1b0634c7b33257790f01c819f3 of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
       HarnessTeam.CDP),
-  CDS_TERRAFORM_CONFIG_INSPECT_V1_3(
-      "Enables usage of terraform-config-inspect v1.2 built from commit f32df32a01cd687715ed165ac5d202009eba9b2f of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
-      HarnessTeam.CDP),
   CDS_TERRAFORM_S3_SUPPORT(
       "Enable support for AWS S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG(
@@ -211,6 +194,7 @@ public enum FeatureName {
   CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG(
       "To encrypt and decrypt terraform and terragrunt plan on manager side instead of delegate side for NG",
       HarnessTeam.CDP),
+  CDS_TERRAGRUNT_CLI_OPTIONS_NG("Enable terragrunt CLI Options", HarnessTeam.CDP),
   CDS_TRIGGER_ACTIVITY_PAGE("NG Triggers Activity page", HarnessTeam.CDC),
   CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
       "This is to diable checking for the HTTP status code and instead just check for a valid response",
@@ -261,6 +245,7 @@ public enum FeatureName {
   CHAOS_DASHBOARD_ENABLED("Enables chaos dashboards in CHAOS module", HarnessTeam.CHAOS),
   CHAOS_IMAGE_REGISTRY_DEV("Enable image registry configuration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_NEW_ENVIRONMENTS_PAGE("Enable New Environments page in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
   CHAOS_SECURITY_GOVERNANCE("Enable security governance routes, validation and navigation in CHAOS", HarnessTeam.CHAOS),
   CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
@@ -291,6 +276,7 @@ public enum FeatureName {
   CI_PIPELINE_VARIABLES_IN_STEPS("For enabling pipeline variables as env variables in CI steps", HarnessTeam.CI),
   CI_PYTHON_TI("Enable Test Intelligence for Python", HarnessTeam.CI),
   CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
+  CI_RUBY_TI("Enable Test Intelligence for Ruby", HarnessTeam.CI),
   CI_TESTTAB_NAVIGATION,
   CI_TI_DASHBOARDS_ENABLED,
   CI_USE_S3_FOR_CACHE("Use S3 bucket for cache intelligence instead of GCP", HarnessTeam.CI),
@@ -421,6 +407,8 @@ public enum FeatureName {
   FFM_7258_INTERCOM_VIDEO_LINKS("Enable links to launch Intercom window containing video tutorials", HarnessTeam.CF),
   FFM_8261_EXPRESSIONS_IN_PIPELINE_STEP("Enable expressions support in the FF pipeline step", HarnessTeam.CF),
   FFM_8344_FLAG_CLEANUP("Enable Stale Flag Cleanup in Feature Flags filtered listing page", HarnessTeam.CF),
+  FFM_8823_AIDA_SDK_CODE_SAMPLE("Enable AIDA generated code sample in FF Onboarding", HarnessTeam.CF),
+  FFM_8184_FEATURE_FLAG_TAGGING("Enable tagging in Feature Flags", HarnessTeam.CF),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
   FF_FLAG_SYNC_THROUGH_GITEX_ENABLED,
   FF_GITSYNC,
@@ -431,7 +419,11 @@ public enum FeatureName {
   GCB_CI_SYSTEM,
   GCP_WORKLOAD_IDENTITY,
   GITHUB_WEBHOOK_AUTHENTICATION,
+  SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL(
+      "Enables the error return when the database transaction was not completed due to reaching the transaction limit.",
+      SPG),
   SPG_CG_FIXING_PIPELINE_RESUME("This fixes pipeline resume when a loop state is skipped", HarnessTeam.SPG),
+  GITOPS_FLUX_FLAMINGO("Support for flux via flamingo in GitOps", HarnessTeam.GITOPS),
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
   GITOPS_REVERT_PR("Support for Revert PR step in GitOps pipeline flow", HarnessTeam.GITOPS),
@@ -457,6 +449,8 @@ public enum FeatureName {
   IDP_ENABLED("This for enabling IDP on UI", HarnessTeam.IDP),
   IDP_ENABLE_EDIT_HARNESS_CI_CD_PLUGIN(
       "This FF is for allowing user to edit config for harness-ci-cd plugin from UI", HarnessTeam.IDP),
+  IDP_ENABLE_SCORECARDS("This FF is for enabling the scorecards feature in IDP", HarnessTeam.IDP),
+
   INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT,
   INLINE_SSH_COMMAND,
   INSTANCE_SYNC_V2_CG("Enable Instance Sync V2 framework in CG for direct K8s cloud provider", HarnessTeam.CDP),
@@ -478,6 +472,7 @@ public enum FeatureName {
   MOVE_AWS_AMI_SPOT_INST_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_AWS_CODE_DEPLOY_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_AWS_LAMBDA_INSTANCE_SYNC_TO_PERPETUAL_TASK,
+  CD_MAKE_CD_LICENSE_USAGE_REPORTS_ASYNC("Make CD License Usage dashboards to be async", HarnessTeam.CDC),
   MOVE_AWS_SSH_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK,
@@ -507,6 +502,7 @@ public enum FeatureName {
   OPA_FF_GOVERNANCE,
   OPA_GIT_GOVERNANCE,
   OPA_PIPELINE_GOVERNANCE,
+  IACM_OPA_WORKSPACE_GOVERNANCE,
   OPTIMIZED_GIT_FETCH_FILES,
   OPTIMIZED_TF_PLAN,
   OUTAGE_CV_DISABLE,
@@ -526,6 +522,7 @@ public enum FeatureName {
       "FF to optimise the execution flow to fetch only file content for remote entities", HarnessTeam.PIPELINE),
   PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE),
   PIE_GIT_DEFAULT_BRANCH_CACHE("FF to fetch the default branch from the git default branch cache", PIPELINE),
+  PIE_GIT_BI_DIRECTIONAL_SYNC("FF to show account level setting for enabling/disabling bi-directional sync", PIPELINE),
   PIE_MULTISELECT_AND_COMMA_IN_ALLOWED_VALUES(
       "Will allow comma and multi-selection in runtime input allowed values", PIPELINE),
   PIE_NG_BATCH_GET_TEMPLATES(
@@ -541,7 +538,6 @@ public enum FeatureName {
   PIE_STORE_USED_EXPRESSIONS(
       "FF to use store the expressions used during the pipeline executions", HarnessTeam.PIPELINE),
   PIE_USE_SECRET_FUNCTOR_WITH_RBAC("Perform Rbac on secrets when used in pipeline execution", HarnessTeam.PIPELINE),
-  PIE_WEBHOOK_NOTIFICATION("Enable the webhook notifications for the pipeline execution events", PIPELINE),
   PIPELINE_GOVERNANCE,
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
   PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
@@ -550,7 +546,6 @@ public enum FeatureName {
   PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
-  PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL("make the encryption/decryption call as pirvileged call", HarnessTeam.PL),
   PL_DISCOVERY_ENABLE(
       "To control visibility of Discovery navlink in sidebar under project settings", HarnessTeam.CHAOS),
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
@@ -685,23 +680,20 @@ public enum FeatureName {
       "Enables validation of dot on pipeline and workflow name", HarnessTeam.SPG),
   SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID(
       "This feature flag enforces maximum time range for workflow execution queries without appId", HarnessTeam.SPG),
-  SPG_ENVIRONMENT_QUERY_LOGS(
-      "This is a debug FF, no behaviour will be changed. We are adding logs to help find a root cause", SPG),
   SPG_FETCH_ARTIFACT_FROM_DB("Fetch artifact from database if available in artifact collection step", HarnessTeam.SPG),
-  SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
-      "Fixes a bug where approval step is going to waiting for inputs state", HarnessTeam.SPG),
   SPG_GENERATE_CURL_WITHOUT_ARTIFACT(
       "Enable curl generation to trigger when last collected without artifacts.", HarnessTeam.SPG),
   SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP(
       "Verify if application references from a user group still exist", HarnessTeam.SPG),
+  CD_JIRA_CG_FETCH_ISSUE_DEBUG("Enable debug logging for jira fetch issue", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG),
   SPG_LOG_SERVICE_ENABLE_DOWNLOAD_LOGS("Enable download logs in ng. Only used by ui.", HarnessTeam.SPG),
   SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
       "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
-  SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
+  SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
@@ -848,8 +840,10 @@ public enum FeatureName {
       "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
       HarnessTeam.CDP),
   PIE_ERROR_ENHANCEMENTS("Enhance error framework for pipeline exceptions", PIPELINE),
+  CDS_SERVICENOW_FETCH_FIELDS("FF to fetch service now fields", HarnessTeam.CDC),
   CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", PIPELINE),
   CDS_GITHUB_PACKAGES("Used for SSH/WinRm copy and download Github packages artifacts", HarnessTeam.CDP),
+  CDS_DISABLE_FIRST_GEN_CD("Used to disable/block customer access to CG after the migration cut-over", SPG),
   CDS_HELM_SEND_TASK_PROGRESS_NG("For Helm tasks we will be "
           + "sending task progress event via log streaming client which will be received and handled by handleProgress handler in the ng-manager step class",
       HarnessTeam.CDP),
@@ -862,7 +856,22 @@ public enum FeatureName {
   CDS_SUPPORT_SERVICE_INPUTS_AS_EXECUTION_INPUTS(
       "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC),
   CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME(
-      "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP);
+      "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP),
+  CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL("For removing usage of retry interval field for ", HarnessTeam.CDC),
+  CDS_DISABLE_EVALUATE_EXPORT_VARIABLES("For exporting variables without evaluating in command step", HarnessTeam.CDC),
+  CDS_NG_FETCH_FILES_REFACTOR(
+      "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP),
+  CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE),
+  CDS_SERVICE_GITX("Onboard Service entity to GitX", HarnessTeam.CDC),
+  CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC),
+  CDS_ECS_BG_GREEN_SERVICE_ROLLBACK(
+      "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP),
+  SSCA_SLSA_COMPLIANCE("Feature flag for SLSA Compliance", HarnessTeam.SSCA),
+  PL_RUN_INVALID_AUDITS_CLEANUP("Run iterator to cleanup audits with null accountIds", HarnessTeam.PL, Scope.GLOBAL),
+  SSCA_MANAGER_ENABLED("FF to use SSCA manager instead of core", HarnessTeam.SSCA),
+  SSCA_ARTIFACTS_ENABLED("FF to enable SSCA Artifacts on Harness UI", HarnessTeam.SSCA),
+  CDS_JIRA_APPROVAL_OPTIMIZATION("Optimize Jira Approval to only fetch relevant fields", HarnessTeam.CDC),
+  CDS_REMOVE_TIME_BUCKET_GAPFILL_QUERY("This flag removes the usage of time bucket gapfill from CD", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated

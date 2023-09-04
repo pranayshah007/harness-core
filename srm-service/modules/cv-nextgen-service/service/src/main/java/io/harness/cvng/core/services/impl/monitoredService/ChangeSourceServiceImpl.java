@@ -138,13 +138,13 @@ public class ChangeSourceServiceImpl implements ChangeSourceService {
     Map<String, ChangeSource> newChangeSourceMap =
         changeSourceDTOs.stream()
             .map(dto -> changeSourceTransformer.getEntity(monitoredServiceParams, dto))
-            .collect(Collectors.toMap(cs -> cs.getIdentifier(), Function.identity()));
+            .collect(Collectors.toMap(ChangeSource::getIdentifier, Function.identity()));
 
     Map<String, ChangeSource> existingChangeSourceMap =
         createQuery(monitoredServiceParams)
             .asList()
             .stream()
-            .collect(Collectors.toMap(sc -> sc.getIdentifier(), Function.identity()));
+            .collect(Collectors.toMap(ChangeSource::getIdentifier, Function.identity()));
     List<ChangeSource> changeSourcesToCreate = new ArrayList<>();
     newChangeSourceMap.forEach((identifier, changeSource) -> {
       if (replaceable(identifier, newChangeSourceMap, existingChangeSourceMap)) {
@@ -239,7 +239,7 @@ public class ChangeSourceServiceImpl implements ChangeSourceService {
   private void validateChangeSourcesDoesntExist(
       MonitoredServiceParams monitoredServiceParams, Set<ChangeSourceDTO> changeSourceDTOs) {
     Set<ChangeSourceDTO> changeSourceDTOS = get(monitoredServiceParams,
-        changeSourceDTOs.stream().map(changeSourceDTO -> changeSourceDTO.getIdentifier()).collect(Collectors.toList()));
+        changeSourceDTOs.stream().map(ChangeSourceDTO::getIdentifier).collect(Collectors.toList()));
 
     if (CollectionUtils.isNotEmpty(changeSourceDTOS)) {
       throw new InvalidRequestException(String.format("Multiple Change Sources exists with the same identifier %s",

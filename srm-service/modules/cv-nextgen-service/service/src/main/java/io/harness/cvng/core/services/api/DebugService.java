@@ -44,4 +44,6 @@ public interface DebugService {
   void restoreSLOData(ProjectParams projectParams, String sloIdentifier, long startTime, long endTime);
 
   void updateFailedStateOfSLO(ProjectParams projectParams, String sloIdentifier, boolean failedState);
+
+  void scheduleCleanup(List<String> verificationTaskIds);
 }

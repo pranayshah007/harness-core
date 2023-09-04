@@ -10,6 +10,7 @@ package io.harness.perpetualtask;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.DelegateTask.DELEGATE_QUEUE_TIMEOUT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.TaskType.AWS_EC2_TASK;
@@ -93,12 +94,13 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClient implements PerpetualTa
         .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)
         .tags(isNotEmpty(taskData.getAwsConfig().getTag()) ? singletonList(taskData.getAwsConfig().getTag()) : null)
         .data(TaskData.builder()
-                  .async(false)
+                  .async(true)
                   .taskType(AWS_EC2_TASK.name())
                   .parameters(new Object[] {request})
                   .timeout(TimeUnit.MINUTES.toMillis(InstanceSyncConstants.VALIDATION_TIMEOUT_MINUTES))
                   .build())
         .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
+        .waitId(generateUuid())
         .build();
   }
 

@@ -75,7 +75,7 @@ public interface AccountService {
   Boolean syncNextgenWithCG(String accountId);
 
   Boolean cleanUpNextGen(String accountId);
-
+  String disableTriggers(String accountId, String orgIdentifier, String projectIdentifier);
   Boolean disableIpAllowList(String accountId);
 
   Boolean updateIsProductLed(String accountId, boolean isProductLed);
@@ -286,8 +286,6 @@ public interface AccountService {
   boolean isImmutableDelegateEnabled(String accountId);
 
   boolean doMultipleAccountsExist();
-
-  List<AccountDTO> getAllAccounts();
 
   PageResponse<AccountDTO> listAccounts(int offset, int pageSize);
 

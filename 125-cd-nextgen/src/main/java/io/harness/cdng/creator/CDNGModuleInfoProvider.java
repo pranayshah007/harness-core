@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator;
+
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.join;
@@ -28,6 +29,9 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo.CDPipelineModuleInfoBuilder;
 import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo;
@@ -65,12 +69,17 @@ import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Singleton
@@ -104,6 +113,19 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     }
 
     return artifactsSummaryBuilder.build();
+  }
+  public ManifestStoreInfo mapManifestsOutcomeToSummary(Optional<ManifestsOutcome> manifestsOutcome) {
+    if (manifestsOutcome.isEmpty()) {
+      return ManifestStoreInfo.builder().build();
+    }
+    List<ManifestOutcome> manifestOutcomes = new ArrayList<>(manifestsOutcome.get().values());
+    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
+      Optional<ManifestStoreInfo> manifestStoreInfo = manifestOutcome.toManifestStoreInfo();
+      if (manifestStoreInfo.isPresent()) {
+        return manifestStoreInfo.get();
+      }
+    }
+    return ManifestStoreInfo.builder().build();
   }
 
   private Optional<ServiceStepOutcome> getServiceStepOutcome(Ambiance ambiance) {
@@ -140,6 +162,15 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       return Optional.empty();
     }
     return Optional.ofNullable((ArtifactsOutcome) optionalOutcome.getOutcome());
+  }
+
+  private Optional<ManifestsOutcome> getManifestOutcome(OrchestrationEvent event) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS));
+    if (!optionalOutcome.isFound()) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable((ManifestsOutcome) optionalOutcome.getOutcome());
   }
 
   private Optional<InfrastructureOutcome> getInfrastructureOutcome(OrchestrationEvent event) {
@@ -197,7 +228,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(ambiance);
       artifactsOutcome.ifPresent(outcome -> {
         if (outcome.getPrimary() != null && outcome.getPrimary().getArtifactSummary() != null) {
-          cdPipelineModuleInfoBuilder.artifactDisplayName(outcome.getPrimary().getArtifactSummary().getDisplayName());
+          cdPipelineModuleInfoBuilder.artifactDisplayNames(buildArtifactDisplayNames(outcome.getPrimary().getMetaTags(),
+              Collections.singleton(outcome.getPrimary().getArtifactSummary().getDisplayName())));
         }
       });
     }
@@ -291,6 +323,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     if (isServiceNodeAndCompleted(stepType, event.getStatus())) {
       Optional<ServiceStepOutcome> serviceOutcome = getServiceStepOutcome(event.getAmbiance());
       Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(event);
+      Optional<ManifestsOutcome> manifestsOutcome = getManifestOutcome(event);
       serviceOutcome.ifPresent(outcome
           -> cdStageModuleInfoBuilder.serviceInfo(ServiceExecutionSummary.builder()
                                                       .identifier(outcome.getIdentifier())
@@ -298,6 +331,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                       .deploymentType(outcome.getServiceDefinitionType())
                                                       .gitOpsEnabled(outcome.isGitOpsEnabled())
                                                       .artifacts(mapArtifactsOutcomeToSummary(artifactsOutcome))
+                                                      .manifestInfo(mapManifestsOutcomeToSummary(manifestsOutcome))
                                                       .build()));
     } else if (isInfrastructureNodeAndCompleted(stepType, event.getStatus())) {
       Optional<InfrastructureOutcome> infrastructureOutcome = getInfrastructureOutcome(event);
@@ -395,5 +429,13 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         || isGitOpsNodeAndCompleted(stepType, event.getStatus())
         || isRollbackNodeAndCompleted(stepType, event.getStatus())
         || isFetchLinkedAppsNodeAndCompleted(stepType, event.getStatus());
+  }
+
+  private static List<String> buildArtifactDisplayNames(Set<String> items, Set<String> defaultItems) {
+    Set<String> newSet = new HashSet<>(defaultItems);
+    if (EmptyPredicate.isNotEmpty(items)) {
+      newSet.addAll(items.stream().filter(StringUtils::isNotBlank).collect(Collectors.toSet()));
+    }
+    return new ArrayList<>(newSet);
   }
 }

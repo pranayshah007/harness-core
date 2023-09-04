@@ -32,6 +32,7 @@ import io.harness.cvng.activity.entities.SRMStepAnalysisActivity.SRMStepAnalysis
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.DeviationType;
@@ -275,6 +276,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO.EnvironmentResponseDTOBuilder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
@@ -1069,6 +1071,7 @@ public class BuilderFactory {
         .deploymentTag("deploymentTag")
         .stageId("stageId")
         .pipelineId("pipelineId")
+        .runSequence("1")
         .planExecutionId(generateUuid())
         .artifactType("artifactType")
         .artifactTag("artifactTag")
@@ -1100,6 +1103,25 @@ public class BuilderFactory {
         .activityStartTime(clock.instant());
   }
 
+  public SRMAnalysisStepExecutionDetail getSRMAnalysisStepExecutionDetail() {
+    return SRMAnalysisStepExecutionDetail.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .stageStepId("stageStepId")
+        .stageId("stageId")
+        .pipelineId("pipelineId")
+        .planExecutionId("executionId")
+        .artifactType("artifactType")
+        .artifactTag("artifactTag")
+        .stepName(generateUuid())
+        .analysisEndTime(clock.instant().toEpochMilli())
+        .analysisStartTime(clock.instant().toEpochMilli())
+        .build();
+  }
+
   public Ambiance getAmbiance(ProjectParams projectParams) {
     HashMap<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put("accountId", projectParams.getAccountIdentifier());
@@ -1108,8 +1130,32 @@ public class BuilderFactory {
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())
         .setStageExecutionId(generateUuid())
+        .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build())
         .addLevels(Level.newBuilder()
                        .setRuntimeId(generateUuid())
+                       .setStartTs(clock.millis())
+                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                       .build())
+        .addLevels(Level.newBuilder()
+                       .setRuntimeId(generateUuid())
+                       .setIdentifier("identifier")
+                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                       .build())
+        .putAllSetupAbstractions(setupAbstractions)
+        .build();
+  }
+
+  public Ambiance getAmbiance(ProjectParams projectParams, String planExecutionId, String stageId) {
+    HashMap<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put("accountId", projectParams.getAccountIdentifier());
+    setupAbstractions.put("projectIdentifier", projectParams.getProjectIdentifier());
+    setupAbstractions.put("orgIdentifier", projectParams.getOrgIdentifier());
+    return Ambiance.newBuilder()
+        .setPlanExecutionId(planExecutionId)
+        .setStageExecutionId(generateUuid())
+        .addLevels(Level.newBuilder()
+                       .setRuntimeId(generateUuid())
+                       .setIdentifier(stageId)
                        .setStartTs(clock.millis())
                        .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
                        .build())
@@ -1279,6 +1325,7 @@ public class BuilderFactory {
                       .stageStepId("stageStepId")
                       .stageId("stageId")
                       .pipelineId("pipelineId")
+                      .runSequence("1")
                       .planExecutionId("executionId")
                       .artifactType("artifactType")
                       .artifactTag("artifactTag")
@@ -1404,6 +1451,7 @@ public class BuilderFactory {
         .setExecutionDetails(ExecutionDetails.newBuilder()
                                  .setStageId("stageId")
                                  .setPipelineId("pipelineId")
+                                 .setRunSequence("1")
                                  .setPlanExecutionId("planExecutionId")
                                  .setStageSetupId("stageStepId")
                                  .build())
@@ -1706,6 +1754,22 @@ public class BuilderFactory {
     testVerificationJob.setCvConfigs(cvConfigs);
     testVerificationJob.setBaselineVerificationJobInstanceId(UUID.randomUUID().toString());
     return testVerificationJob;
+  }
+
+  public VerificationJob getAutoVerificationJob(List<CVConfig> cvConfigs) {
+    AutoVerificationJob autoVerificationJob = new AutoVerificationJob();
+    autoVerificationJob.setAccountId(context.getAccountId());
+    autoVerificationJob.setIdentifier("identifier");
+    autoVerificationJob.setJobName(generateUuid());
+    autoVerificationJob.setSensitivity(Sensitivity.MEDIUM);
+    autoVerificationJob.setServiceIdentifier(context.getServiceIdentifier(), false);
+    autoVerificationJob.setEnvIdentifier(context.getEnvIdentifier(), false);
+    autoVerificationJob.setDuration(Duration.ofMinutes(5));
+    autoVerificationJob.setMonitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
+    autoVerificationJob.setProjectIdentifier(context.getProjectIdentifier());
+    autoVerificationJob.setOrgIdentifier(context.getOrgIdentifier());
+    autoVerificationJob.setCvConfigs(cvConfigs);
+    return autoVerificationJob;
   }
 
   public VerificationJob getDeploymentVerificationJob() {

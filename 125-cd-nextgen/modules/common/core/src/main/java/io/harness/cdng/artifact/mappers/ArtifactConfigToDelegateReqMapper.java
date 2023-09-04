@@ -108,6 +108,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapper {
   private final String ACCEPT_ALL_REGEX = "\\*";
+  private static final String ALL_REGEX = ".*?";
   private final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
   private final long TIME_OUT = 600000L;
 
@@ -131,11 +132,9 @@ public class ArtifactConfigToDelegateReqMapper {
       tagRegex = ACCEPT_ALL_REGEX;
     }
 
-    boolean shouldFetchDockerV2DigestSHA256 =
-        artifactConfig.getDigest() != null && isNotEmpty((String) artifactConfig.getDigest().fetchFinalValue());
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(
         (String) artifactConfig.getImagePath().fetchFinalValue(), tag, tagRegex, null, connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY, shouldFetchDockerV2DigestSHA256);
+        encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY);
   }
 
   public boolean isLastPublishedExpression(String tag) {
@@ -154,7 +153,7 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public String getTagRegex(String tag) {
-    return tag.equals(LAST_PUBLISHED_EXPRESSION) ? ".*?" : tag;
+    return tag.equals(LAST_PUBLISHED_EXPRESSION) ? ALL_REGEX : tag;
   }
 
   public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
@@ -773,7 +772,7 @@ public class ArtifactConfigToDelegateReqMapper {
         (String) artifactConfig.getRepository().fetchFinalValue(),
         (String) artifactConfig.getArtifactPath().fetchFinalValue(),
         (String) artifactConfig.getRepositoryFormat().fetchFinalValue(), artifactRepositoryUrl, tag, tagRegex,
-        connectorRef, artifactoryConnectorDTO, encryptedDataDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY);
+        connectorRef, artifactoryConnectorDTO, encryptedDataDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY, null);
   }
 
   private ArtifactoryGenericArtifactDelegateRequest getArtifactoryGenericArtifactDelegateRequest(
@@ -791,8 +790,12 @@ public class ArtifactConfigToDelegateReqMapper {
         ? null
         : (String) artifactConfig.getArtifactDirectory().fetchFinalValue();
 
+    String artifactFilter = ParameterField.isNull(artifactConfig.getArtifactFilter())
+        ? null
+        : (String) artifactConfig.getArtifactFilter().fetchFinalValue();
+
     if (isLastPublishedExpression(artifactPath)) {
-      artifactPathFilter = "*";
+      artifactPathFilter = ALL_REGEX;
     }
 
     if (ParameterField.isNotNull(artifactConfig.getArtifactPath())
@@ -804,7 +807,7 @@ public class ArtifactConfigToDelegateReqMapper {
         (String) artifactConfig.getRepository().fetchFinalValue(),
         (String) artifactConfig.getRepositoryFormat().fetchFinalValue(), artifactDirectory, artifactPath,
         artifactPathFilter, connectorRef, artifactoryConnectorDTO, encryptedDataDetails,
-        ArtifactSourceType.ARTIFACTORY_REGISTRY);
+        ArtifactSourceType.ARTIFACTORY_REGISTRY, artifactFilter);
   }
 
   public static ArtifactSourceDelegateRequest getAcrDelegateRequest(AcrArtifactConfig acrArtifactConfig,

@@ -57,6 +57,11 @@ public class NodeExecutionsInfo {
                  .field(NodeExecutionsInfoKeys.nodeExecutionId)
                  .unique(true)
                  .build())
+        // Used by ttl update
+        .add(CompoundMongoIndex.builder()
+                 .name("planExecutionId_idx")
+                 .field(NodeExecutionsInfoKeys.planExecutionId)
+                 .build())
         .build();
   }
 }

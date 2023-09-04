@@ -30,12 +30,12 @@ import io.harness.cache.CacheModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.CIExecutionTestModule;
-import io.harness.ci.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.config.VmImageConfig;
-import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.buildstate.SecretDecryptorViaNg;
+import io.harness.ci.execution.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.ff.CIFeatureFlagNoopServiceImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.license.CILicenseNoopServiceImpl;
@@ -239,6 +239,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .gcsUploadConfig(StepImageConfig.builder().image("gcsUpload:1.2.3").build())
             .sscaOrchestrationConfig(StepImageConfig.builder().image("sscaorchestrate:0.0.1").build())
             .sscaEnforcementConfig(StepImageConfig.builder().image("sscaEnforcement:0.0.1").build())
+            .provenanceConfig(StepImageConfig.builder().image("provenance:0.0.1").build())
             .vmImageConfig(vmImageConfig)
             .build();
 

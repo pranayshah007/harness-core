@@ -53,7 +53,8 @@ public class NamespaceServiceImpl implements NamespaceService {
 
   @Override
   public NamespaceEntity saveAccountIdNamespace(String accountId) {
-    NamespaceEntity dataToInsert = NamespaceEntity.builder().accountIdentifier(accountId).build();
+    NamespaceEntity dataToInsert =
+        NamespaceEntity.builder().accountIdentifier(accountId).nextIteration(System.currentTimeMillis()).build();
     NamespaceEntity insertedData = namespaceRepository.save(dataToInsert);
     k8sClient.createNamespace(insertedData.getId());
     return insertedData;

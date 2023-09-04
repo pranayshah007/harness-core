@@ -10,18 +10,25 @@ package io.harness.cdng.artifact.outcome;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.BambooArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(
+    module = ProductModule.CDS, components = {HarnessModuleComponent.CDS_ARTIFACTS}, unitCoverageRequired = false)
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = false)
@@ -30,7 +37,9 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.BambooArtifactOutcome")
 public class BambooArtifactOutcome implements ArtifactOutcome {
-  /** Bamboo connector. */
+  /**
+   * Bamboo connector.
+   */
   String connectorRef;
 
   /** jobName */
@@ -67,5 +76,10 @@ public class BambooArtifactOutcome implements ArtifactOutcome {
   @Override
   public String getTag() {
     return build;
+  }
+
+  @Override
+  public Set<String> getMetaTags() {
+    return Sets.newHashSet(identifier, build, planKey);
   }
 }

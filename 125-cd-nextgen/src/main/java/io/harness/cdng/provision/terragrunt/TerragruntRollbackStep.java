@@ -6,13 +6,11 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
+import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terragrunt.TerragruntStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.provision.TerragruntConstants.APPLY;
 import static io.harness.provision.TerragruntConstants.DESTROY;
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
-
-import static software.wings.beans.TaskType.TERRAGRUNT_APPLY_TASK_NG;
-import static software.wings.beans.TaskType.TERRAGRUNT_DESTROY_TASK_NG;
 
 import static java.lang.String.format;
 
@@ -24,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -38,7 +37,6 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.UnitProgress;
 import io.harness.persistence.HIterator;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -52,6 +50,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -81,10 +80,11 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     TerragruntRollbackStepParameters stepParametersSpec = (TerragruntRollbackStepParameters) stepParameters.getSpec();
     log.info("Running Obtain Task for Terragrunt Rollback Step");
     String provisionerIdentifier =
@@ -145,25 +145,26 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
         TerragruntApplyTaskParametersBuilder<?, ?> builderApply =
             createApplyTaskParameters(rollbackConfig, ambiance, stepParameters, provisionerIdentifier);
         commandUnitsList.add(APPLY);
-        return prepareCDTaskRequest(ambiance, builderApply.build(), stepParameters, stepParametersSpec,
-            commandUnitsList, TERRAGRUNT_APPLY_TASK_NG);
+        TaskType applyTaskType = builderApply.build().getDelegateTaskTypeForApplyStep();
+        return prepareCDTaskRequest(
+            ambiance, builderApply.build(), stepParameters, stepParametersSpec, commandUnitsList, applyTaskType);
       } else {
         TerragruntDestroyTaskParametersBuilder<?, ?> builderDestroy =
             createDestroyTaskParameters(rollbackConfig, ambiance, stepParameters, provisionerIdentifier);
+        TaskType destroyTaskType = builderDestroy.build().getDelegateTaskTypeForDestroyStep();
         commandUnitsList.add(DESTROY);
-        return prepareCDTaskRequest(ambiance, builderDestroy.build(), stepParameters, stepParametersSpec,
-            commandUnitsList, TERRAGRUNT_DESTROY_TASK_NG);
+        return prepareCDTaskRequest(
+            ambiance, builderDestroy.build(), stepParameters, stepParametersSpec, commandUnitsList, destroyTaskType);
       }
     }
   }
 
-  private TaskRequest prepareCDTaskRequest(Ambiance ambiance, Object parameters,
-      StepElementParameters stepElementParameters, TerragruntRollbackStepParameters stepParameters,
-      List<String> commandUnitsList, TaskType taskType) {
+  private TaskRequest prepareCDTaskRequest(Ambiance ambiance, Object parameters, StepBaseParameters StepBaseParameters,
+      TerragruntRollbackStepParameters stepParameters, List<String> commandUnitsList, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .async(true)
                             .taskType(taskType.name())
-                            .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), DEFAULT_TIMEOUT))
+                            .timeout(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), DEFAULT_TIMEOUT))
                             .parameters(new Object[] {parameters})
                             .build();
 
@@ -174,7 +175,7 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<AbstractTerragruntTaskResponse> responseDataSupplier)
+      StepBaseParameters stepParameters, ThrowingSupplier<AbstractTerragruntTaskResponse> responseDataSupplier)
       throws Exception {
     log.info("Handling Task Result With Security Context for Terragrunt Rollback Step");
     StepResponse stepResponse = null;
@@ -229,10 +230,16 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
   }
 
   private TerragruntApplyTaskParametersBuilder<?, ?> createApplyTaskParameters(TerragruntConfig terragruntConfig,
-      Ambiance ambiance, StepElementParameters stepParameters, String provisionerIdentifier) {
+      Ambiance ambiance, StepBaseParameters stepParameters, String provisionerIdentifier) {
     TerragruntApplyTaskParametersBuilder<?, ?> builder = TerragruntApplyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = terragruntStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
+
+    TerragruntRollbackStepParameters stepParametersSpec = (TerragruntRollbackStepParameters) stepParameters.getSpec();
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_CLI_OPTIONS_NG)) {
+      builder.terragruntCommandFlags(terragruntStepHelper.getTerragruntCliFlags(stepParametersSpec.getCommandFlags()));
+    }
+
     builder.accountId(accountId)
         .entityId(entityId)
         .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
@@ -257,10 +264,16 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
   }
 
   private TerragruntDestroyTaskParametersBuilder<?, ?> createDestroyTaskParameters(TerragruntConfig terragruntConfig,
-      Ambiance ambiance, StepElementParameters stepParameters, String provisionerIdentifier) {
+      Ambiance ambiance, StepBaseParameters stepParameters, String provisionerIdentifier) {
     TerragruntDestroyTaskParametersBuilder<?, ?> builder = TerragruntDestroyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = terragruntStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
+
+    TerragruntRollbackStepParameters stepParametersSpec = (TerragruntRollbackStepParameters) stepParameters.getSpec();
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_CLI_OPTIONS_NG)) {
+      builder.terragruntCommandFlags(terragruntStepHelper.getTerragruntCliFlags(stepParametersSpec.getCommandFlags()));
+    }
+
     builder.accountId(accountId)
         .entityId(entityId)
         .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
@@ -286,11 +299,11 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
 
   @Override
   public Class getStepParametersClass() {
-    return StepElementParameters.class;
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // no connectors/secret managers to validate
   }
 }

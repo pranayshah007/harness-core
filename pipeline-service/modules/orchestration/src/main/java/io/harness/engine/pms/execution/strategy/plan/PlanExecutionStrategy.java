@@ -168,7 +168,11 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
     try {
       orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
-          OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
+          OrchestrationStartInfo.builder()
+              .ambiance(ambiance)
+              .planExecutionMetadata(planExecutionMetadata)
+              .startStatus(status)
+              .build());
     } catch (Exception e) {
       // Marking the planExecution Errored if OrchestrationStartObservers failed.
       planExecutionService.markPlanExecutionErrored(ambiance.getPlanExecutionId());
@@ -192,7 +196,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
     if (planExecution != null) {
       eventEmitter.emitEvent(buildEndEvent(ambiance, planExecution.getStatus()));
     }
-    orchestrationEndSubject.fireInform(OrchestrationEndObserver::onEnd, ambiance);
+    orchestrationEndSubject.fireInform(OrchestrationEndObserver::onEnd, ambiance, status);
   }
 
   private OrchestrationEvent buildEndEvent(Ambiance ambiance, Status status) {

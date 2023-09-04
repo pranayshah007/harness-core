@@ -1000,6 +1000,9 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     ConnectorValidationResult validationResult;
     validationResult = validateSafely(
         connectorResponseDTO, connectorInfo, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    // generate secret usage for connector test
+    connectorEntityReferenceHelper.sendSecretUsageEventForConnectorTest(
+        accountIdentifier, connectorInfo, validationResult.getStatus());
     return validationResult;
   }
 
@@ -1046,6 +1049,12 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         String errorSummary = ngErrorHelper.getErrorSummary(errorMessage);
         List<ErrorDetail> errorDetail = Collections.singletonList(ngErrorHelper.createErrorDetail(errorMessage));
         validationFailureBuilder.errorSummary(errorSummary).errors(errorDetail);
+      }
+      String taskId = (String) ex.getParams().get("taskId");
+      if (isNotEmpty(taskId)) {
+        ConnectorValidationResult result = validationFailureBuilder.build();
+        result.setTaskId(taskId);
+        return result;
       }
       return validationFailureBuilder.build();
     } catch (WingsException wingsException) {

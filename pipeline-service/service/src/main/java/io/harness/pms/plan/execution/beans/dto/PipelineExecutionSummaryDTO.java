@@ -50,6 +50,8 @@ public class PipelineExecutionSummaryDTO {
   @Trimmed @NotEmpty String projectIdentifier;
   String planExecutionId;
   String name;
+  // Stores the pipeline yaml version
+  String yamlVersion;
 
   ExecutionStatus status;
 
@@ -90,4 +92,5 @@ public class PipelineExecutionSummaryDTO {
   AbortedBy abortedBy;
 
   ExecutionMode executionMode;
+  boolean notesExistForPlanExecutionId;
 }

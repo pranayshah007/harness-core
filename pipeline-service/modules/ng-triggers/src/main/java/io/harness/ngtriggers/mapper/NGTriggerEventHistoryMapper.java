@@ -38,12 +38,14 @@ public class NGTriggerEventHistoryMapper {
     if (ngTriggerEventHistoryDTO.getType().equals(NGTriggerType.ARTIFACT)) {
       ngTriggerEventHistoryDTO.setNgTriggerEventInfo(
           ArtifactTriggerEventInfo.builder()
+              .build(triggerEventHistory.getBuild())
               .pollingDocumentInfo(
                   PollingDocumentInfo.builder().pollingDocumentId(triggerEventHistory.getPollingDocId()).build())
               .build());
     } else if (ngTriggerEventHistoryDTO.getType().equals(NGTriggerType.MANIFEST)) {
       ngTriggerEventHistoryDTO.setNgTriggerEventInfo(
           ManifestTriggerEventInfo.builder()
+              .build(triggerEventHistory.getBuild())
               .pollingDocumentInfo(
                   PollingDocumentInfo.builder().pollingDocumentId(triggerEventHistory.getPollingDocId()).build())
               .build());

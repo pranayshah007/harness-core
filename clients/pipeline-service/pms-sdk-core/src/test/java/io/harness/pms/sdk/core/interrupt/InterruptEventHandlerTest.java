@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.interrupt;
 
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -138,5 +139,30 @@ public class InterruptEventHandlerTest extends PmsSdkCoreTestBase {
                                .build();
     interruptEventHandler.handleEventWithContext(event);
     Mockito.verify(pmsInterruptService).handleFailure("notifyId");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testHandleUserMarkedFailure() {
+    Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
+    InterruptEvent event = InterruptEvent.newBuilder()
+                               .setAmbiance(AmbianceUtils.cloneForFinish(ambiance,
+                                   ambiance.getLevelsList()
+                                       .get(ambiance.getLevelsList().size() - 1)
+                                       .toBuilder()
+                                       .setStepType(TestChildChainStep.STEP_TYPE)
+                                       .build()))
+
+                               .setType(InterruptType.USER_MARKED_FAIL_ALL)
+                               .setInterruptUuid("interruptUuid")
+                               .setNotifyId("notifyId")
+                               .build();
+    assertThat(TestChildChainStep.isHandleAbortAndUserMarkedFailureCalled).isFalse();
+    interruptEventHandler.handleEventWithContext(event);
+    Mockito.verify(pmsInterruptService).handleAbort("notifyId");
+    // TestChildChainStep.isHandleAbortAndUserMarkedFailureCalled will be marked as true once the
+    // handleAbortAndUserMarkedFailure is called on step.
+    assertThat(TestChildChainStep.isHandleAbortAndUserMarkedFailureCalled).isTrue();
   }
 }

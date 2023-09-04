@@ -10,7 +10,10 @@ package io.harness.ng.core.serviceoverride.mapper;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
@@ -25,7 +28,8 @@ import io.harness.yaml.core.variables.NGVariable;
 import java.io.IOException;
 import java.util.List;
 import lombok.experimental.UtilityClass;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @UtilityClass
 public class NGServiceOverrideEntityConfigMapper {

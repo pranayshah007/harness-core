@@ -86,7 +86,6 @@ public class RedisProgressEventPublisherTest extends OrchestrationTestBase {
                           .build())
             .status(Status.RUNNING)
             .mode(ExecutionMode.ASYNC)
-            .planNode(planNode)
             .executableResponse(ExecutableResponse.newBuilder()
                                     .setTask(TaskExecutableResponse.newBuilder()
                                                  .setTaskId(generateUuid())

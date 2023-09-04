@@ -37,11 +37,13 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpec;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalHelperService;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalOutCome;
@@ -74,6 +76,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock ExecutorService dashboardExecutorService;
   @Mock ServiceNowApprovalHelperService serviceNowApprovalHelperService;
+  @Mock IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @InjectMocks private ServiceNowApprovalStep serviceNowApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 
@@ -124,6 +127,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
     assertThat(instance.getChangeWindow().getStartField()).isEqualTo(CHANGE_WINDOW_START);
     assertThat(instance.getChangeWindow().getEndField()).isEqualTo(CHANGE_WINDOW_END);
     verify(logStreamingStepClient, times(4)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
+    verify(irregularApprovalInstanceHandler, times(1)).wakeup();
   }
 
   @Test
@@ -222,7 +226,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testgetStepParametersClass() {
-    assertThat(serviceNowApprovalStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(serviceNowApprovalStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
   private StepElementParameters getStepElementParameters(String ticketNumber, String ticketType, String connector) {
     return StepElementParameters.builder()

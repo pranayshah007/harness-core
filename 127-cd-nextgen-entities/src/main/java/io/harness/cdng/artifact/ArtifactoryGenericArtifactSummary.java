@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.nio.file.Paths;
 import lombok.Builder;
 import lombok.Data;
 
@@ -30,7 +29,7 @@ public class ArtifactoryGenericArtifactSummary implements ArtifactSummary {
 
   @Override
   public String getDisplayName() {
-    return Paths.get(artifactDirectory, artifactPath).toString();
+    return artifactPath;
   }
 
   @Override

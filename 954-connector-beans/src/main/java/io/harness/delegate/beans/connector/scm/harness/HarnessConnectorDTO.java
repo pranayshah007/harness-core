@@ -60,11 +60,12 @@ public class HarnessConnectorDTO extends ConnectorConfigDTO implements ScmConnec
   Boolean executeOnDelegate = Boolean.FALSE;
   String gitConnectionUrl;
   @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) String apiUrl;
+  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) String slug;
 
   @Builder
   public HarnessConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
-      HarnessAuthenticationDTO authentication, HarnessApiAccessDTO apiAccess, boolean executeOnDelegate,
-      String apiUrl) {
+      HarnessAuthenticationDTO authentication, HarnessApiAccessDTO apiAccess, boolean executeOnDelegate, String apiUrl,
+      String slug) {
     this.connectionType = connectionType;
     this.url = url;
     this.validationRepo = validationRepo;
@@ -72,6 +73,7 @@ public class HarnessConnectorDTO extends ConnectorConfigDTO implements ScmConnec
     this.apiAccess = apiAccess;
     this.executeOnDelegate = executeOnDelegate;
     this.apiUrl = apiUrl;
+    this.slug = slug;
   }
 
   @Override

@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.govern.Switch;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -229,7 +228,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
             adviserObtainmentBuilder, retrySGAction, retrySGCount, currentField));
         break;
       default:
-        Switch.unhandled(actionType);
+        // do nothing
     }
   }
 

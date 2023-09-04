@@ -24,6 +24,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import okhttp3.Request;
+import org.apache.commons.io.FileUtils;
 
 @Data
 @SuperBuilder
@@ -37,6 +38,8 @@ public class ApiCallLogDTO extends CVNGLogDTO {
   public static final String REQUEST_BODY = "Request Body";
   public static final String REQUEST_URL = "url";
   public static final String STATUS_CODE = "Status Code";
+  public static final String RESPONSE_SIZE = "Response Size";
+  public static final String RESPONSE_TIME_TAKEN = "Response Time Taken";
   public static final String REQUEST_METHOD = "Request Method";
   public static final String REQUEST_HEADERS = "Request Headers";
 
@@ -77,7 +80,7 @@ public class ApiCallLogDTO extends CVNGLogDTO {
                           .build());
   }
 
-  public void addFieldToResponse(int statusCode, Object response, FieldType fieldType) {
+  public void addFieldToResponse(int statusCode, long responseTimeinMs, Object response, FieldType fieldType) {
     Preconditions.checkNotNull(response, "Api call log response field is null.");
 
     if (this.responses == null) {
@@ -88,6 +91,17 @@ public class ApiCallLogDTO extends CVNGLogDTO {
                            .type(FieldType.NUMBER)
                            .name(STATUS_CODE)
                            .value(Integer.toString(statusCode))
+                           .build());
+    this.responses.add(
+        ApiCallLogDTOField.builder()
+            .type(FieldType.NUMBER)
+            .name(RESPONSE_SIZE)
+            .value(FileUtils.byteCountToDisplaySize(jsonResponse.getBytes(StandardCharsets.UTF_8).length))
+            .build());
+    this.responses.add(ApiCallLogDTOField.builder()
+                           .type(FieldType.NUMBER)
+                           .name(RESPONSE_TIME_TAKEN)
+                           .value(responseTimeinMs + " ms")
                            .build());
     String trimmedResponse = jsonResponse.substring(0, Math.min(jsonResponse.length(), MAX_JSON_RESPONSE_LENGTH));
     this.responses.add(ApiCallLogDTOField.builder().type(fieldType).name(RESPONSE_BODY).value(trimmedResponse).build());

@@ -19,6 +19,7 @@ import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.HELM_RELEASE_LABEL;
 import static io.harness.k8s.K8sConstants.KUBERNETES_CHANGE_CAUSE_ANNOTATION;
@@ -110,6 +111,7 @@ import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sApiClient;
@@ -2327,7 +2329,7 @@ public class K8sTaskHelperBase {
 
         String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlFolderPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
-        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
+        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams,
             kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback,
             kustomizeManifest.getCommandFlags());
 
@@ -2379,9 +2381,9 @@ public class K8sTaskHelperBase {
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
-        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), manifestFilesDirectory, filesList, true, manifestOverrideFiles,
-            executionLogCallback, kustomizeManifest.getCommandFlags());
+        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams, kustomizeManifest.getPluginPath(),
+            manifestFilesDirectory, filesList, true, manifestOverrideFiles, executionLogCallback,
+            kustomizeManifest.getCommandFlags());
 
       default:
         throw new UnsupportedOperationException(
@@ -3252,5 +3254,22 @@ public class K8sTaskHelperBase {
           + ": true");
     }
     return kubernetesResourceIds.get(0);
+  }
+  public HelmChartInfo getHelmChartDetails(ManifestDelegateConfig manifestDelegateConfig, String manifestFileDir) {
+    String finalPath = getManifestDirectoryForHelmChartWithSubCharts(
+        manifestFileDir, (HelmChartManifestDelegateConfig) manifestDelegateConfig);
+    try {
+      HelmChartInfo helmChartInfo =
+          helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(Paths.get(finalPath, CHARTS_YAML_KEY).toString());
+
+      if (helmChartInfo != null) {
+        helmChartInfo.setRepoUrl(manifestDelegateConfig.getStoreDelegateConfig().getRepoUrl());
+      }
+
+      return helmChartInfo;
+    } catch (Exception ex) {
+      log.warn("Unable to retrieve helmChartInfo from the Chart Yaml: " + ExceptionUtils.getMessage(ex));
+      return null;
+    }
   }
 }

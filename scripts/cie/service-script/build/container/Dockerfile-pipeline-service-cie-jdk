@@ -5,7 +5,7 @@
 
 # To be used when building in CIE
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
+FROM us.gcr.io/platform-205701/harness/ubi8/java11:11.0.19_7 as base
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534 pipeline-service-capsule.jar /opt/harness/

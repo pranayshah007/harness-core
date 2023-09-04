@@ -205,7 +205,10 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   public boolean disableIpAllowList(String accountId) {
     return accountService.disableIpAllowList(accountId);
   }
-
+  @Override
+  public String disableTriggers(String accountId, String orgIdentifier, String projectIdentifier) {
+    return accountService.disableTriggers(accountId, orgIdentifier, projectIdentifier);
+  }
   @Override
   public boolean updateIsProductLed(String accountId, boolean isProductLed) {
     accountService.updateIsProductLed(accountId, isProductLed);

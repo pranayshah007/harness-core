@@ -5,13 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.states.ssca;
+package io.harness.ci.execution.states.ssca;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.steps.outcome.StepArtifacts.StepArtifactsBuilder;
-import io.harness.ci.states.AbstractStepExecutable;
+import io.harness.ci.execution.states.AbstractStepExecutable;
 import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadataType;
@@ -21,6 +21,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryResponse;
 import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.ssca.client.beans.enforcement.SscaEnforcementSummary;
@@ -47,41 +48,81 @@ public class SscaEnforcementStep extends AbstractStepExecutable {
   @Override
   protected void modifyStepStatus(Ambiance ambiance, StepStatus stepStatus, String stepIdentifier) {
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    SscaEnforcementSummary enforcementSummary = sscaServiceUtils.getEnforcementSummary(stepExecutionId);
 
-    stepStatus.setArtifactMetadata(
-        ArtifactMetadata.builder()
-            .type(ArtifactMetadataType.SSCA_ARTIFACT_METADATA)
-            .spec(SscaArtifactMetadata.builder()
-                      .id(enforcementSummary.getArtifact().getId())
-                      .imageName(enforcementSummary.getArtifact().getName())
-                      .registryUrl(enforcementSummary.getArtifact().getUrl())
-                      .registryType(enforcementSummary.getArtifact().getType())
-                      .stepExecutionId(stepExecutionId)
-                      .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
-                      .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
-                      .imageTag(enforcementSummary.getArtifact().getTag())
-                      .build())
-            .build());
+    if (sscaServiceUtils.isSSCAManagerEnabled()) {
+      EnforcementSummaryResponse enforcementSummary =
+          sscaServiceUtils.getEnforcementSummary(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+              AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+
+      stepStatus.setArtifactMetadata(
+          ArtifactMetadata.builder()
+              .type(ArtifactMetadataType.SSCA_ARTIFACT_METADATA)
+              .spec(SscaArtifactMetadata.builder()
+                        .id(enforcementSummary.getArtifact().getId())
+                        .imageName(enforcementSummary.getArtifact().getName())
+                        .registryUrl(enforcementSummary.getArtifact().getRegistryUrl())
+                        .registryType(enforcementSummary.getArtifact().getType())
+                        .stepExecutionId(stepExecutionId)
+                        .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
+                        .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
+                        .imageTag(enforcementSummary.getArtifact().getTag())
+                        .build())
+              .build());
+    } else {
+      SscaEnforcementSummary enforcementSummary = sscaServiceUtils.getEnforcementSummary(stepExecutionId);
+
+      stepStatus.setArtifactMetadata(
+          ArtifactMetadata.builder()
+              .type(ArtifactMetadataType.SSCA_ARTIFACT_METADATA)
+              .spec(SscaArtifactMetadata.builder()
+                        .id(enforcementSummary.getArtifact().getId())
+                        .imageName(enforcementSummary.getArtifact().getName())
+                        .registryUrl(enforcementSummary.getArtifact().getUrl())
+                        .registryType(enforcementSummary.getArtifact().getType())
+                        .stepExecutionId(stepExecutionId)
+                        .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
+                        .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
+                        .imageTag(enforcementSummary.getArtifact().getTag())
+                        .build())
+              .build());
+    }
   }
 
   @Override
   protected StepArtifacts handleArtifactForVm(
       ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    SscaEnforcementSummary enforcementSummary = sscaServiceUtils.getEnforcementSummary(stepExecutionId);
+    if (sscaServiceUtils.isSSCAManagerEnabled()) {
+      EnforcementSummaryResponse enforcementSummary =
+          sscaServiceUtils.getEnforcementSummary(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+              AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
 
-    return StepArtifacts.builder()
-        .publishedSbomArtifact(PublishedSbomArtifact.builder()
-                                   .id(enforcementSummary.getArtifact().getId())
-                                   .url(enforcementSummary.getArtifact().getUrl())
-                                   .imageName(enforcementSummary.getArtifact().getName())
-                                   .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
-                                   .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
-                                   .stepExecutionId(stepExecutionId)
-                                   .tag(enforcementSummary.getArtifact().getTag())
-                                   .build())
-        .build();
+      return StepArtifacts.builder()
+          .publishedSbomArtifact(PublishedSbomArtifact.builder()
+                                     .id(enforcementSummary.getArtifact().getId())
+                                     .url(enforcementSummary.getArtifact().getRegistryUrl())
+                                     .imageName(enforcementSummary.getArtifact().getName())
+                                     .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
+                                     .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
+                                     .stepExecutionId(stepExecutionId)
+                                     .tag(enforcementSummary.getArtifact().getTag())
+                                     .build())
+          .build();
+    } else {
+      SscaEnforcementSummary enforcementSummary = sscaServiceUtils.getEnforcementSummary(stepExecutionId);
+
+      return StepArtifacts.builder()
+          .publishedSbomArtifact(PublishedSbomArtifact.builder()
+                                     .id(enforcementSummary.getArtifact().getId())
+                                     .url(enforcementSummary.getArtifact().getUrl())
+                                     .imageName(enforcementSummary.getArtifact().getName())
+                                     .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
+                                     .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
+                                     .stepExecutionId(stepExecutionId)
+                                     .tag(enforcementSummary.getArtifact().getTag())
+                                     .build())
+          .build();
+    }
   }
 
   @Override

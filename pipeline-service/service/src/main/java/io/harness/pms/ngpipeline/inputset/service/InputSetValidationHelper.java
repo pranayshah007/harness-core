@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.utils.PipelineExceptionsHelper.ERROR_PIPELINE_BRANCH_NOT_PROVIDED;
 
@@ -187,6 +188,7 @@ public class InputSetValidationHelper {
     }
 
     yamlDiffDTO.setGitDetails(entityGitDetails);
+    yamlDiffDTO.setYamlDiffPresent(!Objects.equals(yamlDiffDTO.getOldYAML(), yamlDiffDTO.getNewYAML()));
     return yamlDiffDTO;
   }
 

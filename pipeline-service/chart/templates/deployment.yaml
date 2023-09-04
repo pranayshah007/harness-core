@@ -4,7 +4,13 @@ metadata:
   name: pipeline-service
   namespace: {{ .Release.Namespace }}
   labels:
-        {{- include "pipeline-service.labels" . | nindent 4 }}
+    {{- include "pipeline-service.labels" . | nindent 4 }}
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -25,9 +31,16 @@ spec:
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- include "harnesscommon.monitoring.annotations" . | nindent 8 }}
       labels:
         app: pipeline-service
         {{- include "pipeline-service.selectorLabels" . | nindent 8 }}
+        {{- if .Values.global.commonLabels }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 8 }}
+        {{- end }}
+        {{- if .Values.podLabels }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.podLabels "context" $) | nindent 8 }}
+        {{- end }}
     spec:
       {{ include "pipeline-service.pullSecrets" . | nindent 6 }}
       serviceAccountName: {{ include "pipeline-service.serviceAccountName" . }}
@@ -67,6 +80,7 @@ spec:
           - name: grpc-gitsync
             containerPort: {{ .Values.service.gitsyncgrpcport }}
             protocol: "TCP"
+          {{- include "harnesscommon.monitoring.containerPort" . | nindent 10 }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
         env:

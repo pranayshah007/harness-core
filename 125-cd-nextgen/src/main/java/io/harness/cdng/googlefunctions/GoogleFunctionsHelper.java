@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.googlefunctions;
+
 import static io.harness.cdng.manifest.ManifestType.GOOGLE_FUNCTIONS_GEN_ONE_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -72,7 +73,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -90,6 +90,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -123,7 +124,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   private final String GOOGLE_FUNCTION_GEN_ONE_ENV_TYPE = "GenOne";
   private final String INVALID_ENV_TYPE = "Environment version is invalid in Google Function Service";
 
-  public TaskChainResponse startChainLink(Ambiance ambiance, StepElementParameters stepElementParameters) {
+  public TaskChainResponse startChainLink(Ambiance ambiance, StepBaseParameters stepElementParameters) {
     // Get ManifestsOutcome
     ManifestsOutcome manifestsOutcome = resolveGoogleFunctionsManifestsOutcome(ambiance);
 
@@ -186,8 +187,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   private TaskChainResponse handlePrepareRollbackDataResponse(
       GoogleFunctionPrepareRollbackResponse googleFunctionPrepareRollbackResponse,
       GoogleFunctionsStepExecutor googleFunctionsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters,
-      GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData) {
+      StepBaseParameters stepElementParameters, GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData) {
     if (googleFunctionPrepareRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       GoogleFunctionsStepExceptionPassThroughData googleFunctionsStepExceptionPassThroughData =
           GoogleFunctionsStepExceptionPassThroughData.builder()
@@ -218,8 +218,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   private TaskChainResponse handlePrepareRollbackDataResponseGenOne(
       GoogleFunctionGenOnePrepareRollbackResponse googleFunctionGenOnePrepareRollbackResponse,
       GoogleFunctionsStepExecutor googleFunctionsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters,
-      GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData) {
+      StepBaseParameters stepElementParameters, GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData) {
     if (googleFunctionGenOnePrepareRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       GoogleFunctionsStepExceptionPassThroughData googleFunctionsStepExceptionPassThroughData =
           GoogleFunctionsStepExceptionPassThroughData.builder()
@@ -247,7 +246,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
         googleFunctionGenOnePrepareRollbackResponse.getUnitProgressData());
   }
 
-  public TaskChainResponse executePrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executePrepareRollbackTask(Ambiance ambiance, StepBaseParameters stepParameters,
       GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = googleFunctionsStepPassThroughData.getInfrastructureOutcome();
     if (GOOGLE_FUNCTION_GEN_TWO_ENV_TYPE.equals(googleFunctionsStepPassThroughData.getEnvironmentType())) {
@@ -275,7 +274,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   }
 
   public TaskChainResponse executeNextLink(GoogleFunctionsStepExecutor googleFunctionsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
     GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData =
@@ -436,8 +435,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   }
 
   private TaskChainResponse handleGitFetchFilesResponse(GitTaskNGResponse gitTaskResponse, Ambiance ambiance,
-      StepElementParameters stepElementParameters,
-      GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData) {
+      StepBaseParameters stepElementParameters, GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData) {
     if (gitTaskResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       GoogleFunctionsStepExceptionPassThroughData googleFunctionsStepExceptionPassThroughData =
           GoogleFunctionsStepExceptionPassThroughData.builder()
@@ -468,7 +466,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   }
 
   private TaskChainResponse prepareManifestGitFetchTask(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance,
-      StepElementParameters stepElementParameters, ManifestOutcome manifestOutcome, String environmentType) {
+      StepBaseParameters stepElementParameters, ManifestOutcome manifestOutcome, String environmentType) {
     GitRequestFileConfig gitRequestFileConfig = null;
 
     if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
@@ -487,8 +485,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   }
 
   private TaskChainResponse getGitFetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters,
-      GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData,
+      StepBaseParameters stepElementParameters, GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData,
       GitRequestFileConfig gitRequestFileConfig) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
@@ -584,7 +581,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
     return harnessStoreManifestContent;
   }
 
-  public TaskChainResponse queueTask(StepElementParameters stepElementParameters,
+  public TaskChainResponse queueTask(StepBaseParameters stepElementParameters,
       GoogleFunctionCommandRequest googleFunctionCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
       boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()

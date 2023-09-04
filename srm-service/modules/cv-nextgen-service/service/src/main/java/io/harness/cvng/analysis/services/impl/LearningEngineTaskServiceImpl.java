@@ -112,7 +112,7 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     if (verificationTask.getTaskInfo().getTaskType() == TaskType.DEPLOYMENT) {
       learningEngineTask.setTaskPriority(P0.getValue());
     }
-    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(learningEngineTask.getUuid());
+    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForTask(learningEngineTask);
     executionLogService.getLogger(learningEngineTask)
         .log(learningEngineTask.getLogLevel(), cvngLogTags,
             "Learning engine task status: " + learningEngineTask.getTaskStatus());
@@ -138,7 +138,7 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
             task.setTaskStatus(ExecutionStatus.TIMEOUT);
             incTaskStatusMetric(task.getAccountId(), ExecutionStatus.TIMEOUT);
             addTimeToFinishMetrics(task);
-            List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(task.getUuid());
+            List<CVNGLogTag> cvngLogTags = getCvngLogTagsForTask(task);
             executionLogService.getLogger(task).log(
                 task.getLogLevel(), cvngLogTags, "Learning engine task status: " + task.getTaskStatus());
             timedOutTaskIds.add(task.getUuid());
@@ -231,11 +231,15 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
         .log(ExecutionLogDTO.LogLevel.ERROR, cvngLogTags,
             "Learning engine task failed. Exception: ", learningEngineTask.getException());
   }
+  private static List<CVNGLogTag> getCvngLogTagsForTask(LearningEngineTask task) {
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(task.getUuid());
+    cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+        CVNGTaskMetadataConstants.TASK_TYPE, String.valueOf(task.getAnalysisType())));
+    return cvngLogTags;
+  }
 
   private static List<CVNGLogTag> getCvngLogTagsForFinalState(LearningEngineTask learningEngineTask, Clock clock) {
-    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(learningEngineTask.getUuid());
-    cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
-        CVNGTaskMetadataConstants.TASK_TYPE, String.valueOf(learningEngineTask.getAnalysisType())));
+    List<CVNGLogTag> cvngLogTags = getCvngLogTagsForTask(learningEngineTask);
     if (learningEngineTask.getPickedAt() != null) {
       cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
           CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, learningEngineTask.waitTime()));

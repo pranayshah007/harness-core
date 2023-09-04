@@ -44,7 +44,7 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     AmiArtifactStream amiArtifactStream = (AmiArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(amiArtifactStream.getSettingId()).build())
@@ -72,7 +72,7 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
                   .region(ParameterField.createValueField(amiArtifactStream.getRegion()))
                   .tags(ParameterField.createValueField(tags))
                   .filters(ParameterField.createValueField(filters))
-                  .version(ParameterField.createValueField("<+input>"))
+                  .version(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }
@@ -86,7 +86,7 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
   public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String connectorRef = getConnectorRef(migratedEntities, artifactStream);
-    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
     String region = "us-east-1";
     List<AMITag> tags = Collections.emptyList();
     List<AMIFilter> filters = Collections.emptyList();

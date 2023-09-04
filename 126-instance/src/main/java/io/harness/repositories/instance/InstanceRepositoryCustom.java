@@ -113,4 +113,6 @@ public interface InstanceRepositoryCustom {
 
   List<Instance> getInstancesCreatedBefore(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceIdentifier, long timestamp);
+
+  List<Instance> getInstancesForProject(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

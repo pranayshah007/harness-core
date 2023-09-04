@@ -73,16 +73,15 @@ public class GraphStatusUpdateHelper {
       }
 
       Map<String, GraphVertex> graphVertexMap = orchestrationGraph.getAdjacencyList().getGraphVertexMap();
-      if (graphVertexMap.containsKey(nodeExecutionId)) {
-        if (nodeExecution.getOldRetry()) {
-          log.info("[PMS_GRAPH]  Removing graph vertex with id [{}] and status [{}]. PlanExecutionId: [{}]",
-              nodeExecutionId, nodeExecution.getStatus(), planExecutionId);
-          orchestrationAdjacencyListGenerator.removeVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
-        } else {
-          updateGraphVertex(graphVertexMap, nodeExecution, planExecutionId);
-        }
+      if (graphVertexMap.containsKey(nodeExecutionId) && nodeExecution.getOldRetry()) {
+        log.info("[PMS_GRAPH]  Removing graph vertex with id [{}] and status [{}]. PlanExecutionId: [{}]",
+            nodeExecutionId, nodeExecution.getStatus(), planExecutionId);
+        orchestrationAdjacencyListGenerator.removeVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
       } else if (!nodeExecution.getOldRetry()) {
-        orchestrationAdjacencyListGenerator.addVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
+        if (!graphVertexMap.containsKey(nodeExecutionId)) {
+          orchestrationAdjacencyListGenerator.addVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
+        }
+        updateGraphVertex(graphVertexMap, nodeExecution, planExecutionId);
       }
     } catch (Exception e) {
       log.error(
@@ -114,7 +113,7 @@ public class GraphStatusUpdateHelper {
     GraphVertexBuilder prevValueBuilder =
         prevValue.toBuilder()
             .uuid(nodeExecution.getUuid())
-            .ambiance(nodeExecution.getAmbiance())
+            .currentLevel(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()))
             .planNodeId(level.getSetupId())
             .identifier(level.getIdentifier())
             .name(nodeExecution.getName())
@@ -132,7 +131,8 @@ public class GraphStatusUpdateHelper {
             .retryIds(nodeExecution.getRetryIds())
             .skipType(nodeExecution.getSkipGraphType())
             .unitProgresses(nodeExecution.getUnitProgresses())
-            .progressData(nodeExecution.getPmsProgressData());
+            .progressData(nodeExecution.getPmsProgressData())
+            .baseFqn(AmbianceUtils.getFQNUsingLevels(nodeExecution.getAmbiance().getLevelsList()));
     if (prevValue.getStepParameters() == null) {
       prevValueBuilder.stepParameters(nodeExecution.getResolvedParams());
     }

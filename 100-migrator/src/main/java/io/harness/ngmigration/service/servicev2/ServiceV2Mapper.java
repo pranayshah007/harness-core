@@ -105,7 +105,7 @@ public interface ServiceV2Mapper {
             .map(artifactStream -> {
               PrimaryArtifact artifactSource =
                   ArtifactStreamFactory.getArtifactStreamMapper(artifactStream)
-                      .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities);
+                      .getArtifactDetails(inputDTO, entities, graph, artifactStream, migratedEntities, null);
               if (isNotEmpty(artifactSource.getSources())) {
                 return artifactSource.getSources();
               } else {

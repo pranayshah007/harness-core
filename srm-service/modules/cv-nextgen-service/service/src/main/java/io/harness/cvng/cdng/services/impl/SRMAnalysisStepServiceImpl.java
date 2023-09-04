@@ -15,42 +15,59 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTIT
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.MS_HEALTH_REPORT;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_ID;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL_FORMAT;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PLAN_EXECUTION_ID;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.STAGE_STEP_ID;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnalysisStepExecutionDetailsKeys;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepInstanceDetails;
+import io.harness.cvng.beans.change.HarnessCDEventMetadata.SRMAnalysisStepDetails;
+import io.harness.cvng.beans.change.HarnessCDEventMetadata.VerifyStepSummary;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.change.MSHealthReport;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ResourceParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.services.api.SecondaryEventDetailsService;
+import io.harness.cvng.utils.ScopedInformation;
+import io.harness.ng.beans.PageRequest;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
+import io.harness.utils.PageUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
@@ -64,11 +81,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
+public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, SecondaryEventDetailsService {
   @Inject HPersistence hPersistence;
 
   @Inject PipelineServiceClient pipelineServiceClient;
@@ -78,6 +97,8 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
   @Inject Clock clock;
 
   @Inject MonitoredServiceService monitoredServiceService;
+
+  @Inject ChangeEventService changeEventService;
 
   @Inject MSHealthReportService msHealthReportService;
 
@@ -102,6 +123,8 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
         SRMAnalysisStepExecutionDetail.builder()
             .stageId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getIdentifier())
             .stageStepId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getSetupId())
+            .stageExecutionId(AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance))
+            .stepRuntimeId(AmbianceUtils.getRuntimeIdForGivenCategory(ambiance, StepCategory.STEP))
             .pipelineId(ambiance.getMetadata().getPipelineIdentifier())
             .planExecutionId(ambiance.getPlanExecutionId())
             .stepName(stepName)
@@ -121,7 +144,11 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
       executionDetails.setArtifactType(optionalArtifactsOutcome.get().getPrimary().getArtifactType());
       executionDetails.setArtifactTag(optionalArtifactsOutcome.get().getPrimary().getTag());
     }
-    return hPersistence.save(executionDetails);
+    String executionDetailId = hPersistence.save(executionDetails);
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        hPersistence.get(SRMAnalysisStepExecutionDetail.class, executionDetailId);
+    changeEventService.mapSRMAnalysisExecutionsToDeploymentActivities(stepExecutionDetail);
+    return executionDetailId;
   }
 
   @Nullable
@@ -133,11 +160,7 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
   @Override
   public void abortRunningStepsForMonitoredService(ProjectParams projectParams, String monitoredServiceIdentifier) {
     Query<SRMAnalysisStepExecutionDetail> updateQuery =
-        hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class)
-            .filter(SRMAnalysisStepExecutionDetailsKeys.accountId, projectParams.getAccountIdentifier())
-            .filter(SRMAnalysisStepExecutionDetailsKeys.orgIdentifier, projectParams.getOrgIdentifier())
-            .filter(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier, projectParams.getProjectIdentifier())
-            .filter(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier, monitoredServiceIdentifier)
+        getSRMAnalysisStepExecutionDetailQuery(projectParams, monitoredServiceIdentifier)
             .filter(SRMAnalysisStepExecutionDetailsKeys.analysisStatus, SRMAnalysisStatus.RUNNING);
     UpdateOperations<SRMAnalysisStepExecutionDetail> updateOperations =
         hPersistence.createUpdateOperations(SRMAnalysisStepExecutionDetail.class)
@@ -203,7 +226,96 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
     srmAnalysisStepDetailDTO.setServiceName(serviceResponseDTO != null ? serviceResponseDTO.getName() : null);
     srmAnalysisStepDetailDTO.setEnvironmentName(
         environmentResponseDTO != null ? environmentResponseDTO.getName() : null);
+    List<DeploymentActivity> activities =
+        changeEventService.getAnalysisStepAssociatedDeploymentActivities(stepExecutionDetail.getAccountId(),
+            stepExecutionDetail.getOrgIdentifier(), stepExecutionDetail.getProjectIdentifier(),
+            stepExecutionDetail.getPlanExecutionId(), stepExecutionDetail.getStageId());
+    if (isNotEmpty(activities) && activities.get(0).getVerificationSummary() != null
+        && activities.get(0).getVerificationSummary().getVerficationStatusMap() != null) {
+      List<VerifyStepSummary> verifyStepSummaries =
+          activities.get(0)
+              .getVerificationSummary()
+              .getVerficationStatusMap()
+              .entrySet()
+              .stream()
+              .map(entry
+                  -> VerifyStepSummary.builder().name(entry.getKey()).verificationStatus(entry.getValue()).build())
+              .collect(Collectors.toList());
+      srmAnalysisStepDetailDTO.setVerifyStepSummaries(verifyStepSummaries);
+    }
     return srmAnalysisStepDetailDTO;
+  }
+
+  @Override
+  public List<SecondaryEventsResponse> getSRMAnalysisStepExecutions(
+      ProjectParams projectParams, String monitoredServiceIdentifier, long startTime, long endTime) {
+    List<SRMAnalysisStepExecutionDetail> srmAnalysisStepExecutionDetails =
+        getSRMAnalysisStepExecutionDetailQuery(projectParams, monitoredServiceIdentifier)
+            .field(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime)
+            .lessThanOrEq(endTime)
+            .field(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime)
+            .greaterThanOrEq(startTime)
+            .asList();
+    return srmAnalysisStepExecutionDetails.stream()
+        .map(executionDetail
+            -> SecondaryEventsResponse.builder()
+                   .type(SecondaryEventsType.SRM_ANALYSIS_IMPACT)
+                   .startTime(TimeUnit.MILLISECONDS.toSeconds(executionDetail.getAnalysisStartTime()))
+                   .endTime(TimeUnit.MILLISECONDS.toSeconds(executionDetail.getAnalysisEndTime()))
+                   .identifiers(List.of(executionDetail.getUuid()))
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public SecondaryEventDetailsResponse getInstanceByUuids(List<String> uuids, SecondaryEventsType eventType) {
+    SRMAnalysisStepExecutionDetail analysisStepExecutionDetail = getSRMAnalysisStepExecutionDetail(uuids.get(0));
+    return SecondaryEventDetailsResponse.builder()
+        .type(eventType)
+        .startTime(TimeUnit.MILLISECONDS.toSeconds(analysisStepExecutionDetail.getAnalysisStartTime()))
+        .endTime(TimeUnit.MILLISECONDS.toSeconds(analysisStepExecutionDetail.getAnalysisEndTime()))
+        .details(SRMAnalysisStepInstanceDetails.builder()
+                     .analysisDuration(analysisStepExecutionDetail.getAnalysisDuration())
+                     .analysisStatus(analysisStepExecutionDetail.getAnalysisStatus())
+                     .build())
+        .build();
+  }
+
+  @Override
+  public List<SRMAnalysisStepDetailDTO> getSRMAnalysisSummaries(
+      String accountId, String orgIdentifier, String projectIdentifier, String planExecutionId, String stageId) {
+    List<SRMAnalysisStepExecutionDetail> analysisStepExecutionDetails =
+        hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.accountId, accountId)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.orgIdentifier, orgIdentifier)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier, projectIdentifier)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.planExecutionId, planExecutionId)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.stageId, stageId)
+            .asList();
+    return analysisStepExecutionDetails.stream()
+        .map(SRMAnalysisStepDetailDTO::getDTOFromEntity)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<SRMAnalysisStepDetails> getSRMAnalysisStepDetails(List<String> executionDetailIds) {
+    List<SRMAnalysisStepExecutionDetail> stepExecutionDetails =
+        hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class)
+            .field(SRMAnalysisStepExecutionDetailsKeys.uuid)
+            .in(executionDetailIds)
+            .asList();
+    return stepExecutionDetails.stream()
+        .map(executionDetails
+            -> SRMAnalysisStepDetails.builder()
+                   .analysisStatus(executionDetails.getAnalysisStatus())
+                   .monitoredServiceIdentifier(executionDetails.getMonitoredServiceIdentifier())
+                   .analysisStartTime(executionDetails.getAnalysisStartTime())
+                   .analysisEndTime(executionDetails.getAnalysisEndTime())
+                   .analysisDuration(executionDetails.getAnalysisDuration())
+                   .executionDetailIdentifier(executionDetails.getUuid())
+                   .stepName(executionDetails.getStepName())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -242,8 +354,7 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
         entityDetails.put(STAGE_STEP_ID, stepExecutionDetail.getStageStepId());
         entityDetails.put(ANALYSIS_STARTED_AT, formattedStartDate);
         entityDetails.put(ANALYSIS_ENDED_AT, formattedEndDate);
-        entityDetails.put(
-            ANALYSIS_DURATION, String.valueOf(stepExecutionDetail.getAnalysisDuration().toDays()) + " days");
+        entityDetails.put(ANALYSIS_DURATION, stepExecutionDetail.getAnalysisDuration().toDays() + " days");
         entityDetails.put(ANALYSIS_PIPELINE_NAME,
             stepExecutionDetail.getPipelineName().equals(null) ? "" : stepExecutionDetail.getPipelineName());
         msHealthReportService.sendReportNotification(projectParams, entityDetails,
@@ -254,10 +365,107 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
     }
   }
 
-  private String getPipelineUrl(
-      String baseUrl, ProjectParams projectParams, SRMAnalysisStepExecutionDetail stepExecutionDetail) {
-    return String.format(PIPELINE_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(),
-        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), stepExecutionDetail.getPipelineId(),
-        stepExecutionDetail.getPlanExecutionId(), stepExecutionDetail.getStageStepId());
+  private Query<SRMAnalysisStepExecutionDetail> getSRMAnalysisStepExecutionDetailQuery(
+      ProjectParams projectParams, String monitoredServiceIdentifier) {
+    return hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class)
+        .filter(SRMAnalysisStepExecutionDetailsKeys.accountId, projectParams.getAccountIdentifier())
+        .filter(SRMAnalysisStepExecutionDetailsKeys.orgIdentifier, projectParams.getOrgIdentifier())
+        .filter(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier, projectParams.getProjectIdentifier())
+        .filter(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier, monitoredServiceIdentifier);
+  }
+
+  @Override
+  public PageResponse<SRMAnalysisStepDetailDTO> getReportList(ProjectParams projectParams,
+      List<String> serviceIdentifiers, List<String> environmentIdentifiers, List<String> monitoredServiceIdentifiers,
+      boolean isMonitoredServiceIdentifierScoped, Instant startTime, Instant endTime, PageRequest pageRequest) {
+    if (isNotEmpty(monitoredServiceIdentifiers)) {
+      Preconditions.checkState(isEmpty(serviceIdentifiers) && isEmpty(environmentIdentifiers),
+          "serviceIdentifier, envIdentifier filter can not be used with monitoredServiceIdentifier filter");
+      return getReportList(projectParams, monitoredServiceIdentifiers, startTime, endTime, pageRequest,
+          isMonitoredServiceIdentifierScoped);
+    } else {
+      return getReportList(projectParams, serviceIdentifiers, environmentIdentifiers, startTime, endTime, pageRequest);
+    }
+  }
+
+  public PageResponse<SRMAnalysisStepDetailDTO> getReportList(ProjectParams projectParams,
+      List<String> serviceIdentifiers, List<String> environmentIdentifier, Instant startTime, Instant endTime,
+      PageRequest pageRequest) {
+    List<String> monitoredServiceIdentifiers = monitoredServiceService.getMonitoredServiceIdentifiers(
+        projectParams, serviceIdentifiers, environmentIdentifier);
+    return getReportList(projectParams, monitoredServiceIdentifiers, startTime, endTime, pageRequest, false);
+  }
+
+  private PageResponse<SRMAnalysisStepDetailDTO> getReportList(ProjectParams projectParams,
+      List<String> monitoredServiceIdentifiers, Instant startTime, Instant endTime, PageRequest pageRequest,
+      boolean isMonitoredServiceIdentifierScoped) {
+    List<SRMAnalysisStepExecutionDetail> list =
+        getList(startTime, endTime, projectParams, monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped)
+            .asList();
+
+    List<SRMAnalysisStepDetailDTO> srmAnalysisStepDetailDTOList =
+        list.stream()
+            .map(stepExecutionDetail -> {
+              ServiceResponseDTO serviceResponseDTO = null;
+              EnvironmentResponseDTO environmentResponseDTO = null;
+              if (stepExecutionDetail.getOrgIdentifier() != null
+                  && stepExecutionDetail.getProjectIdentifier() != null) {
+                if (stepExecutionDetail.getServiceIdentifier() != null) {
+                  serviceResponseDTO = nextGenService.getService(stepExecutionDetail.getAccountId(),
+                      stepExecutionDetail.getOrgIdentifier(), stepExecutionDetail.getProjectIdentifier(),
+                      stepExecutionDetail.getServiceIdentifier());
+                }
+                if (stepExecutionDetail.getEnvIdentifier() != null) {
+                  environmentResponseDTO = nextGenService.getEnvironment(stepExecutionDetail.getAccountId(),
+                      stepExecutionDetail.getOrgIdentifier(), stepExecutionDetail.getProjectIdentifier(),
+                      stepExecutionDetail.getEnvIdentifier());
+                }
+              }
+              SRMAnalysisStepDetailDTO srmAnalysisStepDetailDTO =
+                  SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
+              srmAnalysisStepDetailDTO.setServiceName(serviceResponseDTO != null ? serviceResponseDTO.getName() : null);
+              srmAnalysisStepDetailDTO.setEnvironmentName(
+                  environmentResponseDTO != null ? environmentResponseDTO.getName() : null);
+              srmAnalysisStepDetailDTO.setServiceName(serviceResponseDTO != null ? serviceResponseDTO.getName() : null);
+              return srmAnalysisStepDetailDTO;
+            })
+            .collect(Collectors.toList());
+
+    return PageUtils.offsetAndLimit(
+        srmAnalysisStepDetailDTOList, pageRequest.getPageIndex(), pageRequest.getPageSize());
+  }
+
+  private Query<SRMAnalysisStepExecutionDetail> getList(Instant startTime, Instant endTime, ProjectParams projectParams,
+      List<String> monitoredServiceIdentifiers, boolean isMonitoredServiceIdentifierScoped) {
+    Query<SRMAnalysisStepExecutionDetail> query = hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class);
+    if (isMonitoredServiceIdentifierScoped) {
+      List<ResourceParams> monitoredServiceIdentifiersWithParams =
+          ScopedInformation.getResourceParamsFromScopedIdentifiers(monitoredServiceIdentifiers);
+
+      for (int i = 0; i < monitoredServiceIdentifiersWithParams.size(); i++) {
+        query.or(query.and(query.criteria(SRMAnalysisStepExecutionDetailsKeys.accountId)
+                               .equal(monitoredServiceIdentifiersWithParams.get(i).getAccountIdentifier()),
+            query.criteria(SRMAnalysisStepExecutionDetailsKeys.orgIdentifier)
+                .equal(monitoredServiceIdentifiersWithParams.get(i).getOrgIdentifier()),
+            query.criteria(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier)
+                .equal(monitoredServiceIdentifiersWithParams.get(i).getProjectIdentifier()),
+            query.criteria(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier)
+                .equal(monitoredServiceIdentifiersWithParams.get(i).getIdentifier())));
+        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime).greaterThanOrEq(startTime.toEpochMilli());
+        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime).lessThan(endTime.toEpochMilli());
+      }
+
+    } else {
+      query = query.filter(SRMAnalysisStepExecutionDetailsKeys.accountId, projectParams.getAccountIdentifier())
+                  .filter(SRMAnalysisStepExecutionDetailsKeys.orgIdentifier, projectParams.getOrgIdentifier())
+                  .filter(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier, projectParams.getProjectIdentifier())
+                  .field(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier)
+                  .in(monitoredServiceIdentifiers)
+                  .field(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime)
+                  .greaterThanOrEq(startTime.toEpochMilli())
+                  .field(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime)
+                  .lessThan(endTime.toEpochMilli());
+    }
+    return query.order(Sort.descending(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime));
   }
 }

@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 public class SchemaConstants {
   public static final String PIPELINE_NODE = "pipeline";
   public static final String TEMPLATE_NODE = "template";
+  public static final String TRIGGER_NODE = "trigger";
   public static final String STAGES_NODE = "stages";
   public static final String PARALLEL_NODE = "parallel";
   public static final String IF_NODE = "if";
@@ -77,4 +78,6 @@ public class SchemaConstants {
   public static final String STAGE_ELEMENT_WRAPPER_CONFIG = "StageElementWrapperConfig";
   public static final String STAGE_ELEMENT_CONFIG_REF_VALUE = "#/definitions/StageElementConfig";
   public static final String STAGE_NODE = "stage";
+  public static final String HASH_SYMBOL = "#";
+  public static final String TITLE = "title";
 }

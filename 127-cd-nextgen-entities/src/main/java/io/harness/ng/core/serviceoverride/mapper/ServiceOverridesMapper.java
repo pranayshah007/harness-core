@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.serviceoverride.mapper;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
@@ -32,13 +33,16 @@ import io.harness.yaml.core.variables.NGServiceOverrides;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import groovy.util.logging.Slf4j;
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
+@Slf4j
 public class ServiceOverridesMapper {
   public NGServiceOverridesEntity toServiceOverridesEntity(
       String accountId, ServiceOverrideRequestDTO serviceOverrideRequestDTO) {
@@ -114,14 +118,15 @@ public class ServiceOverridesMapper {
     return updatedYaml;
   }
 
-  public ServiceOverrideResponseDTO toResponseWrapper(NGServiceOverridesEntity serviceOverridesEntity) {
+  public ServiceOverrideResponseDTO toResponseWrapper(
+      NGServiceOverridesEntity serviceOverridesEntity, boolean v2Enabled) {
     return ServiceOverrideResponseDTO.builder()
         .accountId(serviceOverridesEntity.getAccountId())
         .orgIdentifier(serviceOverridesEntity.getOrgIdentifier())
         .projectIdentifier(serviceOverridesEntity.getProjectIdentifier())
         .environmentRef(serviceOverridesEntity.getEnvironmentRef())
         .serviceRef(serviceOverridesEntity.getServiceRef())
-        .yaml(serviceOverridesEntity.getYaml())
+        .yaml(v2Enabled ? serviceOverridesEntity.getYamlInternal() : serviceOverridesEntity.getYaml())
         .build();
   }
 

@@ -7,10 +7,16 @@
 
 package io.harness.cdng.customdeployment;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 public enum CustomDeploymentNGVariableType {
   @JsonProperty(CustomDeploymentNGVariableConstants.STRING_TYPE)
   STRING(CustomDeploymentNGVariableConstants.STRING_TYPE),

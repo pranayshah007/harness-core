@@ -9,13 +9,17 @@ package io.harness.setupusage;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
 
 import com.google.inject.Singleton;
 import com.google.protobuf.StringValue;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 public class InfraDefinitionRefProtoDTOHelper {

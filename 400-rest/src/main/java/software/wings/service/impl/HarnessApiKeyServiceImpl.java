@@ -39,12 +39,15 @@ import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.HttpHeaders;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 @ValidateOnExecution
 public class HarnessApiKeyServiceImpl implements HarnessApiKeyService {
   @Inject private WingsPersistence wingsPersistence;
@@ -68,9 +71,17 @@ public class HarnessApiKeyServiceImpl implements HarnessApiKeyService {
                                 .encryptedKey(EncryptionUtils.encrypt(apiKey.getBytes(Charset.forName("UTF-8")), null))
                                 .clientType(clientTypeObject)
                                 .build());
-      harnessApiKeyCache.put(clientType, apiKey);
+      updateHarnessApiKeyCache(clientType, apiKey);
     }
     return apiKey;
+  }
+
+  private void updateHarnessApiKeyCache(String clientType, String apiKey) {
+    try {
+      harnessApiKeyCache.put(clientType, apiKey);
+    } catch (CacheException e) {
+      log.error("Unable to set harness api key data into cache", e);
+    }
   }
 
   private String extractToken(ContainerRequestContext requestContext, String prefix) {
@@ -98,7 +109,7 @@ public class HarnessApiKeyServiceImpl implements HarnessApiKeyService {
           wingsPersistence.createQuery(HarnessApiKey.class).filter(HarnessApiKeyKeys.clientType, clientType).get();
       notNullCheck("global api key null for client type " + clientType, globalApiKey, USER);
       apiKey = getDecryptedKey(globalApiKey.getEncryptedKey());
-      harnessApiKeyCache.put(clientType, apiKey);
+      updateHarnessApiKeyCache(clientType, apiKey);
     }
     return apiKey;
   }

@@ -18,10 +18,8 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS,
-        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_K8S,
-        HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 public interface YamlTypes {
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
@@ -242,4 +240,5 @@ public interface YamlTypes {
   String AWS_CDK_DIFF = StepSpecTypeConstants.AWS_CDK_DIFF;
   String AWS_CDK_DEPLOY = StepSpecTypeConstants.AWS_CDK_DEPLOY;
   String AWS_CDK_DESTROY = StepSpecTypeConstants.AWS_CDK_DESTROY;
+  String AWS_CDK_ROLLBACK = StepSpecTypeConstants.AWS_CDK_ROLLBACK;
 }

@@ -62,6 +62,10 @@ public class JiraUpdateStepInfo implements PMSStepInfo, WithConnectorRef, WithDe
   TransitionTo transitionTo;
   List<JiraField> fields;
 
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String issueType;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String projectKey;
+
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

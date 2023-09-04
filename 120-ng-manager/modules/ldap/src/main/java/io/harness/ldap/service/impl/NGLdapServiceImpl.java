@@ -298,7 +298,12 @@ public class NGLdapServiceImpl implements NGLdapService {
             userGroup.getIdentifier(), accountIdentifier);
 
         if (null != groupSearchResponse.getLdapGroupsResponse()) {
-          userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
+          if (isUserGroupSsoStateValid(userGroup)) {
+            userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
+          } else {
+            log.error("NGLDAP: userGroup {} sync is not happening for account {} due to invalid SSO state",
+                userGroup.getIdentifier(), userGroup.getAccountIdentifier());
+          }
         } else {
           log.error(
               "NGLDAP: No LDAP group response received in delegate response. Points to some error in delegate task execution for group: {} in account: {}",
@@ -311,6 +316,30 @@ public class NGLdapServiceImpl implements NGLdapService {
 
     ngLdapGroupSyncHelper.reconcileAllUserGroups(
         userGroupsToLdapGroupMap, settingsWithEncryptedDataDetail.getLdapSettings().getUuid(), accountIdentifier);
+  }
+
+  public boolean isUserGroupSsoStateValid(UserGroup userGroup) {
+    // Check if the User Group State has not changed
+    Optional<UserGroup> savedUserGroup = userGroupService.get(userGroup.getAccountIdentifier(),
+        userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), userGroup.getIdentifier());
+    if (!savedUserGroup.isPresent()) {
+      log.error("NGLDAP: User group {} for account {} no longer exists.", userGroup.getIdentifier(),
+          userGroup.getAccountIdentifier());
+      return false;
+    }
+    if (!savedUserGroup.get().getIsSsoLinked()) {
+      log.error("NGLDAP: User group {} for account {} is no longer SSO linked ", userGroup.getIdentifier(),
+          userGroup.getAccountIdentifier());
+      return false;
+    }
+    if (!savedUserGroup.get().getSsoGroupId().equals(userGroup.getSsoGroupId())) {
+      log.error("NGLDAP: User group {} for account {} is linked to SSO Group {} but sync happening for SSO Group {}.",
+          userGroup.getIdentifier(), userGroup.getAccountIdentifier(), savedUserGroup.get().getSsoGroupId(),
+          userGroup.getSsoGroupId());
+      return false;
+    }
+
+    return true;
   }
 
   private void handleErrorResponseMessageFromDelegate(String errorMessage, String ldapTestResponseMessage) {

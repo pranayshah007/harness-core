@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
+import io.harness.PipelineServiceTestHelper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -28,7 +29,6 @@ import io.harness.rule.Owner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -168,8 +168,9 @@ public class ExpressionEvaluatorServiceImplTest extends CategoryTest {
   public void testGetFQNToAmbianceMap() {
     Ambiance ambiance = Ambiance.newBuilder().addAllLevels(prepareLevel()).build();
     String expectedFqn = "pipeline.stages.stage1.execution.steps.step1";
-    Map<String, Ambiance> fqnToAmbianceMap = expressionEvaluatorService.getFQNToAmbianceMap(
-        Collections.singletonList(NodeExecution.builder().ambiance(ambiance).build()));
+    Map<String, Ambiance> fqnToAmbianceMap =
+        expressionEvaluatorService.getFQNToAmbianceMap(PipelineServiceTestHelper.createCloseableIterator(
+            List.of(NodeExecution.builder().ambiance(ambiance).build()).iterator()));
     assertThat(fqnToAmbianceMap.containsKey(expectedFqn)).isTrue();
     assertThat(fqnToAmbianceMap.get(expectedFqn)).isEqualTo(ambiance);
   }

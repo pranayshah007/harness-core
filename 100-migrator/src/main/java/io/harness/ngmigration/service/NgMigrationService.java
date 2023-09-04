@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service;
+
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
 import io.harness.annotations.dev.CodePulse;
@@ -141,7 +142,7 @@ public abstract class NgMigrationService {
   }
 
   public YamlGenerationDetails getYamls(MigrationContext migrationContext, CgEntityId root, CgEntityId entityId) {
-    if (!isNGEntityExists()
+    if (!isNGEntityExists(migrationContext)
         || !canMigrate(entityId, root, migrationContext.getInputDTO().isMigrateReferencedEntities())) {
       return null;
     }
@@ -175,7 +176,7 @@ public abstract class NgMigrationService {
       Map<CgEntityId, NGYamlFile> migratedEntities, CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail,
       String accountIdentifier);
 
-  protected abstract boolean isNGEntityExists();
+  protected abstract boolean isNGEntityExists(MigrationContext migrationContext);
 
   protected <T> MigrationImportSummaryDTO handleResp(NGYamlFile yamlFile, Response<ResponseDTO<T>> resp)
       throws IOException {
@@ -191,10 +192,8 @@ public abstract class NgMigrationService {
     RequestBody type = RequestBody.create(TEXT_PLAIN, "FILE");
     RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getRootIdentifier());
     RequestBody mimeType = RequestBody.create(TEXT_PLAIN, "txt");
-    RequestBody content = null;
-    if (StringUtils.isNotBlank(fileYamlDTO.getContent())) {
-      content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
-    }
+    RequestBody content = RequestBody.create(
+        MediaType.parse("application/octet-stream"), StringUtils.defaultIfBlank(fileYamlDTO.getContent(), ""));
 
     Response<ResponseDTO<FileDTO>> resp;
     try {

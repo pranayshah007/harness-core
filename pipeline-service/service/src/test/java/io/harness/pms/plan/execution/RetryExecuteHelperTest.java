@@ -842,7 +842,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
     List<Node> identityPlanNodes =
         updatedNodes.stream().filter(o -> o instanceof IdentityPlanNode).collect(Collectors.toList());
     assertThat(updatedNodes.size()).isEqualTo(3);
-    assertThat(updatedNodes.get(1).getNodeType()).isEqualTo(NodeType.PLAN_NODE);
+    assertThat(updatedNodes.get(0).getNodeType()).isEqualTo(NodeType.PLAN_NODE);
+    assertThat(updatedNodes.get(2).getNodeType()).isEqualTo(NodeType.PLAN_NODE);
     assertEquals(identityPlanNodes.size(), 1);
     assertThat(((IdentityPlanNode) identityPlanNodes.get(0)).getOriginalNodeExecutionId()).isEqualTo("nodeUuid");
     assertThat(identityPlanNodes.get(0).getIdentifier()).isEqualTo("test");
@@ -865,7 +866,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
                                                          .addLevels(Level.newBuilder().build())
                                                          .build())
                                            .stageFqn("pipeline.stages.stage3")
-                                           .planNode(planNode3)
+                                           .nodeId(planNode3.getUuid())
                                            .build()))
         .when(nodeExecutionService)
         .fetchStrategyNodeExecutions(any(), any());
@@ -968,7 +969,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
                                              .addLevels(Level.newBuilder().build())
                                              .build())
                                .stageFqn("pipeline.stages.stage3")
-                               .planNode(planNode3)
+                               .nodeId(planNode3.getUuid())
                                .build(),
                  NodeExecution.builder()
                      .uuid("stepStrategyNodeExecutionUUID")
@@ -979,10 +980,13 @@ public class RetryExecuteHelperTest extends CategoryTest {
                                    .addLevels(Level.newBuilder().setGroup("STRATEGY").build())
                                    .build())
                      .stageFqn("pipeline.stages.stage3")
-                     .planNode(planNode4)
+                     .nodeId(planNode4.getUuid())
                      .build()))
         .when(nodeExecutionService)
         .fetchStrategyNodeExecutions(any(), any());
+    doReturn(Collections.singletonList("pipeline.stages.pip1"))
+        .when(nodeExecutionService)
+        .fetchStageFqnFromStageIdentifiers("abc", identifierOfSkipStages);
 
     Plan newPlan = retryExecuteHelper.transformPlan(
         Plan.builder().planNodes(Arrays.asList(planNode1, planNode2, planNode3, planNode4)).build(),
@@ -1035,12 +1039,14 @@ public class RetryExecuteHelperTest extends CategoryTest {
                                                          .startTs(10L)
                                                          .endTs(11L)
                                                          .status(ExecutionStatus.FAILED)
+                                                         .runSequence(1)
                                                          .build(),
         PipelineExecutionSummaryEntity.builder()
             .planExecutionId("uuid2")
             .startTs(20L)
             .endTs(21L)
             .status(ExecutionStatus.FAILED)
+            .runSequence(2)
             .build(),
         PipelineExecutionSummaryEntity.builder()
             .planExecutionId("uuid3")
@@ -1058,6 +1064,9 @@ public class RetryExecuteHelperTest extends CategoryTest {
     assertThat(retryHistory.getErrorMessage()).isNull();
     assertThat(retryHistory.getLatestExecutionId()).isEqualTo("uuid1");
     assertThat(retryHistory.getExecutionInfos().size()).isEqualTo(3);
+    assertThat(retryHistory.getExecutionInfos().get(0).getRunSequence()).isEqualTo(1);
+    assertThat(retryHistory.getExecutionInfos().get(1).getRunSequence()).isEqualTo(2);
+    assertThat(retryHistory.getExecutionInfos().get(2).getRunSequence()).isEqualTo(0);
   }
 
   @Test

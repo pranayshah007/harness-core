@@ -251,7 +251,7 @@ public class OrchestrationVisualizationRule implements MethodRule, InjectorRuleM
         EventsFrameworkConfiguration.builder()
             .redisConfig(RedisConfig.builder().redisUrl("dummyRedisUrl").build())
             .build(),
-        ThreadPoolConfig.builder().build()));
+        ThreadPoolConfig.builder().build(), 200));
     return modules;
   }
 

@@ -13,8 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultAppRoleLoginResult;
-import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultK8sAuthLoginResult;
+import static io.harness.helpers.vault.NGVaultTaskHelper.getToken;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofMillis;
@@ -40,7 +39,6 @@ import software.wings.helpers.ext.vault.SysMount;
 import software.wings.helpers.ext.vault.SysMountsResponse;
 import software.wings.helpers.ext.vault.VaultAppRoleLoginRequest;
 import software.wings.helpers.ext.vault.VaultAppRoleLoginResponse;
-import software.wings.helpers.ext.vault.VaultK8sLoginResult;
 import software.wings.helpers.ext.vault.VaultRestClientFactory;
 import software.wings.helpers.ext.vault.VaultSecretMetadata;
 import software.wings.helpers.ext.vault.VaultSecretMetadata.VersionMetadata;
@@ -51,9 +49,6 @@ import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.inject.Singleton;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -339,25 +334,5 @@ public class SecretManagementDelegateServiceImpl implements SecretManagementDele
           baseVaultConfig.getName(), baseVaultConfig.getNamespace(), response.message() + response.body());
     }
     throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, errorMsg, USER);
-  }
-
-  private String getToken(BaseVaultConfig vaultConfig) {
-    if (vaultConfig.isUseVaultAgent()) {
-      try {
-        byte[] content = Files.readAllBytes(Paths.get(URI.create("file://" + vaultConfig.getSinkPath())));
-        String token = new String(content);
-        vaultConfig.setAuthToken(token);
-      } catch (IOException e) {
-        throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR,
-            "Using Vault Agent Cannot read Token From Sink Path:" + vaultConfig.getSinkPath(), e, USER);
-      }
-    } else if (vaultConfig.isUseK8sAuth()) {
-      VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
-      vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
-    } else if (!vaultConfig.getRenewAppRoleToken()) {
-      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
-      vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
-    }
-    return vaultConfig.getAuthToken();
   }
 }

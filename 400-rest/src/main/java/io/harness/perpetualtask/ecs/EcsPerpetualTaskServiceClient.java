@@ -8,6 +8,7 @@
 package io.harness.perpetualtask.ecs;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static java.util.Collections.singletonList;
 
@@ -95,12 +96,13 @@ public class EcsPerpetualTaskServiceClient implements PerpetualTaskServiceClient
     return DelegateTask.builder()
         .accountId(accountId)
         .data(TaskData.builder()
-                  .async(false)
+                  .async(true)
                   .taskType(TaskType.AWS_ECS_TASK.name())
                   .parameters(new Object[] {awsEcsRequest})
                   .timeout(TimeUnit.MINUTES.toMillis(1))
                   .build())
         .tags(isNotEmpty(awsConfig.getTag()) ? singletonList(awsConfig.getTag()) : null)
+        .waitId(generateUuid())
         .build();
   }
 }

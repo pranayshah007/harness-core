@@ -15,7 +15,9 @@ import io.harness.ccm.commons.entities.billing.Budget.BudgetKeys;
 @OwnedBy(CE)
 public enum BudgetSortType {
   BUDGET_AMOUNT(BudgetKeys.budgetAmount),
-  NAME(BudgetKeys.name);
+  NAME(BudgetKeys.name),
+  ACTUAL_COST(BudgetKeys.actualCost),
+  FORECASTED_COST(BudgetKeys.forecastCost);
 
   private final String columnName;
 

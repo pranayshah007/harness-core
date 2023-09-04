@@ -14,6 +14,14 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/secret.
 
 option java_multiple_files = true;
 
+message ContainerSpec {
+  string image = 1;             // Container image
+  int32 port = 2;               // Container port to be exposed
+  string working_dir = 3;       // Container working dir
+  repeated string command = 4;  // Container command
+  repeated string args = 5;     // Container args
+}
+
 message K8SInfra {
   repeated K8SStep steps = 1;
   repeated Secret infra_secrets = 2;     // Secret needed to setup execution environment (e.g. imagePullSecrets)
@@ -22,7 +30,8 @@ message K8SInfra {
   SecurityContext security_context = 5;  // Startup user id for the execution infra
   string working_dir = 6;                // Working dir that all tasks have read/write access to
   repeated Resource resources = 7;       // Any global resources like shared volumes
-  string logPrefix = 8;
+  string log_prefix = 8;
+  string log_token = 9;  // Token for sending logs to logging service
 }
 
 message K8SStep {
@@ -33,8 +42,7 @@ message K8SStep {
   ExecutionType execution_type = 4;  // Type of the step
   StepRuntime runtime = 5;           // Environment in which the task should run
   repeated Secret input_secrets =
-      6;                     // Task specific secrets. One instance can contain multiple secrets from same provider
-  string logging_token = 7;  // Token for sending logs to logging service
+      6;  // Task specific secrets. One instance can contain multiple secrets from same provider
 }
 
 /*

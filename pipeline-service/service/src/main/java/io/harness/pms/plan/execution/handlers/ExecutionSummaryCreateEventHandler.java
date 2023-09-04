@@ -6,6 +6,9 @@
  */
 
 package io.harness.pms.plan.execution.handlers;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -102,26 +105,49 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     String planExecutionId = ambiance.getPlanExecutionId();
     PlanExecution planExecution = planExecutionService.get(planExecutionId);
+    PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
 
     ExecutionMetadata metadata = planExecution.getMetadata();
     String pipelineId = metadata.getPipelineIdentifier();
+    boolean getMetadataOnly = true;
+
+    // pipelineYaml in planExecutionMetadata is a transient field and not stored in db. It is passed by caller and can
+    // be null in some cases like in case of Pipeline Rollback. In such cases, we will get the pipeline yaml from
+    // pipeline entity
+    if (isEmpty(planExecutionMetadata.getPipelineYaml())) {
+      getMetadataOnly = false;
+    }
     Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, getMetadataOnly);
     if (pipelineEntity.isEmpty()) {
       return;
     }
-
+    if (isEmpty(planExecutionMetadata.getPipelineYaml())) {
+      planExecutionMetadata.setPipelineYaml(pipelineEntity.get().getYaml());
+    }
     // RetryInfo
     String rootExecutionId = planExecutionId;
     String parentExecutionId = planExecutionId;
-    if (metadata.getRetryInfo().getIsRetry()) {
-      rootExecutionId = metadata.getRetryInfo().getRootExecutionId();
-      parentExecutionId = metadata.getRetryInfo().getParentRetryId();
+    if (planExecutionMetadata.getRetryExecutionInfo() != null
+        && planExecutionMetadata.getRetryExecutionInfo().getIsRetry()) {
+      rootExecutionId = planExecutionMetadata.getRetryExecutionInfo().getRootExecutionId();
+      parentExecutionId = planExecutionMetadata.getRetryExecutionInfo().getParentRetryId();
 
       // updating isLatest and canRetry
       Update update = new Update();
       update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
       pmsExecutionSummaryService.update(parentExecutionId, update);
+    } else {
+      // remove after next release
+      if (metadata.hasRetryInfo() && metadata.getRetryInfo().getIsRetry()) {
+        rootExecutionId = metadata.getRetryInfo().getRootExecutionId();
+        parentExecutionId = metadata.getRetryInfo().getParentRetryId();
+
+        // updating isLatest and canRetry
+        Update update = new Update();
+        update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
+        pmsExecutionSummaryService.update(parentExecutionId, update);
+      }
     }
 
     recentExecutionsInfoHelper.onExecutionStart(accountId, orgId, projectId, pipelineId, planExecution);
@@ -162,7 +188,6 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
       modules.add(moduleName);
     }
 
-    PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         PipelineExecutionSummaryEntity.builder()
             .layoutNodeMap(layoutNodeDTOMap)
@@ -172,7 +197,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .planExecutionId(planExecutionId)
             .name(pipelineEntity.get().getName())
             .inputSetYaml(planExecutionMetadata.getInputSetYaml())
-            .pipelineTemplate(getPipelineTemplate(pipelineEntity.get(), planExecutionMetadata))
+            .pipelineTemplate(getPipelineTemplate(planExecutionMetadata))
             .internalStatus(planExecution.getStatus())
             .status(ExecutionStatus.getExecutionStatus(planExecution.getStatus()))
             .startTs(planExecution.getStartTs())
@@ -187,6 +212,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .labels(LabelsHelper.getLabels(planExecutionMetadata.getYaml(), pipelineEntity.get().getHarnessVersion()))
             .modules(new ArrayList<>(modules))
             .isLatestExecution(true)
+            .notesExistForPlanExecutionId(EmptyPredicate.isNotEmpty(planExecutionMetadata.getNotes()))
             .retryExecutionMetadata(RetryExecutionMetadata.builder()
                                         .parentExecutionId(parentExecutionId)
                                         .rootExecutionId(rootExecutionId)
@@ -196,23 +222,23 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .stagesExecutionMetadata(planExecutionMetadata.getStagesExecutionMetadata())
             .storeType(StoreTypeMapper.fromPipelineStoreType(metadata.getPipelineStoreType()))
             .executionInputConfigured(orchestrationStartInfo.getPlanExecutionMetadata().getExecutionInputConfigured())
-            .connectorRef(
-                EmptyPredicate.isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
+            .connectorRef(isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .executionMode(metadata.getExecutionMode())
-            .pipelineVersion(PipelineYamlHelper.getVersion(pipelineEntity.get().getYaml()))
+            .pipelineVersion(PipelineYamlHelper.getVersion(planExecutionMetadata.getPipelineYaml()))
             .build();
     pmsExecutionSummaryService.save(pipelineExecutionSummaryEntity);
+    unsetPipelineYamlInPlanExecutionMetadata(planExecutionMetadata);
     notificationHelper.sendNotification(
         orchestrationStartInfo.getAmbiance(), PipelineEventType.PIPELINE_START, null, null);
   }
 
-  private String getPipelineTemplate(PipelineEntity pipelineEntity, PlanExecutionMetadata planExecutionMetadata) {
+  private String getPipelineTemplate(PlanExecutionMetadata planExecutionMetadata) {
     StagesExecutionMetadata stagesExecutionMetadata = planExecutionMetadata.getStagesExecutionMetadata();
     if (stagesExecutionMetadata != null && stagesExecutionMetadata.isStagesExecution()) {
       return InputSetTemplateHelper.createTemplateFromPipelineForGivenStages(
-          pipelineEntity.getYaml(), stagesExecutionMetadata.getStageIdentifiers());
+          planExecutionMetadata.getPipelineYaml(), stagesExecutionMetadata.getStageIdentifiers());
     }
-    return InputSetTemplateHelper.createTemplateFromPipeline(pipelineEntity.getYaml());
+    return InputSetTemplateHelper.createTemplateFromPipeline(planExecutionMetadata.getPipelineYaml());
   }
 
   private void updateExecutionInfoInPipelineEntity(String accountId, String orgId, String projectId, String pipelineId,
@@ -234,5 +260,9 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     executionSummaryInfo.setLastExecutionTs(todaysDate.getTime());
     executionSummaryInfo.setLastExecutionId(planExecutionId);
     pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
+  }
+
+  private void unsetPipelineYamlInPlanExecutionMetadata(PlanExecutionMetadata planExecutionMetadata) {
+    planExecutionMetadata.setPipelineYaml(null);
   }
 }

@@ -20,6 +20,7 @@ import static io.harness.delegate.k8s.K8sTestHelper.CONFIG_MAP;
 import static io.harness.delegate.k8s.K8sTestHelper.DEPLOYMENT;
 import static io.harness.delegate.k8s.K8sTestHelper.DEPLOYMENT_CONFIG;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.helm.HelmConstants.HELM_RELEASE_LABEL;
 import static io.harness.helm.HelmSubCommandType.TEMPLATE;
 import static io.harness.k8s.K8sConstants.RELEASE_NAME_CONFLICTS_WITH_SECRETS_OR_CONFIG_MAPS;
@@ -106,6 +107,7 @@ import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
@@ -124,8 +126,11 @@ import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.InlineStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.clienttools.ClientTool;
@@ -134,6 +139,7 @@ import io.harness.delegate.k8s.K8sTestHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sApiClient;
@@ -141,6 +147,7 @@ import io.harness.delegate.task.k8s.client.K8sCliClient;
 import io.harness.delegate.task.k8s.k8sbase.K8sReleaseHandlerFactory;
 import io.harness.delegate.task.k8s.k8sbase.KustomizeTaskHelper;
 import io.harness.delegate.task.localstore.ManifestFiles;
+import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ExceptionUtils;
@@ -3271,14 +3278,14 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     List<FileData> renderedFiles = new ArrayList<>();
     doReturn(renderedFiles)
         .when(kustomizeTaskHelper)
-        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback, null);
+        .build("manifest", delegateTaskParams, kustomizePluginPath, "kustomize-dir-path", executionLogCallback, null);
 
     List<FileData> result = k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, "manifest",
         valuesList, "release", "namespace", executionLogCallback, 10);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(kustomizeTaskHelper, times(1))
-        .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback, null);
+        .build("manifest", delegateTaskParams, kustomizePluginPath, "kustomize-dir-path", executionLogCallback, null);
   }
 
   @Test
@@ -3298,16 +3305,16 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     List<FileData> renderedFiles = ImmutableList.of(FileData.builder().fileName("deploy.yaml").build());
     doReturn(renderedFiles)
         .when(kustomizeTaskHelper)
-        .buildForApply(
-            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback, null);
+        .buildForApply(delegateTaskParams, kustomizePluginPath, "manifest", fileList, true, emptyList(),
+            executionLogCallback, null);
 
     List<FileData> result = k8sTaskHelperBase.renderTemplateForGivenFiles(delegateTaskParams, manifestDelegateConfig,
         "manifest", fileList, valuesList, "release", "namespace", executionLogCallback, 10, false);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(kustomizeTaskHelper, times(1))
-        .buildForApply(
-            kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback, null);
+        .buildForApply(delegateTaskParams, kustomizePluginPath, "manifest", fileList, true, emptyList(),
+            executionLogCallback, null);
   }
 
   @Test
@@ -3914,5 +3921,153 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     spyK8sTaskHelperBase.warnIfReleaseNameConflictsWithSecretOrConfigMap(resources, "configMap1", executionLogCallback);
     verify(executionLogCallback, times(0))
         .saveExecutionLog(RELEASE_NAME_CONFLICTS_WITH_SECRETS_OR_CONFIG_MAPS, WARN, CommandExecutionStatus.RUNNING);
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testGetHelmChartDetailsFunctionForHTTP() throws Exception {
+    String repoUrl = "sample/repo/url";
+    String repoUrl2 = "sample/repo/url2";
+    String bucketName = "bucket";
+    String folderPath = "sample/folder/path";
+    GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url(repoUrl).build();
+    String manifestFilesDir = "sample/manifest/dir";
+    String manifestFilesDirHelm = "sample/manifest/dir/nginx";
+    String helmStoreChartName = "helmStoreChart";
+    String sampleHelmChartName = "sampleHelmchart";
+    String chartName = "nginx";
+    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder().gitConfigDTO(gitConfigDTO).build();
+    GcsHelmStoreDelegateConfig gcsHelmStoreDelegateConfig =
+        GcsHelmStoreDelegateConfig.builder().bucketName(bucketName).folderPath(folderPath).build();
+    HttpHelmStoreDelegateConfig httpStoreDelegateConfig =
+        HttpHelmStoreDelegateConfig.builder()
+            .httpHelmConnector(HttpHelmConnectorDTO.builder().helmRepoUrl(repoUrl).build())
+            .build();
+    OciHelmStoreDelegateConfig ociHelmStoreDelegateConfig =
+        OciHelmStoreDelegateConfig.builder()
+            .ociHelmConnector(OciHelmConnectorDTO.builder().helmRepoUrl(repoUrl).build())
+            .build();
+
+    CustomRemoteStoreDelegateConfig customRemoteStoreDelegateConfig =
+        CustomRemoteStoreDelegateConfig.builder()
+            .customManifestSource(CustomManifestSource.builder().filePaths(Collections.singletonList(repoUrl)).build())
+            .build();
+    List<String> customFilePaths = new ArrayList<>();
+    customFilePaths.add(repoUrl);
+    customFilePaths.add(repoUrl2);
+    CustomRemoteStoreDelegateConfig customRemoteStoreDelegateConfigMultipleFilePaths =
+        CustomRemoteStoreDelegateConfig.builder()
+            .customManifestSource(CustomManifestSource.builder().filePaths(customFilePaths).build())
+            .build();
+
+    HarnessStoreDelegateConfig harnessStoreDelegateConfig =
+        HarnessStoreDelegateConfig.builder()
+            .configFiles(Collections.singletonList(ConfigFileParameters.builder().destinationPath(repoUrl).build()))
+            .build();
+    List<ConfigFileParameters> configFileParams = new ArrayList<>();
+    configFileParams.add(ConfigFileParameters.builder().destinationPath(repoUrl).build());
+    configFileParams.add(ConfigFileParameters.builder().destinationPath(repoUrl2).build());
+    HarnessStoreDelegateConfig harnessStoreDelegateConfigMultipleConfigParams =
+        HarnessStoreDelegateConfig.builder().configFiles(configFileParams).build();
+
+    S3HelmStoreDelegateConfig s3HelmStoreDelegateConfig =
+        S3HelmStoreDelegateConfig.builder().bucketName(bucketName).folderPath(folderPath).build();
+
+    InlineStoreDelegateConfig inlineStoreDelegateConfig = InlineStoreDelegateConfig.builder().build();
+
+    LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
+        LocalFileStoreDelegateConfig.builder().folder(repoUrl).build();
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder().version("sample").name(sampleHelmChartName).build();
+    HelmChartInfo helmChartInfo2 = HelmChartInfo.builder().version("sample").name(helmStoreChartName).build();
+
+    ManifestDelegateConfig manifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder().storeDelegateConfig(gitStoreDelegateConfig).build();
+    doReturn(helmChartInfo)
+        .when(helmTaskHelperBase)
+        .getHelmChartInfoFromChartsYamlFile(Paths.get(manifestFilesDir, CHARTS_YAML_KEY).toString());
+    doReturn(helmChartInfo2)
+        .when(helmTaskHelperBase)
+        .getHelmChartInfoFromChartsYamlFile(Paths.get(manifestFilesDirHelm, CHARTS_YAML_KEY).toString());
+
+    // Test GitStore
+    HelmChartInfo helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("sample/repo/url");
+    assertThat(helmChartInfoFinal.getName()).isEqualTo(sampleHelmChartName);
+    // Test Gcs
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(gcsHelmStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("gs://" + bucketName + "/" + folderPath);
+    assertThat(helmChartInfoFinal.getName()).isEqualTo(helmStoreChartName);
+
+    // Test HTTP
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(httpStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getName()).isEqualTo(helmStoreChartName);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo(repoUrl);
+
+    // Test S3
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(s3HelmStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getName()).isEqualTo(helmStoreChartName);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("s3://" + bucketName + "/" + folderPath);
+
+    // Test Custom
+    manifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder().storeDelegateConfig(customRemoteStoreDelegateConfig).build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("custom://" + repoUrl);
+
+    // Test Multiple Custom
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(customRemoteStoreDelegateConfigMultipleFilePaths)
+                                 .build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("custom");
+
+    // Test Harness
+    manifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder().storeDelegateConfig(harnessStoreDelegateConfig).build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("harness://" + repoUrl);
+
+    // Test Multiple Harness
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(harnessStoreDelegateConfigMultipleConfigParams)
+                                 .build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("harness");
+
+    // Test Oci
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(ociHelmStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getName()).isEqualTo(helmStoreChartName);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo(repoUrl);
+
+    // Test Inline
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(inlineStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getName()).isEqualTo(helmStoreChartName);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEmpty();
+
+    // Test Local
+    manifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder().storeDelegateConfig(localFileStoreDelegateConfig).build();
+    helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
+    assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("harness://" + repoUrl);
   }
 }

@@ -10,7 +10,10 @@ package io.harness.freeze.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.exception.JsonSchemaException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
@@ -31,6 +34,8 @@ import java.util.Collections;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @Singleton
 @Slf4j
 @OwnedBy(CDC)

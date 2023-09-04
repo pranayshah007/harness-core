@@ -54,4 +54,35 @@ public class Constants {
   public static final String SOURCE_FORMAT = "blob";
   public static final String LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES = "LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES";
   public static final String PLUGIN_REQUEST_NOTIFICATION_SLACK_WEBHOOK = "pluginRequestsNotificationSlack";
+  public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
+  public static final String DOT_SEPARATOR = ".";
+  public static final String SPACE_SEPARATOR = " ";
+  public static final String SUCCESS_RESPONSE = "SUCCESS";
+
+  public static final String HARNESS_IDENTIFIER = "harness";
+  public static final String GITHUB_IDENTIFIER = "github";
+  public static final String CATALOG_IDENTIFIER = "catalog";
+  public static final String CUSTOM_IDENTIFIER = "custom";
+  public static final String DSL_RESPONSE = "dsl_response";
+  public static final String DATA_POINT_VALUE_KEY = "value";
+  public static final String ERROR_MESSAGE_KEY = "error_messages";
+
+  public static final String QA_HOST = "qa.harness.io";
+  public static final String PRE_QA_HOST = "stress.harness.io";
+  public static final String PROD_HOST = "app.harness.io";
+
+  public static final String LOCAL_HOST = "localhost:8181";
+
+  public static final String QA_ENV = "qa";
+  public static final String PRE_QA_ENV = "stress";
+
+  public static final String LOCAL_ENV = "local";
+
+  public static final String COMPLIANCE_ENV = "compliance";
+
+  public static final String HARNESS_STO_SCAN_SETUP_DSL = "harness_sto_scan_dsl";
+  public static final String HARNESS_POLICY_EVALUATION_DSL = "harness_policy_evaluation_dsl";
+  public static final String HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS = "harness_ci_success_percent_in_seven_days";
+
+  public static final String HARNESS_TEST_PASSING_ON_CI_IS_ZERO = "harness_test_passing_on_ci_is_zero";
 }

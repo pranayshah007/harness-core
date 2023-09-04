@@ -92,7 +92,8 @@ public class JenkinsBuildStepVariableCreatorTest extends CategoryTest {
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.spec.connectorRef",
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.spec.jobParameter.booleankey",
             "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.spec.jobName",
-            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.when");
+            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.when",
+            "pipeline.tags.Jenkins.description.execution.steps.JenkinsBuild.spec.consoleLogPollFrequency");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

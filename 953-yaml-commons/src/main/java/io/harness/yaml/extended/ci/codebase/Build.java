@@ -34,10 +34,10 @@ public class Build {
 
   public static List<String> getExpressionsAvailable() {
     List<String> list = new LinkedList<>();
-    list.add("build.type");
-    list.add("build.spec.branch");
-    list.add("build.spec.tag");
-    list.add("build.spec.number");
+    list.add("type");
+    list.add("spec.branch");
+    list.add("spec.tag");
+    list.add("spec.number");
     return list;
   }
 }

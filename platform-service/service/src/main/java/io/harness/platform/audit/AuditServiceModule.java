@@ -27,7 +27,7 @@ import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.api.streaming.impl.AggregateStreamingServiceImpl;
 import io.harness.audit.api.streaming.impl.StreamingServiceImpl;
 import io.harness.audit.client.remote.AuditClientModule;
-import io.harness.audit.eventframework.AccountEntityCrudStreamListener;
+import io.harness.audit.eventframework.AuditEntityCrudStreamListener;
 import io.harness.audit.repositories.streaming.StreamingBatchRepository;
 import io.harness.audit.repositories.streaming.StreamingBatchRepositoryImpl;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -47,6 +47,8 @@ import io.harness.remote.client.ClientMode;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGAuditServiceRegistrars;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
 import io.harness.token.TokenClientModule;
 import io.harness.version.VersionModule;
@@ -158,12 +160,18 @@ public class AuditServiceModule extends AbstractModule {
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), AUDIT_SERVICE.getServiceId()));
     install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
     registerEventListeners();
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return appConfig.getSegmentConfiguration();
+      }
+    });
   }
 
   private void registerEventListeners() {
     bind(MessageListener.class)
         .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
-        .to(AccountEntityCrudStreamListener.class);
+        .to(AuditEntityCrudStreamListener.class);
   }
 
   @Provides
