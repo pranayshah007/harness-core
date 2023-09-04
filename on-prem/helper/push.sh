@@ -7,6 +7,6 @@
 set -e
 
 IMAGE_NAME=harness/onprem-install-builder
-IMAGE_TAG=helper
+IMAGE_TAG=helper-help
 
 docker push "$IMAGE_NAME:$IMAGE_TAG"
