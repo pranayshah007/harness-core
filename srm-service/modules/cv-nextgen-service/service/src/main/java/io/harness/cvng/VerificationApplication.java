@@ -109,6 +109,7 @@ import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.cvng.notification.jobs.MonitoredServiceNotificationHandler;
 import io.harness.cvng.notification.jobs.SLONotificationHandler;
 import io.harness.cvng.notification.jobs.SRMAnalysisStepNotificationHandler;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -1030,15 +1031,13 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .semaphore(new Semaphore(3))
             .handler(sloHistoryTimescaleHandler)
             .schedulingType(REGULAR)
-            .filterExpander(query
-                -> query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
-                       .greaterThan(
-                           injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()))
+            .filterExpander(
+                query -> query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
     injector.injectMembers(sloHistoryTimescaleHandlerIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 0, 1, TimeUnit.MINUTES);
+    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 0, 1, TimeUnit.DAYS);
   }
 
   private void sloHealthIndicatorTimescale(Injector injector) {

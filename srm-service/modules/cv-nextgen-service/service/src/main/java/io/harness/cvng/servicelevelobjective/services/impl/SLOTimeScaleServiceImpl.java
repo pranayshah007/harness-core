@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
@@ -30,6 +31,7 @@ import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Calendar;
 import lombok.extern.slf4j.Slf4j;
 
@@ -138,22 +140,25 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
   public void insertSLOHistory(AbstractServiceLevelObjective serviceLevelObjective) {
     try (Connection connection = timeScaleDBService.getDBConnection();
          PreparedStatement insertStatement = connection.prepareStatement(INSERT_SLO_HISTORY);) {
-      if (serviceLevelObjective instanceof SimpleServiceLevelObjective) {
-        SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
-        ProjectParams projectParams = ProjectParams.builder()
-                                          .accountIdentifier(serviceLevelObjective.getAccountId())
-                                          .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                                          .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                                          .build();
-        LocalDateTime currentLocalDate =
-            LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-        SLODashboardWidget.SLOGraphData sloGraphData =
-            sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective, null);
-        TimePeriod timePeriod = simpleServiceLevelObjective.getTarget().getCurrentTimeRange(currentLocalDate);
+      SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
+      ProjectParams projectParams = ProjectParams.builder()
+                                        .accountIdentifier(serviceLevelObjective.getAccountId())
+                                        .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                        .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                        .build();
+      LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
+      TimePeriod timePeriod = simpleServiceLevelObjective.getTarget().getTimeRangeForHistory(currentLocalDate);
+      SLODashboardWidget.SLOGraphData sloGraphData =
+          sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective,
+              TimeRangeParams.builder()
+                  .startTime(timePeriod.getStartTime(ZoneOffset.UTC))
+                  .endTime(timePeriod.getEndTime(ZoneOffset.UTC))
+                  .build());
+      if (!sloGraphData.getSloPerformanceTrend().isEmpty()) {
+        insertStatement.setTimestamp(1,
+            new Timestamp(timePeriod.getStartTime().toInstant(ZoneOffset.UTC).toEpochMilli()), Calendar.getInstance());
         insertStatement.setTimestamp(
-            1, new Timestamp(timePeriod.getStartTime().getSecond() * 1000L), Calendar.getInstance());
-        insertStatement.setTimestamp(
-            2, new Timestamp(timePeriod.getEndTime().getSecond() * 1000L), Calendar.getInstance());
+            2, new Timestamp(timePeriod.getEndTime().toInstant(ZoneOffset.UTC).toEpochMilli()), Calendar.getInstance());
         insertStatement.setString(3, simpleServiceLevelObjective.getAccountId());
         insertStatement.setString(4, simpleServiceLevelObjective.getOrgIdentifier());
         insertStatement.setString(5, simpleServiceLevelObjective.getProjectIdentifier());
