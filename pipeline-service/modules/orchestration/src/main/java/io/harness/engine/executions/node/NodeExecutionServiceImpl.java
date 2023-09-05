@@ -167,7 +167,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public NodeExecutionStatusResult getStatus(String nodeExecutionId) {
+  public Status getStatus(String nodeExecutionId) {
     // Uses - id index
     Query query = query(where(NodeExecutionKeys.id).is(nodeExecutionId));
     query.fields().include(NodeExecutionKeys.status);
@@ -177,7 +177,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     if (nodeExecutionOptional.isEmpty()) {
       throw new InvalidRequestException("Node Execution is null for id: " + nodeExecutionId);
     }
-    return nodeExecutionOptional.get();
+    return nodeExecutionOptional.get().getStatus();
   }
 
   @Override

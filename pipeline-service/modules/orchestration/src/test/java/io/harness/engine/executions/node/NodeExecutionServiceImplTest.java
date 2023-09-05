@@ -340,10 +340,10 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
     nodeExecutionService.save(nodeExecution);
 
-    NodeExecutionStatusResult found = nodeExecutionService.getStatus(nodeExecutionId);
-    assertThat(found).isNotNull();
+    Status nodeExecutionStatus = nodeExecutionService.getStatus(nodeExecutionId);
+    assertThat(nodeExecutionStatus).isNotNull();
 
-    assertThat(found.getStatus()).isEqualTo(SUCCEEDED);
+    assertThat(nodeExecutionStatus).isEqualTo(SUCCEEDED);
   }
 
   @Test

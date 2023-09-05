@@ -32,7 +32,6 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.InterruptBuilder;
 import io.harness.interrupts.Interrupt.State;
@@ -83,9 +82,7 @@ public class MarkStatusInterruptHandlerTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("NodeExecutionId Cannot be empty for MARK_SUCCESS interrupt");
 
-    doReturn(NodeExecutionStatusResult.builder().status(Status.RUNNING).build())
-        .when(nodeExecutionService)
-        .getStatus(nodeExecutionId);
+    doReturn(Status.RUNNING).when(nodeExecutionService).getStatus(nodeExecutionId);
 
     interruptBuilder.nodeExecutionId(nodeExecutionId);
     assertThatThrownBy(() -> markStatusInterruptHandler.registerInterrupt(interruptBuilder.build()))
@@ -94,9 +91,7 @@ public class MarkStatusInterruptHandlerTest extends CategoryTest {
             + ". Either another interrupt is already in process or the current status: " + Status.RUNNING
             + "does not allow interruption");
 
-    doReturn(NodeExecutionStatusResult.builder().status(FAILED).build())
-        .when(nodeExecutionService)
-        .getStatus(nodeExecutionId);
+    doReturn(FAILED).when(nodeExecutionService).getStatus(nodeExecutionId);
 
     ArgumentCaptor<Interrupt> interruptArgumentCaptor = ArgumentCaptor.forClass(Interrupt.class);
     markStatusInterruptHandler.registerInterrupt(interruptBuilder.build());

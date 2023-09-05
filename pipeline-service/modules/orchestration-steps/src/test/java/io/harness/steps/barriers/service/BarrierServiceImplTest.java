@@ -28,7 +28,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.BarrierNodeRepository;
 import io.harness.rule.Owner;
@@ -516,8 +515,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     BarrierExecutionInstance barrierExecutionInstance = obtainBarrierExecutionInstance();
     barrierService.save(barrierExecutionInstance);
 
-    when(nodeExecutionService.getStatus(anyString()))
-        .thenReturn(NodeExecutionStatusResult.builder().status(Status.SUCCEEDED).build());
+    when(nodeExecutionService.getStatus(anyString())).thenReturn(Status.SUCCEEDED);
 
     barrierService.update(barrierExecutionInstance);
     BarrierExecutionInstance updated = barrierService.get(barrierExecutionInstance.getUuid());
@@ -553,8 +551,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     barrierService.save(barrierExecutionInstance);
 
     when(waitNotifyEngine.doneWith(anyString(), any())).thenReturn("");
-    when(nodeExecutionService.getStatus(anyString()))
-        .thenReturn(NodeExecutionStatusResult.builder().status(Status.EXPIRED).build());
+    when(nodeExecutionService.getStatus(anyString())).thenReturn(Status.EXPIRED);
 
     barrierService.update(barrierExecutionInstance);
     BarrierExecutionInstance updated = barrierService.get(barrierExecutionInstance.getUuid());

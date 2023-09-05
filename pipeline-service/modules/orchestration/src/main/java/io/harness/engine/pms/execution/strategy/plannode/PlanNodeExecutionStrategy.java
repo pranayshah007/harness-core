@@ -42,7 +42,6 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
-import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.logging.AutoLogContext;
@@ -376,14 +375,13 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       return;
     }
     // TODO: find a way to remove this and pass old status as parameter
-    NodeExecutionStatusResult nodeExecution =
-        nodeExecutionService.getStatus(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    Status nodeExecutionStatus = nodeExecutionService.getStatus(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     NodeExecution updatedNodeExecution = endNodeExecutionHelper.handleStepResponsePreAdviser(ambiance, stepResponse);
     if (updatedNodeExecution == null) {
       return;
     }
 
-    nodeAdviseHelper.queueAdvisingEvent(updatedNodeExecution, planNode, nodeExecution.getStatus());
+    nodeAdviseHelper.queueAdvisingEvent(updatedNodeExecution, planNode, nodeExecutionStatus);
   }
 
   @VisibleForTesting

@@ -26,7 +26,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
@@ -208,8 +207,7 @@ public class ResumeAllInterruptHandlerTest extends OrchestrationTestBase {
                               .planExecutionId(generateUuid())
                               .build();
 
-    when(nodeExecutionService.getStatus(nodeExecutionId))
-        .thenReturn(NodeExecutionStatusResult.builder().status(Status.RUNNING).build());
+    when(nodeExecutionService.getStatus(nodeExecutionId)).thenReturn(Status.RUNNING);
 
     resumeAllInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
 
@@ -228,8 +226,7 @@ public class ResumeAllInterruptHandlerTest extends OrchestrationTestBase {
                               .planExecutionId(generateUuid())
                               .build();
 
-    when(nodeExecutionService.getStatus(nodeExecutionId))
-        .thenReturn(NodeExecutionStatusResult.builder().status(Status.PAUSED).build());
+    when(nodeExecutionService.getStatus(nodeExecutionId)).thenReturn(Status.PAUSED);
 
     resumeAllInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
 

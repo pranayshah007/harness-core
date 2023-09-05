@@ -20,13 +20,13 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -99,11 +99,10 @@ public class IdentityStrategyInternalStep
   @Override
   public StepResponse handleChildResponse(
       Ambiance ambiance, IdentityStepParameters identityParams, Map<String, ResponseData> responseDataMap) {
-    NodeExecutionStatusResult originalNodeExecution =
-        nodeExecutionService.getStatus(identityParams.getOriginalNodeExecutionId());
+    Status nodeExecutionStatus = nodeExecutionService.getStatus(identityParams.getOriginalNodeExecutionId());
     // Copying the outcomes
     pmsOutcomeService.cloneForRetryExecution(ambiance, identityParams.getOriginalNodeExecutionId());
-    return StepResponse.builder().status(originalNodeExecution.getStatus()).build();
+    return StepResponse.builder().status(nodeExecutionStatus).build();
   }
 
   @Override

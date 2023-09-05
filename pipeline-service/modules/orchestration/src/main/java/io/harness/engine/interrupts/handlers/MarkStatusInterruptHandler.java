@@ -22,7 +22,6 @@ import io.harness.engine.interrupts.InterruptService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.pms.contracts.execution.Status;
@@ -56,11 +55,10 @@ public abstract class MarkStatusInterruptHandler implements InterruptHandler {
       throw new InvalidRequestException("NodeExecutionId Cannot be empty for MARK_SUCCESS interrupt");
     }
 
-    NodeExecutionStatusResult nodeExecution = nodeExecutionService.getStatus(interrupt.getNodeExecutionId());
-    if (!StatusUtils.brokeStatuses().contains(nodeExecution.getStatus())
-        && nodeExecution.getStatus() != INTERVENTION_WAITING) {
+    Status nodeExecutionStatus = nodeExecutionService.getStatus(interrupt.getNodeExecutionId());
+    if (!StatusUtils.brokeStatuses().contains(nodeExecutionStatus) && nodeExecutionStatus != INTERVENTION_WAITING) {
       throw new InvalidRequestException("Failed to interrupt node execution " + interrupt.getType()
-          + ". Either another interrupt is already in process or the current status: " + nodeExecution.getStatus()
+          + ". Either another interrupt is already in process or the current status: " + nodeExecutionStatus
           + "does not allow interruption");
     }
 

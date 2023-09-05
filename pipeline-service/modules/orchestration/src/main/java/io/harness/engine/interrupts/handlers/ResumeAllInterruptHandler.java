@@ -23,7 +23,6 @@ import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.interrupts.InterruptUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.pms.contracts.execution.Status;
@@ -102,8 +101,8 @@ public class ResumeAllInterruptHandler implements InterruptHandler {
 
   @Override
   public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
-    NodeExecutionStatusResult nodeExecution = nodeExecutionService.getStatus(nodeExecutionId);
-    if (nodeExecution.getStatus() != Status.PAUSED) {
+    Status nodeExecutionStatus = nodeExecutionService.getStatus(nodeExecutionId);
+    if (nodeExecutionStatus != Status.PAUSED) {
       return interrupt;
     }
     // Update status
