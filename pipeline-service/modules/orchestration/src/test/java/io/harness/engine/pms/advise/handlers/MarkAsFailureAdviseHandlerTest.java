@@ -28,6 +28,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.node.NodeExecutionServiceImpl;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.MarkAsFailureAdvise;
@@ -138,6 +139,9 @@ public class MarkAsFailureAdviseHandlerTest extends CategoryTest {
     when(planService.fetchNode(planId, nextNodeId)).thenReturn(planNode);
     doNothing().when(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
     doReturn(nodeExecution).when(nodeExecutionService).getWithFieldsIncluded(any(), any());
+    doReturn(NodeExecutionAmbianceResult.builder().ambiance(ambiance).build())
+        .when(nodeExecutionService)
+        .get(any(), any(), any());
 
     ArgumentCaptor<Ambiance> ambianceArgumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
     markAsFailureAdviseHandler.handleAdvise(nodeExecution, adviserResponse);

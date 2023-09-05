@@ -28,7 +28,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.NodeExecution;
 import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.BarrierNodeRepository;
