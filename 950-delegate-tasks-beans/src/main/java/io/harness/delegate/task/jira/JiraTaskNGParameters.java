@@ -28,7 +28,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Value
