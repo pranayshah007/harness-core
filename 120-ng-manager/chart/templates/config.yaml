@@ -80,6 +80,7 @@ data:
   PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service:12001/api/
   CI_MANAGER_SERVICE_CLIENT_BASEURL: http://ci-manager:7090/
   CVNG_SERVICE_CLIENT_BASEURL: http://cv-nextgen:6060/cv/api/
+  STO_CORE_SERVICE_CLIENT_BASEURL: http://sto-core:4000/api/
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   HARNESS_NG_MANAGER_INTERNAL_URL: 'http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090'
   HARNESS_SCM_API_INTERNAL_URL: 'http://code-api.{{ .Release.Namespace }}.svc.cluster.local:80'
