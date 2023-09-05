@@ -65,6 +65,8 @@ import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
+import io.harness.repositories.test.TestEntity;
+import io.harness.repositories.test.TestService;
 import io.harness.utils.PageUtils;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -105,6 +107,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
+  private final TestService testService;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Deprecated
@@ -279,6 +282,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, @ResourceIdentifier String pipelineId, String pipelineName,
       String pipelineDescription, Boolean isDraft, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
+    TestEntity test1 = TestEntity.builder().testIdentifier(pipelineId).accountId(accountId).build();
+    testService.create(test1);
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));

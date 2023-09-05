@@ -216,6 +216,8 @@ import io.harness.steps.wait.WaitStepServiceImpl;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.TemplateResourceClientModule;
+import io.harness.repositories.test.TestService;
+import io.harness.repositories.test.TestServiceImpl;
 import io.harness.threading.ThreadPool;
 import io.harness.threading.ThreadPoolConfig;
 import io.harness.time.TimeModule;
@@ -500,6 +502,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(ServiceNowStepHelperService.class).to(ServiceNowStepHelperServiceImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(ContainerStepV2PluginProvider.class).to(ContainerStepV2PluginProviderImpl.class);
+    bind(TestService.class).to(TestServiceImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));

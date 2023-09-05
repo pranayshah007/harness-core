@@ -20,6 +20,8 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
@@ -33,9 +35,7 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.customstage.CustomStageSpecParams;
-import io.harness.steps.customstage.CustomStageStep;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.common.base.Preconditions;
@@ -58,8 +58,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(
-        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.CUSTOM_STAGE));
+    return Collections.singletonMap(YAMLFieldNameConstants.STAGE, Collections.singleton("Custom"));
   }
 
   @Override
@@ -121,7 +120,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, config.getUuid()))
             .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, config.getId()))
-            .stepType(CustomStageStep.STEP_TYPE)
+            .stepType(StepType.newBuilder().setType("CUSTOM_STAGE").setStepCategory(StepCategory.STAGE).build())
             .group(StepOutcomeGroup.STAGE.name())
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, name))
             .skipUnresolvedExpressionsCheck(true)

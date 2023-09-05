@@ -64,6 +64,8 @@ import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaH
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
+import io.harness.repositories.test.TestEntity;
+import io.harness.repositories.test.TestService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
@@ -155,6 +157,7 @@ public class InfrastructureResource {
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private final SshEntityHelper sshEntityHelper;
   private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
+  @Inject private final TestService testService;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
 
@@ -212,6 +215,9 @@ public class InfrastructureResource {
             examples = @ExampleObject(name = "Create", summary = "Sample Infrastructure create payload",
                 value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
       }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
+    //TestEntity test1 = TestEntity.builder().testIdentifier("abcmanager").accountId(accountId).build();
+    //testService.create(test1);
+
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
     infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
@@ -307,6 +313,8 @@ public class InfrastructureResource {
             examples = @ExampleObject(name = "Update", summary = "Sample Infrastructure update payload",
                 value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
       }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
+    TestEntity test1 = TestEntity.builder().testIdentifier("abcpipeline").accountId(accountId).build();
+    testService.create(test1);
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
     infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =

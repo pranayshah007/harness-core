@@ -300,6 +300,9 @@ import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
 import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.steps.customstage.CustomStageFilterCreator;
+import io.harness.steps.customstage.CustomStagePlanCreator;
+import io.harness.steps.customstage.CustomStageVariableCreator;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -537,6 +540,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AwsCdkDestroyStepPlanCreator());
     planCreators.add(new AwsCdkRollbackStepPlanCreator());
 
+    planCreators.add(new CustomStagePlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -555,6 +560,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new EmptyFilterJsonCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(PRIMARY, EMPTY_PRIMARY_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
+
+    filterJsonCreators.add(new CustomStageFilterCreator());
 
     injectorUtils.injectMembers(filterJsonCreators);
 
@@ -692,6 +699,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AwsCdkDeployVariableCreator());
     variableCreators.add(new AwsCdkDestroyVariableCreator());
     variableCreators.add(new AwsCdkRollbackVariableCreator());
+
+    variableCreators.add(new CustomStageVariableCreator());
 
     return variableCreators;
   }

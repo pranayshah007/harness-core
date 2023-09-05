@@ -5,7 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.infra.helper;
+package io.harness.steps.customstage;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
@@ -17,44 +18,26 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.environment.helper.EnvironmentYamlV2VisitorHelper;
-import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
-import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
-import io.harness.cdng.infra.yaml.InfrastructureConfig;
-import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDTO;
-import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
-import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
-import io.harness.pms.merger.fqn.FQN;
-import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.preflight.PreFlightCheckMetadata;
-import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.IdentifierRefProtoUtils;
-import io.harness.walktree.visitor.SimpleVisitorFactory;
 import io.harness.walktree.visitor.entityreference.EntityReferenceExtractor;
-import io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisitor;
 import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
-import io.harness.yaml.utils.JsonPipelineUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,10 +45,12 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Slf4j
 public class InfraStructureDefinitionVisitorHelper implements ConfigValidator, EntityReferenceExtractor {
+  /*
   @Inject InfrastructureEntityService infrastructureEntityService;
 
   @Inject InfrastructureEntitySetupUsageHelper infrastructureEntitySetupUsageHelper;
-  @Inject private SimpleVisitorFactory simpleVisitorFactory;
+
+   */
 
   @Override
   public void validate(Object object, ValidationVisitor visitor) {
@@ -111,47 +96,40 @@ public class InfraStructureDefinitionVisitorHelper implements ConfigValidator, E
           if (EmptyPredicate.isEmpty(infraRef) || NGExpressionUtils.isRuntimeOrExpressionField(infraRef)) {
             return result;
           }
-          Map<String, Object> inputs2 = new HashMap<>();
+          // TODO: Handle if it is really required
+          /*
+                    Optional<InfrastructureEntity> infraEntity = infrastructureEntityService.get(
+                        envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
+                        envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraRef);
 
-          Map<String, Object> inputs = infraYaml.getInputs().getValue();
-          inputs2.put(YamlTypes.INFRASTRUCTURE_DEF, inputs);
-          final String ROOT_LEVEL_NAME = "infrastructureDefinition";
-          List<String> qualifiedNameList = Collections.singletonList(ROOT_LEVEL_NAME);
-          EntityReferenceExtractorVisitor visitor = simpleVisitorFactory.obtainEntityReferenceExtractorVisitor(
-                  accountIdentifier, orgIdentifier, projectIdentifier, qualifiedNameList);
-          visitor.walkElementTree(inputs2);
-          Set<EntityDetailProtoDTO> entityDetailProtoDTOS1 =  visitor.getEntityReferenceSet();
+                    if (infraEntity.isEmpty()) {
+                      return result;
+                    }
 
-          Optional<InfrastructureEntity> infraEntity = infrastructureEntityService.get(
-              envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-              envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraRef);
+                    Set<EntityDetailProtoDTO> entityDetailProtoDTOS =
+                        infrastructureEntitySetupUsageHelper.getAllReferredEntities(infraEntity.get());
 
-          if (infraEntity.isEmpty()) {
-            return result;
-          }
+                    Map<String, Object> map = new LinkedHashMap<>();
+                    map.put("infrastructureDefinition", infraYaml.getInputs().getValue());
+                    Map<FQN, Object> fqnToValueMap = FQNMapGenerator.generateFQNMap(JsonPipelineUtils.asTree(map));
+                    Map<String, Object> fqnStringToValueMap = new HashMap<>();
+                    fqnToValueMap.forEach((fqn, value) -> fqnStringToValueMap.put(fqn.getExpressionFqn(), value));
 
-          Set<EntityDetailProtoDTO> entityDetailProtoDTOS =
-              infrastructureEntitySetupUsageHelper.getAllReferredEntities(infraEntity.get());
+                    for (EntityDetailProtoDTO entityDetailProtoDTO : entityDetailProtoDTOS) {
+                      if (isReferredEntityForRuntimeInput(entityDetailProtoDTO.getIdentifierRef())) {
+                        JsonNode obj = (JsonNode) fqnStringToValueMap.get(
+                            entityDetailProtoDTO.getIdentifierRef().getMetadataMap().get("fqn"));
+                        if (obj != null) {
+                          EntityDetailProtoDTO entityDetailProtoDTOFinal =
+                              convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier, projectIdentifier,
+                                  entityDetailProtoDTO.getIdentifierRef().getMetadataMap().get("fqn"), obj.textValue(),
+                                  entityDetailProtoDTO.getType(), true);
+                          result.add(entityDetailProtoDTOFinal);
+                        }
+                      }
+                    }
 
-          Map<String, Object> map = new LinkedHashMap<>();
-          map.put("infrastructureDefinition", infraYaml.getInputs().getValue());
-          Map<FQN, Object> fqnToValueMap = FQNMapGenerator.generateFQNMap(JsonPipelineUtils.asTree(map));
-          Map<String, Object> fqnStringToValueMap = new HashMap<>();
-          fqnToValueMap.forEach((fqn, value) -> fqnStringToValueMap.put(fqn.getExpressionFqn(), value));
-
-          for (EntityDetailProtoDTO entityDetailProtoDTO : entityDetailProtoDTOS) {
-            if (isReferredEntityForRuntimeInput(entityDetailProtoDTO.getIdentifierRef())) {
-              JsonNode obj = (JsonNode) fqnStringToValueMap.get(
-                  entityDetailProtoDTO.getIdentifierRef().getMetadataMap().get("fqn"));
-              if (obj != null) {
-                EntityDetailProtoDTO entityDetailProtoDTOFinal =
-                    convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier, projectIdentifier,
-                        entityDetailProtoDTO.getIdentifierRef().getMetadataMap().get("fqn"), obj.textValue(),
-                        entityDetailProtoDTO.getType(), true);
-                result.add(entityDetailProtoDTOFinal);
-              }
-            }
-          }
+           */
         }
       }
       return result;

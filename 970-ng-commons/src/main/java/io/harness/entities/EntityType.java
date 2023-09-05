@@ -335,6 +335,7 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK)
   SERVERLESS_AWS_LAMBDA_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK,
       IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_ROLLBACK),
+  // TODO: PMS or CD ?
   @JsonProperty(EntityTypeConstants.CUSTOM_STAGE)
   CUSTOM_STAGE(ModuleType.PMS, EntityTypeConstants.CUSTOM_STAGE, IdentifierRef.class, EntityYamlRootNames.CUSTOM_STAGE),
   @JsonProperty(EntityTypeConstants.CLOUDFORMATION_ROLLBACK_STACK_STEP)

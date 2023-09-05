@@ -139,6 +139,8 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
+import io.harness.repositories.test.TestService;
+import io.harness.repositories.test.TestServiceImpl;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
 
@@ -208,6 +210,7 @@ public class NGModule extends AbstractModule {
     bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
     bind(CustomResourceService.class).to(CustomResourceServiceImpl.class);
     bind(BambooResourceService.class).to(BambooResourceServiceImpl.class);
+    bind(TestService.class).to(TestServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("CdTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,

@@ -10,7 +10,6 @@ package io.harness.steps.customstage;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
-import io.harness.steps.StepSpecTypeConstants;
 
 import java.util.Collections;
 import java.util.Set;
@@ -18,7 +17,7 @@ import java.util.Set;
 public class CustomStageFilterCreator extends GenericStageFilterJsonCreatorV2<CustomStageNode> {
   @Override
   public Set<String> getSupportedStageTypes() {
-    return Collections.singleton(StepSpecTypeConstants.CUSTOM_STAGE);
+    return Collections.singleton("Custom");
   }
 
   @Override
