@@ -35,6 +35,7 @@ import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
@@ -158,9 +159,9 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
     doReturn(fullExecutionInputYamlMap)
         .when(executionInputServiceHelper)
         .getExecutionInputMap(eq(YamlUtils.readAsJsonNode(template)), any());
-    doReturn(NodeExecution.builder().ambiance(Ambiance.newBuilder().build()).build())
+    doReturn(NodeExecutionAmbianceResult.builder().ambiance(Ambiance.newBuilder().build()).build())
         .when(nodeExecutionService)
-        .getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbianceAndStatus);
+        .get(nodeExecutionId, NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbiance);
     doReturn(YamlUtils.readAsJsonNode(fullExecutionInputYaml))
         .when(pmsEngineExpressionService)
         .resolve(any(), any(), any());

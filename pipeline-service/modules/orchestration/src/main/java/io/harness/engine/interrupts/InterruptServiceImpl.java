@@ -28,6 +28,7 @@ import io.harness.engine.interrupts.handlers.ResumeAllInterruptHandler;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.InterruptKeys;
 import io.harness.pms.contracts.interrupts.InterruptType;
@@ -156,8 +157,8 @@ public class InterruptServiceImpl implements InterruptService {
 
     // Lets first check if stage is already in final state
     // (ex. interrupt was fired for the last node in the stage)
-    NodeExecution interruptNodeExecution = nodeExecutionService.getWithFieldsIncluded(
-        interrupt.getNodeExecutionId(), NodeProjectionUtils.withAmbianceAndStatus);
+    NodeExecutionAmbianceResult interruptNodeExecution = nodeExecutionService.get(
+        interrupt.getNodeExecutionId(), NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbianceAndStatus);
     if (StatusUtils.isFinalStatus(interruptNodeExecution.getStatus())) {
       updatePlanStatus(interruptNodeExecution.getAmbiance().getPlanExecutionId());
       updateInterruptState(interrupt.getUuid(), PROCESSED_SUCCESSFULLY, false);

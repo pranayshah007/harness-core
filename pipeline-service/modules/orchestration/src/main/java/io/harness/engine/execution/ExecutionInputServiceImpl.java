@@ -27,6 +27,7 @@ import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -136,7 +137,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
       checkValueForRequiredVariablesProvided(
           executionInputInstance.getFieldYaml(), userInputJsonNode, continueWithDefault);
       Ambiance ambiance =
-          nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbianceAndStatus)
+          nodeExecutionService.get(nodeExecutionId, NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbiance)
               .getAmbiance();
       userInputJsonNode = (JsonNode) pmsEngineExpressionService.resolve(
           ambiance, userInputJsonNode, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
