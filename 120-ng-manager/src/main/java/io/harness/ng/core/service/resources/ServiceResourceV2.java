@@ -251,8 +251,8 @@ public class ServiceResourceV2 {
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     } else {
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
 
     if (featureFlagService.isEnabled(accountId, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
@@ -750,9 +750,8 @@ public class ServiceResourceV2 {
       return ResponseDTO.newResponse(
           NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceInputYaml).build());
     } else {
-      // todo: better error message here
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
   }
 
@@ -835,8 +834,8 @@ public class ServiceResourceV2 {
       return ResponseDTO.newResponse(
           serviceEntityService.getArtifactSourceInputs(serviceEntity.get().getYaml(), serviceIdentifier));
     } else {
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
   }
 

@@ -160,8 +160,8 @@ public interface CDOverviewDashboardService {
   DeploymentsInfo getDeploymentsByServiceId(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceId, long startTimeInMs, long endTimeInMs);
 
-  ServiceHeaderInfo getServiceHeaderInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+  ServiceHeaderInfo getServiceHeaderInfo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceId, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   Map<String, String> getLastPipeline(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIds);
