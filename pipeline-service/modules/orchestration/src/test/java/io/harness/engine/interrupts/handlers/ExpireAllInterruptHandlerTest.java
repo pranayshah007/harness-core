@@ -21,7 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
@@ -140,8 +140,9 @@ public class ExpireAllInterruptHandlerTest extends OrchestrationTestBase {
   public void shouldTestRegisterInterruptPlanEnded() {
     String planExecutionId = generateUuid();
     when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.ABORTED);
-    when(nodeExecutionService.getPipelineNodeExecutionWithProjections(planExecutionId, NodeProjectionUtils.withStatus))
-        .thenReturn(Optional.of(NodeExecution.builder().status(Status.FAILED).build()));
+    when(nodeExecutionService.getPipelineNodeExecution(
+             planExecutionId, NodeExecutionStatusResult.class, NodeProjectionUtils.withStatus))
+        .thenReturn(Optional.of(NodeExecutionStatusResult.builder().status(Status.FAILED).build()));
     assertThatThrownBy(
         ()
             -> expireAllInterruptHandler.registerInterrupt(Interrupt.builder()
@@ -176,8 +177,9 @@ public class ExpireAllInterruptHandlerTest extends OrchestrationTestBase {
             String.format("NodeExecution not found for pipeline node for planExecutionId %s and interruptId %s",
                 planExecutionId, interruptId));
 
-    when(nodeExecutionService.getPipelineNodeExecutionWithProjections(planExecutionId, NodeProjectionUtils.withStatus))
-        .thenReturn(Optional.of(NodeExecution.builder().status(Status.RUNNING).build()));
+    when(nodeExecutionService.getPipelineNodeExecution(
+             planExecutionId, NodeExecutionStatusResult.class, NodeProjectionUtils.withStatus))
+        .thenReturn(Optional.of(NodeExecutionStatusResult.builder().status(Status.RUNNING).build()));
     Interrupt interrupt =
         expireAllInterruptHandler.registerInterrupt(Interrupt.builder()
                                                         .uuid(interruptId)

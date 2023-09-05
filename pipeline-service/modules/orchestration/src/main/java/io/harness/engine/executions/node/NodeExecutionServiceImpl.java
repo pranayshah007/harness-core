@@ -42,10 +42,9 @@ import io.harness.exception.UnexpectedException;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.execution.NodeExecutionAmbianceResult;
-import io.harness.execution.NodeExecutionStatusResult;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
@@ -158,7 +157,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     Query query = query(where(NodeExecutionKeys.id).is(nodeExecutionId));
     query.fields().include(NodeExecutionKeys.status);
     query.fields().exclude(NodeExecutionKeys.id);
-    Optional<NodeExecutionStatusResult> nodeExecutionOptional = nodeExecutionReadHelper.getStatus(query);
+    Optional<NodeExecutionStatusResult> nodeExecutionOptional =
+        nodeExecutionReadHelper.getOne(query, NodeExecutionStatusResult.class);
     if (nodeExecutionOptional.isEmpty()) {
       throw new InvalidRequestException("Node Execution is null for id: " + nodeExecutionId);
     }
@@ -166,8 +166,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public Optional<NodeExecution> getPipelineNodeExecutionWithProjections(
-      @NonNull String planExecutionId, Set<String> fields) {
+  public <T> Optional<T> getPipelineNodeExecution(@NonNull String planExecutionId, Class<T> clazz, Set<String> fields) {
     // Uses - planExecutionId_stepCategory_identifier_idx
     // Sort is not part of index, as node selection is always one node thus it will not impact much
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
@@ -176,20 +175,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     for (String fieldName : fields) {
       query.fields().include(fieldName);
     }
-    return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
-  }
-
-  @Override
-  public Optional<NodeExecutionAmbianceResult> getPipelineNodeExecution(@NonNull String planExecutionId) {
-    // Uses - planExecutionId_stepCategory_identifier_idx
-    // Sort is not part of index, as node selection is always one node thus it will not impact much
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.PIPELINE))
-                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
-    for (String fieldName : NodeProjectionUtils.withAmbianceAndStatus) {
-      query.fields().include(fieldName);
-    }
-    return nodeExecutionReadHelper.getOne(query, NodeExecutionAmbianceResult.class);
+    return nodeExecutionReadHelper.getOne(query, clazz);
   }
 
   // TODO (alexi) : Handle the case where multiple instances are returned

@@ -18,8 +18,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
-import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecutionAmbianceResult;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.ngtriggers.expressions.NGTriggerExpressionEvaluatorProvider;
@@ -54,8 +53,8 @@ public class YamlExpressionResolveHelper {
 
   public String resolveExpressionsInYaml(
       String yamlString, String planExecutionId, ResolveInputYamlType resolveInputYamlType) {
-    Optional<NodeExecutionAmbianceResult> nodeExecution =
-        nodeExecutionService.getPipelineNodeExecution(planExecutionId);
+    Optional<NodeExecutionAmbianceResult> nodeExecution = nodeExecutionService.getPipelineNodeExecution(
+        planExecutionId, NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbianceAndStatus);
 
     if (nodeExecution.isPresent()) {
       EngineExpressionEvaluator engineExpressionEvaluator;

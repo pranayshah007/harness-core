@@ -24,8 +24,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecutionAmbianceResult;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.pipeline.ResolveInputYamlType;
@@ -99,7 +98,7 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void resolveExpressionsInYamlTestWithNullNodeExecution() {
     Optional<NodeExecutionAmbianceResult> nodeExecution = Optional.ofNullable(null);
-    doReturn(nodeExecution).when(nodeExecutionService).getPipelineNodeExecution(any());
+    doReturn(nodeExecution).when(nodeExecutionService).getPipelineNodeExecution(any(), any(), any());
     Assertions
         .assertThatCode(()
                             -> yamlExpressionResolveHelper.resolveExpressionsInYaml(
@@ -121,7 +120,7 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
         prepareEngineExpressionEvaluator(YamlUtils.read(arrayTypeString, Map.class));
     Optional<NodeExecutionAmbianceResult> nodeExecution =
         Optional.ofNullable(NodeExecutionAmbianceResult.builder().ambiance(Ambiance.newBuilder().build()).build());
-    doReturn(nodeExecution).when(nodeExecutionService).getPipelineNodeExecution(any());
+    doReturn(nodeExecution).when(nodeExecutionService).getPipelineNodeExecution(any(), any(), any());
     doReturn(expressionEvaluator).when(pmsEngineExpressionService).prepareExpressionEvaluator(any());
     assertThatCode(()
                        -> yamlExpressionResolveHelper.resolveExpressionsInYaml(

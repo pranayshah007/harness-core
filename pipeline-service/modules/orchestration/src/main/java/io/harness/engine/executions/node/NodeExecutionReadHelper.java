@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.node;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -14,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecutionStatusResult;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
@@ -63,11 +63,6 @@ public class NodeExecutionReadHelper {
   public <T> Optional<T> getOne(Query query, Class<T> clazz) {
     validateNodeExecutionProjection(query);
     return Optional.ofNullable(mongoTemplate.findOne(query, clazz, COLLECTION_NAME));
-  }
-
-  public Optional<NodeExecutionStatusResult> getStatus(Query query) {
-    validateNodeExecutionProjection(query);
-    return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecutionStatusResult.class, COLLECTION_NAME));
   }
 
   public CloseableIterator<NodeExecution> fetchNodeExecutions(Query query) {

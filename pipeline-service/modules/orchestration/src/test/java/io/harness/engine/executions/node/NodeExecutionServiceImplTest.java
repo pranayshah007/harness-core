@@ -42,8 +42,8 @@ import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.execution.NodeExecutionAmbianceResult;
-import io.harness.execution.NodeExecutionStatusResult;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
+import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
 import io.harness.plan.PlanNode;
@@ -1103,10 +1103,15 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     nodeExecutionService.save(nodeExecution);
     nodeExecutionService.save(nodeExecution1);
 
-    Optional<NodeExecutionAmbianceResult> nodeExecutionAmbianceResult =
-        nodeExecutionService.getPipelineNodeExecution(planExecutionUuid);
+    Optional<NodeExecutionAmbianceResult> nodeExecutionAmbianceResult = nodeExecutionService.getPipelineNodeExecution(
+        planExecutionUuid, NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbianceAndStatus);
     assertThat(nodeExecutionAmbianceResult).isPresent();
     assertThat(nodeExecutionAmbianceResult.get().getStatus()).isEqualTo(SUCCEEDED);
     assertThat(nodeExecutionAmbianceResult.get().getAmbiance().getLevelsCount()).isEqualTo(1);
+
+    Optional<NodeExecutionStatusResult> pipelineNodeExecutionStatus = nodeExecutionService.getPipelineNodeExecution(
+        planExecutionUuid, NodeExecutionStatusResult.class, NodeProjectionUtils.withStatus);
+    assertThat(pipelineNodeExecutionStatus).isPresent();
+    assertThat(pipelineNodeExecutionStatus.get().getStatus()).isEqualTo(SUCCEEDED);
   }
 }

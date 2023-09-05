@@ -23,7 +23,7 @@ import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.interrupts.InterruptUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.execution.NodeExecutionStatusResult;
+import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.pms.contracts.execution.Status;
