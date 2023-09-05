@@ -226,6 +226,22 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.createdAt)
                  .build())
+        .add(
+            CompoundMongoIndex.builder()
+                .name(
+                    "accountId_organizationId_projectId_pipelineId_modules_parent_info_executionMode_latestExecution_repoName_branch_status")
+                .field(PlanExecutionSummaryKeys.accountId)
+                .field(PlanExecutionSummaryKeys.orgIdentifier)
+                .field(PlanExecutionSummaryKeys.projectIdentifier)
+                .field(PlanExecutionSummaryKeys.pipelineIdentifier)
+                .field(PlanExecutionSummaryKeys.modules)
+                .field(PlanExecutionSummaryKeys.isChildPipeline)
+                .field(PlanExecutionSummaryKeys.executionMode)
+                .field(PlanExecutionSummaryKeys.isLatestExecution)
+                .field(PlanExecutionSummaryKeys.entityGitDetailsRepoName)
+                .field(PlanExecutionSummaryKeys.entityGitDetailsBranch)
+                .field(PlanExecutionSummaryKeys.status)
+                .build())
         // fetchPipelineSummaryEntityFromRootParentId in repoCustomImpl
         .add(SortCompoundMongoIndex.builder()
                  .name("rootExecution_createdAt_id")
