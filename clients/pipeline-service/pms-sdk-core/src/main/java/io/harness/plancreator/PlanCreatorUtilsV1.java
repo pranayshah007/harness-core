@@ -28,7 +28,9 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
 import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
@@ -40,6 +42,8 @@ import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviser;
 import io.harness.pms.sdk.core.adviser.markFailure.OnMarkFailureAdviserParameters;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -448,7 +452,43 @@ public class PlanCreatorUtilsV1 {
 
   @FunctionalInterface
   public interface GetAdviserForActionType {
-    AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureStrategyActionConfigV1 action,
+    AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureConfigV1 action,
         Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType, String nextNodeUuid);
+  }
+
+  public void putParentInfo(PlanCreationResponse response, String key, String value) {
+    putParentInfoInternal(response, key, HarnessValue.newBuilder().setStringValue(value).build());
+  }
+
+  public void putParentInfo(PlanCreationResponse response, String key, boolean value) {
+    putParentInfoInternal(response, key, HarnessValue.newBuilder().setBoolValue(value).build());
+  }
+
+  public void putParentInfoInternal(PlanCreationResponse response, String key, HarnessValue value) {
+    // No dependencies, so return.
+    if (response.getDependencies() == null) {
+      return;
+    }
+    Dependencies.Builder dependencies = response.getDependencies().toBuilder();
+    for (String depKey : response.getDependencies().getDependenciesMap().keySet()) {
+      Dependency dependencyMetadata = response.getDependencies().getDependencyMetadataMap().get(depKey);
+      // If dependencyMetadata not present for a uuid then create empty metadata.
+      if (dependencyMetadata == null) {
+        dependencyMetadata = Dependency.newBuilder().build();
+      }
+      HarnessStruct.Builder parentInfoOfCurrentNode = dependencyMetadata.getParentInfo().toBuilder();
+      parentInfoOfCurrentNode.putData(key, value).build();
+      dependencies.putDependencyMetadata(
+          depKey, dependencyMetadata.toBuilder().setParentInfo(parentInfoOfCurrentNode.build()).build());
+    }
+    response.setDependencies(dependencies.build());
+  }
+
+  public HarnessValue getFromParentInfo(String key, PlanCreationContext ctx) {
+    HarnessValue result = ctx.getDependency().getParentInfo().getDataMap().get(key);
+    if (result == null) {
+      return HarnessValue.newBuilder().build();
+    }
+    return result;
   }
 }

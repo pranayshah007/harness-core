@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
@@ -60,8 +61,14 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.strategy.AxisConfig;
+import io.harness.plancreator.strategy.MatrixConfig;
+import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -681,5 +688,60 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
         .getNode()
         .getField(YAMLFieldNameConstants.SPEC)
         .getNode();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  @Parameters(method = "getDeploymentStageConfig")
+  @PrepareForTest(YamlUtils.class)
+  public void testPopulateParentInfo(DeploymentStageNode node) throws IOException {
+    node.setFailureStrategies(
+        ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
+                                                    .onFailure(OnFailureConfig.builder()
+                                                                   .errors(List.of(NGFailureType.ALL_ERRORS))
+                                                                   .action(AbortFailureActionConfig.builder().build())
+                                                                   .build())
+                                                    .build())));
+    node.setStrategy(ParameterField.createValueField(
+        StrategyConfig.builder()
+            .matrixConfig(ParameterField.createValueField(
+                MatrixConfig.builder()
+                    .axes(Map.of("a",
+                        AxisConfig.builder()
+                            .axisValue(ParameterField.createValueField(List.of("a", "b", "c")))
+                            .build()))
+                    .build()))
+            .build()));
+
+    JsonNode jsonNode = mapper.valueToTree(node);
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .globalContext(Map.of("metadata",
+                                      PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
+                                  .currentField(new YamlField(new YamlNode("spec", jsonNode)))
+                                  .build();
+
+    try (MockedStatic<YamlUtils> mockSettings = mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+         MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = mockStatic(NGRestUtils.class);
+         MockedStatic<StrategyUtils> strategyUtilsMockSettings = mockStatic(StrategyUtils.class, RETURNS_MOCKS)) {
+      SettingValueResponseDTO settingValueResponseDTO =
+          SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+      when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(new YamlNode("spec", jsonNode));
+      when(NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
+      when(StrategyUtils.isStrategyFieldPresent(any())).thenReturn(true);
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
+          deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
+      deploymentStagePMSPlanCreator.populateParentInfo(ctx, planCreationResponseMap);
+      for (String key : planCreationResponseMap.keySet()) {
+        PlanCreationResponse response = planCreationResponseMap.get(key);
+        Dependencies dependencies = response.getDependencies();
+        if (dependencies != null) {
+          Map<String, HarnessValue> parentInfo =
+              dependencies.getDependencyMetadataMap().get(key).getParentInfo().getDataMap();
+          assertThat(parentInfo.get("stageId").getStringValue()).isEqualTo(ctx.getCurrentField().getUuid());
+          assertThat(parentInfo.get("strategyId").getStringValue()).isEqualTo(ctx.getCurrentField().getUuid());
+        }
+      }
+    }
   }
 }

@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -39,6 +40,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PlanCreationParentInfoConstants;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -147,6 +149,20 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+  }
+
+  @Override
+  public void populateParentInfo(PlanCreationContext ctx, Map<String, PlanCreationResponse> childrenResponses) {
+    String uuid = ctx.getCurrentField().getUuid();
+    boolean isStrategyFieldPresent = StrategyUtils.isStrategyFieldPresent(ctx);
+    for (String childKey : childrenResponses.keySet()) {
+      PlanCreatorUtilsV1.putParentInfo(
+          childrenResponses.get(childKey), PlanCreationParentInfoConstants.STEP_GROUP_ID, uuid);
+      if (isStrategyFieldPresent) {
+        PlanCreatorUtilsV1.putParentInfo(
+            childrenResponses.get(childKey), PlanCreationParentInfoConstants.STRATEGY_ID, uuid);
+      }
+    }
   }
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(KryoSerializer kryoSerializer,
