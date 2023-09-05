@@ -55,6 +55,7 @@ import io.harness.event.handlers.AdviserResponseRequestProcessor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
+import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -833,8 +834,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .build();
     doReturn(planNode).when(planService).fetchNode(planId, setupId);
     StepResponseProto stepResponseProto = StepResponseProto.newBuilder().build();
-    NodeExecution nodeExecution = NodeExecution.builder().build();
-    doReturn(nodeExecution).when(nodeExecutionService).getWithFieldsIncluded(any(), any());
+    NodeExecutionStatusResult nodeExecution = NodeExecutionStatusResult.builder().status(Status.ABORTED).build();
+    doReturn(nodeExecution).when(nodeExecutionService).getStatus(any());
     doReturn(NodeExecution.builder().build())
         .when(endNodeExecutionHelper)
         .handleStepResponsePreAdviser(ambiance, stepResponseProto);

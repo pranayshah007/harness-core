@@ -36,15 +36,14 @@ import io.harness.distribution.barrier.ForcerId;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -308,8 +307,7 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
         return ABANDONED;
       }
     } else {
-      NodeExecution forcerNode =
-          nodeExecutionService.getWithFieldsIncluded(forcerId.getValue(), NodeProjectionUtils.withStatus);
+      NodeExecutionStatusResult forcerNode = nodeExecutionService.getStatus(forcerId.getValue());
       status = forcerNode.getStatus();
     }
 
