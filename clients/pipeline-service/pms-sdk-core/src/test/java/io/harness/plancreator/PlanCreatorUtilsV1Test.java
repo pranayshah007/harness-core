@@ -9,6 +9,7 @@ package io.harness.plancreator;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,13 +19,17 @@ import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.yaml.core.failurestrategy.abort.v1.AbortFailureActionConfigV1;
@@ -89,44 +94,130 @@ public class PlanCreatorUtilsV1Test extends PmsSdkCoreTestBase {
     ClassLoader classLoader = this.getClass().getClassLoader();
     String fileName = "failure-strategies-v1.yaml";
     String failureStrategiesYaml =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName)), StandardCharsets.UTF_8);
+            Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName)), StandardCharsets.UTF_8);
     List<FailureConfigV1> failureConfigs =
-        PlanCreatorUtilsV1.getFailureStrategies(new YamlNode(YamlUtils.readAsJsonNode(failureStrategiesYaml)));
+            PlanCreatorUtilsV1.getFailureStrategies(new YamlNode(YamlUtils.readAsJsonNode(failureStrategiesYaml)));
     assertEquals(failureConfigs,
-        List.of(
-            FailureConfigV1.builder()
-                .errors(List.of(NGFailureTypeV1.AUTHORIZATION_ERROR))
-                .action(
-                    RetryFailureActionConfigV1.builder()
-                        .spec(RetryFailureSpecConfigV1.builder()
-                                  .attempts(ParameterField.createValueField(2))
-                                  .interval(ParameterField.createValueField(List.of(Timeout.fromString("1m"))))
-                                  .failure(RetryFailureConfigV1.builder()
-                                               .action(ManualInterventionFailureActionConfigV1.builder()
-                                                           .spec(ManualFailureSpecConfigV1.builder()
-                                                                     .timeout(ParameterField.createValueField(
-                                                                         Timeout.fromString("10s")))
-                                                                     .timeout_action(
-                                                                         AbortFailureActionConfigV1.builder().build())
-                                                                     .build())
-                                                           .build())
-                                               .build())
-                                  .build())
-                        .build())
-                .build()));
+            List.of(
+                    FailureConfigV1.builder()
+                            .errors(List.of(NGFailureTypeV1.AUTHORIZATION_ERROR))
+                            .action(
+                                    RetryFailureActionConfigV1.builder()
+                                            .spec(RetryFailureSpecConfigV1.builder()
+                                                    .attempts(ParameterField.createValueField(2))
+                                                    .interval(ParameterField.createValueField(List.of(Timeout.fromString("1m"))))
+                                                    .failure(RetryFailureConfigV1.builder()
+                                                            .action(ManualInterventionFailureActionConfigV1.builder()
+                                                                    .spec(ManualFailureSpecConfigV1.builder()
+                                                                            .timeout(ParameterField.createValueField(
+                                                                                    Timeout.fromString("10s")))
+                                                                            .timeout_action(
+                                                                                    AbortFailureActionConfigV1.builder().build())
+                                                                            .build())
+                                                                    .build())
+                                                            .build())
+                                                    .build())
+                                            .build())
+                            .build()));
     fileName = "failure-strategies-list-v1.yaml";
     failureStrategiesYaml =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName)), StandardCharsets.UTF_8);
+            Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName)), StandardCharsets.UTF_8);
     failureConfigs =
-        PlanCreatorUtilsV1.getFailureStrategies(new YamlNode(YamlUtils.readAsJsonNode(failureStrategiesYaml)));
+            PlanCreatorUtilsV1.getFailureStrategies(new YamlNode(YamlUtils.readAsJsonNode(failureStrategiesYaml)));
     assertEquals(failureConfigs,
-        List.of(FailureConfigV1.builder()
-                    .errors(List.of(NGFailureTypeV1.AUTHENTICATION_ERROR, NGFailureTypeV1.CONNECTIVITY_ERROR))
-                    .action(IgnoreFailureActionConfigV1.builder().build())
-                    .build(),
-            FailureConfigV1.builder()
-                .errors(List.of(NGFailureTypeV1.ALL_ERRORS))
-                .action(MarkAsSuccessFailureActionConfigV1.builder().build())
-                .build()));
+            List.of(FailureConfigV1.builder()
+                            .errors(List.of(NGFailureTypeV1.AUTHENTICATION_ERROR, NGFailureTypeV1.CONNECTIVITY_ERROR))
+                            .action(IgnoreFailureActionConfigV1.builder().build())
+                            .build(),
+                    FailureConfigV1.builder()
+                            .errors(List.of(NGFailureTypeV1.ALL_ERRORS))
+                            .action(MarkAsSuccessFailureActionConfigV1.builder().build())
+                            .build()));
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testParentInfoPutAndGet() {
+    PlanCreationResponse response = PlanCreationResponse.builder()
+                                        .dependencies(Dependencies.newBuilder()
+                                                          .putDependencyMetadata("dep", Dependency.newBuilder().build())
+                                                          .putDependencies("dep", "dep")
+                                                          .build())
+                                        .build();
+    PlanCreatorUtilsV1.putParentInfoInternal(
+        response, "key", HarnessValue.newBuilder().setStringValue("value").build());
+    PlanCreationContext context = PlanCreationContext.builder()
+                                      .dependency(response.getDependencies().getDependencyMetadataMap().get("dep"))
+                                      .build();
+    assertThat(PlanCreatorUtilsV1.getFromParentInfo("key", context).getStringValue()).isEqualTo("value");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testPutParentInfoString() {
+    PlanCreationResponse response = PlanCreationResponse.builder()
+                                        .dependencies(Dependencies.newBuilder()
+                                                          .putDependencyMetadata("dep", Dependency.newBuilder().build())
+                                                          .putDependencies("dep", "dep")
+                                                          .build())
+                                        .build();
+    PlanCreatorUtilsV1.putParentInfo(response, "key", "value");
+    PlanCreationContext context = PlanCreationContext.builder()
+                                      .dependency(response.getDependencies().getDependencyMetadataMap().get("dep"))
+                                      .build();
+    assertThat(PlanCreatorUtilsV1.getFromParentInfo("key", context).getStringValue()).isEqualTo("value");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetFromParentInfoEmptyString() {
+    PlanCreationResponse response = PlanCreationResponse.builder()
+                                        .dependencies(Dependencies.newBuilder()
+                                                          .putDependencyMetadata("dep", Dependency.newBuilder().build())
+                                                          .putDependencies("dep", "dep")
+                                                          .build())
+                                        .build();
+    PlanCreatorUtilsV1.putParentInfo(response, "key", "value");
+    PlanCreationContext context = PlanCreationContext.builder()
+                                      .dependency(response.getDependencies().getDependencyMetadataMap().get("dep"))
+                                      .build();
+    assertThat(PlanCreatorUtilsV1.getFromParentInfo("wrongKey", context).getStringValue()).isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testPutParentInfoBoolean() {
+    PlanCreationResponse response = PlanCreationResponse.builder()
+                                        .dependencies(Dependencies.newBuilder()
+                                                          .putDependencyMetadata("dep", Dependency.newBuilder().build())
+                                                          .putDependencies("dep", "dep")
+                                                          .build())
+                                        .build();
+    PlanCreatorUtilsV1.putParentInfo(response, "key", true);
+    PlanCreationContext context = PlanCreationContext.builder()
+                                      .dependency(response.getDependencies().getDependencyMetadataMap().get("dep"))
+                                      .build();
+    assertThat(PlanCreatorUtilsV1.getFromParentInfo("key", context).getBoolValue()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetFromParentInfoBooleanDefaultsToFalse() {
+    PlanCreationResponse response = PlanCreationResponse.builder()
+                                        .dependencies(Dependencies.newBuilder()
+                                                          .putDependencyMetadata("dep", Dependency.newBuilder().build())
+                                                          .putDependencies("dep", "dep")
+                                                          .build())
+                                        .build();
+    PlanCreatorUtilsV1.putParentInfo(response, "key", true);
+    PlanCreationContext context = PlanCreationContext.builder()
+                                      .dependency(response.getDependencies().getDependencyMetadataMap().get("dep"))
+                                      .build();
+    assertThat(PlanCreatorUtilsV1.getFromParentInfo("wrongKey", context).getBoolValue()).isFalse();
   }
 }

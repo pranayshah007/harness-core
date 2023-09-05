@@ -10,6 +10,7 @@ package io.harness.plancreator.steps;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,26 +53,9 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
 
   @Before
   public void setUp() throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    final URL testFile = classLoader.getResource("complex_pipeline.yaml");
-    assertThat(testFile).isNotNull();
-    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
-    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
-
-    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
-    assertThat(pipelineYamlField).isNotNull();
-    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
-    assertThat(stagesYamlField).isNotNull();
-    List<YamlNode> stagesNodes = stagesYamlField.getNode().asArray();
-    YamlField approvalStageField = stagesNodes.get(0).getField("stage");
-    YamlField approvalSpecField = Objects.requireNonNull(approvalStageField).getNode().getField("spec");
-    YamlField executionField = Objects.requireNonNull(approvalSpecField).getNode().getField("execution");
-
-    stepGroupYamlField = executionField.getNode().getField("steps").getNode().asArray().get(0).getField("stepGroup");
+    stepGroupYamlField = getStepGroupYamlField("complex_pipeline.yaml");
     assertThat(stepGroupYamlField).isNotNull();
-
     stepElementConfig = YamlUtils.read(stepGroupYamlField.getNode().toString(), StepGroupElementConfig.class);
-
     context = PlanCreationContext.builder()
                   .currentField(stepGroupYamlField)
                   .globalContext("metadata",
@@ -134,5 +118,61 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
         stepGroupPMSPlanCreator.getAdviserObtainmentFromMetaData(kryoSerializer, stepGroupYamlField, false, false);
     assertThat(adviserObtainmentList).hasSize(1);
     assertThat(adviserObtainmentList.get(0).getType().toString()).isEqualTo("type: \"NEXT_STEP\"\n");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testPopulateParentInfo() throws IOException {
+    YamlField stepGroupYamlField1 = getStepGroupYamlField("complex_pipeline_with_strategy.yaml");
+    assertThat(stepGroupYamlField1).isNotNull();
+    stepElementConfig = YamlUtils.read(stepGroupYamlField1.getNode().toString(), StepGroupElementConfig.class);
+    context = PlanCreationContext.builder()
+                  .currentField(stepGroupYamlField1)
+                  .globalContext("metadata",
+                      PlanCreationContextValue.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build())
+                  .build();
+    YamlField stepsField = stepGroupYamlField1.getNode().getField("steps");
+    LinkedHashMap<String, PlanCreationResponse> planForChildrenNodes =
+        stepGroupPMSPlanCreator.createPlanForChildrenNodes(context, stepElementConfig);
+    stepGroupPMSPlanCreator.populateParentInfo(context, planForChildrenNodes);
+    assertThat(planForChildrenNodes.containsKey(stepsField.getNode().getUuid())).isTrue();
+    PlanCreationResponse stepsResponse = planForChildrenNodes.get(stepsField.getNode().getUuid());
+    assertThat(stepsResponse.getDependencies()).isNotNull();
+    assertThat(stepsResponse.getDependencies()
+                   .getDependencyMetadataMap()
+                   .get(stepsField.getNode().getUuid())
+                   .getParentInfo()
+                   .getDataMap()
+                   .get("stepGroupId")
+                   .getStringValue())
+        .isEqualTo(stepGroupYamlField1.getUuid());
+    assertThat(stepsResponse.getDependencies()
+                   .getDependencyMetadataMap()
+                   .get(stepsField.getNode().getUuid())
+                   .getParentInfo()
+                   .getDataMap()
+                   .get("strategyId")
+                   .getStringValue())
+        .isEqualTo(stepGroupYamlField1.getUuid());
+  }
+
+  private YamlField getStepGroupYamlField(String pipelineYamlFilePath) throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource(pipelineYamlFilePath);
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+    List<YamlNode> stagesNodes = stagesYamlField.getNode().asArray();
+    YamlField approvalStageField = stagesNodes.get(0).getField("stage");
+    YamlField approvalSpecField = Objects.requireNonNull(approvalStageField).getNode().getField("spec");
+    YamlField executionField = Objects.requireNonNull(approvalSpecField).getNode().getField("execution");
+
+    return executionField.getNode().getField("steps").getNode().asArray().get(0).getField("stepGroup");
   }
 }
