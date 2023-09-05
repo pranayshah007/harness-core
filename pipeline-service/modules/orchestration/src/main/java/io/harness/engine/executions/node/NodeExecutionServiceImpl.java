@@ -42,6 +42,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.execution.NodeExecutionAmbianceResult;
 import io.harness.execution.NodeExecutionStatusResult;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
@@ -178,6 +179,19 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
   }
 
+  @Override
+  public Optional<NodeExecutionAmbianceResult> getPipelineNodeExecution(@NonNull String planExecutionId) {
+    // Uses - planExecutionId_stepCategory_identifier_idx
+    // Sort is not part of index, as node selection is always one node thus it will not impact much
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.PIPELINE))
+                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
+    for (String fieldName : NodeProjectionUtils.withAmbianceAndStatus) {
+      query.fields().include(fieldName);
+    }
+    return nodeExecutionReadHelper.getOne(query, NodeExecutionAmbianceResult.class);
+  }
+
   // TODO (alexi) : Handle the case where multiple instances are returned
   @Override
   public NodeExecution getByPlanNodeUuid(String planNodeUuid, String planExecutionId) {
@@ -244,13 +258,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
     // Exclude so that it can use Projection covered from index without scanning documents.
     query.fields().exclude(NodeExecutionKeys.id).include(NodeExecutionKeys.status);
-    List<NodeExecution> nodeExecutions = new LinkedList<>();
-    try (CloseableIterator<NodeExecution> iterator = nodeExecutionReadHelper.fetchNodeExecutions(query)) {
+    List<Status> statuses = new LinkedList<>();
+    try (CloseableIterator<NodeExecutionStatusResult> iterator =
+             nodeExecutionReadHelper.fetchNodeExecutions(query, NodeExecutionStatusResult.class)) {
       while (iterator.hasNext()) {
-        nodeExecutions.add(iterator.next());
+        statuses.add(iterator.next().getStatus());
       }
     }
-    return nodeExecutions.stream().map(NodeExecution::getStatus).collect(Collectors.toList());
+    return statuses;
   }
 
   @Override

@@ -42,11 +42,13 @@ import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.execution.NodeExecutionAmbianceResult;
 import io.harness.execution.NodeExecutionStatusResult;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -68,6 +70,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.joor.Reflect;
 import org.junit.Before;
@@ -975,5 +978,135 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
 
     List<Status> statuses = nodeExecutionService.fetchNonFlowingAndNonFinalStatuses(planExecutionUuid);
     assertThat(statuses).contains(Status.QUEUED_LICENSE_LIMIT_REACHED, Status.APPROVAL_WAITING);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testFetchNodeExecutionsStatusesWithoutOldRetries() {
+    String planExecutionUuid = generateUuid();
+    String parentId = generateUuid();
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(SUCCEEDED)
+            .build();
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(Status.QUEUED_LICENSE_LIMIT_REACHED)
+            .build();
+    NodeExecution nodeExecution2 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(Status.APPROVAL_WAITING)
+            .build();
+    NodeExecution nodeExecution3 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .oldRetry(true)
+            .status(FAILED)
+            .build();
+
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+
+    nodeExecutionService.save(nodeExecution);
+    nodeExecutionService.save(nodeExecution1);
+    nodeExecutionService.save(nodeExecution2);
+    nodeExecutionService.save(nodeExecution3);
+
+    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionUuid);
+    assertThat(statuses).containsExactly(SUCCEEDED, Status.QUEUED_LICENSE_LIMIT_REACHED, Status.APPROVAL_WAITING);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testGetPipelineNodeExecution() {
+    String planExecutionUuid = generateUuid();
+    String parentId = generateUuid();
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(
+                Ambiance.newBuilder()
+                    .addLevels(
+                        Level.newBuilder()
+                            .setStepType(
+                                StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.PIPELINE).build())
+                            .build())
+                    .setPlanExecutionId(planExecutionUuid)
+                    .build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.PIPELINE).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(SUCCEEDED)
+            .build();
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(SUCCEEDED)
+            .build();
+
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+
+    nodeExecutionService.save(nodeExecution);
+    nodeExecutionService.save(nodeExecution1);
+
+    Optional<NodeExecutionAmbianceResult> nodeExecutionAmbianceResult =
+        nodeExecutionService.getPipelineNodeExecution(planExecutionUuid);
+    assertThat(nodeExecutionAmbianceResult).isPresent();
+    assertThat(nodeExecutionAmbianceResult.get().getStatus()).isEqualTo(SUCCEEDED);
+    assertThat(nodeExecutionAmbianceResult.get().getAmbiance().getLevelsCount()).isEqualTo(1);
   }
 }

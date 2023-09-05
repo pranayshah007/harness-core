@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecutionAmbianceResult;
 import io.harness.execution.NodeExecutionStatusResult;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.execution.Status;
@@ -70,6 +71,14 @@ public interface NodeExecutionService {
    * @return
    */
   Optional<NodeExecution> getPipelineNodeExecutionWithProjections(@NonNull String planExecutionId, Set<String> fields);
+
+  /**
+   * Get pipeline node from a given planExecutionId with projection
+   * Uses - planExecutionId_stepCategory_identifier_idx
+   * @param planExecutionId
+   * @return
+   */
+  Optional<NodeExecutionAmbianceResult> getPipelineNodeExecution(@NonNull String planExecutionId);
 
   /**
    * Fetches nodeExecution for given planExecutionId and planNodeId

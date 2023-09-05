@@ -59,10 +59,6 @@ public class NodeProjectionUtils {
   public static final Set<String> fieldsForNodeUpdateObserver = Sets.newHashSet(
       NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry);
 
-  public static final Set<String> fieldsForNodeStatusUpdateObserver =
-      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.resolvedParams,
-          NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry, NodeExecutionKeys.timeoutInstanceIds);
-
   public static final Set<String> fieldsForResume =
       Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses,
           NodeExecutionKeys.mode, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.module,

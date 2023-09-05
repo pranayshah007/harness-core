@@ -33,7 +33,7 @@ import org.springframework.data.util.CloseableIterator;
 @Singleton
 public class NodeExecutionReadHelper {
   private static final int MAX_BATCH_SIZE = 1000;
-  private static final String COLLECTION_NAME = "nodeExecutions";
+  public static final String COLLECTION_NAME = "nodeExecutions";
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate analyticsMongoTemplate;
 
@@ -58,6 +58,11 @@ public class NodeExecutionReadHelper {
   public Optional<NodeExecution> getOne(Query query) {
     validateNodeExecutionProjection(query);
     return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
+  }
+
+  public <T> Optional<T> getOne(Query query, Class<T> clazz) {
+    validateNodeExecutionProjection(query);
+    return Optional.ofNullable(mongoTemplate.findOne(query, clazz, COLLECTION_NAME));
   }
 
   public Optional<NodeExecutionStatusResult> getStatus(Query query) {

@@ -64,7 +64,7 @@ public class FailureInterruptCallback implements OldNotifyCallback {
                   .interruptType(interruptType)
                   .interruptConfig(interruptConfig)
                   .build()),
-          NodeProjectionUtils.withStatus);
+          NodeProjectionUtils.withAmbianceAndStatus);
 
       if (originalStatus == null) {
         originalStatus = updatedNodeExecution.getStatus();
