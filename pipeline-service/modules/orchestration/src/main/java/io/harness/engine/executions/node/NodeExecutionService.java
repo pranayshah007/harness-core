@@ -94,15 +94,23 @@ public interface NodeExecutionService {
 
   /**
    * Fetches all statuses for nodeExecutions for give planExecutionId and oldRetry false
-   * Uses - planExecutionId_status_idx index
+   * Uses - planExecutionId_mode_status_oldRetry_idx index
    * @param planExecutionId
    * @return
    */
   List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId);
 
   /**
+   * Fetches all non-final-statuses for nodeExecutions for given planExecutionId and oldRetry false
+   * Uses - planExecutionId_mode_status_oldRetry_idx index, uses PROJECTION_COVERED
+   * @param planExecutionId
+   * @return
+   */
+  List<Status> fetchNonFlowingAndNonFinalStatuses(String planExecutionId);
+
+  /**
    * Returns iterator for nodeExecution without old retries without projection
-   * Uses - planExecutionId_status_idx
+   * Uses - planExecutionId_oldRetry_idx
    * Check before using this, as it gets all nodes without projections for a planExecutionId (Get approval)
    * Example -> Complete Graph generation
    * @param planExecutionId

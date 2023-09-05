@@ -44,7 +44,6 @@ import io.harness.logstreaming.LogLine;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.repositories.ApprovalInstanceRepository;
@@ -227,7 +226,6 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
 
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("PlanExecutionId").build();
     entity.setAmbiance(ambiance);
-    when(planExecutionService.calculateStatusExcluding(any(), any())).thenReturn(Status.SUCCEEDED);
     approvalInstanceServiceImpl.finalizeStatus("hello", ApprovalStatus.APPROVED, "errormessage", null);
     ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
     ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
@@ -247,7 +245,6 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     when(approvalInstanceRepository.updateFirst(any(), any())).thenReturn(entity);
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("PlanExecutionId").build();
     entity.setAmbiance(ambiance);
-    when(planExecutionService.calculateStatusExcluding(any(), any())).thenReturn(Status.SUCCEEDED);
     approvalInstanceServiceImpl.finalizeStatus("hello", ApprovalStatus.APPROVED, "errormessage", null);
     ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
     ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);

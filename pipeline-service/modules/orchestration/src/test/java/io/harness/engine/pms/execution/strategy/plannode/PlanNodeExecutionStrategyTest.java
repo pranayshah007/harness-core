@@ -38,6 +38,7 @@ import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.execution.WaitForExecutionInputHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.facilitation.facilitator.publisher.FacilitateEventPublisher;
 import io.harness.engine.interrupts.InterruptService;
@@ -120,6 +121,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private NodeAdviseHelper adviseHelper;
   @Mock private InterruptService interruptService;
   @Mock private PlanService planService;
+  @Mock private PlanExecutionService planExecutionService;
   @Mock private SdkResponseProcessorFactory processorFactory;
   @Mock private AdviserResponseRequestProcessor adviserResponseProcessor;
   @Mock private WaitForExecutionInputHelper waitForExecutionInputHelper;
@@ -400,6 +402,31 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     when(nodeExecutionService.getWithFieldsIncluded(eq(nodeExecutionId), eq(NodeProjectionUtils.fieldsForResume)))
         .thenReturn(nodeExecution);
     executionStrategy.resumeNodeExecution(ambiance, responseMap, false);
+    verify(resumeHelper).resume(eq(nodeExecution), eq(responseMap), eq(false));
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldTestResumeNodeExecutionWithStatusApprovalWaiting() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .putAllSetupAbstractions(prepareInputArgs())
+                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+                            .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).status(Status.APPROVAL_WAITING).build();
+    Map<String, ResponseDataProto> responseMap = ImmutableMap.of(
+        generateUuid(), ResponseDataProto.newBuilder().setResponse(ByteString.copyFromUtf8(generateUuid())).build());
+    when(nodeExecutionService.getWithFieldsIncluded(eq(nodeExecutionId), eq(NodeProjectionUtils.fieldsForResume)))
+        .thenReturn(nodeExecution);
+    when(nodeExecutionService.updateStatusWithOps(
+             eq(nodeExecutionId), eq(Status.RUNNING), eq(null), eq(EnumSet.noneOf(Status.class))))
+        .thenReturn(nodeExecution);
+    executionStrategy.resumeNodeExecution(ambiance, responseMap, false);
+    verify(planExecutionService, times(1)).calculateAndUpdateRunningStatusUnderLock(planExecutionId, null);
     verify(resumeHelper).resume(eq(nodeExecution), eq(responseMap), eq(false));
   }
 
