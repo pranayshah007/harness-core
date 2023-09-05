@@ -11,31 +11,49 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.HINGER;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
+import io.harness.steps.jira.beans.JiraField;
+import io.harness.steps.jira.update.JiraUpdateSpecParameters;
+import io.harness.steps.jira.update.JiraUpdateStepInfo;
 import io.harness.steps.jira.update.JiraUpdateStepNode;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class JiraUpdateStepVariableCreatorTest extends CategoryTest {
   JiraUpdateStepVariableCreator jiraUpdateStepVariableCreator = new JiraUpdateStepVariableCreator();
+  @Mock private NGLogCallback mockNgLogCallback;
 
+  @Before
+  public void setup() {
+    MockitoAnnotations.initMocks(this);
+  }
   @Test
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
@@ -109,5 +127,49 @@ public class JiraUpdateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.jira_update.type",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.startTs",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.endTs");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.vivekveman)
+  @Category(UnitTests.class)
+  public void testValidateJiraForUnresolvedFields() {
+    List<JiraField> fields = new ArrayList<>();
+    doNothing().when(mockNgLogCallback).saveExecutionLog(any(), any());
+    fields.add(JiraField.builder().name("name").value(ParameterField.createValueField("value")).build());
+    fields.add(JiraField.builder().name("name2").value(ParameterField.createValueField("value2")).build());
+    fields.add(JiraField.builder().name("name3").value(ParameterField.createValueField("null")).build());
+    JiraUpdateStepInfo jiraUpdateStepInfo = JiraUpdateStepInfo.builder()
+                                                .fields(fields)
+                                                .connectorRef(ParameterField.createValueField("ConnectorRef"))
+                                                .issueType("CHANGE_REQUEST")
+                                                .issueKey(ParameterField.createValueField("TicketNumber"))
+                                                .build();
+    JiraUpdateSpecParameters specParameters = (JiraUpdateSpecParameters) (jiraUpdateStepInfo.getSpecParameters());
+    Map<String, String> result =
+        JiraStepUtils.processJiraFieldsInParameters(specParameters.getFields(), mockNgLogCallback);
+    assertThat(result.size()).isEqualTo(2);
+    assertThat(result.containsValue("null")).isFalse();
+  }
+  @Test
+  @Owner(developers = OwnerRule.vivekveman)
+  @Category(UnitTests.class)
+  public void testValidateJiraForNullFieldValues() {
+    List<JiraField> fields = new ArrayList<>();
+    doNothing().when(mockNgLogCallback).saveExecutionLog(any(), any());
+
+    fields.add(JiraField.builder().name("name").value(ParameterField.createValueField("value")).build());
+    fields.add(JiraField.builder().name("name2").value(ParameterField.createValueField("value2")).build());
+    fields.add(JiraField.builder().name("name3").value(null).build());
+    JiraUpdateStepInfo jiraUpdateStepInfo = JiraUpdateStepInfo.builder()
+                                                .fields(fields)
+                                                .connectorRef(ParameterField.createValueField("ConnectorRef"))
+                                                .issueType("CHANGE_REQUEST")
+                                                .issueKey(ParameterField.createValueField("TicketNumber"))
+                                                .build();
+    JiraUpdateSpecParameters specParameters = (JiraUpdateSpecParameters) (jiraUpdateStepInfo.getSpecParameters());
+    Map<String, String> result =
+        JiraStepUtils.processJiraFieldsInParameters(specParameters.getFields(), mockNgLogCallback);
+    assertThat(result.size()).isEqualTo(2);
+    assertThat(result.containsValue("null")).isFalse();
   }
 }
