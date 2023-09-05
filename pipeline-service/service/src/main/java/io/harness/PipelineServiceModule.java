@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
@@ -903,5 +904,12 @@ public class PipelineServiceModule extends AbstractModule {
     return new ManagedExecutorService(ThreadPool.create(configuration.getPipelineSetupUsageCreationPoolConfig(), 1,
         new ThreadFactoryBuilder().setNameFormat("PipelineSetupUsageCreationExecutorService-%d").build(),
         new ThreadPoolExecutor.AbortPolicy()));
+  }
+
+  @Provides
+  @Singleton
+  @Named("useNewNodeEntityConfiguration")
+  public Boolean getUseNewNodeEntityConfiguration() {
+    return configuration.getUseNewNodeEntityConfiguration();
   }
 }
