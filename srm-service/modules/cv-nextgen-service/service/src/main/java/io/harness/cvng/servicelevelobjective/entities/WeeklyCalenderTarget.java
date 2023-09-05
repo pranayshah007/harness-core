@@ -33,6 +33,12 @@ public class WeeklyCalenderTarget extends CalenderSLOTarget {
   }
 
   @Override
+  public TimePeriod getTimeRangeForHistory(LocalDateTime currentDateTime) {
+    LocalDate nextDayOfWeek = dayOfWeek.getPreviousDayOfWeek(currentDateTime.toLocalDate());
+    return TimePeriod.builder().startDate(nextDayOfWeek.minusDays(6)).endDate(nextDayOfWeek.plusDays(1)).build();
+  }
+
+  @Override
   public List<SLODashboardDetail.TimeRangeFilter> getTimeRangeFilters() {
     List<SLODashboardDetail.TimeRangeFilter> timeRangeFilterList = new ArrayList<>();
     timeRangeFilterList.add(SLODashboardDetail.TimeRangeFilter.ONE_HOUR_FILTER);

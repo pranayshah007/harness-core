@@ -46,9 +46,9 @@ public class HandleProgressRequestProcessor implements SdkResponseProcessor {
           SdkResponseEventUtils.getNodeExecutionId(event), progressRequest.getStatus(),
           ops -> setUnset(ops, NodeExecutionKeys.progressData, progressDoc), EnumSet.noneOf(Status.class));
       if (nodeExecution != null) {
-        String planNodeId = nodeExecution.getAmbiance().getPlanExecutionId();
+        String planExecutionId = nodeExecution.getAmbiance().getPlanExecutionId();
         log.info("Updating plan status from Progress Request");
-        planExecutionService.calculateAndUpdateRunningStatus(planNodeId, nodeExecution.getNodeId());
+        planExecutionService.calculateAndUpdateRunningStatusUnderLock(planExecutionId, null);
       }
     } else {
       nodeExecutionService.updateV2(SdkResponseEventUtils.getNodeExecutionId(event),

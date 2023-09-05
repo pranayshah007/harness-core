@@ -65,6 +65,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +76,9 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
 
 public class ServiceNowResourceServiceTest extends CategoryTest {
   private static final String ACCOUNT_ID = "accountId";
@@ -417,7 +420,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTemplateList(serviceNowFieldNGList1).build());
     assertThat(serviceNowResourceService.getTemplateList(
-                   identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 0, 0, TEMPLATE_NAME, "CHANGE_TASK"))
+                   identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2, TEMPLATE_NAME, "CHANGE_TASK", "filter"))
         .isEqualTo(serviceNowFieldNGList1);
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
@@ -425,6 +428,8 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TEMPLATE);
     assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+    assertThat(parameters.getSearchTerm()).isEqualTo("filter");
+    assertThat(parameters.getTemplateListOffset()).isEqualTo(100);
   }
 
   @Test
@@ -570,6 +575,34 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
 
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET_TYPES);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetTicketWithRetryWithQueryFields() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+    List<String> queryFields = new ArrayList<>();
+    queryFields.add("active");
+    queryFields.add("opened_at");
+    queryFields.add("approval_set");
+    queryFields.add("number");
+    queryFields.add("caused_by");
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(ServiceNowTaskNGResponse.builder().build());
+    assertThat(serviceNowResourceService.getTicketDetails(
+                   identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_REQUEST", "INC-", queryFields))
+        .isEqualTo(null);
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET);
+    assertThat(parameters.getQueryFields()).isEqualTo("active,opened_at,approval_set,number,caused_by");
   }
 
   private JsonNode readResource(String filePath) throws IOException {

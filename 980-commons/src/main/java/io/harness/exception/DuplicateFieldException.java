@@ -34,4 +34,9 @@ public class DuplicateFieldException extends WingsException {
     super(message, e, DUPLICATE_FIELD, Level.ERROR, reportTarget, null);
     super.param(MESSAGE_ARG, message);
   }
+
+  public DuplicateFieldException(String message, EnumSet<ReportTarget> reportTarget) {
+    super(message, null, DUPLICATE_FIELD, Level.ERROR, reportTarget, null);
+    super.param(MESSAGE_ARG, message);
+  }
 }

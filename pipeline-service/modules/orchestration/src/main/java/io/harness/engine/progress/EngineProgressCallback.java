@@ -37,7 +37,8 @@ public class EngineProgressCallback implements ProgressCallback {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject @Transient ProgressEventPublisher progressEventPublisher;
 
-  Ambiance ambiance;
+  @Deprecated Ambiance ambiance;
+  String nodeExecutionId;
 
   @Override
   public void notify(String correlationId, ProgressData progressData) {
@@ -65,6 +66,6 @@ public class EngineProgressCallback implements ProgressCallback {
   }
 
   private String getNodeExecutionId() {
-    return AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    return nodeExecutionId == null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : nodeExecutionId;
   }
 }

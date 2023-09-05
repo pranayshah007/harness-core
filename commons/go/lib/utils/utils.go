@@ -373,6 +373,36 @@ func ParseFileNames(files []types.File, testGlobs []string) ([]Node, error) {
 	return nodes, nil
 }
 
+// ParseFileNamesWithLanguage extract Node from given file path and language strings
+func ParseFileNamesWithLanguage(files []types.File, testGlobs []string, language string) []Node {
+	nodes := make([]Node, 0)
+	for _, file := range files {
+		path := file.Name
+		if len(path) == 0 {
+			continue
+		}
+		var node *Node
+		var err error
+		switch language {
+		case "csharp":
+			node, err = ParseCsharpNode(file, testGlobs)
+		case "java", "scala", "kotlin":
+			node, err = ParseJavaNode(file)
+		case "python":
+			node = ParsePythonNode(file, testGlobs)
+		case "ruby":
+			node = ParseRubyNode(file, testGlobs)
+		default:
+			node, err = ParsePathBasedNodeAndType(file, testGlobs)
+		}
+		if err != nil {
+			continue
+		}
+		nodes = append(nodes, *node)
+	}
+	return nodes
+}
+
 // GetSliceDiff returns the unique element in sIDs which are not present in dIDs
 func GetSliceDiff(sIDs []int, dIDs []int) []int {
 	mp := make(map[int]bool)
@@ -395,4 +425,21 @@ func GetRepoUrl(repo string) string {
 		repo += ".git"
 	}
 	return repo
+}
+
+// GetUniqueTestStrings extract list of test strings from Class
+// It should only work if Class is the only primary identifier of the test selection
+func GetUniqueTestStrings(tests []types.RunnableTest) []string {
+	set := make(map[types.RunnableTest]interface{})
+	ut := []string{}
+	for _, t := range tests {
+		w := types.RunnableTest{Class: t.Class}
+		if _, ok := set[w]; ok {
+			// The test has already been added
+			continue
+		}
+		set[w] = struct{}{}
+		ut = append(ut, t.Class)
+	}
+	return ut
 }

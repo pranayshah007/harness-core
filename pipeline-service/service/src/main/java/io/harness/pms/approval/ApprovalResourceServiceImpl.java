@@ -10,6 +10,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.security.dto.PrincipalType.USER;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -90,7 +92,13 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   }
 
   @Override
-  public ApprovalInstanceResponseDTO get(String approvalInstanceId) {
+  public ApprovalInstanceResponseDTO get(String approvalInstanceId, String accountId) {
+    ApprovalInstance approvalInstance = approvalInstanceService.get(approvalInstanceId);
+    if (!isNull(accountId) && !accountId.equals(approvalInstance.getAccountId())) {
+      throw new InvalidRequestException(
+          String.format("Account Identifier provided %s doesn't match with approval instance's account identifier: %s",
+              accountId, approvalInstance.getAccountId()));
+    }
     return approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(
         approvalInstanceService.get(approvalInstanceId), true);
   }

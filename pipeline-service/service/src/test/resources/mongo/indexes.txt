@@ -8,6 +8,7 @@ approvalInstances {"name": "nodeExecutionId_1", "background": true} {"nodeExecut
 approvalInstances {"name": "planExecutionId_status_type_nodeExecutionId", "background": true} {"planExecutionId": 1, "status": 1, "type": 1, "nodeExecutionId": 1}
 approvalInstances {"name": "status_deadline", "background": true} {"status": 1, "deadline": 1}
 approvalInstances {"name": "status_type_nextIteration", "background": true} {"status": 1, "type": 1, "nextIteration": -1}
+approvalInstances {"name": "status_type_nextIterations", "background": true} {"status": 1, "type": 1, "nextIterations": 1}
 approvalInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 barrierExecutionInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
 barrierExecutionInstances {"name": "next_iteration_idx", "background": true} {"barrierState": 1, "nextIteration": 1}
@@ -58,6 +59,7 @@ nodeExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds"
 nodeExecutionsInfo {"name": "nodeExecutionId_unique_idx", "unique": true} {"nodeExecutionId": 1}
 nodeExecutionsInfo {"name": "planExecutionId_idx", "background": true} {"planExecutionId": 1}
 nodeExecutionsInfo {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+nodes {"name": "nodeId_idx", "background": true} {"nodeId": 1}
 nodes {"name": "planNodeId_nodeId", "background": true} {"planId": 1, "nodeId": 1}
 nodes {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 notifyQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
@@ -139,6 +141,7 @@ triggersNG {"name": "accId_signature_index", "background": true} {"accountId": 1
 triggersNG {"name": "accId_signature_index_for_multibuildmetadata", "background": true} {"accountId": 1, "metadata.multiBuildMetadata.pollingConfig.signature": 1}
 triggersNG {"name": "accId_sourcerepo_index", "background": true} {"accountId": 1, "metadata.webhook.type": 1}
 triggersNG {"name": "nextIterations_1", "background": true} {"nextIterations": 1}
+triggersNG {"name": "type_nextIterations", "background": true} {"type": 1, "nextIterations": 1}
 triggersNG {"name": "type_repoUrl", "background": true} {"type": 1, "metadata.webhook.git.connectorIdentifier": 1, "accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 triggersNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_identifier", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 triggersNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_targetIdentifier_triggerType_identifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "targetIdentifier": 1, "targetType": 1, "identifier": 1}

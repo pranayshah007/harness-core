@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.artifact.outcome;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
@@ -18,13 +19,16 @@ import io.harness.cdng.artifact.CustomArtifactSummary;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.google.common.collect.Sets;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = false)
@@ -64,5 +68,10 @@ public class CustomArtifactOutcome implements ArtifactOutcome {
   @Override
   public String getTag() {
     return version;
+  }
+
+  @Override
+  public Set<String> getMetaTags() {
+    return Sets.newHashSet(tag, identifier, version);
   }
 }

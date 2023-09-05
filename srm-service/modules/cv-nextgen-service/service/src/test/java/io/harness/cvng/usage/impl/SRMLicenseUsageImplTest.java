@@ -150,8 +150,8 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
     activeServiceDTOList.sort(Comparator.comparing(ActiveServiceDTO::getIdentifier));
     assertThat(activeServiceDTOList.get(0).getIdentifier()).isEqualTo("account.service1");
     assertThat(activeServiceDTOList.get(0).getMonitoredServiceCount()).isEqualTo(1);
-    assertThat(activeServiceDTOList.get(0).getOrgName()).isEqualTo(null);
-    assertThat(activeServiceDTOList.get(0).getProjectName()).isEqualTo(null);
+    assertThat(activeServiceDTOList.get(0).getOrgName()).isEqualTo("Deleted");
+    assertThat(activeServiceDTOList.get(0).getProjectName()).isEqualTo("Deleted");
     assertThat(activeServiceDTOList.get(1).getIdentifier()).isEqualTo("account.service2");
     assertThat(activeServiceDTOList.get(1).getMonitoredServiceCount()).isEqualTo(1);
     assertThat(activeServiceDTOList.get(2).getIdentifier()).isEqualTo("service2");
@@ -189,11 +189,11 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
     assertThat(activeServiceDTOList.get(0).getIdentifier()).isEqualTo("org.service1");
     assertThat(activeServiceDTOList.get(0).getMonitoredServiceCount()).isEqualTo(1);
     assertThat(activeServiceDTOList.get(0).getOrgName()).isEqualTo("Mocked org name");
-    assertThat(activeServiceDTOList.get(0).getProjectName()).isEqualTo(null);
+    assertThat(activeServiceDTOList.get(0).getProjectName()).isEqualTo("Deleted");
     assertThat(activeServiceDTOList.get(1).getIdentifier()).isEqualTo("org.service2");
     assertThat(activeServiceDTOList.get(1).getMonitoredServiceCount()).isEqualTo(1);
     assertThat(activeServiceDTOList.get(1).getOrgName()).isEqualTo("Mocked org name");
-    assertThat(activeServiceDTOList.get(1).getProjectName()).isEqualTo(null);
+    assertThat(activeServiceDTOList.get(1).getProjectName()).isEqualTo("Deleted");
     assertThat(activeServiceDTOList.get(2).getIdentifier()).isEqualTo("service2");
     assertThat(activeServiceDTOList.get(2).getMonitoredServiceCount()).isEqualTo(2);
     assertThat(activeServiceDTOList.get(2).getOrgName()).isEqualTo("Mocked org name");

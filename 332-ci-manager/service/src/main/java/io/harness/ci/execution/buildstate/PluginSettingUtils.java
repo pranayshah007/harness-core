@@ -77,8 +77,10 @@ import io.harness.plugin.service.PluginServiceImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.beans.stepinfo.ProvenanceStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.execution.ProvenancePluginHelper;
 import io.harness.ssca.execution.SscaEnforcementPluginHelper;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
@@ -149,6 +151,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
+  @Inject private ProvenancePluginHelper provenancePluginHelper;
+  @Inject private SscaEnforcementPluginHelper sscaEnforcementPluginHelper;
 
   @Override
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
@@ -189,12 +193,14 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
             (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance, infraType);
       case SSCA_ENFORCEMENT:
-        return SscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
+        return sscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
             (SscaEnforcementStepInfo) stepInfo, identifier, ambiance, infraType);
       case IACM_TERRAFORM_PLUGIN:
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMTerraformPluginInfo) stepInfo);
       case IACM_APPROVAL:
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMApprovalInfo) stepInfo);
+      case PROVENANCE:
+        return provenancePluginHelper.getProvenanceStepEnvVariables((ProvenanceStepInfo) stepInfo, identifier);
       default:
         throw new IllegalStateException(
             "Unexpected value in getPluginCompatibleEnvVariables: " + stepInfo.getNonYamlInfo().getStepInfoType());
@@ -207,10 +213,12 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case SSCA_ORCHESTRATION:
         return SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars((SscaOrchestrationStepInfo) step);
       case SSCA_ENFORCEMENT:
-        return SscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
+        return sscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
             (SscaEnforcementStepInfo) step, identifier);
       case IACM_TERRAFORM_PLUGIN:
         return iacmStepsUtils.getSecretVariablesForKubernetes((IACMTerraformPluginInfo) step);
+      case PROVENANCE:
+        return provenancePluginHelper.getProvenanceStepSecretVariables((ProvenanceStepInfo) step);
       default:
         return new HashMap<>();
     }
@@ -264,6 +272,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return map;
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case PROVENANCE:
         return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);

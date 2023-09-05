@@ -12,15 +12,15 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.IDP)
 public enum BackstageCatalogEntityTypes {
-  DOMAIN("Domain"),
-  SYSTEM("System"),
-  COMPONENT("Component"),
   API("Api"),
-  USER("User"),
+  COMPONENT("Component"),
+  DOMAIN("Domain"),
   GROUP("Group"),
-  RESOURCE("Resource"),
   LOCATION("Location"),
-  TEMPLATE("Template");
+  RESOURCE("Resource"),
+  SYSTEM("System"),
+  TEMPLATE("Template"),
+  USER("User");
 
   public final String kind;
 
@@ -74,10 +74,38 @@ public enum BackstageCatalogEntityTypes {
         return ((BackstageCatalogTemplateEntity) entity).getSpec().getType();
       case RESOURCE:
         return ((BackstageCatalogResourceEntity) entity).getSpec().getType();
+      default:
+        return null;
+    }
+  }
+
+  public static String getEntityOwner(BackstageCatalogEntity entity) {
+    switch (BackstageCatalogEntityTypes.fromString(entity.getKind())) {
+      case API:
+        return ((BackstageCatalogApiEntity) entity).getSpec().getOwner();
+      case COMPONENT:
+        return ((BackstageCatalogComponentEntity) entity).getSpec().getOwner();
+      case RESOURCE:
+        return ((BackstageCatalogResourceEntity) entity).getSpec().getOwner();
       case DOMAIN:
+        return ((BackstageCatalogDomainEntity) entity).getSpec().getOwner();
       case SYSTEM:
-      case USER:
+        return ((BackstageCatalogSystemEntity) entity).getSpec().getOwner();
       case GROUP:
+        return ((BackstageCatalogGroupEntity) entity).getSpec().getOwner();
+      case TEMPLATE:
+        return ((BackstageCatalogTemplateEntity) entity).getSpec().getOwner();
+      default:
+        return null;
+    }
+  }
+
+  public static String getEntityLifecycle(BackstageCatalogEntity entity) {
+    switch (BackstageCatalogEntityTypes.fromString(entity.getKind())) {
+      case API:
+        return ((BackstageCatalogApiEntity) entity).getSpec().getLifecycle();
+      case COMPONENT:
+        return ((BackstageCatalogComponentEntity) entity).getSpec().getLifecycle();
       default:
         return null;
     }

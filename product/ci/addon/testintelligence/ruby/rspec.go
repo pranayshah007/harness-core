@@ -16,12 +16,19 @@ package ruby
 import (
 	"context"
 	"errors"
+	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
+)
+
+var (
+	rspecCmd = "bundle exec rspec"
 )
 
 type rspecRunner struct {
@@ -56,7 +63,35 @@ func (b *rspecRunner) ReadPackages(files []types.File) []types.File {
 }
 
 func (b *rspecRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
-	// Placeholder
 	testCmd := ""
+	tiFlag := "INTEL=1"
+	repoPath := filepath.Join(b.agentPath, "harness", "ruby-agent")
+	err := WriteGemFile(repoPath)
+	if err != nil {
+		return testCmd, err
+	}
+	// Run all the tests
+	if runAll {
+		if ignoreInstr {
+			return strings.TrimSpace(fmt.Sprintf("%s %s", rspecCmd, userArgs)), nil
+		}
+		testCmd = strings.TrimSpace(fmt.Sprintf("%s %s %s ",
+			tiFlag, rspecCmd, userArgs))
+		return testCmd, nil
+	}
+
+	if len(tests) == 0 {
+		return "echo \"Skipping test run, received no tests to execute\"", nil
+	}
+
+	ut := utils.GetUniqueTestStrings(tests)
+	testStr := strings.Join(ut, " ")
+
+	if ignoreInstr {
+		return strings.TrimSpace(fmt.Sprintf("%s %s %s", rspecCmd, userArgs, testStr)), nil
+	}
+
+	testCmd = fmt.Sprintf("%s %s %s %s",
+		tiFlag, rspecCmd, userArgs, testStr)
 	return testCmd, nil
 }

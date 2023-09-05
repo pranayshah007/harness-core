@@ -471,7 +471,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       StepStatus stepStatus, StepResponseBuilder stepResponseBuilder) {
     modifyStepStatus(ambiance, stepStatus, stepIdentifier);
 
-    StepArtifacts stepArtifacts = handleArtifact(stepStatus.getArtifactMetadata(), stepParameters);
+    StepArtifacts stepArtifacts = handleArtifact(stepStatus.getArtifactMetadata(), stepParameters, ambiance);
     if (stepArtifacts != null) {
       // since jexl doesn't understand - therefore we are adding a new outcome with artifact_ appended
       // Also to have backward compatibility we'll save the old outcome as an output variable.
@@ -583,6 +583,11 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     } else {
       return errorMessage;
     }
+  }
+
+  protected StepArtifacts handleArtifact(
+      ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
+    return handleArtifact(artifactMetadata, stepParameters);
   }
 
   protected StepArtifacts handleArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters) {

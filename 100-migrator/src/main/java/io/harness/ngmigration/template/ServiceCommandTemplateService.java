@@ -231,6 +231,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
   static CommandUnitWrapper handleExec(MigrationContext context, CommandUnit commandUnit) {
     ExecCommandUnit execCommandUnit = (ExecCommandUnit) commandUnit;
+    processScript(execCommandUnit);
     List<TailFilePattern> tailFilePatterns = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(execCommandUnit.getTailPatterns())) {
       tailFilePatterns = execCommandUnit.getTailPatterns()
@@ -263,6 +264,26 @@ public class ServiceCommandTemplateService implements NgTemplateService {
                             .build())
                 .build())
         .build();
+  }
+
+  private static void processScript(ExecCommandUnit execCommandUnit) {
+    String str = execCommandUnit.getCommandString();
+    String runTimePath = "$RUNTIME_PATH";
+    String backupPath = "$BACKUP_PATH";
+    String stagingPath = "$STAGING_PATH";
+    String wingRunTimePath = "$WINGS_RUNTIME_PATH";
+    String wingBackupPath = "$WINGS_BACKUP_PATH";
+    String wingStagingPath = "$WINGS_STAGING_PATH";
+    String finalEdit = "{$";
+
+    String modifiedContent = str.replace(runTimePath, "${" + runTimePath + "}");
+    modifiedContent = modifiedContent.replace(backupPath, "${" + backupPath + "}");
+    modifiedContent = modifiedContent.replace(stagingPath, "${" + stagingPath + "}");
+    modifiedContent = modifiedContent.replace(wingRunTimePath, "${" + wingRunTimePath + "}");
+    modifiedContent = modifiedContent.replace(wingBackupPath, "${" + wingBackupPath + "}");
+    modifiedContent = modifiedContent.replace(wingStagingPath, "${" + wingStagingPath + "}");
+    modifiedContent = modifiedContent.replace(finalEdit, "{");
+    execCommandUnit.setCommandString(modifiedContent);
   }
 
   static ParameterField<String> valueOrDefaultEmpty(String val) {

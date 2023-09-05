@@ -22,6 +22,6 @@ public interface EnforcementStepService {
   EnforcementSummaryResponse getEnforcementSummary(
       String accountId, String orgIdentifier, String projectIdentifier, String enforcementId);
 
-  Page<PolicyViolation> getPolicyViolations(
-      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId, Pageable pageable);
+  Page<PolicyViolation> getPolicyViolations(String accountId, String orgIdentifier, String projectIdentifier,
+      String enforcementId, String searchText, Pageable pageable);
 }

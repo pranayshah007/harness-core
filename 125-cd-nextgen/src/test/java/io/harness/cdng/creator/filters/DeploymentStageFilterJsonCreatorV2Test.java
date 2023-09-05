@@ -398,7 +398,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                     .build();
     assertThatExceptionOfType(InvalidYamlRuntimeException.class)
         .isThrownBy(() -> filterCreator.getFilter(ctx, node))
-        .withMessageContaining("cannot save a stage template that propagates service from another stage");
+        .withMessageContaining("Stage template that propagates service from another stage cannot be saved");
   }
 
   @Test
@@ -433,7 +433,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                     .build();
     assertThatExceptionOfType(InvalidYamlRuntimeException.class)
         .isThrownBy(() -> filterCreator.getFilter(ctx, node))
-        .withMessageContaining("cannot save a stage template that propagates services from another stage");
+        .withMessageContaining("Stage template that propagates services from another stage cannot be saved");
   }
 
   @Test
@@ -464,7 +464,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                     .build();
     assertThatExceptionOfType(InvalidYamlRuntimeException.class)
         .isThrownBy(() -> filterCreator.getFilter(ctx, node))
-        .withMessageContaining("cannot save a stage template that propagates environment from another stage");
+        .withMessageContaining("Stage template that propagates environment from another stage cannot be saved");
   }
 
   @Test

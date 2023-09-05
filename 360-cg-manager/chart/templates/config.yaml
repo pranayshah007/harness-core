@@ -6,8 +6,8 @@ metadata:
   {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
-  {{- if .Values.global.commonAnnotation }}
-  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
   GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
@@ -400,6 +400,16 @@ data:
         "throttleIntervalInSeconds": 0
       },
       {
+        "name": "DelegateTaskFailOnDMS",
+        "enabled": true,
+        "threadPoolSize": 10,
+        "threadPoolIntervalInSeconds": 30,
+        "nextIterationMode": "TARGET",
+        "targetIntervalInSeconds": 30,
+        "throttleIntervalInSeconds": 0,
+        "iteratorMode": "PUMP"
+      },
+      {
         "name": "DelegateTelemetryPublisherIteration",
         "enabled": true,
         "threadPoolSize": 1,
@@ -409,4 +419,3 @@ data:
         "throttleIntervalInSeconds": 0
       }
     ]
-

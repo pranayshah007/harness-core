@@ -16,12 +16,19 @@ import io.harness.waiter.notify.NotifyEventProto;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 public class CINotifyEventMessageListener extends PmsAbstractMessageListener<NotifyEventProto, NotifyEventHandler> {
   @Inject
   public CINotifyEventMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, NotifyEventHandler notifyEventHandler) {
     super(serviceName, NotifyEventProto.class, notifyEventHandler);
+  }
+
+  @Override
+  protected NotifyEventProto extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return NotifyEventProto.parseFrom(message);
   }
 
   @Override

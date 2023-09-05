@@ -8,6 +8,7 @@
 package io.harness.cvng.verificationjob.utils;
 
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.verificationjob.entities.ServiceInstanceDetails;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -39,19 +40,43 @@ public class VerificationJobInstanceServiceInstanceUtils {
   }
 
   public boolean canUseNodesFromCD(VerificationJobInstance verificationJobInstance) {
-    return verificationJobInstance.getServiceInstanceDetails() != null
-        && verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD()
-        && CollectionUtils.isNotEmpty(verificationJobInstance.getServiceInstanceDetails().getDeployedServiceInstances())
-        && CollectionUtils.isNotEmpty(
-            verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment());
+    return canUseNodesFromCD(verificationJobInstance.getServiceInstanceDetails());
+  }
+
+  public boolean canUseNodesFromCD(ServiceInstanceDetails serviceInstanceDetails) {
+    return serviceInstanceDetails != null && serviceInstanceDetails.isShouldUseNodesFromCD()
+        && CollectionUtils.isNotEmpty(serviceInstanceDetails.getDeployedServiceInstances())
+        && CollectionUtils.isNotEmpty(serviceInstanceDetails.getServiceInstancesAfterDeployment());
   }
 
   public List<String> getSampledTestNodes(VerificationJobInstance verificationJobInstance) {
-    return getRandomElement(getTestNodes(verificationJobInstance), MAX_TEST_NODE_COUNT);
+    return getSampledTestNodes(verificationJobInstance.getServiceInstanceDetails());
+  }
+
+  public List<String> getSampledTestNodes(ServiceInstanceDetails serviceInstanceDetails) {
+    if (!canUseNodesFromCD(serviceInstanceDetails)) {
+      return null;
+    }
+    if (CollectionUtils.isNotEmpty(serviceInstanceDetails.getSampledTestNodes())) {
+      return serviceInstanceDetails.getSampledTestNodes();
+    }
+    return getRandomElement(getTestNodes(serviceInstanceDetails), MAX_TEST_NODE_COUNT);
   }
 
   public List<String> getSampledControlNodes(VerificationJobInstance verificationJobInstance) {
-    return getRandomElement(getControlNodes(verificationJobInstance), MAX_CONTROL_NODE_COUNT);
+    return getSampledControlNodes(
+        verificationJobInstance.getResolvedJob().getType(), verificationJobInstance.getServiceInstanceDetails());
+  }
+
+  public List<String> getSampledControlNodes(
+      VerificationJobType verificationJobType, ServiceInstanceDetails serviceInstanceDetails) {
+    if (!canUseNodesFromCD(serviceInstanceDetails)) {
+      return null;
+    }
+    if (CollectionUtils.isNotEmpty(serviceInstanceDetails.getSampledControlNodes())) {
+      return serviceInstanceDetails.getSampledControlNodes();
+    }
+    return getRandomElement(getControlNodes(verificationJobType, serviceInstanceDetails), MAX_CONTROL_NODE_COUNT);
   }
 
   public Set<String> filterValidTestNodes(
@@ -113,34 +138,42 @@ public class VerificationJobInstanceServiceInstanceUtils {
   }
 
   public List<String> getTestNodes(VerificationJobInstance verificationJobInstance) {
-    if (!canUseNodesFromCD(verificationJobInstance)) {
+    return getTestNodes(verificationJobInstance.getServiceInstanceDetails());
+  }
+
+  public List<String> getTestNodes(ServiceInstanceDetails serviceInstanceDetails) {
+    if (!canUseNodesFromCD(serviceInstanceDetails)) {
       return null;
     }
     return new ArrayList<>(getRegExFilteredTestNodes(
-        CollectionUtils.emptyIfNull(verificationJobInstance.getServiceInstanceDetails().getDeployedServiceInstances())
+        CollectionUtils.emptyIfNull(serviceInstanceDetails.getDeployedServiceInstances())
             .stream()
-            .filter(si
-                -> verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment().contains(
-                    si))
+            .filter(si -> serviceInstanceDetails.getServiceInstancesAfterDeployment().contains(si))
             .collect(Collectors.toSet()),
-        verificationJobInstance.getServiceInstanceDetails()));
+        serviceInstanceDetails));
   }
 
   public List<String> getControlNodes(VerificationJobInstance verificationJobInstance) {
-    if (!canUseNodesFromCD(verificationJobInstance)) {
+    return getControlNodes(
+        verificationJobInstance.getResolvedJob().getType(), verificationJobInstance.getServiceInstanceDetails());
+  }
+
+  public List<String> getControlNodes(
+      VerificationJobType verificationJobType, ServiceInstanceDetails serviceInstanceDetails) {
+    if (!canUseNodesFromCD(serviceInstanceDetails)) {
       return null;
     }
-    switch (verificationJobInstance.getResolvedJob().getType()) {
+    switch (verificationJobType) {
       case CANARY:
-        return getControlNodesForCanaryComparison(verificationJobInstance.getServiceInstanceDetails());
+        return getControlNodesForCanaryComparison(serviceInstanceDetails);
       case ROLLING:
       case BLUE_GREEN:
-        return getControlNodesForBeforeAfterComparison(verificationJobInstance.getServiceInstanceDetails());
+        return getControlNodesForBeforeAfterComparison(serviceInstanceDetails);
       case AUTO:
-        if (isValidCanaryDeployment(verificationJobInstance.getServiceInstanceDetails())) {
-          return getControlNodesForCanaryComparison(verificationJobInstance.getServiceInstanceDetails());
+        if (isValidCanaryDeployment(serviceInstanceDetails)) {
+          return getControlNodesForCanaryComparison(serviceInstanceDetails);
         } else {
-          return getControlNodesForBeforeAfterComparison(verificationJobInstance.getServiceInstanceDetails());
+          return getControlNodesForBeforeAfterComparison(serviceInstanceDetails);
         }
       default:
         return null;
@@ -199,5 +232,64 @@ public class VerificationJobInstanceServiceInstanceUtils {
       list.remove(randomIndex);
     }
     return newList;
+  }
+
+  public void logExecutionLog(VerificationJobInstance verificationJobInstance, ExecutionLogger executionLogger) {
+    if (verificationJobInstance.getServiceInstanceDetails() == null) {
+      return;
+    }
+    if (isNodeRegExEnabled(verificationJobInstance)) {
+      StringBuilder logMessageBuilder = new StringBuilder();
+      logMessageBuilder.append("Verify step configured to filter out nodes based on Regex. \n");
+      if (StringUtils.isNotEmpty(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern())) {
+        logMessageBuilder.append("Test node regex pattern: ")
+            .append(verificationJobInstance.getServiceInstanceDetails().getTestNodeRegExPattern())
+            .append("\n");
+      }
+      if (StringUtils.isNotEmpty(verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern())) {
+        logMessageBuilder.append("Control node regex pattern: ")
+            .append(verificationJobInstance.getServiceInstanceDetails().getControlNodeRegExPattern());
+      }
+      executionLogger.log(ExecutionLogDTO.LogLevel.INFO, logMessageBuilder.toString());
+    }
+    if (verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD() == true) {
+      StringBuilder logMessageBuilder = new StringBuilder();
+      logMessageBuilder.append("Verify step configured to use deployed node(service instance) details from CD. \n\n");
+      logMessageBuilder.append("Received Node details from CD:\n");
+      logMessageBuilder.append("Deployed in this stage:")
+          .append(String.join(", ",
+              CollectionUtils.emptyIfNull(
+                  verificationJobInstance.getServiceInstanceDetails().getDeployedServiceInstances())))
+          .append("\n");
+      logMessageBuilder.append("Nodes before deployment:")
+          .append(String.join(", ",
+              CollectionUtils.emptyIfNull(
+                  verificationJobInstance.getServiceInstanceDetails().getServiceInstancesBeforeDeployment())))
+          .append("\n");
+      logMessageBuilder.append("Nodes after deployment:")
+          .append(String.join(", ",
+              CollectionUtils.emptyIfNull(
+                  verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment())))
+          .append("\n\n");
+      if (canUseNodesFromCD(verificationJobInstance)) {
+        logMessageBuilder.append("Sampled nodes for analysis: \n");
+        logMessageBuilder.append("Test(Max:")
+            .append(MAX_TEST_NODE_COUNT)
+            .append("): ")
+            .append(String.join(", ",
+                CollectionUtils.emptyIfNull(verificationJobInstance.getServiceInstanceDetails().getSampledTestNodes())))
+            .append("\n");
+        logMessageBuilder.append("Control(Max:")
+            .append(MAX_CONTROL_NODE_COUNT)
+            .append("): ")
+            .append(String.join(", ",
+                CollectionUtils.emptyIfNull(
+                    verificationJobInstance.getServiceInstanceDetails().getSampledControlNodes())));
+      } else {
+        logMessageBuilder.append(
+            "We couldn't find deployed node details from CD, hence falling back to default analysis based on node details from APM provider.");
+      }
+      executionLogger.log(ExecutionLogDTO.LogLevel.INFO, logMessageBuilder.toString());
+    }
   }
 }

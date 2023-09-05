@@ -44,7 +44,7 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     AmiArtifactStream amiArtifactStream = (AmiArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(amiArtifactStream.getSettingId()).build())
@@ -72,7 +72,7 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
                   .region(ParameterField.createValueField(amiArtifactStream.getRegion()))
                   .tags(ParameterField.createValueField(tags))
                   .filters(ParameterField.createValueField(filters))
-                  .version(ParameterField.createValueField("<+input>"))
+                  .version(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }

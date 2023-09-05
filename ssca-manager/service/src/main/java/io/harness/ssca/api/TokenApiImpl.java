@@ -7,13 +7,10 @@
 
 package io.harness.ssca.api;
 
-import static io.harness.authorization.AuthorizationServiceHeader.SSCA_SERVICE;
-
 import io.harness.annotations.SSCAServiceAuth;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.security.dto.ServicePrincipal;
 import io.harness.spec.server.ssca.v1.TokenApi;
 import io.harness.spec.server.ssca.v1.model.TokenIssueResponseBody;
 
@@ -28,11 +25,10 @@ import lombok.extern.slf4j.Slf4j;
 @SSCAServiceAuth
 public class TokenApiImpl implements TokenApi {
   @Inject private ServiceTokenGenerator tokenGenerator;
-  @Inject @Named("sscaManagerServiceSecret") String sscaManagerServiceSecret;
+  @Inject @Named("jwtAuthSecret") String jwtAuthSecret;
   @Override
   public Response tokenIssueToken(String harnessAccount) {
-    String serviceTokenWithDuration = tokenGenerator.getServiceTokenWithDuration(
-        sscaManagerServiceSecret, Duration.ofHours(24), new ServicePrincipal(SSCA_SERVICE.getServiceId()));
+    String serviceTokenWithDuration = tokenGenerator.getServiceTokenWithDuration(jwtAuthSecret, Duration.ofHours(24));
 
     TokenIssueResponseBody responseBody = new TokenIssueResponseBody().token(serviceTokenWithDuration);
     return Response.ok().entity(responseBody).build();

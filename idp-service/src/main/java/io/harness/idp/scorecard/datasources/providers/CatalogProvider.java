@@ -35,8 +35,8 @@ public class CatalogProvider extends DataSourceProvider {
   @Override
   public Map<String, Map<String, Object>> fetchData(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    return processOut(
-        accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier), Collections.emptyMap());
+    return processOut(accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier),
+        Collections.emptyMap(), Collections.emptyMap());
   }
 
   @Override

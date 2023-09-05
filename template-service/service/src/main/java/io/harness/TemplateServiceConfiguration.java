@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Collections.singletonList;
@@ -119,6 +120,7 @@ public class TemplateServiceConfiguration extends Configuration {
   private String managerServiceSecret;
   private String managerTarget;
   private String managerAuthority;
+  @Builder.Default boolean enableOpaEvaluation = Boolean.FALSE;
 
   public TemplateServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

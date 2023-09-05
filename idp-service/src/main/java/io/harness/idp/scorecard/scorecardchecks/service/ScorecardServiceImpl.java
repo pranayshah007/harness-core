@@ -100,7 +100,7 @@ public class ScorecardServiceImpl implements ScorecardService {
   public List<ScorecardAndChecks> getAllScorecardAndChecks(
       String accountIdentifier, List<String> scorecardIdentifiers) {
     List<ScorecardEntity> scorecardEntities;
-    if (scorecardIdentifiers.isEmpty()) {
+    if (scorecardIdentifiers == null || scorecardIdentifiers.isEmpty()) {
       scorecardEntities = scorecardRepository.findByAccountIdentifierAndPublished(accountIdentifier, true);
     } else {
       scorecardEntities =

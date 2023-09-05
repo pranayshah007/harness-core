@@ -9,6 +9,7 @@ package io.harness.ngtriggers.expressions;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -211,7 +212,60 @@ public class TriggerFunctorTest extends CategoryTest {
                 .build()));
     assertThatThrownBy(() -> finalExpressionEvaluator.renderExpression("<+trigger.event>"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Event payload could not be converted to a hashmap");
+        .hasMessage("Event payload could not be converted to a hashmap or list");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCustomWebhookWhenPayloadIsArray() {
+    String arrayPayload =
+        "[\"value1\",\"value2\",[\"value3\",\"value4\"],{\"key1\":\"value5\"},{\"key2\":[\"value6\"]}]";
+    PlanExecutionMetadataService metadataService = mock(PlanExecutionMetadataServiceImpl.class);
+    when(metadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder()
+                                    .triggerHeader(null)
+                                    .triggerJsonPayload(arrayPayload)
+                                    .triggerPayload(TriggerPayload.newBuilder().build())
+                                    .build()));
+    SampleEvaluator expressionEvaluator = new SampleEvaluator(
+        new TriggerFunctor(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder()).build(), metadataService));
+    assertThat(expressionEvaluator.renderExpression("<+trigger.eventPayload>")).isEqualTo(arrayPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload>")).isEqualTo(arrayPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[0]>")).isEqualTo("value1");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[1]>")).isEqualTo("value2");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[2]>")).isEqualTo("[\"value3\",\"value4\"]");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[2]>[0]>")).isEqualTo("value3");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[2]>[1]>")).isEqualTo("value4");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[3]>")).isEqualTo("{\"key1\":\"value5\"}");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[3]>.key1>")).isEqualTo("value5");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[4]>")).isEqualTo("{\"key2\":[\"value6\"]}");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[4]>.key2>")).isEqualTo("[\"value6\"]");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[4].key2[0]>")).isEqualTo("value6");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCustomWebhookWhenPayloadIsMap() {
+    String mapPayload = "{\"key1\":\"value1\",\"key2\":[\"value2\",{\"key3\":\"value3\"}]}";
+    PlanExecutionMetadataService metadataService = mock(PlanExecutionMetadataServiceImpl.class);
+    when(metadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder()
+                                    .triggerHeader(null)
+                                    .triggerJsonPayload(mapPayload)
+                                    .triggerPayload(TriggerPayload.newBuilder().build())
+                                    .build()));
+    SampleEvaluator expressionEvaluator = new SampleEvaluator(
+        new TriggerFunctor(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder()).build(), metadataService));
+    assertThat(expressionEvaluator.renderExpression("<+trigger.eventPayload>")).isEqualTo(mapPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload>")).isEqualTo(mapPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key1>")).isEqualTo("value1");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key2>"))
+        .isEqualTo("[\"value2\",{\"key3\":\"value3\"}]");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key2[0]>")).isEqualTo("value2");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key2[1]>")).isEqualTo("{\"key3\":\"value3\"}");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload.key2[1]>.key3>")).isEqualTo("value3");
   }
 
   @Test

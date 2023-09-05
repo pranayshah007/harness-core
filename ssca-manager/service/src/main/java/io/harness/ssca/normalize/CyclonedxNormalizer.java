@@ -119,7 +119,7 @@ public class CyclonedxNormalizer implements Normalizer<CyclonedxDTO> {
         }
       }
     } else {
-      result.add("");
+      result.add("NO_ASSERTION");
     }
     return result;
   }

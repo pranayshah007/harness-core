@@ -10,7 +10,10 @@ package io.harness.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.network.Http.getOkHttpClientBuilder;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.HttpResponseException;
 import io.harness.exception.InvalidRequestException;
@@ -30,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONArray;
@@ -46,6 +50,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @OwnedBy(CDC)
 @Slf4j
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class JiraClient {
   private static final int MAX_FIELD_RESULTS = 200;
   private static final int CONNECT_TIMEOUT = 60;
@@ -135,6 +140,27 @@ public class JiraClient {
         .flatMap(it -> it.getStatuses().stream())
         .collect(Collectors.collectingAndThen(
             Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(JiraStatusNG::getName))), ArrayList::new));
+  }
+
+  /**
+   * Get all statuses. Optionally filter by issueKey
+   *
+   * @return the list of statuses
+   */
+  public List<JiraStatusNG> getStatuses(String issueKey) {
+    if (StringUtils.isBlank(issueKey)) {
+      return getStatuses();
+    }
+
+    JiraIssueTransitionsNG jiraIssueTransitionsNG = getIssueTransitions(issueKey);
+    return jiraIssueTransitionsNG.getTransitions()
+        .stream()
+        .map(JiraIssueTransitionNG::getTo)
+        .collect(Collectors.toMap(JiraStatusNG::getName, // Use the name property as the key for distinctness
+            Function.identity(), (existing, replacement) -> existing))
+        .values()
+        .stream()
+        .collect(Collectors.toList());
   }
 
   /**
@@ -469,8 +495,7 @@ public class JiraClient {
       return null;
     }
 
-    JiraIssueTransitionsNG transitions =
-        executeCall(restClient.getIssueTransitions(issueKey), "fetching issue transitions");
+    JiraIssueTransitionsNG transitions = getIssueTransitions(issueKey);
     if (EmptyPredicate.isNotEmpty(transitionName)) {
       // If transitionName is given, find first transition with the given and toStatus, else throw error.
       return transitions.getTransitions()
@@ -489,6 +514,10 @@ public class JiraClient {
           .orElseThrow(
               () -> new JiraClientException(String.format("Invalid transition to status: %s", transitionToStatus)));
     }
+  }
+
+  public JiraIssueTransitionsNG getIssueTransitions(@NotBlank String issueKey) {
+    return executeCall(restClient.getIssueTransitions(issueKey), "fetching issue transitions");
   }
 
   private <T> T executeCall(Call<T> call, String action) {

@@ -251,13 +251,11 @@ public class EcsBlueGreenRollbackCommandTaskHandler extends EcsCommandTaskNGHand
       CreateServiceRequest.Builder createServiceRequestBuilder =
           ecsCommandTaskHelper.parseYamlAsObject(ecsBlueGreenRollbackRequest.getNewServiceRequestBuilderString(),
               CreateServiceRequest.serializableBuilderClass());
-      Integer desiredCount = ecsCommandTaskHelper.getDesiredCountOfServiceForRollback(ecsInfraConfig,
-          createServiceRequestBuilder.build().desiredCount(), createServiceRequestBuilder.build().serviceName());
-      // replace cluster and desired count
+      // replace cluster
       CreateServiceRequest createServiceRequest =
-          createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster()).desiredCount(desiredCount).build();
+          createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster()).build();
       rollbackCallback.saveExecutionLog(format("Rolling back green service: %s with desired count: %s",
-          ecsBlueGreenRollbackRequest.getNewServiceName(), desiredCount));
+          ecsBlueGreenRollbackRequest.getNewServiceName(), createServiceRequestBuilder.build().desiredCount()));
       // if service exists create service, otherwise update service
       Optional<Service> optionalService = ecsCommandTaskHelper.describeService(createServiceRequest.cluster(),
           createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());

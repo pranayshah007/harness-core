@@ -6,6 +6,11 @@
  */
 package io.harness.idp.scorecard.datapointsdata.dsldataprovider.factory;
 
+import static io.harness.idp.common.Constants.HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS;
+import static io.harness.idp.common.Constants.HARNESS_POLICY_EVALUATION_DSL;
+import static io.harness.idp.common.Constants.HARNESS_STO_SCAN_SETUP_DSL;
+import static io.harness.idp.common.Constants.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.base.DataSourceDsl;
@@ -17,19 +22,16 @@ import io.harness.idp.scorecard.datapointsdata.dsldataprovider.impl.HarnessTestP
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 public class HarnessDslFactory implements DataSourceDsl {
   HarnessStoScanDsl harnessStoScanDsl;
   HarnessPolicyEvaluationDsl harnessPolicyEvaluationDsl;
   HarnessPipelineSuccessPercent harnessPipelineSuccessPercent;
   HarnessTestPassingInCi harnessTestPassingInCi;
-  private static final String HARNESS_STO_SCAN_SETUP_DSL = "harness_sto_scan_dsl";
-  private static final String HARNESS_POLICY_EVALUATION_DSL = "harness_policy_evaluation_dsl";
-  private static final String HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS = "harness_ci_success_percent_in_seven_days";
-
-  private static final String HARNESS_TEST_PASSING_ON_CI_IS_ZERO = "harness_test_passing_on_ci_is_zero";
 
   @Override
   public DslDataProvider getDslDataProvider(String dslIdentifier) {

@@ -50,7 +50,7 @@ public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     NexusArtifactStream nexusArtifactStream = (NexusArtifactStream) artifactStream;
     NgEntityDetail ngConnector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(nexusArtifactStream.getSettingId()).build())
@@ -65,8 +65,8 @@ public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
         .sourceType(VERSION_2.equals(nexusConfig.getVersion()) ? ArtifactSourceType.NEXUS2_REGISTRY
                                                                : ArtifactSourceType.NEXUS3_REGISTRY)
         .spec(VERSION_2.equals(nexusConfig.getVersion())
-                ? getNexus2RegistryArtifactConfig(nexusArtifactStream, nexusRegistryConfigSpec, ngConnector)
-                : getNexus3ArtifactConfig(nexusArtifactStream, nexusRegistryConfigSpec, ngConnector))
+                ? getNexus2RegistryArtifactConfig(nexusArtifactStream, nexusRegistryConfigSpec, ngConnector, version)
+                : getNexus3ArtifactConfig(nexusArtifactStream, nexusRegistryConfigSpec, ngConnector, version))
         .build();
   }
 
@@ -126,24 +126,24 @@ public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
   }
 
   private static ArtifactConfig getNexus3ArtifactConfig(NexusArtifactStream nexusArtifactStream,
-      NexusRegistryConfigSpec nexusRegistryConfigSpec, NgEntityDetail ngConnector) {
+      NexusRegistryConfigSpec nexusRegistryConfigSpec, NgEntityDetail ngConnector, String version) {
     return NexusRegistryArtifactConfig.builder()
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(ngConnector)))
         .repository(ParameterField.createValueField(nexusArtifactStream.getJobname()))
         .repositoryFormat(ParameterField.createValueField(nexusArtifactStream.getRepositoryFormat()))
         .nexusRegistryConfigSpec(nexusRegistryConfigSpec)
-        .tag(ParameterField.createValueField("<+input>"))
+        .tag(ParameterField.createValueField(version == null ? "<+input>" : version))
         .build();
   }
 
   private static Nexus2RegistryArtifactConfig getNexus2RegistryArtifactConfig(NexusArtifactStream nexusArtifactStream,
-      NexusRegistryConfigSpec nexusRegistryConfigSpec, NgEntityDetail ngConnector) {
+      NexusRegistryConfigSpec nexusRegistryConfigSpec, NgEntityDetail ngConnector, String version) {
     return Nexus2RegistryArtifactConfig.builder()
         .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(ngConnector)))
         .repository(ParameterField.createValueField(nexusArtifactStream.getJobname()))
         .repositoryFormat(ParameterField.createValueField(nexusArtifactStream.getRepositoryFormat()))
         .nexusRegistryConfigSpec(nexusRegistryConfigSpec)
-        .tag(ParameterField.createValueField("<+input>"))
+        .tag(ParameterField.createValueField(version == null ? "<+input>" : version))
         .build();
   }
 }

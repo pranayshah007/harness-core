@@ -13,6 +13,8 @@ import lombok.Data;
 public class K8SRunnerConfig {
   private final String namespace;
   private final String delegateName;
+  private final String delegateToken;
+  private final String delegateTaskParamsFile;
   private final String accountId;
   private final String logServiceUrl;
 

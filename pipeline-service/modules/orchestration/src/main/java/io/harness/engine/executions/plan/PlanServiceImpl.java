@@ -26,6 +26,7 @@ import io.harness.springdata.TransactionHelper;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Date;
@@ -48,6 +49,7 @@ public class PlanServiceImpl implements PlanService {
   @Inject private PlanRepository planRepository;
   @Inject private NodeEntityRepository nodeEntityRepository;
   @Inject private TransactionHelper transactionHelper;
+  @Inject @Named("useNewNodeEntityConfiguration") private Boolean useNewNodeEntityConfiguration;
 
   @Override
   public Plan fetchPlan(String planId) {
@@ -67,7 +69,9 @@ public class PlanServiceImpl implements PlanService {
   public List<Node> saveIdentityNodesForMatrix(List<Node> identityNodes, String planId) {
     List<Node> nodes = new ArrayList<>();
     nodeEntityRepository
-        .saveAll(identityNodes.stream().map(o -> NodeEntity.fromNode(o, planId)).collect(Collectors.toList()))
+        .saveAll(identityNodes.stream()
+                     .map(o -> NodeEntity.fromNode(o, planId, useNewNodeEntityConfiguration))
+                     .collect(Collectors.toList()))
         .iterator()
         .forEachRemaining(nodeEntity -> nodes.add(nodeEntity.getNode()));
     return nodes;
@@ -77,7 +81,10 @@ public class PlanServiceImpl implements PlanService {
   public Plan save(Plan plan) {
     return transactionHelper.performTransaction(() -> {
       List<NodeEntity> nodeEntities =
-          plan.getPlanNodes().stream().map(pn -> NodeEntity.fromNode(pn, plan.getUuid())).collect(Collectors.toList());
+          plan.getPlanNodes()
+              .stream()
+              .map(pn -> NodeEntity.fromNode(pn, plan.getUuid(), useNewNodeEntityConfiguration))
+              .collect(Collectors.toList());
       nodeEntityRepository.saveAll(nodeEntities);
       if (!planRepository.existsById(plan.getUuid())) {
         return planRepository.save(plan.withPlanNodes(new ArrayList<>()));
@@ -101,6 +108,19 @@ public class PlanServiceImpl implements PlanService {
     if (nodeEntity.isPresent()) {
       log.info("Unable to find node from node Id and planId . Most likely this was an older running execution");
       return nodeEntity.get().getNode();
+    }
+
+    // We have added this code so that in case for some step while plan creation the uuid of planNode is generated
+    // everytime instead of being formed from yaml in such a case while retry the nodeId of the node the nodeId in the
+    // next step handler of the previous step will be different. To handle such a case we are getting node based on
+    // nodeId which will get the node from some previous planId.  Example for InfraStructureStep in
+    // InfrastructurePmsPlanCreator.java
+    List<NodeEntity> nodeEntitiesByNodeId = nodeEntityRepository.findNodeEntityByNodeId(nodeId);
+    if (isNotEmpty(nodeEntitiesByNodeId)) {
+      if (nodeEntitiesByNodeId.size() > 1) {
+        log.warn("Multiple nodes found for nodeId {}", nodeId);
+      }
+      return nodeEntitiesByNodeId.get(0).getNode();
     }
 
     Plan plan = fetchPlan(planId);

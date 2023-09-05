@@ -6,7 +6,8 @@
     "name": "Github mean time to merge PR hours",
     "type": "NUMBER",
     "dataSourceIdentifier": "github",
-    "dataSourceLocationIdentifier": "github_mean_time_to_merge_pr"
+    "dataSourceLocationIdentifier": "github_mean_time_to_merge_pr",
+    "isConditional": true
   },
   {
     "id": "64d5c505c94f589f936c04d7",
@@ -15,17 +16,18 @@
     "name": "Catalog pagerduty annotation",
     "type": "STRING",
     "dataSourceIdentifier": "catalog",
-    "outcomeExpression":  "catalog.metadata.annotations.pagerduty_com_service_id",
+    "outcomeExpression":  "catalog.metadata.annotations.\"pagerduty.com/service-id\"",
     "dataSourceLocationIdentifier": "catalog"
   },
   {
     "id": "64d5f2bc387ee61486eed6f6",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isBranchProtected",
-    "name": "Github default branch protection set",
+    "name": "Github branch protection set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "github",
-    "dataSourceLocationIdentifier": "github_is_branch_protection_set"
+    "dataSourceLocationIdentifier": "github_is_branch_protection_set",
+    "isConditional": true
   },
   {
     "id": "64d5f56280f63a315c9e08b5",
@@ -34,7 +36,7 @@
     "name": "Catalog TechDocs annotation",
     "type": "STRING",
     "dataSourceIdentifier": "catalog",
-    "outcomeExpression":  "catalog.metadata.annotations.backstage_io_techdocs_ref",
+    "outcomeExpression":  "catalog.metadata.annotations.\"backstage.io/techdocs-ref\"",
     "dataSourceLocationIdentifier": "catalog"
   },
   {
@@ -46,5 +48,53 @@
     "dataSourceIdentifier": "catalog",
     "outcomeExpression":  "catalog.spec.owner",
     "dataSourceLocationIdentifier": "catalog"
+  },
+  {
+    "id": "64ecede6b5fd454d919d01f0",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isFileExists",
+    "name": "Github file exists",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_is_file_exists",
+    "isConditional": true
+  },
+  {
+    "id": "64ef7973f616c89330020df5",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "stoStageAdded",
+    "name": "STO Stage Added In Pipeline",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "harness",
+    "dataSourceLocationIdentifier": "harness_sto_scan_dsl",
+    "isConditional": true
+  },
+  {
+    "id": "64ef79bbf616c89330020df6",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isPolicyEvaluationSuccessful",
+    "name": "Policy Evaluation Success",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "harness",
+    "dataSourceLocationIdentifier": "harness_policy_evaluation_dsl",
+    "isConditional": true
+  },
+  {
+    "id": "64ef7a5ff616c89330020df7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "%ofCIPipelinePassingInPast7Days",
+    "name": "Percentage of CI Pipeline passing in Past 7 days",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "harness",
+    "dataSourceLocationIdentifier": "harness_ci_success_percent_in_seven_days"
+  },
+  {
+    "id": "64ef7ac1f616c89330020df8",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "noTestsFailingInCiPipeline",
+    "name": "No Test Failing CI Pipeline",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "harness",
+    "dataSourceLocationIdentifier": "harness_test_passing_on_ci_is_zero"
   }
 ]

@@ -194,7 +194,7 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 

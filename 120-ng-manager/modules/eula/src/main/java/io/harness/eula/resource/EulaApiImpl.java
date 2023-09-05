@@ -11,7 +11,6 @@ import io.harness.eula.dto.EulaDTO;
 import io.harness.eula.service.EulaService;
 import io.harness.eula.utils.EulaResourceUtils;
 import io.harness.spec.server.ng.v1.EulaApi;
-import io.harness.spec.server.ng.v1.model.AgreementType;
 import io.harness.spec.server.ng.v1.model.EulaSignRequest;
 import io.harness.spec.server.ng.v1.model.EulaSignResponse;
 
@@ -45,9 +44,9 @@ public class EulaApiImpl implements EulaApi {
   }
 
   @Override
-  public Response validateEulaSign(@NotNull AgreementType agreementType, String harnessAccount) {
-    boolean isSigned = eulaService.isSigned(
-        EnumUtils.getEnum(io.harness.eula.AgreementType.class, agreementType.toString()), harnessAccount);
+  public Response validateEulaSign(@NotNull String agreementType, String harnessAccount) {
+    boolean isSigned =
+        eulaService.isSigned(EnumUtils.getEnum(io.harness.eula.AgreementType.class, agreementType), harnessAccount);
     String responseMessage;
     if (isSigned) {
       responseMessage = String.format("An End User License Agreement is signed for %s.", agreementType);

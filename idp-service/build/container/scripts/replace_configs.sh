@@ -382,3 +382,15 @@ fi
 if [[ "" != "$TI_SERVICE_GLOBAL_TOKEN" ]]; then
   export TI_SERVICE_GLOBAL_TOKEN; yq -i '.tiServiceConfig.globalToken=env(TI_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
+
+if [[ "" != "$SCORECARD_ITERATOR_THREAD_POOL_COUNT" ]]; then
+  export SCORECARD_ITERATOR_THREAD_POOL_COUNT; yq -i '.scorecardScoreComputationIteratorConfig.threadPoolCount=env(SCORECARD_ITERATOR_THREAD_POOL_COUNT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORECARD_ITERATOR_ENABLED" ]]; then
+  export SCORECARD_ITERATOR_ENABLED; yq -i '.scorecardScoreComputationIteratorConfig.enabled=env(SCORECARD_ITERATOR_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS" ]]; then
+  export SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS; yq -i '.scorecardScoreComputationIteratorConfig.targetIntervalInSeconds=env(SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS)' $CONFIG_FILE
+fi

@@ -22,8 +22,8 @@ public interface EnforcementResultService {
   List<EnforcementResultEntity> getEnforcementResults(List<NormalizedSBOMComponentEntity> violatedComponents,
       String violationType, String violationDetails, ArtifactEntity artifact, String enforcementId);
 
-  Page<EnforcementResultEntity> getPolicyViolations(
-      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId, Pageable pageable);
+  Page<EnforcementResultEntity> getPolicyViolations(String accountId, String orgIdentifier, String projectIdentifier,
+      String enforcementId, String searchText, Pageable pageable);
   String getViolationDetails(NormalizedSBOMComponentEntity pkg, AllowListItem allowListItem, AllowListRuleType type);
 
   String getViolationDetails(DenyListItem denyListItem);

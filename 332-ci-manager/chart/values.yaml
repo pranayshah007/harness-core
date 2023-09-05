@@ -254,6 +254,7 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 additionalConfigs: {}
+java17flags: ""
 
 virtualService:
   annotations: {}

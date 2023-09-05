@@ -244,7 +244,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
 
     Call mockCall = Mockito.mock(Call.class);
-    when(serviceNowRestClient.getIssue(anyString(), anyString(), anyString(), anyString())).thenReturn(mockCall);
+    when(serviceNowRestClient.getIssueV2(anyString(), anyString(), anyString(), anyString(), eq(null)))
+        .thenReturn(mockCall);
     Map<String, Map<String, String>> responseMap =
         ImmutableMap.of("field1", ImmutableMap.of("value", "BEvalue1", "display_value", "UIvalue1"), "field2",
             ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2"));
@@ -276,7 +277,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
       assertThat(response.getTicket().getFields().get("field2").getDisplayValue()).isEqualTo("UIvalue2");
       verify(secretDecryptionService).decrypt(any(), any());
 
-      verify(serviceNowRestClient).getIssue(anyString(), anyString(), eq("number=" + TICKET_NUMBER), eq("all"));
+      verify(serviceNowRestClient)
+          .getIssueV2(anyString(), anyString(), eq("number=" + TICKET_NUMBER), eq("all"), eq(null));
     }
   }
 
@@ -287,7 +289,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
 
     Call mockCall = Mockito.mock(Call.class);
-    when(serviceNowRestClient.getIssue(anyString(), anyString(), anyString(), anyString())).thenReturn(mockCall);
+    when(serviceNowRestClient.getIssueV2(anyString(), anyString(), anyString(), anyString(), eq(null)))
+        .thenReturn(mockCall);
     Map<String, Map<String, String>> responseMap =
         ImmutableMap.of("field1", ImmutableMap.of("value", "BEvalue1", "display_value", "UIvalue1"), "field2",
             ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2"));
@@ -325,7 +328,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
       verify(secretDecryptionService).decrypt(any(), any());
 
       verify(serviceNowRestClient, times(2))
-          .getIssue(anyString(), anyString(), eq("number=" + TICKET_NUMBER), eq("all"));
+          .getIssueV2(anyString(), anyString(), eq("number=" + TICKET_NUMBER), eq("all"), eq(null));
     }
   }
 
@@ -563,7 +566,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
 
     Call mockCall = Mockito.mock(Call.class);
-    when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), anyInt(), anyString()))
+    when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), eq(100), anyString(), anyString()))
         .thenReturn(mockCall);
 
     ClassLoader classLoader = this.getClass().getClassLoader();
@@ -582,9 +585,10 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                            .action(ServiceNowActionNG.GET_TEMPLATE)
                                                            .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                            .ticketType("incident")
-                                                           .templateListLimit(1)
-                                                           .templateListOffset(0)
+                                                           .templateListLimit(50)
+                                                           .templateListOffset(100)
                                                            .templateName(TEMPLATE_NAME)
+                                                           .searchTerm("filter")
                                                            .build(),
               logStreamingTaskClient);
 
@@ -599,7 +603,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
 
       verify(secretDecryptionService).decrypt(any(), any());
 
-      verify(serviceNowRestClient).getTemplateList(anyString(), eq("incident"), anyInt(), anyInt(), anyString());
+      verify(serviceNowRestClient)
+          .getTemplateList(anyString(), eq("incident"), anyInt(), eq(100), anyString(), eq("filter"));
     }
   }
 
@@ -610,7 +615,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
 
     Call mockCall = Mockito.mock(Call.class);
-    when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), anyInt(), anyString()))
+    when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), anyInt(), anyString(), eq(null)))
         .thenReturn(mockCall);
 
     ClassLoader classLoader = this.getClass().getClassLoader();
@@ -649,7 +654,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
 
       verify(secretDecryptionService).decrypt(any(), any());
 
-      verify(serviceNowRestClient).getTemplateList(anyString(), eq("change_request"), anyInt(), anyInt(), anyString());
+      verify(serviceNowRestClient)
+          .getTemplateList(anyString(), eq("change_request"), anyInt(), anyInt(), anyString(), eq(null));
     }
   }
 
