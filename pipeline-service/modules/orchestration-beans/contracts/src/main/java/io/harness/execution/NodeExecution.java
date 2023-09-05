@@ -145,6 +145,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   String identifier;
   String stageFqn;
   String group;
+  String nodeType;
 
   public ExecutableResponse obtainLatestExecutableResponse() {
     if (isEmpty(executableResponses)) {
@@ -249,6 +250,16 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
 
   public ByteString getResolvedStepParametersBytes() {
     if (this.getNodeType().equals(NodeType.IDENTITY_PLAN_NODE)) {
+      IdentityStepParameters build =
+          IdentityStepParameters.builder().originalNodeExecutionId(originalNodeExecutionId).build();
+      return ByteString.copyFromUtf8(emptyIfNull(RecastOrchestrationUtils.toJson(build)));
+    }
+    String resolvedStepParams = RecastOrchestrationUtils.toJson(this.getResolvedStepParameters());
+    return ByteString.copyFromUtf8(emptyIfNull(resolvedStepParams));
+  }
+
+  public ByteString getResolvedStepParametersBytes(String nodeType) {
+    if (nodeType.equals(NodeType.IDENTITY_PLAN_NODE)) {
       IdentityStepParameters build =
           IdentityStepParameters.builder().originalNodeExecutionId(originalNodeExecutionId).build();
       return ByteString.copyFromUtf8(emptyIfNull(RecastOrchestrationUtils.toJson(build)));

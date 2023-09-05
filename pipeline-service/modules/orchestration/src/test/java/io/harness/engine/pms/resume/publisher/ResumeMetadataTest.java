@@ -36,7 +36,7 @@ public class ResumeMetadataTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIfStepParametersSentAreResolvedOne() {
     NodeExecution nodeExecution = mock(NodeExecution.class);
-    ResumeMetadata.fromNodeExecution(nodeExecution);
+    ResumeMetadata.fromNodeExecution(nodeExecution, nodeExecution.getAmbiance());
     Mockito.verify(nodeExecution).getUuid();
     Mockito.verify(nodeExecution).getMode();
     Mockito.verify(nodeExecution).getAmbiance();

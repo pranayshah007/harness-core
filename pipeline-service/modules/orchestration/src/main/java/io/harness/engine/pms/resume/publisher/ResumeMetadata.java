@@ -13,6 +13,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.protobuf.ByteString;
 import lombok.Builder;
@@ -32,12 +33,12 @@ public class ResumeMetadata {
   ExecutableResponse latestExecutableResponse;
   String module;
 
-  public static ResumeMetadata fromNodeExecution(NodeExecution nodeExecution) {
+  public static ResumeMetadata fromNodeExecution(NodeExecution nodeExecution, Ambiance ambiance) {
     return ResumeMetadata.builder()
         .nodeExecutionUuid(nodeExecution.getUuid())
-        .ambiance(nodeExecution.getAmbiance())
+        .ambiance(ambiance)
         .mode(nodeExecution.getMode())
-        .resolvedStepParameters(nodeExecution.getResolvedStepParametersBytes())
+        .resolvedStepParameters(nodeExecution.getResolvedStepParametersBytes(AmbianceUtils.obtainNodeType(ambiance)))
         .latestExecutableResponse(nodeExecution.obtainLatestExecutableResponse())
         .module(nodeExecution.getModule())
         .build();

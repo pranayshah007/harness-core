@@ -272,7 +272,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         // This will happen if the node is not in any paused or waiting statuses.
         log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);
       }
-      resumeHelper.resume(nodeExecution, response, asyncError);
+      resumeHelper.resume(nodeExecution, ambiance, response, asyncError);
     } catch (Exception exception) {
       log.error(String.format("Exception Occurred in handling resume with nodeExecutionId %s planExecutionId %s",
                     nodeExecutionId, ambiance.getPlanExecutionId()),

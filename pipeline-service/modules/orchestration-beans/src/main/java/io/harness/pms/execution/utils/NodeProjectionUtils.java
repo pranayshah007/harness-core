@@ -44,7 +44,7 @@ public class NodeProjectionUtils {
           NodeExecutionKeys.mode, NodeExecutionKeys.unitProgresses, NodeExecutionKeys.parentId);
 
   public static final Set<String> fieldsForInstrumentationHandler =
-      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.identifier, NodeExecutionKeys.stepType);
 
   public static final Set<String> withAmbianceAndStatus =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
@@ -61,16 +61,11 @@ public class NodeProjectionUtils {
       Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.adviserResponse);
 
   public static final Set<String> fieldsForNodeUpdateObserver = Sets.newHashSet(
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry);
+      NodeExecutionKeys.status, NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry, NodeExecutionKeys.planExecutionId);
 
-  public static final Set<String> fieldsForNodeStatusUpdateObserver =
-      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.resolvedParams,
-          NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry, NodeExecutionKeys.timeoutInstanceIds);
-
-  public static final Set<String> fieldsForResume =
-      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses,
-          NodeExecutionKeys.mode, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.module,
-          NodeExecutionKeys.stepType, NodeExecutionKeys.originalNodeExecutionId);
+  public static final Set<String> fieldsForResume = Sets.newHashSet(NodeExecutionKeys.status,
+      NodeExecutionKeys.executableResponses, NodeExecutionKeys.mode, NodeExecutionKeys.resolvedParams,
+      NodeExecutionKeys.module, NodeExecutionKeys.stepType, NodeExecutionKeys.originalNodeExecutionId);
 
   public static final Set<String> fieldsForInterruptEventPublish = Sets.newHashSet(NodeExecutionKeys.status,
       NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses, NodeExecutionKeys.mode,
@@ -86,7 +81,7 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.parentId, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry,
       NodeExecutionKeys.nodeId, NodeExecutionKeys.retryIds);
 
-  public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
+  public static final Set<String> forFacilitation = Sets.newHashSet(
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);
 
   public static final Set<String> fieldsForResponseNotifyData = Sets.newHashSet(NodeExecutionKeys.identifier,
@@ -94,8 +89,8 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.failureInfo, NodeExecutionKeys.oldRetry, NodeExecutionKeys.endTs);
 
   public static final Set<String> fieldsForExecutionStrategy =
-      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.adviserResponse,
-          NodeExecutionKeys.failureInfo, NodeExecutionKeys.notifyId, NodeExecutionKeys.endTs);
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.adviserResponse, NodeExecutionKeys.failureInfo,
+          NodeExecutionKeys.notifyId, NodeExecutionKeys.endTs);
 
   public static final Set<String> fieldsForIdentityStrategyStep =
       Sets.newHashSet(NodeExecutionKeys.identifier, NodeExecutionKeys.name, NodeExecutionKeys.nodeId,

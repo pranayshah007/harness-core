@@ -400,7 +400,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     when(nodeExecutionService.getWithFieldsIncluded(eq(nodeExecutionId), eq(NodeProjectionUtils.fieldsForResume)))
         .thenReturn(nodeExecution);
     executionStrategy.resumeNodeExecution(ambiance, responseMap, false);
-    verify(resumeHelper).resume(eq(nodeExecution), eq(responseMap), eq(false));
+    verify(resumeHelper).resume(eq(nodeExecution), eq(ambiance), eq(responseMap), eq(false));
   }
 
   @Test
@@ -420,7 +420,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
         generateUuid(), ResponseDataProto.newBuilder().setResponse(ByteString.copyFromUtf8(generateUuid())).build());
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
     executionStrategy.resumeNodeExecution(ambiance, responseMap, false);
-    verify(resumeHelper, times(0)).resume(eq(nodeExecution), eq(responseMap), eq(false));
+    verify(resumeHelper, times(0)).resume(eq(nodeExecution), eq(ambiance), eq(responseMap), eq(false));
   }
 
   @Test

@@ -21,6 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.pms.resume.publisher.NodeResumeEventPublisher;
 import io.harness.engine.pms.resume.publisher.ResumeMetadata;
 import io.harness.execution.NodeExecution;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 
 import java.util.HashMap;
@@ -46,8 +47,10 @@ public class IdentityNodeResumeHelperTest extends OrchestrationTestBase {
   public void testResume() {
     ResumeMetadata resumeMetadata = ResumeMetadata.builder().build();
     MockedStatic<ResumeMetadata> utilities = Mockito.mockStatic(ResumeMetadata.class);
-    utilities.when(() -> ResumeMetadata.fromNodeExecution(any(NodeExecution.class))).thenReturn(resumeMetadata);
-    identityNodeResumeHelper.resume(NodeExecution.builder().build(), new HashMap<>(), false, "");
+    utilities.when(() -> ResumeMetadata.fromNodeExecution(any(NodeExecution.class), any(Ambiance.class)))
+        .thenReturn(resumeMetadata);
+    identityNodeResumeHelper.resume(
+        NodeExecution.builder().build(), Ambiance.newBuilder().build(), new HashMap<>(), false, "");
     verify(nodeResumeEventPublisher, times(1))
         .publishEventForIdentityNode(any(ResumeMetadata.class), any(Map.class), anyBoolean(), anyString());
   }

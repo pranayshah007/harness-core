@@ -32,15 +32,16 @@ public class RedisFacilitateEventPublisher implements FacilitateEventPublisher {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.forFacilitation);
-    FacilitatorEvent event = FacilitatorEvent.newBuilder()
-                                 .setNodeExecutionId(nodeExecutionId)
-                                 .setAmbiance(ambiance)
-                                 .setStepParameters(nodeExecution.getResolvedStepParametersBytes())
-                                 .setStepType(node.getStepType())
-                                 .setNotifyId(generateUuid())
-                                 .addAllRefObjects(node.getRefObjects())
-                                 .addAllFacilitatorObtainments(node.getFacilitatorObtainments())
-                                 .build();
+    FacilitatorEvent event =
+        FacilitatorEvent.newBuilder()
+            .setNodeExecutionId(nodeExecutionId)
+            .setAmbiance(ambiance)
+            .setStepParameters(nodeExecution.getResolvedStepParametersBytes(AmbianceUtils.obtainNodeType(ambiance)))
+            .setStepType(node.getStepType())
+            .setNotifyId(generateUuid())
+            .addAllRefObjects(node.getRefObjects())
+            .addAllFacilitatorObtainments(node.getFacilitatorObtainments())
+            .build();
 
     return eventSender.sendEvent(
         ambiance, event.toByteString(), PmsEventCategory.FACILITATOR_EVENT, nodeExecution.getModule(), true);

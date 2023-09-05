@@ -191,7 +191,7 @@ public class IdentityNodeExecutionStrategy
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForExecutionStrategy);
     if (isNotEmpty(nodeExecution.getNotifyId())) {
-      Level level = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
+      Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
       StepResponseNotifyData responseData = StepResponseNotifyData.builder()
                                                 .nodeUuid(level.getSetupId())
                                                 .failureInfo(nodeExecution.getFailureInfo())
@@ -229,7 +229,7 @@ public class IdentityNodeExecutionStrategy
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForResume);
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
-      identityNodeResumeHelper.resume(nodeExecution, response, asyncError, SERVICE_NAME_IDENTITY);
+      identityNodeResumeHelper.resume(nodeExecution, ambiance, response, asyncError, SERVICE_NAME_IDENTITY);
     } catch (Exception exception) {
       log.error("Exception Occurred in handling resume with nodeExecutionId {} planExecutionId {}", nodeExecutionId,
           ambiance.getPlanExecutionId(), exception);

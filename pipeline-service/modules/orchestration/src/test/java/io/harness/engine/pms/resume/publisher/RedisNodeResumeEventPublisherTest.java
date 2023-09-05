@@ -100,7 +100,8 @@ public class RedisNodeResumeEventPublisherTest extends OrchestrationTestBase {
             .interruptHistories(new ArrayList<>())
             .startTs(System.currentTimeMillis())
             .build();
-    resumeEventPublisher.publishEvent(ResumeMetadata.fromNodeExecution(nodeExecution), new HashMap<>(), false);
+    resumeEventPublisher.publishEvent(
+        ResumeMetadata.fromNodeExecution(nodeExecution, nodeExecution.getAmbiance()), new HashMap<>(), false);
     NodeResumeEvent nodeResumeEvent = NodeResumeEvent.newBuilder()
                                           .setAmbiance(nodeExecution.getAmbiance())
                                           .setExecutionMode(nodeExecution.getMode())
@@ -151,7 +152,8 @@ public class RedisNodeResumeEventPublisherTest extends OrchestrationTestBase {
             .startTs(System.currentTimeMillis())
             .build();
     resumeEventPublisher.publishEventForIdentityNode(
-        ResumeMetadata.fromNodeExecution(nodeExecution), new HashMap<>(), false, "service1");
+        ResumeMetadata.fromNodeExecution(nodeExecution, nodeExecution.getAmbiance()), new HashMap<>(), false,
+        "service1");
     NodeResumeEvent nodeResumeEvent = NodeResumeEvent.newBuilder()
                                           .setAmbiance(IdentityStep.modifyAmbiance(nodeExecution.getAmbiance()))
                                           .setExecutionMode(nodeExecution.getMode())
@@ -201,7 +203,8 @@ public class RedisNodeResumeEventPublisherTest extends OrchestrationTestBase {
             .interruptHistories(new ArrayList<>())
             .startTs(System.currentTimeMillis())
             .build();
-    assertNull(resumeEventPublisher.buildChainDetails(ResumeMetadata.fromNodeExecution(nodeExecution)));
+    assertNull(resumeEventPublisher.buildChainDetails(
+        ResumeMetadata.fromNodeExecution(nodeExecution, nodeExecution.getAmbiance())));
   }
 
   @Test
@@ -240,7 +243,8 @@ public class RedisNodeResumeEventPublisherTest extends OrchestrationTestBase {
             .interruptHistories(new ArrayList<>())
             .startTs(System.currentTimeMillis())
             .build();
-    ChainDetails chainDetails = resumeEventPublisher.buildChainDetails(ResumeMetadata.fromNodeExecution(nodeExecution));
+    ChainDetails chainDetails = resumeEventPublisher.buildChainDetails(
+        ResumeMetadata.fromNodeExecution(nodeExecution, nodeExecution.getAmbiance()));
     ChainDetails expectedChainDetails =
         ChainDetails.newBuilder()
             .setIsEnd(true)
@@ -285,7 +289,8 @@ public class RedisNodeResumeEventPublisherTest extends OrchestrationTestBase {
             .interruptHistories(new ArrayList<>())
             .startTs(System.currentTimeMillis())
             .build();
-    ChainDetails chainDetails = resumeEventPublisher.buildChainDetails(ResumeMetadata.fromNodeExecution(nodeExecution));
+    ChainDetails chainDetails = resumeEventPublisher.buildChainDetails(
+        ResumeMetadata.fromNodeExecution(nodeExecution, nodeExecution.getAmbiance()));
     ChainDetails expectedChainDetails =
         ChainDetails.newBuilder()
             .setIsEnd(true)

@@ -14,6 +14,7 @@ import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.resume.publisher.NodeResumeEventPublisher;
 import io.harness.engine.pms.resume.publisher.ResumeMetadata;
 import io.harness.execution.NodeExecution;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
@@ -41,8 +42,9 @@ public class NodeResumeHelper {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private NodeResumeEventPublisher nodeResumeEventPublisher;
 
-  public void resume(NodeExecution nodeExecution, Map<String, ResponseDataProto> responseMap, boolean isError) {
-    ResumeMetadata resumeMetadata = ResumeMetadata.fromNodeExecution(nodeExecution);
+  public void resume(
+      NodeExecution nodeExecution, Ambiance ambiance, Map<String, ResponseDataProto> responseMap, boolean isError) {
+    ResumeMetadata resumeMetadata = ResumeMetadata.fromNodeExecution(nodeExecution, ambiance);
     nodeResumeEventPublisher.publishEvent(resumeMetadata, buildResponseMap(resumeMetadata, responseMap), isError);
   }
 
