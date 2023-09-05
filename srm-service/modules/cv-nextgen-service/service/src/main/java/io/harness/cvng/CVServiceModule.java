@@ -205,7 +205,10 @@ import io.harness.cvng.core.services.impl.CustomHealthLogDataCollectionInfoMappe
 import io.harness.cvng.core.services.impl.CustomHealthMetricDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.CustomHealthServiceImpl;
 import io.harness.cvng.core.services.impl.DataCollectionTaskServiceImpl;
+import io.harness.cvng.core.services.impl.DatadogLogDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.DatadogLogNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.DatadogMetricDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.DatadogMetricNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.DatadogServiceImpl;
 import io.harness.cvng.core.services.impl.DebugServiceImpl;
 import io.harness.cvng.core.services.impl.DeeplinkURLServiceImpl;
@@ -236,6 +239,7 @@ import io.harness.cvng.core.services.impl.PagerDutyServiceImpl;
 import io.harness.cvng.core.services.impl.PagerdutyChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.ParseSampleDataServiceImpl;
 import io.harness.cvng.core.services.impl.PrometheusDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.PrometheusNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.PrometheusServiceImpl;
 import io.harness.cvng.core.services.impl.SLIDataCollectionTaskServiceImpl;
 import io.harness.cvng.core.services.impl.SRMTelemetrySentStatusServiceImpl;
@@ -266,7 +270,6 @@ import io.harness.cvng.core.services.impl.demo.changesource.CDNGChangeSourceDemo
 import io.harness.cvng.core.services.impl.demo.changesource.KubernetesChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.demo.changesource.PagerdutyChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.monitoredService.ChangeSourceServiceImpl;
-import io.harness.cvng.core.services.impl.monitoredService.DatadogLogDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MSHealthReportServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
@@ -908,6 +911,15 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.AZURE_METRICS)
         .to(AzureMetricsNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.DATADOG_LOG)
+        .to(DatadogLogNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.DATADOG_METRICS)
+        .to(DatadogMetricNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.PROMETHEUS)
+        .to(PrometheusNextGenHealthSourceHelper.class)
         .in(Scopes.SINGLETON);
     MapBinder<DataSourceType, CVConfigUpdatableEntity> dataSourceTypeCVConfigMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, CVConfigUpdatableEntity.class);
