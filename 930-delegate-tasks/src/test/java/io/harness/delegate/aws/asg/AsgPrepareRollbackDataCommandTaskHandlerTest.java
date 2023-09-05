@@ -85,6 +85,8 @@ public class AsgPrepareRollbackDataCommandTaskHandlerTest extends CategoryTest {
     doReturn(new AutoScalingGroup().withAutoScalingGroupName(ASG_NAME).withLaunchTemplate(launchTemplateSpecification))
         .when(asgSdkManager)
         .getASG(anyString());
+    doReturn(ASG_NAME).when(asgTaskHelper).getAsgName(any(), any());
+    doReturn(new HashMap<>()).when(asgTaskHelper).getAsgStoreManifestsContent(any(), any(), any());
   }
 
   @Test

@@ -86,6 +86,8 @@ public class AsgRollingDeployCommandTaskHandlerTest extends CategoryTest {
     doReturn(new StartInstanceRefreshResult().withInstanceRefreshId("id"))
         .when(asgSdkManager)
         .startInstanceRefresh(any(), any(), any(), any());
+    doReturn(ASG_NAME).when(asgTaskHelper).getAsgName(any(), any());
+    doReturn(new HashMap<>()).when(asgTaskHelper).getAsgStoreManifestsContent(any(), any(), any());
   }
 
   @Test
