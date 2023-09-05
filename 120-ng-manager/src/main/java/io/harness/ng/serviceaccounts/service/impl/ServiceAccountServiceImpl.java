@@ -76,6 +76,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -419,12 +420,14 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
       return criteria;
     }
     if (isNotBlank(serviceAccountFilterDTO.getSearchTerm())) {
-      criteria.orOperator(Criteria.where(ServiceAccountKeys.name).regex(serviceAccountFilterDTO.getSearchTerm(), "i"),
-          Criteria.where(ServiceAccountKeys.identifier).regex(serviceAccountFilterDTO.getSearchTerm(), "i"),
+      criteria.orOperator(
+          Criteria.where(ServiceAccountKeys.name).regex(Pattern.quote(serviceAccountFilterDTO.getSearchTerm()), "i"),
+          Criteria.where(ServiceAccountKeys.identifier)
+              .regex(Pattern.quote(serviceAccountFilterDTO.getSearchTerm()), "i"),
           Criteria.where(ServiceAccountKeys.tags + "." + NGTagKeys.key)
-              .regex(serviceAccountFilterDTO.getSearchTerm(), "i"),
+              .regex(Pattern.quote(serviceAccountFilterDTO.getSearchTerm()), "i"),
           Criteria.where(ServiceAccountKeys.tags + "." + NGTagKeys.value)
-              .regex(serviceAccountFilterDTO.getSearchTerm(), "i"));
+              .regex(Pattern.quote(serviceAccountFilterDTO.getSearchTerm()), "i"));
     }
     if (Objects.nonNull(serviceAccountFilterDTO.getOrgIdentifier())
         && !serviceAccountFilterDTO.getOrgIdentifier().isEmpty()) {

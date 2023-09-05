@@ -56,6 +56,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -303,9 +304,12 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     if (isNotBlank(searchTerm)) {
       Criteria tagCriteria = createCriteriaForSearchingTag(searchTerm);
       return new Criteria().orOperator(
-          where(ConnectorKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-          where(ConnectorKeys.identifier).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-          where(ConnectorKeys.description).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(ConnectorKeys.name)
+              .regex(Pattern.quote(searchTerm), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(ConnectorKeys.identifier)
+              .regex(Pattern.quote(searchTerm), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(ConnectorKeys.description)
+              .regex(Pattern.quote(searchTerm), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
           tagCriteria);
     }
     return null;

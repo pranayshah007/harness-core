@@ -47,6 +47,7 @@ import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -131,9 +132,10 @@ public class VariableServiceImpl implements VariableService {
     }
     if (!StringUtils.isEmpty(searchTerm)) {
       criteria = criteria.orOperator(
-          Criteria.where(VariableKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          Criteria.where(VariableKeys.name)
+              .regex(Pattern.quote(searchTerm), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
           Criteria.where(VariableKeys.identifier)
-              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+              .regex(Pattern.quote(searchTerm), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
     return criteria;
   }
