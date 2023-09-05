@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 55
+version: 56
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1470,7 +1470,7 @@ permissions:
       - account
       - organization
       - project
-  - identifier: code_commitCheck_report
+  - identifier: code_repo_reportCommitCheck
     name: Report a Status Check Result on a Commit
     status: ACTIVE
     allowedScopeLevels:

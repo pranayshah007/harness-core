@@ -164,9 +164,9 @@ public class SRMLicenseUsageResource {
       @QueryParam(TIMESTAMP) @DefaultValue("0") long currentTsInMs,
       @Valid @RequestBody(description = ACTIVE_SERVICES_MONITORED_FILTER_PARAM_MESSAGE)
       ActiveServiceMonitoredFilterParams filterParams) {
+    currentTsInMs = fixOptionalCurrentTs(currentTsInMs);
     Pageable pageRequest =
         PageableUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, SERVICE_INSTANCE_ID));
-    validateSort(pageRequest.getSort(), ACTIVE_SERVICES_MONITORED_SORT_QUERY_PROPERTIES);
     DefaultPageableUsageRequestParams requestParams =
         DefaultPageableUsageRequestParams.builder().filterParams(filterParams).pageRequest(pageRequest).build();
 

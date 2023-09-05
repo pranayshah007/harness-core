@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.yaml.ParameterField;
 
@@ -43,12 +44,12 @@ public class MatrixConfigService implements StrategyConfigService {
   }
 
   public StrategyInfo expandJsonNodeFromClass(StrategyConfig strategyConfig, JsonNode jsonNode,
-      Optional<Integer> maxExpansionLimit, boolean isStepGroup, Class cls) {
+      Optional<Integer> maxExpansionLimit, boolean isStepGroup, Class cls, Ambiance ambiance) {
     MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig().getValue();
     List<String> keys = getKeys(matrixConfig);
     return matrixConfigServiceHelper.expandJsonNodeFromClass(keys, matrixConfig.getAxes(),
         matrixConfig.getExpressionAxes(), matrixConfig.getExclude(), matrixConfig.getMaxConcurrency(), jsonNode,
-        maxExpansionLimit, isStepGroup, cls);
+        maxExpansionLimit, isStepGroup, cls, ambiance);
   }
 
   public StrategyInfo expandJsonNode(

@@ -17,10 +17,4 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.IDP)
 public interface DataPointParser {
   Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPointIdentifier, Set<String> strings);
-
-  default String extractInputValue(String expression) {
-    return "INV";
-  }
-
-  String getReplaceKey();
 }

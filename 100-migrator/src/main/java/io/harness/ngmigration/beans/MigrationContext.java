@@ -9,6 +9,7 @@ package io.harness.ngmigration.beans;
 
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
+import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +29,7 @@ public class MigrationContext {
   private MigrationInputDTO inputDTO;
   private String accountId;
   private boolean templatizeStepParams;
+  private NGMigrationEntityType root;
 
   public static MigrationContext newInstance(String accountId, MigrationInputDTO inputDTO,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph,

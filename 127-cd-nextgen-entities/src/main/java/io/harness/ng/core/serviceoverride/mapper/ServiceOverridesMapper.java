@@ -10,7 +10,6 @@ package io.harness.ng.core.serviceoverride.mapper;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.CodePulse;
@@ -25,8 +24,6 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServi
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
-import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
-import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.scope.ScopeHelper;
@@ -123,33 +120,13 @@ public class ServiceOverridesMapper {
 
   public ServiceOverrideResponseDTO toResponseWrapper(
       NGServiceOverridesEntity serviceOverridesEntity, boolean v2Enabled) {
-    String yamlFromV2Spec = EMPTY;
-
-    if (serviceOverridesEntity.getSpec() != null && v2Enabled) {
-      ServiceOverridesSpec specV2 = serviceOverridesEntity.getSpec();
-      NGServiceOverrideConfig overrideConfig =
-          NGServiceOverrideConfig.builder()
-              .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
-                                             .environmentRef(serviceOverridesEntity.getEnvironmentRef())
-                                             .serviceRef(serviceOverridesEntity.getServiceRef())
-                                             .variables(specV2.getVariables())
-                                             .manifests(specV2.getManifests())
-                                             .configFiles(specV2.getConfigFiles())
-                                             .applicationSettings(specV2.getApplicationSettings())
-                                             .connectionStrings(specV2.getConnectionStrings())
-                                             .build())
-              .build();
-
-      yamlFromV2Spec = YamlUtils.writeYamlString(overrideConfig);
-    }
-
     return ServiceOverrideResponseDTO.builder()
         .accountId(serviceOverridesEntity.getAccountId())
         .orgIdentifier(serviceOverridesEntity.getOrgIdentifier())
         .projectIdentifier(serviceOverridesEntity.getProjectIdentifier())
         .environmentRef(serviceOverridesEntity.getEnvironmentRef())
         .serviceRef(serviceOverridesEntity.getServiceRef())
-        .yaml(isNotBlank(yamlFromV2Spec) ? yamlFromV2Spec : serviceOverridesEntity.getYaml())
+        .yaml(v2Enabled ? serviceOverridesEntity.getYamlInternal() : serviceOverridesEntity.getYaml())
         .build();
   }
 

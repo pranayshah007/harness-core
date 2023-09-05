@@ -111,7 +111,7 @@ managerClientConfig:
   readTimeOutSeconds: 15
 
 backstageHttpClientConfig:
-  baseUrl: https://localhost:7007
+  baseUrl: http://localhost:7007/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -213,6 +213,11 @@ pipelineServiceClientConfig:
   baseUrl: http://localhost:12001/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+scorecardScoreComputationIteratorConfig:
+  threadPoolCount: 5
+  enabled: false
+  targetIntervalInSeconds: 43200 #12 hours in seconds
 
 tiServiceConfig:
   internalUrl: ""

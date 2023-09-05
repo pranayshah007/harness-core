@@ -36,6 +36,18 @@ public class QuarterlyCalenderTarget extends CalenderSLOTarget {
   }
 
   @Override
+  public TimePeriod getTimeRangeForHistory(LocalDateTime currentDateTime) {
+    LocalDate firstDayOfQuarter =
+        currentDateTime.toLocalDate()
+            .minusMonths(3)
+            .with(currentDateTime.toLocalDate().minusMonths(3).getMonth().firstMonthOfQuarter())
+            .with(TemporalAdjusters.firstDayOfMonth());
+
+    LocalDate lastDayOfQuarter = firstDayOfQuarter.plusMonths(2).with(TemporalAdjusters.lastDayOfMonth());
+    return TimePeriod.builder().startDate(firstDayOfQuarter).endDate(lastDayOfQuarter.plusDays(1)).build();
+  }
+
+  @Override
   public List<SLODashboardDetail.TimeRangeFilter> getTimeRangeFilters() {
     List<SLODashboardDetail.TimeRangeFilter> timeRangeFilterList = new ArrayList<>();
     timeRangeFilterList.add(SLODashboardDetail.TimeRangeFilter.ONE_HOUR_FILTER);

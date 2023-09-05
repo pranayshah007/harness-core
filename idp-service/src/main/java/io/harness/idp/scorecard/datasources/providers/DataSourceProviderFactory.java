@@ -23,6 +23,7 @@ import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocat
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 @OwnedBy(HarnessTeam.IDP)
 public class DataSourceProviderFactory {
@@ -35,6 +36,7 @@ public class DataSourceProviderFactory {
   @Inject SecretManagerClientService ngSecretService;
 
   @Inject IdpAuthInterceptor idpAuthInterceptor;
+  @Inject @Named("env") private String env;
 
   public DataSourceProvider getProvider(String dataSource) {
     switch (dataSource) {
@@ -47,7 +49,7 @@ public class DataSourceProviderFactory {
             backstageEnvVariableRepository, ngSecretService);
       case HARNESS_IDENTIFIER:
         return new HarnessProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
-            dataSourceDataPointParserFactory.getDataPointParserFactory(HARNESS_IDENTIFIER), idpAuthInterceptor);
+            dataSourceDataPointParserFactory.getDataPointParserFactory(HARNESS_IDENTIFIER), idpAuthInterceptor, env);
       case CUSTOM_IDENTIFIER:
         return new CustomProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(CUSTOM_IDENTIFIER));

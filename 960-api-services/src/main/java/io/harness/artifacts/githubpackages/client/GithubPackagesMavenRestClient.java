@@ -6,6 +6,7 @@
  */
 
 package io.harness.artifacts.githubpackages.client;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -19,7 +20,8 @@ import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.Path;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface GithubPackagesMavenRestClient {
   @GET("{userOrg}/{repository}/{packageName}/{artifactId}/{version}/maven-metadata.xml")

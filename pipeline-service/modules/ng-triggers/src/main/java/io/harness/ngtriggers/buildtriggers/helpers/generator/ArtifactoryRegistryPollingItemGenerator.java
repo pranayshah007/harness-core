@@ -46,6 +46,7 @@ public class ArtifactoryRegistryPollingItemGenerator implements PollingItemGener
         buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryFormat");
     String artifactPath = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.artifactPath");
     String repositoryUrl = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryUrl");
+    String artifactFilter = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.artifactFilter");
 
     if (RepositoryFormat.generic.toString().equals(repositoryFormat)) {
       artifactPath = Strings.EMPTY;
@@ -60,6 +61,7 @@ public class ArtifactoryRegistryPollingItemGenerator implements PollingItemGener
                                                                       .setRepository(repository)
                                                                       .setArtifactDirectory(artifactDirectory)
                                                                       .setRepositoryFormat(repositoryFormat)
+                                                                      .setArtifactFilter(artifactFilter)
                                                                       .build())
                                    .build())
         .build();

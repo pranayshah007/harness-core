@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -81,12 +82,18 @@ public class RuntimeInputValuesValidator {
         }
         InputSetValidator inputSetValidator = templateField.getInputSetValidator();
         if (inputSetValidator.getValidatorType() == REGEX) {
-          boolean matchesPattern =
-              NGExpressionUtils.matchesPattern(Pattern.compile(inputSetValidator.getParameters()), inputSetFieldValue);
-          error = matchesPattern
-              ? ""
-              : String.format("The value provided for [%s: %s] does not match the required regex pattern",
-                  expressionFqn, inputSetFieldValue);
+          try {
+            boolean matchesPattern = NGExpressionUtils.matchesPattern(
+                Pattern.compile(inputSetValidator.getParameters()), inputSetFieldValue);
+            error = matchesPattern
+                ? ""
+                : String.format("The value provided for [%s: %s] does not match the required regex pattern",
+                    expressionFqn, inputSetFieldValue);
+          } catch (PatternSyntaxException e) {
+            throw new InvalidRequestException(
+                String.format("Invalid pattern %s provided in %s", inputSetValidator.getParameters(), expressionFqn),
+                e);
+          }
         } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
           List<String> allowedValues = AllowedValuesHelper.split(inputSetValidator.getParameters());
           List<String> inputFields = AllowedValuesHelper.split(inputSetFieldValue);
@@ -178,8 +185,14 @@ public class RuntimeInputValuesValidator {
 
         InputSetValidator inputSetValidator = sourceField.getInputSetValidator();
         if (inputSetValidator.getValidatorType() == REGEX) {
-          return NGExpressionUtils.matchesPattern(
-              Pattern.compile(inputSetValidator.getParameters()), objectToValidateFieldValue);
+          try {
+            return NGExpressionUtils.matchesPattern(
+                Pattern.compile(inputSetValidator.getParameters()), objectToValidateFieldValue);
+          } catch (PatternSyntaxException e) {
+            throw new InvalidRequestException(String.format("Invalid pattern %s provided for validation of value %s",
+                                                  inputSetValidator.getParameters(), objectToValidateFieldValue),
+                e);
+          }
         } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
           String[] allowedValues = inputSetValidator.getParameters().split(", *");
           for (String allowedValue : allowedValues) {

@@ -141,7 +141,8 @@ public class ServiceResource {
   @Path("{serviceId}")
   @Timed
   @ExceptionMetered
-  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = PermissionType.SERVICE, action = Action.READ)
+  @AuthRule(permissionType = PermissionType.SERVICE, action = Action.READ)
   public RestResponse<Service> get(@QueryParam("appId") String appId, @PathParam("serviceId") String serviceId,
       @QueryParam("status") SetupStatus status) {
     if (status == null) {

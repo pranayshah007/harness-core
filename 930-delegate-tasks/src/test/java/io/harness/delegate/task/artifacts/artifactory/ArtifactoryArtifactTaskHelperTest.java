@@ -64,6 +64,8 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
 
   @Mock ArtifactoryNgServiceImpl artifactoryNgService;
 
+  private static final String ARTIFACT_FILTER = "artifactFilter";
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -431,6 +433,7 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
             .connectorRef("connectorRef")
             .repositoryFormat("repoFormat")
             .repositoryName("repoName")
+            .artifactFilter(ARTIFACT_FILTER)
             .build();
 
     doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(any());
@@ -446,7 +449,8 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
         .getLatestArtifact(artifactoryConfigRequest, artifactoryArtifactDelegateRequest.getRepositoryName(),
             artifactoryArtifactDelegateRequest.getArtifactDirectory(),
             artifactoryArtifactDelegateRequest.getArtifactPathFilter(),
-            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000);
+            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000,
+            artifactoryArtifactDelegateRequest.getArtifactFilter());
 
     ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
                                                         .attributes(artifactoryArtifactDelegateRequest)
@@ -511,6 +515,7 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
             .artifactPathFilter("filter")
             .connectorRef("connectorRef")
             .repositoryFormat("repoFormat")
+            .artifactFilter(ARTIFACT_FILTER)
             .repositoryName("repoName")
             .build();
 
@@ -521,7 +526,8 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
         .getLatestArtifact(artifactoryConfigRequest, artifactoryArtifactDelegateRequest.getRepositoryName(),
             artifactoryArtifactDelegateRequest.getArtifactDirectory(),
             artifactoryArtifactDelegateRequest.getArtifactPathFilter(),
-            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000);
+            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000,
+            artifactoryArtifactDelegateRequest.getArtifactFilter());
 
     ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
                                                         .attributes(artifactoryArtifactDelegateRequest)
@@ -583,6 +589,7 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
             .artifactPathFilter("filter")
             .connectorRef("connectorRef")
             .repositoryFormat("repoFormat")
+            .artifactFilter(ARTIFACT_FILTER)
             .repositoryName("repoName")
             .build();
 
@@ -593,7 +600,8 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
         .getLatestArtifact(artifactoryConfigRequest, artifactoryArtifactDelegateRequest.getRepositoryName(),
             artifactoryArtifactDelegateRequest.getArtifactDirectory(),
             artifactoryArtifactDelegateRequest.getArtifactPathFilter(),
-            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000);
+            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000,
+            artifactoryArtifactDelegateRequest.getArtifactFilter());
 
     ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
                                                         .attributes(artifactoryArtifactDelegateRequest)
@@ -642,6 +650,7 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
             .artifactPathFilter("filter")
             .connectorRef("connectorRef")
             .repositoryFormat("repoFormat")
+            .artifactFilter(ARTIFACT_FILTER)
             .repositoryName("repoName")
             .build();
 
@@ -658,7 +667,8 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
         .getLatestArtifact(artifactoryConfigRequest, artifactoryArtifactDelegateRequest.getRepositoryName(),
             artifactoryArtifactDelegateRequest.getArtifactDirectory(),
             artifactoryArtifactDelegateRequest.getArtifactPathFilter(),
-            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000);
+            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000,
+            artifactoryArtifactDelegateRequest.getArtifactFilter());
 
     ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
                                                         .attributes(artifactoryArtifactDelegateRequest)
@@ -722,6 +732,7 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
             .artifactPath("path")
             .artifactPathFilter("")
             .connectorRef("connectorRef")
+            .artifactFilter(ARTIFACT_FILTER)
             .repositoryFormat("repoFormat")
             .repositoryName("repoName")
             .build();
@@ -739,7 +750,8 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
         .getLatestArtifact(artifactoryConfigRequest, artifactoryArtifactDelegateRequest.getRepositoryName(),
             artifactoryArtifactDelegateRequest.getArtifactDirectory(),
             artifactoryArtifactDelegateRequest.getArtifactPathFilter(),
-            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000);
+            artifactoryArtifactDelegateRequest.getArtifactPath(), 10000,
+            artifactoryArtifactDelegateRequest.getArtifactFilter());
 
     ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
                                                         .attributes(artifactoryArtifactDelegateRequest)

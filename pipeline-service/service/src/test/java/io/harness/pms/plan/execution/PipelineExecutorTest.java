@@ -363,8 +363,8 @@ public class PipelineExecutorTest extends CategoryTest {
         .get(originalExecutionId);
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
-        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
-            projectId, ExecutionMode.POST_EXECUTION_ROLLBACK, null, stageNodeExecutionIds);
+        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo,
+            ExecutionMode.POST_EXECUTION_ROLLBACK, null, stageNodeExecutionIds);
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))
@@ -400,8 +400,8 @@ public class PipelineExecutorTest extends CategoryTest {
         .get(originalExecutionId);
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
-        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
-            projectId, ExecutionMode.PIPELINE_ROLLBACK, null, Collections.emptyList());
+        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo,
+            ExecutionMode.PIPELINE_ROLLBACK, null, Collections.emptyList());
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))

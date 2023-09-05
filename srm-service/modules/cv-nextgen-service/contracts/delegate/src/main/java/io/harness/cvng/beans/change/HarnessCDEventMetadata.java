@@ -32,6 +32,7 @@ public class HarnessCDEventMetadata extends ChangeEventMetadata {
   long deploymentEndTime;
   String planExecutionId;
   String pipelineId;
+  String runSequence;
   String stageStepId;
   String stageId;
   String artifactType;

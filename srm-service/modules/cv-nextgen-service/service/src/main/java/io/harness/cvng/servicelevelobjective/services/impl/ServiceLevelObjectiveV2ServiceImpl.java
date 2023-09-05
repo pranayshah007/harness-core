@@ -33,6 +33,7 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
 import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -530,6 +531,42 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     for (String identifier : identifiers) {
       sloTimeScaleService.deleteServiceLevelObjective(projectParams, identifier);
     }
+
+    return hPersistence.delete(
+        hPersistence.createQuery(AbstractServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveV2Keys.accountId, projectParams.getAccountIdentifier())
+            .filter(ServiceLevelObjectiveV2Keys.orgIdentifier, projectParams.getOrgIdentifier())
+            .filter(ServiceLevelObjectiveV2Keys.projectIdentifier, projectParams.getProjectIdentifier())
+            .field(ServiceLevelObjectiveV2Keys.identifier)
+            .in(identifiers));
+  }
+
+  @Override
+  public boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> identifiers) {
+    List<AbstractServiceLevelObjective> serviceLevelObjectives = get(projectParams, identifiers);
+    List<String> notiRuleRefs = new ArrayList<>();
+
+    for (AbstractServiceLevelObjective serviceLevelObjective : serviceLevelObjectives) {
+      VerificationTask verificationTask = verificationTaskService.getCompositeSLOTask(
+          serviceLevelObjective.getAccountId(), serviceLevelObjective.getUuid());
+      if (verificationTask != null) {
+        String verificationTaskId = verificationTask.getUuid();
+        if (StringUtils.isNotBlank(verificationTaskId)) {
+          sideKickService.schedule(
+              VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).build(),
+              clock.instant().plus(Duration.ofMinutes(15)));
+        }
+      }
+      notiRuleRefs.addAll(serviceLevelObjective.getNotificationRuleRefs()
+                              .stream()
+                              .map(NotificationRuleRef::getNotificationRuleRef)
+                              .collect(Collectors.toList()));
+    }
+
+    notificationRuleService.delete(projectParams, notiRuleRefs);
+    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifiers);
+    sloHealthIndicatorService.delete(projectParams, identifiers);
+    annotationService.delete(projectParams, identifiers);
 
     return hPersistence.delete(
         hPersistence.createQuery(AbstractServiceLevelObjective.class)

@@ -18,6 +18,7 @@ import io.harness.ssca.beans.OrchestrationStepSecretVariables;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -58,6 +59,9 @@ public class SscaOrchestrationStepPluginUtils {
     envMap.put(SSCA_MANAGER_ENABLED, String.valueOf(envVariables.isSscaManagerEnabled()));
     envMap.put(STEP_EXECUTION_ID, envVariables.getStepExecutionId());
     envMap.put(STEP_ID, envVariables.getStepIdentifier());
+
+    envMap.values().removeAll(Collections.singleton(null));
+
     return envMap;
   }
 

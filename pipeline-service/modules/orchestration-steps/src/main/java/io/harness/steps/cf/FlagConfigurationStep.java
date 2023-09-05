@@ -258,8 +258,8 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
             if (spec == null) {
               throw new InvalidRequestException("the spec for flag instruction, remove target group, is null");
             }
-            PatchInstruction instruction =
-                cfApi.getAddSegmentToVariationMapParams(spec.getVariation().getValue(), spec.getSegments().getValue());
+            PatchInstruction instruction = cfApi.getRemoveSegmentToVariationMapParams(
+                spec.getVariation().getValue(), spec.getSegments().getValue());
             instructions.add(instruction);
           }
         }

@@ -94,10 +94,10 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
   }
 
   @Override
-  public Page<PolicyViolation> getPolicyViolations(
-      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId, Pageable pageable) {
+  public Page<PolicyViolation> getPolicyViolations(String accountId, String orgIdentifier, String projectIdentifier,
+      String enforcementId, String searchText, Pageable pageable) {
     return enforcementResultService
-        .getPolicyViolations(accountId, orgIdentifier, projectIdentifier, enforcementId, pageable)
+        .getPolicyViolations(accountId, orgIdentifier, projectIdentifier, enforcementId, searchText, pageable)
         .map(enforcementResultEntity
             -> new PolicyViolation()
                    .enforcementId(enforcementResultEntity.getEnforcementID())

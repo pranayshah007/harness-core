@@ -11,6 +11,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -27,6 +29,8 @@ import io.harness.jira.JiraInstanceData;
 import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraIssueTransitionNG;
+import io.harness.jira.JiraIssueTransitionsNG;
 import io.harness.jira.JiraIssueTypeNG;
 import io.harness.jira.JiraIssueUpdateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
@@ -35,6 +39,7 @@ import io.harness.jira.JiraStatusNG;
 import io.harness.jira.JiraUserData;
 
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +85,13 @@ public class JiraTaskNGHandler {
 
   public JiraTaskNGResponse getStatuses(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
-    List<JiraStatusNG> statuses = jiraClient.getStatuses(params.getProjectKey(), params.getIssueType());
+    List<JiraStatusNG> statuses;
+    if (isBlank(params.getIssueKey())) {
+      statuses = jiraClient.getStatuses(params.getProjectKey(), params.getIssueType());
+    } else {
+      statuses = jiraClient.getStatuses(params.getIssueKey());
+    }
+
     return JiraTaskNGResponse.builder().statuses(statuses).build();
   }
 
@@ -244,5 +255,16 @@ public class JiraTaskNGHandler {
 
   private JiraClient getJiraClient(JiraTaskNGParameters parameters) {
     return new JiraClient(JiraRequestResponseMapper.toJiraInternalConfig(parameters.getJiraConnectorDTO()));
+  }
+
+  public JiraTaskNGResponse getIssueTransitions(JiraTaskNGParameters params) {
+    JiraClient jiraClient = getJiraClient(params);
+    JiraIssueTransitionsNG jiraIssueTransitionsNG = null;
+    if (isNotBlank(params.getIssueKey())) {
+      jiraIssueTransitionsNG = jiraClient.getIssueTransitions(params.getIssueKey());
+    }
+    List<JiraIssueTransitionNG> jiraIssueTransitionNGList =
+        jiraIssueTransitionsNG.getTransitions() == null ? new ArrayList<>() : jiraIssueTransitionsNG.getTransitions();
+    return JiraTaskNGResponse.builder().jiraIssueTransitionsNG(jiraIssueTransitionNGList).build();
   }
 }

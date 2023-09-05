@@ -11,11 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.jira.resources.service.JiraResourceService;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.jira.JiraIssueCreateMetadataNG;
+import io.harness.jira.JiraIssueTransitionNG;
 import io.harness.jira.JiraIssueUpdateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
 import io.harness.jira.JiraStatusNG;
@@ -53,6 +57,8 @@ import org.hibernate.validator.constraints.NotEmpty;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class JiraResource {
   private final JiraResourceService jiraResourceService;
 
@@ -89,10 +95,11 @@ public class JiraResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId, @QueryParam("projectKey") String projectKey,
-      @QueryParam("issueType") String issueType, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @QueryParam("issueType") String issueType, @QueryParam("issueKey") String issueKey,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(jiraConnectorRef, accountId, orgId, projectId);
     List<JiraStatusNG> statuses =
-        jiraResourceService.getStatuses(connectorRef, orgId, projectId, projectKey, issueType);
+        jiraResourceService.getStatuses(connectorRef, orgId, projectId, projectKey, issueType, issueKey);
     return ResponseDTO.newResponse(statuses);
   }
 
@@ -141,5 +148,18 @@ public class JiraResource {
     JiraIssueUpdateMetadataNG updateMetadata =
         jiraResourceService.getIssueUpdateMetadata(connectorRef, orgId, projectId, issueKey);
     return ResponseDTO.newResponse(updateMetadata);
+  }
+
+  @GET
+  @Path("transitions")
+  @ApiOperation(value = "Get issue transitions", nickname = "getIssueTransitions")
+  public ResponseDTO<List<JiraIssueTransitionNG>> getIssueTransitions(
+      @NotNull @QueryParam("connectorRef") String jiraConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @NotNull @QueryParam("issueKey") String issueKey, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(jiraConnectorRef, accountId, orgId, projectId);
+    return ResponseDTO.newResponse(jiraResourceService.getTransitions(connectorRef, orgId, projectId, issueKey));
   }
 }

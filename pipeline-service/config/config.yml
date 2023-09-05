@@ -611,7 +611,7 @@ eventsFrameworkSnapshotDebezium:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-true}
 
 cfClientConfig:
   apiKey: ""
@@ -667,3 +667,5 @@ webhookEventHsqsDequeueConfig:
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
 
 streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- fale}
+
+graphConsumerSleepIntervalMs: ${GRAPH_CONSUMER_SLEEP_INTERVAL_MS:-0}

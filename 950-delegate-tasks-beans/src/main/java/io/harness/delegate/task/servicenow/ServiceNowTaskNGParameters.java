@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.servicenow;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
@@ -62,6 +63,12 @@ public class ServiceNowTaskNGParameters implements TaskParameters, ExecutionCapa
   @Expression(ALLOW_SECRETS) String importData;
 
   List<String> delegateSelectors;
+
+  // List of required field append by comma
+  String queryFields;
+
+  // Will be used to filter the response
+  String searchTerm;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

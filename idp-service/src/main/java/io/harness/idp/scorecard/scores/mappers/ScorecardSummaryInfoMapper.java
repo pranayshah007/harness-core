@@ -18,14 +18,12 @@ import lombok.experimental.UtilityClass;
 public class ScorecardSummaryInfoMapper {
   public ScorecardSummaryInfo toDTO(ScoreEntity scoreEntity, String scoreCardName, String scoreCardDescription) {
     ScorecardSummaryInfo scorecardSummaryInfo = new ScorecardSummaryInfo();
-    scorecardSummaryInfo.setScore(0);
-    if (scoreEntity != null) {
-      scorecardSummaryInfo.setScore(scoreEntity.getScore());
-      scorecardSummaryInfo.setTimestamp(scoreEntity.getLastComputedTimestamp());
-      scorecardSummaryInfo.setChecksStatuses(scoreEntity.getCheckStatus());
-    }
+    scorecardSummaryInfo.setScore(scoreEntity.getScore());
+    scorecardSummaryInfo.setTimestamp(scoreEntity.getLastComputedTimestamp());
+    scorecardSummaryInfo.setChecksStatuses(scoreEntity.getCheckStatus());
     scorecardSummaryInfo.setScorecardName(scoreCardName);
     scorecardSummaryInfo.setDescription(scoreCardDescription);
+    scorecardSummaryInfo.setScorecardIdentifier(scoreEntity.getScorecardIdentifier());
     return scorecardSummaryInfo;
   }
 }

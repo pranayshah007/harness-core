@@ -62,7 +62,7 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     CustomArtifactStream customArtifactStream = (CustomArtifactStream) artifactStream;
     if (isNotEmpty(customArtifactStream.getTemplateUuid())) {
       TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();

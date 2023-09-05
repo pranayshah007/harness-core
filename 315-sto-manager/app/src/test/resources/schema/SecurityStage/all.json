@@ -537,6 +537,40 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AttestationSpecV1": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AttestationV1": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignAttestationV1"
+              }
+            }
+          }
+        }
+      ]
+    },
     "AwsEcrStepInfo": {
       "allOf": [
         {
@@ -1611,12 +1645,29 @@
           "enum": [
             "branch",
             "tag",
-            "PR"
+            "PR",
+            "CommitSha"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CommitSha"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CommitShaBuildSpec"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -2505,6 +2556,25 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CommitShaBuildSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BuildSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "commitSha"
+          ],
+          "properties": {
+            "commitSha": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ConnectorConversionInfo": {
       "type": "object",
       "properties": {
@@ -2836,6 +2906,25 @@
               "type": "string"
             },
             "privateKey": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignAttestationV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AttestationSpecV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "password": {
+              "type": "string"
+            },
+            "private_key": {
               "type": "string"
             }
           }
@@ -3467,6 +3556,42 @@
     },
     "DockerRuntimeSpec": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProvenanceSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "repo",
+            "tags"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "repo": {
+              "type": "string"
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DockerStepInfo": {
@@ -4893,6 +5018,22 @@
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "IACMApprovalInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "IACMCostEstimationInfo": {
       "allOf": [
         {
           "$ref": "#/definitions/StepSpecType"
@@ -7944,6 +8085,59 @@
               "enum": [
                 "ProceedWithDefaultValues"
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ProvenanceSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "docker"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "docker"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DockerSourceSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ProvenanceSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ProvenanceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "attestation": {
+              "$ref": "#/definitions/AttestationV1"
+            },
+            "source": {
+              "$ref": "#/definitions/ProvenanceSource"
             }
           }
         }
@@ -11706,6 +11900,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "IACMCostEstimation"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMCostEstimationInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "IACMTerraformPlugin"
               }
             }
@@ -12306,6 +12516,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/PluginStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "provenance"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ProvenanceStepInfo"
               }
             }
           }

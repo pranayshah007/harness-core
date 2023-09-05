@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.servicenow;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -447,7 +448,8 @@ public class ServiceNowTaskNgHelper {
     final Call<JsonNode> request =
         serviceNowRestClient.getTemplateList(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
             serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTemplateListLimit(),
-            serviceNowTaskNGParameters.getTemplateListOffset(), serviceNowTaskNGParameters.getTemplateName());
+            serviceNowTaskNGParameters.getTemplateListOffset(), serviceNowTaskNGParameters.getTemplateName(),
+            serviceNowTaskNGParameters.getSearchTerm());
     Response<JsonNode> response = null;
     try {
       response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
@@ -492,10 +494,10 @@ public class ServiceNowTaskNgHelper {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request =
-        serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, true),
-            serviceNowTaskNGParameters.getTicketType().toLowerCase(),
-            "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
+    final Call<JsonNode> request = serviceNowRestClient.getIssueV2(
+        ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, true),
+        serviceNowTaskNGParameters.getTicketType().toLowerCase(),
+        "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all", serviceNowTaskNGParameters.getQueryFields());
     Response<JsonNode> response = null;
 
     try {
@@ -503,9 +505,10 @@ public class ServiceNowTaskNgHelper {
       if (isUnauthorizedError(response)) {
         log.warn("Failed to get serviceNow ticket using cached auth token; trying with fresh token");
         Call<JsonNode> requestWithoutCache =
-            serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, false),
+            serviceNowRestClient.getIssueV2(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, false),
                 serviceNowTaskNGParameters.getTicketType().toLowerCase(),
-                "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
+                "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all",
+                serviceNowTaskNGParameters.getQueryFields());
         response = Retry.decorateCallable(retry, () -> requestWithoutCache.clone().execute()).call();
       }
       handleResponse(response, "Failed to get serviceNow ticket");

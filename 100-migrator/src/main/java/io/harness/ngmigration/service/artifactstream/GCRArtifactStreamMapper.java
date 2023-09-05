@@ -42,7 +42,7 @@ public class GCRArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     GcrArtifactStream gcrArtifactStream = (GcrArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(gcrArtifactStream.getSettingId()).build())
@@ -53,7 +53,7 @@ public class GCRArtifactStreamMapper implements ArtifactStreamMapper {
                   .registryHostname(ParameterField.createValueField(gcrArtifactStream.getRegistryHostName()))
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .imagePath(ParameterField.createValueField(gcrArtifactStream.getDockerImageName()))
-                  .tag(ParameterField.createValueField("<+input>"))
+                  .tag(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }

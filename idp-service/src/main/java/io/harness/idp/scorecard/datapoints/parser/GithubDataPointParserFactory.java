@@ -8,6 +8,7 @@
 package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_BRANCH_PROTECTED;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_FILE_EXISTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,6 +22,7 @@ import lombok.AllArgsConstructor;
 public class GithubDataPointParserFactory implements DataPointParserFactory {
   private GithubMeanTimeToMergeParser githubMeanTimeToMergeParser;
   private GithubIsBranchProtectedParser githubIsBranchProtectedParser;
+  private GithubFileExistsParser githubFileExistsParser;
 
   public DataPointParser getParser(String identifier) {
     switch (identifier) {
@@ -28,6 +30,8 @@ public class GithubDataPointParserFactory implements DataPointParserFactory {
         return githubMeanTimeToMergeParser;
       case GITHUB_IS_BRANCH_PROTECTED:
         return githubIsBranchProtectedParser;
+      case GITHUB_IS_FILE_EXISTS:
+        return githubFileExistsParser;
       // Add more cases for other parsers
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataPoint parser for %s", identifier));

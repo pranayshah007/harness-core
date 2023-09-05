@@ -34,6 +34,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.step.PipelineStageStep;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -171,7 +172,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
                     .build())
             .adviserObtainments(
                 PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), true));
-    if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
+    if (EmptyPredicate.isNotEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
     // If strategy present then don't add advisers. Strategy node will take care of running the stage nodes.
@@ -197,7 +198,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
                     Dependency.newBuilder()
                         .putAllMetadata(dependencyMetadata.getMetadataMap())
                         .setNodeMetadata(
-                            HarnessStruct.newBuilder().putAllFields(dependencyMetadata.getNodeMetadataMap()).build())
+                            HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
                         .build())
                 .build())
         .build();
@@ -219,15 +220,15 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
     YamlField stageYamlField = context.getCurrentField();
     String nextNodeUuid = null;
     if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey(YAMLFieldNameConstants.NEXT_ID)) {
+        && context.getDependency().getMetadataMap().containsKey(PlanCreatorConstants.NEXT_ID)) {
       nextNodeUuid = (String) kryoSerializer.asObject(
-          context.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
+          context.getDependency().getMetadataMap().get(PlanCreatorConstants.NEXT_ID).toByteArray());
     }
     if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
     } else {
       EdgeLayoutList edgeLayoutList = EdgeLayoutList.newBuilder().build();
-      if (!EmptyPredicate.isEmpty(nextNodeUuid)) {
+      if (EmptyPredicate.isNotEmpty(nextNodeUuid)) {
         // Add nextChildId in edgeLayoutList if present.
         edgeLayoutList = EdgeLayoutList.newBuilder().addNextIds(nextNodeUuid).build();
       }

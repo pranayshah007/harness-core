@@ -159,17 +159,22 @@ public class ElastigroupDeployTaskHelper {
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
     final LogCallback logCallback =
         getLogCallback(logStreamingTaskClient, DELETE_NEW_ELASTI_GROUP, commandUnitsProgress);
+    try {
+      if (elastigroup == null || isEmpty(elastigroup.getId())) {
+        logCallback.saveExecutionLog("No Elastigroup eligible for deletion.", INFO, SUCCESS);
+        return;
+      }
 
-    if (elastigroup == null || isEmpty(elastigroup.getId())) {
-      logCallback.saveExecutionLog("No Elastigroup eligible for deletion.", INFO, SUCCESS);
-      return;
+      logCallback.saveExecutionLog(format(
+          "Sending request to Spotinst to delete newly created Elastigroup: %s", getElastigroupString(elastigroup)));
+      spotInstHelperServiceDelegate.deleteElastiGroup(spotInstToken, spotInstAccountId, elastigroup.getId());
+      logCallback.saveExecutionLog(
+          format("Elastigroup: %s deleted successfully", getElastigroupString(elastigroup)), INFO, SUCCESS);
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(
+          format("Exception while deleting Elastigroup, Error message: [%s]", e.getMessage()), ERROR, FAILURE);
+      throw e;
     }
-
-    logCallback.saveExecutionLog(format(
-        "Sending request to Spotinst to delete newly created Elastigroup: %s", getElastigroupString(elastigroup)));
-    spotInstHelperServiceDelegate.deleteElastiGroup(spotInstToken, spotInstAccountId, elastigroup.getId());
-    logCallback.saveExecutionLog(
-        format("Elastigroup: %s deleted successfully", getElastigroupString(elastigroup)), INFO, SUCCESS);
   }
 
   public void renameElastigroup(ElastiGroup elastigroup, String newName, String spotInstAccountId, String spotInstToken,
@@ -194,21 +199,27 @@ public class ElastigroupDeployTaskHelper {
       CommandUnitsProgress commandUnitsProgress) {
     final LogCallback logCallback =
         getLogCallback(logStreamingTaskClient, SWAP_ROUTES_COMMAND_UNIT, commandUnitsProgress);
-
-    if (isEmpty(loadBalancerDetails)) {
-      logCallback.saveExecutionLog("No Action Needed", INFO, SUCCESS);
-      return;
-    }
-
-    for (LoadBalancerDetailsForBGDeployment lbDetail : loadBalancerDetails) {
-      if (lbDetail.isUseSpecificRules()) {
-        restoreSpecificRulesRoutesIfChanged(lbDetail, logCallback, awsInternalConfig, awsRegion);
-      } else {
-        restoreDefaultRulesRoutesIfChanged(lbDetail, logCallback, awsInternalConfig, awsRegion);
+    try {
+      if (isEmpty(loadBalancerDetails)) {
+        logCallback.saveExecutionLog("No Action Needed", INFO, SUCCESS);
+        return;
       }
-    }
 
-    logCallback.saveExecutionLog("Prod Elastigroup is UP with correct traffic", INFO, SUCCESS);
+      for (LoadBalancerDetailsForBGDeployment lbDetail : loadBalancerDetails) {
+        if (lbDetail.isUseSpecificRules()) {
+          restoreSpecificRulesRoutesIfChanged(lbDetail, logCallback, awsInternalConfig, awsRegion);
+        } else {
+          restoreDefaultRulesRoutesIfChanged(lbDetail, logCallback, awsInternalConfig, awsRegion);
+        }
+      }
+
+      logCallback.saveExecutionLog("Prod Elastigroup is UP with correct traffic", INFO, SUCCESS);
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(
+          format("Exception while restoring load balancer routes, Error message: [%s]", e.getMessage()), ERROR,
+          FAILURE);
+      throw e;
+    }
   }
 
   private void restoreSpecificRulesRoutesIfChanged(LoadBalancerDetailsForBGDeployment lbDetail, LogCallback logCallback,

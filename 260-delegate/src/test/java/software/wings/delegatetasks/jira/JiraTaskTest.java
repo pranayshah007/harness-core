@@ -613,6 +613,15 @@ public class JiraTaskTest extends CategoryTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
+  public void shouldWarningExceptionDetectSSLHandshakeException1() {
+    JiraException e =
+        new JiraException("Failed to retrieve issue 141081", new RestException("Too many requests", 429, null, null));
+    assertThat(jiraTask.isWarningException(e)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
   public void shouldWarningExceptionIgnoreMissingCause() {
     JiraException e = new JiraException("Failed to retrieve issue 141081");
     assertThat(jiraTask.isWarningException(e)).isFalse();

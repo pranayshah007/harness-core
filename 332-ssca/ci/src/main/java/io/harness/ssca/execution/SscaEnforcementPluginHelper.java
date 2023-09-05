@@ -24,17 +24,19 @@ import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
 import io.harness.ssca.beans.store.HarnessStore;
 import io.harness.ssca.beans.store.StoreType;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.ssca.execution.enforcement.SscaEnforcementStepPluginUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
+import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.experimental.UtilityClass;
 
-@UtilityClass
 @OwnedBy(HarnessTeam.SSCA)
 public class SscaEnforcementPluginHelper {
+  @Inject private SSCAServiceUtils sscaServiceUtils;
+
   public Map<String, String> getSscaEnforcementStepEnvVariables(
       SscaEnforcementStepInfo stepInfo, String identifier, Ambiance ambiance, Type infraType) {
     String sbomSource = null;
@@ -52,12 +54,13 @@ public class SscaEnforcementPluginHelper {
 
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
 
-    Map<String, String> envMap =
-        SscaEnforcementStepPluginUtils.getSscaEnforcementStepEnvVariables(EnforcementStepEnvVariables.builder()
-                                                                              .stepExecutionId(runtimeId)
-                                                                              .sbomSource(sbomSource)
-                                                                              .harnessPolicyFileId(policyFile)
-                                                                              .build());
+    Map<String, String> envMap = SscaEnforcementStepPluginUtils.getSscaEnforcementStepEnvVariables(
+        EnforcementStepEnvVariables.builder()
+            .stepExecutionId(runtimeId)
+            .sbomSource(sbomSource)
+            .harnessPolicyFileId(policyFile)
+            .sscaManagerEnabled(sscaServiceUtils.isSSCAManagerEnabled())
+            .build());
     if (infraType == Type.VM) {
       envMap.putAll(getSscaEnforcementSecretEnvMap(stepInfo, identifier, ambiance.getExpressionFunctorToken()));
     }
