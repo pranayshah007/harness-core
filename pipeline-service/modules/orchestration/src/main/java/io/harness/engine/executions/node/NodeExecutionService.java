@@ -58,6 +58,14 @@ public interface NodeExecutionService {
   /**
    * Fetches nodeExecution and uses id Index
    * @param nodeExecutionId
+   * @param fieldsToInclude
+   * @return NodeExecution with fields included as projection
+   */
+  <T> T get(String nodeExecutionId, Class<T> clazz, Set<String> fieldsToInclude);
+
+  /**
+   * Fetches nodeExecution and uses id Index
+   * @param nodeExecutionId
    * @return NodeExecution with fields included as projection
    */
   NodeExecutionStatusResult getStatus(String nodeExecutionId);

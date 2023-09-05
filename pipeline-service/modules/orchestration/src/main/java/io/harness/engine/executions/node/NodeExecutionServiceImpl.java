@@ -152,6 +152,21 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public <T> T get(String nodeExecutionId, Class<T> clazz, Set<String> fieldsToInclude) {
+    // Uses - id index
+    Query query = query(where(NodeExecutionKeys.id).is(nodeExecutionId));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
+    }
+    query.fields().exclude(NodeExecutionKeys.id);
+    Optional<T> nodeExecutionOptional = nodeExecutionReadHelper.getOne(query, clazz);
+    if (nodeExecutionOptional.isEmpty()) {
+      throw new InvalidRequestException("Node Execution is null for id: " + nodeExecutionId);
+    }
+    return nodeExecutionOptional.get();
+  }
+
+  @Override
   public NodeExecutionStatusResult getStatus(String nodeExecutionId) {
     // Uses - id index
     Query query = query(where(NodeExecutionKeys.id).is(nodeExecutionId));

@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
-import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.lock.PersistentLocker;
 import io.harness.lock.redis.RedisAcquiredLock;
@@ -88,8 +88,8 @@ public class MaxConcurrentChildCallbackTest extends OrchestrationTestBase {
                         .childrenNodeExecutionIds(Lists.newArrayList("a", "b", "c"))
                         .build());
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(PLAN_EXECUTION_ID).build();
-    when(nodeExecutionService.getWithFieldsIncluded("b", NodeProjectionUtils.withAmbianceAndStatus))
-        .thenReturn(NodeExecution.builder().ambiance(ambiance).status(Status.QUEUED).uuid("b").build());
+    when(nodeExecutionService.get("b", NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbianceAndStatus))
+        .thenReturn(NodeExecutionAmbianceResult.builder().ambiance(ambiance).status(Status.QUEUED).build());
 
     maxConcurrentChildCallback.notify(new HashMap<>());
 

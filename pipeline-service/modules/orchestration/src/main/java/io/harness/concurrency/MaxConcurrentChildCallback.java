@@ -14,7 +14,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.UnexpectedException;
-import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -100,15 +100,15 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
 
   private void skipExecution(String nodeExecutionId) {
     log.info(String.format("Skipping node: %s", nodeExecutionId));
-    NodeExecution nodeExecution =
-        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbianceAndStatus);
+    NodeExecutionAmbianceResult nodeExecution = nodeExecutionService.get(
+        nodeExecutionId, NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbianceAndStatus);
     StepResponseProto response = StepResponseProto.newBuilder().setStatus(Status.SKIPPED).build();
     engine.processStepResponse(nodeExecution.getAmbiance(), response);
   }
 
   private void getAmbianceAndStartExecution(String nodeExecutionToStart) {
-    NodeExecution nodeExecution =
-        nodeExecutionService.getWithFieldsIncluded(nodeExecutionToStart, NodeProjectionUtils.withAmbianceAndStatus);
+    NodeExecutionAmbianceResult nodeExecution = nodeExecutionService.get(
+        nodeExecutionToStart, NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbianceAndStatus);
     if (StatusUtils.resumableStatuses().contains(nodeExecution.getStatus())) {
       log.info("[MaxConcurrentCallback]: Starting the execution with id: " + nodeExecutionToStart);
       engine.startNodeExecution(nodeExecution.getAmbiance());

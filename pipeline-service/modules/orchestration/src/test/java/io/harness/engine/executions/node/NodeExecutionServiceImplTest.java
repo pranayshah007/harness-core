@@ -1075,7 +1075,6 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
                     .setPlanExecutionId(planExecutionUuid)
                     .build())
             .mode(ExecutionMode.SYNC)
-            .uuid(generateUuid())
             .name("name")
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.PIPELINE).build())
@@ -1089,7 +1088,6 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .parentId(parentId)
             .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
             .mode(ExecutionMode.SYNC)
-            .uuid(generateUuid())
             .name("name")
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
@@ -1113,5 +1111,58 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         planExecutionUuid, NodeExecutionStatusResult.class, NodeProjectionUtils.withStatus);
     assertThat(pipelineNodeExecutionStatus).isPresent();
     assertThat(pipelineNodeExecutionStatus.get().getStatus()).isEqualTo(SUCCEEDED);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testGetNodeExecution() {
+    String planExecutionUuid = generateUuid();
+    String parentId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(nodeExecutionId)
+            .parentId(parentId)
+            .ambiance(
+                Ambiance.newBuilder()
+                    .addLevels(
+                        Level.newBuilder()
+                            .setStepType(
+                                StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.PIPELINE).build())
+                            .build())
+                    .setPlanExecutionId(planExecutionUuid)
+                    .build())
+            .mode(ExecutionMode.SYNC)
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.PIPELINE).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(SUCCEEDED)
+            .build();
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(SUCCEEDED)
+            .build();
+
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+
+    nodeExecutionService.save(nodeExecution);
+    nodeExecutionService.save(nodeExecution1);
+
+    NodeExecutionAmbianceResult nodeExecutionAmbianceResult = nodeExecutionService.get(
+        nodeExecutionId, NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbianceAndStatus);
+    assertThat(nodeExecutionAmbianceResult.getStatus()).isEqualTo(SUCCEEDED);
+    assertThat(nodeExecutionAmbianceResult.getAmbiance().getLevelsCount()).isEqualTo(1);
   }
 }
