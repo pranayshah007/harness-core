@@ -22,6 +22,7 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
@@ -86,8 +87,8 @@ public class NextStepHandler implements AdviserResponseHandler {
           prevNodeExecution.getAmbiance().getPlanExecutionId());
       return nextNode;
     }
-    NodeExecution parentNodeExecution =
-        nodeExecutionService.getWithFieldsIncluded(prevNodeExecution.getParentId(), NodeProjectionUtils.withAmbiance);
+    NodeExecutionAmbianceResult parentNodeExecution = nodeExecutionService.get(
+        prevNodeExecution.getParentId(), NodeExecutionAmbianceResult.class, NodeProjectionUtils.withAmbiance);
     // Create IdentityNode for nextNode when the parentNodeExecution.node is of type IdentityNode
     if (parentNodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
       NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(

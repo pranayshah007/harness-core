@@ -15,7 +15,6 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -33,6 +32,7 @@ import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyInternalStep;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionStatusResult;
 import io.harness.persistence.UuidAccess;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
@@ -377,8 +377,8 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
         IdentityStepParameters.builder().originalNodeExecutionId("nodeUuid").build();
 
     // nodeExecution formation
-    NodeExecution nodeExecution = NodeExecution.builder().uuid("nodeUuid").status(Status.ABORTED).build();
-    doReturn(nodeExecution).when(nodeExecutionService).getWithFieldsIncluded(anyString(), anySet());
+    NodeExecutionStatusResult nodeExecution = NodeExecutionStatusResult.builder().status(Status.ABORTED).build();
+    doReturn(nodeExecution).when(nodeExecutionService).getStatus(anyString());
 
     StepResponse stepResponse = identityStrategyInternalStep.handleChildResponse(ambiance, identityParams, null);
     verify(pmsOutcomeService, times(1)).cloneForRetryExecution(ambiance, "nodeUuid");

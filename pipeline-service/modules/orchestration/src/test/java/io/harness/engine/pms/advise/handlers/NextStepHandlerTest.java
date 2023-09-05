@@ -31,6 +31,7 @@ import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.node.NodeExecutionAmbianceResult;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
@@ -117,13 +118,13 @@ public class NextStepHandlerTest extends CategoryTest {
                                       .notifyId(generateUuid())
                                       .build();
 
-    doReturn(NodeExecution.builder()
+    doReturn(NodeExecutionAmbianceResult.builder()
                  .ambiance(Ambiance.newBuilder()
                                .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build())
                                .build())
                  .build())
         .when(nodeExecutionService)
-        .getWithFieldsIncluded(any(), eq(NodeProjectionUtils.withAmbiance));
+        .get(any(), eq(NodeExecutionAmbianceResult.class), eq(NodeProjectionUtils.withAmbiance));
     when(planService.fetchNode(planId, nextNodeId)).thenReturn(planNode);
     doNothing().when(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
 
@@ -156,13 +157,13 @@ public class NextStepHandlerTest extends CategoryTest {
                    NORMAL))
         .isEqualTo(planNode);
 
-    doReturn(NodeExecution.builder()
+    doReturn(NodeExecutionAmbianceResult.builder()
                  .ambiance(Ambiance.newBuilder()
                                .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build())
                                .build())
                  .build())
         .when(nodeExecutionService)
-        .getWithFieldsIncluded(eq("parentId"), any());
+        .get(eq("parentId"), eq(NodeExecutionAmbianceResult.class), any());
     assertThat(nextStepHandler.createIdentityNodeIfRequired(
                    planNode, NodeExecution.builder().parentId("parentId").build(), NORMAL))
         .isEqualTo(planNode);
@@ -170,14 +171,14 @@ public class NextStepHandlerTest extends CategoryTest {
     // Till now, same node has been returned all time. So, no interaction with planService.
     verify(planService, times(0)).saveIdentityNodesForMatrix(any(), any());
 
-    doReturn(NodeExecution.builder()
+    doReturn(NodeExecutionAmbianceResult.builder()
                  .ambiance(Ambiance.newBuilder()
                                .addLevels(Level.newBuilder().setNodeType(NodeType.IDENTITY_PLAN_NODE.name()).build())
                                .build())
                  .uuid("parentId")
                  .build())
         .when(nodeExecutionService)
-        .getWithFieldsIncluded(eq("parentId"), any());
+        .get(eq("parentId"), eq(NodeExecutionAmbianceResult.class), any());
     doReturn(NodeExecution.builder().uuid("originalNodeExecutionId").nextId("nextId").build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("originalNodeExecutionId"), any());
