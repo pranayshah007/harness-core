@@ -7,6 +7,7 @@
 
 package io.harness.cdng.aws.asg;
 
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
@@ -33,6 +34,7 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResult;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -141,11 +143,13 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     AsgCapacityConfig asgCapacityConfig =
         asgStepCommonHelper.getAsgCapacityConfig(asgBlueGreenDeployStepParameters.getInstances());
 
+    AsgInfraConfig asgInfraConfig = asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance);
+
     AsgBlueGreenDeployRequest asgBlueGreenDeployRequest =
         AsgBlueGreenDeployRequest.builder()
             .commandName(ASG_BLUE_GREEN_DEPLOY_COMMAND_NAME)
             .accountId(accountId)
-            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .asgInfraConfig(asgInfraConfig)
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
@@ -160,7 +164,8 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
 
     TaskType taskType =
         asgStepCommonHelper.isV2Feature(asgStepExecutorParams.getAsgStoreManifestsContent(),
-            asgBlueGreenDeployStepParameters.getInstances(), asgBlueGreenDeployStepParameters.getLoadBalancers())
+            asgBlueGreenDeployStepParameters.getInstances(), asgBlueGreenDeployStepParameters.getLoadBalancers(),
+            asgInfraConfig, asgBlueGreenDeployStepParameters)
         ? AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2
         : AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
 
@@ -179,10 +184,12 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
         (AsgBlueGreenDeployStepParameters) stepElementParameters.getSpec();
 
     AsgLoadBalancerConfig asgLoadBalancerConfig = getLoadBalancer(asgBlueGreenDeployStepParameters);
+    AsgInfraConfig asgInfraConfig = asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance);
 
     List<AsgLoadBalancerConfig> loadBalancers = null;
     if (asgStepCommonHelper.isV2Feature(asgPrepareRollbackDataPassThroughData.getAsgStoreManifestsContent(),
-            asgBlueGreenDeployStepParameters.getInstances(), asgBlueGreenDeployStepParameters.getLoadBalancers())) {
+            asgBlueGreenDeployStepParameters.getInstances(), asgBlueGreenDeployStepParameters.getLoadBalancers(),
+            asgInfraConfig, asgBlueGreenDeployStepParameters)) {
       loadBalancers = getLoadBalancers(asgBlueGreenDeployStepParameters);
     }
 
@@ -190,15 +197,17 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
         AsgBlueGreenPrepareRollbackDataRequest.builder()
             .commandName(ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_COMMAND_NAME)
             .accountId(accountId)
-            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .asgInfraConfig(asgInfraConfig)
             .asgStoreManifestsContent(asgPrepareRollbackDataPassThroughData.getAsgStoreManifestsContent())
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
             .loadBalancers(loadBalancers)
+            .asgName(getParameterFieldValue(asgBlueGreenDeployStepParameters.getAsgName()))
             .build();
 
-    TaskType taskType = asgStepCommonHelper.isV2Feature(null, null, asgBlueGreenDeployStepParameters.getLoadBalancers())
+    TaskType taskType = asgStepCommonHelper.isV2Feature(null, null, asgBlueGreenDeployStepParameters.getLoadBalancers(),
+                            asgInfraConfig, asgBlueGreenDeployStepParameters)
         ? AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2
         : AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG;
 

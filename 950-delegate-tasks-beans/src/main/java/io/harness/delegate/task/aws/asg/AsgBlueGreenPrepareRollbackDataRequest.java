@@ -34,4 +34,5 @@ public class AsgBlueGreenPrepareRollbackDataRequest implements AsgCommandRequest
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   @Deprecated AsgLoadBalancerConfig asgLoadBalancerConfig;
   List<AsgLoadBalancerConfig> loadBalancers;
+  String asgName;
 }

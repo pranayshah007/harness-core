@@ -38,4 +38,9 @@ public class AsgBlueGreenRollbackRequest implements AsgCommandRequest, NestedAnn
   Map<String, List<String>> prodAsgManifestsDataForRollback;
   boolean servicesSwapped;
   List<AsgLoadBalancerConfig> loadBalancers;
+
+  @Override
+  public String getAsgName() {
+    return null;
+  }
 }

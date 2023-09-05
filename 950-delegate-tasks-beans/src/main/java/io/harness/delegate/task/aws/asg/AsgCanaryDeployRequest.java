@@ -35,4 +35,5 @@ public class AsgCanaryDeployRequest implements AsgCommandRequest, NestedAnnotati
   String serviceNameSuffix;
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   String amiImageId;
+  String asgName;
 }

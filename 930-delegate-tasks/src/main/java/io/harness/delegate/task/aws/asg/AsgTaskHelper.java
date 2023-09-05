@@ -264,13 +264,12 @@ public class AsgTaskHelper {
   }
 
   public boolean isBaseAsgDeployment(AsgInfraConfig asgInfraConfig) {
-    return isNotEmpty(asgInfraConfig.getBaseAsgName()) && isNotEmpty(asgInfraConfig.getAsgName());
+    return isNotEmpty(asgInfraConfig.getBaseAsgName());
   }
 
-  public String getAsgName(AsgInfraConfig asgInfraConfig, Map<String, List<String>> asgStoreManifestsContent) {
-    boolean isBaseAsg = isBaseAsgDeployment(asgInfraConfig);
-    if (isBaseAsg) {
-      return asgInfraConfig.getAsgName();
+  public String getAsgName(AsgCommandRequest asgCommandRequest, Map<String, List<String>> asgStoreManifestsContent) {
+    if (isNotEmpty(asgCommandRequest.getAsgName())) {
+      return asgCommandRequest.getAsgName();
     }
 
     String asgConfigurationContent = getAsgConfigurationContent(asgStoreManifestsContent);
@@ -295,7 +294,8 @@ public class AsgTaskHelper {
     return asgStoreManifestsContent;
   }
 
-  Map<String, List<String>> createAsgStoreManifestsContentFromAsg(String baseAsgName, AsgSdkManager asgSdkManager) {
+  private Map<String, List<String>> createAsgStoreManifestsContentFromAsg(
+      String baseAsgName, AsgSdkManager asgSdkManager) {
     asgSdkManager.info("Getting Asg configuration for ASG `%s`", baseAsgName);
 
     // Chain factory code to handle each manifest one by one in a chain
@@ -304,7 +304,6 @@ public class AsgTaskHelper {
             .initialChainState(AsgManifestHandlerChainState.builder().asgName(baseAsgName).build())
             .asgSdkManager(asgSdkManager)
             .build()
-            //            .addHandler(AsgLaunchTemplate, AsgLaunchTemplateManifestRequest.builder().build())
             .addHandler(AsgConfiguration, AsgConfigurationManifestRequest.builder().build())
             .addHandler(AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().build())
             .addHandler(AsgScheduledUpdateGroupAction, AsgScheduledActionManifestRequest.builder().build())
@@ -321,7 +320,8 @@ public class AsgTaskHelper {
     return chainState.getAsgManifestsDataForRollback();
   }
 
-  String generateManifestContentForLaunchTemplateForBaseDeploy(AsgSdkManager asgSdkManager, String baseAsgName) {
+  private String generateManifestContentForLaunchTemplateForBaseDeploy(
+      AsgSdkManager asgSdkManager, String baseAsgName) {
     AutoScalingGroup baseAsg = asgSdkManager.getASG(baseAsgName);
     LaunchTemplateSpecification launchTemplateSpecification = baseAsg.getLaunchTemplate();
 
@@ -336,7 +336,8 @@ public class AsgTaskHelper {
     return AsgContentParser.toString(map, false);
   }
 
-  RequestLaunchTemplateData mapToRequestLaunchTemplateData(ResponseLaunchTemplateData responseLaunchTemplateData) {
+  private RequestLaunchTemplateData mapToRequestLaunchTemplateData(
+      ResponseLaunchTemplateData responseLaunchTemplateData) {
     String responseLaunchTemplateDataJson = AsgContentParser.toString(responseLaunchTemplateData, false);
     return AsgContentParser.parseJson(responseLaunchTemplateDataJson, RequestLaunchTemplateData.class, false);
   }

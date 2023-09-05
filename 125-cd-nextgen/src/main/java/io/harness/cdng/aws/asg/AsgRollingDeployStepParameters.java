@@ -34,9 +34,9 @@ public class AsgRollingDeployStepParameters extends AsgRollingDeployBaseStepInfo
   public AsgRollingDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> skipMatching, ParameterField<Boolean> useAlreadyRunningInstances,
       ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage,
-      ElastigroupInstances instances) {
+      ElastigroupInstances instances, ParameterField<String> asgName) {
     super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
-        instances);
+        instances, asgName);
   }
 
   public List<String> getCommandUnits() {

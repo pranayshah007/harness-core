@@ -29,5 +29,4 @@ public class AsgInfraConfig {
   @NonFinal @Expression(ALLOW_SECRETS) String region;
   String infraStructureKey;
   String baseAsgName;
-  String asgName;
 }

@@ -60,4 +60,6 @@ public class AsgBlueGreenDeployBaseStepInfo {
   ElastigroupInstances instances;
 
   @ApiModelProperty(dataType = SwaggerConstants.LOAD_BALANCER_CONFIGURATION_CLASSPATH) List<LoadBalancer> loadBalancers;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> asgName;
 }

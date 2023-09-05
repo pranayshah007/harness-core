@@ -63,4 +63,6 @@ public class AsgRollingDeployBaseStepInfo {
 
   @ApiModelProperty(dataType = SwaggerConstants.INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH)
   ElastigroupInstances instances;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> asgName;
 }

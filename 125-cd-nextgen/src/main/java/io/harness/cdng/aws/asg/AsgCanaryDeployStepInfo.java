@@ -51,8 +51,9 @@ public class AsgCanaryDeployStepInfo extends AsgCanaryDeployBaseStepInfo impleme
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AsgCanaryDeployStepInfo(Capacity instanceSelection, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(instanceSelection, delegateSelectors);
+  public AsgCanaryDeployStepInfo(Capacity instanceSelection, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<String> asgName) {
+    super(instanceSelection, delegateSelectors, asgName);
   }
 
   @Override
@@ -70,6 +71,7 @@ public class AsgCanaryDeployStepInfo extends AsgCanaryDeployBaseStepInfo impleme
     return AsgCanaryDeployStepParameters.infoBuilder()
         .delegateSelectors(delegateSelectors)
         .instanceSelection(instanceSelection)
+        .asgName(asgName)
         .build();
   }
 

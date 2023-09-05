@@ -38,4 +38,5 @@ public class AsgRollingDeployRequest implements AsgCommandRequest, NestedAnnotat
   @NonFinal @Expression(ALLOW_SECRETS) Integer minimumHealthyPercentage;
   String amiImageId;
   AsgCapacityConfig asgCapacityConfig;
+  String asgName;
 }

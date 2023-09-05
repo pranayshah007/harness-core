@@ -57,9 +57,9 @@ public class AsgBlueGreenDeployStepInfo
       ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
       ParameterField<String> stageListenerRuleArn, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> useAlreadyRunningInstances, ElastigroupInstances instances,
-      List<LoadBalancer> loadBalancers) {
+      List<LoadBalancer> loadBalancers, ParameterField<String> asgName) {
     super(loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn, delegateSelectors,
-        useAlreadyRunningInstances, instances, loadBalancers);
+        useAlreadyRunningInstances, instances, loadBalancers, asgName);
   }
 
   @Override
@@ -84,6 +84,7 @@ public class AsgBlueGreenDeployStepInfo
         .useAlreadyRunningInstances(useAlreadyRunningInstances)
         .instances(instances)
         .loadBalancers(loadBalancers)
+        .asgName(asgName)
         .build();
   }
 

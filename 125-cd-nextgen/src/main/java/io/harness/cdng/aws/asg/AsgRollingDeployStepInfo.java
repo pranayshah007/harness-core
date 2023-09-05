@@ -54,9 +54,9 @@ public class AsgRollingDeployStepInfo extends AsgRollingDeployBaseStepInfo imple
   public AsgRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> skipMatching, ParameterField<Boolean> useAlreadyRunningInstances,
       ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage,
-      ElastigroupInstances instances) {
+      ElastigroupInstances instances, ParameterField<String> asgName) {
     super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
-        instances);
+        instances, asgName);
   }
 
   @Override
@@ -78,6 +78,7 @@ public class AsgRollingDeployStepInfo extends AsgRollingDeployBaseStepInfo imple
         .instanceWarmup(this.getInstanceWarmup())
         .minimumHealthyPercentage(this.getMinimumHealthyPercentage())
         .instances(this.getInstances())
+        .asgName(this.getAsgName())
         .build();
   }
 

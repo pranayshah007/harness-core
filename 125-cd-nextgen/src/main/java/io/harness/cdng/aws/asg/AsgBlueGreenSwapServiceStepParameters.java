@@ -36,6 +36,11 @@ public class AsgBlueGreenSwapServiceStepParameters
     super(delegateSelectors, downsizeOldAsg, asgBlueGreenDeployFqn, asgBlueGreenSwapServiceFqn);
   }
 
+  @Override
+  public ParameterField<String> getAsgName() {
+    return null;
+  }
+
   public List<String> getCommandUnits() {
     return Arrays.asList(AsgCommandUnitConstants.swapService.toString());
   }

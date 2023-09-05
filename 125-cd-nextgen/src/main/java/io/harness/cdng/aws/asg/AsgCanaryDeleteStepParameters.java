@@ -35,6 +35,11 @@ public class AsgCanaryDeleteStepParameters extends AsgCanaryDeleteBaseStepInfo i
     super(delegateSelectors, asgCanaryDeployFqn, asgCanaryDeleteFqn);
   }
 
+  @Override
+  public ParameterField<String> getAsgName() {
+    return null;
+  }
+
   public List<String> getCommandUnits() {
     return Arrays.asList(AsgCommandUnitConstants.deleteService.toString());
   }

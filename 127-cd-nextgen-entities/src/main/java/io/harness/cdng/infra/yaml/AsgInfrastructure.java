@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.AsgInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -67,18 +68,12 @@ public class AsgInfrastructure extends InfrastructureDetailsAbstract
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @With ParameterField<String> baseAsgName;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @With ParameterField<String> asgName;
-
   @Override
   public InfraMapping getInfraMapping() {
-    String baseAsg = baseAsgName != null ? baseAsgName.getValue() : null;
-    String asg = asgName != null ? asgName.getValue() : null;
-
     return AsgInfraMapping.builder()
         .awsConnector(connectorRef.getValue())
         .region(region.getValue())
-        .baseAsgName(baseAsg)
-        .asgName(asg)
+        .baseAsgName(ParameterFieldHelper.getParameterFieldFinalValueString(baseAsgName))
         .build();
   }
 
@@ -116,6 +111,9 @@ public class AsgInfrastructure extends InfrastructureDetailsAbstract
     }
     if (!ParameterField.isNull(config.getProvisioner())) {
       resultantInfra.setProvisioner(config.getProvisioner());
+    }
+    if (!ParameterField.isNull(config.getBaseAsgName())) {
+      resultantInfra.withBaseAsgName(config.getBaseAsgName());
     }
 
     return resultantInfra;
