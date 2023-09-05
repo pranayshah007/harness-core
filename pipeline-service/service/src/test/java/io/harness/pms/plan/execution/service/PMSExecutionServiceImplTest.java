@@ -196,11 +196,8 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     childCriteria.orOperator(Criteria.where(PlanExecutionSummaryKeys.parentStageInfo).exists(false),
         Criteria.where(PlanExecutionSummaryKeys.isChildPipeline).is(false));
 
-    List<Boolean> inChildList =
-        (List<Boolean>) ((Document) form.getCriteriaObject().get(PlanExecutionSummaryKeys.isChildPipeline)).get("$in");
-    assertThat(inChildList.size()).isEqualTo(2);
-    assertThat(inChildList.get(0)).isNull();
-    assertThat(inChildList.get(1)).isEqualTo(false);
+    Boolean inChildList = (Boolean) form.getCriteriaObject().get(PlanExecutionSummaryKeys.isChildPipeline);
+    assertThat(inChildList).isEqualTo(false);
   }
 
   @Test
