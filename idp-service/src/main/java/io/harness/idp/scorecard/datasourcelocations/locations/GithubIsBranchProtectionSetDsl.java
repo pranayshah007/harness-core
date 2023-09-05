@@ -10,6 +10,7 @@ package io.harness.idp.scorecard.datasourcelocations.locations;
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_BRANCH_PROTECTED;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPO_SCM;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -46,7 +47,7 @@ public class GithubIsBranchProtectionSetDsl implements DataSourceLocation {
     String requestBody =
         constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPointsAndInputValues);
     DslClient dslClient =
-        dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get("{REPO_SCM}"));
+        dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
 
     Response response;
     Map<String, Object> data = new HashMap<>();
