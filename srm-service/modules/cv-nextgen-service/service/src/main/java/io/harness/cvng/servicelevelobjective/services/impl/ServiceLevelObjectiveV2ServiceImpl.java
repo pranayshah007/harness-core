@@ -255,6 +255,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
               .startTime(Instant.now())
               .endTime(Instant.now())
               .build());
+      sloTimeScaleService.upsertServiceLevelObjective(compositeServiceLevelObjective);
       return getSLOResponse(compositeServiceLevelObjective.getIdentifier(), projectParams);
     }
   }
