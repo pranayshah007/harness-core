@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.template;
+
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
 import io.harness.annotations.dev.CodePulse;
@@ -144,7 +145,9 @@ public class ShellScriptTemplateService implements NgTemplateService {
     return ImmutableMap.<String, String>builder()
         .put("name", valueOrDefaultEmpty(varName))
         .put("type", "String")
-        .put("value", StringUtils.isNotBlank(value) ? String.format("<+input>.default(%s)", value) : RUNTIME_INPUT)
+        .put("value",
+            StringUtils.isNotBlank(value) ? String.format("<+input>.default(%s)", value.replaceAll(":\\s+", ":"))
+                                          : RUNTIME_INPUT)
         .build();
   }
 

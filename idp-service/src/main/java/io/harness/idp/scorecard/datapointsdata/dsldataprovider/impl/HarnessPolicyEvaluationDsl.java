@@ -37,6 +37,9 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
 
   @Override
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
+    log.info("HarnessPolicyEvaluationDsl DSL invoked for account - {} datapoints - {}", accountIdentifier,
+        dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());
+
     // ci pipeline detail
     Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
         DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));

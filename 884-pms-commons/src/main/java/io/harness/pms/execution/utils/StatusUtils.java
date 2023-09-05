@@ -139,6 +139,13 @@ public class StatusUtils {
     return FLOWING_STATUSES;
   }
 
+  // All the statuses which means executions is not running
+  public EnumSet<Status> nonFlowingAndNonFinalStatuses() {
+    EnumSet<Status> statuses = EnumSet.complementOf(FLOWING_STATUSES);
+    statuses.removeAll(FINAL_STATUSES);
+    return statuses;
+  }
+
   public EnumSet<Status> retryableStatuses() {
     return RETRYABLE_STATUSES;
   }

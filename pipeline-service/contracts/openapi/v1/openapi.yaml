@@ -720,6 +720,14 @@ paths:
               - template
           in: query
           name: node_group_differentiator
+        - schema:
+            type: string
+            default: v0
+            enum:
+              - v0
+              - v1
+          in: query
+          name: version
       security:
         - x-api-key: []
       tags:

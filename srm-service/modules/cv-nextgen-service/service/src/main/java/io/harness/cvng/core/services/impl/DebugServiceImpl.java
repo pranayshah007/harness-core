@@ -232,6 +232,14 @@ public class DebugServiceImpl implements DebugService {
   }
 
   @Override
+  public boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> compositeSloIdentifiers) {
+    if (!debugConfigService.isDebugEnabled()) {
+      throw new RuntimeException("Debug Mode is turned off");
+    }
+    return serviceLevelObjectiveV2Service.forceDeleteCompositeSLO(projectParams, compositeSloIdentifiers);
+  }
+
+  @Override
   public boolean forceDeleteSLI(ProjectParams projectParams, List<String> sliIdentifiers) {
     if (!debugConfigService.isDebugEnabled()) {
       throw new RuntimeException("Debug Mode is turned off");

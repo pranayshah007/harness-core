@@ -11,6 +11,7 @@ import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPO_SCM;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -41,7 +42,8 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs) {
+      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
+      Map<String, String> possibleReplaceableUrlPairs) {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
     Map<String, String> headers = apiRequestDetails.getHeaders();
     matchAndReplaceHeaders(headers, replaceableHeaders);
@@ -49,7 +51,7 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
         constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPointsAndInputValues);
 
     DslClient dslClient =
-        dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get("{REPO_SCM}"));
+        dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
 
     Response response;
     Map<String, Object> data = new HashMap<>();
@@ -73,8 +75,11 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
       String dataPointInputValue =
           dataPointsAndInputValues.get(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE).iterator().next();
       if (dataPointInputValue != null) {
-        requestBody =
-            requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER, ",baseRefName: \"" + dataPointInputValue + "\"");
+        requestBody = requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER,
+            ",baseRefName:"
+                + "\\"
+                + "\"" + dataPointInputValue + "\\"
+                + "\"");
       } else {
         requestBody = requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER, "");
       }

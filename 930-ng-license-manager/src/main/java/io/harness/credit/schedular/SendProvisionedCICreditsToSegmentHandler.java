@@ -35,7 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.GTM)
 @Slf4j
 public class SendProvisionedCICreditsToSegmentHandler extends CreditExpiryIteratorHandler<CICredit> {
-  private static final Duration INTERVAL = ofHours(24);
+  private static final Duration INTERVAL = ofHours(6);
+  private static final Duration TARGET_INTERVAL = ofHours(24);
   private static final String GROUP_TYPE = "group_type";
   private static final String GROUP_ID = "group_id";
   private static final String ACCOUNT = "Account";

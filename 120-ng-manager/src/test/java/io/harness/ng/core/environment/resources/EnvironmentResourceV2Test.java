@@ -371,6 +371,9 @@ public class EnvironmentResourceV2Test extends CategoryTest {
 
   private void assertRequestDTOV2(ServiceOverrideRequestDTOV2 requestDTOV2) {
     assertThat(requestDTOV2.isV1Api()).isTrue();
+    assertThat(requestDTOV2.getYamlInternal())
+        .isEqualTo(
+            "serviceOverrides:\n  environmentRef: envId\n  serviceRef: svcId\n  variables:\n    - name: var1\n      type: String\n      value: val1\n");
     assertThat(requestDTOV2.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
     assertThat(requestDTOV2.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(requestDTOV2.getEnvironmentRef()).isEqualTo(ENV_IDENTIFIER);

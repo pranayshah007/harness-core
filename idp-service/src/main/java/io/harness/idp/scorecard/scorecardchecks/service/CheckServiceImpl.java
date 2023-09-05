@@ -26,17 +26,14 @@ import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper;
-import io.harness.idp.scorecard.scorecardchecks.mappers.CheckMapper;
 import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
-import io.harness.spec.server.idp.v1.model.CheckListItem;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -72,13 +69,10 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public List<CheckListItem> getChecksByAccountId(
+  public Page<CheckEntity> getChecksByAccountId(
       Boolean custom, String accountIdentifier, Pageable pageRequest, String searchTerm) {
     Criteria criteria = buildCriteriaForChecksList(accountIdentifier, custom, searchTerm);
-    Page<CheckEntity> entities = checkRepository.findAll(criteria, pageRequest);
-    List<CheckListItem> checks = new ArrayList<>();
-    entities.getContent().forEach(checkEntity -> checks.add(CheckMapper.toDTO(checkEntity)));
-    return checks;
+    return checkRepository.findAll(criteria, pageRequest);
   }
 
   @Override

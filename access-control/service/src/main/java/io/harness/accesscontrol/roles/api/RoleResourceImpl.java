@@ -24,9 +24,9 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
-import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.RoleUpdateResult;
+import io.harness.accesscontrol.roles.RoleWithPrincipalCount;
 import io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel;
 import io.harness.accesscontrol.roles.events.RoleCreateEvent;
 import io.harness.accesscontrol.roles.events.RoleDeleteEvent;
@@ -70,6 +70,7 @@ public class RoleResourceImpl implements RoleResource {
   private final RoleService roleService;
   private final ScopeService scopeService;
   private final RoleDTOMapper roleDTOMapper;
+  private RoleWithPrincipalCountDTOMapper roleWithPrincipalCountDTOMapper;
   private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
   private final AccessControlClient accessControlClient;
@@ -80,7 +81,8 @@ public class RoleResourceImpl implements RoleResource {
   @Inject
   public RoleResourceImpl(RoleService roleService, ScopeService scopeService, RoleDTOMapper roleDTOMapper,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
-      AccessControlClient accessControlClient, FeatureFlagService featureFlagService) {
+      AccessControlClient accessControlClient, FeatureFlagService featureFlagService,
+      RoleWithPrincipalCountDTOMapper roleWithPrincipalCountDTOMapper) {
     this.roleService = roleService;
     this.scopeService = scopeService;
     this.roleDTOMapper = roleDTOMapper;
@@ -88,10 +90,11 @@ public class RoleResourceImpl implements RoleResource {
     this.outboxService = outboxService;
     this.accessControlClient = accessControlClient;
     this.featureFlagService = featureFlagService;
+    this.roleWithPrincipalCountDTOMapper = roleWithPrincipalCountDTOMapper;
   }
 
   @Override
-  public ResponseDTO<PageResponse<RoleResponseDTO>> get(
+  public ResponseDTO<PageResponse<RoleWithPrincipalCountResponseDTO>> get(
       PageRequest pageRequest, HarnessScopeParams harnessScopeParams, String searchTerm) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(harnessScopeParams.getAccountIdentifier(), harnessScopeParams.getOrgIdentifier(),
@@ -113,8 +116,9 @@ public class RoleResourceImpl implements RoleResource {
       roleFilterBuilder.managedFilter(NO_FILTER);
     }
 
-    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilterBuilder.build(), true);
-    return ResponseDTO.newResponse(pageResponse.map(roleDTOMapper::toResponseDTO));
+    PageResponse<RoleWithPrincipalCount> pageResponse =
+        roleService.listWithPrincipalCount(pageRequest, roleFilterBuilder.build(), true);
+    return ResponseDTO.newResponse(pageResponse.map(roleWithPrincipalCountDTOMapper::toResponseDTO));
   }
 
   @Override

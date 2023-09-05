@@ -7,8 +7,11 @@
 
 package io.harness.polling.bean.artifact;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -18,6 +21,7 @@ import io.harness.polling.bean.ArtifactInfo;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
@@ -28,6 +32,7 @@ public class ArtifactoryRegistryArtifactInfo implements ArtifactInfo {
   String artifactDirectory;
   String repositoryFormat;
   String repositoryUrl;
+  String artifactFilter;
 
   @Override
   public ArtifactSourceType getType() {
@@ -43,6 +48,7 @@ public class ArtifactoryRegistryArtifactInfo implements ArtifactInfo {
         .repositoryUrl(returnParameterFieldOnlyIfNotNull(repositoryUrl))
         .artifactDirectory(returnParameterFieldOnlyIfNotNull(artifactDirectory))
         .repositoryFormat(returnParameterFieldOnlyIfNotNull(repositoryFormat))
+        .artifactFilter(returnParameterFieldOnlyIfNotNull(artifactFilter))
         .build();
   }
 

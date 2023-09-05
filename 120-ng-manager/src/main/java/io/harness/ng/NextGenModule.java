@@ -848,6 +848,7 @@ public class NextGenModule extends AbstractModule {
     install(new NGIpAllowlistModule(appConfig));
     install(new NGFavoriteModule(appConfig));
     install(new EulaModule(appConfig));
+    install(new GitXWebhookModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(

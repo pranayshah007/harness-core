@@ -352,7 +352,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTaskV2(any());
+    verify(delegateService, times(0)).isTaskTypeSupported(any(), any());
   }
 
   @Test

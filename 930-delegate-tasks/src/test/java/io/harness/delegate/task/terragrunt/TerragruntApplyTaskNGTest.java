@@ -91,8 +91,9 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
         .thenReturn(terragruntContext);
     doNothing().when(taskService).decryptTaskParameters(any());
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
-    when(cliHelper.executeCliCommand(eq("terragrunt init -backend-config=backendFileDirectory/test-backendFile.tfvars"),
-             anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
+    when(
+        cliHelper.executeCliCommand(eq("terragrunt init -backend-config=backendFileDirectory/test-backendFile.tfvars "),
+            anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(eq("terragrunt workspace list"), anyLong(), eq(applyParameters.getEnvVars()),
              any(), any(), any(), any(), any(), anyLong()))
@@ -101,15 +102,15 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
                         .exitCode(0)
                         .output("")
                         .build());
-    when(cliHelper.executeCliCommand(eq("terragrunt workspace new test-workspace"), anyLong(),
+    when(cliHelper.executeCliCommand(eq("terragrunt workspace new  test-workspace"), anyLong(),
              eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(
         cliHelper.executeCliCommand(
-            eq("terragrunt plan -out=tfplan -input=false -target=\"test-target\" -var-file=\"test-terragrunt-12345.tfvars\""),
+            eq("terragrunt plan -out=tfplan -input=false -target=\"test-target\" -var-file=\"test-terragrunt-12345.tfvars\" "),
             anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
-    when(cliHelper.executeCliCommand(eq("terragrunt apply -input=false tfplan"), anyLong(),
+    when(cliHelper.executeCliCommand(eq("terragrunt apply -input=false -lock-timeout=10s tfplan"), anyLong(),
              eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(contains("terragrunt output -json >"), anyLong(), eq(applyParameters.getEnvVars()),
@@ -158,8 +159,9 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
         .thenReturn(terragruntContext);
     doNothing().when(taskService).decryptTaskParameters(any());
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
-    when(cliHelper.executeCliCommand(eq("terragrunt init -backend-config=backendFileDirectory/test-backendFile.tfvars"),
-             anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
+    when(
+        cliHelper.executeCliCommand(eq("terragrunt init -backend-config=backendFileDirectory/test-backendFile.tfvars "),
+            anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(eq("terragrunt workspace list"), anyLong(), eq(applyParameters.getEnvVars()),
              any(), any(), any(), any(), any(), anyLong()))
@@ -168,10 +170,10 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
                         .exitCode(0)
                         .output("")
                         .build());
-    when(cliHelper.executeCliCommand(eq("terragrunt workspace new test-workspace"), anyLong(),
+    when(cliHelper.executeCliCommand(eq("terragrunt workspace new  test-workspace"), anyLong(),
              eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
-    when(cliHelper.executeCliCommand(eq("terragrunt apply -input=false tfplan"), anyLong(),
+    when(cliHelper.executeCliCommand(eq("terragrunt apply -input=false -lock-timeout=10s tfplan"), anyLong(),
              eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(contains("terragrunt output -json >"), anyLong(), eq(applyParameters.getEnvVars()),
@@ -198,7 +200,7 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
     assertThat(response.getVarFilesSourceReference().get("test-varFileId-1")).isEqualTo("test-ref1");
     verify(cliHelper, times(0))
         .executeCliCommand(
-            eq("terragrunt plan -out=tfplan -input=false -target=\"test-target\" -var-file=\"test-terragrunt-12345.tfvars\""),
+            eq("terragrunt plan -out=tfplan -input=false -target=\"test-target\" -var-file=\"test-terragrunt-12345.tfvars\" "),
             anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong());
     verify(taskService, times(1)).cleanDirectoryAndSecretFromSecretManager(any(), any(), any(), any());
 
@@ -222,7 +224,7 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
     doNothing().when(taskService).decryptTaskParameters(any());
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
     when(cliHelper.executeCliCommand(
-             eq("echo \"y\" | terragrunt run-all init -backend-config=backendFileDirectory/test-backendFile.tfvars"),
+             eq("echo \"y\" | terragrunt run-all init -backend-config=backendFileDirectory/test-backendFile.tfvars "),
              anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(eq("echo \"y\" | terragrunt run-all workspace list"), anyLong(),
@@ -232,12 +234,12 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
                         .exitCode(0)
                         .output("")
                         .build());
-    when(cliHelper.executeCliCommand(eq("terragrunt run-all workspace new test-workspace"), anyLong(),
+    when(cliHelper.executeCliCommand(eq("terragrunt run-all workspace new  test-workspace"), anyLong(),
              eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(
         cliHelper.executeCliCommand(
-            eq("terragrunt run-all apply -input=false --terragrunt-non-interactive --terragrunt-include-external-dependencies  -target=\"test-target\"   -var-file=\"test-terragrunt-12345.tfvars\" "),
+            eq("terragrunt run-all apply -input=false --terragrunt-non-interactive  -target=\"test-target\"   -var-file=\"test-terragrunt-12345.tfvars\"  -lock-timeout=10s"),
             anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(contains("echo \"y\" | terragrunt run-all output --json >"), anyLong(),
@@ -261,7 +263,7 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
     assertThat(response.getVarFilesSourceReference().get("test-varFileId-1")).isEqualTo("test-ref1");
     verify(cliHelper, times(0))
         .executeCliCommand(
-            eq("terragrunt plan -out=tfplan -input=false -target=\"test-target\" -var-file=\"test-terragrunt-12345.tfvars\""),
+            eq("terragrunt plan -out=tfplan -input=false -target=\"test-target\" -var-file=\"test-terragrunt-12345.tfvars\" "),
             anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any(), anyLong());
     verify(taskService, times(1)).cleanDirectoryAndSecretFromSecretManager(any(), any(), any(), any());
 
@@ -284,7 +286,7 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
         .thenReturn(terragruntContext);
     doNothing().when(taskService).decryptTaskParameters(any());
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
-    when(cliHelper.executeCliCommand(eq("terragrunt init"), anyLong(), eq(applyParameters.getEnvVars()), any(), any(),
+    when(cliHelper.executeCliCommand(eq("terragrunt init "), anyLong(), eq(applyParameters.getEnvVars()), any(), any(),
              any(), any(), any(), anyLong()))
         .thenReturn(CliResponse.builder()
                         .command("terragrunt init")

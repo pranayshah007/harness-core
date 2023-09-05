@@ -163,6 +163,7 @@ message Dependency {
   map<string, bytes> metadata = 2;
   RollbackModeBehaviour rollbackModeBehaviour = 3;
   HarnessStruct nodeMetadata = 4;
+  HarnessStruct parentInfo = 5;
 }
 
 // We are not using this struct from protobuf library:

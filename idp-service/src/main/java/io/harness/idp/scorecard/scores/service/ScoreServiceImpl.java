@@ -128,22 +128,26 @@ public class ScoreServiceImpl implements ScoreService {
 
   @Override
   public List<ScorecardSummaryInfo> getScoresSummaryForAnEntity(String accountIdentifier, String entityIdentifier) {
-    Map<String, ScoreEntity> lastComputesScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
-        scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
-            .getMappedResults());
-
-    Map<String, Scorecard> scoreCardIdentifierMapping =
+    Map<String, Scorecard> scorecardIdentifierEntityMapping =
         scorecardService.getAllScorecardsAndChecksDetails(accountIdentifier)
             .stream()
             .collect(Collectors.toMap(Scorecard::getIdentifier, Function.identity()));
 
-    return scoreCardIdentifierMapping.keySet()
+    Map<String, ScoreEntity> lastComputedScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
+        scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
+            .getMappedResults());
+
+    // deleting scores for deleted scorecards
+    deleteScoresForDeletedScoreCards(
+        accountIdentifier, scorecardIdentifierEntityMapping, lastComputedScoresForScorecards);
+
+    return lastComputedScoresForScorecards.keySet()
         .stream()
-        .filter(scoreCardIdentifier -> scoreCardIdentifierMapping.get(scoreCardIdentifier).isPublished())
+        .filter(scoreCardIdentifier -> scorecardIdentifierEntityMapping.get(scoreCardIdentifier).isPublished())
         .map(scoreCardIdentifier
-            -> ScorecardSummaryInfoMapper.toDTO(lastComputesScoresForScorecards.get(scoreCardIdentifier),
-                scoreCardIdentifierMapping.get(scoreCardIdentifier).getName(),
-                scoreCardIdentifierMapping.get(scoreCardIdentifier).getDescription()))
+            -> ScorecardSummaryInfoMapper.toDTO(lastComputedScoresForScorecards.get(scoreCardIdentifier),
+                scorecardIdentifierEntityMapping.get(scoreCardIdentifier).getName(),
+                scorecardIdentifierEntityMapping.get(scoreCardIdentifier).getDescription()))
         .collect(Collectors.toList());
   }
 
@@ -158,20 +162,24 @@ public class ScoreServiceImpl implements ScoreService {
 
   @Override
   public List<ScorecardScore> getScorecardScoreOverviewForAnEntity(String accountIdentifier, String entityIdentifier) {
-    Map<String, ScoreEntity> lastComputesScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
-        scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
-            .getMappedResults());
-
     Map<String, Scorecard> scorecardIdentifierEntityMapping =
         scorecardService.getAllScorecardsAndChecksDetails(accountIdentifier)
             .stream()
             .collect(Collectors.toMap(Scorecard::getIdentifier, Function.identity()));
 
-    return scorecardIdentifierEntityMapping.keySet()
+    Map<String, ScoreEntity> lastComputedScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
+        scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
+            .getMappedResults());
+
+    // deleting scores for deleted scorecards
+    deleteScoresForDeletedScoreCards(
+        accountIdentifier, scorecardIdentifierEntityMapping, lastComputedScoresForScorecards);
+
+    return lastComputedScoresForScorecards.keySet()
         .stream()
         .filter(scorecardIdentifier -> scorecardIdentifierEntityMapping.get(scorecardIdentifier).isPublished())
         .map(scorecardIdentifier
-            -> ScorecardScoreMapper.toDTO(lastComputesScoresForScorecards.get(scorecardIdentifier),
+            -> ScorecardScoreMapper.toDTO(lastComputedScoresForScorecards.get(scorecardIdentifier),
                 scorecardIdentifierEntityMapping.get(scorecardIdentifier).getName(),
                 scorecardIdentifierEntityMapping.get(scorecardIdentifier).getDescription()))
         .collect(Collectors.toList());
@@ -375,9 +383,11 @@ public class ScoreServiceImpl implements ScoreService {
           checkStatus.setName(check.getName());
           Pair<CheckStatus.StatusEnum, String> statusAndMessage = getCheckStatusAndFailureReason(evaluator, check);
           checkStatus.setStatus(statusAndMessage.getFirst());
-          checkStatus.setReason(statusAndMessage.getSecond());
-          log.info("Check status for {} : {}; Account: {} ", check.getIdentifier(), checkStatus.getStatus(),
-              accountIdentifier);
+          if (statusAndMessage.getSecond() != null) {
+            checkStatus.setReason(statusAndMessage.getSecond());
+          }
+          log.info("Check {}, Status : {}, Reason: {}, Account: {} ", check.getIdentifier(), checkStatus.getStatus(),
+              statusAndMessage.getSecond(), accountIdentifier);
 
           double weightage = scorecardCheckByIdentifier.get(check.getIdentifier()).getWeightage();
           totalPossibleScore += weightage;
@@ -431,29 +441,50 @@ public class ScoreServiceImpl implements ScoreService {
         log.warn("Expected boolean assertion, got {} value for check {}", value, checkEntity.getIdentifier());
         return new Pair<>(CheckStatus.StatusEnum.valueOf(checkEntity.getDefaultBehaviour().toString()), null);
       }
-
       if (!(boolean) value) {
-        StringBuilder reasonBuilder = new StringBuilder();
-        for (Rule rule : checkEntity.getRules()) {
-          String errorMessageExpression = constructExpressionFromRules(
-              Collections.singletonList(rule), checkEntity.getRuleStrategy(), ERROR_MESSAGE_KEY, true);
-          String lhsExpression = constructExpressionFromRules(
-              Collections.singletonList(rule), checkEntity.getRuleStrategy(), DATA_POINT_VALUE_KEY, true);
-          Object lhsValue = evaluator.evaluateExpression(lhsExpression, RETURN_NULL_IF_UNRESOLVED);
-          Object errorMessage = evaluator.evaluateExpression(errorMessageExpression, RETURN_NULL_IF_UNRESOLVED);
-          reasonBuilder.append(String.format(
-              "Expected %s %s. Actual %s. Reason: %s", rule.getOperator(), rule.getValue(), lhsValue, errorMessage));
-        }
-        return new Pair<>(CheckStatus.StatusEnum.FAIL, reasonBuilder.toString());
+        return new Pair<>(CheckStatus.StatusEnum.FAIL, getCheckFailureReason(evaluator, checkEntity));
       }
-
       return new Pair<>(CheckStatus.StatusEnum.PASS, null);
     }
+  }
+
+  private String getCheckFailureReason(IdpExpressionEvaluator evaluator, CheckEntity checkEntity) {
+    StringBuilder reasonBuilder = new StringBuilder();
+    for (Rule rule : checkEntity.getRules()) {
+      try {
+        String errorMessageExpression = constructExpressionFromRules(
+            Collections.singletonList(rule), checkEntity.getRuleStrategy(), ERROR_MESSAGE_KEY, true);
+        String lhsExpression = constructExpressionFromRules(
+            Collections.singletonList(rule), checkEntity.getRuleStrategy(), DATA_POINT_VALUE_KEY, true);
+        Object lhsValue = evaluator.evaluateExpression(lhsExpression, RETURN_NULL_IF_UNRESOLVED);
+        Object errorMessage = evaluator.evaluateExpression(errorMessageExpression, RETURN_NULL_IF_UNRESOLVED);
+        reasonBuilder.append(
+            String.format("Expected %s %s. Actual %s.", rule.getOperator(), rule.getValue(), lhsValue));
+        if ((errorMessage instanceof String) && !((String) errorMessage).isEmpty()) {
+          reasonBuilder.append(String.format(" Reason: %s", errorMessage));
+        }
+      } catch (JexlException e) {
+        log.warn("Reason expression evaluation failed", e);
+      }
+    }
+    return reasonBuilder.toString();
   }
 
   private Map<String, ScoreEntity> getScoreEntityAndScoreCardIdentifierMapping(
       List<ScoreEntityByScorecardIdentifier> scoreEntityByScorecardIdentifierList) {
     return scoreEntityByScorecardIdentifierList.stream().collect(Collectors.toMap(
         ScoreEntityByScorecardIdentifier::getScorecardIdentifier, ScoreEntityByScorecardIdentifier::getScoreEntity));
+  }
+
+  private void deleteScoresForDeletedScoreCards(String accountIdentifier,
+      Map<String, Scorecard> scorecardIdentifierMapping, Map<String, ScoreEntity> lastComputedScores) {
+    List<String> scoreIdsToBeDeleted = new ArrayList<>();
+
+    for (Map.Entry<String, ScoreEntity> lastComputedScore : lastComputedScores.entrySet()) {
+      if (!scorecardIdentifierMapping.containsKey(lastComputedScore.getKey())) {
+        scoreIdsToBeDeleted.add(lastComputedScore.getValue().getId());
+      }
+    }
+    scoreRepository.deleteAllByAccountIdentifierAndIdIn(accountIdentifier, scoreIdsToBeDeleted);
   }
 }

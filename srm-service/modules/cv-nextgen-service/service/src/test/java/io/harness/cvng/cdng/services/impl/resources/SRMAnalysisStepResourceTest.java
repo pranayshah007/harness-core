@@ -18,7 +18,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
@@ -97,11 +96,6 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
     analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
         builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, stepName,
         serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
-    SRMStepAnalysisActivity stepAnalysisActivity = builderFactory.getSRMStepAnalysisActivityBuilder()
-                                                       .executionNotificationDetailsId(analysisExecutionDetailsId)
-                                                       .build();
-    stepAnalysisActivity.setUuid(analysisExecutionDetailsId);
-    activityId = activityService.createActivity(stepAnalysisActivity);
   }
 
   @Test
@@ -110,7 +104,7 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
   public void testGetSummary_withNoDeploymentStep() {
     WebTarget webTarget = RESOURCES.client()
                               .target("http://localhost:9998/srm-analysis-step/"
-                                  + "activityId"
+                                  + "analysisExecutionDetailsId"
                                   + "/analysis-summary")
                               .queryParam("accountId", builderFactory.getContext().getAccountId());
 
@@ -123,9 +117,10 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetSummary() {
-    WebTarget webTarget = RESOURCES.client()
-                              .target("http://localhost:9998/srm-analysis-step/" + activityId + "/analysis-summary")
-                              .queryParam("accountId", builderFactory.getContext().getAccountId());
+    WebTarget webTarget =
+        RESOURCES.client()
+            .target("http://localhost:9998/srm-analysis-step/" + analysisExecutionDetailsId + "/analysis-summary")
+            .queryParam("accountId", builderFactory.getContext().getAccountId());
 
     Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
     assertThat(response.getStatus()).isEqualTo(200);

@@ -32,8 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class CreditExpiryIteratorHandler<T extends Credit & PersistentIterable> implements Handler<T> {
   protected static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
   protected static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(15);
-  protected static final Duration TARGET_INTERVAL = ofSeconds(31);
-  protected static final Duration INTERVAL = ofHours(6);
+  protected static final Duration TARGET_INTERVAL = ofHours(6);
+  protected static final Duration INTERVAL = ofHours(3);
 
   protected final PersistenceIteratorFactory persistenceIteratorFactory;
   protected final MorphiaPersistenceProvider<T> persistenceProvider;

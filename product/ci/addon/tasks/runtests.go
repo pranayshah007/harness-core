@@ -370,7 +370,8 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, runner testintellig
 	// Call TI svc to get test selection based on the files changed
 	files = runner.ReadPackages(files)
 	var err error
-	resp, err = selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs)
+	testGlobSlice := strings.Split(r.testGlobs, ",")
+	resp, err = selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs, r.language, testGlobSlice)
 	if err != nil {
 		log.Errorw("There was some issue in trying to intelligently figure out tests to run, running all the tests", "error", zap.Error(err))
 		r.runOnlySelectedTests = false

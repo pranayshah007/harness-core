@@ -78,6 +78,18 @@ if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
   export NG_MANAGER_SERVICE_SECRET; yq -i '.ngManagerServiceSecret=env(NG_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_MANAGER_SERVICE_SECRET" ]]; then
+  export SSCA_MANAGER_SERVICE_SECRET; yq -i '.sscaManagerServiceSecret=env(SSCA_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$JWT_AUTH_SECRET" ]]; then
+  export JWT_AUTH_SECRET; yq -i '.jwtAuthSecret=env(JWT_AUTH_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
+  export JWT_IDENTITY_SERVICE_SECRET; yq -i '.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
   export NG_MANAGER_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_BASE_URL)' $CONFIG_FILE
 fi

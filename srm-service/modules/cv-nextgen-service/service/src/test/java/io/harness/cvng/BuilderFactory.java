@@ -27,8 +27,6 @@ import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClu
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityBuilder;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity.SRMStepAnalysisActivityBuilder;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
@@ -53,14 +51,12 @@ import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.HarnessCDCurrentGenEventMetadata;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata;
-import io.harness.cvng.beans.change.HarnessSRMAnalysisEventMetadata;
 import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.Action;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.KubernetesResourceType;
 import io.harness.cvng.beans.change.PagerDutyEventMetaData;
-import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.beans.customhealth.TimestampInfo;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.ExecutionLogDTOBuilder;
@@ -1082,27 +1078,6 @@ public class BuilderFactory {
         .activityStartTime(clock.instant());
   }
 
-  public SRMStepAnalysisActivityBuilder getSRMStepAnalysisActivityBuilder() {
-    return SRMStepAnalysisActivity.builder()
-        .accountId(context.getAccountId())
-        .orgIdentifier(context.getOrgIdentifier())
-        .projectIdentifier(context.getProjectIdentifier())
-        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
-        .eventTime(clock.instant())
-        .changeSourceIdentifier("changeSourceID")
-        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
-        .type(ChangeSourceType.HARNESS_CD.getActivityType())
-        .stageStepId("stageStepId")
-        .stageId("stageId")
-        .pipelineId("pipelineId")
-        .planExecutionId(generateUuid())
-        .artifactType("artifactType")
-        .artifactTag("artifactTag")
-        .activityName(generateUuid())
-        .activityEndTime(clock.instant())
-        .activityStartTime(clock.instant());
-  }
-
   public SRMAnalysisStepExecutionDetail getSRMAnalysisStepExecutionDetail() {
     return SRMAnalysisStepExecutionDetail.builder()
         .accountId(context.getAccountId())
@@ -1330,25 +1305,6 @@ public class BuilderFactory {
                       .artifactType("artifactType")
                       .artifactTag("artifactTag")
                       .status("status")
-                      .build());
-  }
-
-  public ChangeEventDTOBuilder harnessSRMAnalysisChangeEventDTOBuilder() {
-    return getChangeEventDTOBuilder()
-        .type(ChangeSourceType.SRM_STEP_ANALYSIS)
-        .metadata(HarnessSRMAnalysisEventMetadata.builder()
-                      .stageStepId("stage")
-                      .planExecutionId("executionId")
-                      .analysisEndTime(Instant.now().plus(2, ChronoUnit.DAYS).toEpochMilli())
-                      .analysisStartTime(Instant.now().toEpochMilli())
-                      .stageStepId("stageStepId")
-                      .stageId("stageId")
-                      .pipelineId("pipelineId")
-                      .planExecutionId("executionId")
-                      .artifactType("artifactType")
-                      .artifactTag("artifactTag")
-                      .analysisStatus(SRMAnalysisStatus.RUNNING)
-                      .analysisDuration(Duration.of(2, ChronoUnit.DAYS))
                       .build());
   }
 

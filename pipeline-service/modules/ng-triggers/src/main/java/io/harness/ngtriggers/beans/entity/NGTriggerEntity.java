@@ -107,6 +107,11 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
                 .name("accId_signature_index_for_multibuildmetadata")
                 .field(NGTriggerEntityKeys.accountId)
                 .field("metadata.multiBuildMetadata.pollingConfig.signature")
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("type_nextIterations")
+                .field(NGTriggerEntityKeys.type)
+                .field(NGTriggerEntityKeys.nextIterations)
                 .build())
         .build();
   }

@@ -110,11 +110,10 @@ public class ProvenanceStepGenerator {
   }
 
   private JsonNode createStepGroupExecutionWrapper(CIAbstractStepNode stepNode, AttestationV1 attestation) {
-    CIStepInfo stepInfo = (CIStepInfo) stepNode.getStepSpecType();
     StepGroupElementConfig stepGroupElementConfig =
         StepGroupElementConfig.builder()
-            .identifier(PROVENANCE_STEP_GROUP + UNDERSCORE_SEP + stepInfo.getIdentifier())
-            .name(PROVENANCE_STEP_GROUP + UNDERSCORE_SEP + stepInfo.getName())
+            .identifier(PROVENANCE_STEP_GROUP + UNDERSCORE_SEP + stepNode.getIdentifier())
+            .name(PROVENANCE_STEP_GROUP + UNDERSCORE_SEP + stepNode.getName())
             .uuid(generateUuid())
             .when(stepNode.getWhen())
             .skipCondition(stepNode.getSkipCondition())

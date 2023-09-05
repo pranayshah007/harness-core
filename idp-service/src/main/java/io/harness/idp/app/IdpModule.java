@@ -604,4 +604,11 @@ public class IdpModule extends AbstractModule {
   public IteratorConfig scorecardScoreComputationIteratorConfig() {
     return this.appConfig.getScorecardScoreComputationIteratorConfig();
   }
+
+  @Provides
+  @Singleton
+  @Named("idpServiceSecret")
+  public String idpServiceSecret() {
+    return this.appConfig.getIdpServiceSecret();
+  }
 }

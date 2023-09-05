@@ -208,7 +208,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
-      adviserObtainments = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
+      adviserObtainments = getAdviserObtainmentFromMetaData(ctx.getCurrentField(), ctx.getDependency());
     }
     // We need to swap the ids if strategy is present
     PlanNodeBuilder builder =

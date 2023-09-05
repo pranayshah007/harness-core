@@ -134,6 +134,8 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_HTTP_STEP_NG_CERTIFICATE("Allow enforce SSL/TLS certificate in NG HTTP step", HarnessTeam.CDC),
   CDS_JIRA_TRANSITION_LIST("Have Jira status and transitions support", HarnessTeam.CDC),
+  CDS_JIRA_UPDATE_SELECT_FIELDS_ENABLED(
+      "Enable jira select fields for Jira update step using project and issue Type", HarnessTeam.CDC),
   CDS_K8S_HELM_INSTANCE_SYNC_V2_NG(
       "FF for enabling Instance Sync V2 for K8s and Native Helm swimlanes in NG", HarnessTeam.CDP),
   CDS_K8S_SERVICE_HOOKS_NG("Enables Service hooks support for K8s/Native Helm Services", HarnessTeam.CDP),
@@ -175,9 +177,6 @@ public enum FeatureName {
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_SSH_CLIENT("Enable SSH new implementation via SSH Client", HarnessTeam.CDP),
   CDS_SSH_SSHJ("Enable SSH for Vault flow via SSHJ", HarnessTeam.CDP),
-  CDS_STAGE_EXECUTION_DATA_SYNC(
-      "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
-      HarnessTeam.CDC),
   CDS_SUPPORT_EXPRESSION_REMOTE_TERRAFORM_VAR_FILES_NG(
       "FF to support expressions in remote terraform var files", HarnessTeam.CDP),
   CDS_SUPPORT_HPA_AND_PDB_NG(
@@ -452,6 +451,8 @@ public enum FeatureName {
   IDP_ENABLED("This for enabling IDP on UI", HarnessTeam.IDP),
   IDP_ENABLE_EDIT_HARNESS_CI_CD_PLUGIN(
       "This FF is for allowing user to edit config for harness-ci-cd plugin from UI", HarnessTeam.IDP),
+  IDP_ENABLE_SCORECARDS("This FF is for enabling the scorecards feature in IDP", HarnessTeam.IDP),
+
   INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT,
   INLINE_SSH_COMMAND,
   INSTANCE_SYNC_V2_CG("Enable Instance Sync V2 framework in CG for direct K8s cloud provider", HarnessTeam.CDP),

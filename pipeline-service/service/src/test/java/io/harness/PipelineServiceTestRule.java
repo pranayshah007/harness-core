@@ -178,6 +178,13 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
       public boolean getSerializationForDelegate() {
         return false;
       }
+
+      @Provides
+      @Singleton
+      @Named("useNewNodeEntityConfiguration")
+      public Boolean getUseNewNodeEntityConfiguration() {
+        return true;
+      }
     });
 
     modules.add(new AbstractModule() {

@@ -22,11 +22,13 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnalysisStepExecutionDetailsKeys;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepInstanceDetails;
-import io.harness.cvng.beans.change.HarnessCDEventMetadata;
+import io.harness.cvng.beans.change.HarnessCDEventMetadata.SRMAnalysisStepDetails;
+import io.harness.cvng.beans.change.HarnessCDEventMetadata.VerifyStepSummary;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.NextGenService;
@@ -224,6 +226,23 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
     srmAnalysisStepDetailDTO.setServiceName(serviceResponseDTO != null ? serviceResponseDTO.getName() : null);
     srmAnalysisStepDetailDTO.setEnvironmentName(
         environmentResponseDTO != null ? environmentResponseDTO.getName() : null);
+    List<DeploymentActivity> activities =
+        changeEventService.getAnalysisStepAssociatedDeploymentActivities(stepExecutionDetail.getAccountId(),
+            stepExecutionDetail.getOrgIdentifier(), stepExecutionDetail.getProjectIdentifier(),
+            stepExecutionDetail.getPlanExecutionId(), stepExecutionDetail.getStageId());
+    if (isNotEmpty(activities) && activities.get(0).getVerificationSummary() != null
+        && activities.get(0).getVerificationSummary().getVerficationStatusMap() != null) {
+      List<VerifyStepSummary> verifyStepSummaries =
+          activities.get(0)
+              .getVerificationSummary()
+              .getVerficationStatusMap()
+              .entrySet()
+              .stream()
+              .map(entry
+                  -> VerifyStepSummary.builder().name(entry.getKey()).verificationStatus(entry.getValue()).build())
+              .collect(Collectors.toList());
+      srmAnalysisStepDetailDTO.setVerifyStepSummaries(verifyStepSummaries);
+    }
     return srmAnalysisStepDetailDTO;
   }
 
@@ -264,9 +283,12 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
 
   @Override
   public List<SRMAnalysisStepDetailDTO> getSRMAnalysisSummaries(
-      String monitoredServiceIdentifier, String planExecutionId, String stageId) {
+      String accountId, String orgIdentifier, String projectIdentifier, String planExecutionId, String stageId) {
     List<SRMAnalysisStepExecutionDetail> analysisStepExecutionDetails =
         hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.accountId, accountId)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.orgIdentifier, orgIdentifier)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier, projectIdentifier)
             .filter(SRMAnalysisStepExecutionDetailsKeys.planExecutionId, planExecutionId)
             .filter(SRMAnalysisStepExecutionDetailsKeys.stageId, stageId)
             .asList();
@@ -276,8 +298,7 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
   }
 
   @Override
-  public List<HarnessCDEventMetadata.SRMAnalysisStepDetails> getSRMAnalysisStepDetails(
-      List<String> executionDetailIds) {
+  public List<SRMAnalysisStepDetails> getSRMAnalysisStepDetails(List<String> executionDetailIds) {
     List<SRMAnalysisStepExecutionDetail> stepExecutionDetails =
         hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class)
             .field(SRMAnalysisStepExecutionDetailsKeys.uuid)
@@ -285,7 +306,7 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
             .asList();
     return stepExecutionDetails.stream()
         .map(executionDetails
-            -> HarnessCDEventMetadata.SRMAnalysisStepDetails.builder()
+            -> SRMAnalysisStepDetails.builder()
                    .analysisStatus(executionDetails.getAnalysisStatus())
                    .monitoredServiceIdentifier(executionDetails.getMonitoredServiceIdentifier())
                    .analysisStartTime(executionDetails.getAnalysisStartTime())

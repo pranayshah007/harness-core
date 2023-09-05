@@ -137,8 +137,8 @@ public class CIStepGroupUtils {
     }
     if (featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, accountId)
         && (integrationStageConfig instanceof IntegrationStageConfigImpl)) {
-      provenanceStepGenerator.encapsulateBuildAndPushStepsWithStepGroup(
-          executionSections, ((IntegrationStageConfigImpl) integrationStageConfig).getSlsa(), infrastructure.getType());
+      provenanceStepGenerator.encapsulateBuildAndPushStepsWithStepGroup(executionSections,
+          ((IntegrationStageConfigImpl) integrationStageConfig).getSlsa_provenance(), infrastructure.getType());
     }
     initializeExecutionSections.addAll(executionSections);
 

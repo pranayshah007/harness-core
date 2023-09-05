@@ -1322,12 +1322,14 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
               .yamlFilePath(changeContext.getChange().getFilePath())
               .build();
         }
+        String dumpedYaml = software.wings.yaml.YamlHelper.toYamlString(changeContext.getYaml());
 
         return FileOperationStatus.builder()
             .status(FileOperationStatus.Status.SUCCESS)
             .errorMssg("")
             .yamlFilePath(changeContext.getChange().getFilePath())
             .entityId(entityId)
+            .entityYaml(dumpedYaml)
             .build();
       }
     } catch (YamlProcessingException ex) {

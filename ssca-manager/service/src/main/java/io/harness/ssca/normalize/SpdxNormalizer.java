@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.Strings;
 
@@ -44,7 +45,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
               .packageID(spdxPackage.getSPDXID())
               .packageName(spdxPackage.getName())
               .packageDescription(spdxPackage.getDescription())
-              .packageLicense(getPackageLicenses(spdxPackage.getLicenseDeclared()))
+              .packageLicense(getPackageLicenses(spdxPackage.getLicenseConcluded(), spdxPackage.getLicenseDeclared()))
               .packageVersion(spdxPackage.getVersionInfo())
               .packageSourceInfo(spdxPackage.getSourceInfo())
               .orchestrationId(settings.getOrchestrationID())
@@ -81,8 +82,14 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
     return sbomEntityList;
   }
 
-  private List<String> getPackageLicenses(String licenseDeclared) {
-    List<String> licenses = SBOMUtils.processExpression(licenseDeclared);
+  private List<String> getPackageLicenses(String licenseConcluded, String licenseDeclared) {
+    String packageLicenseExpression = "NO_ASSERTION";
+    if (Objects.nonNull(licenseConcluded) && !licenseConcluded.isEmpty()) {
+      packageLicenseExpression = licenseConcluded;
+    } else if (Objects.nonNull(licenseDeclared) && !licenseDeclared.isEmpty()) {
+      packageLicenseExpression = licenseDeclared;
+    }
+    List<String> licenses = SBOMUtils.processExpression(packageLicenseExpression);
 
     for (int i = 0; i < licenses.size(); i++) {
       if (licenses.get(i).contains(SBOMUtils.LICENSE_REF_DELIM)) {

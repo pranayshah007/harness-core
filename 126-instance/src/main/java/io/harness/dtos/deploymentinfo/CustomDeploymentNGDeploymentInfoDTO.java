@@ -14,7 +14,7 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.util.InstanceSyncKey;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,7 +29,7 @@ public class CustomDeploymentNGDeploymentInfoDTO extends DeploymentInfoDTO {
   @NotNull private String infratructureKey;
   private String instanceFetchScript;
   private String scriptOutput;
-  private List<String> tags;
+  private Set<String> tags;
   private String artifactName;
   private String artifactSourceName;
   private String artifactStreamId;

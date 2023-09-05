@@ -9,9 +9,11 @@ package io.harness.cvng.analysis.entities;
 
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL_FORMAT;
 
+import io.harness.cvng.beans.change.HarnessCDEventMetadata.VerifyStepSummary;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -45,6 +47,7 @@ public class SRMAnalysisStepDetailDTO {
   @NotNull String stageStepId;
   @NotNull String planExecutionId;
   private String pipelinePath;
+  List<VerifyStepSummary> verifyStepSummaries;
 
   public static SRMAnalysisStepDetailDTO getDTOFromEntity(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
     return SRMAnalysisStepDetailDTO.builder()

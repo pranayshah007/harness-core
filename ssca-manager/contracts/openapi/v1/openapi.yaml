@@ -95,8 +95,8 @@ paths:
       summary: Download SBOM for an artifact
       responses:
         '200':
-          $ref: '#/components/responses/TokenIssueResponseBody'
-      operationId: download-sbom
+          $ref: '#/components/responses/ArtifactSbomResponseBody'
+      operationId: downloadSbom
       x-stoplight:
         id: 65dvz43ksx8pa
       description: Download SBOM for an artifact
@@ -184,6 +184,11 @@ paths:
         - $ref: '#/components/parameters/Order'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Sort'
+        - schema:
+            type: string
+          in: query
+          name: search_text
+          description: Text on the basis of which results will be filtered
     parameters:
       - $ref: '#/components/parameters/OrgParam'
       - $ref: '#/components/parameters/ProjectParam'
@@ -192,6 +197,7 @@ paths:
         name: enforcement-id
         in: path
         required: true
+        description: Enforcement Identifier
 components:
   schemas:
     Artifact:
@@ -536,7 +542,6 @@ components:
     Limit:
       name: limit
       in: query
-      required: false
       schema:
         type: integer
         default: 30
@@ -551,6 +556,7 @@ components:
         enum:
           - ASC
           - DESC
+        default: ASC
       description: Order on the basis of which sorting is done.
     Page:
       name: page
@@ -571,6 +577,9 @@ components:
           - identifier
           - created
           - updated
+          - license
+          - supplier
+        default: name
       description: Parameter on the basis of which sorting is done.
   requestBodies:
     SbomProcessRequestBody:

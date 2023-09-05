@@ -13,6 +13,4 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.CDC)
 public interface CDGitXService {
   boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier);
-
-  String getErrorMessageForGitSimplification(String orgIdentifier, String projectIdentifier);
 }

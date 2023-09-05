@@ -123,6 +123,39 @@ public final class PersistenceIteratorFactory {
     return iterator;
   }
 
+  private <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
+  createIteratorWithDedicatedThreadPoolNoRecoverAfterPause(PersistenceIterator.ProcessMode processMode,
+      PumpExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
+    /*
+       iterator::recoverAfterPause uses un-indexable queries which can cause undesired load in DB.
+       When using this method, we leave to the consumer of the framework the responsibility
+       of optimizing the underlying iterator query.
+    */
+    if (!workersConfiguration.confirmWorkerIsActive(cls)) {
+      log.info(getWorkerDisabledLog(cls.getName()));
+      return null;
+    }
+
+    String iteratorName = "Iterator-" + options.name;
+    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
+        options.poolSize, new ThreadFactoryBuilder().setNameFormat(iteratorName).build());
+    log.info(getWorkerEnabledLog(cls.getName()));
+
+    MetricRegistry metricRegistry = harnessMetricRegistry.getThreadPoolMetricRegistry();
+    InstrumentedExecutorService instrumentedExecutorService =
+        new InstrumentedExecutorService(executor, metricRegistry, iteratorName);
+
+    MongoPersistenceIterator<T, F> iterator = builder.mode(processMode)
+                                                  .executorService(instrumentedExecutorService)
+                                                  .semaphore(new Semaphore(options.poolSize))
+                                                  .iteratorName(options.name)
+                                                  .build();
+    injector.injectMembers(iterator);
+    long millis = options.interval.toMillis();
+    executor.scheduleAtFixedRate(iterator::process, random.nextInt((int) millis), millis, TimeUnit.MILLISECONDS);
+    return iterator;
+  }
+
   // TODO (prashant) : this method looks wrong for loop iterators, scheduled at fixed rate do not make sense
   // Investigate more when time permits
   public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
@@ -132,9 +165,21 @@ public final class PersistenceIteratorFactory {
   }
 
   public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
+  createLoopIteratorWithDedicatedThreadPoolNoRecoverAfterPause(
+      PumpExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
+    return createIteratorWithDedicatedThreadPoolNoRecoverAfterPause(LOOP, options, cls, builder);
+  }
+
+  public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
   createPumpIteratorWithDedicatedThreadPool(
       PumpExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
     return createIteratorWithDedicatedThreadPool(PUMP, options, cls, builder);
+  }
+
+  public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
+  createPumpIteratorWithDedicatedThreadPoolNoRecoverAfterPause(
+      PumpExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
+    return createIteratorWithDedicatedThreadPoolNoRecoverAfterPause(PUMP, options, cls, builder);
   }
 
   public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
