@@ -35,6 +35,11 @@ public class AsgRollingRollbackStepParameters extends AsgRollingRollbackBaseStep
     super(delegateSelectors, asgRollingDeployFqn);
   }
 
+  @Override
+  public ParameterField<String> getAsgName() {
+    return null;
+  }
+
   public List<String> getCommandUnits() {
     return Arrays.asList(AsgCommandUnitConstants.rollback.toString());
   }

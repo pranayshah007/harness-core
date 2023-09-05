@@ -85,7 +85,6 @@ public class AsgEntityHelper {
             .region(asgInfrastructureOutcome.getRegion())
             .infraStructureKey(asgInfrastructureOutcome.getInfrastructureKey())
             .baseAsgName(asgInfrastructureOutcome.getBaseAsgName())
-            .asgName(asgInfrastructureOutcome.getAsgName())
             .build();
       default:
         throw new UnsupportedOperationException(

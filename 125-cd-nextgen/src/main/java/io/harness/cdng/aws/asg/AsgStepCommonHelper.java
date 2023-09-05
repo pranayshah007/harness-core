@@ -141,7 +141,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
-    boolean isBaseAsg = isBaseAsgDeployment(ambiance, infrastructureOutcome);
+    boolean isBaseAsg = isBaseAsgDeployment(ambiance, infrastructureOutcome, stepElementParameters);
 
     Collection<ManifestOutcome> manifestOutcomeList = new ArrayList<>();
 
@@ -781,7 +781,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   public boolean isV2Feature(Map<String, List<String>> asgStoreManifestsContent, AsgInstances instances,
-      List<AwsAsgLoadBalancerConfigYaml> loadBalancers) {
+      List<AwsAsgLoadBalancerConfigYaml> loadBalancers, AsgInfraConfig asgInfraConfig, AsgSpecParameters asgSpecParameters) {
     if (isNotEmpty(asgStoreManifestsContent)
         && isNotEmpty(asgStoreManifestsContent.get(OutcomeExpressionConstants.USER_DATA))) {
       return true;
@@ -791,22 +791,28 @@ public class AsgStepCommonHelper extends CDStepHelper {
       return true;
     }
 
+    if (asgInfraConfig != null && isNotEmpty(asgInfraConfig.getBaseAsgName())) {
+      return true;
+    }
+
+    if (asgSpecParameters != null && isNotEmpty(getParameterFieldValue(asgSpecParameters.getAsgName()))) {
+      return true;
+    }
+
     return false;
   }
 
-  boolean isBaseAsgDeployment(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
+  boolean isBaseAsgDeployment(
+      Ambiance ambiance, InfrastructureOutcome infrastructureOutcome, StepBaseParameters stepElementParameters) {
     AsgInfraConfig asgInfraConfig = getAsgInfraConfig(infrastructureOutcome, ambiance);
+    AsgSpecParameters asgSpecParameters = (AsgSpecParameters) stepElementParameters.getSpec();
     String baseAsg = asgInfraConfig.getBaseAsgName();
-    String asg = asgInfraConfig.getAsgName();
+    String asg = getParameterFieldValue(asgSpecParameters.getAsgName());
 
     if (isNotEmpty(baseAsg) && isEmpty(asg)) {
       throw new InvalidRequestException("asgName is required if baseAsgName is provided in infrastructure");
     }
 
-    if (isNotEmpty(asg) && isEmpty(baseAsg)) {
-      throw new InvalidRequestException("baseAsgName is required if asgName is provided in infrastructure");
-    }
-
-    return isNotEmpty(baseAsg) && isNotEmpty(asg);
+    return isNotEmpty(baseAsg);
   }
 }

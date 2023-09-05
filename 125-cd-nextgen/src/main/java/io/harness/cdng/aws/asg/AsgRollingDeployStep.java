@@ -7,7 +7,10 @@
 
 package io.harness.cdng.aws.asg;
 
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+
 import static software.wings.beans.TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG_V2;
 import static software.wings.beans.TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG;
 import static software.wings.beans.TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG_V2;
 
@@ -26,6 +29,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
@@ -129,11 +133,12 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
         asgStepCommonHelper.isUseAlreadyRunningInstances(asgSpecParameters.getInstances(),
             ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getUseAlreadyRunningInstances()));
     AsgCapacityConfig asgCapacityConfig = asgStepCommonHelper.getAsgCapacityConfig(asgSpecParameters.getInstances());
+    AsgInfraConfig asgInfraConfig = asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance);
 
     AsgRollingDeployRequest asgRollingDeployRequest =
         AsgRollingDeployRequest.builder()
             .commandName(ASG_ROLLING_DEPLOY_COMMAND_NAME)
-            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .asgInfraConfig(asgInfraConfig)
             .accountId(accountId)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
@@ -145,10 +150,11 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .minimumHealthyPercentage(
                 ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getMinimumHealthyPercentage()))
             .amiImageId(amiImageId)
+            .asgName(getParameterFieldValue(asgSpecParameters.getAsgName()))
             .build();
 
-    TaskType taskType = asgStepCommonHelper.isV2Feature(
-                            asgStepExecutorParams.getAsgStoreManifestsContent(), asgSpecParameters.getInstances(), null)
+    TaskType taskType = asgStepCommonHelper.isV2Feature(asgStepExecutorParams.getAsgStoreManifestsContent(),
+                            asgSpecParameters.getInstances(), null, asgInfraConfig, asgSpecParameters)
         ? AWS_ASG_ROLLING_DEPLOY_TASK_NG_V2
         : AWS_ASG_ROLLING_DEPLOY_TASK_NG;
 
@@ -161,18 +167,27 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       StepBaseParameters stepElementParameters,
       AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = asgPrepareRollbackDataPassThroughData.getInfrastructureOutcome();
+    AsgSpecParameters asgSpecParameters = (AsgSpecParameters) stepElementParameters.getSpec();
+    AsgInfraConfig asgInfraConfig = asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance);
     final String accountId = AmbianceUtils.getAccountId(ambiance);
+
     AsgPrepareRollbackDataRequest asgPrepareRollbackDataRequest =
         AsgPrepareRollbackDataRequest.builder()
             .commandName(ASG_ROLLING_PREPARE_ROLLBACK_DATA_COMMAND_NAME)
             .accountId(accountId)
-            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .asgInfraConfig(asgInfraConfig)
             .asgStoreManifestsContent(asgPrepareRollbackDataPassThroughData.getAsgStoreManifestsContent())
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .asgName(getParameterFieldValue(asgSpecParameters.getAsgName()))
             .build();
+
+    TaskType taskType = asgStepCommonHelper.isV2Feature(null, null, null, asgInfraConfig, asgSpecParameters)
+        ? AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG_V2
+        : AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG;
+
     return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgPrepareRollbackDataRequest, ambiance,
-        asgPrepareRollbackDataPassThroughData, false, AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG);
+        asgPrepareRollbackDataPassThroughData, false, taskType);
   }
 
   @Override

@@ -105,7 +105,7 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
       AutoScalingGroupContainer autoScalingGroupContainer = executeRollingDeployWithInstanceRefresh(asgSdkManager,
           asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
           asgRollingDeployRequest.getAmiImageId(), awsInternalConfig, region,
-          asgRollingDeployRequest.getAsgCapacityConfig(), asgInfraConfig);
+          asgRollingDeployRequest.getAsgCapacityConfig(), asgRollingDeployRequest);
 
       AsgRollingDeployResult asgRollingDeployResult = AsgRollingDeployResult.builder()
                                                           .autoScalingGroupContainer(autoScalingGroupContainer)
@@ -130,14 +130,14 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
   private AutoScalingGroupContainer executeRollingDeployWithInstanceRefresh(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, Boolean skipMatching, Boolean useAlreadyRunningInstances,
       Integer instanceWarmup, Integer minimumHealthyPercentage, String amiImageId, AwsInternalConfig awsInternalConfig,
-      String region, AsgCapacityConfig asgCapacityConfig, AsgInfraConfig asgInfraConfig) {
+      String region, AsgCapacityConfig asgCapacityConfig, AsgRollingDeployRequest asgRollingDeployRequest) {
     // Get the content of all required manifest files
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
     List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
     List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgStoreManifestsContent);
 
-    String asgName = asgTaskHelper.getAsgName(asgInfraConfig, asgStoreManifestsContent);
+    String asgName = asgTaskHelper.getAsgName(asgRollingDeployRequest, asgStoreManifestsContent);
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }

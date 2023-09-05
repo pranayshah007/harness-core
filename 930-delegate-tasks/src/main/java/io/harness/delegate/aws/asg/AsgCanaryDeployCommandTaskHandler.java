@@ -94,7 +94,7 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
 
       AutoScalingGroupContainer autoScalingGroupContainer =
           executeCanaryDeploy(asgSdkManager, asgStoreManifestsContent, serviceSuffix, nrOfInstances,
-              asgCanaryDeployRequest.getAmiImageId(), awsInternalConfig, region, asgInfraConfig);
+              asgCanaryDeployRequest.getAmiImageId(), awsInternalConfig, region, asgCanaryDeployRequest);
 
       AsgCanaryDeployResult asgCanaryDeployResult =
           AsgCanaryDeployResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
@@ -116,10 +116,11 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
 
   private AutoScalingGroupContainer executeCanaryDeploy(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, String serviceSuffix, Integer nrOfInstances,
-      String amiImageId, AwsInternalConfig awsInternalConfig, String region, AsgInfraConfig asgInfraConfig) {
+      String amiImageId, AwsInternalConfig awsInternalConfig, String region,
+      AsgCanaryDeployRequest asgCanaryDeployRequest) {
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
-    String asgName = asgTaskHelper.getAsgName(asgInfraConfig, asgStoreManifestsContent);
+    String asgName = asgTaskHelper.getAsgName(asgCanaryDeployRequest, asgStoreManifestsContent);
 
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));

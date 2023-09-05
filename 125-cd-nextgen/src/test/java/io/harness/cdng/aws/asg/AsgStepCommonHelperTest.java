@@ -8,6 +8,7 @@
 package io.harness.cdng.aws.asg;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -17,10 +18,14 @@ import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
+import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -126,13 +131,53 @@ public class AsgStepCommonHelperTest extends CategoryTest {
     Map<String, List<String>> asgStoreManifestsContent =
         Map.of(OutcomeExpressionConstants.USER_DATA, List.of("something"));
 
-    boolean ret = asgStepCommonHelper.isV2Feature(asgStoreManifestsContent, null, null);
+    boolean ret = asgStepCommonHelper.isV2Feature(asgStoreManifestsContent, null, null, null, null);
     assertThat(ret).isEqualTo(true);
 
-    ret = asgStepCommonHelper.isV2Feature(null, AsgInstances.builder().build(), null);
+    ret = asgStepCommonHelper.isV2Feature(null, AsgInstances.builder().build(), null, null, null);
     assertThat(ret).isEqualTo(true);
 
-    ret = asgStepCommonHelper.isV2Feature(null, null, List.of(AwsAsgLoadBalancerConfigYaml.builder().build()));
+    ret = asgStepCommonHelper.isV2Feature(null, null, List.of(AwsAsgLoadBalancerConfigYaml.builder().build()), null, null);
     assertThat(ret).isEqualTo(true);
+
+    ret = asgStepCommonHelper.isV2Feature(null, null, null, AsgInfraConfig.builder().baseAsgName("test").build(), null);
+    assertThat(ret).isEqualTo(true);
+
+    ret = asgStepCommonHelper.isV2Feature(null, null, null, null,
+            AsgRollingDeployStepParameters.infoBuilder().asgName(ParameterField.createValueField("test")).build());
+    assertThat(ret).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VITALIE)
+  @Category(UnitTests.class)
+  public void isBaseAsgDeploymentTest() {
+    Ambiance ambiance = mock(Ambiance.class);
+    InfrastructureOutcome infrastructureOutcome = mock(InfrastructureOutcome.class);
+
+    AsgRollingDeployStepParameters asgRollingDeployStepParameters =
+            AsgRollingDeployStepParameters.infoBuilder().asgName(ParameterField.createValueField("test")).build();
+    StepElementParameters stepElementParameters =
+            StepElementParameters.builder().spec(asgRollingDeployStepParameters).build();
+
+    doReturn(AsgInfraConfig.builder().baseAsgName("test").build())
+            .when(asgEntityHelper)
+            .getAsgInfraConfig(any(), any());
+
+    boolean ret = asgStepCommonHelper.isBaseAsgDeployment(ambiance, infrastructureOutcome, stepElementParameters);
+    assertThat(ret).isEqualTo(true);
+
+    AsgRollingDeployStepParameters asgRollingDeployStepParameters2 =
+            AsgRollingDeployStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters2 =
+            StepElementParameters.builder().spec(asgRollingDeployStepParameters2).build();
+    assertThatThrownBy(
+            () -> asgStepCommonHelper.isBaseAsgDeployment(ambiance, infrastructureOutcome, stepElementParameters2))
+            .isInstanceOf(InvalidRequestException.class);
+
+    doReturn(AsgInfraConfig.builder().build()).when(asgEntityHelper).getAsgInfraConfig(any(), any());
+
+    ret = asgStepCommonHelper.isBaseAsgDeployment(ambiance, infrastructureOutcome, stepElementParameters);
+    assertThat(ret).isEqualTo(false);
   }
 }

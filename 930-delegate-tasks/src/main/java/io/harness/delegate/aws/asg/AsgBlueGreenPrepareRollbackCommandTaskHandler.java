@@ -109,7 +109,7 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
       asgSdkManager.info("Starting BG Prepare Rollback");
 
       String asgName = asgTaskHelper.getAsgName(
-          asgInfraConfig, asgBlueGreenPrepareRollbackDataRequest.getAsgStoreManifestsContent());
+          asgCommandRequest, asgBlueGreenPrepareRollbackDataRequest.getAsgStoreManifestsContent());
 
       if (isEmpty(asgName)) {
         throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
