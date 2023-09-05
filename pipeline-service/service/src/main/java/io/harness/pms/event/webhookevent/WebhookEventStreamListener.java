@@ -8,6 +8,7 @@
 package io.harness.pms.event.webhookevent;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.pms.sdk.PmsSdkModuleUtils.SDK_SERVICE_NAME;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -25,6 +26,8 @@ import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionServiceV2;
 import io.harness.product.ci.scm.proto.Action;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PullRequestHook;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.serializer.JsonUtils;
 
 import com.google.inject.Inject;
@@ -54,6 +57,7 @@ public class WebhookEventStreamListener extends PmsAbstractMessageListener<Facil
   public boolean handleMessage(Message message, Long readTs) {
     if (message != null && message.hasMessage()) {
       try {
+        SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         log.info("Started processing webhook event for message id {}", message.getId());
         WebhookDTO webhookDTO = WebhookDTO.parseFrom(message.getMessage().getData());
         try (NgTriggerAutoLogContext ignore0 = new NgTriggerAutoLogContext("eventId", webhookDTO.getEventId(),

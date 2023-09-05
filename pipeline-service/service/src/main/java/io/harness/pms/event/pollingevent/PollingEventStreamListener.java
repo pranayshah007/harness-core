@@ -8,6 +8,7 @@
 package io.harness.pms.event.pollingevent;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.pms.sdk.PmsSdkModuleUtils.SDK_SERVICE_NAME;
@@ -29,6 +30,8 @@ import io.harness.pms.triggers.build.eventmapper.BuildTriggerEventMapper;
 import io.harness.pms.triggers.webhook.helpers.TriggerEventExecutionHelper;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -53,6 +56,7 @@ public class PollingEventStreamListener extends PmsAbstractMessageListener<Facil
   public boolean handleMessage(Message message, Long readTs) {
     if (message != null && message.hasMessage()) {
       try {
+        SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         PollingResponse response = PollingResponse.parseFrom(message.getMessage().getData());
         try (AccountLogContext ignore1 = new AccountLogContext(response.getAccountId(), OVERRIDE_ERROR);
              AutoLogContext ignore2 = new NgPollingAutoLogContext(response.getPollingDocId(), OVERRIDE_ERROR);

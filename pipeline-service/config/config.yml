@@ -665,3 +665,5 @@ webhookEventHsqsDequeueConfig:
   threadSleepTimeInMillis: ${WEBHOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
 
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
+
+useNewNodeEntityConfiguration: ${USE_NEW_NODE_ENTITY_CONFIGURATION:-false}

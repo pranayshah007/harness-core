@@ -27,4 +27,6 @@ public interface NodeEntityRepository extends CrudRepository<NodeEntity, String>
   List<NodeEntity> findNodeEntityByPlanId(String planId);
 
   Optional<NodeEntity> findByPlanIdAndNodeId(String planId, String nodeId);
+
+  List<NodeEntity> findNodeEntityByNodeId(String nodeId);
 }

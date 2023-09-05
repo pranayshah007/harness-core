@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -164,6 +165,13 @@ public class OrchestrationVisualizationRule implements MethodRule, InjectorRuleM
       @Singleton
       public boolean getSerializationForDelegate() {
         return false;
+      }
+
+      @Provides
+      @Singleton
+      @Named("useNewNodeEntityConfiguration")
+      public Boolean getUseNewNodeEntityConfiguration() {
+        return true;
       }
     });
 
