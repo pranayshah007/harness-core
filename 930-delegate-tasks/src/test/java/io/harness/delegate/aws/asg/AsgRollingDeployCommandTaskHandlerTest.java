@@ -102,7 +102,6 @@ public class AsgRollingDeployCommandTaskHandlerTest extends CategoryTest {
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     AsgRollingDeployResult result = response.getAsgRollingDeployResult();
-
     assertThat(result.getAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
   }
 
