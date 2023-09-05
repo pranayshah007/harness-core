@@ -782,24 +782,11 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public boolean isV2Feature(Map<String, List<String>> asgStoreManifestsContent, AsgInstances instances,
       List<AwsAsgLoadBalancerConfigYaml> loadBalancers, AsgInfraConfig asgInfraConfig, AsgSpecParameters asgSpecParameters) {
-    if (isNotEmpty(asgStoreManifestsContent)
-        && isNotEmpty(asgStoreManifestsContent.get(OutcomeExpressionConstants.USER_DATA))) {
-      return true;
-    }
-
-    if (instances != null || isNotEmpty(loadBalancers)) {
-      return true;
-    }
-
-    if (asgInfraConfig != null && isNotEmpty(asgInfraConfig.getBaseAsgName())) {
-      return true;
-    }
-
-    if (asgSpecParameters != null && isNotEmpty(getParameterFieldValue(asgSpecParameters.getAsgName()))) {
-      return true;
-    }
-
-    return false;
+    return asgStoreManifestsContent != null
+        && isNotEmpty(asgStoreManifestsContent.get(OutcomeExpressionConstants.USER_DATA))
+        || instances != null || isNotEmpty(loadBalancers)
+        || asgInfraConfig != null && isNotEmpty(asgInfraConfig.getBaseAsgName())
+        || asgSpecParameters != null && isNotEmpty(getParameterFieldValue(asgSpecParameters.getAsgName()));
   }
 
   boolean isBaseAsgDeployment(
