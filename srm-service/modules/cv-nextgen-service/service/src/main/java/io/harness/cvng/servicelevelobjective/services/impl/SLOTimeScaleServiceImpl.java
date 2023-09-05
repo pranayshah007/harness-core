@@ -43,9 +43,9 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
   @Inject private ServiceLevelObjectiveV2ServiceImpl serviceLevelObjectiveV2Service;
   @Inject Clock clock;
   private static final String UPSERT_SERVICE_LEVEL_OBJECTIVE =
-      "INSERT INTO SERVICE_LEVEL_OBJECTIVE (REPORTEDAT,UPDATEDAT,ACCOUNTID,ORGID,PROJECTID,SLOID,SLONAME,USERJOURNEY,PERIODLENGTH,SLITYPE,PERIODTYPE,SLOPERCENTAGE,TOTALERRORBUDGET,SERVICE,ENV) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
-      + "ON CONFLICT(ACCOUNTID,ORGID,PROJECTID,SLOID) DO UPDATE SET UPDATEDAT = EXCLUDED.UPDATEDAT, USERJOURNEY = EXCLUDED.USERJOURNEY, PERIODLENGTH = EXCLUDED.PERIODLENGTH, SLITYPE = EXCLUDED.SLITYPE,  "
-      + "PERIODTYPE = EXCLUDED.PERIODTYPE, SLOPERCENTAGE = EXCLUDED.SLOPERCENTAGE, TOTALERRORBUDGET = EXCLUDED.TOTALERRORBUDGET, SERVICE = EXCLUDED.SERVICE, ENV = EXCLUDED.ENV, SLONAME = EXCLUDED.SLONAME";
+      "INSERT INTO SERVICE_LEVEL_OBJECTIVE (REPORTEDAT,UPDATEDAT,ACCOUNTID,ORGID,PROJECTID,SLOID,SLONAME,USERJOURNEY,PERIODLENGTH,SLITYPE,PERIODTYPE,SLOPERCENTAGE,TOTALERRORBUDGET,SERVICE,ENV,SLOTYPE,SLIEVALUATIONTYPE) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+      + "ON CONFLICT(ACCOUNTID,ORGID,PROJECTID,SLOID) DO UPDATE SET UPDATEDAT = EXCLUDED.UPDATEDAT, USERJOURNEY = EXCLUDED.USERJOURNEY, PERIODLENGTH = EXCLUDED.PERIODLENGTH, SLOTYPE = EXCLUDED.SLOTYPE, "
+      + "SLIEVALUATIONTYPE = EXCLUDED.SLIEVALUATIONTYPE, PERIODTYPE = EXCLUDED.PERIODTYPE, SLOPERCENTAGE = EXCLUDED.SLOPERCENTAGE, TOTALERRORBUDGET = EXCLUDED.TOTALERRORBUDGET, SERVICE = EXCLUDED.SERVICE, ENV = EXCLUDED.ENV, SLONAME = EXCLUDED.SLONAME";
 
   private static final String DELETE_SERVICE_LEVEL_OBJECTIVE =
       "DELETE FROM SERVICE_LEVEL_OBJECTIVE WHERE ACCOUNTID = ? AND ORGID = ? AND PROJECTID = ? AND SLOID = ?";
@@ -61,36 +61,39 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
   public void upsertServiceLevelObjective(AbstractServiceLevelObjective serviceLevelObjective) {
     try (Connection connection = timeScaleDBService.getDBConnection();
          PreparedStatement upsertStatement = connection.prepareStatement(UPSERT_SERVICE_LEVEL_OBJECTIVE);) {
+      ProjectParams projectParams = ProjectParams.builder()
+                                        .accountIdentifier(serviceLevelObjective.getAccountId())
+                                        .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                        .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                        .build();
+      SLOHealthIndicator sloHealthIndicator =
+          sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
+      upsertStatement.setTimestamp(1, new Timestamp(serviceLevelObjective.getCreatedAt()), Calendar.getInstance());
+      upsertStatement.setTimestamp(2, new Timestamp(serviceLevelObjective.getLastUpdatedAt()), Calendar.getInstance());
+      upsertStatement.setString(3, serviceLevelObjective.getAccountId());
+      upsertStatement.setString(4, serviceLevelObjective.getOrgIdentifier());
+      upsertStatement.setString(5, serviceLevelObjective.getProjectIdentifier());
+      upsertStatement.setString(6, serviceLevelObjective.getIdentifier());
+      upsertStatement.setString(7, serviceLevelObjective.getName());
+      upsertStatement.setString(8, serviceLevelObjective.getUserJourneyIdentifiers().get(0));
+      upsertStatement.setInt(9, getPeriodDays(serviceLevelObjective.getTarget()));
+      upsertStatement.setString(10, null);
+      upsertStatement.setString(11, serviceLevelObjective.getTarget().getType().toString());
+      upsertStatement.setDouble(12, sloHealthIndicator.getErrorBudgetRemainingPercentage());
+      upsertStatement.setDouble(13, serviceLevelObjective.getSloTargetPercentage());
       if (serviceLevelObjective instanceof SimpleServiceLevelObjective) {
         SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
-        ProjectParams projectParams = ProjectParams.builder()
-                                          .accountIdentifier(serviceLevelObjective.getAccountId())
-                                          .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                                          .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                                          .build();
         MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
             projectParams, simpleServiceLevelObjective.getMonitoredServiceIdentifier());
-        SLOHealthIndicator sloHealthIndicator =
-            sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
-        upsertStatement.setTimestamp(
-            1, new Timestamp(simpleServiceLevelObjective.getCreatedAt()), Calendar.getInstance());
-        upsertStatement.setTimestamp(
-            2, new Timestamp(simpleServiceLevelObjective.getLastUpdatedAt()), Calendar.getInstance());
-        upsertStatement.setString(3, simpleServiceLevelObjective.getAccountId());
-        upsertStatement.setString(4, simpleServiceLevelObjective.getOrgIdentifier());
-        upsertStatement.setString(5, simpleServiceLevelObjective.getProjectIdentifier());
-        upsertStatement.setString(6, simpleServiceLevelObjective.getIdentifier());
-        upsertStatement.setString(7, simpleServiceLevelObjective.getName());
-        upsertStatement.setString(8, simpleServiceLevelObjective.getUserJourneyIdentifiers().get(0));
-        upsertStatement.setInt(9, getPeriodDays(simpleServiceLevelObjective.getTarget()));
-        upsertStatement.setString(10, simpleServiceLevelObjective.getServiceLevelIndicatorType().toString());
-        upsertStatement.setString(11, simpleServiceLevelObjective.getTarget().getType().toString());
-        upsertStatement.setDouble(12, sloHealthIndicator.getErrorBudgetRemainingPercentage());
-        upsertStatement.setDouble(13, simpleServiceLevelObjective.getSloTargetPercentage());
         upsertStatement.setString(14, monitoredService.getServiceIdentifier());
         upsertStatement.setString(15, monitoredService.getEnvironmentIdentifier());
-        upsertStatement.execute();
+      } else {
+        upsertStatement.setString(14, null);
+        upsertStatement.setString(15, null);
       }
+      upsertStatement.setString(16, serviceLevelObjective.getType().toString());
+      upsertStatement.setString(17, serviceLevelObjective.getSliEvaluationType().toString());
+      upsertStatement.execute();
     } catch (Exception ex) {
       log.error("error while upserting slo data.");
     }
@@ -106,7 +109,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
       deleteStatement.setString(4, identifier);
       deleteStatement.execute();
     } catch (Exception ex) {
-      log.error("error while upserting slo data.");
+      log.error("error while deleting slo data.");
     }
   }
 
@@ -140,14 +143,13 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
   public void insertSLOHistory(AbstractServiceLevelObjective serviceLevelObjective) {
     try (Connection connection = timeScaleDBService.getDBConnection();
          PreparedStatement insertStatement = connection.prepareStatement(INSERT_SLO_HISTORY);) {
-      SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
       ProjectParams projectParams = ProjectParams.builder()
                                         .accountIdentifier(serviceLevelObjective.getAccountId())
                                         .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
                                         .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                                         .build();
       LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-      TimePeriod timePeriod = simpleServiceLevelObjective.getTarget().getTimeRangeForHistory(currentLocalDate);
+      TimePeriod timePeriod = serviceLevelObjective.getTarget().getTimeRangeForHistory(currentLocalDate);
       SLODashboardWidget.SLOGraphData sloGraphData =
           sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective,
               TimeRangeParams.builder()
@@ -159,10 +161,10 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
             new Timestamp(timePeriod.getStartTime().toInstant(ZoneOffset.UTC).toEpochMilli()), Calendar.getInstance());
         insertStatement.setTimestamp(
             2, new Timestamp(timePeriod.getEndTime().toInstant(ZoneOffset.UTC).toEpochMilli()), Calendar.getInstance());
-        insertStatement.setString(3, simpleServiceLevelObjective.getAccountId());
-        insertStatement.setString(4, simpleServiceLevelObjective.getOrgIdentifier());
-        insertStatement.setString(5, simpleServiceLevelObjective.getProjectIdentifier());
-        insertStatement.setString(6, simpleServiceLevelObjective.getIdentifier());
+        insertStatement.setString(3, serviceLevelObjective.getAccountId());
+        insertStatement.setString(4, serviceLevelObjective.getOrgIdentifier());
+        insertStatement.setString(5, serviceLevelObjective.getProjectIdentifier());
+        insertStatement.setString(6, serviceLevelObjective.getIdentifier());
         insertStatement.setString(7, String.valueOf(sloGraphData.getErrorBudgetRemaining()));
         insertStatement.setString(8, String.valueOf(serviceLevelObjective.getSloTargetPercentage()));
         insertStatement.setString(9, String.valueOf(sloGraphData.getSliStatusPercentage()));
@@ -171,8 +173,8 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
         } else {
           insertStatement.setString(10, "NO");
         }
-        insertStatement.setInt(11, getPeriodDays(simpleServiceLevelObjective.getTarget()));
-        insertStatement.setInt(12, simpleServiceLevelObjective.getTotalErrorBudgetMinutes(currentLocalDate));
+        insertStatement.setInt(11, getPeriodDays(serviceLevelObjective.getTarget()));
+        insertStatement.setInt(12, serviceLevelObjective.getTotalErrorBudgetMinutes(currentLocalDate));
         insertStatement.execute();
       }
     } catch (Exception ex) {
