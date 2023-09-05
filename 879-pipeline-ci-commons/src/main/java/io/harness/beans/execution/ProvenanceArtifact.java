@@ -18,5 +18,6 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.SSCA)
 public class ProvenanceArtifact {
+  String predicateType;
   ProvenancePredicate predicate;
 }
