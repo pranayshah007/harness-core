@@ -107,6 +107,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -678,8 +679,8 @@ public class UserGroupServiceImpl implements UserGroupService {
       criteria = createScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
     }
     if (isNotBlank(searchTerm)) {
-      Criteria searchCriteria = new Criteria().orOperator(Criteria.where(UserGroupKeys.name).regex(searchTerm, "i"),
-          Criteria.where(UserGroupKeys.tags).regex(searchTerm, "i"));
+      Criteria searchCriteria = new Criteria().orOperator(Criteria.where(UserGroupKeys.name).regex(Pattern.quote(searchTerm), "i"),
+          Criteria.where(UserGroupKeys.tags).regex(Pattern.quote(searchTerm), "i"));
       criteria.andOperator(searchCriteria);
     }
     return criteria;
