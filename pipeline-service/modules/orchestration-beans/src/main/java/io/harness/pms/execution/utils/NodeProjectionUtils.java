@@ -24,11 +24,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 public class NodeProjectionUtils {
   public static final Set<String> withId = Sets.newHashSet(NodeExecutionKeys.uuid);
-
-  public static final Set<String> withParentId = Sets.newHashSet(NodeExecutionKeys.parentId);
-
   public static final Set<String> withNextId = Sets.newHashSet(NodeExecutionKeys.nextId);
-
   public static final Set<String> fieldsForRetryInterruptHandler = Sets.newHashSet(
       NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.oldRetry, NodeExecutionKeys.mode);
 

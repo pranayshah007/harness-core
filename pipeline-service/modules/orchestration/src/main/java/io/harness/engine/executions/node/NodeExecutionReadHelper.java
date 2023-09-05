@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecutionStatusResult;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
@@ -32,6 +33,7 @@ import org.springframework.data.util.CloseableIterator;
 @Singleton
 public class NodeExecutionReadHelper {
   private static final int MAX_BATCH_SIZE = 1000;
+  private static final String COLLECTION_NAME = "nodeExecutions";
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate analyticsMongoTemplate;
 
@@ -58,10 +60,21 @@ public class NodeExecutionReadHelper {
     return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
   }
 
+  public Optional<NodeExecutionStatusResult> getStatus(Query query) {
+    validateNodeExecutionProjection(query);
+    return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecutionStatusResult.class, COLLECTION_NAME));
+  }
+
   public CloseableIterator<NodeExecution> fetchNodeExecutions(Query query) {
     query.cursorBatchSize(MAX_BATCH_SIZE);
     validateNodeExecutionStreamQuery(query);
     return mongoTemplate.stream(query, NodeExecution.class);
+  }
+
+  public <T> CloseableIterator<T> fetchNodeExecutions(Query query, Class<T> clazz) {
+    query.cursorBatchSize(MAX_BATCH_SIZE);
+    validateNodeExecutionStreamQuery(query);
+    return mongoTemplate.stream(query, clazz, COLLECTION_NAME);
   }
 
   public CloseableIterator<NodeExecution> fetchNodeExecutionsWithAllFields(Query query) {

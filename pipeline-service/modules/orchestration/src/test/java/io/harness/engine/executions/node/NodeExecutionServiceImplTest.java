@@ -42,6 +42,7 @@ import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.execution.NodeExecutionStatusResult;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
 import io.harness.plan.PlanNode;
@@ -312,6 +313,34 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     assertThat(found).isNotNull();
 
     assertThat(found.getUuid()).isEqualTo(nodeExecutionId);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestGetStatus() {
+    String nodeExecutionId = generateUuid();
+    String planNodeUuid = generateUuid();
+    String planExecutionUuid = generateUuid();
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(nodeExecutionId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .startTs(System.currentTimeMillis())
+            .nodeId(planNodeUuid)
+            .name("name")
+            .identifier("dummy")
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .status(Status.SUCCEEDED)
+            .build();
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+    nodeExecutionService.save(nodeExecution);
+
+    NodeExecutionStatusResult found = nodeExecutionService.getStatus(nodeExecutionId);
+    assertThat(found).isNotNull();
+
+    assertThat(found.getStatus()).isEqualTo(SUCCEEDED);
   }
 
   @Test
