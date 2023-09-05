@@ -376,6 +376,7 @@ public class TerragruntTaskService {
                   .targets(taskParameters.getTargets())
                   .backendConfigFile(filesContext.getBackendFile())
                   .varFiles(filesContext.getVarFiles())
+                  .additionalCliArgs(taskParameters.getTerragruntCommandFlags())
                   .build())
         .runType(getCliRunType(taskParameters))
         .envVars(taskParameters.getEnvVars())
