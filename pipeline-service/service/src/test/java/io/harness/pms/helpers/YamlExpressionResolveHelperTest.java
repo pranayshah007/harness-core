@@ -25,6 +25,7 @@ import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecutionAmbianceResult;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.pipeline.ResolveInputYamlType;
@@ -97,8 +98,8 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
   @Owner(developers = VIVEK_DIXIT)
   @Category(UnitTests.class)
   public void resolveExpressionsInYamlTestWithNullNodeExecution() {
-    Optional<NodeExecution> nodeExecution = Optional.ofNullable(null);
-    doReturn(nodeExecution).when(nodeExecutionService).getPipelineNodeExecutionWithProjections(any(), any());
+    Optional<NodeExecutionAmbianceResult> nodeExecution = Optional.ofNullable(null);
+    doReturn(nodeExecution).when(nodeExecutionService).getPipelineNodeExecution(any());
     Assertions
         .assertThatCode(()
                             -> yamlExpressionResolveHelper.resolveExpressionsInYaml(
@@ -118,9 +119,9 @@ public class YamlExpressionResolveHelperTest extends CategoryTest {
         + "   - <+pipeline.name>\n";
     EngineExpressionEvaluator expressionEvaluator =
         prepareEngineExpressionEvaluator(YamlUtils.read(arrayTypeString, Map.class));
-    Optional<NodeExecution> nodeExecution =
-        Optional.ofNullable(NodeExecution.builder().ambiance(Ambiance.newBuilder().build()).build());
-    doReturn(nodeExecution).when(nodeExecutionService).getPipelineNodeExecutionWithProjections(any(), any());
+    Optional<NodeExecutionAmbianceResult> nodeExecution =
+        Optional.ofNullable(NodeExecutionAmbianceResult.builder().ambiance(Ambiance.newBuilder().build()).build());
+    doReturn(nodeExecution).when(nodeExecutionService).getPipelineNodeExecution(any());
     doReturn(expressionEvaluator).when(pmsEngineExpressionService).prepareExpressionEvaluator(any());
     assertThatCode(()
                        -> yamlExpressionResolveHelper.resolveExpressionsInYaml(
