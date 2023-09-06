@@ -35,4 +35,6 @@ if [[ -z "$FIX_SRM_VERSION_ID" ]]; then
   echo "fix version not found - aborting script"
   # shellcheck disable=SC2242
   exit -1
+else
+  export FIX_SRM_VERSION_ID
 fi
