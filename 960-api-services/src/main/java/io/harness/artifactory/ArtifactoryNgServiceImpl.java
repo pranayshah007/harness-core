@@ -150,9 +150,16 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
         build = buildDetail.orElse(null);
       }
     } else {
-      List<BuildDetails> builds = getArtifactListWithPathFilter(
+      // Backward Compatibility for legacy case
+      List<BuildDetails> buildDetails = getArtifactListWithPathFilterFromFilePath(
           artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions);
-      build = isNotEmpty(builds) ? builds.get(0) : null;
+      if (isNotEmpty(buildDetails)) {
+        build = buildDetails.get(0);
+      } else {
+        List<BuildDetails> builds = getArtifactListWithPathFilter(
+            artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions);
+        build = isNotEmpty(builds) ? builds.get(0) : null;
+      }
     }
 
     if (build == null) {
@@ -176,6 +183,16 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     }
 
     return build;
+  }
+
+  private List<BuildDetails> getArtifactListWithPathFilterFromFilePath(ArtifactoryConfigRequest artifactoryConfig,
+      String repositoryName, String artifactDirectory, String artifactPathFilter, int maxVersions) {
+    String filePath = Paths.get(artifactDirectory, artifactPathFilter).toString();
+
+    List<BuildDetails> buildDetails =
+        artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, filePath, maxVersions);
+
+    return buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList());
   }
 
   @Override
