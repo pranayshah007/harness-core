@@ -20,6 +20,8 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.ASYNC_WAITING;
 import static io.harness.pms.contracts.execution.Status.EXPIRED;
+import static io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPositionInfoKeys;
+import static io.harness.steps.barriers.beans.BarrierSetupInfo.BarrierSetupInfoKeys;
 
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
@@ -310,30 +312,26 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
             .set(BarrierExecutionInstanceKeys.identifier, barrierExecutionInstance.getIdentifier())
             .set(BarrierExecutionInstanceKeys.planExecutionId, barrierExecutionInstance.getPlanExecutionId())
             .set(BarrierExecutionInstanceKeys.barrierState, STANDING)
-            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfo.BarrierSetupInfoKeys.name,
+            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.name,
                 barrierExecutionInstance.getSetupInfo().getName())
-            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfo.BarrierSetupInfoKeys.identifier,
+            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.identifier,
                 barrierExecutionInstance.getSetupInfo().getIdentifier())
-            .addToSet(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfo.BarrierSetupInfoKeys.stages)
+            .addToSet(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.stages)
             .each(barrierExecutionInstance.getSetupInfo().getStages())
-            .set(BarrierExecutionInstanceKeys.positionInfo + "."
-                    + BarrierPositionInfo.BarrierPositionInfoKeys.planExecutionId,
+            .set(BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfoKeys.planExecutionId,
                 barrierExecutionInstance.getPositionInfo().getPlanExecutionId())
-            .addToSet(BarrierExecutionInstanceKeys.positionInfo + "."
-                + BarrierPositionInfo.BarrierPositionInfoKeys.barrierPositionList)
+            .addToSet(BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfoKeys.barrierPositionList)
             .each(barrierExecutionInstance.getPositionInfo().getBarrierPositionList());
     if (barrierExecutionInstance.getSetupInfo().getStrategySetupIds() != null) {
-      update
-          .addToSet(
-              BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfo.BarrierSetupInfoKeys.strategySetupIds)
+      update.addToSet(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.strategySetupIds)
           .each(barrierExecutionInstance.getSetupInfo().getStrategySetupIds());
     }
     return update;
   }
 
   private Update obtainBarrierPositionInfoUpdate(List<BarrierPositionInfo.BarrierPosition> barrierPositions) {
-    return new Update().set(BarrierExecutionInstanceKeys.positionInfo + "."
-            + BarrierPositionInfo.BarrierPositionInfoKeys.barrierPositionList,
+    return new Update().set(
+        BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfoKeys.barrierPositionList,
         barrierPositions);
   }
 
