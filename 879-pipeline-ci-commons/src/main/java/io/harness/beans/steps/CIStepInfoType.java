@@ -89,7 +89,8 @@ public enum CIStepInfoType {
   ACTION_V1(CI_LITE_ENGINE, "action"),
   SSCA_ORCHESTRATION(CI_LITE_ENGINE, "SscaOrchestration"),
   SSCA_ENFORCEMENT(CI_LITE_ENGINE, "SscaEnforcement"),
-  PROVENANCE(CI_LITE_ENGINE, "provenance");
+  PROVENANCE(CI_LITE_ENGINE, "provenance"),
+  SLSA_VERIFICATION(CI_LITE_ENGINE, "SlsaVerification");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;
