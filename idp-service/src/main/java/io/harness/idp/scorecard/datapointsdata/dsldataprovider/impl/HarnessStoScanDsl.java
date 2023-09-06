@@ -46,6 +46,7 @@ public class HarnessStoScanDsl implements DslDataProvider {
     // ci pipeline detail
     Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
         DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    log.info("CI identifiers  in HarnessStoScanDsl - {}", ciIdentifiers);
 
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
@@ -68,9 +69,17 @@ public class HarnessStoScanDsl implements DslDataProvider {
           e);
     }
 
+    log.info("CI Response in  HarnessStoScanDsl - {}, CI Pipeline url - {}", responseCI,
+        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+
     // cd pipeline detail
     Map<String, String> serviceIdentifiers = DslUtils.getCdServiceUrlIdentifiers(
         DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+
+    log.info("Service URL in HarnessStoScanDsl - {}",
+        DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    log.info("Service identifiers  in HarnessStoScanDsl - {}", serviceIdentifiers);
+
     long currentTime = System.currentTimeMillis();
     DeploymentsInfo serviceDeploymentInfo = null;
     try {
@@ -92,11 +101,13 @@ public class HarnessStoScanDsl implements DslDataProvider {
               serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY)),
           e);
     }
+    log.info("Service DeploymentInfo in HarnessStoScanDsl - {}", serviceDeploymentInfo);
 
     String cdPipelineId = null;
     if (serviceDeploymentInfo != null && !serviceDeploymentInfo.getDeployments().isEmpty()) {
       cdPipelineId = serviceDeploymentInfo.getDeployments().get(0).getPipelineIdentifier();
     }
+    log.info("CD Pipeline id in HarnessStoScanDsl - {}", cdPipelineId);
     PMSPipelineResponseDTO responseCD = null;
     if (cdPipelineId != null) {
       try {
@@ -114,6 +125,8 @@ public class HarnessStoScanDsl implements DslDataProvider {
             e);
       }
     }
+    log.info("CD Response in HarnessStoScanDsl - {}, CD Pipeline url - {}", responseCD,
+        DslDataProviderUtil.getCdPipelineFromIdentifiers(serviceIdentifiers, cdPipelineId));
 
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
@@ -122,6 +135,7 @@ public class HarnessStoScanDsl implements DslDataProvider {
                                 DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()),
                                 DslDataProviderUtil.getCdPipelineFromIdentifiers(serviceIdentifiers, cdPipelineId)));
     }
+    log.info("Return data in HarnessStoScanDsl - {}", returnData);
     return returnData;
   }
 }

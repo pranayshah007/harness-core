@@ -36,7 +36,9 @@ public class DslUtils {
     returnMap.put(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY, splitText[5]);
     returnMap.put(DslConstants.CD_ORG_IDENTIFIER_KEY, splitText[8]);
     returnMap.put(DslConstants.CD_PROJECT_IDENTIFIER_KEY, splitText[10]);
-    returnMap.put(DslConstants.CD_SERVICE_IDENTIFIER_KEY, splitText[12]);
+    String lastSplitContainingServiceId = splitText[12];
+    String[] splitForServiceId = lastSplitContainingServiceId.split("\\?");
+    returnMap.put(DslConstants.CD_SERVICE_IDENTIFIER_KEY, splitForServiceId[0]);
     returnMap.put(DslConstants.CD_SERVICE_HOST, splitText[2]);
     return returnMap;
   }

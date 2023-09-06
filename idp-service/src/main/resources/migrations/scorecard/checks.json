@@ -170,7 +170,7 @@
     "rules": [
       {
         "data_source_identifier": "harness",
-        "data_point_identifier": "%ofCIPipelinePassingInPast7Days",
+        "data_point_identifier": "PercentageOfCIPipelinePassingInPastSevenDays",
         "operator": ">",
         "value": "80"
       }
@@ -192,7 +192,7 @@
         "data_source_identifier": "harness",
         "data_point_identifier": "noTestsFailingInCiPipeline",
         "operator": "==",
-        "value": "0"
+        "value": "true"
       }
     ],
     "expression": "harness.noTestsFailingInCiPipeline == 0",

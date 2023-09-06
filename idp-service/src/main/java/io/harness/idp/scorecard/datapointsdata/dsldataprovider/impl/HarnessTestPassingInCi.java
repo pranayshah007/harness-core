@@ -68,10 +68,14 @@ public class HarnessTestPassingInCi implements DslDataProvider {
               ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
           e);
     }
+    log.info("CI Response in HarnessTestPassingInCi - {}, CI Pipeline url - {}", responseCI,
+        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
 
     int buildNo = DslDataProviderUtil.getRunSequenceForPipelineExecution(responseCI);
+    log.info("Build no - {} in HarnessTestPassingInCi", buildNo);
 
     String token = null;
+    log.info("Account id - {}", ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY));
     try {
       token = tiServiceUtils.getTIServiceToken(
           ciIdentifiers.get(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY)));
@@ -103,6 +107,7 @@ public class HarnessTestPassingInCi implements DslDataProvider {
               ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
           e);
     }
+    log.info("Summary Report in HarnessTestPassingInCi - {}", summaryReport);
 
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
@@ -113,6 +118,7 @@ public class HarnessTestPassingInCi implements DslDataProvider {
                             .getParsedValue(summaryReport, dataPointIdentifier,
                                 DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml())));
     }
+    log.info("Return data in HarnessTestPassingInCi - {}", returnData);
 
     return returnData;
   }

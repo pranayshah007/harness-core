@@ -62,6 +62,8 @@ public class HarnessPipelineSuccessPercent implements DslDataProvider {
               ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
           e);
     }
+    log.info("Dashboard response in HarnessPipelineSuccessPercent - {}, CI Pipeline url - {}", dashboard,
+        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
 
     Map<String, Object> returnData = new HashMap<>();
     List<DataPointInputValues> dataPointInputValuesList =
@@ -73,7 +75,8 @@ public class HarnessPipelineSuccessPercent implements DslDataProvider {
                             .getParsedValue(dashboard, dataPointIdentifier,
                                 DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml())));
     }
-
+    log.info("Return data in HarnessPipelineSuccessPercent DSL - {}, CI  Pipeline url - {}", returnData,
+        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
     return returnData;
   }
 }

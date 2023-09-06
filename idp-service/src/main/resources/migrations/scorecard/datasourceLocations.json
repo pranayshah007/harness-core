@@ -59,7 +59,7 @@
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "harness_sto_scan_dsl",
     "dataSourceIdentifier": "harness",
-    "type": "DirectHttp",
+    "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
       "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
@@ -77,7 +77,7 @@
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "harness_policy_evaluation_dsl",
     "dataSourceIdentifier": "harness",
-    "type": "DirectHttp",
+    "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
       "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
@@ -95,7 +95,7 @@
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "harness_ci_success_percent_in_seven_days",
     "dataSourceIdentifier": "harness",
-    "type": "DirectHttp",
+    "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
       "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
@@ -113,7 +113,7 @@
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "harness_test_passing_on_ci_is_zero",
     "dataSourceIdentifier": "harness",
-    "type": "DirectHttp",
+    "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
       "url": "https://{HOST}/v1/data-sources/harness/data-point/values",

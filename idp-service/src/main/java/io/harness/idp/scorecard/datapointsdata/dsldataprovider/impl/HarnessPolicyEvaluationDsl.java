@@ -61,10 +61,16 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
               ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
           e);
     }
+    log.info("CI response in HarnessPolicyEvaluationDsl - {}, CI Pipeline Url - {}", responseCI,
+        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
 
     // cd pipeline detail
     Map<String, String> serviceIdentifiers = DslUtils.getCdServiceUrlIdentifiers(
         DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    log.info("Service Url in HarnessPolicyEvaluationDsl : {}",
+        DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    log.info("Service identifiers in HarnessPolicyEvaluationDsl - {}", serviceIdentifiers);
+
     long currentTime = System.currentTimeMillis();
     DeploymentsInfo serviceDeploymentInfo = null;
     try {
@@ -86,11 +92,13 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
               serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY)),
           e);
     }
+    log.info("Service deployment info in HarnessPolicyEvaluationDsl - {}", serviceDeploymentInfo);
 
     String cdPipelineId = null;
     if (serviceDeploymentInfo != null && !serviceDeploymentInfo.getDeployments().isEmpty()) {
       cdPipelineId = serviceDeploymentInfo.getDeployments().get(0).getPipelineIdentifier();
     }
+    log.info("CD pipeline id in HarnessPolicyEvaluationDsl - {}", cdPipelineId);
 
     Object responseCD = null;
 
@@ -111,6 +119,8 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
             e);
       }
     }
+    log.info("CD pipeline response in HarnessPolicyEvaluationDsl - {}, CD Pipeline url -{}", responseCD,
+        DslDataProviderUtil.getCdPipelineFromIdentifiers(serviceIdentifiers, cdPipelineId));
 
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
@@ -124,6 +134,7 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
                                 DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()),
                                 DslDataProviderUtil.getCdPipelineFromIdentifiers(serviceIdentifiers, cdPipelineId)));
     }
+    log.info("Return data in HarnessPolicyEvaluationDsl - {}", returnData);
     return returnData;
   }
 }
