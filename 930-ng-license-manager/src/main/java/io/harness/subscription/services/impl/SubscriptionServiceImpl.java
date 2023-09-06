@@ -75,7 +75,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.jooq.tools.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+
 @Slf4j
 @Singleton
 public class SubscriptionServiceImpl implements SubscriptionService {

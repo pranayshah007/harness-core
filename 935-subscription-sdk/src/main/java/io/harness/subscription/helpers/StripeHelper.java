@@ -7,6 +7,9 @@
 
 package io.harness.subscription.helpers;
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
@@ -22,6 +25,8 @@ import com.stripe.model.Price;
 import java.util.List;
 import java.util.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+        components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_DASHBOARD})
 public interface StripeHelper {
   CustomerDetailDTO createCustomer(CustomerParams customerParams);
 
