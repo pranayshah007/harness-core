@@ -27,7 +27,7 @@ public class BarrierPositionInfo {
   List<BarrierPosition> barrierPositionList;
 
   @Data
-  @Builder
+  @Builder(toBuilder = true)
   @FieldNameConstants(innerTypeName = "BarrierPositionKeys")
   @FieldDefaults(level = AccessLevel.PRIVATE)
   public static class BarrierPosition {
@@ -42,6 +42,9 @@ public class BarrierPositionInfo {
 
     String stepSetupId;
     String stepRuntimeId;
+
+    String strategySetupId;
+    String strategyNodeType;
 
     boolean stepGroupRollback;
 
