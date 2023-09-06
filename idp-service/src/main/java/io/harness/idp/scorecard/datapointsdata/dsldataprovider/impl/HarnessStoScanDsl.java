@@ -12,6 +12,7 @@ import io.harness.dashboard.DashboardResourceClient;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory.PipelineInfoResponseFactory;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.DslConstants;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.base.DslDataProvider;
+import io.harness.idp.scorecard.datapointsdata.dsldataprovider.utils.DslDataProviderUtil;
 import io.harness.idp.scorecard.datapointsdata.utils.DslUtils;
 import io.harness.ng.core.dashboard.DeploymentsInfo;
 import io.harness.pipeline.remote.PipelineServiceClient;
@@ -39,9 +40,12 @@ public class HarnessStoScanDsl implements DslDataProvider {
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
     Map<String, Object> returnData = new HashMap<>();
 
+    log.info("STO scan setup DSL invoked for account - {} datapoints - {}", accountIdentifier,
+        dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());
+
     // ci pipeline detail
-    Map<String, String> ciIdentifiers =
-        DslUtils.getCiPipelineUrlIdentifiers(dataSourceDataPointInfo.getCiPipelineUrl());
+    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
+        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
 
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
@@ -65,8 +69,8 @@ public class HarnessStoScanDsl implements DslDataProvider {
     }
 
     // cd pipeline detail
-    Map<String, String> serviceIdentifiers =
-        DslUtils.getCdServiceUrlIdentifiers(dataSourceDataPointInfo.getServiceUrl());
+    Map<String, String> serviceIdentifiers = DslUtils.getCdServiceUrlIdentifiers(
+        DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
     long currentTime = System.currentTimeMillis();
     DeploymentsInfo serviceDeploymentInfo = null;
     try {
@@ -114,7 +118,9 @@ public class HarnessStoScanDsl implements DslDataProvider {
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
       returnData.putAll(pipelineInfoFactory.getResponseParser(dataPointIdentifier)
-                            .getParsedValue(responseCI, responseCD, dataPointIdentifier));
+                            .getParsedValue(responseCI, responseCD, dataPointIdentifier,
+                                DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()),
+                                DslDataProviderUtil.getCdPipelineFromIdentifiers(serviceIdentifiers, cdPipelineId)));
     }
     return returnData;
   }

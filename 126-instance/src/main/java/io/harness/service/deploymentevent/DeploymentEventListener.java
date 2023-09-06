@@ -20,6 +20,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
@@ -88,6 +89,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
 
       StepType stepType = AmbianceUtils.getCurrentStepType(ambiance);
       List<ServerInstanceInfo> serverInstanceInfoList = instanceInfoService.listServerInstances(ambiance, stepType);
+      DeploymentOutcomeMetadata deploymentOutcomeMetadata =
+          instanceInfoService.getDeploymentOutcomeMetadata(ambiance, stepType);
       if (serverInstanceInfoList.isEmpty()) {
         return;
       }
@@ -96,8 +99,9 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
 
       InfrastructureMappingDTO infrastructureMappingDTO =
           createInfrastructureMappingIfNotExists(ambiance, serviceStepOutcome, infrastructureOutcome);
-      DeploymentSummaryDTO deploymentSummaryDTO = createDeploymentSummary(ambiance, serviceStepOutcome,
-          infrastructureOutcome, infrastructureMappingDTO, serverInstanceInfoList, event.getStatus());
+      DeploymentSummaryDTO deploymentSummaryDTO =
+          createDeploymentSummary(ambiance, serviceStepOutcome, infrastructureOutcome, infrastructureMappingDTO,
+              serverInstanceInfoList, event.getStatus(), deploymentOutcomeMetadata);
 
       instanceSyncService.processInstanceSyncForNewDeployment(
           new DeploymentEvent(deploymentSummaryDTO, null, infrastructureOutcome));
@@ -159,11 +163,14 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
 
   private DeploymentSummaryDTO createDeploymentSummary(Ambiance ambiance, ServiceStepOutcome serviceOutcome,
       InfrastructureOutcome infrastructureOutcome, InfrastructureMappingDTO infrastructureMappingDTO,
-      List<ServerInstanceInfo> serverInstanceInfoList, Status status) {
+      List<ServerInstanceInfo> serverInstanceInfoList, Status status,
+      DeploymentOutcomeMetadata deploymentOutcomeMetadata) {
     AbstractInstanceSyncHandler abstractInstanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
         serviceOutcome.getType(), infrastructureOutcome.getKind());
     DeploymentInfoDTO deploymentInfoDTO =
         abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, serverInstanceInfoList);
+    deploymentInfoDTO =
+        abstractInstanceSyncHandler.updateDeploymentInfoDTO(deploymentInfoDTO, deploymentOutcomeMetadata);
     Level stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance).get();
     RollbackStatus rollbackStatus = RollbackStatus.NOT_STARTED;
     if (ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())

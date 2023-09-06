@@ -54,6 +54,7 @@ import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.user.remote.UserFilterNG;
 
+import software.wings.audit.AuditSkip;
 import software.wings.beans.Account;
 import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
@@ -466,6 +467,7 @@ public class UserResourceNG {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Successfully updated user information")
       })
+  @AuditSkip
   public RestResponse<Optional<UserInfo>>
   updateUser(@Body UserInfo userInfo) {
     User user = convertNgUserToUserWithNameUpdated(userInfo);

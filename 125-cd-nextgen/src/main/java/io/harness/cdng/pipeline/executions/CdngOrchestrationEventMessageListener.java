@@ -23,6 +23,8 @@ import io.harness.pms.events.base.PmsAbstractMessageListener;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,6 +38,11 @@ public class CdngOrchestrationEventMessageListener
   public CdngOrchestrationEventMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, CDSdkOrchestrationEventHandler cdSdkOrchestrationEventHandler) {
     super(serviceName, OrchestrationEvent.class, cdSdkOrchestrationEventHandler);
+  }
+
+  @Override
+  protected OrchestrationEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return OrchestrationEvent.parseFrom(message);
   }
 
   @Override

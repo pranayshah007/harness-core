@@ -83,6 +83,16 @@ public class DebugResource {
 
   @GET
   @Timed
+  @Path("schedule-cleanup")
+  @ApiOperation(
+      value = "Schedule sidekick jobs for cleanup of verificationTasks", nickname = "scheduleCleanup", hidden = true)
+  public void
+  scheduleCleanup(@NotNull @QueryParam("identifiers") List<String> verificationTaskIds) {
+    debugService.scheduleCleanup(verificationTaskIds);
+  }
+
+  @GET
+  @Timed
   @Path("isSLIDeleted/{identifier}")
   @ApiOperation(value = "Checks whether SLI resources are deleted", nickname = "isSLIResourcesDeleted", hidden = true)
   public RestResponse<Boolean> isSLIDeleted(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
@@ -106,6 +116,17 @@ public class DebugResource {
   public RestResponse<Boolean> forceDeleteSLI(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> identifiers) {
     return new RestResponse<>(debugService.forceDeleteSLI(projectParams.getProjectParams(), identifiers));
+  }
+
+  @DELETE
+  @Timed
+  @Path("composite-slo")
+  @ApiOperation(value = "Force deletes composite SLOs and associated entities", nickname = "forceDeleteCompositeSLO",
+      hidden = true)
+  public RestResponse<Boolean>
+  forceDeleteCompositeSLO(@NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> identifiers) {
+    return new RestResponse<>(debugService.forceDeleteCompositeSLO(projectParams, identifiers));
   }
 
   @GET

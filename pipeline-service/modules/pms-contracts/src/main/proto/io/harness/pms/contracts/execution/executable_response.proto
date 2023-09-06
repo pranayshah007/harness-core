@@ -74,6 +74,7 @@ message StrategyMetadata {
     MatrixMetadata matrixMetadata = 3;
     ForMetadata forMetadata = 4;
   }
+  string identifierPostFix = 5;
 }
 
 message ForMetadata {
@@ -86,6 +87,7 @@ message MatrixMetadata {
   repeated int32 matrixCombination = 2;
   string subType = 3;
   repeated string matrixKeysToSkipInName = 4;
+  string nodeName = 5;
 }
 
 message ChildChainExecutableResponse {

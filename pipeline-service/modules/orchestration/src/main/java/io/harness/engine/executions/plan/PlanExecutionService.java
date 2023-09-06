@@ -60,7 +60,12 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
 
   PlanExecution updateCalculatedStatus(String planExecutionId);
 
-  Status calculateStatusExcluding(String planExecutionId, String excludedNodeExecutionId);
+  /**
+   * Updated planExecution status if calculated status are non-final and non-flowing statuses under Lock
+   * @param planExecutionId
+   * @param excludeNodeExecutionStatus
+   */
+  void calculateAndUpdateRunningStatusUnderLock(String planExecutionId, Status excludeNodeExecutionStatus);
 
   List<PlanExecution> findByStatusWithProjections(Set<Status> statuses, Set<String> fieldNames);
 
@@ -92,6 +97,4 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
    * @param planExecutionId Ids of to be updated TTL planExecutions
    */
   void updateTTL(String planExecutionId, Date ttlDate);
-
-  void calculateAndUpdateRunningStatus(String planNodeId, String nodeId);
 }

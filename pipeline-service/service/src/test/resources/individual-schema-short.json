@@ -1,0 +1,13 @@
+{
+  "data": {
+    "title": "K8sApplyStepNode",
+    "type": "object",
+    "required": [
+      "identifier",
+      "name",
+      "spec",
+      "type"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

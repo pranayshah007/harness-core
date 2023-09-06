@@ -27,15 +27,15 @@ import io.harness.engine.observers.PlanExecutionDeleteObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.exception.EntityNotFoundException;
-import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.ExecutionMetadataKeys;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -47,6 +47,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -77,6 +78,9 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Inject private NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject private PersistentLocker persistentLocker;
+
+  private static final String PLAN_EXECUTION_STATUS_UPDATE_LOCK = "PLAN_STATUS_UPDATE_LOCK_";
 
   @Getter private final Subject<PlanStatusUpdateObserver> planStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<PlanExecutionDeleteObserver> planExecutionDeleteObserverSubject = new Subject<>();
@@ -223,26 +227,62 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     return mongoTemplate.find(new Query(criteria), PlanExecution.class);
   }
 
+  @Override
   public Status calculateStatus(String planExecutionId) {
     List<Status> statuses = nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
     return OrchestrationUtils.calculateStatusForPlanExecution(statuses, planExecutionId);
   }
 
-  @Override
-  public Status calculateStatusExcluding(String planExecutionId, String excludedNodeExecutionId) {
-    List<NodeExecution> nodeExecutions = new LinkedList<>();
-    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
-             planExecutionId, NodeProjectionUtils.withStatus)) {
-      while (iterator.hasNext()) {
-        nodeExecutions.add(iterator.next());
-      }
-    }
+  /*
+    This functions calculates the status of the based on status of all node execution status excluding current node. If
+    the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
+    matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it
+    should be marked to Running
 
-    List<Status> filtered = nodeExecutions.stream()
-                                .filter(ne -> !ne.getUuid().equals(excludedNodeExecutionId))
-                                .map(NodeExecution::getStatus)
-                                .collect(Collectors.toList());
-    return StatusUtils.calculateStatus(filtered, planExecutionId);
+    Updating planExecution status can cause race condition, thus using lock on planExecutionId so that updates are
+    sequential
+     */
+
+  @Override
+  public void calculateAndUpdateRunningStatusUnderLock(String planExecutionId, Status excludeNodeExecutionStatus) {
+    String lockName = PLAN_EXECUTION_STATUS_UPDATE_LOCK + planExecutionId;
+    try (AcquiredLock<?> lock =
+             persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
+      if (lock == null) {
+        log.debug(String.format(
+            "[PLAN_EXECUTION_STATUS_UPDATE] Not able to take lock on plan status update for lockName - %s, returning early.",
+            lockName));
+      }
+
+      Status updateStatusTo = RUNNING;
+      Status planExecutionStatus = getStatus(planExecutionId);
+      if (planExecutionStatus == RUNNING) {
+        return;
+      }
+      log.info("Calculating the planExecution status as current status {}", planExecutionStatus);
+      Status planStatus = calculateNonFlowingAndNonFinalStatusExcluding(planExecutionId, excludeNodeExecutionStatus);
+      if (!StatusUtils.isFinalStatus(planStatus)) {
+        updateStatusTo = planStatus;
+      }
+      log.info("Marking PlanExecution %s status to %s", planExecutionId, updateStatusTo);
+      updateStatus(planExecutionId, updateStatusTo);
+
+    } catch (Exception exception) {
+      log.error(String.format(
+                    "[PLAN_EXECUTION_STATUS_UPDATE] Exception Occurred while updating status for planExecutionId: %s",
+                    planExecutionId),
+          exception);
+    }
+  }
+
+  // excludeCurrentNodeExecutionStatus if some status of nodeExecution you want to exclude from calculateStatus
+  private Status calculateNonFlowingAndNonFinalStatusExcluding(
+      String planExecutionId, Status excludeCurrentNodeExecutionStatus) {
+    List<Status> nonFinalStatusList = nodeExecutionService.fetchNonFlowingAndNonFinalStatuses(planExecutionId);
+    if (excludeCurrentNodeExecutionStatus != null) {
+      nonFinalStatusList.remove(excludeCurrentNodeExecutionStatus);
+    }
+    return StatusUtils.calculateStatus(nonFinalStatusList, planExecutionId);
   }
 
   public PlanExecution updateCalculatedStatus(String planExecutionId) {
@@ -382,22 +422,5 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
       planExecutionRepository.multiUpdatePlanExecution(query, ops);
       return true;
     });
-  }
-
-  /*
-    This functions calculates the status of the based on status of all node execution status excluding current node. If
-    the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
-    matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it
-    should be marked to Running
-     */
-  @Override
-  public void calculateAndUpdateRunningStatus(String planNodeId, String nodeExecutionId) {
-    Status updateStatusTo = RUNNING;
-    Status planStatus = calculateStatusExcluding(planNodeId, nodeExecutionId);
-    if (!StatusUtils.isFinalStatus(planStatus)) {
-      updateStatusTo = planStatus;
-    }
-    log.info("Marking PlanExecution %s status to %s", planNodeId, updateStatusTo);
-    updateStatus(planNodeId, updateStatusTo);
   }
 }

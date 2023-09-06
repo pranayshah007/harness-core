@@ -57,6 +57,7 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.mappers.GraphLayoutDtoMapper;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -494,7 +495,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
               .setNodeUUID("aBcDeFgH")
               .setName("Node name")
               .setNodeGroup("STAGE")
-              .setEdgeLayoutList(EdgeLayoutList.newBuilder().addNextIds("nextId").build())
+              .setEdgeLayoutList(EdgeLayoutList.newBuilder().addNextIds(PlanCreatorConstants.NEXT_ID).build())
               .build();
       GraphLayoutNodeDTO graphLayoutNodeDTO1 = GraphLayoutDtoMapper.toDto(graphLayoutNode1);
       HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
@@ -508,7 +509,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                              .setNodeGroup("STAGE")
                                              .build();
       GraphLayoutNodeDTO graphLayoutNodeDTO2 = GraphLayoutDtoMapper.toDto(graphLayoutNode2);
-      layoutNodeDTOMap.put("nextId", graphLayoutNodeDTO2);
+      layoutNodeDTOMap.put(PlanCreatorConstants.NEXT_ID, graphLayoutNodeDTO2);
 
       Ambiance ambiance = Ambiance.newBuilder()
                               .putSetupAbstractions("accountId", accountId)

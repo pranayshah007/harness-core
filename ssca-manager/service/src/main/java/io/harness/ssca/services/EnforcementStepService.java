@@ -10,6 +10,10 @@ package io.harness.ssca.services;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomRequestBody;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomResponseBody;
 import io.harness.spec.server.ssca.v1.model.EnforcementSummaryResponse;
+import io.harness.spec.server.ssca.v1.model.PolicyViolation;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface EnforcementStepService {
   EnforceSbomResponseBody enforceSbom(
@@ -17,4 +21,7 @@ public interface EnforcementStepService {
 
   EnforcementSummaryResponse getEnforcementSummary(
       String accountId, String orgIdentifier, String projectIdentifier, String enforcementId);
+
+  Page<PolicyViolation> getPolicyViolations(String accountId, String orgIdentifier, String projectIdentifier,
+      String enforcementId, String searchText, Pageable pageable);
 }

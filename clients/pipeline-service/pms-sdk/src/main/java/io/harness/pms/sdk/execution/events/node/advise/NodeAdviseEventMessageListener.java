@@ -21,6 +21,8 @@ import io.harness.pms.sdk.core.execution.events.node.advise.NodeAdviseEventHandl
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -30,5 +32,10 @@ public class NodeAdviseEventMessageListener extends PmsAbstractMessageListener<A
   public NodeAdviseEventMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, NodeAdviseEventHandler nodeAdviseEventHandler) {
     super(serviceName, AdviseEvent.class, nodeAdviseEventHandler);
+  }
+
+  @Override
+  protected AdviseEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return AdviseEvent.parseFrom(message);
   }
 }

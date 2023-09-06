@@ -18,6 +18,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.rule.Owner;
@@ -31,15 +32,17 @@ public class GraphLayoutDtoMapperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testToDto() {
-    GraphLayoutNode graphLayoutNode =
-        GraphLayoutNode.newBuilder()
-            .setNodeIdentifier("nodeIdentifier")
-            .setNodeType("Approval")
-            .setNodeUUID("aBcDeFgH")
-            .setName("Node name")
-            .setNodeGroup("goodNodes")
-            .setEdgeLayoutList(EdgeLayoutList.newBuilder().addNextIds("nextId").addCurrentNodeChildren("child").build())
-            .build();
+    GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
+                                          .setNodeIdentifier("nodeIdentifier")
+                                          .setNodeType("Approval")
+                                          .setNodeUUID("aBcDeFgH")
+                                          .setName("Node name")
+                                          .setNodeGroup("goodNodes")
+                                          .setEdgeLayoutList(EdgeLayoutList.newBuilder()
+                                                                 .addNextIds(PlanCreatorConstants.NEXT_ID)
+                                                                 .addCurrentNodeChildren("child")
+                                                                 .build())
+                                          .build();
     GraphLayoutNodeDTO graphLayoutNodeDTO = GraphLayoutDtoMapper.toDto(graphLayoutNode);
     assertThat(graphLayoutNodeDTO.getNodeIdentifier()).isEqualTo("nodeIdentifier");
     assertThat(graphLayoutNodeDTO.getNodeType()).isEqualTo("Approval");
@@ -52,6 +55,6 @@ public class GraphLayoutDtoMapperTest extends CategoryTest {
     assertThat(edgeLayoutList.getCurrentNodeChildren()).hasSize(1);
     assertThat(edgeLayoutList.getCurrentNodeChildren()).contains("child");
     assertThat(edgeLayoutList.getNextIds()).hasSize(1);
-    assertThat(edgeLayoutList.getNextIds()).contains("nextId");
+    assertThat(edgeLayoutList.getNextIds()).contains(PlanCreatorConstants.NEXT_ID);
   }
 }

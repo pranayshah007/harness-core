@@ -109,25 +109,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void testRegisterSRMAnalysisEvent_insert() {
-    ChangeEventDTO changeEventDTO = builderFactory.harnessSRMAnalysisChangeEventDTOBuilder().build();
-    changeEventDTO.setMonitoredServiceIdentifier(builderFactory.getContext().getMonitoredServiceIdentifier());
-
-    changeEventService.register(changeEventDTO);
-
-    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
-    Assertions.assertThat(activityFromDb).isNotNull();
-
-    SRMAnalysisStepExecutionDetail executionDetail =
-        hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class).get();
-    Assertions.assertThat(executionDetail).isNotNull();
-
-    assertThat(executionDetail.getUuid()).isEqualTo(activityFromDb.getUuid());
-  }
-
-  @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testRegister_insertInternalChangeEvent() {

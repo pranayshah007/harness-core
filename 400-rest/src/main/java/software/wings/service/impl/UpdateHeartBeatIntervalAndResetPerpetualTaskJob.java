@@ -52,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UpdateHeartBeatIntervalAndResetPerpetualTaskJob implements Managed {
   private static final long DELAY_IN_MINUTES = 120;
   private static final long NEW_INTERVAL = 1800;
+  private static final long OLD_INTERVAL = 600;
 
   private static final String LOCK_NAME = "PERPETUAL_TASK_LEVEL_DATA_LOCK";
   private final String DEBUG_MESSAGE = "PerpetualTaskUpdation: ";
@@ -137,6 +138,7 @@ public class UpdateHeartBeatIntervalAndResetPerpetualTaskJob implements Managed 
           .find(persistence.createQuery(PerpetualTaskRecord.class)
                     .filter(PerpetualTaskRecordKeys.accountId, accountId)
                     .filter(PerpetualTaskRecordKeys.perpetualTaskType, CONNECTOR_TEST_CONNECTION)
+                    .filter(PerpetualTaskRecordKeys.intervalSeconds, OLD_INTERVAL)
                     .getQueryObject())
           .update(new BasicDBObject("$set", updateOperations)
                       .append("$unset",

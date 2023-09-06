@@ -13,6 +13,7 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabApiAccess;
@@ -40,6 +41,8 @@ import software.wings.security.authentication.oauth.OAuthConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -104,6 +107,16 @@ public class GitlabConnectorOAuthTokenRefresher implements Handler<GitlabConnect
 
     try {
       oAuthTokenRefresherHelper.updateContext();
+
+      LocalDate thresholdTime = LocalDate.now().minusMonths(1);
+      Long thresholdTimestamp = thresholdTime.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+
+      Long lastActivityTime = entity.getTimeWhenConnectorIsLastUpdated();
+      if (lastActivityTime != null && (lastActivityTime < thresholdTimestamp)
+          && entity.getConnectivityDetails().getStatus().equals(ConnectivityStatus.FAILURE)) {
+        return;
+      }
+
       GitlabOauthDTO gitlabOauthDTO = getGitlabOauthDecrypted(entity);
 
       SecretDTOV2 tokenDTO = getSecretSecretValue(entity, gitlabOauthDTO.getTokenRef());

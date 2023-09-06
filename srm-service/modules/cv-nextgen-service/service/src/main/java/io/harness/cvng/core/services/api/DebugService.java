@@ -30,6 +30,8 @@ public interface DebugService {
 
   boolean forceDeleteSLI(ProjectParams projectParams, List<String> sliIdentifiers);
 
+  boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> compositeSloIdentifiers);
+
   VerifyStepDebugResponse getVerifyStepDebugResponse(ProjectParams projectParams, String identifier);
 
   CompositeSLODebugResponse getCompositeSLODebugResponse(ProjectParams projectParams, String identifier);
@@ -44,4 +46,6 @@ public interface DebugService {
   void restoreSLOData(ProjectParams projectParams, String sloIdentifier, long startTime, long endTime);
 
   void updateFailedStateOfSLO(ProjectParams projectParams, String sloIdentifier, boolean failedState);
+
+  void scheduleCleanup(List<String> verificationTaskIds);
 }

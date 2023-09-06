@@ -91,11 +91,12 @@ public class StrategyStepV1 extends ChildrenExecutableWithRollbackAndRbac<Strate
       if (stepParameters.getStrategyConfig().getStrategyInfoConfig().isExpression()) {
         throw new InvalidRequestException("Expression for matrix at runtime could not be resolved!");
       } else {
-        children =
-            matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+        children = matrixConfigService.fetchChildren(
+            stepParameters.getStrategyConfig(), stepParameters.getChildNodeId(), ambiance);
       }
     } else if (stepParameters.getStrategyConfig().getType() == StrategyTypeV1.FOR) {
-      children = forConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+      children =
+          forConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId(), ambiance);
     }
     // If children list is not empty then return all the children.
     if (!children.isEmpty()) {

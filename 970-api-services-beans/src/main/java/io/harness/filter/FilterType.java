@@ -25,6 +25,7 @@ public enum FilterType {
   @JsonProperty("Deployment") DEPLOYMENT("Deployment"),
   @JsonProperty("Audit") AUDIT("Audit"),
   @JsonProperty("Template") TEMPLATE("Template"),
+  @JsonProperty("Trigger") TRIGGER("Trigger"),
   @JsonProperty("EnvironmentGroup") ENVIRONMENTGROUP("EnvironmentGroup"),
   @JsonProperty("FileStore") FILESTORE("FileStore"),
   @JsonProperty("CCMRecommendation") CCMRECOMMENDATION("CCMRecommendation"),

@@ -16,6 +16,7 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.plancreator.strategy.v1.ForConfigV1;
 import io.harness.plancreator.strategy.v1.StrategyConfigV1;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.yaml.ParameterField;
@@ -37,7 +38,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ForConfigServiceV1 implements StrategyConfigServiceV1 {
   @Override
-  public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfigV1 strategyConfig, String childNodeId) {
+  public List<ChildrenExecutableResponse.Child> fetchChildren(
+      StrategyConfigV1 strategyConfig, String childNodeId, Ambiance ambiance) {
     try {
       ForConfigV1 forConfig = (ForConfigV1) strategyConfig.getStrategyInfoConfig().getValue();
       List<ChildrenExecutableResponse.Child> children = new ArrayList<>();

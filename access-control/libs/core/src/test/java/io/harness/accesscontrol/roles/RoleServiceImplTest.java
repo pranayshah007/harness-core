@@ -8,6 +8,7 @@
 package io.harness.accesscontrol.roles;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static junit.framework.TestCase.assertEquals;
@@ -16,6 +17,7 @@ import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -28,6 +30,9 @@ import io.harness.accesscontrol.permissions.Permission;
 import io.harness.accesscontrol.permissions.PermissionFilter;
 import io.harness.accesscontrol.permissions.PermissionService;
 import io.harness.accesscontrol.permissions.PermissionStatus;
+import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.roleassignments.RoleAssignment;
+import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.roles.persistence.RoleDao;
@@ -47,6 +52,7 @@ import com.google.common.collect.Sets;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -418,5 +424,164 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     result = roleService.removePermissionFromRoles(permissionIdentifier, roleFilter);
     assertFalse(result);
     verify(roleDao, times(2)).removePermissionFromRoles(any(), any());
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testListWithPrincipalCountUser() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
+    Role role = Role.builder()
+                    .identifier(randomAlphabetic(10))
+                    .scopeIdentifier(randomAlphabetic(10))
+                    .name(randomAlphabetic(10))
+                    .build();
+    RoleAssignment roleAssignmentToUser = RoleAssignment.builder()
+                                              .identifier(randomAlphabetic(10))
+                                              .scopeIdentifier(role.getScopeIdentifier())
+                                              .roleIdentifier(role.getIdentifier())
+                                              .principalType(PrincipalType.USER)
+                                              .build();
+    RoleFilter roleFilter = RoleFilter.builder()
+                                .identifierFilter(Sets.newHashSet(roleAssignmentToUser.getRoleIdentifier()))
+                                .scopeIdentifier(role.getScopeIdentifier())
+                                .build();
+
+    PageResponse<Role> rolePageResponse = PageResponse.<Role>builder()
+                                              .content(Collections.singletonList(role))
+                                              .totalPages(1)
+                                              .totalItems(1)
+                                              .pageItemCount(1)
+                                              .pageSize(50)
+                                              .pageIndex(0)
+                                              .empty(false)
+                                              .build();
+    when(roleService.list(any(), any(RoleFilter.class), eq(true))).thenReturn(rolePageResponse);
+
+    PageResponse<RoleAssignment> roleAssignmentPageResponse =
+        PageResponse.<RoleAssignment>builder()
+            .content(Collections.singletonList(roleAssignmentToUser))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .build();
+    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+        .thenReturn(roleAssignmentPageResponse);
+
+    PageResponse<RoleWithPrincipalCount> pageResponse =
+        roleService.listWithPrincipalCount(pageRequest, roleFilter, true);
+
+    assertEquals(1, pageResponse.getContent().size());
+    for (int i = 0; i < pageResponse.getContent().size(); i++) {
+      assertEquals(1, (int) pageResponse.getContent().get(i).getRoleAssignedToUserCount());
+    }
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testListWithPrincipalCountUserGroup() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
+    Role role = Role.builder()
+                    .identifier(randomAlphabetic(10))
+                    .scopeIdentifier(randomAlphabetic(10))
+                    .name(randomAlphabetic(10))
+                    .build();
+    RoleAssignment roleAssignmentToUserGroup = RoleAssignment.builder()
+                                                   .identifier(randomAlphabetic(10))
+                                                   .scopeIdentifier(role.getScopeIdentifier())
+                                                   .roleIdentifier(role.getIdentifier())
+                                                   .principalType(PrincipalType.USER_GROUP)
+                                                   .build();
+    RoleFilter roleFilter = RoleFilter.builder()
+                                .identifierFilter(Sets.newHashSet(roleAssignmentToUserGroup.getRoleIdentifier()))
+                                .scopeIdentifier(role.getScopeIdentifier())
+                                .build();
+
+    PageResponse<Role> rolePageResponse = PageResponse.<Role>builder()
+                                              .content(Collections.singletonList(role))
+                                              .totalPages(1)
+                                              .totalItems(1)
+                                              .pageItemCount(1)
+                                              .pageSize(50)
+                                              .pageIndex(0)
+                                              .empty(false)
+                                              .build();
+    when(roleService.list(any(), any(RoleFilter.class), eq(true))).thenReturn(rolePageResponse);
+
+    PageResponse<RoleAssignment> roleAssignmentPageResponse =
+        PageResponse.<RoleAssignment>builder()
+            .content(Collections.singletonList(roleAssignmentToUserGroup))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .build();
+    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+        .thenReturn(roleAssignmentPageResponse);
+
+    PageResponse<RoleWithPrincipalCount> pageResponse =
+        roleService.listWithPrincipalCount(pageRequest, roleFilter, true);
+
+    assertEquals(1, pageResponse.getContent().size());
+    for (int i = 0; i < pageResponse.getContent().size(); i++) {
+      assertEquals(1, (int) pageResponse.getContent().get(i).getRoleAssignedToUserGroupCount());
+    }
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testListWithPrincipalCountServiceAccount() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
+    Role role = Role.builder()
+                    .identifier(randomAlphabetic(10))
+                    .scopeIdentifier(randomAlphabetic(10))
+                    .name(randomAlphabetic(10))
+                    .build();
+    RoleAssignment roleAssignmentToServiceAccount = RoleAssignment.builder()
+                                                        .identifier(randomAlphabetic(10))
+                                                        .scopeIdentifier(role.getScopeIdentifier())
+                                                        .roleIdentifier(role.getIdentifier())
+                                                        .principalType(PrincipalType.SERVICE_ACCOUNT)
+                                                        .build();
+    RoleFilter roleFilter = RoleFilter.builder()
+                                .identifierFilter(Sets.newHashSet(roleAssignmentToServiceAccount.getRoleIdentifier()))
+                                .scopeIdentifier(role.getScopeIdentifier())
+                                .build();
+
+    PageResponse<Role> rolePageResponse = PageResponse.<Role>builder()
+                                              .content(Collections.singletonList(role))
+                                              .totalPages(1)
+                                              .totalItems(1)
+                                              .pageItemCount(1)
+                                              .pageSize(50)
+                                              .pageIndex(0)
+                                              .empty(false)
+                                              .build();
+    when(roleService.list(any(), any(RoleFilter.class), eq(true))).thenReturn(rolePageResponse);
+
+    PageResponse<RoleAssignment> roleAssignmentPageResponse =
+        PageResponse.<RoleAssignment>builder()
+            .content(Collections.singletonList(roleAssignmentToServiceAccount))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .build();
+    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+        .thenReturn(roleAssignmentPageResponse);
+
+    PageResponse<RoleWithPrincipalCount> pageResponse =
+        roleService.listWithPrincipalCount(pageRequest, roleFilter, true);
+
+    assertEquals(1, pageResponse.getContent().size());
+    for (int i = 0; i < pageResponse.getContent().size(); i++) {
+      assertEquals(1, (int) pageResponse.getContent().get(i).getRoleAssignedToServiceAccountCount());
+    }
   }
 }

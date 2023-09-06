@@ -5,7 +5,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 set -ex
 
-export FIX_OIP_VERSION="OIP_""$VERSION"00
+export FIX_OIP_VERSION="OIP_""$VERSION"
 RELDATE=$(date +'%Y-%m-%d')
 PROJ="OIP"
 response=$(curl -X POST https://harness.atlassian.net/rest/api/2/version/ --write-out '%{http_code}' --output /dev/null --silent --user ${JIRA_USERNAME}:${JIRA_PASSWORD} -H "Content-Type: application/json" -d '{

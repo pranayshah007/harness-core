@@ -12,28 +12,37 @@ import io.harness.spec.server.ssca.v1.model.Artifact;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomRequestBody;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomResponseBody;
 import io.harness.spec.server.ssca.v1.model.EnforcementSummaryResponse;
+import io.harness.spec.server.ssca.v1.model.PolicyViolation;
 import io.harness.ssca.beans.RuleDTO;
 import io.harness.ssca.enforcement.ExecutorRegistry;
 import io.harness.ssca.enforcement.constants.RuleExecutorType;
 import io.harness.ssca.enforcement.rule.Engine;
 import io.harness.ssca.entities.ArtifactEntity;
+import io.harness.ssca.entities.ArtifactEntity.ArtifactEntityKeys;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
 
 import com.google.inject.Inject;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 public class EnforcementStepServiceImpl implements EnforcementStepService {
   @Inject ArtifactRepository artifactRepository;
   @Inject ExecutorRegistry executorRegistry;
   @Inject RuleEngineService ruleEngineService;
   @Inject EnforcementSummaryService enforcementSummaryService;
+  @Inject EnforcementResultService enforcementResultService;
 
   @Override
   public EnforceSbomResponseBody enforceSbom(
       String accountId, String orgIdentifier, String projectIdentifier, EnforceSbomRequestBody body) {
-    ArtifactEntity artifactEntity = artifactRepository.findFirstByUrl(body.getArtifact().getRegistryUrl()).get();
+    ArtifactEntity artifactEntity =
+        artifactRepository
+            .findFirstByUrlLike(body.getArtifact().getRegistryUrl(), Sort.by(ArtifactEntityKeys.createdOn).descending())
+            .get();
 
     RuleDTO ruleDTO = ruleEngineService.getRules(accountId, orgIdentifier, projectIdentifier, body.getPolicyFileId());
 
@@ -82,5 +91,31 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
         .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
         .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
         .status(enforcementSummary.getStatus());
+  }
+
+  @Override
+  public Page<PolicyViolation> getPolicyViolations(String accountId, String orgIdentifier, String projectIdentifier,
+      String enforcementId, String searchText, Pageable pageable) {
+    return enforcementResultService
+        .getPolicyViolations(accountId, orgIdentifier, projectIdentifier, enforcementId, searchText, pageable)
+        .map(enforcementResultEntity
+            -> new PolicyViolation()
+                   .enforcementId(enforcementResultEntity.getEnforcementID())
+                   .account(enforcementResultEntity.getAccountId())
+                   .org(enforcementResultEntity.getOrgIdentifier())
+                   .project(enforcementResultEntity.getProjectIdentifier())
+                   .artifactId(enforcementResultEntity.getArtifactId())
+                   .imageName(enforcementResultEntity.getImageName())
+                   .purl(enforcementResultEntity.getPurl())
+                   .orchestrationId(enforcementResultEntity.getOrchestrationID())
+                   .license(enforcementResultEntity.getLicense())
+                   .tag(enforcementResultEntity.getTag())
+                   .supplier(enforcementResultEntity.getSupplier())
+                   .supplierType(enforcementResultEntity.getSupplierType())
+                   .name(enforcementResultEntity.getName())
+                   .version(enforcementResultEntity.getVersion())
+                   .packageManager(enforcementResultEntity.getPackageManager())
+                   .violationType(enforcementResultEntity.getViolationType())
+                   .violationDetails(enforcementResultEntity.getViolationDetails()));
   }
 }

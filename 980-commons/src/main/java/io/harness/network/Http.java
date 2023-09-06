@@ -562,13 +562,12 @@ public class Http {
       String password = getProxyPassword();
       builder.proxyAuthenticator((route, response) -> {
         if (response == null || response.code() == 407) {
-          return null;
+          log.warn("Proxy authentication failed with 407, proceeding ahead");
         }
         String credential = Credentials.basic(user, password);
         return response.request().newBuilder().header("Proxy-Authorization", credential).build();
       });
     }
-
     return builder;
   }
 

@@ -51,12 +51,13 @@ public class CdSscaEnforcementPluginHelper {
     }
 
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    Map<String, String> envVars =
-        SscaEnforcementStepPluginUtils.getSscaEnforcementStepEnvVariables(EnforcementStepEnvVariables.builder()
-                                                                              .stepExecutionId(runtimeId)
-                                                                              .sbomSource(sbomSource)
-                                                                              .harnessPolicyFileId(policyFile)
-                                                                              .build());
+    Map<String, String> envVars = SscaEnforcementStepPluginUtils.getSscaEnforcementStepEnvVariables(
+        EnforcementStepEnvVariables.builder()
+            .stepExecutionId(runtimeId)
+            .sbomSource(sbomSource)
+            .harnessPolicyFileId(policyFile)
+            .sscaManagerEnabled(sscaServiceUtils.isSSCAManagerEnabled())
+            .build());
     envVars.putAll(sscaServiceUtils.getSSCAServiceEnvVariables(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
     return envVars;

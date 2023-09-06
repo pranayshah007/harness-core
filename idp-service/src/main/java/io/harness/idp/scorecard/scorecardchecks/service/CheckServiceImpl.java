@@ -26,17 +26,14 @@ import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper;
-import io.harness.idp.scorecard.scorecardchecks.mappers.CheckMapper;
 import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
-import io.harness.spec.server.idp.v1.model.CheckListItem;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -72,13 +69,10 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public List<CheckListItem> getChecksByAccountId(
+  public Page<CheckEntity> getChecksByAccountId(
       Boolean custom, String accountIdentifier, Pageable pageRequest, String searchTerm) {
     Criteria criteria = buildCriteriaForChecksList(accountIdentifier, custom, searchTerm);
-    Page<CheckEntity> entities = checkRepository.findAll(criteria, pageRequest);
-    List<CheckListItem> checks = new ArrayList<>();
-    entities.getContent().forEach(checkEntity -> checks.add(CheckMapper.toDTO(checkEntity)));
-    return checks;
+    return checkRepository.findAll(criteria, pageRequest);
   }
 
   @Override
@@ -111,16 +105,16 @@ public class CheckServiceImpl implements CheckService {
   public void deleteCustomCheck(String accountIdentifier, String identifier, boolean forceDelete) {
     if (forceDelete && !isForceDeleteSettingEnabled(accountIdentifier)) {
       throw new InvalidRequestException(
-          format("Parameter forceDelete cannot be true. Force deletion of secret is not enabled for this account [%s]",
+          format("Parameter forceDelete cannot be true. Force deletion of check is not enabled for this account [%s]",
               accountIdentifier));
     }
     if (!forceDelete) {
       validateCheckUsage(accountIdentifier, identifier);
-    } else {
-      UpdateResult updateResult = checkRepository.updateDeleted(accountIdentifier, identifier);
-      if (updateResult.getModifiedCount() == 0) {
-        throw new InvalidRequestException("Default checks cannot be deleted");
-      }
+    }
+
+    UpdateResult updateResult = checkRepository.updateDeleted(accountIdentifier, identifier);
+    if (updateResult.getModifiedCount() == 0) {
+      throw new InvalidRequestException("Default checks cannot be deleted");
     }
   }
 
@@ -178,7 +172,6 @@ public class CheckServiceImpl implements CheckService {
         where(CheckEntity.CheckKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
         where(CheckEntity.CheckKeys.identifier)
             .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-        where(CheckEntity.CheckKeys.labels)
-            .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+        where(CheckEntity.CheckKeys.tags).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
   }
 }

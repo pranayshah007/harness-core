@@ -67,7 +67,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
         ServiceEntityKeys.isFromDefaultBranch, ServiceEntityKeys.branch, ServiceEntityKeys.yamlGitConfigRef,
         ServiceEntityKeys.filePath, ServiceEntityKeys.rootFolder, "class", "templateReference", "data",
         ServiceEntityKeys.storeType, ServiceEntityKeys.repo, ServiceEntityKeys.connectorRef, ServiceEntityKeys.repoURL,
-        ServiceEntityKeys.fallBackBranch));
+        ServiceEntityKeys.fallBackBranch, "accountIdentifier", "invalidYamlString", "uuid", "entityInvalid"));
 
     for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
       boolean shouldExist =

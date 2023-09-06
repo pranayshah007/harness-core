@@ -140,7 +140,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     if (usesServicesFromAnotherStage(deploymentStageConfig)
         & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
       throw new InvalidYamlRuntimeException(
-          "cannot save a stage template that propagates services from another stage.");
+          "Stage template that propagates services from another stage cannot be saved.");
     }
   }
 
@@ -180,13 +180,13 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     if (usesServiceFromAnotherStage(deploymentStageConfig)
         & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
       throw new InvalidYamlRuntimeException(
-          "cannot save a stage template that propagates service from another stage. Please remove useFromStage and set the serviceRef to fixed value or runtime or an expression and try again");
+          "Stage template that propagates service from another stage cannot be saved. Please remove useFromStage and set the serviceRef to fixed value, runtime or an expression and try again");
     }
 
     if (usesEnvironmentFromAnotherStage(deploymentStageConfig)
         & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
       throw new InvalidYamlRuntimeException(
-          "cannot save a stage template that propagates environment from another stage. Please remove useFromStage and set the environmentRef to fixed value or runtime or an expression and try again");
+          "Stage template that propagates environment from another stage cannot be saved. Please remove useFromStage and set the environmentRef to fixed value, runtime or an expression and try again");
     }
     if (deploymentStageConfig.getInfrastructure() != null) {
       throw new InvalidYamlRuntimeException(format(

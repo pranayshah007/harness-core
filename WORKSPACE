@@ -4623,8 +4623,8 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:XXOg2PARWL1s4lpy4WXPcWqt8fXfV9e9KjDozeefzdk=",
-    version = "v0.0.0-20230720204407-c0e24ffb7964",
+    sum = "h1:tKAZ/8G4ErcAMEPmVsA3A0w+aYpagXwT3fXxtFcJKiM=",
+    version = "v0.0.0-20230827043740-d394b7ccaa1a",
 )
 
 go_rules_dependencies()
@@ -5093,11 +5093,11 @@ plain_artifacts = [
     "net.minidev:accessors-smart:1.2",
     "net.minidev:json-smart:2.4.10",
     "net.openhft:affinity:3.2.2",
-    "net.openhft:chronicle-bytes:2.22.28",
-    "net.openhft:chronicle-core:2.22.35",
-    "net.openhft:chronicle-queue:5.22.28",
-    "net.openhft:chronicle-threads:2.22.16",
-    "net.openhft:chronicle-wire:2.22.22",
+    "net.openhft:chronicle-bytes:2.24ea15",
+    "net.openhft:chronicle-core:2.24ea20",
+    "net.openhft:chronicle-queue:5.24ea24",
+    "net.openhft:chronicle-threads:2.24ea9",
+    "net.openhft:chronicle-wire:2.24ea24",
     "net.openhft:compiler:2.3.4",
     "net.rcarz:jira-client:0.9-SNAPSHOT",
     "net.redhogs.cronparser:cron-parser:2.6",

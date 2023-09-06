@@ -470,7 +470,8 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
       }
     }
 
-    throw new RuntimeException("Failed to retrieve decrypted value after multiple retries.");
+    log.error("Failed to retrieve decrypted value after multiple retries.");
+    return "";
   }
 
   private String formatPrivateKey(String privateKey) {

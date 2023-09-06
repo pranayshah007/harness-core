@@ -17,6 +17,8 @@ import io.harness.accesscontrol.permissions.PermissionFilter;
 import io.harness.accesscontrol.permissions.PermissionFilter.IncludedInAllRolesFilter;
 import io.harness.accesscontrol.permissions.PermissionService;
 import io.harness.accesscontrol.permissions.PermissionStatus;
+import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
@@ -35,7 +37,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -87,6 +91,61 @@ public class RoleServiceImpl implements RoleService {
   @Override
   public PageResponse<Role> list(PageRequest pageRequest, RoleFilter roleFilter, boolean hideInternal) {
     return roleDao.list(pageRequest, roleFilter, hideInternal);
+  }
+
+  @Override
+  public PageResponse<RoleWithPrincipalCount> listWithPrincipalCount(
+      PageRequest pageRequest, RoleFilter roleFilter, boolean hideInternal) {
+    PageResponse<Role> rolePages = list(pageRequest, roleFilter, hideInternal);
+    RoleAssignmentFilter roleAssignmentFilter = RoleAssignmentFilter.builder()
+                                                    .scopeFilter(roleFilter.getScopeIdentifier())
+                                                    .roleFilter(roleFilter.getIdentifierFilter())
+                                                    .build();
+    PageResponse<RoleAssignment> roleAssignmentServicePageResponse =
+        roleAssignmentService.list(pageRequest, roleAssignmentFilter, true);
+    Map<String, Map<PrincipalType, Integer>> countMap = new HashMap<>();
+
+    for (RoleAssignment roleAssignment : roleAssignmentServicePageResponse.getContent()) {
+      PrincipalType principalType = roleAssignment.getPrincipalType();
+      if (principalType == PrincipalType.USER || principalType == PrincipalType.SERVICE_ACCOUNT
+          || principalType == PrincipalType.USER_GROUP) {
+        String roleIdentifier = roleAssignment.getRoleIdentifier();
+        countMap.putIfAbsent(roleIdentifier, new HashMap<>());
+        countMap.get(roleIdentifier)
+            .put(principalType, countMap.get(roleIdentifier).getOrDefault(principalType, 0) + 1);
+      }
+    }
+
+    List<RoleWithPrincipalCount> rolesWithPrincipalCount = new ArrayList<>();
+
+    for (Role role : rolePages.getContent()) {
+      String roleIdentifier = role.getIdentifier();
+      Map<PrincipalType, Integer> roleIdentifierMap = countMap.get(roleIdentifier);
+
+      RoleWithPrincipalCount roleWithCount =
+          RoleWithPrincipalCount.builder()
+              .role(role)
+              .roleAssignedToUserCount(
+                  roleIdentifierMap != null ? roleIdentifierMap.getOrDefault(PrincipalType.USER, 0) : 0)
+              .roleAssignedToUserGroupCount(
+                  roleIdentifierMap != null ? roleIdentifierMap.getOrDefault(PrincipalType.USER_GROUP, 0) : 0)
+              .roleAssignedToServiceAccountCount(
+                  roleIdentifierMap != null ? roleIdentifierMap.getOrDefault(PrincipalType.SERVICE_ACCOUNT, 0) : 0)
+              .build();
+
+      rolesWithPrincipalCount.add(roleWithCount);
+    }
+
+    return PageResponse.<RoleWithPrincipalCount>builder()
+        .totalPages(rolePages.getTotalPages())
+        .totalItems(rolePages.getTotalItems())
+        .pageItemCount(rolePages.getPageItemCount())
+        .pageSize(rolePages.getPageSize())
+        .content(rolesWithPrincipalCount)
+        .pageIndex(rolePages.getPageIndex())
+        .empty(rolePages.isEmpty())
+        .pageToken(rolePages.getPageToken())
+        .build();
   }
 
   @Override

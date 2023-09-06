@@ -8,6 +8,7 @@
 package io.harness.delegate.task.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.MOUNIK;
 import static io.harness.rule.OwnerRule.NAMANG;
@@ -27,7 +28,10 @@ import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
@@ -51,6 +55,7 @@ import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 import io.harness.jira.JiraInternalConfig;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraIssueTransitionNG;
 import io.harness.jira.JiraIssueTypeNG;
 import io.harness.jira.JiraIssueUpdateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
@@ -85,6 +90,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDC)
 @RunWith(MockitoJUnitRunner.class)
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class JiraTaskNGHandlerTest extends CategoryTest {
   @Rule
   public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig()
@@ -216,6 +223,52 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     assertThat(jiraTaskNGHandler.getStatuses(
                    createJiraTaskParametersBuilder().projectKey("projectkey").issueType("NAME").build()))
         .isEqualTo(JiraTaskNGResponse.builder().statuses(statuses).build());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetStatusIssueKeyIsNotEmpty() throws Exception {
+    wireMockRule.stubFor(
+        get(urlEqualTo("/rest/api/2/issue/issueKey/transitions"))
+            .willReturn(aResponse().withStatus(200).withBody(
+                "{\"transitions\":[{\"id\":\"ID\",\"name\":\"NAME\",\"to\":{\"id\":\"ID\",\"name\":\"NAME\"},\"isAvailable\":false}]}")));
+
+    Map<String, String> properties1 = new HashMap<>();
+    properties1.put("id", "ID");
+    properties1.put("name", "NAME");
+    JsonNodeUtils.updatePropertiesInJsonNode(jsonstatusNode, properties1);
+
+    List<JiraStatusNG> statuses = new ArrayList<>();
+    statuses.add(new JiraStatusNG(jsonstatusNode));
+    assertThat(jiraTaskNGHandler.getStatuses(createJiraTaskParametersBuilder().issueKey("issueKey").build()))
+        .isEqualTo(JiraTaskNGResponse.builder().statuses(statuses).build());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetTransitions() throws Exception {
+    wireMockRule.stubFor(
+        get(urlEqualTo("/rest/api/2/issue/issueKey/transitions"))
+            .willReturn(aResponse().withStatus(200).withBody(
+                "{\"transitions\":[{\"id\":\"ID\",\"name\":\"NAME\",\"to\":{\"id\":\"ID\",\"name\":\"NAME\"},\"isAvailable\":false}]}")));
+
+    Map<String, String> properties1 = new HashMap<>();
+    properties1.put("id", "ID");
+    properties1.put("name", "NAME");
+    JsonNodeUtils.updatePropertiesInJsonNode(jsonstatusNode, properties1);
+
+    List<JiraStatusNG> statuses = new ArrayList<>();
+    statuses.add(new JiraStatusNG(jsonstatusNode));
+
+    JiraIssueTransitionNG jiraIssueTransitionNG = new JiraIssueTransitionNG();
+    jiraIssueTransitionNG.setName("NAME");
+    jiraIssueTransitionNG.setId("ID");
+    jiraIssueTransitionNG.setTo(new JiraStatusNG(jsonstatusNode));
+
+    assertThat(jiraTaskNGHandler.getIssueTransitions(createJiraTaskParametersBuilder().issueKey("issueKey").build()))
+        .isEqualTo(JiraTaskNGResponse.builder().jiraIssueTransitionsNG(Arrays.asList(jiraIssueTransitionNG)).build());
   }
 
   @Test

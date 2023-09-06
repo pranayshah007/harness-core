@@ -73,20 +73,28 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
   public void checkLimitsAndValidate(RuleEnforcement ruleEnforcement, GovernanceConfig governanceConfig) {
     if (ruleEnforcement.getRuleIds() != null
         && ruleEnforcement.getRuleIds().size() > governanceConfig.getPoliciesInEnforcement()) {
-      throw new InvalidRequestException("Limit of number of rules in an enforcement is exceeded ");
+      throw new InvalidRequestException(
+          String.format("Number of rules(%s) in the enforcement is exceeding set limit(%s)",
+              ruleEnforcement.getRuleIds().size(), governanceConfig.getPoliciesInEnforcement()));
     }
     if (ruleEnforcement.getRuleSetIDs() != null
         && ruleEnforcement.getRuleSetIDs().size() > governanceConfig.getPacksInEnforcement()) {
-      throw new InvalidRequestException("Limit of number of Rule Sets in an enforcement is exceeded ");
+      throw new InvalidRequestException(
+          String.format("Number of Rule Set(%s) in the enforcement is exceeding set limit(%s)",
+              ruleEnforcement.getRuleSetIDs().size(), governanceConfig.getPacksInEnforcement()));
     }
     if (ruleEnforcement.getTargetAccounts() != null
         && ruleEnforcement.getTargetAccounts().size() > governanceConfig.getAccountLimit()) {
-      throw new InvalidRequestException("Limit of number of target accounts allowed per enforcement is exceeded ");
+      throw new InvalidRequestException(
+          String.format("Number of target accounts(%s) in the enforcement is exceeding set limit(%s)",
+              ruleEnforcement.getTargetAccounts().size(), governanceConfig.getAccountLimit()));
     }
 
     if (ruleEnforcement.getTargetRegions() != null
         && ruleEnforcement.getTargetRegions().size() > governanceConfig.getRegionLimit()) {
-      throw new InvalidRequestException("Limit of target regions allowed per enforcement is exceeded ");
+      throw new InvalidRequestException(
+          String.format("Number of regions(%s) in the enforcement is exceeding set limit(%s)",
+              ruleEnforcement.getTargetRegions().size(), governanceConfig.getRegionLimit()));
     }
     if (ruleEnforcement.getRuleIds() != null) {
       ruleService.check(ruleEnforcement.getAccountId(), ruleEnforcement.getRuleIds());
@@ -143,6 +151,7 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
     }
     return ruleSetId;
   }
+
   @Override
   public ExecutionDetails getDetails(String accountId, ExecutionDetailRequest executionDetailRequest) {
     List<RuleEnforcement> ruleEnforcements =
@@ -190,5 +199,19 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
     }
     executionDetails.setEnforcementIds(executionDetailList);
     return executionDetails;
+  }
+
+  @Override
+  public List<RuleEnforcement> listEnforcementsWithGivenRule(String accountId, String ruleId) {
+    return ruleEnforcementDAO.listEnforcementsWithGivenRule(accountId, ruleId);
+  }
+
+  @Override
+  public RuleEnforcement removeRuleFromEnforcement(RuleEnforcement ruleEnforcement, String ruleId) {
+    List<String> rules = ruleEnforcement.getRuleIds();
+    rules.remove(ruleId);
+    ruleEnforcement.setRuleIds(rules);
+    ruleEnforcementDAO.update(ruleEnforcement);
+    return null;
   }
 }

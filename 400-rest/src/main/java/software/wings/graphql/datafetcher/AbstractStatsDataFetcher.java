@@ -188,7 +188,7 @@ public abstract class AbstractStatsDataFetcher<A, F, G, S> implements DataFetche
       return new StringBuilder("date_trunc('").append(unit).append("',").append(dbFieldName).append(')').toString();
     }
 
-    return new StringBuilder("time_bucket('")
+    return new StringBuilder("harness_date_bin_graphql('")
         .append(value)
         .append(' ')
         .append(unit)

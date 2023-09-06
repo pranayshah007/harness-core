@@ -78,6 +78,10 @@ public class Kubectl {
     return new CreateCommand(this, manifestName);
   }
 
+  public KustomizeCommand kustomize(String kustomizeDirPath) {
+    return new KustomizeCommand(this, kustomizeDirPath);
+  }
+
   public String command() {
     StringBuilder command = new StringBuilder(128);
     if (StringUtils.isNotBlank(kubectlPath)) {

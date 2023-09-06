@@ -7,7 +7,7 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
-import static io.harness.idp.scorecard.datasources.constants.Constants.CATALOG_PROVIDER;
+import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,15 +28,15 @@ import lombok.experimental.FieldDefaults;
 public class CatalogProvider extends DataSourceProvider {
   protected CatalogProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory) {
-    super(CATALOG_PROVIDER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+    super(CATALOG_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
         dataPointParserFactory);
   }
 
   @Override
   public Map<String, Map<String, Object>> fetchData(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    return processOut(
-        accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier), Collections.emptyMap());
+    return processOut(accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier),
+        Collections.emptyMap(), Collections.emptyMap());
   }
 
   @Override

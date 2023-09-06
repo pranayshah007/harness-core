@@ -7,6 +7,8 @@ global:
     port: 8889
     path: /metrics
   kubeVersion: ""
+  commonAnnotations: {}
+  commonLabels: {}
   loadbalancerURL: ""
   stackDriverLoggingEnabled: false
   database:
@@ -97,7 +99,7 @@ image:
   repository: harness/pipeline-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.37.12"
+  tag: "1.41.3"
   imagePullSecrets: []
 
 waitForInitContainer:
@@ -172,6 +174,7 @@ probes:
     failureThreshold: 25
 
 service:
+  annotations: {}
   type: ClusterIP
   protocol: TCP
   port: 12001
@@ -201,6 +204,8 @@ imagePullSecrets: {}
 
 additionalConfigs: {}
 
+java17flags: ""
+
 # extraVolumes:
 # - name: volume-test
 #   configMap:
@@ -227,3 +232,8 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

@@ -7,11 +7,14 @@
 
 package io.harness.cdng.ecs.beans;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.cdng.ecs.beans.EcsRunTaskManifestsContent")
 public class EcsRunTaskManifestsContent {
   String runTaskDefinitionFileContent;
   String runTaskRequestDefinitionFileContent;

@@ -41,18 +41,22 @@ public class OrchestrationVisualizationModule extends AbstractModule {
   private final EventsFrameworkConfiguration eventsFrameworkConfiguration;
   private final ThreadPoolConfig visualizationThreadPoolConfig;
 
-  public static OrchestrationVisualizationModule getInstance(
-      EventsFrameworkConfiguration eventsFrameworkConfiguration, ThreadPoolConfig visualizationThreadPoolConfig) {
+  private final Integer graphConsumerSleepMs;
+
+  public static OrchestrationVisualizationModule getInstance(EventsFrameworkConfiguration eventsFrameworkConfiguration,
+      ThreadPoolConfig visualizationThreadPoolConfig, Integer graphConsumerSleepMs) {
     if (instance == null) {
-      instance = new OrchestrationVisualizationModule(eventsFrameworkConfiguration, visualizationThreadPoolConfig);
+      instance = new OrchestrationVisualizationModule(
+          eventsFrameworkConfiguration, visualizationThreadPoolConfig, graphConsumerSleepMs);
     }
     return instance;
   }
 
-  OrchestrationVisualizationModule(
-      EventsFrameworkConfiguration eventsFrameworkConfiguration, ThreadPoolConfig visualizationThreadPoolConfig) {
+  OrchestrationVisualizationModule(EventsFrameworkConfiguration eventsFrameworkConfiguration,
+      ThreadPoolConfig visualizationThreadPoolConfig, Integer graphConsumerSleepMs) {
     this.eventsFrameworkConfiguration = eventsFrameworkConfiguration;
     this.visualizationThreadPoolConfig = visualizationThreadPoolConfig;
+    this.graphConsumerSleepMs = graphConsumerSleepMs == null ? 0 : graphConsumerSleepMs;
   }
 
   @Override
@@ -83,5 +87,12 @@ public class OrchestrationVisualizationModule extends AbstractModule {
         visualizationThreadPoolConfig.getMaxPoolSize(), visualizationThreadPoolConfig.getIdleTime(),
         visualizationThreadPoolConfig.getTimeUnit(),
         new ThreadFactoryBuilder().setNameFormat("OrchestrationVisualizationExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
+  @Named("GraphConsumerSleepMs")
+  public int graphConsumerSleepMs() {
+    return graphConsumerSleepMs;
   }
 }

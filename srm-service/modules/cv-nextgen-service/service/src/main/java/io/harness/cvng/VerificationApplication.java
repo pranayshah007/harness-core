@@ -1030,15 +1030,11 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .semaphore(new Semaphore(3))
             .handler(sloHistoryTimescaleHandler)
             .schedulingType(REGULAR)
-            .filterExpander(query
-                -> query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
-                       .greaterThan(
-                           injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
     injector.injectMembers(sloHistoryTimescaleHandlerIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 0, 1, TimeUnit.MINUTES);
+    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 0, 1, TimeUnit.DAYS);
   }
 
   private void sloHealthIndicatorTimescale(Injector injector) {

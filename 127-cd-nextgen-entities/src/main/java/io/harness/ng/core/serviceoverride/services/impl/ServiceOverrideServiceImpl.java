@@ -98,6 +98,13 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     return getByEnvironmentRef(accountId, orgIdentifier, projectIdentifier, environmentRef, serviceRef);
   }
 
+  @Override
+  public Optional<NGServiceOverridesEntity> getForV1AndV2(
+      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    return getByEnvironmentRef(accountId, orgIdentifier, projectIdentifier, environmentRef, serviceRef);
+  }
+
   // Todo: This code handles all four cases where request and entity in DB can contain any of environment Ref or
   // identifier. Clean up in future after successful migration
   private Optional<NGServiceOverridesEntity> getByEnvironmentRef(

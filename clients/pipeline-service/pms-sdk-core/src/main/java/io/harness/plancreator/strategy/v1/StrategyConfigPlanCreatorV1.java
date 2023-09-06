@@ -9,6 +9,7 @@ package io.harness.plancreator.strategy.v1;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -29,7 +30,6 @@ import io.harness.steps.matrix.v1.StrategyStepParametersV1;
 import io.harness.steps.matrix.v1.StrategyStepV1;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,9 +50,11 @@ public class StrategyConfigPlanCreatorV1 extends ChildrenPlanCreator<StrategyCon
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, StrategyConfigV1 config, List<String> childrenNodeIds) {
-    ByteString strategyMetadata = ctx.getDependency().getMetadataMap().get(
-        StrategyConstants.STRATEGY_METADATA + ctx.getCurrentField().getNode().getUuid());
-    StrategyMetadata metadata = (StrategyMetadata) kryoSerializer.asInflatedObject(strategyMetadata.toByteArray());
+    StrategyMetadata metadata =
+        (StrategyMetadata) PlanCreatorUtilsV1
+            .getDeserializedObjectFromDependency(ctx.getDependency(), kryoSerializer,
+                StrategyConstants.STRATEGY_METADATA + ctx.getCurrentField().getNode().getUuid(), true)
+            .get();
     String childNodeId = metadata.getChildNodeId();
     String strategyNodeId = metadata.getStrategyNodeId();
     if (EmptyPredicate.isEmpty(childNodeId) || EmptyPredicate.isEmpty(strategyNodeId)) {

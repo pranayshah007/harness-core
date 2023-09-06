@@ -2011,7 +2011,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "RemoveSegmentToVariationTargetMap"
+                "RemoveSegmentsToVariationTargetMap"
               ]
             }
           }

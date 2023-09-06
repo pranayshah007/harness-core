@@ -7,6 +7,9 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import io.harness.delegate.core.beans.ContainerSpec;
+import io.harness.delegate.core.beans.K8SInfra;
+import io.harness.delegate.core.beans.K8SStep;
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.SecurityContext;
 import io.harness.delegate.core.beans.StepRuntime;
@@ -50,23 +53,36 @@ public class ContainerFactory {
   private static final String DELEGATE_SERVICE_ENDPOINT_VARIABLE = "DELEGATE_SERVICE_ENDPOINT";
   private static final String DELEGATE_SERVICE_ID_VARIABLE = "DELEGATE_SERVICE_ID";
   private static final String HARNESS_ACCOUNT_ID_VARIABLE = "HARNESS_ACCOUNT_ID";
+  private static final String TASK_PARAMETERS_FILE = "TASK_PARAMETERS_FILE";
+  private static final String TASK_DATA_PATH = "TASK_DATA_PATH";
+  private static final String DELEGATE_TOKEN = "DELEGATE_TOKEN";
+  private static final String TASK_ID = "TASK_ID";
 
   private static final String WORKING_DIR = "/harness";
   private static final String ADDON_RUN_COMMAND = "/addon/bin/ci-addon";
-  private static final String ADDON_RUN_ARGS_FORMAT = "--port %s";
+  private static final String ADDON_RUN_ARGS_FORMAT = "--port";
   public static final int RESERVED_LE_PORT = 20001;
+  public static final int RESERVED_ADDON_PORT = 20002;
 
   private final K8SRunnerConfig config;
 
   public V1ContainerBuilder createContainer(final String taskId, final StepRuntime containerRuntime, final int port) {
+    final var envVars = ImmutableMap.<String, String>builder();
+    envVars.putAll(containerRuntime.getEnvMap());
+    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, config.getAccountId());
+    envVars.put(DELEGATE_TOKEN, config.getDelegateToken());
+    envVars.put(TASK_PARAMETERS_FILE, config.getDelegateTaskParamsFile());
+    envVars.put(TASK_DATA_PATH, config.getDelegateTaskParamsFile());
+    envVars.put(TASK_ID, taskId);
     final V1ContainerBuilder containerBuilder = new V1ContainerBuilder()
                                                     .withName(K8SResourceHelper.getContainerName(taskId))
                                                     .withImage(containerRuntime.getUses())
                                                     .withCommand(ADDON_RUN_COMMAND)
-                                                    .withArgs(String.format(ADDON_RUN_ARGS_FORMAT, port))
+                                                    .withArgs(List.of(ADDON_RUN_ARGS_FORMAT, String.valueOf(port)))
                                                     .withPorts(getPort(port))
-                                                    .withEnv(K8SEnvVar.fromMap(containerRuntime.getEnvMap()))
-                                                    .withResources(getResources("100m", "100Mi"))
+                                                    .withEnv(K8SEnvVar.fromMap(envVars.build()))
+                                                    .withResources(getResources(containerRuntime.getResource().getCpu(),
+                                                        containerRuntime.getResource().getMemory()))
                                                     .withImagePullPolicy("Always");
 
     if (containerRuntime.hasResource()) {
@@ -87,26 +103,29 @@ public class ContainerFactory {
     return containerBuilder;
   }
 
-  public V1ContainerBuilder createAddonInitContainer() {
+  public V1ContainerBuilder createAddonInitContainer(K8SInfra k8SInfra) {
+    final var envVars = ImmutableMap.<String, String>builder();
+    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, config.getAccountId());
     return new V1ContainerBuilder()
         .withName(SETUP_ADDON_CONTAINER_NAME)
-        .withImage(getAddonImage())
-        .withCommand(getAddonCmd()) // TODO: Why defining here, should be part of image
-        .withArgs(getAddonArgs()) // TODO: Why defining here, should be part of image
-        .withEnv(new V1EnvVar().name(HARNESS_WORKSPACE).value(WORKING_DIR))
+        .withImage("raghavendramurali/ci-addon:tag1.6")
+        .withEnv(K8SEnvVar.fromMap(envVars.build()))
+        .withCommand(getAddonCmd())
+        .withArgs(getAddonArgs())
         .withImagePullPolicy("Always")
-        .withResources(getResources("100m", "100Mi"));
+        .withResources(getResources("100m", "100Mi"))
+        .withWorkingDir("/opt/harness");
   }
 
-  public V1ContainerBuilder createLEContainer(final ResourceRequirements resource) {
+  public V1ContainerBuilder createLEContainer(final ResourceRequirements resourceRequirements) {
     return new V1ContainerBuilder()
         .withName(LE_CONTAINER_NAME)
-        .withImage(getLeImage())
+        .withImage("raghavendramurali/ci-lite-engine:tag1.6")
         .withEnv(K8SEnvVar.fromMap(getLeEnvVars()))
         .withImagePullPolicy("Always")
         .withPorts(getPort(RESERVED_LE_PORT))
-        .withResources(getResources(resource.getCpu(), resource.getMemory()))
-        .withWorkingDir(WORKING_DIR);
+        .withResources(getResources(resourceRequirements.getCpu(), resourceRequirements.getMemory()))
+        .withWorkingDir("/opt/harness");
   }
 
   private Map<String, String> getLeEnvVars() {
@@ -136,16 +155,6 @@ public class ContainerFactory {
   private List<String> getAddonArgs() {
     return List.of(
         "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; if [ -e /usr/local/bin/ci-addon-linux-amd64 ];then cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon;else cp /usr/local/bin/ci-addon-linux /addon/bin/ci-addon;fi; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/tmate /addon/bin/tmate; chmod +x /addon/bin/tmate; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; if [ -e /usr/local/bin/split_tests ];then cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin; fi;");
-  }
-
-  @NonNull
-  private String getAddonImage() {
-    return config.getCiAddonImage();
-  }
-
-  @NonNull
-  private String getLeImage() {
-    return config.getLeImage();
   }
 
   @NonNull
