@@ -25,12 +25,9 @@ import java.util.Set;
 public class GithubIsBranchProtectedParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
-    Map<String, Object> dataPointInfo = new HashMap<>();
     if (CommonUtils.findObjectByName(data, "defaultBranchRef") == null
         && CommonUtils.findObjectByName(data, "ref") == null) {
-      dataPointInfo.put(DATA_POINT_VALUE_KEY, null);
-      dataPointInfo.put(ERROR_MESSAGE_KEY, INVALID_BRANCH_NAME_ERROR);
-      return dataPointInfo;
+      return constructDataPointInfo(inputValues, false, INVALID_BRANCH_NAME_ERROR);
     }
     Map<String, Object> branchProtectionRule =
         (Map<String, Object>) CommonUtils.findObjectByName(data, "branchProtectionRule");
@@ -43,8 +40,18 @@ public class GithubIsBranchProtectedParser implements DataPointParser {
     } else {
       errorMessage = GITHUB_ADMIN_PERMISSION_ERROR;
     }
-    dataPointInfo.put(DATA_POINT_VALUE_KEY, value);
-    dataPointInfo.put(ERROR_MESSAGE_KEY, errorMessage);
-    return dataPointInfo;
+    return constructDataPointInfo(inputValues, value, errorMessage);
+  }
+
+  private Map<String, Object> constructDataPointInfo(Set<String> inputValues, boolean value, String errorMessage) {
+    Map<String, Object> data = new HashMap<>();
+    data.put(DATA_POINT_VALUE_KEY, value);
+    data.put(ERROR_MESSAGE_KEY, errorMessage);
+    if (inputValues.isEmpty()) {
+      return data;
+    } else {
+      String inputValue = inputValues.iterator().next();
+      return Map.of(inputValue, data);
+    }
   }
 }
