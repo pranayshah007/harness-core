@@ -180,15 +180,12 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
     public static final String stepCategory = NodeExecutionKeys.stepType + "."
         + "stepCategory";
 
+    public static final String stageFqn = NodeExecutionKeys.planNode + "."
+        + "stageFqn";
+
     public static final String accountId = NodeExecutionKeys.ambiance + "."
         + "setupAbstractions"
         + "." + SetupAbstractionKeys.accountId;
-
-    public static final String stageFqnDeprecated = NodeExecutionKeys.planNode + "."
-        + "stageFqn";
-
-    public static final String planId = NodeExecutionKeys.ambiance + "."
-        + "planId";
   }
 
   public static List<MongoIndex> mongoIndexes() {
@@ -240,7 +237,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_stageFqn_idx")
                  .field(NodeExecutionKeys.planExecutionId)
-                 .field(NodeExecutionKeys.stageFqnDeprecated)
+                 .field(NodeExecutionKeys.stageFqn)
                  .build())
         // updateRelationShipsForRetryNode
         .add(CompoundMongoIndex.builder().name("previous_id_idx").field(NodeExecutionKeys.previousId).build())
