@@ -303,7 +303,9 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails5.add(BuildDetails.Builder.aBuildDetails()
                           .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.hash")
                           .build());
-    doReturn(buildDetails5).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
+    doReturn(buildDetails5)
+        .when(artifactoryClient)
+        .getArtifactList(any(), anyString(), eq("artifactDirectory/subfolder/*"), anyInt());
 
     BuildDetails result5 = artifactoryNgService.getLatestArtifact(
         artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "[a-zA-Z.]+(exe)", "", 10);
@@ -322,7 +324,7 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.bin.asd").build());
     buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.asd").build());
     buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.zip").build());
-    doReturn(buildDetails6).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
+    doReturn(buildDetails6).when(artifactoryClient).getArtifactList(any(), anyString(), eq("/*"), anyInt());
 
     BuildDetails result6 =
         artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "/", "[a-zA-Z.]+(exe)", "", 10);
@@ -338,7 +340,7 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
     buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe").build());
     buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.hash").build());
-    doReturn(buildDetails7).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
+    doReturn(buildDetails7).when(artifactoryClient).getArtifactList(any(), anyString(), eq("*"), anyInt());
 
     BuildDetails result7 =
         artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "[a-zA-Z.]+(exe)", "", 10);
