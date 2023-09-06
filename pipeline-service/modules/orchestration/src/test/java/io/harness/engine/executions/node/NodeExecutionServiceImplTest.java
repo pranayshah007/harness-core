@@ -57,6 +57,7 @@ import io.harness.utils.AmbianceTestUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import com.google.protobuf.util.JsonFormat;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -68,6 +69,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
+import org.bson.types.Binary;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,6 +88,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Mock private Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject;
   @Mock private PlanService planService;
@@ -90,7 +96,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
 
   @Before
   public void beforeTest() {
-    doNothing().when(nodeExecutionService).emitEvent(any(), any());
+//    doNothing().when(nodeExecutionService).emitEvent(any(), any());
   }
 
   @Test
@@ -946,5 +952,208 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
 
     List<Status> statuses = nodeExecutionService.fetchNonFlowingAndNonFinalStatuses(planExecutionUuid);
     assertThat(statuses).contains(Status.QUEUED_LICENSE_LIMIT_REACHED, Status.APPROVAL_WAITING);
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  @SneakyThrows
+  public void benchmarkDocumentToEntity() {
+
+    String ambianceJson = "{\n"
+        + "  \"setupAbstractions\": {\n"
+        + "    \"accountId\": \"kmpySmUISimoRrJL6NL73w\",\n"
+        + "    \"orgIdentifier\": \"default\",\n"
+        + "    \"projectIdentifier\": \"plugins\"\n"
+        + "  },\n"
+        + "  \"levels\": [\n"
+        + "    {\n"
+        + "      \"setupId\": \"w9Gt_DJQQqKRGxqlm8VGew\",\n"
+        + "      \"runtimeId\": \"wFXvW62oTiKeb3-PyuEfwg\",\n"
+        + "      \"identifier\": \"pipeline\",\n"
+        + "      \"stepType\": {\n"
+        + "        \"type\": \"PIPELINE_SECTION\",\n"
+        + "        \"stepCategory\": \"PIPELINE\"\n"
+        + "      },\n"
+        + "      \"group\": \"PIPELINE\",\n"
+        + "      \"startTs\": \"1682583461022\",\n"
+        + "      \"nodeType\": \"PLAN_NODE\",\n"
+        + "      \"originalIdentifier\": \"pipeline\"\n"
+        + "    },\n"
+        + "    {\n"
+        + "      \"setupId\": \"w9Gt_DJQQqKRGxqlm8VGewstages\",\n"
+        + "      \"runtimeId\": \"0R-08vnETXaXjCyfTcDvsg\",\n"
+        + "      \"identifier\": \"stages\",\n"
+        + "      \"stepType\": {\n"
+        + "        \"type\": \"STAGES_STEP\",\n"
+        + "        \"stepCategory\": \"STAGES\"\n"
+        + "      },\n"
+        + "      \"group\": \"STAGES\",\n"
+        + "      \"startTs\": \"1682583461560\",\n"
+        + "      \"nodeType\": \"PLAN_NODE\",\n"
+        + "      \"originalIdentifier\": \"stages\"\n"
+        + "    },\n"
+        + "    {\n"
+        + "      \"setupId\": \"4rvQuc_8QDexgKtVRuslzA\",\n"
+        + "      \"runtimeId\": \"1O5jjZyCSwWa5_A1hNdVXA\",\n"
+        + "      \"identifier\": \"stage1\",\n"
+        + "      \"stepType\": {\n"
+        + "        \"type\": \"IntegrationStageStepPMS\",\n"
+        + "        \"stepCategory\": \"STAGE\"\n"
+        + "      },\n"
+        + "      \"group\": \"STAGE\",\n"
+        + "      \"startTs\": \"1682583462175\",\n"
+        + "      \"nodeType\": \"PLAN_NODE\",\n"
+        + "      \"originalIdentifier\": \"stage1\"\n"
+        + "    }\n"
+        + "  ],\n"
+        + "  \"planExecutionId\": \"SkppIwjzQFK6GqPibmlqMg\",\n"
+        + "  \"metadata\": {\n"
+        + "    \"runSequence\": 1,\n"
+        + "    \"triggerInfo\": {\n"
+        + "      \"triggerType\": \"MANUAL\",\n"
+        + "      \"triggeredBy\": {\n"
+        + "        \"uuid\": \"lv0euRhKRCyiXWzS7pOg6g\",\n"
+        + "        \"identifier\": \"Admin\",\n"
+        + "        \"extraInfo\": {\n"
+        + "          \"email\": \"admin@harness.io\"\n"
+        + "        }\n"
+        + "      }\n"
+        + "    },\n"
+        + "    \"pipelineIdentifier\": \"echo\",\n"
+        + "    \"executionUuid\": \"SkppIwjzQFK6GqPibmlqMg\",\n"
+        + "    \"principalInfo\": {\n"
+        + "      \"principal\": \"lv0euRhKRCyiXWzS7pOg6g\",\n"
+        + "      \"principalType\": \"USER\",\n"
+        + "      \"shouldValidateRbac\": true\n"
+        + "    },\n"
+        + "    \"gitSyncBranchContext\": \"eJyNkc1KAzEUhROtIOJefYluBF240mrLSG1La9clzWSm0fwMSUadB9GFb+UTuKnahSDYQrcm0wo2zoiLkMu537nkntw/HkHYoKaXCXyikMCjmhSG3JlqTM1CCET08bTxYMFdC54JQ01mNVkdIk1yZOLpBRqWnFMTjIvUC/3my0IQbKTqktfVTkQZ6SAz8VURnpIIpczUleRtMyLWmsiph0kWEvXbTvXSXLQM1fWUMRdPncm532uR22JTbrBvadDZaoshbWqFYbhOe3hlF/c7CVJELIVjjGUqTBBahUaUfJajtdIYf1JtFf9nWEfJ/Gn/QF30LcRf/ib66n0VUIU2RbRkNyS0y0SM4pLstN2SXGaJZ84QZ1ZxXhoH4204GISLrx48rwNYsQcs7++67OTMHtiB1zzJerwf9CiXXXXePGg1D/fnjtoCm3AxfubKhKUxFVN/TgWsQegKCMAXTfBHKg==\",\n"
+        + "    \"moduleType\": \"cd\",\n"
+        + "    \"retryInfo\": {\n"
+        + "      \n"
+        + "    },\n"
+        + "    \"pipelineStoreType\": \"INLINE\",\n"
+        + "    \"harnessVersion\": \"0\",\n"
+        + "    \"executionMode\": \"NORMAL\"\n"
+        + "  },\n"
+        + "  \"expressionFunctorToken\": \"-1830125044\",\n"
+        + "  \"planId\": \"aSF_9bYRRZWBDdVJNBdJOA\",\n"
+        + "  \"startTs\": \"1682583459946\",\n"
+        + "  \"stageExecutionId\": \"1O5jjZyCSwWa5_A1hNdVXA\"\n"
+        + "}";
+
+    Document ambianceDoc = Document.parse(ambianceJson);
+    JsonFormat.Parser parser = JsonFormat.parser().ignoringUnknownFields();
+
+    Ambiance.Builder builder = Ambiance.newBuilder();
+
+    long startTs = System.currentTimeMillis();
+    for (int i = 0; i < 5_000_000; i++) {
+      Ambiance.Builder clone = builder.clone();
+      parser.merge(ambianceDoc.toJson(), clone);
+      clone.build();
+    }
+    log.info("Time taken {}ms", System.currentTimeMillis() - startTs);
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  @SneakyThrows
+  public void benchmarkBinaryToEntity() {
+
+    String ambianceJson = "{\n"
+        + "  \"setupAbstractions\": {\n"
+        + "    \"accountId\": \"kmpySmUISimoRrJL6NL73w\",\n"
+        + "    \"orgIdentifier\": \"default\",\n"
+        + "    \"projectIdentifier\": \"plugins\"\n"
+        + "  },\n"
+        + "  \"levels\": [\n"
+        + "    {\n"
+        + "      \"setupId\": \"w9Gt_DJQQqKRGxqlm8VGew\",\n"
+        + "      \"runtimeId\": \"wFXvW62oTiKeb3-PyuEfwg\",\n"
+        + "      \"identifier\": \"pipeline\",\n"
+        + "      \"stepType\": {\n"
+        + "        \"type\": \"PIPELINE_SECTION\",\n"
+        + "        \"stepCategory\": \"PIPELINE\"\n"
+        + "      },\n"
+        + "      \"group\": \"PIPELINE\",\n"
+        + "      \"startTs\": \"1682583461022\",\n"
+        + "      \"nodeType\": \"PLAN_NODE\",\n"
+        + "      \"originalIdentifier\": \"pipeline\"\n"
+        + "    },\n"
+        + "    {\n"
+        + "      \"setupId\": \"w9Gt_DJQQqKRGxqlm8VGewstages\",\n"
+        + "      \"runtimeId\": \"0R-08vnETXaXjCyfTcDvsg\",\n"
+        + "      \"identifier\": \"stages\",\n"
+        + "      \"stepType\": {\n"
+        + "        \"type\": \"STAGES_STEP\",\n"
+        + "        \"stepCategory\": \"STAGES\"\n"
+        + "      },\n"
+        + "      \"group\": \"STAGES\",\n"
+        + "      \"startTs\": \"1682583461560\",\n"
+        + "      \"nodeType\": \"PLAN_NODE\",\n"
+        + "      \"originalIdentifier\": \"stages\"\n"
+        + "    },\n"
+        + "    {\n"
+        + "      \"setupId\": \"4rvQuc_8QDexgKtVRuslzA\",\n"
+        + "      \"runtimeId\": \"1O5jjZyCSwWa5_A1hNdVXA\",\n"
+        + "      \"identifier\": \"stage1\",\n"
+        + "      \"stepType\": {\n"
+        + "        \"type\": \"IntegrationStageStepPMS\",\n"
+        + "        \"stepCategory\": \"STAGE\"\n"
+        + "      },\n"
+        + "      \"group\": \"STAGE\",\n"
+        + "      \"startTs\": \"1682583462175\",\n"
+        + "      \"nodeType\": \"PLAN_NODE\",\n"
+        + "      \"originalIdentifier\": \"stage1\"\n"
+        + "    }\n"
+        + "  ],\n"
+        + "  \"planExecutionId\": \"SkppIwjzQFK6GqPibmlqMg\",\n"
+        + "  \"metadata\": {\n"
+        + "    \"runSequence\": 1,\n"
+        + "    \"triggerInfo\": {\n"
+        + "      \"triggerType\": \"MANUAL\",\n"
+        + "      \"triggeredBy\": {\n"
+        + "        \"uuid\": \"lv0euRhKRCyiXWzS7pOg6g\",\n"
+        + "        \"identifier\": \"Admin\",\n"
+        + "        \"extraInfo\": {\n"
+        + "          \"email\": \"admin@harness.io\"\n"
+        + "        }\n"
+        + "      }\n"
+        + "    },\n"
+        + "    \"pipelineIdentifier\": \"echo\",\n"
+        + "    \"executionUuid\": \"SkppIwjzQFK6GqPibmlqMg\",\n"
+        + "    \"principalInfo\": {\n"
+        + "      \"principal\": \"lv0euRhKRCyiXWzS7pOg6g\",\n"
+        + "      \"principalType\": \"USER\",\n"
+        + "      \"shouldValidateRbac\": true\n"
+        + "    },\n"
+        + "    \"gitSyncBranchContext\": \"eJyNkc1KAzEUhROtIOJefYluBF240mrLSG1La9clzWSm0fwMSUadB9GFb+UTuKnahSDYQrcm0wo2zoiLkMu537nkntw/HkHYoKaXCXyikMCjmhSG3JlqTM1CCET08bTxYMFdC54JQ01mNVkdIk1yZOLpBRqWnFMTjIvUC/3my0IQbKTqktfVTkQZ6SAz8VURnpIIpczUleRtMyLWmsiph0kWEvXbTvXSXLQM1fWUMRdPncm532uR22JTbrBvadDZaoshbWqFYbhOe3hlF/c7CVJELIVjjGUqTBBahUaUfJajtdIYf1JtFf9nWEfJ/Gn/QF30LcRf/ib66n0VUIU2RbRkNyS0y0SM4pLstN2SXGaJZ84QZ1ZxXhoH4204GISLrx48rwNYsQcs7++67OTMHtiB1zzJerwf9CiXXXXePGg1D/fnjtoCm3AxfubKhKUxFVN/TgWsQegKCMAXTfBHKg==\",\n"
+        + "    \"moduleType\": \"cd\",\n"
+        + "    \"retryInfo\": {\n"
+        + "      \n"
+        + "    },\n"
+        + "    \"pipelineStoreType\": \"INLINE\",\n"
+        + "    \"harnessVersion\": \"0\",\n"
+        + "    \"executionMode\": \"NORMAL\"\n"
+        + "  },\n"
+        + "  \"expressionFunctorToken\": \"-1830125044\",\n"
+        + "  \"planId\": \"aSF_9bYRRZWBDdVJNBdJOA\",\n"
+        + "  \"startTs\": \"1682583459946\",\n"
+        + "  \"stageExecutionId\": \"1O5jjZyCSwWa5_A1hNdVXA\"\n"
+        + "}";
+
+    Document ambianceDoc = Document.parse(ambianceJson);
+    Ambiance.Builder builder = Ambiance.newBuilder();
+
+    JsonFormat.parser().ignoringUnknownFields().merge(ambianceDoc.toJson(), builder);
+    Binary data = new Binary(builder.build().toByteArray());
+
+    long startTs = System.currentTimeMillis();
+    for (int i = 0; i < 5_000_000; i++) {
+      Ambiance.parseFrom(data.getData());
+    }
+    log.info("Time taken {}ms", System.currentTimeMillis() - startTs);
   }
 }
