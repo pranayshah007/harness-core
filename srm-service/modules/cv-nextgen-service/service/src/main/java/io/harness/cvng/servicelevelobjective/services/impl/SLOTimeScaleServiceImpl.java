@@ -95,7 +95,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
       upsertStatement.setString(17, serviceLevelObjective.getSliEvaluationType().toString());
       upsertStatement.execute();
     } catch (Exception ex) {
-      log.error("error while upserting slo data.");
+      log.error("error while upserting slo data {}", ex);
     }
   }
 
@@ -109,7 +109,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
       deleteStatement.setString(4, identifier);
       deleteStatement.execute();
     } catch (Exception ex) {
-      log.error("error while deleting slo data.");
+      log.error("error while deleting slo data. {}", ex);
     }
   }
 
@@ -135,7 +135,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
           sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective, null).getSliStatusPercentage());
       upsertStatement.execute();
     } catch (Exception ex) {
-      log.error("error while upserting slo data.");
+      log.error("error while upserting slo data. {}", ex);
     }
   }
 
@@ -178,7 +178,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
         insertStatement.execute();
       }
     } catch (Exception ex) {
-      log.error("error while upserting slo data.");
+      log.error("error while upserting slo data. {}", ex);
     }
   }
 
