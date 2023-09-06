@@ -391,6 +391,11 @@ public class IdpModule extends AbstractModule {
     bind(ExecutorService.class)
         .annotatedWith(Names.named("DefaultPREnvAccountIdToNamespaceMappingCreator"))
         .toInstance(new ManagedExecutorService(Executors.newSingleThreadExecutor()));
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("ScoreComputer"))
+        .toInstance(new ManagedExecutorService(Executors.newFixedThreadPool(
+            Integer.parseInt(appConfig.getCpu()) * Integer.parseInt(appConfig.getScoreComputerThreadsPerCore()),
+            new ThreadFactoryBuilder().setNameFormat("score-computer-%d").build())));
     bind(HealthResource.class).to(HealthResourceImpl.class);
 
     if (appConfig.getDelegateSelectorsCacheMode().equals(IN_MEMORY)) {

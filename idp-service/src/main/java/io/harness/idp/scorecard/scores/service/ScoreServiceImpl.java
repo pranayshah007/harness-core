@@ -33,15 +33,16 @@ import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
 import io.harness.idp.scorecard.scorecardchecks.beans.ScorecardAndChecks;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecardchecks.entity.ScorecardEntity;
-import io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper;
 import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
 import io.harness.idp.scorecard.scorecardchecks.service.ScorecardService;
 import io.harness.idp.scorecard.scores.entities.ScoreEntity;
+import io.harness.idp.scorecard.scores.logging.ScoreComputationLogContext;
 import io.harness.idp.scorecard.scores.mappers.ScorecardGraphSummaryInfoMapper;
 import io.harness.idp.scorecard.scores.mappers.ScorecardScoreMapper;
 import io.harness.idp.scorecard.scores.mappers.ScorecardSummaryInfoMapper;
 import io.harness.idp.scorecard.scores.repositories.ScoreEntityByScorecardIdentifier;
 import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
+import io.harness.logging.AutoLogContext;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.Scorecard;
@@ -55,6 +56,7 @@ import io.harness.springdata.TransactionHelper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,11 +65,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Pair;
 
@@ -81,6 +85,7 @@ public class ScoreServiceImpl implements ScoreService {
   @Inject DataPointsRepository datapointRepository;
   @Inject DataSourceRepository datasourceRepository;
   @Inject DataSourceLocationRepository datasourceLocationRepository;
+  @Inject @Named("ScoreComputer") ExecutorService executorService;
   ScorecardService scorecardService;
   DataSourceProviderFactory dataSourceProviderFactory;
   ScoreRepository scoreRepository;
@@ -120,9 +125,27 @@ public class ScoreServiceImpl implements ScoreService {
 
     Map<String, Set<String>> dataPointsAndInputValues = getDataPointsAndInputValues(scorecardsAndChecks);
 
+    CountDownLatch latch = new CountDownLatch(entities.size());
     for (BackstageCatalogEntity entity : entities) {
-      Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, dataPointsAndInputValues);
-      compute(accountIdentifier, entity, scorecardsAndChecks, data);
+      executorService.submit(() -> {
+        try {
+          Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, dataPointsAndInputValues);
+          compute(accountIdentifier, entity, scorecardsAndChecks, data);
+        } finally {
+          latch.countDown();
+        }
+      });
+    }
+
+    if (entityIdentifiers != null && !entityIdentifiers.isEmpty()) {
+      try {
+        if (!latch.await(30, TimeUnit.SECONDS)) {
+          log.warn("Timeout waiting for threads to complete.");
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        log.warn("Interrupted while waiting for threads.");
+      }
     }
   }
 
@@ -316,38 +339,45 @@ public class ScoreServiceImpl implements ScoreService {
 
   private Map<String, Map<String, Object>> fetch(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
-    List<DataPointEntity> dataPointEntities = datapointRepository.findByIdentifierIn(dataPointIdentifiers);
-    Map<String, Map<String, Set<String>>> providerDataPoints = new HashMap<>();
-    dataPointsAndInputValues.forEach((k, v) -> {
-      DataPointEntity dataPointEntity =
-          dataPointEntities.stream().filter(dpe -> dpe.getIdentifier().equals(k)).findFirst().orElse(null);
-      assert dataPointEntity != null;
-      String dataSourceIdentifier = dataPointEntity.getDataSourceIdentifier();
-      if (providerDataPoints.containsKey(dataSourceIdentifier)) {
-        Map<String, Set<String>> existingProviderDataPoints = providerDataPoints.get(dataSourceIdentifier);
-        existingProviderDataPoints.put(k, v);
-        providerDataPoints.put(dataSourceIdentifier, existingProviderDataPoints);
-      } else {
-        providerDataPoints.put(dataSourceIdentifier, new HashMap<>() {
-          { put(k, v); }
-        });
-      }
-    });
-
-    Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
-    providerDataPoints.forEach((k, v) -> {
-      DataSourceProvider provider = dataSourceProviderFactory.getProvider(k);
-      try {
-        Map<String, Map<String, Object>> data = provider.fetchData(accountIdentifier, entity, v);
-        if (data != null) {
-          aggregatedData.putAll(data);
+    try (AutoLogContext ignore1 = ScoreComputationLogContext.builder()
+                                      .accountIdentifier(accountIdentifier)
+                                      .threadName(Thread.currentThread().getName())
+                                      .build(AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+      log.info("Fetching data from provider for entity: {}", entity.getMetadata().getUid());
+      Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
+      List<DataPointEntity> dataPointEntities = datapointRepository.findByIdentifierIn(dataPointIdentifiers);
+      Map<String, Map<String, Set<String>>> providerDataPoints = new HashMap<>();
+      dataPointsAndInputValues.forEach((k, v) -> {
+        DataPointEntity dataPointEntity =
+            dataPointEntities.stream().filter(dpe -> dpe.getIdentifier().equals(k)).findFirst().orElse(null);
+        assert dataPointEntity != null;
+        String dataSourceIdentifier = dataPointEntity.getDataSourceIdentifier();
+        if (providerDataPoints.containsKey(dataSourceIdentifier)) {
+          Map<String, Set<String>> existingProviderDataPoints = providerDataPoints.get(dataSourceIdentifier);
+          existingProviderDataPoints.put(k, v);
+          providerDataPoints.put(dataSourceIdentifier, existingProviderDataPoints);
+        } else {
+          providerDataPoints.put(dataSourceIdentifier, new HashMap<>() {
+            { put(k, v); }
+          });
         }
-      } catch (Exception e) {
-        log.warn("Error fetching data from {} provider", provider.getIdentifier(), e);
-      }
-    });
-    return aggregatedData;
+      });
+
+      Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
+      providerDataPoints.forEach((k, v) -> {
+        DataSourceProvider provider = dataSourceProviderFactory.getProvider(k);
+        try {
+          Map<String, Map<String, Object>> data = provider.fetchData(accountIdentifier, entity, v);
+          if (data != null) {
+            aggregatedData.putAll(data);
+          }
+        } catch (Exception e) {
+          log.warn("Error fetching data from {} provider for entity: {}", provider.getIdentifier(),
+              entity.getMetadata().getUid(), e);
+        }
+      });
+      return aggregatedData;
+    }
   }
 
   private void compute(String accountIdentifier, BackstageCatalogEntity entity,
@@ -356,13 +386,17 @@ public class ScoreServiceImpl implements ScoreService {
 
     for (ScorecardAndChecks scorecardAndChecks : scorecardsAndChecks) {
       ScorecardEntity scorecard = scorecardAndChecks.getScorecard();
-      try {
+      try (AutoLogContext ignore1 = ScoreComputationLogContext.builder()
+                                        .accountIdentifier(accountIdentifier)
+                                        .scorecardIdentifier(scorecard.getIdentifier())
+                                        .threadName(Thread.currentThread().getName())
+                                        .build(AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
         if (!shouldComputeScore(scorecard.getFilter(), entity)) {
+          log.info("Not computing score as the entity {} does not match the scorecard filters",
+              entity.getMetadata().getUid());
           continue;
         }
-        log.info("Calculating score for entity: {}, scorecard: {}, account: {}", entity.getMetadata().getUid(),
-            scorecard.getIdentifier(), accountIdentifier);
-
+        log.info("Computing score for entity: {}", entity.getMetadata().getUid());
         ScoreEntity.ScoreEntityBuilder scoreBuilder = ScoreEntity.builder()
                                                           .scorecardIdentifier(scorecard.getIdentifier())
                                                           .accountIdentifier(accountIdentifier)
@@ -377,8 +411,6 @@ public class ScoreServiceImpl implements ScoreService {
             Collectors.toMap(ScorecardEntity.Check::getIdentifier, Function.identity()));
 
         for (CheckEntity check : checks) {
-          log.info("Evaluating check status for: {}, account: {}", check.getIdentifier(), accountIdentifier);
-
           CheckStatus checkStatus = new CheckStatus();
           checkStatus.setName(check.getName());
           Pair<CheckStatus.StatusEnum, String> statusAndMessage = getCheckStatusAndFailureReason(evaluator, check);
@@ -386,8 +418,8 @@ public class ScoreServiceImpl implements ScoreService {
           if (statusAndMessage.getSecond() != null) {
             checkStatus.setReason(statusAndMessage.getSecond());
           }
-          log.info("Check {}, Status : {}, Reason: {}, Account: {} ", check.getIdentifier(), checkStatus.getStatus(),
-              statusAndMessage.getSecond(), accountIdentifier);
+          log.info("Check {}, Status : {}, Reason: {}", check.getIdentifier(), checkStatus.getStatus(),
+              statusAndMessage.getSecond());
 
           double weightage = scorecardCheckByIdentifier.get(check.getIdentifier()).getWeightage();
           totalPossibleScore += weightage;
@@ -396,13 +428,14 @@ public class ScoreServiceImpl implements ScoreService {
           checkStatuses.add(checkStatus);
         }
 
+        int score = totalPossibleScore == 0 ? 0 : Math.round((float) totalScore / totalPossibleScore * 100);
         scoreBuilder.checkStatus(checkStatuses);
-        scoreBuilder.score(totalPossibleScore == 0 ? 0 : Math.round((float) totalScore / totalPossibleScore * 100));
+        scoreBuilder.score(score);
         scoreBuilder.lastComputedTimestamp(System.currentTimeMillis());
         scoreRepository.save(scoreBuilder.build());
+        log.info("Score computed for entity {} with score: {}", entity.getMetadata().getUid(), score);
       } catch (Exception e) {
-        log.warn("Error computing score for scorecard {} entity {}", scorecard.getIdentifier(),
-            entity.getMetadata().getIdentifier(), e);
+        log.warn("Error computing score", e);
       }
     }
   }
@@ -430,7 +463,7 @@ public class ScoreServiceImpl implements ScoreService {
     Object value = null;
     try {
       value = evaluator.evaluateExpression(expression, RETURN_NULL_IF_UNRESOLVED);
-    } catch (JexlException e) {
+    } catch (Exception e) {
       log.error("Expression evaluation failed. Falling back to default check behaviour", e);
     }
     if (value == null) {
@@ -454,16 +487,11 @@ public class ScoreServiceImpl implements ScoreService {
       try {
         String errorMessageExpression = constructExpressionFromRules(
             Collections.singletonList(rule), checkEntity.getRuleStrategy(), ERROR_MESSAGE_KEY, true);
-        String lhsExpression = constructExpressionFromRules(
-            Collections.singletonList(rule), checkEntity.getRuleStrategy(), DATA_POINT_VALUE_KEY, true);
-        Object lhsValue = evaluator.evaluateExpression(lhsExpression, RETURN_NULL_IF_UNRESOLVED);
         Object errorMessage = evaluator.evaluateExpression(errorMessageExpression, RETURN_NULL_IF_UNRESOLVED);
-        reasonBuilder.append(
-            String.format("Expected %s %s. Actual %s.", rule.getOperator(), rule.getValue(), lhsValue));
         if ((errorMessage instanceof String) && !((String) errorMessage).isEmpty()) {
-          reasonBuilder.append(String.format(" Reason: %s", errorMessage));
+          reasonBuilder.append(String.format("Reason: %s", errorMessage));
         }
-      } catch (JexlException e) {
+      } catch (Exception e) {
         log.warn("Reason expression evaluation failed", e);
       }
     }

@@ -210,6 +210,14 @@ if [[ "" != "$PROXY_ALLOW_LIST_CONFIG_SERVICES" ]]; then
   sed -i '' 's/  services: |-/  services:/g' $CONFIG_FILE
 fi
 
+if [[ "" != "$CPU" ]]; then
+  export CPU; yq -i '.cpu=env(CPU)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORE_COMPUTER_THREADS_PER_CORE" ]]; then
+  export SCORE_COMPUTER_THREADS_PER_CORE; yq -i '.scoreComputerThreadsPerCore=env(SCORE_COMPUTER_THREADS_PER_CORE)' $CONFIG_FILE
+fi
+
 yq -i 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
