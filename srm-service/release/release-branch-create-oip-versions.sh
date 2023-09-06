@@ -36,5 +36,6 @@ if [[ -z "$FIX_OIP_VERSION_ID" ]]; then
   # shellcheck disable=SC2242
   exit -1
 else
+  echo "exporting new OIP version $FIX_OIP_VERSION_ID"
   export FIX_OIP_VERSION_ID
 fi
