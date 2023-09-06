@@ -29,7 +29,8 @@ public interface BarrierService {
   BarrierExecutionInstance updateState(String uuid, State state);
   List<BarrierExecutionInstance> updatePosition(String planExecutionId,
       BarrierPositionInfo.BarrierPosition.BarrierPositionType positionType, String positionSetupId,
-      String positionExecutionId, String stageExecutionId, String stepGroupExecutionId);
+      String positionExecutionId, String stageExecutionId, String stepGroupExecutionId,
+      boolean addFiltersForBarriersWithinLoopingStrategy);
   BarrierExecutionInstance findByIdentifierAndPlanExecutionId(String identifier, String planExecutionId);
   BarrierExecutionInstance findByPlanNodeIdAndPlanExecutionId(String planNodeId, String planExecutionId);
   List<BarrierExecutionInstance> findByStageIdentifierAndPlanExecutionIdAnsStateIn(
