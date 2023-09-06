@@ -44,6 +44,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.service.beans.YamlInputDetails;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
@@ -55,6 +56,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineImportRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineInputSchemaDetailsResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineSaveResponseBody;
@@ -131,7 +133,11 @@ public class PipelinesApiImpl implements PipelinesApi {
 
   @Override
   public Response getInputsSchemaDetails(String org, String project, String pipeline, String harnessAccount) {
-    return Response.ok().build();
+    List<YamlInputDetails> yamlInputDetails =
+        pmsPipelineService.getInputSchemaDetails(harnessAccount, org, project, pipeline);
+    PipelineInputSchemaDetailsResponseBody responseBody =
+        PipelinesApiUtils.getPipelineInputSchemaDetailsResponseBody(yamlInputDetails);
+    return Response.ok().entity(responseBody).build();
   }
 
   @Override

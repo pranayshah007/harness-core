@@ -86,6 +86,7 @@ import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
+import io.harness.pms.pipeline.service.beans.YamlInputDetails;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
@@ -163,6 +164,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private final PMSYamlSchemaService pmsYamlSchemaService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -955,6 +957,19 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
 
     return pipelineAfterUpdate.getIdentifier();
+  }
+
+  @Override
+  public List<YamlInputDetails> getInputSchemaDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    Optional<PipelineEntity> optionalPipelineEntity =
+        getPipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+    if (optionalPipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
+          orgIdentifier, projectIdentifier, pipelineIdentifier));
+    }
+    // TODO: add integration with yaml schema service
+    return null;
   }
 
   private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
