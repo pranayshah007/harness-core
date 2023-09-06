@@ -679,8 +679,9 @@ public class UserGroupServiceImpl implements UserGroupService {
       criteria = createScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
     }
     if (isNotBlank(searchTerm)) {
-      Criteria searchCriteria = new Criteria().orOperator(Criteria.where(UserGroupKeys.name).regex(Pattern.quote(searchTerm), "i"),
-          Criteria.where(UserGroupKeys.tags).regex(Pattern.quote(searchTerm), "i"));
+      Criteria searchCriteria =
+          new Criteria().orOperator(Criteria.where(UserGroupKeys.name).regex(Pattern.quote(searchTerm), "i"),
+              Criteria.where(UserGroupKeys.tags).regex(Pattern.quote(searchTerm), "i"));
       criteria.andOperator(searchCriteria);
     }
     return criteria;
