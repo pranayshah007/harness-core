@@ -46,7 +46,9 @@ import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.RuleSetService;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.GovernanceConfig;
 import io.harness.rule.Owner;
@@ -115,6 +117,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
   private RuleSet ruleSet;
   private GovernanceRuleSetResource ruleSetManagement;
   private RuleEnforcement ruleEnforcement;
+  private ConnectorInfoDTO connectorInfoDTO;
   private GovernanceRuleEnforcementResource ruleEnforcementManagement;
 
   @Captor private ArgumentCaptor<RuleCreateEvent> rulesCreateEventArgumentCaptor;
@@ -186,6 +189,10 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     ruleEnforcementManagement = new GovernanceRuleEnforcementResource(ruleEnforcementService, telemetryReporter,
         transactionTemplate, outboxService, configuration, rbacHelper, ruleSetService, governanceRuleService);
     when(ruleEnforcementService.listId(ACCOUNT_ID, UUIDENF, false)).thenReturn(ruleEnforcement);
+
+    connectorInfoDTO = ConnectorInfoDTO.builder()
+                           .connectorConfig(CEAwsConnectorDTO.builder().awsAccountId(ACCOUNT_ID).build())
+                           .build();
   }
 
   @Test
@@ -233,6 +240,10 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                    .doInTransaction(new SimpleTransactionStatus()));
     when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
         .thenReturn(Collections.singleton(UUID));
+    when(governanceRuleService.getConnectorResponse(any(), any(), any()))
+        .thenReturn(Collections.singleton(connectorInfoDTO));
+    when(rbacHelper.checkAccountIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(ACCOUNT_ID));
     ruleEnforcementManagement.create(
         ACCOUNT_ID, CreateRuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcement).build());
     verify(transactionTemplate, times(1)).execute(any());
@@ -286,6 +297,10 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                    .doInTransaction(new SimpleTransactionStatus()));
     when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
         .thenReturn(Collections.singleton(UUID));
+    when(governanceRuleService.getConnectorResponse(any(), any(), any()))
+        .thenReturn(Collections.singleton(connectorInfoDTO));
+    when(rbacHelper.checkAccountIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(ACCOUNT_ID));
     ruleEnforcementManagement.update(
         ACCOUNT_ID, CreateRuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcement).build());
     verify(transactionTemplate, times(1)).execute(any());

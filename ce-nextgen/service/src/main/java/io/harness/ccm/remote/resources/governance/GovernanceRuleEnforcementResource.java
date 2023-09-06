@@ -46,10 +46,13 @@ import io.harness.ccm.views.helper.EnforcementCount;
 import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleSetService;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -217,6 +220,9 @@ public class GovernanceRuleEnforcementResource {
     }
     Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
         accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
+    if (nextGenConnectorResponses == null || nextGenConnectorResponses.size() == 0) {
+      throw new InvalidRequestException("At least one valid target account is required");
+    }
     Set<String> allowedAccountIds = null;
     if (nextGenConnectorResponses != null) {
       allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
@@ -226,6 +232,16 @@ public class GovernanceRuleEnforcementResource {
     if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
       throw new NGAccessDeniedException(
           String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
+    }
+    if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AWS) {
+      ruleEnforcement.setTargetAccounts(nextGenConnectorResponses.stream()
+                                            .map(c -> ((CEAwsConnectorDTO) c.getConnectorConfig()).getAwsAccountId())
+                                            .collect(Collectors.toList()));
+    } else if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AZURE) {
+      ruleEnforcement.setTargetAccounts(
+          nextGenConnectorResponses.stream()
+              .map(c -> ((CEAzureConnectorDTO) c.getConnectorConfig()).getSubscriptionId())
+              .collect(Collectors.toList()));
     }
     ruleEnforcement.setAccountId(accountId);
     ruleEnforcement.setRunCount(0);
@@ -390,6 +406,11 @@ public class GovernanceRuleEnforcementResource {
     ruleEnforcement.setAccountId(accountId);
     RuleEnforcement ruleEnforcementFromMongo =
         ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
+    if (ruleEnforcement.getCloudProvider() == null) {
+      ruleEnforcement.setCloudProvider(ruleEnforcementFromMongo.getCloudProvider());
+    } else if (ruleEnforcement.getCloudProvider() != ruleEnforcementFromMongo.getCloudProvider()) {
+      throw new InvalidRequestException("Update to Cloud Provider is not allowed");
+    }
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
     Set<String> rules = new HashSet<>();
@@ -407,7 +428,7 @@ public class GovernanceRuleEnforcementResource {
     if (rules.size() < 1) {
       throw new InvalidRequestException("At least one rule should be added in ruleIds/ruleSetIDs");
     }
-    ruleSetService.validateCloudProvider(accountId, rules, ruleEnforcementFromMongo.getCloudProvider());
+    ruleSetService.validateCloudProvider(accountId, rules, ruleEnforcement.getCloudProvider());
     if (ruleEnforcement.getRuleIds() != null) {
       Set<String> rulesPermitted = rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, rules, RULE_EXECUTE);
       if (rulesPermitted.size() != rules.size()) {
@@ -416,19 +437,31 @@ public class GovernanceRuleEnforcementResource {
             WingsException.USER, null);
       }
     }
-    if (ruleEnforcement.getTargetAccounts() != null) {
-      Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
-          accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
-      Set<String> allowedAccountIds = null;
-      if (nextGenConnectorResponses != null) {
-        allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-            nextGenConnectorResponses.stream().map(ConnectorInfoDTO::getIdentifier).collect(Collectors.toSet()),
-            RULE_EXECUTE);
-      }
-      if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
-        throw new NGAccessDeniedException(
-            String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
-      }
+
+    Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
+        accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
+    if (nextGenConnectorResponses == null || nextGenConnectorResponses.size() == 0) {
+      throw new InvalidRequestException("At least one valid target account is required");
+    }
+    Set<String> allowedAccountIds = null;
+    if (nextGenConnectorResponses != null) {
+      allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+          nextGenConnectorResponses.stream().map(ConnectorInfoDTO::getIdentifier).collect(Collectors.toSet()),
+          RULE_EXECUTE);
+    }
+    if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
+    }
+    if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AWS) {
+      ruleEnforcement.setTargetAccounts(nextGenConnectorResponses.stream()
+                                            .map(c -> ((CEAwsConnectorDTO) c.getConnectorConfig()).getAwsAccountId())
+                                            .collect(Collectors.toList()));
+    } else if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AZURE) {
+      ruleEnforcement.setTargetAccounts(
+          nextGenConnectorResponses.stream()
+              .map(c -> ((CEAzureConnectorDTO) c.getConnectorConfig()).getSubscriptionId())
+              .collect(Collectors.toList()));
     }
 
     // Update dkron if enforcement is toggled or schedule is changed or timezone is changed
