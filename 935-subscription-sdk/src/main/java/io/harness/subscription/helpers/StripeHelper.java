@@ -25,8 +25,7 @@ import com.stripe.model.Price;
 import java.util.List;
 import java.util.Optional;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
-        components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_DASHBOARD})
+
 public interface StripeHelper {
   CustomerDetailDTO createCustomer(CustomerParams customerParams);
 
