@@ -145,7 +145,6 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   String identifier;
   String stageFqn;
   String group;
-  String nodeType;
 
   public ExecutableResponse obtainLatestExecutableResponse() {
     if (isEmpty(executableResponses)) {
