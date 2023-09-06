@@ -51,6 +51,7 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -80,7 +81,7 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   @Inject
   public ApprovalResourceServiceImpl(ApprovalInstanceService approvalInstanceService,
       ApprovalInstanceResponseMapper approvalInstanceResponseMapper, PlanExecutionService planExecutionService,
-      UserGroupClient userGroupClient, CurrentUserHelper currentUserHelper, UserClient userClient,
+      @Named("PRIVILEGED") UserGroupClient userGroupClient, CurrentUserHelper currentUserHelper, UserClient userClient,
       LogStreamingStepClientFactory logStreamingStepClientFactory) {
     this.approvalInstanceService = approvalInstanceService;
     this.approvalInstanceResponseMapper = approvalInstanceResponseMapper;
