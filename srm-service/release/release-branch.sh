@@ -144,7 +144,7 @@ FIX_SRM_VERSION_ID=`srm-service/release/release-branch-create-srm-versions.sh | 
 echo "INFO: Step 14: Creating the oip fix version."
 chmod +x srm-service/release/release-branch-create-oip-versions.sh
 FIX_OIP_VERSION_ID=`srm-service/release/release-branch-create-oip-versions.sh  | grep 'FIX_OIP_VERSION_ID' | sed -e 's: *FIX_OIP_VERSION_ID=::g'`
-echo "finalVersions NEW_VERSION-$NEW_VERSION-FIX_SRM_VERSION_ID=$FIX_SRM_VERSION_ID-FIX_OIP_VERSION_ID=$FIX_OIP_VERSION_ID"
+echo "finalVersions NEW_VERSION=$NEW_VERSION-FIX_SRM_VERSION_ID=$FIX_SRM_VERSION_ID-FIX_OIP_VERSION_ID=$FIX_OIP_VERSION_ID"
 #echo "INFO: Step 15: Updating oip jiras."
 #chmod +x srm-service/release/release-branch-update-oip-jiras.sh
 #srm-service/release/release-branch-update-oip-jiras.sh
