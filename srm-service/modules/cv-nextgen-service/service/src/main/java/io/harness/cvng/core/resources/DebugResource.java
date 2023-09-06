@@ -118,6 +118,17 @@ public class DebugResource {
     return new RestResponse<>(debugService.forceDeleteSLI(projectParams.getProjectParams(), identifiers));
   }
 
+  @DELETE
+  @Timed
+  @Path("composite-slo")
+  @ApiOperation(value = "Force deletes composite SLOs and associated entities", nickname = "forceDeleteCompositeSLO",
+      hidden = true)
+  public RestResponse<Boolean>
+  forceDeleteCompositeSLO(@NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> identifiers) {
+    return new RestResponse<>(debugService.forceDeleteCompositeSLO(projectParams, identifiers));
+  }
+
   @GET
   @Timed
   @Path("composite-slo/{identifier}")

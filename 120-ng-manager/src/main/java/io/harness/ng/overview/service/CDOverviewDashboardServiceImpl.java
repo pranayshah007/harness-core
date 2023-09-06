@@ -167,6 +167,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -3891,10 +3892,15 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         + String.format("projectidentifier='%s' and ", projectIdentifier) + String.format("service_id='%s'", serviceId);
   }
 
-  public io.harness.ng.overview.dto.ServiceHeaderInfo getServiceHeaderInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
-    Optional<ServiceEntity> service =
-        serviceEntityServiceImpl.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false);
+  public io.harness.ng.overview.dto.ServiceHeaderInfo getServiceHeaderInfo(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceId, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
+    Optional<ServiceEntity> service = serviceEntityServiceImpl.get(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false, loadFromCache, loadFromFallbackBranch);
+    if (service.isEmpty()) {
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceId));
+    }
     ServiceEntity serviceEntity = service.get();
 
     String serviceRef =

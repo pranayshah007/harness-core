@@ -10,7 +10,7 @@ KEYS=$(git log --pretty=oneline --abbrev-commit |\
 echo $KEYS
 
 #FIX_OIP_VERSION value to be same as used in release-branch-create-oip-version.sh
-FIX_OIP_VERSION="OIP_""$VERSION"00
+FIX_OIP_VERSION="OIP_""$VERSION"
 
 for KEY in ${KEYS}
   do

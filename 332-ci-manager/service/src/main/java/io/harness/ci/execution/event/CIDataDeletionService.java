@@ -13,7 +13,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
-import io.harness.ci.telemetry.CITelemetryStatusRepositoryCustomImpl;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -23,6 +22,7 @@ import io.harness.repositories.CIBuildInfoRepositoryCustomImpl;
 import io.harness.repositories.CIExecutionConfigRepository;
 import io.harness.repositories.CIExecutionRepository;
 import io.harness.repositories.CITaskDetailsRepository;
+import io.harness.repositories.CITelemetryStatusRepositoryCustomImpl;
 import io.harness.repositories.ExecutionQueueLimitRepository;
 
 import com.google.inject.Inject;

@@ -151,6 +151,7 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
     }
     return ruleSetId;
   }
+
   @Override
   public ExecutionDetails getDetails(String accountId, ExecutionDetailRequest executionDetailRequest) {
     List<RuleEnforcement> ruleEnforcements =
@@ -198,5 +199,19 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
     }
     executionDetails.setEnforcementIds(executionDetailList);
     return executionDetails;
+  }
+
+  @Override
+  public List<RuleEnforcement> listEnforcementsWithGivenRule(String accountId, String ruleId) {
+    return ruleEnforcementDAO.listEnforcementsWithGivenRule(accountId, ruleId);
+  }
+
+  @Override
+  public RuleEnforcement removeRuleFromEnforcement(RuleEnforcement ruleEnforcement, String ruleId) {
+    List<String> rules = ruleEnforcement.getRuleIds();
+    rules.remove(ruleId);
+    ruleEnforcement.setRuleIds(rules);
+    ruleEnforcementDAO.update(ruleEnforcement);
+    return null;
   }
 }

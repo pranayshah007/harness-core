@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -60,6 +61,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Optional;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -92,6 +94,12 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
   @Mock InstanceInfoService instanceInfoService;
   @Mock DeploymentSummaryService deploymentSummaryService;
   @InjectMocks DeploymentEventListener deploymentEventListener;
+
+  @Before
+  public void setup() {
+    doReturn(null).when(instanceInfoService).getDeploymentOutcomeMetadata(any(), any());
+    doReturn(null).when(abstractInstanceSyncHandler).updateDeploymentInfoDTO(any(), any());
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -158,6 +166,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
         .thenReturn(abstractInstanceSyncHandler);
     DeploymentInfoDTO deploymentInfoDTO =
         K8sDeploymentInfoDTO.builder().releaseName(RELEASE_NAME).namespaces(namespaces).build();
+    doReturn(deploymentInfoDTO).when(abstractInstanceSyncHandler).updateDeploymentInfoDTO(any(), any());
     when(abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, Arrays.asList(serverInstanceInfo)))
         .thenReturn(deploymentInfoDTO);
 
@@ -285,6 +294,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
         .thenReturn(abstractInstanceSyncHandler);
     DeploymentInfoDTO deploymentInfoDTO =
         K8sDeploymentInfoDTO.builder().releaseName(RELEASE_NAME).namespaces(namespaces).build();
+    doReturn(deploymentInfoDTO).when(abstractInstanceSyncHandler).updateDeploymentInfoDTO(any(), any());
     when(abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, Arrays.asList(serverInstanceInfo)))
         .thenReturn(deploymentInfoDTO);
 
@@ -414,6 +424,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
         .thenReturn(abstractInstanceSyncHandler);
     DeploymentInfoDTO deploymentInfoDTO =
         K8sDeploymentInfoDTO.builder().releaseName(RELEASE_NAME).namespaces(namespaces).build();
+    doReturn(deploymentInfoDTO).when(abstractInstanceSyncHandler).updateDeploymentInfoDTO(any(), any());
     when(abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, Arrays.asList(serverInstanceInfo)))
         .thenReturn(deploymentInfoDTO);
 

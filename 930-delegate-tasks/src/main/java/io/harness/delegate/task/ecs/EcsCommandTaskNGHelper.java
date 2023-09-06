@@ -1380,25 +1380,22 @@ public class EcsCommandTaskNGHelper {
           List<Task> tasks =
               getTasksFromTaskARNs(triggeredRunTaskArns, clusterName, region, awsConnectorDTO, logCallback);
 
-          List<Task> notInStoppedStateTasks =
-              tasks.stream()
-                  .filter(t -> !t.lastStatus().equals(com.amazonaws.services.ecs.model.DesiredStatus.STOPPED.name()))
-                  .collect(Collectors.toList());
+          List<Task> notInRunningStateTasks = tasks.stream()
+                                                  .filter(t -> !DesiredStatus.RUNNING.name().equals(t.lastStatus()))
+                                                  .collect(Collectors.toList());
 
           List<Task> tasksWithFailedContainers =
               tasks.stream()
-                  .filter(task -> task.containers().stream().anyMatch(container -> isEcsTaskContainerFailed(container)))
+                  .filter(task -> task.containers().stream().anyMatch(this::isEcsTaskContainerFailed))
                   .collect(Collectors.toList());
 
           if (EmptyPredicate.isNotEmpty(tasksWithFailedContainers)) {
-            String errorMsg =
-                tasksWithFailedContainers.stream()
-                    .flatMap(
-                        task -> task.containers().stream().filter(container -> isEcsTaskContainerFailed(container)))
-                    .map(container
-                        -> container.taskArn() + " => " + container.containerArn()
-                            + " => exit code : " + container.exitCode())
-                    .collect(Collectors.joining("\n"));
+            String errorMsg = tasksWithFailedContainers.stream()
+                                  .flatMap(task -> task.containers().stream().filter(this::isEcsTaskContainerFailed))
+                                  .map(container
+                                      -> container.taskArn() + " => " + container.containerArn()
+                                          + " => exit code : " + container.exitCode())
+                                  .collect(Collectors.joining("\n"));
             logCallback.saveExecutionLog(
                 "Containers in some tasks failed and are showing non zero exit code\n" + errorMsg, LogLevel.ERROR,
                 CommandExecutionStatus.FAILURE);
@@ -1406,7 +1403,7 @@ public class EcsCommandTaskNGHelper {
                 "Containers in some tasks failed and are showing non zero exit code\n " + errorMsg);
           }
 
-          if (EmptyPredicate.isEmpty(notInStoppedStateTasks)) {
+          if (EmptyPredicate.isEmpty(notInRunningStateTasks)) {
             return true;
           }
 
@@ -1414,7 +1411,7 @@ public class EcsCommandTaskNGHelper {
                                      .map(task -> format("%s : %s", task.taskArn(), task.lastStatus()))
                                      .collect(Collectors.joining("\n"));
 
-          logCallback.saveExecutionLog(format("%d tasks have not completed", notInStoppedStateTasks.size()));
+          logCallback.saveExecutionLog(format("%d tasks have not completed", notInRunningStateTasks.size()));
           logCallback.saveExecutionLog(taskStatusLog);
           sleep(ofSeconds(10));
         }

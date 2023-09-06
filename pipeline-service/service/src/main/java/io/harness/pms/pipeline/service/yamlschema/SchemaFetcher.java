@@ -67,17 +67,21 @@ public class SchemaFetcher {
   @Inject private SchemaGetterFactory schemaGetterFactory;
   @Inject private StaticSchemaParserFactory staticSchemaParserFactory;
 
-  private JsonNode pipelineStaticSchema = null;
+  private JsonNode pipelineStaticSchemaV0 = null;
+  private JsonNode pipelineStaticSchemaV1 = null;
 
   private JsonNode triggerStaticSchema = null;
 
-  private final String PIPELINE_JSON_PATH = "static-schema/pipeline.json";
-  private final String TRIGGER_JSON_PATH = "static-schema/trigger.json";
+  private final String PIPELINE_JSON_PATH_V0 = "static-schema/v0/pipeline.json";
+  private final String PIPELINE_JSON_PATH_V1 = "static-schema/v1/pipeline.json";
+  private final String TRIGGER_JSON_PATH_V0 = "static-schema/v0/trigger.json";
 
   @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
 
   private final String PIPELINE_JSON = "pipeline.json";
   private final String TRIGGER_JSON = "trigger.json";
+  private final String VERSION_V0 = "v0";
+  private final String VERSION_V1 = "v1";
 
   private final String PRE_QA = "stress";
 
@@ -165,30 +169,45 @@ public class SchemaFetcher {
         orgIdentifier, projectIdentifier, scope, entityType, yamlGroup, yamlSchemaWithDetailsList);
   }
 
-  public JsonNode fetchPipelineStaticYamlSchema() {
+  public JsonNode fetchPipelineStaticYamlSchema(String version) {
     log.info("[PMS] Fetching static schema");
     try (ResponseTimeRecorder ignore = new ResponseTimeRecorder("Fetching Pipeline Static Schema")) {
       /*
         Fetches schema from Github repo in case of PRE_QA Env.
         If pipelineStaticSchema is null, then we read it from the pipeline.json resource file and set it to
         pipelineStaticSchema and return pipelineStaticSchema.
+        uses pipelineStaticSchemaV0 for v0 schema and pipelineStaticSchemaV1 for v1 schema.
       */
-      return getPipelineStaticSchema();
+      return getPipelineStaticSchema(version);
+    } catch (InvalidRequestException exception) {
+      throw exception;
     } catch (Exception e) {
       log.warn("[PMS] Unable to get pipeline static schema", e);
-      throw new InvalidRequestException(String.format("Not able to read json from %s path", PIPELINE_JSON_PATH), e);
+      throw new InvalidRequestException(String.format("Not able to read json from %s path",
+                                            "v0".equals(version) ? PIPELINE_JSON_PATH_V0 : PIPELINE_JSON_PATH_V1),
+          e);
     }
   }
 
-  private JsonNode getPipelineStaticSchema() throws IOException {
+  private JsonNode getPipelineStaticSchema(String version) throws IOException {
     String env = System.getenv("ENV");
     if (PREQA.equals(env)) {
-      return fetchSchemaFromRepo(EntityType.PIPELINES, "v0");
+      return fetchSchemaFromRepo(EntityType.PIPELINES, version);
     }
-    if (null == pipelineStaticSchema) {
-      pipelineStaticSchema = fetchFile(PIPELINE_JSON_PATH);
+    if (version.equals(VERSION_V0)) {
+      if (null == pipelineStaticSchemaV0) {
+        pipelineStaticSchemaV0 = fetchFile(PIPELINE_JSON_PATH_V0);
+      }
+      return pipelineStaticSchemaV0;
+    } else if (version.equals(VERSION_V1)) {
+      if (null == pipelineStaticSchemaV1) {
+        pipelineStaticSchemaV1 = fetchFile(PIPELINE_JSON_PATH_V1);
+      }
+      return pipelineStaticSchemaV1;
+    } else {
+      throw new InvalidRequestException(
+          String.format("[PMS] Incorrect version [%s] of Pipeline Schema passed, Valid values are [v0, v1]", version));
     }
-    return pipelineStaticSchema;
   }
 
   public JsonNode fetchTriggerStaticYamlSchema() {
@@ -202,7 +221,7 @@ public class SchemaFetcher {
       return getTriggerStaticSchema();
     } catch (Exception e) {
       log.warn("[PMS] Unable to get trigger static schema", e);
-      throw new InvalidRequestException(String.format("Not able to read json from %s path", TRIGGER_JSON_PATH), e);
+      throw new InvalidRequestException(String.format("Not able to read json from %s path", TRIGGER_JSON_PATH_V0), e);
     }
   }
 
@@ -212,7 +231,7 @@ public class SchemaFetcher {
       return fetchSchemaFromRepo(EntityType.TRIGGERS, "v0");
     }
     if (null == triggerStaticSchema) {
-      triggerStaticSchema = fetchFile(TRIGGER_JSON_PATH);
+      triggerStaticSchema = fetchFile(TRIGGER_JSON_PATH_V0);
     }
     return triggerStaticSchema;
   }
@@ -220,10 +239,10 @@ public class SchemaFetcher {
   public ObjectNode getIndividualSchema(String nodeGroup, String nodeType, String nodeGroupDifferentiator) {
     JsonNode jsonNode;
     try {
-      jsonNode = getPipelineStaticSchema();
+      jsonNode = getPipelineStaticSchema("v0");
     } catch (IOException ex) {
-      log.error("Not able to read json from {} path", PIPELINE_JSON_PATH);
-      throw new InvalidRequestException(String.format("Not able to read json from %s path", PIPELINE_JSON_PATH));
+      log.error("Not able to read json from {} path", PIPELINE_JSON_PATH_V0);
+      throw new InvalidRequestException(String.format("Not able to read json from %s path", PIPELINE_JSON_PATH_V0));
     }
     AbstractStaticSchemaParser abstractStaticSchemaParser =
         staticSchemaParserFactory.getParser(PIPELINE, PipelineVersion.V0, jsonNode);
@@ -253,7 +272,7 @@ public class SchemaFetcher {
       log.error("Could not able to read schema for url {} ", staticYamlRepoUrl);
     }
 
-    return fetchFile(PIPELINE_JSON_PATH);
+    return fetchFile(PIPELINE_JSON_PATH_V0);
   }
 
   private String calculateFileURL(EntityType entityType, String version) {

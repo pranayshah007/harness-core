@@ -225,8 +225,25 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId) {
-    // Uses - planExecutionId_status_idx
+    // Uses - planExecutionId_mode_status_oldRetry_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    // Exclude so that it can use Projection covered from index without scanning documents.
+    query.fields().exclude(NodeExecutionKeys.id).include(NodeExecutionKeys.status);
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionReadHelper.fetchNodeExecutions(query)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
+      }
+    }
+    return nodeExecutions.stream().map(NodeExecution::getStatus).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<Status> fetchNonFlowingAndNonFinalStatuses(String planExecutionId) {
+    // Uses - planExecutionId_mode_status_oldRetry_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.status).in(StatusUtils.nonFlowingAndNonFinalStatuses()))
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
     // Exclude so that it can use Projection simplified from index without scanning documents.
     query.fields().exclude(NodeExecutionKeys.id).include(NodeExecutionKeys.status);
@@ -241,7 +258,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public CloseableIterator<NodeExecution> fetchNodeExecutionsWithoutOldRetriesIterator(String planExecutionId) {
-    // Uses - planExecutionId_status_idx
+    // Uses - planExecutionId_oldRetry_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
     // Can't use fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator as it uses projections
@@ -773,7 +790,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @VisibleForTesting
   CloseableIterator<NodeExecution> fetchNodeExecutionsFromAnalytics(
       String planExecutionId, @NotNull Set<String> fieldsToInclude) {
-    // Uses - planExecutionId_status_idx
+    // Uses - id_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId));
     for (String field : fieldsToInclude) {
       query.fields().include(field);

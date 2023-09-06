@@ -116,8 +116,9 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   private final String PIPELINE_JSON = "pipeline.json";
   private final String TRIGGER_JSON = "trigger.json";
-  private final String PIPELINE_JSON_PATH = "static-schema/pipeline.json";
-  private final String TRIGGER_JSON_PATH = "static-schema/trigger.json";
+  private final String PIPELINE_VERSION_V0 = "v0";
+  private final String PIPELINE_JSON_PATH_V0 = "static-schema/v0/pipeline.json";
+  private final String TRIGGER_JSON_PATH_V0 = "static-schema/v0/trigger.json";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
@@ -185,7 +186,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
       // If static schema ff is on, fetch schema from fetcher
       if (pmsFeatureFlagService.isEnabled(accountIdentifier, PIE_STATIC_YAML_SCHEMA)) {
-        schema = schemaFetcher.fetchPipelineStaticYamlSchema();
+        schema = schemaFetcher.fetchPipelineStaticYamlSchema(PIPELINE_VERSION_V0);
       } else {
         schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT);
       }
@@ -513,11 +514,12 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @Override
-  public ObjectNode getStaticSchemaForAllEntities(String nodeGroup, String nodeType, String nodeGroupDifferentiator) {
+  public ObjectNode getStaticSchemaForAllEntities(
+      String nodeGroup, String nodeType, String nodeGroupDifferentiator, String version) {
     JsonNode jsonNode;
     switch (nodeGroup) {
       case PIPELINE:
-        jsonNode = schemaFetcher.fetchPipelineStaticYamlSchema();
+        jsonNode = schemaFetcher.fetchPipelineStaticYamlSchema(version);
         return (ObjectNode) jsonNode;
       case TRIGGER:
         jsonNode = schemaFetcher.fetchTriggerStaticYamlSchema();

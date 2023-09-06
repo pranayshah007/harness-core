@@ -38,11 +38,6 @@ public abstract class DataSourceProvider {
 
   protected static final String AUTHORIZATION_HEADER = "Authorization";
 
-  public static final String REPO_SCM = "{REPO_SCM}";
-  protected static final String REPOSITORY_OWNER = "{REPOSITORY_OWNER}";
-  protected static final String REPOSITORY_NAME = "{REPOSITORY_NAME}";
-  protected static final String REPOSITORY_BRANCH = "{REPOSITORY_BRANCH}";
-
   DataPointService dataPointService;
   DataSourceLocationFactory dataSourceLocationFactory;
   DataSourceLocationRepository dataSourceLocationRepository;

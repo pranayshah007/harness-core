@@ -17,7 +17,6 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.SSCA)
 public class InternalParameters {
-  private String triggeredBy;
   private String pipelineExecutionId;
   private String accountId;
   private String pipelineIdentifier;

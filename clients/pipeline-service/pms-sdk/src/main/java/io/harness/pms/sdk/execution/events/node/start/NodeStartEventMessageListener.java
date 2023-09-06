@@ -21,6 +21,8 @@ import io.harness.pms.sdk.core.execution.events.node.start.NodeStartEventHandler
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -30,5 +32,10 @@ public class NodeStartEventMessageListener extends PmsAbstractMessageListener<No
   public NodeStartEventMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, NodeStartEventHandler nodeStartEventHandler) {
     super(serviceName, NodeStartEvent.class, nodeStartEventHandler);
+  }
+
+  @Override
+  protected NodeStartEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return NodeStartEvent.parseFrom(message);
   }
 }

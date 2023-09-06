@@ -34,7 +34,6 @@ public class ProvenanceGenerator {
                              .internalParameters(InternalParameters.builder()
                                                      .accountId(data.getAccountId())
                                                      .pipelineExecutionId(data.getPipelineExecutionId())
-                                                     .triggeredBy(data.getTriggerBy())
                                                      .pipelineIdentifier(data.getPipelineIdentifier())
                                                      .build())
                              .build())

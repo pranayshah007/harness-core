@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,6 +22,9 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -58,7 +62,9 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   ApprovalInstanceService approvalInstanceService;
-
+  @Mock private NGLogCallback mockNgLogCallback;
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock ILogStreamingStepClient logStreamingStepClient;
   @Mock private ServiceNowStepHelperService serviceNowStepHelperService;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @InjectMocks private ServiceNowUpdateStep serviceNowUpdateStep;
@@ -85,6 +91,7 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
                             .putSetupAbstractions("projectIdentifier", projectIdentifier)
                             .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
                             .build();
+    doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(any());
     StepElementParameters parameters = getStepElementParameters();
     parameters.setTimeout(ParameterField.createValueField(CONNECTOR));
     TaskRequest taskRequest = TaskRequest.newBuilder().build();

@@ -473,6 +473,12 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
           failureType = FailureType.UNKNOWN_FAILURE;
           failureMessage = "Verification could not complete due to an unknown error";
           break;
+        case ABORTED:
+          status = Status.FAILED;
+          errorCode = ErrorCode.ABORT_ALL_ALREADY;
+          failureType = FailureType.USER_MARKED_FAILURE;
+          failureMessage = "Verification could not complete due to it being aborted";
+          break;
         default:
           throw new IllegalStateException(
               "Invalid status value: " + cvngResponseData.getActivityStatusDTO().getStatus());

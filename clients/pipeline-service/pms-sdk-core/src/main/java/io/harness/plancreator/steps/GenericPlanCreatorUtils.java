@@ -71,27 +71,26 @@ public class GenericPlanCreatorUtils {
   // This is required as step can be inside stepGroup which can have Parallel and stepGroup itself can
   // be inside Parallel section.
   public boolean checkIfStepIsInParallelSection(YamlField currentField) {
-    if (currentField != null && currentField.getNode() != null) {
-      if (currentField.checkIfParentIsParallel(STEPS) || currentField.checkIfParentIsParallel(ROLLBACK_STEPS)) {
-        // Check if step is inside StepGroup and StepGroup is inside Parallel but not the step.
-        YamlNode stepGroupNode = YamlUtils.findParentNode(currentField.getNode().getParentNode(), STEP_GROUP);
-        if (stepGroupNode == null) {
-          return true;
-        }
-        /**
-         * We need to check if parallel is in between stepGroup and step then it means that step is in parallel section
-         * otherwise parallel section might be above step group.
-         */
-        YamlNode parallelNodeParentOfStepGroupNode = YamlUtils.findParentNode(stepGroupNode, PARALLEL);
-        YamlNode parallelNodeParentOfCurrentField = YamlUtils.findParentNode(currentField.getNode(), PARALLEL);
-        if (parallelNodeParentOfCurrentField == null) {
-          return false;
-        }
-        if (parallelNodeParentOfStepGroupNode == null) {
-          return true;
-        }
-        return !Objects.equals(parallelNodeParentOfCurrentField.getUuid(), parallelNodeParentOfStepGroupNode.getUuid());
+    if ((currentField != null && currentField.getNode() != null)
+        && (currentField.checkIfParentIsParallel(STEPS) || currentField.checkIfParentIsParallel(ROLLBACK_STEPS))) {
+      // Check if step is inside StepGroup and StepGroup is inside Parallel but not the step.
+      YamlNode stepGroupNode = YamlUtils.findParentNode(currentField.getNode().getParentNode(), STEP_GROUP);
+      if (stepGroupNode == null) {
+        return true;
       }
+      /**
+       * We need to check if parallel is in between stepGroup and step then it means that step is in parallel section
+       * otherwise parallel section might be above step group.
+       */
+      YamlNode parallelNodeParentOfStepGroupNode = YamlUtils.findParentNode(stepGroupNode, PARALLEL);
+      YamlNode parallelNodeParentOfCurrentField = YamlUtils.findParentNode(currentField.getNode(), PARALLEL);
+      if (parallelNodeParentOfCurrentField == null) {
+        return false;
+      }
+      if (parallelNodeParentOfStepGroupNode == null) {
+        return true;
+      }
+      return !Objects.equals(parallelNodeParentOfCurrentField.getUuid(), parallelNodeParentOfStepGroupNode.getUuid());
     }
     return false;
   }

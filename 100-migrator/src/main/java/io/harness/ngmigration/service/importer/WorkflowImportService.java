@@ -7,6 +7,14 @@
 
 package io.harness.ngmigration.service.importer;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.NGMigrationConstants.INFRASTRUCTURE_DEFINITIONS;
+import static io.harness.ngmigration.utils.NGMigrationConstants.INFRA_DEFINITION_ID;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_ID;
+import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_INPUTS;
+
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import io.harness.annotations.dev.CodePulse;
@@ -31,6 +39,7 @@ import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.WorkflowFilter;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.entity.PipelineMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.persistence.HPersistence;
 import io.harness.plancreator.pipeline.PipelineConfig;
@@ -47,18 +56,24 @@ import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.Base;
+import software.wings.beans.CanaryOrchestrationWorkflow;
+import software.wings.beans.TemplateExpression;
+import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +82,9 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.Response;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -141,7 +159,7 @@ public class WorkflowImportService implements ImportService {
           CgEntityId.builder().type(WORKFLOW).id(migratedDetails.getCgEntityDetail().getId()).build();
       if (discoveryResult.getEntities().containsKey(cgEntityId)) {
         Workflow workflow = (Workflow) discoveryResult.getEntities().get(cgEntityId).getEntity();
-        PipelineConfig config = getPipelineConfig(workflow, inputDTO, migratedDetails.getNgEntityDetail());
+        PipelineConfig config = getPipelineConfig(workflow, inputDTO, migratedDetails.getNgEntityDetail(), summaryDTO);
         createPipeline(inputDTO, config);
       }
     }
@@ -209,7 +227,7 @@ public class WorkflowImportService implements ImportService {
   }
 
   private PipelineConfig getPipelineConfig(
-      Workflow workflow, MigrationInputDTO inputDTO, NgEntityDetail ngEntityDetail) {
+      Workflow workflow, MigrationInputDTO inputDTO, NgEntityDetail ngEntityDetail, SaveSummaryDTO summaryDTO) {
     String name = MigratorUtility.generateName(workflow.getName());
     String identifier = MigratorUtility.generateIdentifier(workflow.getName(), inputDTO.getIdentifierCaseFormat());
     Scope scope = Scope.PROJECT;
@@ -222,7 +240,10 @@ public class WorkflowImportService implements ImportService {
     JsonNode templateInputs =
         migrationTemplateUtils.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
 
-    // TODO: Here we need to set the runtime inputs that are set in the workflow
+    if (templateInputs != null && "Deployment".equals(templateInputs.get("type").asText())) {
+      fixServiceDetails(templateInputs, workflow, inputDTO, summaryDTO);
+      fixEnvAndInfraDetails(templateInputs, workflow, inputDTO, summaryDTO);
+    }
 
     templateLinkConfig.setTemplateInputs(templateInputs);
     TemplateStageNode templateStageNode = new TemplateStageNode();
@@ -245,5 +266,214 @@ public class WorkflowImportService implements ImportService {
                                 .allowStageExecutions(true)
                                 .build())
         .build();
+  }
+
+  private void fixEnvAndInfraDetails(
+      JsonNode templateInputs, Workflow workflow, MigrationInputDTO inputDTO, SaveSummaryDTO summaryDTO) {
+    String envRef = templateInputs.at("/spec/environment/environmentRef").asText();
+    if (!RUNTIME_INPUT.equals(envRef)) {
+      return;
+    }
+
+    Map<String, String> workflowVariables = getWorkflowVariables(workflow);
+    String envId = getEnvId(workflow, workflowVariables);
+    String stageEnvRef = getEnvRef(envId, summaryDTO);
+
+    String infraId = getInfraId(workflow, workflowVariables);
+    Pair<String, JsonNode> infraRefAndInput = getInfraRefAndInputs(infraId, stageEnvRef, summaryDTO, inputDTO);
+    String stageInfraRef = infraRefAndInput.getKey();
+    JsonNode infraInputs = infraRefAndInput.getValue();
+
+    ObjectNode environment = (ObjectNode) templateInputs.get("spec").get("environment");
+    environment.put("environmentRef", stageEnvRef);
+    environment.remove("environmentInputs");
+    if (infraInputs != null) {
+      environment.set(INFRASTRUCTURE_DEFINITIONS, infraInputs);
+    } else if (StringUtils.isNotBlank(stageInfraRef) && !RUNTIME_INPUT.equals(stageInfraRef)) {
+      environment.set(
+          INFRASTRUCTURE_DEFINITIONS, JsonPipelineUtils.readTree("[{\"identifier\": \"" + stageInfraRef + "\"}]"));
+    }
+  }
+
+  private void fixServiceDetails(
+      JsonNode templateInputs, Workflow workflow, MigrationInputDTO inputDTO, SaveSummaryDTO summaryDTO) {
+    String serviceRef = templateInputs.at("/spec/service/serviceRef").asText();
+    if (!RUNTIME_INPUT.equals(serviceRef)) {
+      return;
+    }
+
+    Map<String, String> workflowVariables = getWorkflowVariables(workflow);
+    String serviceId = getServiceId(workflow, workflowVariables);
+    Pair<String, JsonNode> serviceRefAndInput = getServiceRefAndInputs(serviceId, summaryDTO, inputDTO);
+    String stageServiceRef = serviceRefAndInput.getKey();
+    JsonNode serviceInputs = serviceRefAndInput.getValue();
+
+    if (!RUNTIME_INPUT.equals(stageServiceRef)) {
+      ObjectNode service = (ObjectNode) templateInputs.get("spec").get("service");
+      service.put("serviceRef", stageServiceRef);
+      if (serviceInputs == null) {
+        service.remove(SERVICE_INPUTS);
+      } else {
+        service.set(SERVICE_INPUTS, serviceInputs);
+      }
+    }
+  }
+
+  private Map<String, String> getWorkflowVariables(Workflow workflow) {
+    List<Variable> userVariables = workflow.getOrchestrationWorkflow().getUserVariables();
+    Map<String, String> workflowVariables = new HashMap<>();
+    for (Variable var : userVariables) {
+      workflowVariables.put(var.getName(), var.getValue());
+    }
+    return workflowVariables;
+  }
+
+  private String getServiceId(Workflow workflow, Map<String, String> workflowVariables) {
+    if (workflow == null) {
+      return null;
+    }
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    if (isEmpty(orchestrationWorkflow.getWorkflowPhases())) {
+      return null;
+    }
+    WorkflowPhase workflowPhase = orchestrationWorkflow.getWorkflowPhases().get(0);
+    String serviceExpression = PipelineMigrationService.getExpression(workflowPhase, SERVICE_ID);
+    if (StringUtils.isBlank(serviceExpression)) {
+      return workflowPhase.getServiceId();
+    }
+    String serviceId = workflowVariables.get(serviceExpression);
+    if (StringUtils.isNotBlank(serviceId)) {
+      return serviceId;
+    }
+    return null;
+  }
+
+  private String getEnvId(Workflow workflow, Map<String, String> workflowVariables) {
+    if (workflow == null) {
+      return null;
+    }
+    if (!workflow.isEnvTemplatized()) {
+      return workflow.getEnvId();
+    }
+    String envExpression = workflow.fetchEnvTemplatizedName();
+    String envId = workflowVariables.get(envExpression);
+    if (StringUtils.isNotBlank(envId)) {
+      return envId;
+    }
+    return null;
+  }
+
+  private String getInfraId(Workflow workflow, Map<String, String> workflowVariables) {
+    if (workflow == null) {
+      return null;
+    }
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    if (isEmpty(orchestrationWorkflow.getWorkflowPhases())) {
+      return null;
+    }
+    WorkflowPhase workflowPhase = orchestrationWorkflow.getWorkflowPhases().get(0);
+    String infraExpression = PipelineMigrationService.getExpression(workflowPhase, INFRA_DEFINITION_ID);
+    if (StringUtils.isBlank(infraExpression)) {
+      return workflowPhase.getInfraDefinitionId();
+    }
+    String infraId = workflowVariables.get(infraExpression);
+    if (StringUtils.isNotBlank(infraId)) {
+      return infraId;
+    }
+    return null;
+  }
+
+  private static String getExpression(WorkflowPhase workflowPhase, String field) {
+    List<TemplateExpression> templateExpressions =
+        ListUtils.defaultIfNull(workflowPhase.getTemplateExpressions(), new ArrayList<>());
+    return templateExpressions.stream()
+        .filter(te -> StringUtils.isNoneBlank(te.getExpression(), te.getFieldName()))
+        .filter(te -> field.equals(te.getFieldName()))
+        .map(TemplateExpression::getExpression)
+        .filter(MigratorUtility::isExpression)
+        .map(te -> te.substring(2, te.length() - 1))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private Pair<String, JsonNode> getServiceRefAndInputs(
+      String serviceId, SaveSummaryDTO summaryDTO, MigrationInputDTO inputDTO) {
+    if (StringUtils.isBlank(serviceId) || MigratorUtility.isExpression(serviceId)) {
+      return Pair.of(RUNTIME_INPUT, null);
+    }
+
+    String stageServiceRef = RUNTIME_INPUT;
+    JsonNode serviceInputs = null;
+
+    List<NgEntityDetail> serviceEntityNG = getMigratedEntity(summaryDTO, serviceId);
+    if (isNotEmpty(serviceEntityNG)) {
+      NgEntityDetail serviceDetails = serviceEntityNG.get(0);
+      stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
+      serviceInputs =
+          migrationTemplateUtils.getServiceInput(inputDTO, serviceDetails, inputDTO.getDestinationAccountIdentifier());
+      if (serviceInputs != null) {
+        serviceInputs = serviceInputs.get(SERVICE_INPUTS);
+      }
+    }
+    return Pair.of(stageServiceRef, serviceInputs);
+  }
+
+  private String getEnvRef(String envId, SaveSummaryDTO summaryDTO) {
+    if (StringUtils.isBlank(envId) || MigratorUtility.isExpression(envId)) {
+      return RUNTIME_INPUT;
+    }
+
+    String stageEnvRef = RUNTIME_INPUT;
+    List<NgEntityDetail> environmentEntityNG = getMigratedEntity(summaryDTO, envId);
+
+    if (isNotEmpty(environmentEntityNG)) {
+      NgEntityDetail environmentDetails = environmentEntityNG.get(0);
+      stageEnvRef = MigratorUtility.getIdentifierWithScope(environmentDetails);
+    }
+    return stageEnvRef;
+  }
+
+  private Pair<String, JsonNode> getInfraRefAndInputs(
+      String infraId, String stageEnvRef, SaveSummaryDTO summaryDTO, MigrationInputDTO inputDTO) {
+    if (StringUtils.isBlank(infraId) || RUNTIME_INPUT.equals(stageEnvRef) || MigratorUtility.isExpression(infraId)) {
+      return Pair.of(RUNTIME_INPUT, null);
+    }
+
+    String stageInfraRef = RUNTIME_INPUT;
+    JsonNode infraInputs = null;
+
+    List<NgEntityDetail> infraEntityNG = getMigratedEntity(summaryDTO, infraId);
+
+    if (isNotEmpty(infraEntityNG)) {
+      NgEntityDetail infraDetails = infraEntityNG.get(0);
+      stageInfraRef = MigratorUtility.getIdentifierWithScope(infraDetails);
+      infraInputs = migrationTemplateUtils.getInfraInput(
+          inputDTO, inputDTO.getDestinationAccountIdentifier(), stageEnvRef, infraDetails);
+      if (infraInputs != null) {
+        infraInputs = infraInputs.get(INFRASTRUCTURE_DEFINITIONS);
+      }
+    }
+    return Pair.of(stageInfraRef, infraInputs);
+  }
+
+  private List<NgEntityDetail> getMigratedEntity(SaveSummaryDTO summaryDTO, String entityId) {
+    List<NgEntityDetail> entityNG =
+        summaryDTO.getAlreadyMigratedDetails()
+            .stream()
+            .filter(migratedEntity -> migratedEntity.getCgEntityDetail().getId().equals(entityId))
+            .map(MigratedDetails::getNgEntityDetail)
+            .collect(Collectors.toList());
+
+    List<NgEntityDetail> successfullyMigratedList =
+        summaryDTO.getSuccessfullyMigratedDetails()
+            .stream()
+            .filter(migratedEntity -> migratedEntity.getCgEntityDetail().getId().equals(entityId))
+            .map(MigratedDetails::getNgEntityDetail)
+            .collect(Collectors.toList());
+    entityNG.addAll(successfullyMigratedList);
+
+    return entityNG;
   }
 }

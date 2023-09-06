@@ -50,7 +50,7 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   private final NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
 
   private final String deployMode = System.getenv().get("DEPLOY_MODE");
-  private final String PIPELINE_JSON_PATH = "static-schema/pipeline.json";
+  private final String PIPELINE_JSON_PATH = "static-schema/v0/pipeline.json";
 
   private final String PRE_QA = "stress";
 
@@ -89,7 +89,7 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
       String orgIdentifier, String identifier, EntityType entityType, Scope scope) {
     switch (entityType) {
       case PIPELINES:
-        return ResponseDTO.newResponse(schemaFetcher.fetchPipelineStaticYamlSchema());
+        return ResponseDTO.newResponse(schemaFetcher.fetchPipelineStaticYamlSchema("v0"));
       default:
         return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
     }

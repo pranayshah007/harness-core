@@ -13,6 +13,7 @@ import static io.harness.accesscontrol.AccessControlResourceTypes.ROLE;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.KARAN;
 
@@ -32,11 +33,17 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
+import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.roleassignments.RoleAssignment;
+import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
+import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResource;
 import io.harness.accesscontrol.roles.api.RoleResourceImpl;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
+import io.harness.accesscontrol.roles.api.RoleWithPrincipalCountDTOMapper;
+import io.harness.accesscontrol.roles.api.RoleWithPrincipalCountResponseDTO;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
@@ -54,6 +61,8 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import org.assertj.core.api.Assertions;
@@ -79,6 +88,8 @@ public class RoleResourceTest extends AccessControlTestBase {
   private HarnessScopeParams harnessScopeParams;
   private ResourceScope resourceScope;
   private FeatureFlagService featureFlagService;
+  private RoleWithPrincipalCountDTOMapper roleWithPrincipalCountDTOMapper;
+  private RoleAssignmentService roleAssignmentService;
 
   @Before
   public void setup() {
@@ -89,8 +100,10 @@ public class RoleResourceTest extends AccessControlTestBase {
     outboxService = mock(OutboxService.class);
     accessControlClient = mock(AccessControlClient.class);
     featureFlagService = mock(FeatureFlagService.class);
+    roleWithPrincipalCountDTOMapper = mock(RoleWithPrincipalCountDTOMapper.class);
+    roleAssignmentService = mock(RoleAssignmentService.class);
     roleResource = new RoleResourceImpl(roleService, scopeService, roleDTOMapper, transactionTemplate, outboxService,
-        accessControlClient, featureFlagService);
+        accessControlClient, featureFlagService, roleWithPrincipalCountDTOMapper);
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
     accountIdentifier = randomAlphabetic(10);
     orgIdentifier = randomAlphabetic(10);
@@ -105,7 +118,7 @@ public class RoleResourceTest extends AccessControlTestBase {
   }
 
   @Test
-  @Owner(developers = KARAN)
+  @Owner(developers = {KARAN, ADITYA})
   @Category(UnitTests.class)
   public void testList() {
     String searchTerm = randomAlphabetic(10);
@@ -113,18 +126,20 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
-    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(), eq(true)))
+        .thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleWithPrincipalCountResponseDTO>> response =
+        roleResource.get(pageRequest, scopeParams, searchTerm);
     assertTrue(response.getData().isEmpty());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
 
     ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
-    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    verify(roleService, times(1)).listWithPrincipalCount(any(), captor.capture(), eq(true));
     Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(NO_FILTER);
   }
 
   @Test
-  @Owner(developers = ASHISHSANODIA)
+  @Owner(developers = {ASHISHSANODIA, ADITYA})
   @Category(UnitTests.class)
   public void testListWithHideOrgLevelManagedRolesIfFFIsEnabled() {
     String searchTerm = randomAlphabetic(10);
@@ -135,17 +150,19 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
-    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(), eq(true)))
+        .thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleWithPrincipalCountResponseDTO>> response =
+        roleResource.get(pageRequest, scopeParams, searchTerm);
     assertTrue(response.getData().isEmpty());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
-    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    verify(roleService, times(1)).listWithPrincipalCount(any(), captor.capture(), eq(true));
     Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(ONLY_CUSTOM);
   }
 
   @Test
-  @Owner(developers = ASHISHSANODIA)
+  @Owner(developers = {ASHISHSANODIA, ADITYA})
   @Category(UnitTests.class)
   public void testListToShowOrgLevelManagedRolesIfFFIsDisabled() {
     String searchTerm = randomAlphabetic(10);
@@ -156,17 +173,19 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
-    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(), eq(true)))
+        .thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleWithPrincipalCountResponseDTO>> response =
+        roleResource.get(pageRequest, scopeParams, searchTerm);
     assertTrue(response.getData().isEmpty());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
-    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    verify(roleService, times(1)).listWithPrincipalCount(any(), captor.capture(), eq(true));
     Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(NO_FILTER);
   }
 
   @Test
-  @Owner(developers = ASHISHSANODIA)
+  @Owner(developers = {ASHISHSANODIA, ADITYA})
   @Category(UnitTests.class)
   public void testListToShowOrgLevelManagedRolesIfFFIsEnabledForProject() {
     String searchTerm = randomAlphabetic(10);
@@ -177,17 +196,19 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
-    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(), eq(true)))
+        .thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleWithPrincipalCountResponseDTO>> response =
+        roleResource.get(pageRequest, scopeParams, searchTerm);
     assertTrue(response.getData().isEmpty());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
-    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    verify(roleService, times(1)).listWithPrincipalCount(any(), captor.capture(), eq(true));
     Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(NO_FILTER);
   }
 
   @Test
-  @Owner(developers = ASHISHSANODIA)
+  @Owner(developers = {ASHISHSANODIA, ADITYA})
   @Category(UnitTests.class)
   public void testListWithHideProjectLevelManagedRolesIfFFIsEnabled() {
     String searchTerm = randomAlphabetic(10);
@@ -201,17 +222,19 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
-    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(), eq(true)))
+        .thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleWithPrincipalCountResponseDTO>> response =
+        roleResource.get(pageRequest, scopeParams, searchTerm);
     assertTrue(response.getData().isEmpty());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
-    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    verify(roleService, times(1)).listWithPrincipalCount(any(), captor.capture(), eq(true));
     Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(ONLY_CUSTOM);
   }
 
   @Test
-  @Owner(developers = ASHISHSANODIA)
+  @Owner(developers = {ADITYA, ASHISHSANODIA})
   @Category(UnitTests.class)
   public void testListToShowProjectLevelManagedRolesIfFFIsDisabled() {
     String searchTerm = randomAlphabetic(10);
@@ -225,12 +248,14 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    when(roleService.list(eq(pageRequest), any(), eq(true))).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
-    ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, scopeParams, searchTerm);
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(), eq(true)))
+        .thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    ResponseDTO<PageResponse<RoleWithPrincipalCountResponseDTO>> response =
+        roleResource.get(pageRequest, scopeParams, searchTerm);
     assertTrue(response.getData().isEmpty());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     ArgumentCaptor<RoleFilter> captor = ArgumentCaptor.forClass(RoleFilter.class);
-    verify(roleService, times(1)).list(any(), captor.capture(), eq(true));
+    verify(roleService, times(1)).listWithPrincipalCount(any(), captor.capture(), eq(true));
     Assertions.assertThat(captor.getValue().getManagedFilter()).isEqualTo(NO_FILTER);
   }
 
@@ -468,5 +493,296 @@ public class RoleResourceTest extends AccessControlTestBase {
     assertEquals(roleResponseDTO, response.getData());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     verify(transactionTemplate, times(1)).execute(any());
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testUserAssignedToRoleCount() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
+    RoleFilter roleFilter = RoleFilter.builder().scopeIdentifier(randomAlphabetic(10)).build();
+    RoleAssignment roleAssignmentToUser = RoleAssignment.builder()
+                                              .identifier(randomAlphabetic(10))
+                                              .scopeIdentifier(randomAlphabetic(10))
+                                              .roleIdentifier(randomAlphabetic(10))
+                                              .principalType(PrincipalType.USER)
+                                              .build();
+    PageResponse<RoleAssignment> roleAssignmentPageResponse =
+        PageResponse.<RoleAssignment>builder()
+            .content(Collections.singletonList(roleAssignmentToUser))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .build();
+    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+        .thenReturn(roleAssignmentPageResponse);
+
+    Role role = Role.builder().identifier("userRole").name(randomAlphabetic(10)).build();
+    RoleWithPrincipalCount roleWithPrincipalCount = RoleWithPrincipalCount.builder()
+                                                        .role(role)
+                                                        .roleAssignedToUserCount(1)
+                                                        .roleAssignedToUserGroupCount(0)
+                                                        .roleAssignedToServiceAccountCount(0)
+                                                        .build();
+
+    PageResponse<RoleWithPrincipalCount> rolePageResponse =
+        PageResponse.<RoleWithPrincipalCount>builder()
+            .content(Collections.singletonList(roleWithPrincipalCount))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .build();
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(RoleFilter.class), eq(true)))
+        .thenReturn(rolePageResponse);
+
+    PageResponse<RoleWithPrincipalCount> result = roleService.listWithPrincipalCount(pageRequest, roleFilter, true);
+    assertEquals(1, result.getContent().size());
+    for (int i = 0; i < result.getContent().size(); i++) {
+      assertEquals("userRole", result.getContent().get(i).getRole().getIdentifier());
+      assertEquals(1, (int) result.getContent().get(i).getRoleAssignedToUserCount());
+      assertEquals(0, (int) result.getContent().get(i).getRoleAssignedToUserGroupCount());
+      assertEquals(0, (int) result.getContent().get(i).getRoleAssignedToServiceAccountCount());
+    }
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testUserGroupAssignedToRoleCount() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
+    RoleFilter roleFilter = RoleFilter.builder().scopeIdentifier(randomAlphabetic(10)).build();
+    RoleAssignment roleAssignmentToUserGroup = RoleAssignment.builder()
+                                                   .identifier(randomAlphabetic(10))
+                                                   .scopeIdentifier(randomAlphabetic(10))
+                                                   .roleIdentifier(randomAlphabetic(10))
+                                                   .principalType(PrincipalType.USER_GROUP)
+                                                   .build();
+    PageResponse<RoleAssignment> roleAssignmentPageResponse =
+        PageResponse.<RoleAssignment>builder()
+            .content(Collections.singletonList(roleAssignmentToUserGroup))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .build();
+    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+        .thenReturn(roleAssignmentPageResponse);
+
+    Role role = Role.builder().identifier("userGroupRole").name(randomAlphabetic(10)).build();
+    RoleWithPrincipalCount roleWithPrincipalCount = RoleWithPrincipalCount.builder()
+                                                        .role(role)
+                                                        .roleAssignedToUserCount(0)
+                                                        .roleAssignedToUserGroupCount(1)
+                                                        .roleAssignedToServiceAccountCount(0)
+                                                        .build();
+
+    PageResponse<RoleWithPrincipalCount> rolePageResponse =
+        PageResponse.<RoleWithPrincipalCount>builder()
+            .content(Collections.singletonList(roleWithPrincipalCount))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .build();
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(RoleFilter.class), eq(true)))
+        .thenReturn(rolePageResponse);
+
+    PageResponse<RoleWithPrincipalCount> result = roleService.listWithPrincipalCount(pageRequest, roleFilter, true);
+    assertEquals(1, result.getContent().size());
+    for (int i = 0; i < result.getContent().size(); i++) {
+      assertEquals("userGroupRole", result.getContent().get(i).getRole().getIdentifier());
+      assertEquals(0, (int) result.getContent().get(i).getRoleAssignedToUserCount());
+      assertEquals(1, (int) result.getContent().get(i).getRoleAssignedToUserGroupCount());
+      assertEquals(0, (int) result.getContent().get(i).getRoleAssignedToServiceAccountCount());
+    }
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testServiceAccountAssignedToRoleCount() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
+    RoleFilter roleFilter = RoleFilter.builder().scopeIdentifier(randomAlphabetic(10)).build();
+    RoleAssignment roleAssignmentToServiceAccount = RoleAssignment.builder()
+                                                        .identifier(randomAlphabetic(10))
+                                                        .scopeIdentifier(randomAlphabetic(10))
+                                                        .roleIdentifier(randomAlphabetic(10))
+                                                        .principalType(PrincipalType.SERVICE_ACCOUNT)
+                                                        .build();
+    PageResponse<RoleAssignment> roleAssignmentPageResponse =
+        PageResponse.<RoleAssignment>builder()
+            .content(Collections.singletonList(roleAssignmentToServiceAccount))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .build();
+    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+        .thenReturn(roleAssignmentPageResponse);
+
+    Role role = Role.builder().identifier("serviceAccountRole").name(randomAlphabetic(10)).build();
+    RoleWithPrincipalCount roleWithPrincipalCount = RoleWithPrincipalCount.builder()
+                                                        .role(role)
+                                                        .roleAssignedToUserCount(0)
+                                                        .roleAssignedToUserGroupCount(0)
+                                                        .roleAssignedToServiceAccountCount(1)
+                                                        .build();
+
+    PageResponse<RoleWithPrincipalCount> rolePageResponse =
+        PageResponse.<RoleWithPrincipalCount>builder()
+            .content(Collections.singletonList(roleWithPrincipalCount))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .build();
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(RoleFilter.class), eq(true)))
+        .thenReturn(rolePageResponse);
+
+    PageResponse<RoleWithPrincipalCount> result = roleService.listWithPrincipalCount(pageRequest, roleFilter, true);
+    assertEquals(1, result.getContent().size());
+    for (int i = 0; i < result.getContent().size(); i++) {
+      assertEquals("serviceAccountRole", result.getContent().get(i).getRole().getIdentifier());
+      assertEquals(0, (int) result.getContent().get(i).getRoleAssignedToUserCount());
+      assertEquals(0, (int) result.getContent().get(i).getRoleAssignedToUserGroupCount());
+      assertEquals(1, (int) result.getContent().get(i).getRoleAssignedToServiceAccountCount());
+    }
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testNoRoleAssigned() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
+    RoleFilter roleFilter = RoleFilter.builder().scopeIdentifier(randomAlphabetic(10)).build();
+    RoleAssignment roleAssignmentToUser = RoleAssignment.builder()
+                                              .identifier(randomAlphabetic(10))
+                                              .scopeIdentifier(randomAlphabetic(10))
+                                              .roleIdentifier(randomAlphabetic(10))
+                                              .build();
+    PageResponse<RoleAssignment> roleAssignmentPageResponse =
+        PageResponse.<RoleAssignment>builder()
+            .content(Collections.singletonList(roleAssignmentToUser))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .pageToken(null)
+            .build();
+    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+        .thenReturn(roleAssignmentPageResponse);
+
+    Role role = Role.builder().identifier(randomAlphabetic(10)).name(randomAlphabetic(10)).build();
+    RoleWithPrincipalCount roleWithPrincipalCount = RoleWithPrincipalCount.builder()
+                                                        .role(role)
+                                                        .roleAssignedToUserCount(0)
+                                                        .roleAssignedToUserGroupCount(0)
+                                                        .roleAssignedToServiceAccountCount(0)
+                                                        .build();
+
+    PageResponse<RoleWithPrincipalCount> rolePageResponse =
+        PageResponse.<RoleWithPrincipalCount>builder()
+            .content(Collections.singletonList(roleWithPrincipalCount))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .pageToken(null)
+            .build();
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(RoleFilter.class), eq(true)))
+        .thenReturn(rolePageResponse);
+
+    PageResponse<RoleWithPrincipalCount> result = roleService.listWithPrincipalCount(pageRequest, roleFilter, true);
+
+    assertEquals(1, result.getContent().size());
+    for (int i = 0; i < result.getContent().size(); i++) {
+      assertEquals(0, (int) result.getContent().get(i).getRoleAssignedToUserCount());
+      assertEquals(0, (int) result.getContent().get(i).getRoleAssignedToUserGroupCount());
+      assertEquals(0, (int) result.getContent().get(i).getRoleAssignedToServiceAccountCount());
+    }
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testAllTypesOfRoleAssigned() {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
+    RoleFilter roleFilter = RoleFilter.builder().scopeIdentifier(randomAlphabetic(10)).build();
+    RoleAssignment roleAssignmentToUser = RoleAssignment.builder()
+                                              .identifier(randomAlphabetic(10))
+                                              .scopeIdentifier(randomAlphabetic(10))
+                                              .roleIdentifier(randomAlphabetic(10))
+                                              .principalType(PrincipalType.USER)
+                                              .build();
+    RoleAssignment roleAssignmentToUserGroup = RoleAssignment.builder()
+                                                   .identifier(randomAlphabetic(10))
+                                                   .scopeIdentifier(randomAlphabetic(10))
+                                                   .roleIdentifier(randomAlphabetic(10))
+                                                   .principalType(PrincipalType.USER)
+                                                   .build();
+    RoleAssignment roleAssignmentToServiceAccount = RoleAssignment.builder()
+                                                        .identifier(randomAlphabetic(10))
+                                                        .scopeIdentifier(randomAlphabetic(10))
+                                                        .roleIdentifier(randomAlphabetic(10))
+                                                        .principalType(PrincipalType.USER)
+                                                        .build();
+    PageResponse<RoleAssignment> roleAssignmentPageResponse =
+        PageResponse.<RoleAssignment>builder()
+            .content(Arrays.asList(roleAssignmentToUser, roleAssignmentToUserGroup, roleAssignmentToServiceAccount))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .pageToken(null)
+            .build();
+    when(roleAssignmentService.list(any(), any(RoleAssignmentFilter.class), eq(true)))
+        .thenReturn(roleAssignmentPageResponse);
+
+    Role role = Role.builder().identifier("allThreeAssignment").name(randomAlphabetic(10)).build();
+    RoleWithPrincipalCount roleWithPrincipalCount = RoleWithPrincipalCount.builder()
+                                                        .role(role)
+                                                        .roleAssignedToUserCount(1)
+                                                        .roleAssignedToUserGroupCount(1)
+                                                        .roleAssignedToServiceAccountCount(1)
+                                                        .build();
+
+    PageResponse<RoleWithPrincipalCount> rolePageResponse =
+        PageResponse.<RoleWithPrincipalCount>builder()
+            .content(Collections.singletonList(roleWithPrincipalCount))
+            .totalPages(1)
+            .totalItems(1)
+            .pageItemCount(1)
+            .pageSize(50)
+            .pageIndex(0)
+            .empty(false)
+            .pageToken(null)
+            .build();
+    when(roleService.listWithPrincipalCount(eq(pageRequest), any(RoleFilter.class), eq(true)))
+        .thenReturn(rolePageResponse);
+
+    PageResponse<RoleWithPrincipalCount> result = roleService.listWithPrincipalCount(pageRequest, roleFilter, true);
+
+    assertEquals(1, result.getContent().size());
+    for (int i = 0; i < result.getContent().size(); i++) {
+      assertEquals("allThreeAssignment", result.getContent().get(i).getRole().getIdentifier());
+      assertEquals(1, (int) result.getContent().get(i).getRoleAssignedToUserCount());
+      assertEquals(1, (int) result.getContent().get(i).getRoleAssignedToUserGroupCount());
+      assertEquals(1, (int) result.getContent().get(i).getRoleAssignedToServiceAccountCount());
+    }
   }
 }

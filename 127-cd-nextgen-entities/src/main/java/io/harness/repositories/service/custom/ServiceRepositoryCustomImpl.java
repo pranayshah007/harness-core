@@ -318,4 +318,10 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
     return scmException != null && SCM_BAD_REQUEST.equals(scmException.getCode())
         && (isNotEmpty(serviceFallbackBranch) && !branchTried.equals(serviceFallbackBranch));
   }
+
+  @Override
+  public List<String> getListOfDistinctRepos(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findDistinct(query, ServiceEntityKeys.repo, ServiceEntity.class, String.class);
+  }
 }

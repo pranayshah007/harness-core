@@ -12,10 +12,13 @@ import static io.harness.rule.OwnerRule.ABHISHEK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.OrchestrationStepsTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.TaskSelector;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -35,7 +38,8 @@ import org.mockito.Mockito;
 public class JiraUpdateStepTest extends OrchestrationStepsTestBase {
   @InjectMocks JiraUpdateStep jiraUpdateStep;
   @Mock private JiraStepHelperService jiraStepHelperService;
-
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock ILogStreamingStepClient logStreamingStepClient;
   private static final String PROJECT = "project";
   private static final String CONNECTOR_REF = "connectorRef";
   private static final String TIMEOUT = "timeOut";
@@ -66,6 +70,7 @@ public class JiraUpdateStepTest extends OrchestrationStepsTestBase {
             .delegateSelectors(DELEGATE_SELECTORS)
             .issueKey(ParameterField.createValueField(ISSUE_KEY))
             .build();
+    doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(any());
     StepElementParameters stepParameters = StepElementParameters.builder()
                                                .timeout(ParameterField.createValueField(TIMEOUT))
                                                .spec(jiraUpdateSpecParameters)

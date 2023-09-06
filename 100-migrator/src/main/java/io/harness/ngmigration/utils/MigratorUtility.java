@@ -852,4 +852,10 @@ public class MigratorUtility {
     }
     return defaultValue;
   }
+  public static boolean isExpression(String str) {
+    if (StringUtils.isBlank(str)) {
+      return false;
+    }
+    return str.startsWith("${") && str.endsWith("}");
+  }
 }

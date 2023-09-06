@@ -9,6 +9,10 @@ package io.harness.idp.scorecard.datasources.providers;
 
 import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.GITHUB_TOKEN;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_BRANCH;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_OWNER;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPO_SCM;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,7 +26,6 @@ import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +33,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
 public class GithubProvider extends DataSourceProvider {
+  private static final String SOURCE_LOCATION_ANNOTATION = "backstage.io/source-location";
   protected GithubProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
       BackstageEnvVariableRepository backstageEnvVariableRepository, SecretManagerClientService ngSecretService) {
@@ -48,7 +52,7 @@ public class GithubProvider extends DataSourceProvider {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
 
-    String catalogLocation = entity.getMetadata().getAnnotations().get("backstage.io/managed-by-location");
+    String catalogLocation = entity.getMetadata().getAnnotations().get(SOURCE_LOCATION_ANNOTATION);
     Map<String, String> possibleReplaceableRequestBodyPairs = prepareRequestBodyReplaceablePairs(catalogLocation);
 
     return processOut(accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders,

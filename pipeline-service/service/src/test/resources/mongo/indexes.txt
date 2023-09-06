@@ -59,6 +59,7 @@ nodeExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds"
 nodeExecutionsInfo {"name": "nodeExecutionId_unique_idx", "unique": true} {"nodeExecutionId": 1}
 nodeExecutionsInfo {"name": "planExecutionId_idx", "background": true} {"planExecutionId": 1}
 nodeExecutionsInfo {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+nodes {"name": "nodeId_idx", "background": true} {"nodeId": 1}
 nodes {"name": "planNodeId_nodeId", "background": true} {"planId": 1, "nodeId": 1}
 nodes {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 notifyQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}

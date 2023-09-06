@@ -21,6 +21,8 @@ import io.harness.pms.sdk.core.execution.events.node.facilitate.FacilitatorEvent
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -31,5 +33,10 @@ public class FacilitatorEventMessageListener
   public FacilitatorEventMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, FacilitatorEventHandler facilitatorEventHandler) {
     super(serviceName, FacilitatorEvent.class, facilitatorEventHandler);
+  }
+
+  @Override
+  protected FacilitatorEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return FacilitatorEvent.parseFrom(message);
   }
 }

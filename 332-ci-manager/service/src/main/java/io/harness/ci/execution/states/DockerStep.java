@@ -41,6 +41,7 @@ import com.google.inject.Inject;
 public class DockerStep extends AbstractStepExecutable {
   public static final StepType STEP_TYPE = DockerStepInfo.STEP_TYPE;
   private static final String DOCKER_URL_FORMAT = "https://hub.docker.com/layers/%s/%s/images/%s/";
+  private static final String PREDICATE_TYPE = "https://slsa.dev/provenance/v1";
 
   @Inject CIExecutionConfigService ciExecutionConfigService;
   @Inject CIFeatureFlagService featureFlagService;
@@ -114,10 +115,10 @@ public class DockerStep extends AbstractStepExecutable {
             .pipelineExecutionId(AmbianceUtils.getPipelineExecutionIdentifier(ambiance))
             .pipelineIdentifier(AmbianceUtils.getPipelineIdentifier(ambiance))
             .startTime(ambiance.getStartTs())
-            .triggerBy(AmbianceUtils.getTriggerBy(ambiance).getTriggerIdentifier())
             .pluginInfo(defaultImageConfig.getImage())
             .build();
     ProvenancePredicate predicate = provenanceGenerator.buildProvenancePredicate(provenanceBuilder);
-    stepArtifactsBuilder.provenanceArtifact(ProvenanceArtifact.builder().predicate(predicate).build());
+    stepArtifactsBuilder.provenanceArtifact(
+        ProvenanceArtifact.builder().predicateType(PREDICATE_TYPE).predicate(predicate).build());
   }
 }
