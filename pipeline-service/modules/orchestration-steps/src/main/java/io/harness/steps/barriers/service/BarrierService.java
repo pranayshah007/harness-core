@@ -14,7 +14,6 @@ import io.harness.distribution.barrier.Barrier.State;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
-import io.harness.steps.barriers.service.visitor.BarrierVisitor;
 
 import java.util.List;
 import java.util.Map;
@@ -45,8 +44,8 @@ public interface BarrierService {
    */
   void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds);
   void upsert(BarrierExecutionInstance barrierExecutionInstance);
-  void updateBarrierPositionInfoList(String barrierIdentifier, String planExecutionId, String strategySetupId,
-      List<BarrierPositionInfo.BarrierPosition> barrierPositions, String strategyExecutionId);
+  void updateBarrierPositionInfoList(
+      String barrierIdentifier, String planExecutionId, List<BarrierPositionInfo.BarrierPosition> barrierPositions);
   List<BarrierExecutionInstance> findManyByPlanExecutionIdAndStrategySetupId(
       String planExecutionId, String strategySetupId);
 }
