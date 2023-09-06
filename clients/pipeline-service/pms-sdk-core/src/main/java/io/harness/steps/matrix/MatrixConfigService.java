@@ -31,7 +31,8 @@ import lombok.NoArgsConstructor;
 public class MatrixConfigService implements StrategyConfigService {
   @Inject MatrixConfigServiceHelper matrixConfigServiceHelper;
 
-  public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
+  public List<ChildrenExecutableResponse.Child> fetchChildren(
+      StrategyConfig strategyConfig, String childNodeId, Ambiance ambiance) {
     MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig().getValue();
     List<String> keys = getKeys(matrixConfig);
 
@@ -40,7 +41,7 @@ public class MatrixConfigService implements StrategyConfigService {
       nodeName = (String) matrixConfig.getNodeName().fetchFinalValue();
     }
     return matrixConfigServiceHelper.fetchChildren(keys, matrixConfig.getAxes(), matrixConfig.getExpressionAxes(),
-        matrixConfig.getExclude(), childNodeId, nodeName);
+        matrixConfig.getExclude(), childNodeId, nodeName, ambiance);
   }
 
   public StrategyInfo expandJsonNodeFromClass(StrategyConfig strategyConfig, JsonNode jsonNode,

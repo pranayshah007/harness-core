@@ -74,6 +74,7 @@ message StrategyMetadata {
     MatrixMetadata matrixMetadata = 3;
     ForMetadata forMetadata = 4;
   }
+  string identifierPostFix = 5;
 }
 
 message ForMetadata {

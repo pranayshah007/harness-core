@@ -52,7 +52,8 @@ import java.util.stream.Collectors;
 public class MatrixConfigServiceHelper {
   public List<ChildrenExecutableResponse.Child> fetchChildren(List<String> keys, Map<String, AxisConfig> axes,
       Map<String, ExpressionAxisConfig> expressionAxes, ParameterField<List<ExcludeConfig>> exclude, String childNodeId,
-      String nodeName) {
+      String nodeName, Ambiance ambiance) {
+    boolean useMatrixFieldName = AmbianceUtils.shouldUseMatrixFieldName(ambiance);
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
 
@@ -94,22 +95,24 @@ public class MatrixConfigServiceHelper {
       }
 
       combinationStringMap.computeIfAbsent(variableName, k -> 0);
-
+      StrategyMetadata strategyMetadata =
+          StrategyMetadata.newBuilder()
+              .setCurrentIteration(currentIteration)
+              .setTotalIterations(totalCount)
+              .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                     .addAllMatrixCombination(matrixMetadata.get(currentIteration))
+                                     .putAllMatrixValues(combination)
+                                     .setNodeName(isNodeNameSet ? variableName : "")
+                                     .build())
+              .build();
+      String modifiedIdentifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, useMatrixFieldName);
+      strategyMetadata = strategyMetadata.toBuilder().setIdentifierPostFix(modifiedIdentifier).build();
       // Setting the nodeName in MatrixMetadata to empty string in case user has not given nodeName while defining
       // matrix This nodeName is used in AmbianceUtils.java to calculate the level identifier for the node based on the
       // default setting for the matrix labels.
       children.add(ChildrenExecutableResponse.Child.newBuilder()
                        .setChildNodeId(childNodeId)
-                       .setStrategyMetadata(
-                           StrategyMetadata.newBuilder()
-                               .setCurrentIteration(currentIteration)
-                               .setTotalIterations(totalCount)
-                               .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                                      .addAllMatrixCombination(matrixMetadata.get(currentIteration))
-                                                      .putAllMatrixValues(combination)
-                                                      .setNodeName(isNodeNameSet ? variableName : "")
-                                                      .build())
-                               .build())
+                       .setStrategyMetadata(strategyMetadata)
                        .build());
       currentIteration++;
     }
