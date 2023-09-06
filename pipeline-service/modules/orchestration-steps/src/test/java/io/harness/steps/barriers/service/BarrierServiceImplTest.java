@@ -14,6 +14,7 @@ import static io.harness.distribution.barrier.Barrier.State.STANDING;
 import static io.harness.distribution.barrier.Barrier.State.TIMED_OUT;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,6 +49,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -425,7 +428,8 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
             .build();
     barrierService.save(barrierExecutionInstance);
 
-    barrierService.updatePosition(planExecutionId, BarrierPositionType.STEP, planNodeId, executionId);
+    barrierService.updatePosition(
+        planExecutionId, BarrierPositionType.STEP, planNodeId, executionId, null, null, false);
 
     List<BarrierExecutionInstance> result =
         barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP, planNodeId);
@@ -436,6 +440,62 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     assertThat(result.get(0).getPositionInfo().getBarrierPositionList()).isNotEmpty();
     assertThat(result.get(0).getPositionInfo().getBarrierPositionList().get(0).getStepRuntimeId())
         .isEqualTo(executionId);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+
+  public void shouldUpdatePositionWithAdditionalFiltersForStep() {
+    // Check if `updatePosition` only updates step runtimeId if we have
+    // matching stageExecutionId and stepGroupExecutionId.
+    String executionId = generateUuid();
+    String planNodeId = generateUuid();
+    BarrierExecutionInstance barrierExecutionInstance = obtainBarrierExecutionInstance();
+    String planExecutionId = barrierExecutionInstance.getPlanExecutionId();
+    barrierExecutionInstance.setPositionInfo(BarrierPositionInfo.builder()
+                                                 .planExecutionId(planExecutionId)
+                                                 .barrierPositionList(List.of(BarrierPosition.builder()
+                                                                                  .stepSetupId(planNodeId)
+                                                                                  .stepGroupRuntimeId("sgRuntime1")
+                                                                                  .stageRuntimeId("stageRuntime1")
+                                                                                  .build(),
+                                                     BarrierPosition.builder()
+                                                         .stepSetupId(planNodeId)
+                                                         .stepGroupRuntimeId("sgRuntime2")
+                                                         .stageRuntimeId("stageRuntime1")
+                                                         .build(),
+                                                     BarrierPosition.builder()
+                                                         .stepSetupId(planNodeId)
+                                                         .stepGroupRuntimeId("sgRuntime1")
+                                                         .stageRuntimeId("stageRuntime2")
+                                                         .build(),
+                                                     BarrierPosition.builder()
+                                                         .stepSetupId(planNodeId)
+                                                         .stepGroupRuntimeId("sgRuntime2")
+                                                         .stageRuntimeId("stageRuntime2")
+                                                         .build()))
+                                                 .build());
+    barrierService.save(barrierExecutionInstance);
+
+    barrierService.updatePosition(
+        planExecutionId, BarrierPositionType.STEP, planNodeId, executionId, "stageRuntime1", "sgRuntime1", true);
+
+    List<BarrierExecutionInstance> result =
+        barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP, planNodeId);
+
+    assertThat(result).isNotNull();
+    assertThat(result).isNotEmpty();
+    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.get(0).getPositionInfo().getBarrierPositionList().size()).isEqualTo(4);
+    for (BarrierPosition position : result.get(0).getPositionInfo().getBarrierPositionList()) {
+      if (position.getStepGroupRuntimeId().equals("sgRuntime1")
+          && position.getStageRuntimeId().equals("stageRuntime1")) {
+        assertThat(position.getStepRuntimeId()).isEqualTo(executionId);
+      } else {
+        assertThat(position.getStepRuntimeId()).isNull();
+      }
+    }
   }
 
   @Test
@@ -460,7 +520,8 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
             .build();
     barrierService.save(barrierExecutionInstance);
 
-    barrierService.updatePosition(planExecutionId, BarrierPositionType.STEP_GROUP, planNodeId, executionId);
+    barrierService.updatePosition(
+        planExecutionId, BarrierPositionType.STEP_GROUP, planNodeId, executionId, null, null, false);
 
     List<BarrierExecutionInstance> result =
         barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP_GROUP, planNodeId);
@@ -471,6 +532,57 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     assertThat(result.get(0).getPositionInfo().getBarrierPositionList()).isNotEmpty();
     assertThat(result.get(0).getPositionInfo().getBarrierPositionList().get(0).getStepGroupRuntimeId())
         .isEqualTo(executionId);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+
+  public void shouldUpdatePositionWithAdditionalFiltersForStepGroup() {
+    // Check if `updatePosition` only updates stepGroup runtimeId if strategyNodeType is not of type stepGroup.
+    String planNodeId = generateUuid();
+    BarrierExecutionInstance barrierExecutionInstance = obtainBarrierExecutionInstance();
+    String planExecutionId = barrierExecutionInstance.getPlanExecutionId();
+    barrierExecutionInstance.setPositionInfo(
+        BarrierPositionInfo.builder()
+            .planExecutionId(planExecutionId)
+            .barrierPositionList(List.of(BarrierPosition.builder()
+                                             .stepSetupId(planNodeId)
+                                             .stepGroupSetupId("sgSetup1")
+                                             .strategyNodeType("stepGroup")
+                                             .build(),
+                BarrierPosition.builder()
+                    .stepSetupId(planNodeId)
+                    .stepGroupSetupId("sgSetup1")
+                    .strategyNodeType("stage")
+                    .build(),
+                BarrierPosition.builder().stepSetupId(planNodeId).stepGroupSetupId("sgSetup1").build(),
+                BarrierPosition.builder().stepSetupId(planNodeId).stepGroupSetupId("sgSetup2").build(),
+                BarrierPosition.builder()
+                    .stepSetupId(planNodeId)
+                    .stepGroupSetupId("sgSetup2")
+                    .strategyNodeType("stage")
+                    .build()))
+            .build());
+    barrierService.save(barrierExecutionInstance);
+
+    barrierService.updatePosition(
+        planExecutionId, BarrierPositionType.STEP_GROUP, "sgSetup1", "sgRuntime1", "stageRuntime1", "sgRuntime1", true);
+
+    List<BarrierExecutionInstance> result =
+        barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP, planNodeId);
+
+    assertThat(result).isNotNull();
+    assertThat(result).isNotEmpty();
+    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.get(0).getPositionInfo().getBarrierPositionList().size()).isEqualTo(5);
+    for (BarrierPosition position : result.get(0).getPositionInfo().getBarrierPositionList()) {
+      if ("sgSetup1".equals(position.getStepGroupSetupId()) && !"stepGroup".equals(position.getStrategyNodeType())) {
+        assertThat(position.getStepGroupRuntimeId()).isEqualTo("sgRuntime1");
+      } else {
+        assertThat(position.getStepGroupRuntimeId()).isNull();
+      }
+    }
   }
 
   @Test
@@ -495,7 +607,8 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
             .build();
     barrierService.save(barrierExecutionInstance);
 
-    barrierService.updatePosition(planExecutionId, BarrierPositionType.STAGE, planNodeId, executionId);
+    barrierService.updatePosition(
+        planExecutionId, BarrierPositionType.STAGE, planNodeId, executionId, null, null, false);
 
     List<BarrierExecutionInstance> result =
         barrierService.findByPosition(planExecutionId, BarrierPositionType.STAGE, planNodeId);
@@ -506,6 +619,53 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     assertThat(result.get(0).getPositionInfo().getBarrierPositionList()).isNotEmpty();
     assertThat(result.get(0).getPositionInfo().getBarrierPositionList().get(0).getStageRuntimeId())
         .isEqualTo(executionId);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+
+  public void shouldUpdatePositionWithAdditionalFiltersForStage() {
+    // Check if `updatePosition` only updates stepGroup runtimeId if strategyNodeType is not of type stepGroup.
+    String planNodeId = generateUuid();
+    BarrierExecutionInstance barrierExecutionInstance = obtainBarrierExecutionInstance();
+    String planExecutionId = barrierExecutionInstance.getPlanExecutionId();
+    barrierExecutionInstance.setPositionInfo(
+        BarrierPositionInfo.builder()
+            .planExecutionId(planExecutionId)
+            .barrierPositionList(List.of(BarrierPosition.builder()
+                                             .stepSetupId(planNodeId)
+                                             .stageSetupId("stageSetup1")
+                                             .strategyNodeType("stepGroup")
+                                             .build(),
+                BarrierPosition.builder()
+                    .stepSetupId(planNodeId)
+                    .stageSetupId("stageSetup1")
+                    .strategyNodeType("stage")
+                    .build(),
+                BarrierPosition.builder().stepSetupId(planNodeId).stageSetupId("stageSetup1").build(),
+                BarrierPosition.builder().stepSetupId(planNodeId).stageSetupId("stageSetup2").build()))
+            .build());
+    barrierService.save(barrierExecutionInstance);
+
+    barrierService.updatePosition(planExecutionId, BarrierPositionType.STAGE, "stageSetup1", "stageRuntime1",
+        "stageRuntime1", "sgRuntime1", true);
+
+    List<BarrierExecutionInstance> result =
+        barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP, planNodeId);
+
+    assertThat(result).isNotNull();
+    assertThat(result).isNotEmpty();
+    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.get(0).getPositionInfo().getBarrierPositionList().size()).isEqualTo(4);
+    for (BarrierPosition position : result.get(0).getPositionInfo().getBarrierPositionList()) {
+      if ("stageSetup1".equals(position.getStageSetupId()) && !"stepGroup".equals(position.getStrategyNodeType())
+          && !"stage".equals(position.getStrategyNodeType())) {
+        assertThat(position.getStageRuntimeId()).isEqualTo("stageRuntime1");
+      } else {
+        assertThat(position.getStageRuntimeId()).isNull();
+      }
+    }
   }
 
   @Test
@@ -561,6 +721,205 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
 
     assertThat(updated).isNotNull();
     assertThat(updated.getBarrierState()).isEqualTo(TIMED_OUT);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+
+  public void testUpsert() {
+    String barrierId = "id1";
+    String planExecutionId = "planId";
+    BarrierExecutionInstance barrierExecutionInstance1 =
+        BarrierExecutionInstance.builder()
+            .uuid(barrierId)
+            .identifier(barrierId)
+            .planExecutionId(planExecutionId)
+            .barrierState(STANDING)
+            .setupInfo(
+                BarrierSetupInfo.builder().stages(Set.of(StageDetail.builder().identifier("stage1").build())).build())
+            .positionInfo(
+                BarrierPositionInfo.builder()
+                    .planExecutionId(planExecutionId)
+                    .barrierPositionList(
+                        List.of(BarrierPosition.builder().stageSetupId("stageId1").stepSetupId("stepSetupId1").build()))
+                    .build())
+            .build();
+    BarrierExecutionInstance barrierExecutionInstance2 =
+        BarrierExecutionInstance.builder()
+            .uuid(barrierId)
+            .identifier(barrierId)
+            .planExecutionId(planExecutionId)
+            .barrierState(STANDING)
+            .setupInfo(
+                BarrierSetupInfo.builder().stages(Set.of(StageDetail.builder().identifier("stage2").build())).build())
+            .positionInfo(
+                BarrierPositionInfo.builder()
+                    .planExecutionId(planExecutionId)
+                    .barrierPositionList(
+                        List.of(BarrierPosition.builder().stageSetupId("stageId2").stepSetupId("stepSetupId2").build()))
+                    .build())
+            .build();
+    barrierService.upsert(barrierExecutionInstance1);
+    List<BarrierExecutionInstance> result =
+        barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP, "stepSetupId1");
+    assertThat(result).isNotNull();
+    assertThat(result).isNotEmpty();
+    assertThat(result.size()).isEqualTo(1);
+    BarrierExecutionInstance barrierExecutionInstance = result.get(0);
+    assertThat(barrierExecutionInstance.getPositionInfo().getBarrierPositionList().size()).isEqualTo(1);
+    assertThat(barrierExecutionInstance.getSetupInfo().getStages().size()).isEqualTo(1);
+    assertThat(barrierExecutionInstance.getSetupInfo()
+                   .getStages()
+                   .stream()
+                   .map(StageDetail::getIdentifier)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stage1");
+    assertThat(barrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStageSetupId)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stageId1");
+    assertThat(barrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStepSetupId)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stepSetupId1");
+
+    barrierService.upsert(barrierExecutionInstance2);
+    result = barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP, "stepSetupId1");
+    assertThat(result).isNotNull();
+    assertThat(result).isNotEmpty();
+    assertThat(result.size()).isEqualTo(1);
+    barrierExecutionInstance = result.get(0);
+    assertThat(barrierExecutionInstance.getPositionInfo().getBarrierPositionList().size()).isEqualTo(2);
+    assertThat(barrierExecutionInstance.getSetupInfo().getStages().size()).isEqualTo(2);
+    assertThat(barrierExecutionInstance.getSetupInfo()
+                   .getStages()
+                   .stream()
+                   .map(StageDetail::getIdentifier)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stage1", "stage2");
+    assertThat(barrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStageSetupId)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stageId1", "stageId2");
+    assertThat(barrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStepSetupId)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stepSetupId1", "stepSetupId2");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+
+  public void testUpdateBarrierPositionInfoList() {
+    String barrierId = "id1";
+    String planExecutionId = "planId";
+    BarrierPositionInfo initialPositionInfo =
+        BarrierPositionInfo.builder()
+            .planExecutionId(planExecutionId)
+            .barrierPositionList(
+                List.of(BarrierPosition.builder().stageSetupId("stageId1").stepSetupId("stepSetupId1").build(),
+                    BarrierPosition.builder().stageSetupId("stageId2").stepSetupId("stepSetupId2").build()))
+            .build();
+    BarrierPositionInfo updatedPositionInfo = BarrierPositionInfo.builder()
+                                                  .planExecutionId(planExecutionId)
+                                                  .barrierPositionList(List.of(BarrierPosition.builder()
+                                                                                   .stageSetupId("stageId1")
+                                                                                   .stepSetupId("stepSetupId1")
+                                                                                   .strategyNodeType("stage")
+                                                                                   .stageRuntimeId("stageRuntimeId1")
+                                                                                   .build(),
+                                                      BarrierPosition.builder()
+                                                          .stageSetupId("stageId2")
+                                                          .stepSetupId("stepSetupId2")
+                                                          .strategyNodeType("stage")
+                                                          .stageRuntimeId("stageRuntimeId2")
+                                                          .build()))
+                                                  .build();
+    BarrierExecutionInstance barrierExecutionInstance =
+        BarrierExecutionInstance.builder()
+            .uuid(barrierId)
+            .identifier(barrierId)
+            .planExecutionId(planExecutionId)
+            .barrierState(STANDING)
+            .setupInfo(
+                BarrierSetupInfo.builder().stages(Set.of(StageDetail.builder().identifier("stage1").build())).build())
+            .positionInfo(initialPositionInfo)
+            .build();
+    barrierService.upsert(barrierExecutionInstance);
+    List<BarrierExecutionInstance> result =
+        barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP, "stepSetupId1");
+    assertThat(result).isNotNull();
+    assertThat(result).isNotEmpty();
+    assertThat(result.size()).isEqualTo(1);
+    BarrierExecutionInstance initialBarrierExecutionInstance = result.get(0);
+    assertThat(initialBarrierExecutionInstance.getPositionInfo().getBarrierPositionList().size()).isEqualTo(2);
+    assertThat(initialBarrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStageSetupId)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stageId1", "stageId2");
+    assertThat(initialBarrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStepSetupId)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stepSetupId1", "stepSetupId2");
+    assertThat(initialBarrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStageRuntimeId)
+                   .collect(Collectors.toSet()))
+        .containsOnlyNulls();
+    assertThat(initialBarrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStrategyNodeType)
+                   .collect(Collectors.toSet()))
+        .containsOnlyNulls();
+
+    barrierService.updateBarrierPositionInfoList(
+        barrierId, planExecutionId, updatedPositionInfo.getBarrierPositionList());
+    result = barrierService.findByPosition(planExecutionId, BarrierPositionType.STEP, "stepSetupId1");
+    assertThat(result).isNotNull();
+    assertThat(result).isNotEmpty();
+    assertThat(result.size()).isEqualTo(1);
+    BarrierExecutionInstance updatedBarrierExecutionInstance = result.get(0);
+    assertThat(updatedBarrierExecutionInstance.getPositionInfo().getBarrierPositionList().size()).isEqualTo(2);
+    assertThat(updatedBarrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStageSetupId)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stageId1", "stageId2");
+    assertThat(updatedBarrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStepSetupId)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stepSetupId1", "stepSetupId2");
+    assertThat(updatedBarrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStageRuntimeId)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stageRuntimeId1", "stageRuntimeId2");
+    assertThat(updatedBarrierExecutionInstance.getPositionInfo()
+                   .getBarrierPositionList()
+                   .stream()
+                   .map(BarrierPosition::getStrategyNodeType)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("stage");
   }
 
   private BarrierExecutionInstance obtainBarrierExecutionInstance() {

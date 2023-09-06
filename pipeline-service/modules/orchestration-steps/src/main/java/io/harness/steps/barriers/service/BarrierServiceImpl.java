@@ -242,8 +242,8 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   }
 
   @Override
-  public void updateBarrierPositionInfoList(String barrierIdentifier, String planExecutionId, String strategySetupId,
-      List<BarrierPositionInfo.BarrierPosition> barrierPositions, String strategyExecutionId) {
+  public void updateBarrierPositionInfoList(
+      String barrierIdentifier, String planExecutionId, List<BarrierPositionInfo.BarrierPosition> barrierPositions) {
     Update update = obtainBarrierPositionInfoUpdate(barrierPositions);
     HMongoTemplate.retry(
         ()
