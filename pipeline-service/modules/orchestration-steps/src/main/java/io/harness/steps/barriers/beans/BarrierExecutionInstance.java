@@ -114,6 +114,12 @@ public final class BarrierExecutionInstance implements PersistentEntity, UuidAwa
                  .field(BarrierExecutionInstanceKeys.barrierState)
                  .field(BarrierExecutionInstanceKeys.nextIteration)
                  .build())
+        .add(
+            CompoundMongoIndex.builder()
+                .name("planExecutionId_setupInfo_strategySetupIds_idx")
+                .field(BarrierExecutionInstanceKeys.planExecutionId)
+                .field(BarrierExecutionInstanceKeys.setupInfo.concat(".").concat(BarrierSetupInfoKeys.strategySetupIds))
+                .build())
         .build();
   }
 }
