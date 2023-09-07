@@ -102,9 +102,6 @@ public enum FeatureName {
       "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
       HarnessTeam.CDP),
   CDS_CONTAINER_STEP_GROUP("Support for container step group in CD", HarnessTeam.CDP),
-  CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC(
-      "This flag controls if you want Custom Stage execution data saved in mongodb and eventually synced to timescale",
-      HarnessTeam.CDP),
   CDS_DEBEZIUM_ENABLED_CG("This flag is enable sync using debezium in cg", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_DISABLE_FABRIC8_CG(
       "Enabling this FF switches the user to kubernetes java client instead of deprecated fabric8 client in CG.",
@@ -844,9 +841,6 @@ public enum FeatureName {
   WORKFLOW_PIPELINE_PERMISSION_BY_ENTITY,
   YAML_APIS_GRANULAR_PERMISSION,
   YAML_GIT_CONNECTOR_NAME,
-  CDS_STEP_EXECUTION_DATA_SYNC(
-      "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
-      HarnessTeam.CDP),
   PIE_ERROR_ENHANCEMENTS("Enhance error framework for pipeline exceptions", PIPELINE),
   CDS_SERVICENOW_FETCH_FIELDS("FF to fetch service now fields", HarnessTeam.CDC),
   CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", PIPELINE),
