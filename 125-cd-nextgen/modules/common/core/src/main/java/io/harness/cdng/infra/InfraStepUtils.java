@@ -25,6 +25,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.environment.EnvironmentMapper;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -87,6 +88,32 @@ public class InfraStepUtils {
           CDNGRbacPermissions.ENVIRONMENT_RUNTIME_PERMISSION,
           String.format(
               "Missing Access Permission for Environment: [%s]", stepParameters.getEnvironmentRef().getValue()));
+    }
+  }
+
+  public void validateResources(
+      AccessControlClient accessControlClient, Ambiance ambiance, ServiceStepV3Parameters stepParameters) {
+    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+    String principal = executionPrincipalInfo.getPrincipal();
+    if (EmptyPredicate.isEmpty(principal)) {
+      return;
+    }
+    PrincipalType principalType = PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
+        executionPrincipalInfo.getPrincipalType());
+
+    if (stepParameters.getEnvRef() == null || EmptyPredicate.isEmpty(stepParameters.getEnvRef().getValue())) {
+      accessControlClient.checkForAccessOrThrow(Principal.of(principalType, principal),
+          ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of("ENVIRONMENT", null),
+          CDNGRbacPermissions.ENVIRONMENT_CREATE_PERMISSION, "Missing Environment Create Permission");
+    } else {
+      accessControlClient.checkForAccessOrThrow(Principal.of(principalType, principal),
+          ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+          Resource.of("ENVIRONMENT", stepParameters.getEnvRef().getValue()),
+          CDNGRbacPermissions.ENVIRONMENT_RUNTIME_PERMISSION,
+          String.format("Missing Access Permission for Environment: [%s]", stepParameters.getEnvRef().getValue()));
     }
   }
 

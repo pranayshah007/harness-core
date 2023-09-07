@@ -49,6 +49,7 @@ import io.harness.cdng.chaos.ChaosStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
+import io.harness.cdng.creator.plan.customstage.CustomStageStep;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStep;
 import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStep;
 import io.harness.cdng.ecs.EcsBlueGreenRollbackStep;
@@ -64,6 +65,7 @@ import io.harness.cdng.elastigroup.ElastigroupSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
+import io.harness.cdng.environment.helper.CustomStageEnvironmentStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.revertpr.RevertPRStep;
@@ -350,6 +352,9 @@ public class NgStepRegistrar {
     engineSteps.put(AwsCdkDeployStep.STEP_TYPE, AwsCdkDeployStep.class);
     engineSteps.put(AwsCdkDestroyStep.STEP_TYPE, AwsCdkDestroyStep.class);
     engineSteps.put(AwsCdkRollbackStep.STEP_TYPE, AwsCdkRollbackStep.class);
+
+    engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
+    engineSteps.put(CustomStageEnvironmentStep.STEP_TYPE, CustomStageEnvironmentStep.class);
 
     return engineSteps;
   }
