@@ -1057,7 +1057,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
-    injector.injectMembers(sloHealthIndicatorTimescaleHandler);
+    injector.injectMembers(sloHealthIndicatorTimescaleHandlerIterator);
     dataCollectionExecutor.scheduleWithFixedDelay(
         sloHealthIndicatorTimescaleHandlerIterator::process, 0, 60, TimeUnit.MINUTES);
   }
