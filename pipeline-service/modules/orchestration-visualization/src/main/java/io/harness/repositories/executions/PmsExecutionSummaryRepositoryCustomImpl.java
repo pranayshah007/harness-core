@@ -85,9 +85,11 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   public Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable) {
     try {
       Query query = new Query(criteria).with(pageable);
+      Query queryForCount = new Query(criteria);
+      queryForCount.fields().include(PlanExecutionSummaryKeys.uuid);
       // Do not add directly the read helper inside the lambda, as secondary mongo reads were not going through if used
       // inside lambda in PageableExecutionUtils
-      long count = pmsExecutionSummaryReadHelper.findCount(query);
+      long count = pmsExecutionSummaryReadHelper.findCount(queryForCount);
       List<PipelineExecutionSummaryEntity> summaryEntities = pmsExecutionSummaryReadHelper.find(query);
       return PageableExecutionUtils.getPage(summaryEntities, pageable, () -> count);
     } catch (IllegalArgumentException ex) {
