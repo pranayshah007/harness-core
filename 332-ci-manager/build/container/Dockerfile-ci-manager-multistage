@@ -23,7 +23,7 @@ RUN chmod +x \
     && /app/scripts/bazel/generate_credentials.sh \
     && /app/build/feature_build.sh $GCP_KEY
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:java-17.0.7_7 as base
+FROM us.gcr.io/platform-205701/harness/ubi8/java11:11.0.19_7 as base
 
 # Add the capsule JAR and ci-manager-config.yml
 COPY --chown=65534:65534 --from=builder \
