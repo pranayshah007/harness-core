@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
+import io.harness.cvng.core.beans.ProjectDeletionResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
@@ -67,7 +68,7 @@ public class DebugResource {
   @Path("isProjectDeleted")
   @ApiOperation(
       value = "Checks whether Project resources are deleted", nickname = "isProjectResourcesDeleted", hidden = true)
-  public RestResponse<Boolean>
+  public RestResponse<ProjectDeletionResponse>
   isProjectDeleted(@NotNull @BeanParam ProjectScopedProjectParams projectParams) {
     return new RestResponse<>(debugService.isProjectDeleted(projectParams.getProjectParams()));
   }

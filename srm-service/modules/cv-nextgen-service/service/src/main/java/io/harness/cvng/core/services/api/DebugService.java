@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
+import io.harness.cvng.core.beans.ProjectDeletionResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -20,7 +21,7 @@ import java.util.List;
 public interface DebugService {
   SLODebugResponse getSLODebugResponse(ProjectParams projectParams, String identifier);
 
-  Boolean isProjectDeleted(ProjectParams projectParams);
+  ProjectDeletionResponse isProjectDeleted(ProjectParams projectParams);
 
   Boolean isSLODeleted(ProjectParams projectParams, String identifier);
 
