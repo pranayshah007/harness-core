@@ -36,6 +36,7 @@ import static java.util.Collections.singletonList;
 import io.harness.EntityType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
@@ -130,6 +131,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.repositories.CIExecutionRepository;
+import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
@@ -190,6 +192,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject QueueExecutionUtils queueExecutionUtils;
+  @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
   @Inject CIExecutionRepository ciExecutionRepository;
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
@@ -209,6 +212,15 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     String taskId;
     String accountId = AmbianceUtils.getAccountId(ambiance);
     addExecutionRecord(ambiance, stepParameters, accountId);
+    String runTime = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String stageRuntimeId = AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
+
+    stepExecutionParametersRepository.save(StepExecutionParameters.builder()
+                                               .accountId(accountId)
+                                               .runTimeId(runTime)
+                                               .stageRunTimeId(stageRuntimeId)
+                                               .stepParameters(RecastOrchestrationUtils.toJson(stepParameters))
+                                               .build());
     boolean queueConcurrencyEnabled =
         ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));
     if (queueConcurrencyEnabled) {
