@@ -24,6 +24,7 @@ io.harness.steps.group.GroupStepParametersV1
 io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig
 io.harness.cdng.helm.NativeHelmDeployOutcome
+io.harness.cdng.helm.ReleaseHelmChartOutcome
 io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepNode
 io.harness.cdng.infra.beans.host.HostFilter
 io.harness.cdng.k8s.K8sRollingStepInfo

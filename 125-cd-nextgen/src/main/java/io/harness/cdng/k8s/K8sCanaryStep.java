@@ -18,6 +18,7 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sCanaryBaseStepInfo.K8sCanaryBaseStepInfoKeys;
@@ -33,6 +34,7 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.mapper.K8sPodToServiceInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sCanaryDeployRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -226,14 +228,19 @@ public class K8sCanaryStep extends CdTaskChainExecutable implements K8sStepExecu
     if (k8sTaskExecutionResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return K8sStepHelper.getFailureResponseBuilder(k8sTaskExecutionResponse, responseBuilder).build();
     }
-
+    HelmChartInfo helmChartInfo = k8sCanaryDeployResponse.getHelmChartInfo();
+    ReleaseHelmChartOutcome releaseHelmChartOutcome = k8sStepHelper.getHelmChartOutcome(helmChartInfo);
     instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
         K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(
-            k8sCanaryDeployResponse.getK8sPodList(), k8sCanaryDeployResponse.getHelmChartInfo()));
+            k8sCanaryDeployResponse.getK8sPodList(), helmChartInfo));
     return responseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)
                          .outcome(k8sCanaryOutcome)
+                         .build())
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.RELEASE_HELM_CHART_OUTCOME)
+                         .outcome(releaseHelmChartOutcome)
                          .build())
         .build();
   }
