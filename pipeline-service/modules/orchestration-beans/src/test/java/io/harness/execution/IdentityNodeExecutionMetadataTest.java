@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.rule.Owner;
 
 import org.junit.Test;
@@ -23,7 +24,8 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentityNodeExecutionMetadataTest extends CategoryTest {
-  IdentityNodeExecutionMetadata identityNodeExecutionMetadata = new IdentityNodeExecutionMetadata();
+  IdentityNodeExecutionMetadata identityNodeExecutionMetadata =
+      new IdentityNodeExecutionMetadata(StrategyMetadata.newBuilder().build());
 
   @Test
   @Owner(developers = PRASHANTSHARMA)

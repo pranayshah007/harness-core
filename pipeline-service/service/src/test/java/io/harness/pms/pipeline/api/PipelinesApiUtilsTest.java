@@ -155,12 +155,14 @@ public class PipelinesApiUtilsTest extends CategoryTest {
                                                                       .createdAt(123456L)
                                                                       .lastUpdatedAt(987654L)
                                                                       .storeType(StoreType.INLINE)
+                                                                      .yamlVersion("1")
                                                                       .build();
     PipelineListResponseBody listResponseBody = PipelinesApiUtils.getPipelines(pmsPipelineSummaryResponseDTO);
     assertEquals(listResponseBody.getCreated().longValue(), 123456L);
     assertEquals(listResponseBody.getUpdated().longValue(), 987654L);
     assertEquals(listResponseBody.getIdentifier(), identifier);
     assertEquals(listResponseBody.getName(), name);
+    assertEquals(listResponseBody.getYamlVersion(), "1");
     assertEquals(listResponseBody.getStoreType(), StoreTypeEnum.INLINE);
   }
 

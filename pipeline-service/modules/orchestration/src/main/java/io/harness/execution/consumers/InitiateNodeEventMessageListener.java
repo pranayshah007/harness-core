@@ -17,6 +17,8 @@ import io.harness.pms.events.base.PmsAbstractMessageListener;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -27,6 +29,11 @@ public class InitiateNodeEventMessageListener
   @Inject
   public InitiateNodeEventMessageListener(InitiateNodeHandler initiateNodeHandler) {
     super(ModuleType.PMS.name(), InitiateNodeEvent.class, initiateNodeHandler);
+  }
+
+  @Override
+  protected InitiateNodeEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return InitiateNodeEvent.parseFrom(message);
   }
 
   @Override

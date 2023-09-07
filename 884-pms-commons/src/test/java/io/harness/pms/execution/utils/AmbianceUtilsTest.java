@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.VED;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
@@ -614,5 +615,79 @@ public class AmbianceUtilsTest extends CategoryTest {
     Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
     String identifier = AmbianceUtils.getStrategyPostfix(level, true);
     assertThat(identifier).isEqualTo("_true_hi_0");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetStrategyPostfixWithNodeNamesAndBooleanSettingEnabled() {
+    Map<String, String> values = new HashMap<>();
+    values.put("go", "world");
+    values.put("matrixIdentifierPostfixForDuplicates", "0");
+    values.put("java", "a");
+    MatrixMetadata matrixMetadata = MatrixMetadata.newBuilder()
+                                        .putAllMatrixValues(values)
+                                        .addAllMatrixCombination(Collections.singletonList(1))
+                                        .setNodeName("a")
+                                        .build();
+    StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
+    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
+    String identifier = AmbianceUtils.getStrategyPostfix(level, true);
+    assertThat(identifier).isEqualTo("_a_0");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetStrategyPostfixWithoutNodeNamesAndBooleanSettingEnabled() {
+    Map<String, String> values = new HashMap<>();
+    values.put("go", "world");
+    values.put("matrixIdentifierPostfixForDuplicates", "0");
+    values.put("java", "a");
+    MatrixMetadata matrixMetadata = MatrixMetadata.newBuilder()
+                                        .putAllMatrixValues(values)
+                                        .addAllMatrixCombination(Collections.singletonList(1))
+                                        .build();
+    StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
+    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
+    String identifier = AmbianceUtils.getStrategyPostfix(level, true);
+    assertThat(identifier).isEqualTo("_world_a_0");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetStrategyPostfixWithoutNodeNamesAndBooleanSettingDisabled() {
+    Map<String, String> values = new HashMap<>();
+    values.put("go", "world");
+    values.put("matrixIdentifierPostfixForDuplicates", "0");
+    values.put("java", "a");
+    MatrixMetadata matrixMetadata = MatrixMetadata.newBuilder()
+                                        .putAllMatrixValues(values)
+                                        .addAllMatrixCombination(Collections.singletonList(0))
+                                        .build();
+    StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
+    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
+    String identifier = AmbianceUtils.getStrategyPostfix(level, false);
+    assertThat(identifier).isEqualTo("_0_0");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetStrategyPostfixWithNodeNamesAndBooleanSettingDisabled() {
+    Map<String, String> values = new HashMap<>();
+    values.put("go", "world");
+    values.put("matrixIdentifierPostfixForDuplicates", "0");
+    values.put("java", "a");
+    MatrixMetadata matrixMetadata = MatrixMetadata.newBuilder()
+                                        .putAllMatrixValues(values)
+                                        .addAllMatrixCombination(Collections.singletonList(0))
+                                        .setNodeName("a")
+                                        .build();
+    StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
+    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
+    String identifier = AmbianceUtils.getStrategyPostfix(level, false);
+    assertThat(identifier).isEqualTo("_a_0");
   }
 }

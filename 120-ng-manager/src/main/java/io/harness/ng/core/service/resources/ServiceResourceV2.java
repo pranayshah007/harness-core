@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.service.resources;
+
 import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl.getConnector;
@@ -74,6 +75,7 @@ import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
 import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
@@ -91,6 +93,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.yaml.YamlField;
@@ -156,7 +159,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @NextGenManagerAuth
 @Api("/servicesV2")
 @Path("/servicesV2")
@@ -239,16 +243,16 @@ public class ServiceResourceV2 {
           "Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
           "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
-    Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
+    Optional<ServiceEntity> serviceEntity = serviceEntityService.get(accountId, orgIdentifier, projectIdentifier,
+        serviceIdentifier, deleted, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     } else {
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
 
     if (featureFlagService.isEnabled(accountId, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
@@ -463,7 +467,7 @@ public class ServiceResourceV2 {
       @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
           "repoName") String repoName) {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
-        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope, repoName);
     Pageable pageRequest;
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
@@ -558,7 +562,7 @@ public class ServiceResourceV2 {
     checkAccessForListingAtScope(accountId, orgIdentifier, projectIdentifier, serviceIdentifiers);
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false);
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false, null);
 
     Pageable pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
 
@@ -660,7 +664,7 @@ public class ServiceResourceV2 {
         "Unauthorized to list services");
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
-        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope, null);
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }
@@ -746,9 +750,8 @@ public class ServiceResourceV2 {
       return ResponseDTO.newResponse(
           NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceInputYaml).build());
     } else {
-      // todo: better error message here
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
   }
 
@@ -831,8 +834,8 @@ public class ServiceResourceV2 {
       return ResponseDTO.newResponse(
           serviceEntityService.getArtifactSourceInputs(serviceEntity.get().getYaml(), serviceIdentifier));
     } else {
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
   }
 
@@ -1168,5 +1171,30 @@ public class ServiceResourceV2 {
       serviceEntities = serviceEntityService.list(criteria, pageRequest);
     }
     return serviceEntities;
+  }
+
+  @GET
+  @Path("/list-repo")
+  @Hidden
+  @ApiOperation(value = "Gets all repo list", nickname = "getRepositoryList")
+  @Operation(operationId = "getRepositoryList", summary = "Gets the list of all repositories",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a list of all the repositories of all Services")
+      })
+
+  public ResponseDTO<RepoListResponseDTO>
+  listRepos(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
+          "includeAllServicesAccessibleAtScope") boolean includeAllServicesAccessibleAtScope) {
+    RepoListResponseDTO repoListResponseDTO = serviceEntityService.getListOfRepos(
+        accountIdentifier, orgIdentifier, projectIdentifier, includeAllServicesAccessibleAtScope);
+    return ResponseDTO.newResponse(repoListResponseDTO);
   }
 }

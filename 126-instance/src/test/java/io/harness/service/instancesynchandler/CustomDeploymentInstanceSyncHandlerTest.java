@@ -17,6 +17,7 @@ import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
+import io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
@@ -24,6 +25,7 @@ import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.CustomDeploymentNGDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
@@ -36,6 +38,7 @@ import io.harness.rule.Owner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
@@ -126,7 +129,6 @@ public class CustomDeploymentInstanceSyncHandlerTest extends InstancesTestBase {
     CustomDeploymentNGDeploymentInfoDTO deploymentInfo =
         (CustomDeploymentNGDeploymentInfoDTO) customDeploymentInstanceSyncHandler.getDeploymentInfo(
             infrastructureOutcome, serverInstanceInfos);
-    assertThat(deploymentInfo.getInstanceFetchScript()).isEqualTo(SCRIPT);
     assertThat(deploymentInfo.getInfratructureKey()).isEqualTo("key");
   }
 
@@ -206,5 +208,43 @@ public class CustomDeploymentInstanceSyncHandlerTest extends InstancesTestBase {
     InstanceType instanceType = customDeploymentInstanceSyncHandler.getInstanceType();
 
     assertThat(instanceType).isEqualTo(InstanceType.CUSTOM_DEPLOYMENT_INSTANCE);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testUpdateDeploymentInfo() {
+    CustomDeploymentNGDeploymentInfoDTO customDeploymentNGDeploymentInfoDTO =
+        CustomDeploymentNGDeploymentInfoDTO.builder().infratructureKey("key").instanceFetchScript("fetch").build();
+    CustomDeploymentOutcomeMetadata customDeploymentOutcomeMetadata =
+        CustomDeploymentOutcomeMetadata.builder().instanceFetchScript("script").build();
+    EcsServerInstanceInfo customDeploymentServerInstanceInfo = EcsServerInstanceInfo.builder().region("east").build();
+
+    List<ServerInstanceInfo> serverInstanceInfos = new ArrayList<>();
+    serverInstanceInfos.add(customDeploymentServerInstanceInfo);
+
+    customDeploymentNGDeploymentInfoDTO =
+        (CustomDeploymentNGDeploymentInfoDTO) customDeploymentInstanceSyncHandler.updateDeploymentInfoDTO(
+            customDeploymentNGDeploymentInfoDTO, customDeploymentOutcomeMetadata);
+    assertThat(customDeploymentNGDeploymentInfoDTO.getInstanceFetchScript()).isEqualTo("script");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testUpdateDeploymentInfoError() {
+    K8sDeploymentInfoDTO k8sDeploymentInfoDTO =
+        K8sDeploymentInfoDTO.builder().namespaces(new LinkedHashSet<>()).releaseName("name").build();
+    CustomDeploymentOutcomeMetadata customDeploymentOutcomeMetadata =
+        CustomDeploymentOutcomeMetadata.builder().instanceFetchScript("script").build();
+    EcsServerInstanceInfo customDeploymentServerInstanceInfo = EcsServerInstanceInfo.builder().region("east").build();
+
+    List<ServerInstanceInfo> serverInstanceInfos = new ArrayList<>();
+    serverInstanceInfos.add(customDeploymentServerInstanceInfo);
+
+    assertThatThrownBy(()
+                           -> customDeploymentInstanceSyncHandler.updateDeploymentInfoDTO(
+                               k8sDeploymentInfoDTO, customDeploymentOutcomeMetadata))
+        .isInstanceOf(InvalidArgumentsException.class);
   }
 }

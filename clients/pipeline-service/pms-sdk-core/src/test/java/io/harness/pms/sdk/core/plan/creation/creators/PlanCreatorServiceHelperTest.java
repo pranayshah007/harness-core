@@ -9,6 +9,7 @@ package io.harness.pms.sdk.core.plan.creation.creators;
 
 import static io.harness.pms.contracts.plan.RollbackModeBehaviour.PRESERVE;
 import static io.harness.pms.contracts.plan.RollbackModeBehaviour.UNDEFINED_BEHAVIOUR;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -20,6 +21,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
@@ -226,5 +230,56 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     assertThat(dependencyMetadataMap.get("du1").getRollbackModeBehaviour()).isEqualTo(PRESERVE);
     assertThat(dependencyMetadataMap.get("du1").getMetadataMap().get("something")).isEqualTo(randomByteString);
     assertThat(dependencyMetadataMap.get("du2").getRollbackModeBehaviour()).isEqualTo(PRESERVE);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testDecorateResponseWithParentInfo() {
+    Dependency initialDependencies =
+        Dependency.newBuilder()
+            .setParentInfo(HarnessStruct.newBuilder()
+                               .putData(PlanCreatorConstants.YAML_VERSION,
+                                   HarnessValue.newBuilder().setStringValue(PipelineVersion.V0).build())
+                               .build())
+            .build();
+    PlanCreationResponse planCreationResponse = PlanCreationResponse.builder().build();
+    PlanCreatorServiceHelper.decorateResponseWithParentInfo(initialDependencies, planCreationResponse);
+    assertThat(planCreationResponse.getDependencies()).isNull();
+
+    Dependencies newDependencies = Dependencies.newBuilder().build();
+    planCreationResponse = PlanCreationResponse.builder().dependencies(newDependencies).build();
+    PlanCreatorServiceHelper.decorateResponseWithParentInfo(initialDependencies, planCreationResponse);
+    assertThat(planCreationResponse.getDependencies()).isEqualTo(newDependencies);
+
+    newDependencies = newDependencies.toBuilder().putDependencies("dep1", "yamlPath").build();
+    planCreationResponse = PlanCreationResponse.builder().dependencies(newDependencies).build();
+    PlanCreatorServiceHelper.decorateResponseWithParentInfo(initialDependencies, planCreationResponse);
+    // planCreationResponse does has the yamlVersion parentInfo passed. So it will be taken from the
+    // initialDependencies.
+    assertThat(
+        planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
+            PlanCreatorConstants.YAML_VERSION))
+        .isEqualTo(HarnessValue.newBuilder().setStringValue(PipelineVersion.V0).build());
+
+    newDependencies =
+        newDependencies.toBuilder()
+            .putDependencies("dep1", "yamlPath")
+            .putDependencyMetadata("dep1",
+                Dependency.newBuilder()
+                    .setParentInfo(HarnessStruct.newBuilder()
+                                       .putData(PlanCreatorConstants.YAML_VERSION,
+                                           HarnessValue.newBuilder().setStringValue(PipelineVersion.V1).build())
+                                       .build())
+                    .build())
+            .build();
+    planCreationResponse = PlanCreationResponse.builder().dependencies(newDependencies).build();
+    PlanCreatorServiceHelper.decorateResponseWithParentInfo(initialDependencies, planCreationResponse);
+    // planCreationResponse has the yamlVersion parentInfo passed. So it will be present in the final decorated
+    // response.
+    assertThat(
+        planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
+            PlanCreatorConstants.YAML_VERSION))
+        .isEqualTo(HarnessValue.newBuilder().setStringValue(PipelineVersion.V1).build());
   }
 }

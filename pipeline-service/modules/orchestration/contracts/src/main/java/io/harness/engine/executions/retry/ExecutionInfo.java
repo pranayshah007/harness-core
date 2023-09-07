@@ -24,4 +24,5 @@ public class ExecutionInfo {
   Long startTs;
   Long endTs;
   ExecutionStatus status;
+  Integer runSequence;
 }

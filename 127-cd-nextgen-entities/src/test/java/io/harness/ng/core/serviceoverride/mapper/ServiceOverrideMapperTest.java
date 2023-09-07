@@ -9,6 +9,7 @@ package io.harness.ng.core.serviceoverride.mapper;
 
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,7 +18,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.NGCoreTestBase;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
+import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.rule.Owner;
 import io.harness.yaml.core.variables.NGServiceOverrides;
 
@@ -28,6 +32,8 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceOverrideMapperTest extends NGCoreTestBase {
+  private final String OVERRIDE_YAML =
+      "serviceOverrides:\n  environmentRef: ENVIRONMENT_REF\n  serviceRef: SERVICE_REF\n  variables:\n    - name: varA\n      value: valA\n      required: false\n";
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
@@ -54,5 +60,41 @@ public class ServiceOverrideMapperTest extends NGCoreTestBase {
     assertThatThrownBy(() -> ServiceOverridesMapper.toServiceOverridesEntity("accountId", serviceOverrideRequestDTO))
         .hasMessageContaining(
             "Project Identifier should not be passed when environment used in service override is at organisation or account scope");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToResponseWrapperHandlingFromV2Api() {
+    NGServiceOverridesEntity entity = NGServiceOverridesEntity.builder()
+                                          .accountId("ACCOUNT_IDENTIFIER")
+                                          .orgIdentifier("ORG_IDENTIFIER")
+                                          .projectIdentifier("PROJECT_IDENTIFIER")
+                                          .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+                                          .environmentRef("ENVIRONMENT_REF")
+                                          .serviceRef("SERVICE_REF")
+                                          .yamlInternal(OVERRIDE_YAML)
+                                          .build();
+
+    ServiceOverrideResponseDTO responseDTO = ServiceOverridesMapper.toResponseWrapper(entity, true);
+    assertThat(responseDTO.getYaml()).isEqualTo(OVERRIDE_YAML);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToResponseWrapperHandlingFromV1Api() {
+    NGServiceOverridesEntity entity = NGServiceOverridesEntity.builder()
+                                          .accountId("ACCOUNT_IDENTIFIER")
+                                          .orgIdentifier("ORG_IDENTIFIER")
+                                          .projectIdentifier("PROJECT_IDENTIFIER")
+                                          .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+                                          .environmentRef("ENVIRONMENT_REF")
+                                          .serviceRef("SERVICE_REF")
+                                          .yaml(OVERRIDE_YAML)
+                                          .build();
+
+    ServiceOverrideResponseDTO responseDTO = ServiceOverridesMapper.toResponseWrapper(entity, false);
+    assertThat(responseDTO.getYaml()).isEqualTo(OVERRIDE_YAML);
   }
 }

@@ -7,7 +7,10 @@
 
 package io.harness.cdng.manifest.yaml;
 
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo.ManifestStoreInfoBuilder;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.pms.yaml.ParameterField;
 
@@ -22,4 +25,12 @@ public interface GitStoreConfig extends StoreConfig {
   ParameterField<String> getFolderPath();
   ParameterField<String> getRepoName();
   GitStoreConfigDTO toGitStoreConfigDTO();
+  @Override
+  default void populateManifestStoreInfo(ManifestStoreInfoBuilder manifestStoreInfoBuilder) {
+    manifestStoreInfoBuilder.branch(getParameterFieldValue(this.getBranch()));
+    manifestStoreInfoBuilder.commitId(getParameterFieldValue(this.getCommitId()));
+    manifestStoreInfoBuilder.folderPath(getParameterFieldValue(this.getFolderPath()));
+    manifestStoreInfoBuilder.repoName(getParameterFieldValue(this.getRepoName()));
+    manifestStoreInfoBuilder.paths(getParameterFieldValue(this.getPaths()));
+  }
 }

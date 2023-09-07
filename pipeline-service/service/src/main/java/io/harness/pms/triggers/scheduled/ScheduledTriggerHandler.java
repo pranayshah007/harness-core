@@ -64,7 +64,7 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
   @Inject private TriggerExecutionHelper triggerExecutionHelper;
 
   public void registerIterators(IteratorConfig iteratorConfig) {
-    persistenceIteratorFactory.createLoopIteratorWithDedicatedThreadPool(
+    persistenceIteratorFactory.createLoopIteratorWithDedicatedThreadPoolNoRecoverAfterPause(
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("ScheduledTriggerProcessor")
             .poolSize(iteratorConfig.getThreadPoolCount())
@@ -72,6 +72,7 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
             .build(),
         ScheduledTriggerHandler.class,
         MongoPersistenceIterator.<NGTriggerEntity, SpringFilterExpander>builder()
+            .unsorted(true)
             .clazz(NGTriggerEntity.class)
             .fieldName(NGTriggerEntityKeys.nextIterations)
             .targetInterval(ofMinutes(5))

@@ -342,7 +342,8 @@ public class PipelineServiceModule extends AbstractModule {
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(FeatureFlagModule.getInstance());
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
-        configuration.getOrchestrationVisualizationThreadPoolConfig()));
+        configuration.getOrchestrationVisualizationThreadPoolConfig(),
+        configuration.getGraphConsumerSleepIntervalMs()));
     install(PodCleanUpModule.getInstance(configuration.getPodCleanUpThreadPoolConfig()));
     install(PrimaryVersionManagerModule.getInstance());
     install(new DelegateServiceDriverGrpcClientModule(configuration.getManagerServiceSecret(),
@@ -445,8 +446,14 @@ public class PipelineServiceModule extends AbstractModule {
     bind(NodeTypeLookupService.class).to(NodeTypeLookupServiceImpl.class);
 
     bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("taskPollExecutor"))
-        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
+        .annotatedWith(Names.named("syncTaskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("SyncTaskPoll-Thread"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("asyncTaskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("AsyncTaskPoll-Thread"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("progressTaskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("ProgressTaskPoll-Thread"));
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("progressUpdateServiceExecutor"))
         .toInstance(new ManagedScheduledExecutorService("ProgressUpdateServiceExecutor-Thread"));
@@ -905,5 +912,12 @@ public class PipelineServiceModule extends AbstractModule {
     return new ManagedExecutorService(ThreadPool.create(configuration.getPipelineSetupUsageCreationPoolConfig(), 1,
         new ThreadFactoryBuilder().setNameFormat("PipelineSetupUsageCreationExecutorService-%d").build(),
         new ThreadPoolExecutor.AbortPolicy()));
+  }
+
+  @Provides
+  @Singleton
+  @Named("useNewNodeEntityConfiguration")
+  public Boolean getUseNewNodeEntityConfiguration() {
+    return configuration.getUseNewNodeEntityConfiguration();
   }
 }

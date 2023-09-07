@@ -15,7 +15,6 @@ import static org.apache.commons.lang3.ObjectUtils.min;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.pubsub.message.BigQueryUpdateMessage;
 import io.harness.beans.FeatureName;
@@ -40,6 +39,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -47,6 +47,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CE)
@@ -54,6 +56,9 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private static final String COST_CATEGORY_FORMAT = "STRUCT('%s' as costCategoryName, %s as costBucketName)";
+  private static final String FAILED_ATTEMPT_MESSAGE =
+      "Attempting to process the COST_CATEGORY_UPDATE message again. Attempt No. {}";
+  private static final String FAILURE_MESSAGE = "Failed to process the COST_CATEGORY_UPDATE message. Attempt No. {}";
 
   private final Gson gson = new Gson();
   private final ModuleLicenseHelper moduleLicenseHelper;
@@ -84,21 +89,14 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
     String data = message.getData().toStringUtf8();
     log.info("Received Big Query update message: {}", data);
 
-    boolean ack;
     try {
-      ack = processPubSubMessage(parseMessage(data));
-    } catch (IOException e) {
-      throw new BatchProcessingException(
-          String.format("Failed to handle Big Query update message %s.", message.getData().toStringUtf8()), e);
+      Failsafe.with(getRetryPolicy()).run(() -> processPubSubMessage(parseMessage(data)));
+    } catch (Exception e) {
+      log.error("Error encountered in processing COST_CATEGORY_UPDATE message", e);
     }
 
-    if (ack) {
-      consumer.ack();
-      log.info("Acknowledged Big Query update message: {}", message.getData().toStringUtf8());
-    } else {
-      consumer.nack();
-      log.warn("Not acknowledged Big Query update message: {}", message.getData().toStringUtf8());
-    }
+    consumer.ack();
+    log.info("Acknowledged Big Query update message: {}", message.getData().toStringUtf8());
   }
 
   public boolean processPubSubMessage(BigQueryUpdateMessage message) throws IOException {
@@ -214,6 +212,15 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
         log.warn("Couldn't add Cost Category {}, skipping it.", businessMappingHistory.getName(), e);
       }
     }
+  }
+
+  public static RetryPolicy<Object> getRetryPolicy() {
+    return new RetryPolicy<>()
+        .handle(Exception.class)
+        .withBackoff(1, 10, ChronoUnit.SECONDS)
+        .withMaxAttempts(3)
+        .onFailedAttempt(event -> log.warn(FAILED_ATTEMPT_MESSAGE, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(FAILURE_MESSAGE, event.getAttemptCount(), event.getFailure()));
   }
 
   private BigQueryUpdateMessage parseMessage(String data) {

@@ -12,13 +12,16 @@ import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class NGArtifactConstants {
+  public static final String ARTIFACT_DIRECTORY = "artifactDirectory";
   public static final String REPOSITORY_NAME = "repositoryName";
   public static final String REPOSITORY = "repository";
   public static final String REPOSITORY_PORT = "repositoryPort";
   public static final String REPOSITORY_FORMAT = "repositoryFormat";
+  public static final String ARTIFACT_FILTER = "artifactFilter";
   public static final String REPOSITORY_URL = "repositoryUrl";
   public static final String REGISTRY_HOST_NAME = "registryHostname";
   public static final String REGISTRY = "registry";

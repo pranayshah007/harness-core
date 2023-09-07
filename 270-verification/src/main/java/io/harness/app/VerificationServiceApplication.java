@@ -622,9 +622,9 @@ public class VerificationServiceApplication extends Application<VerificationServ
             .filterExpander(query
                 -> query.or(query.criteria(AccountKeys.licenseInfo).doesNotExist(),
                     query.and(query.criteria(AccountKeys.licenseInfo + "." + LicenseInfoKeys.accountStatus)
-                                  .equal(AccountStatus.ACTIVE)),
-                    query.criteria(AccountKeys.licenseInfo + "." + LicenseInfoKeys.accountType)
-                        .in(Sets.newHashSet(AccountType.TRIAL, AccountType.PAID))))
+                                  .equal(AccountStatus.ACTIVE),
+                        query.criteria(AccountKeys.licenseInfo + "." + LicenseInfoKeys.accountType)
+                            .in(Sets.newHashSet(AccountType.TRIAL, AccountType.PAID)))))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

@@ -23,4 +23,12 @@ public interface CILogServiceClient {
   Call<Void> closeLogStream(@Query("accountID") String accountId, @Query("key") String logKey,
       @Query("snapshot") boolean snapshot, @Query("prefix") boolean prefix,
       @Header("X-Harness-Token") String authToken);
+
+  @DELETE(CICommonEndpointConstants.LOG_SERVICE_INTERNAL_BLOB_ENDPOINT)
+  Call<Void> deleteLogs(
+      @Query("accountID") String accountId, @Query("key") String key, @Header("X-Harness-Token") String authToken);
+
+  @GET(CICommonEndpointConstants.LOG_SERVICE_BLOB_EXISTS)
+  Call<String> exists(
+      @Query("accountID") String accountId, @Query("key") String key, @Header("X-Harness-Token") String authToken);
 }

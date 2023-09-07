@@ -10,6 +10,7 @@ package io.harness.cdng.provision.awscdk;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_APP_PATH;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_COMMAND_OPTIONS;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_PARAMETERS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
@@ -100,5 +101,19 @@ public class AwsCdkHelper {
       }
     });
     return processedOutput;
+  }
+
+  public void addParametersToEnvValues(
+      Map<String, String> parameters, HashMap<String, String> environmentVariablesMap) {
+    List<String> parametersList = new ArrayList<>();
+    if (isNotEmpty(parameters)) {
+      parameters.forEach((key, value) -> {
+        if (!key.equals("__uuid")) {
+          parametersList.add(String.format("%s=%s", key, value));
+        }
+      });
+      environmentVariablesMap.put(
+          PLUGIN_AWS_CDK_PARAMETERS, "--parameters " + String.join(" --parameters ", parametersList));
+    }
   }
 }

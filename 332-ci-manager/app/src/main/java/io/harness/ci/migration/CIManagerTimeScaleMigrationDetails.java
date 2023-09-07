@@ -37,6 +37,7 @@ public class CIManagerTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(3, AlterTimescalePipelineSummaryExecutionCILicense.class))
         .add(Pair.of(4, AlterTimescalePipelineSummaryExecutionUserSource.class))
         .add(Pair.of(5, UpdateBuildCreditsTimescaleStageExecutionSummary.class))
+        .add(Pair.of(6, CreateTimeBucketListBigIntFunction.class))
         .build();
   }
 }

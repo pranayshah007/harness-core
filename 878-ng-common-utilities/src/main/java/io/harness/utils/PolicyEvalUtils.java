@@ -18,6 +18,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.logging.UnitProgress.Builder;
 import io.harness.network.SafeHttpCall;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
@@ -100,17 +101,22 @@ public class PolicyEvalUtils {
   }
 
   public StepResponse buildFailureStepResponse(ErrorCode errorCode, String message, FailureType failureType) {
-    return buildFailureStepResponse(errorCode, message, failureType, null, null);
+    return buildFailureStepResponse(errorCode, message, failureType, null, null, null);
+  }
+
+  public StepResponse buildFailureStepResponse(ErrorCode errorCode, String message, FailureType failureType,
+      StepOutcome stepOutcome, Builder unitResponseBuilder) {
+    return buildFailureStepResponse(errorCode, message, failureType, stepOutcome, null, unitResponseBuilder);
   }
 
   public StepResponse buildFailureStepResponse(
       ErrorCode errorCode, String message, FailureType failureType, StepOutcome stepOutcome) {
-    return buildFailureStepResponse(errorCode, message, failureType, stepOutcome, null);
+    return buildFailureStepResponse(errorCode, message, failureType, stepOutcome, null, null);
   }
 
   public StepResponse buildFailureStepResponse(
       ErrorCode errorCode, String message, FailureType failureType, StepResponse stepResponse) {
-    return buildFailureStepResponse(errorCode, message, failureType, null, stepResponse);
+    return buildFailureStepResponse(errorCode, message, failureType, null, stepResponse, null);
   }
 
   public String getEntityMetadataString(String stepName) {
@@ -124,7 +130,7 @@ public class PolicyEvalUtils {
   }
 
   private StepResponse buildFailureStepResponse(ErrorCode errorCode, String message, FailureType failureType,
-      StepOutcome stepOutcome, StepResponse stepResponse) {
+      StepOutcome stepOutcome, StepResponse stepResponse, Builder unitResponseBuilder) {
     FailureData failureData = FailureData.newBuilder()
                                   .setCode(errorCode.name())
                                   .setLevel(Level.ERROR.name())
@@ -193,7 +199,7 @@ public class PolicyEvalUtils {
     if (OpaConstants.OPA_STATUS_ERROR.equals(opaEvaluationResponseHolder.getStatus())) {
       String errorMessage = PolicyEvalUtils.buildPolicyEvaluationFailureMessage(opaEvaluationResponseHolder);
       stepResponse = PolicyEvalUtils.buildFailureStepResponse(ErrorCode.POLICY_EVALUATION_FAILURE, errorMessage,
-          FailureType.POLICY_EVALUATION_FAILURE, policyOutcome, stepResponse);
+          FailureType.POLICY_EVALUATION_FAILURE, policyOutcome, stepResponse, null);
       stepResponse = stepResponse.toBuilder().status(Status.FAILED).build();
     } else {
       stepResponse = stepResponse.toBuilder().stepOutcome(policyOutcome).build();

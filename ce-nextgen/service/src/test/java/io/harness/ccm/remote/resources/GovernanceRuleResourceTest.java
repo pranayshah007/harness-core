@@ -46,7 +46,9 @@ import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleExecutionService;
 import io.harness.ccm.views.service.RuleSetService;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.GovernanceConfig;
 import io.harness.rule.Owner;
@@ -115,6 +117,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
   private RuleSet ruleSet;
   private GovernanceRuleSetResource ruleSetManagement;
   private RuleEnforcement ruleEnforcement;
+  private ConnectorInfoDTO connectorInfoDTO;
   private GovernanceRuleEnforcementResource ruleEnforcementManagement;
 
   @Captor private ArgumentCaptor<RuleCreateEvent> rulesCreateEventArgumentCaptor;
@@ -186,6 +189,10 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     ruleEnforcementManagement = new GovernanceRuleEnforcementResource(ruleEnforcementService, telemetryReporter,
         transactionTemplate, outboxService, configuration, rbacHelper, ruleSetService, governanceRuleService);
     when(ruleEnforcementService.listId(ACCOUNT_ID, UUIDENF, false)).thenReturn(ruleEnforcement);
+
+    connectorInfoDTO = ConnectorInfoDTO.builder()
+                           .connectorConfig(CEAwsConnectorDTO.builder().awsAccountId(ACCOUNT_ID).build())
+                           .build();
   }
 
   @Test
@@ -200,7 +207,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesCreateEventArgumentCaptor.capture());
     RuleCreateEvent ruleCreateEvent = rulesCreateEventArgumentCaptor.getValue();
-    assertThat(rule).isEqualTo(ruleCreateEvent.getRule());
+    assertThat(ruleCreateEvent.getRule()).isEqualTo(getRuleExpectedOutput(null));
     verify(governanceRuleService).save(rule);
   }
 
@@ -219,7 +226,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesSetCreateEventArgumentCaptor.capture());
     RuleSetCreateEvent ruleSetCreateEvent = rulesSetCreateEventArgumentCaptor.getValue();
-    assertThat(ruleSet).isEqualTo(ruleSetCreateEvent.getRuleSet());
+    assertThat(ruleSetCreateEvent.getRuleSet()).isEqualTo(getRuleSetExpectedOutput(null));
     verify(ruleSetService).save(ruleSet);
   }
 
@@ -233,12 +240,16 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                    .doInTransaction(new SimpleTransactionStatus()));
     when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
         .thenReturn(Collections.singleton(UUID));
+    when(governanceRuleService.getConnectorResponse(any(), any(), any()))
+        .thenReturn(Collections.singleton(connectorInfoDTO));
+    when(rbacHelper.checkAccountIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(ACCOUNT_ID));
     ruleEnforcementManagement.create(
         ACCOUNT_ID, CreateRuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcement).build());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesEnforcementCreateEventArgumentCaptor.capture());
     RuleEnforcementCreateEvent ruleEnforcementCreateEvent = rulesEnforcementCreateEventArgumentCaptor.getValue();
-    assertThat(ruleEnforcement).isEqualTo(ruleEnforcementCreateEvent.getRuleEnforcement());
+    assertThat(ruleEnforcementCreateEvent.getRuleEnforcement()).isEqualTo(ruleEnforcement);
     verify(ruleEnforcementService).save(ruleEnforcement);
   }
 
@@ -254,7 +265,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesUpdateEventArgumentCaptor.capture());
     RuleUpdateEvent rulesUpdateEvent = rulesUpdateEventArgumentCaptor.getValue();
-    assertThat(rule).isEqualTo(rulesUpdateEvent.getRule());
+    assertThat(rulesUpdateEvent.getRule()).isEqualTo(getRuleExpectedOutput(UUID));
     verify(governanceRuleService).update(rule, ACCOUNT_ID);
   }
 
@@ -272,7 +283,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesSetUpdateEventArgumentCaptor.capture());
     RuleSetUpdateEvent rulesSetUpdateEvent = rulesSetUpdateEventArgumentCaptor.getValue();
-    assertThat(ruleSet).isEqualTo(rulesSetUpdateEvent.getRuleSet());
+    assertThat(rulesSetUpdateEvent.getRuleSet()).isEqualTo(getRuleSetExpectedOutput(UUIDSET));
     verify(ruleSetService).update(ACCOUNT_ID, ruleSet);
   }
 
@@ -286,12 +297,16 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                    .doInTransaction(new SimpleTransactionStatus()));
     when(rbacHelper.checkRuleIdsGivenPermission(any(), any(), any(), any(), any()))
         .thenReturn(Collections.singleton(UUID));
+    when(governanceRuleService.getConnectorResponse(any(), any(), any()))
+        .thenReturn(Collections.singleton(connectorInfoDTO));
+    when(rbacHelper.checkAccountIdsGivenPermission(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singleton(ACCOUNT_ID));
     ruleEnforcementManagement.update(
         ACCOUNT_ID, CreateRuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcement).build());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesEnforcementUpdateEventArgumentCaptor.capture());
     RuleEnforcementUpdateEvent ruleEnforcementUpdateEvent = rulesEnforcementUpdateEventArgumentCaptor.getValue();
-    assertThat(ruleEnforcement).isEqualTo(ruleEnforcementUpdateEvent.getRuleEnforcement());
+    assertThat(ruleEnforcementUpdateEvent.getRuleEnforcement()).isEqualTo(ruleEnforcement);
     verify(ruleEnforcementService).update(ruleEnforcement);
   }
 
@@ -307,7 +322,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesEnforcementDeleteEventArgumentCaptor.capture());
     RuleEnforcementDeleteEvent ruleEnforcementDeleteEvent = rulesEnforcementDeleteEventArgumentCaptor.getValue();
-    assertThat(ruleEnforcement).isEqualTo(ruleEnforcementDeleteEvent.getRuleEnforcement());
+    assertThat(ruleEnforcementDeleteEvent.getRuleEnforcement()).isEqualTo(ruleEnforcement);
     verify(ruleEnforcementService).delete(ACCOUNT_ID, UUIDENF);
   }
 
@@ -323,7 +338,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesSetDeleteEventArgumentCaptor.capture());
     RuleSetDeleteEvent ruleSetDeleteEvent = rulesSetDeleteEventArgumentCaptor.getValue();
-    assertThat(ruleSet).isEqualTo(ruleSetDeleteEvent.getRuleSet());
+    assertThat(ruleSetDeleteEvent.getRuleSet()).isEqualTo(getRuleSetExpectedOutput(UUIDSET));
     verify(ruleSetService).delete(ACCOUNT_ID, UUIDSET);
   }
 
@@ -339,7 +354,21 @@ public class GovernanceRuleResourceTest extends CategoryTest {
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(rulesDeleteEventArgumentCaptor.capture());
     RuleDeleteEvent rulesDeleteEvent = rulesDeleteEventArgumentCaptor.getValue();
-    assertThat(rule).isEqualTo(rulesDeleteEvent.getRule());
+    assertThat(rulesDeleteEvent.getRule()).isEqualTo(getRuleExpectedOutput(UUID));
     verify(governanceRuleService).delete(ACCOUNT_ID, UUID);
+  }
+
+  private Rule getRuleExpectedOutput(String uuid) {
+    return Rule.builder().uuid(uuid).accountId(ACCOUNT_ID).name(NAME).rulesYaml(POLICY).cloudProvider(CLOUD).build();
+  }
+
+  private RuleSet getRuleSetExpectedOutput(String uuid) {
+    return RuleSet.builder()
+        .uuid(uuid)
+        .accountId(ACCOUNT_ID)
+        .name(NAMESET)
+        .rulesIdentifier(Collections.singletonList(UUID))
+        .cloudProvider(CLOUD)
+        .build();
   }
 }

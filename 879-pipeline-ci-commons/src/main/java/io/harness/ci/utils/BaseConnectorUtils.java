@@ -247,8 +247,8 @@ public class BaseConnectorUtils {
         .abortOn(ConnectorNotFoundException.class)
         .withDelay(RETRY_SLEEP_DURATION)
         .withMaxAttempts(MAX_ATTEMPTS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount()));
   }
 
   private ConnectorDetails getConnectorDetailsInternal(NGAccess ngAccess, IdentifierRef connectorRef)

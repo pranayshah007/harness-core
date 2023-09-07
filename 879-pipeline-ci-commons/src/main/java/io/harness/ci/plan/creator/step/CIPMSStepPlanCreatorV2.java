@@ -6,6 +6,7 @@
  */
 
 package io.harness.ci.plan.creator.step;
+
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
@@ -31,6 +32,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.govern.Switch;
+import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
@@ -44,8 +46,10 @@ import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExecutionMode;
+import io.harness.pms.contracts.plan.HarnessStruct;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
@@ -416,11 +420,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     stepElement = (T) getStepNode(stepElement);
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
     YamlField field = ctx.getCurrentField();
-
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
-        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, buildAdviserV1(ctx.getDependency()));
 
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -449,12 +449,23 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
         == null) {
       builder.adviserObtainments(buildAdviserV1(ctx.getDependency()));
     }
+    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, buildAdviserV1(ctx.getDependency()));
+
+    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+    // bytes for complex objects. We will deprecate the first one in v1
     return PlanCreationResponse.builder()
         .planNode(builder.build())
         .dependencies(
             DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                 .toBuilder()
-                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .putDependencyMetadata(field.getUuid(),
+                    Dependency.newBuilder()
+                        .putAllMetadata(dependencyMetadata.getMetadataMap())
+                        .setNodeMetadata(
+                            HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
+                        .build())
                 .build())
         .build();
   }
@@ -500,11 +511,12 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
   private List<AdviserObtainment> buildAdviserV1(Dependency dependency) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey("nextId")) {
+        || !dependency.getMetadataMap().containsKey(PlanCreatorConstants.NEXT_ID)) {
       return adviserObtainments;
     }
 
-    String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
+    String nextId =
+        (String) kryoSerializer.asObject(dependency.getMetadataMap().get(PlanCreatorConstants.NEXT_ID).toByteArray());
     adviserObtainments.add(
         AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())

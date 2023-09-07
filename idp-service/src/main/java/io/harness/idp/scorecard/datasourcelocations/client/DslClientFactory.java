@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.datasourcelocations.client;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.proxy.envvariable.ProxyEnvVariableServiceWrapper;
 
 import com.google.inject.Inject;
@@ -15,8 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-@Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
+@OwnedBy(HarnessTeam.IDP)
 public class DslClientFactory {
   ProxyEnvVariableServiceWrapper proxyEnvVariableServiceWrapper;
   DirectDslClient directDslClient;
@@ -25,7 +28,7 @@ public class DslClientFactory {
   public DslClient getClient(String accountIdentifier, String host) {
     JSONObject hostProxyMap = proxyEnvVariableServiceWrapper.getHostProxyMap(accountIdentifier);
     try {
-      if (hostProxyMap.getBoolean(host)) {
+      if (host != null && hostProxyMap.getBoolean(host)) {
         return delegateDslClient;
       }
     } catch (JSONException e) {

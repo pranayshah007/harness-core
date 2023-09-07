@@ -17,6 +17,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.rule.Owner;
@@ -53,7 +54,9 @@ public class PlanCreatorUtilsV1Test extends PmsSdkCoreTestBase {
         .when(kryoSerializer)
         .asBytes(NextStepAdviserParameters.builder().nextNodeId(nextNodeId).build());
     List<AdviserObtainment> adviserObtainments = PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer,
-        Dependency.newBuilder().putMetadata("nextId", ByteString.copyFrom(nextNodeId.getBytes())).build());
+        Dependency.newBuilder()
+            .putMetadata(PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(nextNodeId.getBytes()))
+            .build());
     assertThat(adviserObtainments.size()).isEqualTo(1);
     assertThat(adviserObtainments.get(0).getType())
         .isEqualTo(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build());

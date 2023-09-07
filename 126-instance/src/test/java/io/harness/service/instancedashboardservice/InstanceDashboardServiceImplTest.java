@@ -91,8 +91,8 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   private static final RollbackStatus rollbackStatus = RollbackStatus.NOT_STARTED;
   private static final List<String> BUILD_IDS = Arrays.asList("id1", "id2");
   private static final List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
-      Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, 2l, null, null),
-          new ArtifactDeploymentDetailModel(ENV_2, DISPLAY_NAME, 1l, null, null));
+      Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, null, 2l, null, null),
+          new ArtifactDeploymentDetailModel(ENV_2, DISPLAY_NAME, null, 1l, null, null));
   private static final List<EnvironmentInstanceCountModel> environmentInstanceCountModels =
       Arrays.asList(new EnvironmentInstanceCountModel(ENV_1, 2), new EnvironmentInstanceCountModel(ENV_2, 1));
   private final List<Instance> instanceList = Arrays.asList(Instance.builder()
@@ -112,7 +112,7 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
       Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(instanceKey, infraMappingId, ENV_IDENTIFIER,
           ENV_IDENTIFIER, EnvironmentType.PreProduction, INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID, 1l,
           DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus,
-          stageSetupId, rollbackStatus));
+          stageSetupId, rollbackStatus, null));
   private AggregationResults<ArtifactDeploymentDetailModel> artifactDeploymentDetailModelAggregationResults;
   private AggregationResults<EnvironmentInstanceCountModel> environmentInstanceCountModelAggregationResults;
   private AggregationResults<InstanceGroupedByPipelineExecution>
@@ -677,16 +677,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getLastDeployedInstance_environmentCard_nonGitOps() {
     when(instanceService.getLastDeployedInstance(
-             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, false))
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, false, false))
         .thenReturn(artifactDeploymentDetailModelAggregationResults);
 
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels1 =
         instanceDashboardService.getLastDeployedInstance(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, false);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, false, false);
 
     verify(instanceService)
         .getLastDeployedInstance(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, false);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, false, false);
     assertThat(artifactDeploymentDetailModels).isEqualTo(artifactDeploymentDetailModels1);
   }
 
@@ -695,16 +695,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getLastDeployedInstance_environmentCard_gitOps() {
     when(instanceService.getLastDeployedInstance(
-             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, true))
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, true, false))
         .thenReturn(artifactDeploymentDetailModelAggregationResults);
 
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels1 =
         instanceDashboardService.getLastDeployedInstance(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, true);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, true, false);
 
     verify(instanceService)
         .getLastDeployedInstance(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, true);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, true, false);
     assertThat(artifactDeploymentDetailModels).isEqualTo(artifactDeploymentDetailModels1);
   }
 
@@ -713,16 +713,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getLastDeployedInstance_notEnvironmentCard_nonGitOps() {
     when(instanceService.getLastDeployedInstance(
-             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, false))
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, false, false))
         .thenReturn(artifactDeploymentDetailModelAggregationResults);
 
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels1 =
         instanceDashboardService.getLastDeployedInstance(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, false);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, false, false);
 
     verify(instanceService)
         .getLastDeployedInstance(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, false);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, false, false);
     assertThat(artifactDeploymentDetailModels).isEqualTo(artifactDeploymentDetailModels1);
   }
 
@@ -731,16 +731,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getLastDeployedInstance_notEnvironmentCard_gitOps() {
     when(instanceService.getLastDeployedInstance(
-             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, true))
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, true, false))
         .thenReturn(artifactDeploymentDetailModelAggregationResults);
 
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels1 =
         instanceDashboardService.getLastDeployedInstance(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, true);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, true, false);
 
     verify(instanceService)
         .getLastDeployedInstance(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, true);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, true, false);
     assertThat(artifactDeploymentDetailModels).isEqualTo(artifactDeploymentDetailModels1);
   }
 
@@ -785,16 +785,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getActiveServiceInstanceInfoWithEnvType_NonGitOps() {
     when(instanceService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
-             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false, true))
+             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false, true, null, false))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeAggregationResults);
 
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList1 =
         instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
-            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false, true);
+            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false, true, null, false);
 
     verify(instanceService)
         .getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_IDENTIFIER,
-            SERVICE_IDENTIFIER, DISPLAY_NAME, false, true);
+            SERVICE_IDENTIFIER, DISPLAY_NAME, false, true, null, false);
     assertThat(activeServiceInstanceInfoWithEnvTypeList).isEqualTo(activeServiceInstanceInfoWithEnvTypeList1);
   }
 
@@ -803,16 +803,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getActiveServiceInstanceInfoWithEnvType_GitOps() {
     when(instanceService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
-             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true, true))
+             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true, true, null, false))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeAggregationResults);
 
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList1 =
         instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
-            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true, true);
+            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true, true, null, false);
 
     verify(instanceService)
         .getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_IDENTIFIER,
-            SERVICE_IDENTIFIER, DISPLAY_NAME, true, true);
+            SERVICE_IDENTIFIER, DISPLAY_NAME, true, true, null, false);
     assertThat(activeServiceInstanceInfoWithEnvTypeList).isEqualTo(activeServiceInstanceInfoWithEnvTypeList1);
   }
 
@@ -824,7 +824,7 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
         instanceDetailGroupedByPipelineExecutionList = getSampleInstanceDetailGroupedByPipelineExecutionList();
     when(instanceService.getActiveInstanceGroupedByPipelineExecution(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
              PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, ENV_IDENTIFIER, EnvironmentType.Production, INFRASTRUCTURE_ID,
-             null, DISPLAY_NAME))
+             null, DISPLAY_NAME, null, false))
         .thenReturn(instanceDetailGroupedByPipelineExecutionAggregationResults);
     when(instanceDetailsMapper.toInstanceDetailsDTOList(anyList(), anyBoolean()))
         .thenReturn(instanceDetailGroupedByPipelineExecutionList.get(0).getInstances());
@@ -832,7 +832,7 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
         instanceDetailGroupedByPipelineExecutionListResult =
             instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(ACCOUNT_IDENTIFIER,
                 ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, ENV_IDENTIFIER, EnvironmentType.Production,
-                INFRASTRUCTURE_ID, null, DISPLAY_NAME, false);
+                INFRASTRUCTURE_ID, null, DISPLAY_NAME, null, false, false);
     assertThat(instanceDetailGroupedByPipelineExecutionList)
         .isEqualTo(instanceDetailGroupedByPipelineExecutionListResult);
   }

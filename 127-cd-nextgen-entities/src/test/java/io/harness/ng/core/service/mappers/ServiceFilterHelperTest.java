@@ -67,7 +67,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
         ServiceEntityKeys.isFromDefaultBranch, ServiceEntityKeys.branch, ServiceEntityKeys.yamlGitConfigRef,
         ServiceEntityKeys.filePath, ServiceEntityKeys.rootFolder, "class", "templateReference", "data",
         ServiceEntityKeys.storeType, ServiceEntityKeys.repo, ServiceEntityKeys.connectorRef, ServiceEntityKeys.repoURL,
-        ServiceEntityKeys.fallBackBranch));
+        ServiceEntityKeys.fallBackBranch, "accountIdentifier", "invalidYamlString", "uuid", "entityInvalid"));
 
     for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
       boolean shouldExist =
@@ -103,7 +103,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList1() {
     Criteria criteria =
-        ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId", false, "foo", null, null, false);
+        ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId", false, "foo", null, null, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
@@ -115,7 +115,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList2() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.KUBERNETES, Boolean.TRUE, false);
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.KUBERNETES, Boolean.TRUE, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
@@ -127,7 +127,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList3() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null, false);
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
@@ -138,8 +138,8 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetListScopedRef1() {
-    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", Collections.singletonList("account.accServ1"), false, null, null, null, false);
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId",
+        Collections.singletonList("account.accServ1"), false, null, null, null, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
@@ -151,7 +151,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetListScopedRef2() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId",
-        Arrays.asList("account.accServ1", "org.orgServ1", "projServ1"), false, null, null, null, false);
+        Arrays.asList("account.accServ1", "org.orgServ1", "projServ1"), false, null, null, null, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(

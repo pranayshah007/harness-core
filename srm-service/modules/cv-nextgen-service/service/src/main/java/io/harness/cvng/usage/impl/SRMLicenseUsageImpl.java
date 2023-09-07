@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.usage.impl.resources.ActiveMonitoredServiceDTO;
+import io.harness.cvng.usage.impl.resources.ActiveServiceDTO;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -57,10 +57,16 @@ import org.springframework.data.domain.Sort;
 public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsageDTO, UsageRequestParams> {
   private static final String ACCOUNT_IDENTIFIER_BLANK_ERROR_MSG = "Account Identifier cannot be null or empty";
   private static final String ACTIVE_SERVICE_MONITORED_CSV_REPORTS_TMP_DIR = "active-service-monitored-csv-reports";
+
+  private static final String ACTIVE_MONITORED_SERVICE_CSV_REPORTS_TMP_DIR = "active-monitored-service-csv-reports";
   private static final int PAGE_SIZE_ACTIVE_SERVICE_MONITORED_DOWNLOAD_CSV = 500;
 
   private static final String[] ACTIVE_SERVICES_MONITORED_CSV_REPORT_HEADER =
       new String[] {"SERVICE", "ORGANIZATION ID", "PROJECT ID", "SERVICE ID", "MONITORED SERVICE COUNT"};
+
+  private static final String[] ACTIVE_MONITORED_SERVICES_CSV_REPORT_HEADER =
+      new String[] {"SERVICE", "ENVIRONMENTS", "ACTIVE MONITORED SERVICES", "ORGANIZATION", "PROJECT"};
+
   @Inject private MonitoredServiceService monitoredServiceService;
 
   @Inject private NextGenService nextGenService;
@@ -82,7 +88,7 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
   }
 
   @Override
-  public Page<ActiveMonitoredServiceDTO> listLicenseUsage(
+  public Page<ActiveServiceDTO> listLicenseUsage(
       String accountIdentifier, ModuleType module, long currentTsInMs, PageableUsageRequestParams usageRequest) {
     if (currentTsInMs <= 0) {
       throw new InvalidArgumentsException(
@@ -108,10 +114,10 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
       projectParams.setProjectIdentifier(filterParams.getProjectIdentifier());
     }
 
-    List<ActiveMonitoredServiceDTO> activeMonitoredServiceDTOList =
+    List<ActiveServiceDTO> activeServiceDTOList =
         monitoredServiceService.listActiveMonitoredServices(projectParams, filterParams.getServiceIdentifier());
 
-    return new PageImpl<>(activeMonitoredServiceDTOList, pageRequest, activeMonitoredServiceDTOList.size());
+    return new PageImpl<>(activeServiceDTOList, pageRequest, activeServiceDTOList.size());
   }
 
   @Override
@@ -131,26 +137,24 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
     Path csvReportFilePath = getAccountCSVReportFilePath(accountCSVReportDir, accountIdentifier, currentTsInMs);
 
     int page = 0;
-    PageImpl<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOS;
+    PageImpl<ActiveServiceDTO> activeServiceDTOS;
 
     do {
       Pageable pageRequest = PageableUtils.getPageRequest(page, PAGE_SIZE_ACTIVE_SERVICE_MONITORED_DOWNLOAD_CSV,
           emptyList(), Sort.by(Sort.Direction.DESC, SERVICE_INSTANCES_QUERY_PROPERTY));
-      List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList =
-          monitoredServiceService.listActiveServiceMonitored(
-              ProjectParams.builder().accountIdentifier(accountIdentifier).build());
+      List<ActiveServiceDTO> activeServiceDTOList = monitoredServiceService.listActiveMonitoredServices(
+          ProjectParams.builder().accountIdentifier(accountIdentifier).build(), null);
 
-      activeServiceMonitoredDTOS =
-          new PageImpl<>(activeServiceMonitoredDTOList, pageRequest, activeServiceMonitoredDTOList.size());
+      activeServiceDTOS = new PageImpl<>(activeServiceDTOList, pageRequest, activeServiceDTOList.size());
 
-      CSVFormat format = page == 0 ? CSVFormat.DEFAULT.withHeader(ACTIVE_SERVICES_MONITORED_CSV_REPORT_HEADER)
+      CSVFormat format = page == 0 ? CSVFormat.DEFAULT.withHeader(ACTIVE_MONITORED_SERVICES_CSV_REPORT_HEADER)
                                    : CSVFormat.DEFAULT.withSkipHeaderRecord();
       long printActiveServicesToCSVStartTime = System.currentTimeMillis();
-      printActiveServicesToCSV(csvReportFilePath, activeServiceMonitoredDTOS.getContent(), format);
+      printActiveMonitoredServicesToCSV(csvReportFilePath, activeServiceDTOS.getContent(), format);
       long printActiveServicesToCSVEndTime = System.currentTimeMillis() - printActiveServicesToCSVStartTime;
       log.info("Active services printed successfully to file: {}, page: {}, time taken in ms: {}", csvReportFilePath,
           page, printActiveServicesToCSVEndTime);
-    } while (++page < activeServiceMonitoredDTOS.getTotalPages());
+    } while (++page < activeServiceDTOS.getTotalPages());
 
     return csvReportFilePath.toFile();
   }
@@ -162,7 +166,7 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
 
   private Path createAccountCSVReportDirIfNotExist(final String accountIdentifier) {
     Path activeServicesMonitoredAccountCSVDir =
-        Path.of(System.getProperty("java.io.tmpdir"), ACTIVE_SERVICE_MONITORED_CSV_REPORTS_TMP_DIR, accountIdentifier);
+        Path.of(System.getProperty("java.io.tmpdir"), ACTIVE_MONITORED_SERVICE_CSV_REPORTS_TMP_DIR, accountIdentifier);
     try {
       FileIo.createDirectoryIfDoesNotExist(activeServicesMonitoredAccountCSVDir);
       return activeServicesMonitoredAccountCSVDir;
@@ -184,6 +188,25 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
           printer.printRecord(activeServiceMonitoredDTO.getName(), activeServiceMonitoredDTO.getOrgIdentifier(),
               activeServiceMonitoredDTO.getProjectIdentifier(), activeServiceMonitoredDTO.getIdentifier(),
               activeServiceMonitoredDTO.getMonitoredServiceCount());
+        } catch (IOException e) {
+          throw new InvalidRequestException(format("Unable to print CSV records to file: %s", csvReportFilePath), e);
+        }
+      });
+    } catch (IOException e) {
+      throw new InvalidRequestException(format("Unable to create CSV printer for file: %s", csvReportFilePath), e);
+    }
+  }
+
+  private void printActiveMonitoredServicesToCSV(
+      Path csvReportFilePath, List<ActiveServiceDTO> activeServiceDTOS, CSVFormat format) {
+    try (
+        CSVPrinter printer = new CSVPrinter(
+            Files.newBufferedWriter(csvReportFilePath, StandardOpenOption.APPEND, StandardOpenOption.CREATE), format)) {
+      activeServiceDTOS.forEach(activeMonitoredServiceDTO -> {
+        try {
+          printer.printRecord(activeMonitoredServiceDTO.getName(), activeMonitoredServiceDTO.getEnvNames(),
+              activeMonitoredServiceDTO.getMonitoredServiceCount(), activeMonitoredServiceDTO.getOrgName(),
+              activeMonitoredServiceDTO.getProjectName());
         } catch (IOException e) {
           throw new InvalidRequestException(format("Unable to print CSV records to file: %s", csvReportFilePath), e);
         }

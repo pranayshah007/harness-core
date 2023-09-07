@@ -22,6 +22,7 @@ import (
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/csharp"
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/java"
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/python"
+	"github.com/harness/harness-core/product/ci/addon/testintelligence/ruby"
 	"github.com/harness/harness-core/product/ci/common/external"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
@@ -369,7 +370,8 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, runner testintellig
 	// Call TI svc to get test selection based on the files changed
 	files = runner.ReadPackages(files)
 	var err error
-	resp, err = selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs)
+	testGlobSlice := strings.Split(r.testGlobs, ",")
+	resp, err = selectTestsFn(ctx, files, r.runOnlySelectedTests, r.id, r.log, r.fs, r.language, testGlobSlice)
 	if err != nil {
 		log.Errorw("There was some issue in trying to intelligently figure out tests to run, running all the tests", "error", zap.Error(err))
 		r.runOnlySelectedTests = false
@@ -618,7 +620,9 @@ func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 
 	// Install agent artifacts if not present
 	var agentPath = ""
-	if r.language == "csharp" || r.language == "python" {
+	switch r.language {
+	case "java", "kotlin", "scala":
+	default:
 		zipAgentPath, err := installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
 		if err != nil {
 			return nil, err
@@ -692,36 +696,37 @@ func (r *runTestsTask) getTiRunner(agentPath string) (runner testintelligence.Te
 		case "bazel":
 			runner = java.NewBazelRunner(r.log, r.fs, r.cmdContextFactory)
 		case "sbt":
-			{
-				if r.language != "scala" {
-					return runner, fmt.Errorf("build tool: SBT is not supported for non-Scala languages")
-				}
-				runner = java.NewSBTRunner(r.log, r.fs, r.cmdContextFactory)
+			if r.language != "scala" {
+				return runner, fmt.Errorf("build tool: SBT is not supported for non-Scala languages")
 			}
+			runner = java.NewSBTRunner(r.log, r.fs, r.cmdContextFactory)
 		default:
 			return runner, fmt.Errorf("build tool: %s is not supported for Java", r.buildTool)
 		}
 	case "csharp":
-		{
-			switch r.buildTool {
-			case "dotnet":
-				runner = csharp.NewDotnetRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
-			case "nunitconsole":
-				runner = csharp.NewNunitConsoleRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
-			default:
-				return runner, fmt.Errorf("build tool: %s is not supported for csharp", r.buildTool)
-			}
+		switch r.buildTool {
+		case "dotnet":
+			runner = csharp.NewDotnetRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+		case "nunitconsole":
+			runner = csharp.NewNunitConsoleRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+		default:
+			return runner, fmt.Errorf("build tool: %s is not supported for csharp", r.buildTool)
 		}
 	case "python":
-		{
-			switch r.buildTool {
-			case "pytest":
-				runner = python.NewPytestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
-			case "unittest":
-				runner = python.NewUnittestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
-			default:
-				return runner, fmt.Errorf("build tool: %s is not supported for python", r.buildTool)
-			}
+		switch r.buildTool {
+		case "pytest":
+			runner = python.NewPytestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+		case "unittest":
+			runner = python.NewUnittestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+		default:
+			return runner, fmt.Errorf("build tool: %s is not supported for python", r.buildTool)
+		}
+	case "ruby":
+		switch r.buildTool {
+		case "rspec":
+			runner = ruby.NewRspecRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+		default:
+			return runner, fmt.Errorf("build tool: %s is not supported for python", r.buildTool)
 		}
 	default:
 		return runner, fmt.Errorf("language %s is not suported", r.language)

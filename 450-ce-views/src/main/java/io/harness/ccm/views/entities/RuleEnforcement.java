@@ -119,8 +119,6 @@ public final class RuleEnforcement implements PersistentEntity, UuidAware, Creat
         .targetRegions(getTargetRegions())
         .isDryRun(getIsDryRun())
         .isEnabled(getIsEnabled())
-        .deleted(getDeleted())
-        .runCount(getRunCount())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())
         .createdBy(getCreatedBy())

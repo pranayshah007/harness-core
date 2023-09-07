@@ -8,6 +8,7 @@
 package io.harness.steps.jira.create;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 import static io.harness.jira.JiraConstantsNG.ISSUE_TYPE_NAME;
 import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
@@ -22,15 +23,20 @@ import io.harness.beans.IdentifierRef;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.engine.executions.step.StepExecutionEntityService;
 import io.harness.eraro.Level;
 import io.harness.exception.ExceptionUtils;
 import io.harness.execution.step.jira.create.JiraCreateStepExecutionDetails;
 import io.harness.jira.JiraActionNG;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.TaskExecutableResponse;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -65,6 +71,7 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
+  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
   public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
@@ -84,6 +91,9 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
+    logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     JiraCreateSpecParameters specParameters = (JiraCreateSpecParameters) stepParameters.getSpec();
     JiraTaskNGParametersBuilder paramsBuilder =
         JiraTaskNGParameters.builder()
@@ -94,7 +104,7 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
                 pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.SPG_USE_NEW_METADATA))
             .delegateSelectors(
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
-            .fields(JiraStepUtils.processJiraFieldsInParameters(specParameters.getFields()));
+            .fields(JiraStepUtils.processJiraFieldsInParameters(specParameters.getFields(), logCallback));
     return jiraStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
         specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(), "Jira Task: Create Issue",
         TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
@@ -103,9 +113,15 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<JiraTaskNGResponse> responseSupplier) throws Exception {
-    dashboardExecutorService.submit(
-        () -> updateJiraCreateStepExecutionDetailsFromResponse(ambiance, responseSupplier, stepParameters.getName()));
-    return jiraStepHelperService.prepareStepResponse(responseSupplier);
+    try {
+      dashboardExecutorService.submit(
+          () -> updateJiraCreateStepExecutionDetailsFromResponse(ambiance, responseSupplier, stepParameters.getName()));
+      return jiraStepHelperService.prepareStepResponse(responseSupplier);
+    }
+
+    finally {
+      closeLogStream(ambiance);
+    }
   }
 
   private void updateJiraCreateStepExecutionDetailsFromResponse(
@@ -137,5 +153,14 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   @Override
   public Class<StepBaseParameters> getStepParametersClass() {
     return StepBaseParameters.class;
+  }
+  @Override
+  public void handleAbort(
+      Ambiance ambiance, StepBaseParameters stepParameters, TaskExecutableResponse executableResponse) {
+    closeLogStream(ambiance);
+  }
+  private void closeLogStream(Ambiance ambiance) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.closeStream(COMMAND_UNIT);
   }
 }

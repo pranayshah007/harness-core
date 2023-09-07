@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.execution.PublishedImageArtifact;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
@@ -105,6 +106,7 @@ public class DockerStepTest extends CIExecutionTestBase {
                                   .build();
     stepElementParameters =
         StepElementParameters.builder().identifier("identifier").name("name").spec(stepInfo).build();
+    when(featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, "accountId")).thenReturn(false);
   }
 
   @Test
@@ -137,7 +139,7 @@ public class DockerStepTest extends CIExecutionTestBase {
                               .build())
                       .build())
             .build();
-    StepArtifacts stepArtifacts = dockerStep.handleArtifact(artifactMetadata, stepElementParameters);
+    StepArtifacts stepArtifacts = dockerStep.handleArtifact(artifactMetadata, stepElementParameters, ambiance);
     assertThat(stepArtifacts).isNotNull();
     assertThat(stepArtifacts.getPublishedImageArtifacts())
         .contains(

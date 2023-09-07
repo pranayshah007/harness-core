@@ -12,5 +12,5 @@ import java.util.Map;
 
 public interface DataPointDataValueService {
   Map<String, Object> getDataPointDataValues(
-      String datasourceIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo);
+      String accountIdentifier, String datasourceIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo);
 }

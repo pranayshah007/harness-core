@@ -102,4 +102,62 @@ public class CILogServiceUtils {
           response.errorBody() == null ? "null" : errorBody));
     }
   }
+
+  @NotNull
+  public boolean checkIfLogsExist(String accountID, String key) {
+    log.info("Calling log service to to check if logs exists for account {}", accountID);
+    Call<String> existsCall = ciLogServiceClient.exists(accountID, key, getLogServiceToken(accountID));
+
+    Response<String> response = null;
+    try {
+      response = existsCall.execute();
+    } catch (IOException e) {
+      log.warn("Exists call to log service failed", e);
+      return true;
+    }
+
+    // Received error from the server
+    if (!response.isSuccessful()) {
+      String errorBody = null;
+      try {
+        errorBody = response.errorBody().string();
+      } catch (IOException e) {
+        log.warn("Could not read error body {}", response.errorBody());
+      }
+
+      log.warn(String.format("Response for log service close call: status code = %s, message = %s, response = %s",
+          response.code(), response.message() == null ? "null" : response.message(),
+          response.errorBody() == null ? "null" : errorBody));
+      return true;
+    }
+    return Boolean.valueOf(response.body());
+  }
+
+  @NotNull
+  public void deleteLogs(String accountID, String key) {
+    log.info("Calling log service to delete logs for the key: " + key);
+    Call<Void> deleteLogsCall = ciLogServiceClient.deleteLogs(accountID, key, logServiceConfig.getGlobalToken());
+
+    Response<Void> response = null;
+    try {
+      response = deleteLogsCall.execute();
+    } catch (IOException e) {
+      log.warn("delete logs call to log service failed", e);
+      return;
+    }
+
+    // Received error from the server
+    if (!response.isSuccessful()) {
+      String errorBody = null;
+      try {
+        errorBody = response.errorBody().string();
+      } catch (IOException e) {
+        log.warn("Could not read error body {}", response.errorBody());
+      }
+
+      log.warn(String.format("Response for log service delete logs call: status code = %s, message = %s, response = %s",
+          response.code(), response.message() == null ? "null" : response.message(),
+          response.errorBody() == null ? "null" : errorBody));
+    }
+  }
 }

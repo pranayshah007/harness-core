@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.servicenow.ServiceNowStepUtils;
@@ -32,13 +35,14 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("keyValuesImportDataSpec")
 @Schema(name = "KeyValuesImportDataSpec", description = "This contains details of Key-Value Import Data specifications")
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class KeyValuesImportDataSpecDTO implements ImportDataSpecDTO {
   @NotNull String importDataJson;
 
   public static KeyValuesImportDataSpecDTO fromKeyValuesImportDataSpec(KeyValuesImportDataSpec keyValuesCriteriaSpec) {
     Map<String, ParameterField<String>> parameterizedFieldsMap =
         ServiceNowStepUtils.processServiceNowFieldsList(keyValuesCriteriaSpec.getFields());
-    Map<String, String> fieldsMap = ServiceNowStepUtils.processServiceNowFieldsInSpec(parameterizedFieldsMap);
+    Map<String, String> fieldsMap = ServiceNowStepUtils.processServiceNowFieldsInSpec(parameterizedFieldsMap, null);
     if (isNull(fieldsMap)) {
       throw new InvalidRequestException("Fields can't be null");
     }

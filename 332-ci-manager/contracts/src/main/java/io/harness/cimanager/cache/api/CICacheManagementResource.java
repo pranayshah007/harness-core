@@ -87,5 +87,5 @@ public interface CICacheManagementResource {
       })
   ResponseDTO<DeleteCacheResponse>
   deleteCache(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @QueryParam("path") String path);
+      @QueryParam("path") String path, @QueryParam("cacheType") String cacheType);
 }

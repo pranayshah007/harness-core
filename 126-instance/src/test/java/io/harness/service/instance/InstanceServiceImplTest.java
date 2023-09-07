@@ -105,7 +105,7 @@ public class InstanceServiceImplTest extends InstancesTestBase {
         Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(instanceKey, infraMappingId, ENVIRONMENT_ID,
             ENVIRONMENT_ID, EnvironmentType.PreProduction, INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID,
             1l, DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus,
-            stageSetupId, rollbackStatus)),
+            stageSetupId, rollbackStatus, null)),
         new Document());
   }
 
@@ -519,15 +519,15 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getActiveServiceInstanceInfoWithEnvType_NonGitOps() {
     when(instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true, null, false))
         .thenReturn(aggregationResults);
     AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults1 =
         instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true, null, false);
     assertThat(aggregationResults1).isEqualTo(aggregationResults);
     verify(instanceRepository)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true, null, false);
   }
 
   @Test
@@ -535,15 +535,15 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void test_getActiveServiceInstanceInfoWithEnvType_GitOps() {
     when(instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true, null, false))
         .thenReturn(aggregationResults);
     AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults1 =
         instanceRepository.getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true, null, false);
     assertThat(aggregationResults1).isEqualTo(aggregationResults);
     verify(instanceRepository)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true, null, false);
   }
 
   @Test

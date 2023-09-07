@@ -7,7 +7,7 @@
 
 package io.harness.cvng.core.beans.dependency;
 
-import static io.harness.cvng.core.beans.dependency.ServiceDependencyMetadata.DependencyMetadataType.KUBERNETES;
+import static io.harness.cvng.core.beans.dependency.DependencyMetadataType.KUBERNETES;
 
 import io.harness.cvng.beans.change.ChangeSourceType;
 

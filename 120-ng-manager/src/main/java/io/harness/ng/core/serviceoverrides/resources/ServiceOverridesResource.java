@@ -210,7 +210,9 @@ public class ServiceOverridesResource {
                      description = "Sample Service Override Request"))
       }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
     String yamlInternal = requestDTOV2.getYamlInternal();
-    if (isNotEmpty(yamlInternal)) {
+    // if request is coming from v1 automation, yamlInternal is only to be used for sending back to v1 api response
+    // In this case it cant be used for creating spec as v1 yaml and v2 yaml (created from spec) are different
+    if (isNotEmpty(yamlInternal) && !requestDTOV2.isV1Api()) {
       try {
         ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
         requestDTOV2.setSpec(spec);
@@ -245,7 +247,7 @@ public class ServiceOverridesResource {
                      description = "Sample Service Override Request"))
       }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
     String yamlInternal = requestDTOV2.getYamlInternal();
-    if (isNotEmpty(yamlInternal)) {
+    if (isNotEmpty(yamlInternal) && !requestDTOV2.isV1Api()) {
       try {
         ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
         requestDTOV2.setSpec(spec);

@@ -435,6 +435,8 @@ clusterDataTableFields = [{'mode': 'REQUIRED', 'name': 'starttime', 'type': 'INT
                           {'mode': 'NULLABLE', 'name': 'maxstoragerequest', 'type': 'FLOAT'},
                           {'mode': 'NULLABLE', 'name': 'orgIdentifier', 'type': 'STRING'},
                           {'mode': 'NULLABLE', 'name': 'projectIdentifier', 'type': 'STRING'},
+                          {'mode': 'NULLABLE', 'name': 'usagestarttime', 'type': 'INTEGER'},
+                          {'mode': 'NULLABLE', 'name': 'usagestoptime', 'type': 'INTEGER'},
                           {
                               "fields": [
                                   {
@@ -495,6 +497,10 @@ clusterDataAggregatedFields = [{'mode': 'REQUIRED', 'name': 'starttime', 'type':
                                {'mode': 'NULLABLE', 'name': 'maxstoragerequest', 'type': 'FLOAT'},
                                {'mode': 'NULLABLE', 'name': 'orgIdentifier', 'type': 'STRING'},
                                {'mode': 'NULLABLE', 'name': 'projectIdentifier', 'type': 'STRING'},
+                               {'mode': 'NULLABLE', 'name': 'usagestarttime', 'type': 'INTEGER'},
+                               {'mode': 'NULLABLE', 'name': 'usagestoptime', 'type': 'INTEGER'},
+                               {'mode': 'NULLABLE', 'name': 'usagedurationseconds', 'type': 'FLOAT'},
+                               {'mode': 'NULLABLE', 'name': 'pricingsource', 'type': 'STRING'},
                                {
                                    "fields": [
                                        {

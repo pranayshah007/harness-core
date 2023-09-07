@@ -6,9 +6,10 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory;
 
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_POLICY_EVALUATION_SUCCESSFUL_IN_PIPELINE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineExecutionInfo;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl.PipelinePolicyEvaluationParser;
 
@@ -22,7 +23,7 @@ public class PipelineExecutionResponseFactory {
 
   public PipelineExecutionInfo getResponseParser(String identifier) {
     switch (identifier) {
-      case ValueParserConstants.POLICY_EVALUATION_DATAPOINT_IDENTIFIER:
+      case IS_POLICY_EVALUATION_SUCCESSFUL_IN_PIPELINE:
         return pipelinePolicyEvaluationParser;
       default:
         throw new UnsupportedOperationException(String.format("Could not find response parser for %s", identifier));

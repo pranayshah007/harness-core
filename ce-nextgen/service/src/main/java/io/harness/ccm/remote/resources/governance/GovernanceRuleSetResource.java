@@ -231,9 +231,13 @@ public class GovernanceRuleSetResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
-    ruleSet.toDTO();
     ruleSet.setAccountId(accountId);
     RuleSet oldRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), true);
+    if (ruleSet.getCloudProvider() == null) {
+      ruleSet.setCloudProvider(oldRuleSet.getCloudProvider());
+    } else if (ruleSet.getCloudProvider() != oldRuleSet.getCloudProvider()) {
+      throw new InvalidRequestException("Update to Cloud Provider is not allowed");
+    }
     if (oldRuleSet.getIsOOTB()) {
       throw new InvalidRequestException("Editing OOTB Rule Set is not allowed");
     }
@@ -247,7 +251,7 @@ public class GovernanceRuleSetResource {
     }
     Set<String> uniqueRuleIds = new HashSet<>();
     uniqueRuleIds.addAll(ruleSet.getRulesIdentifier());
-    ruleSetService.validateCloudProvider(accountId, uniqueRuleIds, oldRuleSet.getCloudProvider());
+    ruleSetService.validateCloudProvider(accountId, uniqueRuleIds, ruleSet.getCloudProvider());
     Set<String> rulesPermitted =
         rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, uniqueRuleIds, RULE_EXECUTE);
     if (rulesPermitted.size() != uniqueRuleIds.size()) {
@@ -295,7 +299,6 @@ public class GovernanceRuleSetResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
-    ruleSet.toDTO();
     if (!ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       throw new InvalidRequestException("Editing OOTB rule set is not allowed");
     }

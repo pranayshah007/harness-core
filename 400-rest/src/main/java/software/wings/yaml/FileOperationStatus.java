@@ -27,4 +27,5 @@ public class FileOperationStatus {
   private Status status;
   private String errorMssg;
   private String entityId;
+  private String entityYaml;
 }

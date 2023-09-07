@@ -38,13 +38,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
+import io.harness.TemplateServiceConfiguration;
 import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
@@ -198,6 +198,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks TemplateMergeServiceImpl templateMergeService;
   @Mock private GovernanceService governanceService;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock TemplateServiceConfiguration templateServiceConfiguration;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -278,14 +279,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     doReturn(ngManagerReconcileCall)
         .when(ngManagerReconcileClient)
         .validateYaml(anyString(), eq(null), eq(null), any(NgManagerRefreshRequestDTO.class));
-
-    doReturn(GovernanceMetadata.newBuilder()
-                 .setDeny(false)
-                 .setMessage(String.format(
-                     "FF: [%s] is disabled for account: [%s]", FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE, ACCOUNT_ID))
-                 .build())
-        .when(governanceService)
-        .evaluateGovernancePoliciesForTemplate(any(), any(), any(), any(), any(), any());
 
     doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(true).build())))
         .when(ngManagerReconcileCall)
@@ -1940,18 +1933,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   }
 
   @Test
-  @Owner(developers = SHIVAM)
-  @Category(UnitTests.class)
-  public void testEvaluateGovernancePoliciesTemplateWithFlagOff() {
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE);
-    GovernanceMetadata flagOffMetadata =
-        templateService.validateGovernanceRules(TemplateEntity.builder().accountId("acc").build());
-    assertThat(flagOffMetadata.getDeny()).isFalse();
-    assertThat(flagOffMetadata.getMessage())
-        .isEqualTo("FF: [CDS_OPA_TEMPLATE_GOVERNANCE] is disabled for account: [acc]");
-  }
-
-  @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testFailOnMoveConfigForNotSupportedTemplates() {
@@ -2289,5 +2270,17 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThatThrownBy(() -> templateService.updateTemplateEntity(updateTemplate, ChangeType.MODIFY, false, ""))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Error while saving template [template1] of versionLabel [version1] : [null]");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testEvaluateGovernancePoliciesTemplateWithFlagOff() {
+    doReturn(false).when(templateServiceConfiguration).isEnableOpaEvaluation();
+    GovernanceMetadata flagOffMetadata =
+        templateService.validateGovernanceRules(TemplateEntity.builder().accountId("acc").build());
+    assertThat(flagOffMetadata.getDeny()).isFalse();
+    assertThat(flagOffMetadata.getMessage())
+        .isEqualTo("Template OPA is disabled. Configure \"enableOpaRule: true\" in config.yaml file");
   }
 }

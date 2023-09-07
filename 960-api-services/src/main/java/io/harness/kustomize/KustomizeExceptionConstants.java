@@ -34,10 +34,15 @@ public class KustomizeExceptionConstants {
       "Please connect remotely to Harness delegate and verify if Harness delegate is whitelisted to access Kubernetes API.";
   public final String KUSTOMIZE_BUILD_FAILED_HINT =
       "Please validate the path to the folder that contains the correct kustomization yaml file.\n- Validate the files that are being used to build the kustomize manifest.";
+  public final String KUSOTMIZE_OR_KUBECTL_VERSION_MISSING_HINT =
+      "Please install Kustomize binary or upgrade Kubectl to minimum version %s. \n Please refer to Harness Docs to install binary on the delegate using following: \n https://developer.harness.io/docs/platform/delegates/install-delegates/install-a-delegate-with-3-rd-party-tool-custom-binaries/";
 
   // Kustomize Explanation
   public static String EVALSYMLINK_ERROR_EXPLANATION = "Manifests may contain references to some missing resource(s).";
-  public final String KUSTOMIZE_IO_EXPLANATION = "Kustomize build failed due to I/O error";
+  public final String KUSTOMIZE_IO_EXPLANATION = "Kustomize command failed due to I/O error";
   public final String KUSTOMIZE_TIMEOUT_EXPLANATION = "Time out while trying to build kustomize manifest.";
-  public final String KUSTOMIZE_BUILD_FAILED_EXPLANATION = "Kustomize build failed due to invalid manifest resources.";
+  public final String KUSTOMIZE_BUILD_FAILED_EXPLANATION =
+      "Kustomize command failed due to invalid manifest resources.";
+  public final String KUSOTMIZE_OR_KUBECTL_VERSION_MISSING_EXPL =
+      "The Kustomize binary is not installed and Kubectl version is less then %s. Kustomize command can't be executed";
 }

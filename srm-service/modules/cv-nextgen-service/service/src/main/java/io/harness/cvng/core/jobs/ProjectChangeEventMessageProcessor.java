@@ -60,19 +60,7 @@ public class ProjectChangeEventMessageProcessor extends EntityChangeEventMessage
     }
   }
 
-  @VisibleForTesting
-  void processCreateAction(ProjectEntityChangeDTO projectEntityChangeDTO) {
-    metricPackService.createDefaultMetricPackAndThresholds(projectEntityChangeDTO.getAccountIdentifier(),
-        projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
-  }
-
-  @VisibleForTesting
-  void processUpdateAction(ProjectEntityChangeDTO projectEntityChangeDTO) {
-    // add code on project update.
-  }
-
-  @VisibleForTesting
-  void processDeleteAction(ProjectEntityChangeDTO projectEntityChangeDTO) {
+  public void processDeleteAction(ProjectEntityChangeDTO projectEntityChangeDTO) {
     ENTITIES_MAP.forEach((entity, handler) -> {
       log.info("Deleting all records of entity {} for accountId {} orgIdentifier {} projectIdentifier {}",
           entity.getSimpleName(), projectEntityChangeDTO.getAccountIdentifier(),
@@ -90,6 +78,17 @@ public class ProjectChangeEventMessageProcessor extends EntityChangeEventMessage
             projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier(), exception);
       }
     });
+  }
+
+  @VisibleForTesting
+  void processCreateAction(ProjectEntityChangeDTO projectEntityChangeDTO) {
+    metricPackService.createDefaultMetricPackAndThresholds(projectEntityChangeDTO.getAccountIdentifier(),
+        projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
+  }
+
+  @VisibleForTesting
+  void processUpdateAction(ProjectEntityChangeDTO projectEntityChangeDTO) {
+    // add code on project update.
   }
 
   private boolean validateMessage(Message message) {

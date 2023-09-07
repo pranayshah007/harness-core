@@ -20,6 +20,7 @@ import io.harness.ng.core.migration.background.AddDeploymentTypeToInfrastructure
 import io.harness.ng.core.migration.background.AddServiceOverrideV2RelatedFieldsMigration;
 import io.harness.ng.core.migration.background.CleanupCdAccountExecutionMetadata;
 import io.harness.ng.core.migration.background.CleanupDeploymentAccounts;
+import io.harness.ng.core.migration.background.CleanupDeploymentSummaryNg;
 import io.harness.ng.core.migration.background.DeleteSoftDeletedConnectorsMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGJiraConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
@@ -62,6 +63,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(14, AddServiceOverrideV2RelatedFieldsMigration.class))
         .add(Pair.of(15, CleanupCdAccountExecutionMetadata.class))
         .add(Pair.of(16, CleanupDeploymentAccounts.class))
+        .add(Pair.of(17, CleanupDeploymentSummaryNg.class))
         .build();
   }
 }

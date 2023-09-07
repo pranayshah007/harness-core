@@ -78,6 +78,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.util.Strings;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
@@ -97,6 +99,7 @@ public class BuildTriggerHelper {
   public static final String MAVEN = "maven";
   public static final String NPM = "npm";
   public static final String NUGET = "nuget";
+  public static final String INPUT = "<+input>";
 
   public Optional<String> fetchPipelineYamlForTrigger(TriggerDetails triggerDetails) {
     PMSPipelineResponseDTO response = fetchPipelineForTrigger(triggerDetails);
@@ -486,15 +489,14 @@ public class BuildTriggerHelper {
 
     String repositoryFormat = artifactoryRegistryPayload.getRepositoryFormat();
     if (repositoryFormat.equals("generic")) {
-      error = checkFiledValueError("artifactDirectory", artifactoryRegistryPayload.getArtifactDirectory());
-      if (isNotBlank(error)) {
-        throw new InvalidRequestException(error);
-      }
+      error =
+          checkAnyFieldPresent(MutablePair.of("artifactDirectory", artifactoryRegistryPayload.getArtifactDirectory()),
+              MutablePair.of("artifactFilter", artifactoryRegistryPayload.getArtifactFilter()));
     } else {
       error = checkFiledValueError("artifactPath", artifactoryRegistryPayload.getArtifactPath());
-      if (isNotBlank(error)) {
-        throw new InvalidRequestException(error);
-      }
+    }
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
     }
   }
 
@@ -637,6 +639,33 @@ public class BuildTriggerHelper {
     } else {
       return EMPTY;
     }
+  }
+
+  private String checkAnyFieldPresent(Pair<String, String>... fields) {
+    int size = fields.length;
+    for (int i = 0; i < size; i++) {
+      String value = fields[i].getValue();
+      if (!isBlank(value) && !INPUT.equals(value)) {
+        return EMPTY;
+      }
+    }
+    return constructErrorMessage(fields);
+  }
+
+  private String constructErrorMessage(Pair<String, String>... value) {
+    int size = value.length;
+    StringBuilder stringBuilder = new StringBuilder(String.format("%s", value[0].getKey()));
+    for (int i = 1; i < size; i++) {
+      stringBuilder.append(String.format(", %s", value[i].getKey()));
+    }
+
+    stringBuilder.append(" can not be blank or Runtime input.");
+
+    if (size > 1) {
+      return stringBuilder.append(" Please provide concrete value to one of these.").toString();
+    }
+
+    return stringBuilder.append(" Needs to have concrete value").toString();
   }
 
   public String generatePollingDescriptor(PollingResponse pollingResponse) {

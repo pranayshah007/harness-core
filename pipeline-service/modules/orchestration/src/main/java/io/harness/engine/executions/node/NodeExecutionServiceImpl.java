@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.node;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
@@ -224,8 +225,25 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId) {
-    // Uses - planExecutionId_status_idx
+    // Uses - planExecutionId_mode_status_oldRetry_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    // Exclude so that it can use Projection covered from index without scanning documents.
+    query.fields().exclude(NodeExecutionKeys.id).include(NodeExecutionKeys.status);
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionReadHelper.fetchNodeExecutions(query)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
+      }
+    }
+    return nodeExecutions.stream().map(NodeExecution::getStatus).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<Status> fetchNonFlowingAndNonFinalStatuses(String planExecutionId) {
+    // Uses - planExecutionId_mode_status_oldRetry_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.status).in(StatusUtils.nonFlowingAndNonFinalStatuses()))
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
     // Exclude so that it can use Projection simplified from index without scanning documents.
     query.fields().exclude(NodeExecutionKeys.id).include(NodeExecutionKeys.status);
@@ -240,7 +258,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public CloseableIterator<NodeExecution> fetchNodeExecutionsWithoutOldRetriesIterator(String planExecutionId) {
-    // Uses - planExecutionId_status_idx
+    // Uses - planExecutionId_oldRetry_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
     // Can't use fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator as it uses projections
@@ -772,7 +790,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @VisibleForTesting
   CloseableIterator<NodeExecution> fetchNodeExecutionsFromAnalytics(
       String planExecutionId, @NotNull Set<String> fieldsToInclude) {
-    // Uses - planExecutionId_status_idx
+    // Uses - id_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId));
     for (String field : fieldsToInclude) {
       query.fields().include(field);
@@ -864,6 +882,19 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public List<NodeExecution> fetchStageExecutionsWithProjection(
+      String planExecutionId, Set<String> fieldsToBeIncluded) {
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
+                      .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
+    for (String field : fieldsToBeIncluded) {
+      query.fields().include(field);
+    }
+    query.with(by(NodeExecutionKeys.createdAt));
+    return mongoTemplate.find(query, NodeExecution.class);
+  }
+
+  @Override
   public List<NodeExecution> fetchStageExecutionsWithEndTsAndStatusProjection(String planExecutionId) {
     Query query =
         query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
@@ -875,7 +906,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.status)
         .include(NodeExecutionKeys.endTs)
         .include(NodeExecutionKeys.createdAt)
-        .include(NodeExecutionKeys.planNode)
         .include(NodeExecutionKeys.mode)
         .include(NodeExecutionKeys.stepType)
         .include(NodeExecutionKeys.ambiance)
@@ -990,7 +1020,10 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     Map<String, Node> nodeExecutionIdToPlanNode = new HashMap<>();
 
     Set<String> nodeIds = nodeExecutionMap.values().stream().map(NodeExecution::getNodeId).collect(Collectors.toSet());
-    Set<Node> nodes = planService.fetchAllNodes(nodeIds);
+    // Here we have assumed that plan id of all node executions will be same as this was the assumption till now as well
+    String planId = !isEmpty(nodeExecutions) ? nodeExecutions.get(0).getPlanId() : null;
+    // TODO Remove the list query to fetch list of nodes
+    Set<Node> nodes = planService.fetchAllNodes(planId, nodeIds);
     Map<String, Node> nodeMap = nodes.stream().collect(Collectors.toMap(Node::getUuid, node -> node));
 
     nodeExecutionMap.forEach(
@@ -1058,12 +1091,13 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded) {
+  public CloseableIterator<NodeExecution> fetchAllWithPlanExecutionId(
+      String planExecutionId, Set<String> fieldsToBeIncluded) {
     Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId).is(planExecutionId);
     Query query = query(criteria);
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);
     }
-    return nodeExecutionReadHelper.fetchNodeExecutionsWithoutProjections(query);
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
   }
 }

@@ -392,8 +392,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo;
-      expandedExecutionWrapperInfo =
-          strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
+      expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfigFromClass(
+          config, maxExpansionLimit, CIAbstractStepNode.class, ambiance);
 
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());

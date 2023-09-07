@@ -9,9 +9,14 @@ package io.harness.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 @OwnedBy(CDC)
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public enum JiraActionNG {
   VALIDATE_CREDENTIALS("Validate Credentials"),
   GET_PROJECTS("Get Projects"),
@@ -21,7 +26,8 @@ public enum JiraActionNG {
   GET_ISSUE_UPDATE_METADATA("Get Issue Update Metadata"),
   CREATE_ISSUE("Create Issue"),
   UPDATE_ISSUE("Update Issue"),
-  SEARCH_USER("Search user");
+  SEARCH_USER("Search user"),
+  GET_TRANSITIONS("Get Issue Transitions");
 
   private final String displayName;
 

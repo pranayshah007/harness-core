@@ -50,7 +50,7 @@ public class HandlerMappingServer {
     var handlerContext = context.deepCopy();
     handlerContext.set(Context.TASK_ID, taskPayload.getId());
     // TODO: add decrypted secrets here
-    handler.handle(taskPayload.getRunnerType(), taskPayload, context);
+    handler.handle(taskPayload.getRunnerType(), taskPayload, handlerContext);
     log.info("Finished executing handler {}", taskPayload.getEventType());
   }
 }

@@ -947,7 +947,8 @@ public class JiraTask extends AbstractDelegateRunnableTask {
   // IDENTIFY WHICH EXCEPTION SHOULD BE LOGGED AS WARNING INSTEAD OF ERROR
   @VisibleForTesting
   boolean isWarningException(JiraException e) {
-    return e.getCause() instanceof SSLHandshakeException;
+    return e.getCause() instanceof SSLHandshakeException
+        || (e.getCause() instanceof RestException && ((RestException) e.getCause()).getHttpStatusCode() == 429);
   }
 
   public String getIssueUrl(JiraConfig jiraConfig, String issueKey) {

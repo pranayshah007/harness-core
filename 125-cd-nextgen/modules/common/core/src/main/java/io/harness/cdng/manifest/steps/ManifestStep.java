@@ -17,7 +17,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
 import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
@@ -49,7 +48,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -70,7 +68,6 @@ public class ManifestStep implements SyncExecutable<ManifestStepParameters> {
 
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
-  @Inject NGFeatureFlagHelperService featureFlagHelperService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
@@ -151,10 +148,6 @@ public class ManifestStep implements SyncExecutable<ManifestStepParameters> {
 
   public void saveManifestExecutionDataToStageInfo(Ambiance ambiance, ManifestOutcome manifestOutcome) {
     if (isNull(manifestOutcome)) {
-      return;
-    }
-    if (!featureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC)) {
       return;
     }
     try {

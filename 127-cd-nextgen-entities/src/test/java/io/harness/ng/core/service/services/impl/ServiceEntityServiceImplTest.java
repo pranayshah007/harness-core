@@ -41,7 +41,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.exception.YamlException;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
@@ -1283,6 +1285,32 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                SERVICE_ID))
         .isInstanceOf(YamlException.class)
         .hasMessage("Yaml provided for service " + SERVICE_ID + " does not have service definition field.");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testListRepoWithRemoteServices() {
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .accountId("ACCOUNT_ID")
+                                      .identifier("IDENTIFIER")
+                                      .orgIdentifier("ORG_ID")
+                                      .projectIdentifier("PROJECT_ID")
+                                      .name("Service")
+                                      .type(ServiceDefinitionType.NATIVE_HELM)
+                                      .gitOpsEnabled(true)
+                                      .storeType(StoreType.REMOTE)
+                                      .connectorRef("githubRepoConnector")
+                                      .fallBackBranch("feature")
+                                      .repo("githubRepoName")
+                                      .build();
+
+    serviceEntityService.create(serviceEntity);
+
+    RepoListResponseDTO repoListResponseDTO =
+        serviceEntityService.getListOfRepos("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false);
+    assertThat(repoListResponseDTO).isNotNull();
+    assertThat(repoListResponseDTO.getRepositories().get(0)).isEqualTo("githubRepoName");
   }
 
   private String readFile(String filename) {

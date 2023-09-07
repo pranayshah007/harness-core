@@ -24,7 +24,15 @@ public class InstanceGroupedOnArtifactList {
   public static class InstanceGroupedOnArtifact {
     String artifact;
     long lastDeployedAt;
-    @NotNull List<InstanceGroupedOnEnvironment> instanceGroupedOnEnvironmentList;
+    @NotNull List<InstanceGroupedOnChartVersion> instanceGroupedOnChartVersionList;
+  }
+
+  @Value
+  @Builder
+  public static class InstanceGroupedOnChartVersion {
+    String chartVersion;
+    long lastDeployedAt;
+    List<InstanceGroupedOnEnvironment> instanceGroupedOnEnvironmentList;
   }
 
   @Value

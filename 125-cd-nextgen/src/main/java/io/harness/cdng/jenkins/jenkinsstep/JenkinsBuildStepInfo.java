@@ -70,7 +70,7 @@ public class JenkinsBuildStepInfo implements CDAbstractStepInfo, WithConnectorRe
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> jobName;
 
-  @Pattern(regexp = NGRegexValidatorConstants.POLL_FREQUENCY_PATTERN_WITHOUT_EXECUTION_INPUT)
+  @Pattern(regexp = NGRegexValidatorConstants.POLL_FREQUENCY_PATTERN)
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<Timeout> consoleLogPollFrequency;
 

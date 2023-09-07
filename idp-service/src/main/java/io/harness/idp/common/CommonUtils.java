@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
@@ -46,5 +47,21 @@ public class CommonUtils {
 
   public static Set<String> addGlobalAccountIdentifierAlong(String accountIdentifier) {
     return new HashSet<>(Arrays.asList(accountIdentifier, GLOBAL_ACCOUNT_ID));
+  }
+
+  public Object findObjectByName(Map<String, Object> map, String targetName) {
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      if (entry.getKey().equals(targetName)) {
+        return entry.getValue();
+      }
+
+      if (entry.getValue() instanceof Map) {
+        Object nestedResult = findObjectByName((Map<String, Object>) entry.getValue(), targetName);
+        if (nestedResult != null) {
+          return nestedResult;
+        }
+      }
+    }
+    return null;
   }
 }

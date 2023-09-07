@@ -23,6 +23,10 @@ public class MigratorResolveFunctor implements ExpressionResolveFunctor {
 
   @Override
   public String processString(String expression) {
+    if (expression.contains(".toLowerCase()")) {
+      String treatedExpression = expression.replace(".toLowerCase()", "");
+      return expressionEvaluator.substitute(treatedExpression, context) + ".toLowerCase()";
+    }
     return expressionEvaluator.substitute(expression, context);
   }
 }

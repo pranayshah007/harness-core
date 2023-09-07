@@ -9,6 +9,7 @@ package io.harness.ngtriggers.expressions;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -211,7 +212,92 @@ public class TriggerFunctorTest extends CategoryTest {
                 .build()));
     assertThatThrownBy(() -> finalExpressionEvaluator.renderExpression("<+trigger.event>"))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Event payload could not be converted to a hashmap");
+        .hasMessage("Event payload could not be converted to a hashmap or list");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCustomWebhookWhenPayloadIsArray() {
+    String arrayPayload =
+        "[\"value1\",\"value2\",[\"value3\",\"value4\"],{\"key1\":\"value5\"},{\"key2\":[\"value6\"]}]";
+    PlanExecutionMetadataService metadataService = mock(PlanExecutionMetadataServiceImpl.class);
+    when(metadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder()
+                                    .triggerHeader(null)
+                                    .triggerJsonPayload(arrayPayload)
+                                    .triggerPayload(TriggerPayload.newBuilder().build())
+                                    .build()));
+    SampleEvaluator expressionEvaluator = new SampleEvaluator(
+        new TriggerFunctor(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder()).build(), metadataService));
+    assertThat(expressionEvaluator.renderExpression("<+trigger.eventPayload>")).isEqualTo(arrayPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload>")).isEqualTo(arrayPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[0]>")).isEqualTo("value1");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[1]>")).isEqualTo("value2");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[2]>")).isEqualTo("[\"value3\",\"value4\"]");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[2]>[0]>")).isEqualTo("value3");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[2]>[1]>")).isEqualTo("value4");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[3]>")).isEqualTo("{\"key1\":\"value5\"}");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[3]>.key1>")).isEqualTo("value5");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[4]>")).isEqualTo("{\"key2\":[\"value6\"]}");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[4]>.key2>")).isEqualTo("[\"value6\"]");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[4].key2[0]>")).isEqualTo("value6");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCustomWebhookWhenPayloadIsMap() {
+    String mapPayload = "{\"key1\":\"value1\",\"key2\":[\"value2\",{\"key3\":\"value3\"}]}";
+    PlanExecutionMetadataService metadataService = mock(PlanExecutionMetadataServiceImpl.class);
+    when(metadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder()
+                                    .triggerHeader(null)
+                                    .triggerJsonPayload(mapPayload)
+                                    .triggerPayload(TriggerPayload.newBuilder().build())
+                                    .build()));
+    SampleEvaluator expressionEvaluator = new SampleEvaluator(
+        new TriggerFunctor(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder()).build(), metadataService));
+    assertThat(expressionEvaluator.renderExpression("<+trigger.eventPayload>")).isEqualTo(mapPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload>")).isEqualTo(mapPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key1>")).isEqualTo("value1");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key2>"))
+        .isEqualTo("[\"value2\",{\"key3\":\"value3\"}]");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key2[0]>")).isEqualTo("value2");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key2[1]>")).isEqualTo("{\"key3\":\"value3\"}");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload.key2[1]>.key3>")).isEqualTo("value3");
+  }
+
+  @Test
+  @Owner(developers = ADWAIT)
+  @Category(UnitTests.class)
+  public void testExpressionEvaluatorForEmptyTriggerPayload() {
+    MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
+    headerMap.put("X-GitHub-Delivery", Collections.singletonList("c4186fb6-1d22-11ee-8736-3f7c21bf83f1"));
+    headerMap.put("Accept", Collections.singletonList("*/*"));
+    headerMap.put("X-GitHub-Hook-ID", Collections.singletonList("402904149"));
+    headerMap.put("content-type", Collections.singletonList("application/json"));
+    headerMap.put("User-Agent", Arrays.asList("GitHub-Hookshot/703fc34", "GitHub-Hookshot/703fc35"));
+    headerMap.put("X-GitHub-Event", Collections.singletonList("push"));
+    headerMap.put("X-GitHub-Hook-Installation-Target-ID", Collections.singletonList("587948287"));
+    headerMap.put("X-GitHub-Hook-Installation-Target-Type", Collections.singletonList("repository"));
+    headerMap.put("X-Hub-Signature", Collections.singletonList("sha1=3e2d63c23863baa66f030c789537a6275744b3c7"));
+    headerMap.put("X-Hub-Signature-256",
+        Collections.singletonList("sha256=3213c8dee847243acbdb71096223f6737d98c9d72ca7ae2b24cacc0f468fa0cb"));
+    headerMap.put("Host", Collections.singletonList("localhost:1010"));
+    headerMap.put("Accept-Encoding", Collections.singletonList("gzip,deflate,br"));
+
+    List<HeaderConfig> headerConfigs = new ArrayList<>();
+    headerMap.forEach((k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
+
+    PlanExecutionMetadataService metadataService = mock(PlanExecutionMetadataServiceImpl.class);
+    when(metadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(
+            PlanExecutionMetadata.builder().triggerJsonPayload(bigPayload).triggerHeader(headerConfigs).build()));
+    SampleEvaluator expressionEvaluator = new SampleEvaluator(
+        new TriggerFunctor(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder()).build(), metadataService));
+
+    assertThat(expressionEvaluator.renderExpression("<+trigger.branch>")).isEqualTo("null");
   }
 
   public static class SampleEvaluator extends EngineExpressionEvaluator {

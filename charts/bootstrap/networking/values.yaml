@@ -1,8 +1,8 @@
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   ingress:
     enabled: false
-    loadBalancerIP: '0.0.0.0'
-    loadBalancerEnabled: false
     className: "harness"
     hosts:
       - 'myhost.example.com'
@@ -44,6 +44,10 @@ global:
 nginx:
   # -- Create Nginx Controller.  True will deploy a controller into your cluster
   create: false
+  # setting true sets it to enable loadBalancer nginx service, otherwise uses nodePort
+  loadBalancerEnabled: false
+  # set loadbalancer IP when loadBalancer service is enabled.
+  loadBalancerIP: '0.0.0.0'
   healthPort: ""
   healthNodePort: ""
   httpNodePort: ""
@@ -70,6 +74,9 @@ nginx:
     requests:
       cpu: '0.5'
       memory: '512Mi'
+  podLabels: {}
+  service:
+    annotations: {}
 
 
 defaultbackend:
@@ -91,3 +98,6 @@ defaultbackend:
     requests:
       cpu: 10m
       memory: 20Mi
+  podLabels: {}
+  service:
+    annotations: {}

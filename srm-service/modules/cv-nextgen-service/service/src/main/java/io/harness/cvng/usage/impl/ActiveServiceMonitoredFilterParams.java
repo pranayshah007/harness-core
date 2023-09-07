@@ -41,7 +41,5 @@ public class ActiveServiceMonitoredFilterParams implements FilterParams {
   @EntityIdentifier(allowBlank = true)
   String projectIdentifier;
 
-  @Schema(description = "Service identifier of the Entity.")
-  @EntityIdentifier(allowBlank = true)
-  String serviceIdentifier;
+  @Schema(description = "Service identifier of the Entity.") String serviceIdentifier;
 }

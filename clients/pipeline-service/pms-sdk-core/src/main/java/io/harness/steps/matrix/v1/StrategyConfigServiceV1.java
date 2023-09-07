@@ -10,6 +10,7 @@ package io.harness.steps.matrix.v1;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.strategy.v1.StrategyConfigV1;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.steps.matrix.StrategyInfo;
 
@@ -19,7 +20,8 @@ import java.util.Optional;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface StrategyConfigServiceV1 {
-  List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfigV1 strategyConfig, String childNodeId);
+  List<ChildrenExecutableResponse.Child> fetchChildren(
+      StrategyConfigV1 strategyConfig, String childNodeId, Ambiance ambiance);
 
   // YAML Expansion will fail if count is more that the supported limit.
   StrategyInfo expandJsonNode(StrategyConfigV1 strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit);

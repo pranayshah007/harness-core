@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.remote.dto.EmailDTO;
+import io.harness.notification.service.ChannelServiceImpl;
 import io.harness.notification.service.MailServiceImpl;
 
 import com.google.inject.Inject;
@@ -25,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EmailResourceImpl implements EmailResource {
   private final MailServiceImpl mailService;
+  private final ChannelServiceImpl channelService;
 
   public ResponseDTO<NotificationTaskResponse> sendEmail(EmailDTO emailDTO) {
     log.info("Received email request for notificationId: {}", emailDTO.getNotificationId());

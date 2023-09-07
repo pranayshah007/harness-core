@@ -53,6 +53,7 @@ public class PageRequest<T> {
   public static final String UNLIMITED = "UNLIMITED";
   public static final int DEFAULT_UNLIMITED = 1000;
   public static final String LIMIT_2K_PAGE_SIZE = "2000";
+  public static final String LIMIT_3K_PAGE_SIZE = "3000";
   public static final int DEFAULT_PAGE_SIZE = 50;
 
   @Inject static int maxDocumentsToBeFetchedByMongoQueries;

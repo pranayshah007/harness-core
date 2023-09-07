@@ -25,6 +25,7 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.activity.ActivityType;
@@ -105,25 +106,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
 
     Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
     Assertions.assertThat(activityFromDb).isNotNull();
-  }
-
-  @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void testRegisterSRMAnalysisEvent_insert() {
-    ChangeEventDTO changeEventDTO = builderFactory.harnessSRMAnalysisChangeEventDTOBuilder().build();
-    changeEventDTO.setMonitoredServiceIdentifier(builderFactory.getContext().getMonitoredServiceIdentifier());
-
-    changeEventService.register(changeEventDTO);
-
-    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
-    Assertions.assertThat(activityFromDb).isNotNull();
-
-    SRMAnalysisStepExecutionDetail executionDetail =
-        hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class).get();
-    Assertions.assertThat(executionDetail).isNotNull();
-
-    assertThat(executionDetail.getUuid()).isEqualTo(activityFromDb.getUuid());
   }
 
   @Test
@@ -1151,5 +1133,21 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     Assertions
         .assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCountInPrecedingWindow())
         .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testMapSRMAnalysisExecutionToDeploymentActivities() {
+    ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
+    changeEventService.register(changeEventDTO);
+
+    SRMAnalysisStepExecutionDetail stepExecutionDetail = builderFactory.getSRMAnalysisStepExecutionDetail();
+    stepExecutionDetail.setUuid("executionDetailId");
+    changeEventService.mapSRMAnalysisExecutionsToDeploymentActivities(stepExecutionDetail);
+    DeploymentActivity activityFromDb = hPersistence.createQuery(DeploymentActivity.class).get();
+    assertThat(activityFromDb).isNotNull();
+    assertThat(activityFromDb.getAnalysisImpactExecutionIds().size()).isEqualTo(1);
+    assertThat(activityFromDb.getAnalysisImpactExecutionIds().get(0)).isEqualTo("executionDetailId");
   }
 }

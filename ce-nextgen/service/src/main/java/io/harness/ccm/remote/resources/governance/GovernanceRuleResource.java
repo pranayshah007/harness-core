@@ -414,7 +414,6 @@ public class GovernanceRuleResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     Rule rule = createRuleDTO.getRule();
-    rule.toDTO();
     Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
     if (oldRule.getIsOOTB()) {
       throw new InvalidRequestException("Editing OOTB rule is not allowed");
@@ -469,7 +468,6 @@ public class GovernanceRuleResource {
     }
 
     Rule rule = createRuleDTO.getRule();
-    rule.toDTO();
     if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       throw new InvalidRequestException("Editing OOTB rule is not allowed");
     }
@@ -725,7 +723,6 @@ public class GovernanceRuleResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     Rule validateRule = generateRule.getRule();
-    validateRule.toDTO();
     governanceRuleService.validateAWSSchema(validateRule);
     governanceRuleService.custodianValidate(validateRule);
   }

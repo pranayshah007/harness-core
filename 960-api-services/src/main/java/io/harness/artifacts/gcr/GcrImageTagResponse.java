@@ -17,7 +17,8 @@ import java.util.Map;
  * The type GCR image tag response.
  */
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public class GcrImageTagResponse {
   private List<String> child;
   private String name;

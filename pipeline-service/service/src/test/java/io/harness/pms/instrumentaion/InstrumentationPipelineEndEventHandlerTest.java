@@ -36,6 +36,7 @@ import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.bean.PipelineEvent;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -131,7 +132,10 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
             .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
             .build();
     List<NodeExecution> nodeExecutionList =
-        Arrays.asList(NodeExecution.builder().ambiance(ambiance).planNode(planNode).build());
+        Arrays.asList(NodeExecution.builder()
+                          .ambiance(ambiance)
+                          .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).setType("Http").build())
+                          .build());
 
     CloseableIterator<NodeExecution> iterator =
         PipelineServiceTestHelper.createCloseableIterator(nodeExecutionList.iterator());
@@ -154,7 +158,7 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
     AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
     doReturn(accountDTO).when(accountService).getAccount(any());
 
-    instrumentationPipelineEndEventHandler.onEnd(ambiance);
+    instrumentationPipelineEndEventHandler.onEnd(ambiance, Status.SUCCEEDED);
 
     ArgumentCaptor<HashMap> argumentCaptor = ArgumentCaptor.forClass(HashMap.class);
     verify(telemetryReporter, times(1))

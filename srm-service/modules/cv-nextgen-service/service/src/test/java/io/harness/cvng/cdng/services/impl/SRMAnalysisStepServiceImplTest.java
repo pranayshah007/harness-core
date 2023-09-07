@@ -23,11 +23,11 @@ import static org.mockito.Mockito.when;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepInstanceDetails;
+import io.harness.cvng.beans.change.HarnessCDEventMetadata;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
@@ -43,6 +43,7 @@ import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
@@ -119,11 +120,6 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
         builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, stepName,
         serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
-    SRMStepAnalysisActivity stepAnalysisActivity = builderFactory.getSRMStepAnalysisActivityBuilder()
-                                                       .executionNotificationDetailsId(analysisExecutionDetailsId)
-                                                       .build();
-    stepAnalysisActivity.setUuid(analysisExecutionDetailsId);
-    activityId = activityService.createActivity(stepAnalysisActivity);
     FieldUtils.writeField(srmAnalysisStepService, "clock", clock, true);
   }
 
@@ -224,8 +220,14 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
   public void testGetSummaryOfStep() {
     SRMAnalysisStepExecutionDetail stepExecutionDetail =
         srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
-    SRMAnalysisStepDetailDTO analysisStepDetailDTO = srmAnalysisStepService.getSRMAnalysisSummary(activityId);
+    SRMAnalysisStepDetailDTO analysisStepDetailDTO =
+        srmAnalysisStepService.getSRMAnalysisSummary(analysisExecutionDetailsId);
 
+    assertThat(analysisStepDetailDTO.getAccountId()).isEqualTo(builderFactory.getContext().getAccountId());
+    assertThat(analysisStepDetailDTO.getOrgIdentifier()).isEqualTo(builderFactory.getContext().getOrgIdentifier());
+    assertThat(analysisStepDetailDTO.getProjectIdentifier())
+        .isEqualTo(builderFactory.getContext().getProjectIdentifier());
+    assertThat(analysisStepDetailDTO.getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
     assertThat(analysisStepDetailDTO.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(analysisStepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(analysisStepDetailDTO.getServiceIdentifier()).isEqualTo(serviceEnvironmentParams.getServiceIdentifier());
@@ -236,16 +238,28 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     assertThat(analysisStepDetailDTO.getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
     assertThat(analysisStepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(analysisStepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(analysisStepDetailDTO.getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
+    assertThat(analysisStepDetailDTO.getPipelinePath()).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSRMAnalysisStepExecutions() {
+    List<SecondaryEventsResponse> instances = srmAnalysisStepService.getSRMAnalysisStepExecutions(
+        builderFactory.getProjectParams(), monitoredServiceIdentifier, clock.instant().toEpochMilli(),
+        clock.instant().plus(5, ChronoUnit.MINUTES).toEpochMilli());
+    assertThat(instances.size()).isEqualTo(1);
+    assertThat(instances.get(0).getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
+    assertThat(instances.get(0).getStartTime()).isEqualTo(clock.instant().getEpochSecond());
+    assertThat(instances.get(0).getIdentifiers().size()).isEqualTo(1);
+    assertThat(instances.get(0).getIdentifiers().get(0)).isEqualTo(analysisExecutionDetailsId);
   }
 
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testGetInstanceByUuids() {
-    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
-        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, "stepName",
-        serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
-
     SecondaryEventDetailsResponse eventDetailsResponse =
         ((SRMAnalysisStepServiceImpl) srmAnalysisStepService)
             .getInstanceByUuids(List.of(analysisExecutionDetailsId), SecondaryEventsType.SRM_ANALYSIS_IMPACT);
@@ -258,34 +272,49 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSRMAnalysisStepDetails() {
+    List<HarnessCDEventMetadata.SRMAnalysisStepDetails> analysisStepDetails =
+        srmAnalysisStepService.getSRMAnalysisStepDetails(List.of(analysisExecutionDetailsId));
+
+    assertThat(analysisStepDetails.size()).isEqualTo(1);
+    assertThat(analysisStepDetails.get(0).getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
+    assertThat(analysisStepDetails.get(0).getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
+    assertThat(analysisStepDetails.get(0).getAnalysisStartTime()).isEqualTo(clock.instant().toEpochMilli());
+    assertThat(analysisStepDetails.get(0).getStepName()).isEqualTo(stepName);
+    assertThat(analysisStepDetails.get(0).getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(analysisStepDetails.get(0).getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
+  }
+
+  @Test
   @Owner(developers = SHASHWAT_SACHAN)
   @Category(UnitTests.class)
   public void testGetReportListProject() {
     SRMAnalysisStepExecutionDetail stepExecutionDetail =
         srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
-    PageResponse<SRMAnalysisStepDetailDTO> firstPage =
+    PageResponse<SRMAnalysisStepDetailDTO> response =
         srmAnalysisStepService.getReportList(builderFactory.getProjectParams(), new ArrayList<>(),
             Collections.emptyList(), Collections.singletonList(monitoredServiceIdentifier), false, clock.instant(),
             clock.instant().plus(4, ChronoUnit.DAYS), PageRequest.builder().pageIndex(0).pageSize(2).build());
-    assertThat(firstPage.getPageIndex()).isEqualTo(0);
-    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
-    assertThat(firstPage.getTotalItems()).isEqualTo(1);
-    assertThat(firstPage.getTotalPages()).isEqualTo(1);
-    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
-    assertThat(firstPage.getContent().get(0).getAccountId()).isEqualTo(stepExecutionDetail.getAccountId());
-    assertThat(firstPage.getContent().get(0).getOrgIdentifier()).isEqualTo(stepExecutionDetail.getOrgIdentifier());
-    assertThat(firstPage.getContent().get(0).getProjectIdentifier())
-        .isEqualTo(stepExecutionDetail.getProjectIdentifier());
-    assertThat(firstPage.getContent().get(0).getStepName()).isEqualTo(stepExecutionDetail.getStepName());
-    assertThat(firstPage.getContent().get(0).getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
-    assertThat(firstPage.getContent().get(0).getAnalysisStartTime())
-        .isEqualTo(stepExecutionDetail.getAnalysisStartTime());
-    assertThat(firstPage.getContent().get(0).getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
-    assertThat(firstPage.getContent().get(0).getAnalysisDuration())
-        .isEqualTo(stepExecutionDetail.getAnalysisDuration());
-    assertThat(firstPage.getContent().get(0).getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
-    assertThat(firstPage.getContent().get(0).getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
-    assertThat(firstPage.getContent().get(0).getStageStepId()).isEqualTo(stepExecutionDetail.getStageStepId());
+    SRMAnalysisStepDetailDTO stepDetailDTO = response.getContent().get(0);
+    assertThat(response.getPageIndex()).isEqualTo(0);
+    assertThat(response.getPageItemCount()).isEqualTo(1);
+    assertThat(response.getTotalItems()).isEqualTo(1);
+    assertThat(response.getTotalPages()).isEqualTo(1);
+    assertThat(response.getPageItemCount()).isEqualTo(1);
+    assertThat(stepDetailDTO.getAccountId()).isEqualTo(stepExecutionDetail.getAccountId());
+    assertThat(stepDetailDTO.getOrgIdentifier()).isEqualTo(stepExecutionDetail.getOrgIdentifier());
+    assertThat(stepDetailDTO.getProjectIdentifier()).isEqualTo(stepExecutionDetail.getProjectIdentifier());
+    assertThat(stepDetailDTO.getStepName()).isEqualTo(stepExecutionDetail.getStepName());
+    assertThat(stepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
+    assertThat(stepDetailDTO.getAnalysisStartTime()).isEqualTo(stepExecutionDetail.getAnalysisStartTime());
+    assertThat(stepDetailDTO.getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
+    assertThat(stepDetailDTO.getAnalysisDuration()).isEqualTo(stepExecutionDetail.getAnalysisDuration());
+    assertThat(stepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(stepDetailDTO.getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
+    assertThat(stepDetailDTO.getStageStepId()).isEqualTo(stepExecutionDetail.getStageStepId());
+    assertThat(stepDetailDTO.getPipelinePath()).isNotEmpty();
   }
 
   @Test
@@ -294,31 +323,29 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
   public void testGetReportListAccount() {
     SRMAnalysisStepExecutionDetail stepExecutionDetail =
         srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
-    PageResponse<SRMAnalysisStepDetailDTO> firstPage = srmAnalysisStepService.getReportList(
+    PageResponse<SRMAnalysisStepDetailDTO> response = srmAnalysisStepService.getReportList(
         builderFactory.getProjectParams(), new ArrayList<>(), Collections.emptyList(),
         Collections.singletonList(ScopedInformation.getScopedInformation(builderFactory.getContext().getAccountId(),
             builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
             builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier())),
         true, clock.instant(), clock.instant().plus(4, ChronoUnit.DAYS),
         PageRequest.builder().pageIndex(0).pageSize(2).build());
-    assertThat(firstPage.getPageIndex()).isEqualTo(0);
-    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
-    assertThat(firstPage.getTotalItems()).isEqualTo(1);
-    assertThat(firstPage.getTotalPages()).isEqualTo(1);
-    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
-    assertThat(firstPage.getContent().get(0).getAccountId()).isEqualTo(stepExecutionDetail.getAccountId());
-    assertThat(firstPage.getContent().get(0).getOrgIdentifier()).isEqualTo(stepExecutionDetail.getOrgIdentifier());
-    assertThat(firstPage.getContent().get(0).getProjectIdentifier())
-        .isEqualTo(stepExecutionDetail.getProjectIdentifier());
-    assertThat(firstPage.getContent().get(0).getStepName()).isEqualTo(stepExecutionDetail.getStepName());
-    assertThat(firstPage.getContent().get(0).getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
-    assertThat(firstPage.getContent().get(0).getAnalysisStartTime())
-        .isEqualTo(stepExecutionDetail.getAnalysisStartTime());
-    assertThat(firstPage.getContent().get(0).getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
-    assertThat(firstPage.getContent().get(0).getAnalysisDuration())
-        .isEqualTo(stepExecutionDetail.getAnalysisDuration());
-    assertThat(firstPage.getContent().get(0).getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
-    assertThat(firstPage.getContent().get(0).getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
-    assertThat(firstPage.getContent().get(0).getStageStepId()).isEqualTo(stepExecutionDetail.getStageStepId());
+    SRMAnalysisStepDetailDTO stepDetailDTO = response.getContent().get(0);
+    assertThat(response.getPageIndex()).isEqualTo(0);
+    assertThat(response.getPageItemCount()).isEqualTo(1);
+    assertThat(response.getTotalItems()).isEqualTo(1);
+    assertThat(response.getTotalPages()).isEqualTo(1);
+    assertThat(response.getPageItemCount()).isEqualTo(1);
+    assertThat(stepDetailDTO.getAccountId()).isEqualTo(stepExecutionDetail.getAccountId());
+    assertThat(stepDetailDTO.getOrgIdentifier()).isEqualTo(stepExecutionDetail.getOrgIdentifier());
+    assertThat(stepDetailDTO.getProjectIdentifier()).isEqualTo(stepExecutionDetail.getProjectIdentifier());
+    assertThat(stepDetailDTO.getStepName()).isEqualTo(stepExecutionDetail.getStepName());
+    assertThat(stepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
+    assertThat(stepDetailDTO.getAnalysisStartTime()).isEqualTo(stepExecutionDetail.getAnalysisStartTime());
+    assertThat(stepDetailDTO.getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
+    assertThat(stepDetailDTO.getAnalysisDuration()).isEqualTo(stepExecutionDetail.getAnalysisDuration());
+    assertThat(stepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(stepDetailDTO.getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
+    assertThat(stepDetailDTO.getStageStepId()).isEqualTo(stepExecutionDetail.getStageStepId());
   }
 }

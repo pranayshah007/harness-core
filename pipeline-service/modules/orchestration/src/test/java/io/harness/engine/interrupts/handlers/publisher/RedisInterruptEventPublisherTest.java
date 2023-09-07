@@ -12,8 +12,7 @@ import static io.harness.rule.OwnerRule.ALEXEI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,8 +32,8 @@ import io.harness.pms.contracts.interrupts.InterruptEvent;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.events.base.PmsEventCategory;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -69,18 +68,18 @@ public class RedisInterruptEventPublisherTest extends OrchestrationTestBase {
                             .uuid(generateUuid())
                             .identifier("DUMMY")
                             .stepType(StepType.newBuilder().setType("STEP").setStepCategory(StepCategory.STEP).build())
-                            .serviceName("serviceName")
+                            .serviceName("CD")
                             .build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .planNode(planNode)
-            .uuid(nodeExecutionId)
-            .ambiance(Ambiance.newBuilder()
-                          .setPlanExecutionId(planExecutionId)
-                          .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
-                          .build())
-            .resolvedStepParameters(RecastOrchestrationUtils.fromJson("{}"))
-            .build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
+                            .build();
+    NodeExecution nodeExecution = NodeExecution.builder()
+                                      .uuid(nodeExecutionId)
+                                      .ambiance(ambiance)
+                                      .resolvedParams(PmsStepParameters.parse("{}"))
+                                      .module("CD")
+                                      .build();
 
     when(nodeExecutionService.getWithFieldsIncluded(any(), any())).thenReturn(nodeExecution);
     when(eventSender.sendEvent(any(), any(), any(), any())).thenReturn(null);
@@ -90,7 +89,7 @@ public class RedisInterruptEventPublisherTest extends OrchestrationTestBase {
     ArgumentCaptor<ByteString> eventArgumentCaptor = ArgumentCaptor.forClass(ByteString.class);
     verify(eventSender)
         .sendEvent(
-            any(Ambiance.class), eventArgumentCaptor.capture(), any(PmsEventCategory.class), anyString(), anyBoolean());
+            eq(ambiance), eventArgumentCaptor.capture(), eq(PmsEventCategory.INTERRUPT_EVENT), eq("CD"), eq(false));
 
     ByteString eventByteString = eventArgumentCaptor.getValue();
     InterruptEvent actualInterruptEvent = InterruptEvent.parseFrom(eventByteString);

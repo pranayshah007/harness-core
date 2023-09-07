@@ -49,16 +49,18 @@ public class StepElementParameters implements StepBaseParameters {
 
   ParameterField<List<String>> delegateSelectors;
 
+  @Deprecated
   // Only for rollback failures
   OnFailRollbackParameters rollbackParameters;
 
   @Override
   public String toViewJson() {
-    StepElementParameters stepElementParameters = cloneParameters(false, false);
-    if (spec != null) {
+    if (spec.getViewJsonObject() != spec) {
+      StepElementParameters stepElementParameters = cloneParameters(false, false);
       stepElementParameters.setSpec(spec.getViewJsonObject());
+      return RecastOrchestrationUtils.toJson(stepElementParameters);
     }
-    return RecastOrchestrationUtils.toJson(stepElementParameters);
+    return DEFAULT;
   }
 
   public StepElementParameters cloneParameters(boolean includeUuid, boolean includeSpec) {

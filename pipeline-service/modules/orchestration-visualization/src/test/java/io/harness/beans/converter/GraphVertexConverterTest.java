@@ -39,7 +39,7 @@ import org.mockito.Mock;
 
 public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase {
   StepType stepType = StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build();
-  Map<String, Object> stepParams = new HashMap<String, Object>() {
+  Map<String, Object> stepParams = new HashMap<>() {
     { put("a", "b"); }
   };
   Ambiance ambiance = Ambiance.newBuilder()
@@ -106,7 +106,7 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
                                       .stepType(stepType)
                                       .retryId("retryId")
                                       .executionInputConfigured(true)
-                                      .resolvedStepParameters(stepParams)
+                                      .resolvedParams(PmsStepParameters.parse(stepParams))
                                       .mode(ExecutionMode.SYNC)
                                       .build();
     GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution, null, null, null);

@@ -14,6 +14,7 @@ import io.harness.logging.AutoLogContext;
 import io.harness.notification.PipelineEventType;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.notification.orchestration.observers.NotificationObserver;
@@ -56,7 +57,7 @@ public class NotificationInformHandler implements AsyncInformObserver, Notificat
   }
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     try (AutoLogContext autoLogContext = AmbianceUtils.autoLogContext(ambiance)) {
       notificationHelper.sendNotification(ambiance, PipelineEventType.PIPELINE_END, null, null);
     }

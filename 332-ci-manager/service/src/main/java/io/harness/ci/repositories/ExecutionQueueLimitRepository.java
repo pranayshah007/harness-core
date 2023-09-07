@@ -18,4 +18,5 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.CI)
 public interface ExecutionQueueLimitRepository extends CrudRepository<ExecutionQueueLimit, String> {
   Optional<ExecutionQueueLimit> findFirstByAccountIdentifier(String accountIdentifier);
+  void deleteAllByAccountIdentifier(String accountIdentifier);
 }

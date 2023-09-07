@@ -9,6 +9,7 @@ package io.harness.delegate.beans.azure.appservicesettings;
 
 import static io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSettingConstants.CONNECTION_SETTING_JSON_TYPE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.azure.model.AzureAppServiceConnectionStringType;
 import io.harness.security.encryption.EncryptedRecord;
 
@@ -31,6 +32,7 @@ import lombok.experimental.FieldDefaults;
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("AzureAppServiceConnectionString")
+@RecasterAlias("io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceConnectionStringDTO")
 public class AzureAppServiceConnectionStringDTO extends AzureAppServiceSettingDTO {
   @NotNull AzureAppServiceConnectionStringType type;
 

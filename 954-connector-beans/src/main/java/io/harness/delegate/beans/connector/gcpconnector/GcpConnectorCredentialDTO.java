@@ -6,6 +6,8 @@
  */
 
 package io.harness.delegate.beans.connector.gcpconnector;
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -27,6 +29,7 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("GcpConnectorCredential")
 @JsonDeserialize(using = GcpCredentialDTODeserializer.class)
 @Schema(name = "GcpConnectorCredential", description = "This contains GCP connector credentials")
+@RecasterAlias("io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO")
 public class GcpConnectorCredentialDTO {
   @NotNull @JsonProperty("type") GcpCredentialType gcpCredentialType;
   @JsonProperty("spec")

@@ -209,6 +209,8 @@ public class NGCommonEntityConstants {
   public static final String ARTIFACT_PATH = "artifactPath";
   public static final String ARTIFACT_VERSION = "artifactVersion";
   public static final String ARTIFACT = "artifact";
+  public static final String CHART_VERSION = "chartVersion";
+  public static final String FILTER_ON_CHART_VERSION = "filterOnChartVersion";
   public static final String PARENT_JOB_NAME = "parentJobName";
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";

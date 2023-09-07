@@ -13,6 +13,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,6 +23,9 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -62,7 +67,9 @@ public class ServiceNowCreateStepTest extends CategoryTest {
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @InjectMocks private ServiceNowCreateStep serviceNowCreateStep;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
-
+  @Mock private NGLogCallback mockNgLogCallback;
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock ILogStreamingStepClient logStreamingStepClient;
   private static String accountId = "accountId";
   private static String orgIdentifier = "orgIdentifier";
   private static String projectIdentifier = "projectIdentifier";
@@ -78,12 +85,14 @@ public class ServiceNowCreateStepTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testObtainTaskAfterRbac() {
+    doNothing().when(mockNgLogCallback).saveExecutionLog(any(), any());
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
                             .putSetupAbstractions("orgIdentifier", orgIdentifier)
                             .putSetupAbstractions("projectIdentifier", projectIdentifier)
                             .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
                             .build();
+    doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(any());
     StepElementParameters parameters = getStepElementParameters();
     parameters.setTimeout(ParameterField.createValueField(CONNECTOR));
     TaskRequest taskRequest = TaskRequest.newBuilder().build();

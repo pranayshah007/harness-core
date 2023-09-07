@@ -39,8 +39,10 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -88,7 +90,7 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
   @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private StepHelper stepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
-  @Captor private ArgumentCaptor<List<ServerInstanceInfo>> serverInstanceInfoListCaptor;
+  @Captor private ArgumentCaptor<DeploymentInfoOutcome> deploymentInfoOutcomeArgumentCaptor;
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @InjectMocks private FetchInstanceScriptStep fetchInstanceScriptStep;
@@ -287,8 +289,9 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
 
     verify(instanceInfoService)
-        .saveServerInstancesIntoSweepingOutput(eq(ambiance), serverInstanceInfoListCaptor.capture());
-    List<ServerInstanceInfo> serverInstanceInfoList = serverInstanceInfoListCaptor.getValue();
+        .saveDeploymentInfoOutcomeIntoSweepingOutput(eq(ambiance), deploymentInfoOutcomeArgumentCaptor.capture());
+    List<ServerInstanceInfo> serverInstanceInfoList =
+        deploymentInfoOutcomeArgumentCaptor.getValue().getServerInstanceInfoList();
     assertThat(serverInstanceInfoList).hasSize(2);
     assertThat(((CustomDeploymentServerInstanceInfo) serverInstanceInfoList.get(0)).getInstanceFetchScript())
         .isEqualTo(infrastructure.getInstanceFetchScript());
@@ -350,7 +353,7 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
 
     verify(instanceInfoService)
-        .saveServerInstancesIntoSweepingOutput(eq(ambiance), serverInstanceInfoListCaptor.capture());
+        .saveDeploymentInfoOutcomeIntoSweepingOutput(eq(ambiance), deploymentInfoOutcomeArgumentCaptor.capture());
     ArgumentCaptor<ExecutionSweepingOutput> instancesOutcomeCaptor =
         ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     verify(executionSweepingOutputService, times(2)).consume(any(), any(), instancesOutcomeCaptor.capture(), any());
@@ -358,5 +361,33 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
         .isEqualTo("instance1");
     assertThat(((InstancesOutcome) instancesOutcomeCaptor.getAllValues().get(0)).getInstances().get(1).getHostName())
         .isEqualTo("instance2");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testHandleResponseWithSecurityContextWithDelegateSelector() throws Exception {
+    List<UnitProgress> unitProgresses = singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+
+    FetchInstanceScriptTaskNGResponse fetchInstanceScriptTaskNGResponse =
+        FetchInstanceScriptTaskNGResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .unitProgressData(unitProgressData)
+            .output(
+                "{\"hosts\":[{ \"host\": 1, \"artifactBuildNo\": \"artifact1\" }, { \"host\": \"instance2\", \"artifactBuildNo\": \"artifact2\" } ] }")
+            .build();
+    doReturn("").when(executionSweepingOutputService).consume(any(), any(), any(), any());
+    StepResponse stepResponse = fetchInstanceScriptStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> fetchInstanceScriptTaskNGResponse);
+    verify(instanceInfoService)
+        .saveDeploymentInfoOutcomeIntoSweepingOutput(eq(ambiance), deploymentInfoOutcomeArgumentCaptor.capture());
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    assertThat(deploymentInfoOutcomeArgumentCaptor.getValue().getDeploymentOutcomeMetadata())
+        .isInstanceOf(CustomDeploymentOutcomeMetadata.class);
+    CustomDeploymentOutcomeMetadata customDeploymentOutcomeMetadata =
+        (CustomDeploymentOutcomeMetadata) deploymentInfoOutcomeArgumentCaptor.getValue().getDeploymentOutcomeMetadata();
+    assertThat(customDeploymentOutcomeMetadata.getDelegateSelectors()).contains("selector-1");
   }
 }

@@ -10,6 +10,7 @@ package io.harness.cdng.instance.info;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
+import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -50,4 +51,6 @@ public interface InstanceInfoService {
    */
   StepOutcome saveDeploymentInfoOutcomeIntoSweepingOutput(
       Ambiance ambiance, DeploymentInfoOutcome deploymentInfoOutcome);
+
+  DeploymentOutcomeMetadata getDeploymentOutcomeMetadata(Ambiance ambiance, StepType stepType);
 }

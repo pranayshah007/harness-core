@@ -18,7 +18,7 @@ import lombok.experimental.UtilityClass;
 public class ScorecardScoreMapper {
   public ScorecardScore toDTO(ScoreEntity scoreEntity, String scorecardName, String scorecardDescription) {
     ScorecardScore scorecardScore = new ScorecardScore();
-    scorecardScore.score((int) scoreEntity.getScore());
+    scorecardScore.score(scoreEntity.getScore());
     scorecardScore.setScorecardName(scorecardName);
     scorecardScore.setDescription(scorecardDescription);
     return scorecardScore;

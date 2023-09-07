@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.api;
+
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -100,9 +101,10 @@ public class PipelinesApiImpl implements PipelinesApi {
     if (requestBody == null) {
       throw new InvalidRequestException("Pipeline Create request body must not be null.");
     }
+    String pipelineVersion = pmsPipelineService.pipelineVersion(account, requestBody.getPipelineYaml());
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitCreateDetails(requestBody.getGitDetails()));
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        PipelinesApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, null);
+        PipelinesApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, null, pipelineVersion);
     log.info(String.format("Creating a Pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), project, org, account));
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity, false);
@@ -125,6 +127,11 @@ public class PipelinesApiImpl implements PipelinesApi {
         "Deleting Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     pmsPipelineService.delete(account, org, project, pipeline, null);
     return Response.status(204).build();
+  }
+
+  @Override
+  public Response getInputsSchemaDetails(String org, String project, String pipeline, String harnessAccount) {
+    return Response.ok().build();
   }
 
   @Override
@@ -302,11 +309,12 @@ public class PipelinesApiImpl implements PipelinesApi {
           String.format("Expected Pipeline identifier in Request Body to be [%s], but was [%s]", pipeline,
               requestBody.getIdentifier()));
     }
+    String pipelineVersion = pmsPipelineService.pipelineVersion(account, requestBody.getPipelineYaml());
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format(
         "Updating Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        PipelinesApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, null);
+        PipelinesApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, null, pipelineVersion);
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.MODIFY, false);
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();

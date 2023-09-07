@@ -17,6 +17,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.logging.AutoLogContext;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.service.GraphGenerationService;
 
@@ -44,7 +45,7 @@ public class OrchestrationEndGraphHandler implements AsyncInformObserver, Orches
   }
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     try (AutoLogContext autoLogContext = AmbianceUtils.autoLogContext(ambiance)) {
       PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(ambiance.getPlanExecutionId());
       // One last time try to update the graph to process any unprocessed logs

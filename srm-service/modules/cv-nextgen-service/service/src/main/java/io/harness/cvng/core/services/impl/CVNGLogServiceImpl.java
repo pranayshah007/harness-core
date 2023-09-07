@@ -12,6 +12,7 @@ import static io.harness.cvng.CVConstants.TAG_ONBOARDING;
 import static io.harness.cvng.CVConstants.TAG_VERIFICATION_TYPE;
 import static io.harness.cvng.beans.cvnglog.CVNGLogType.EXECUTION_LOG;
 import static io.harness.cvng.beans.cvnglog.TraceableType.ONBOARDING;
+import static io.harness.cvng.beans.cvnglog.TraceableType.VERIFICATION_JOB_INSTANCE;
 import static io.harness.cvng.beans.cvnglog.TraceableType.VERIFICATION_TASK;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -242,13 +243,14 @@ public class CVNGLogServiceImpl implements CVNGLogService {
                   verificationTaskId -> cvConfigIds.contains(verificationTaskService.getCVConfigId(verificationTaskId)))
               .collect(Collectors.toSet());
     }
-    return hPersistence.createQuery(CVNGLog.class, excludeAuthority)
-        .filter(CVNGLogKeys.accountId, accountId)
-        .filter(CVNGLogKeys.logType, deploymentLogsFilter.getLogType())
-        .filter(CVNGLogKeys.traceableType, VERIFICATION_TASK)
-        .field(CVNGLogKeys.traceableId)
-        .in(verificationTaskIds)
-        .asList();
+    Query<CVNGLog> query = hPersistence.createQuery(CVNGLog.class, excludeAuthority)
+                               .filter(CVNGLogKeys.accountId, accountId)
+                               .filter(CVNGLogKeys.logType, deploymentLogsFilter.getLogType());
+    query.or(query.and(query.criteria(CVNGLogKeys.traceableType).equal(VERIFICATION_TASK),
+                 query.criteria(CVNGLogKeys.traceableId).in(verificationTaskIds)),
+        query.and(query.criteria(CVNGLogKeys.traceableType).equal(VERIFICATION_JOB_INSTANCE),
+            query.criteria(CVNGLogKeys.traceableId).equal(verificationJobInstanceId)));
+    return query.asList();
   }
 
   private TagResult getTags(CVNGLogDTO cvngLogDTO) {

@@ -15,15 +15,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.exception.InvalidRequestException;
 import io.harness.pms.sdk.execution.events.PmsCommonsBaseEventHandler;
 import io.harness.serializer.ProtoUtils;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
-import java.lang.reflect.InvocationTargetException;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Map;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
@@ -50,21 +47,17 @@ public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.M
 
   @Override
   public boolean handleMessage(Message message, Long readTs) {
-    T entity = extractEntity(message);
-    Long issueTimestamp = ProtoUtils.timestampToUnixMillis(message.getTimestamp());
-    processMessage(entity, message.getMessage().getMetadataMap(), issueTimestamp, readTs);
+    try {
+      T entity = extractEntity(message.getMessage().getData());
+      Long issueTimestamp = ProtoUtils.timestampToUnixMillis(message.getTimestamp());
+      processMessage(entity, message.getMessage().getMetadataMap(), issueTimestamp, readTs);
+    } catch (InvalidProtocolBufferException ex) {
+      log.error(String.format("Cannot decode bytes into object, messageId %s", message.getId()), ex);
+    }
     return true;
   }
 
-  @VisibleForTesting
-  T extractEntity(@NonNull Message message) {
-    try {
-      return (T) entityClass.getMethod("parseFrom", ByteString.class).invoke(null, message.getMessage().getData());
-    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-      throw new InvalidRequestException(
-          String.format("Exception in unpacking %s for key %s", entityClass.getSimpleName(), message.getId()), e);
-    }
-  }
+  protected abstract T extractEntity(ByteString message) throws InvalidProtocolBufferException;
 
   public boolean isProcessable(Message message) {
     if (message != null && message.hasMessage()) {
