@@ -13,7 +13,6 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.beans.modules.SEIModuleLicenseDTO;
 
 @OwnedBy(HarnessTeam.SEI)
-public interface SEIModuleLicenseClient extends ModuleLicenseClient<SEIModuleLicenseDTO>{
-    @Override
-    SEIModuleLicenseDTO createTrialLicense(Edition edition, String accountId);
+public interface SEIModuleLicenseClient extends ModuleLicenseClient<SEIModuleLicenseDTO> {
+  @Override SEIModuleLicenseDTO createTrialLicense(Edition edition, String accountId);
 }

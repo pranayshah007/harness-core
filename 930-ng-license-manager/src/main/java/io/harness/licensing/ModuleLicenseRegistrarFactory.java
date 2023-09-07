@@ -62,7 +62,7 @@ public class ModuleLicenseRegistrarFactory {
     registrar.put(
         ModuleType.CET, new ModuleLicenseRegistrar(ModuleType.CET, CETLicenseObjectMapper.class, CETLocalClient.class));
     registrar.put(
-            ModuleType.SEI, new ModuleLicenseRegistrar(ModuleType.SEI, SEILicenseObjectMapper.class, SEILocalClient.class));
+        ModuleType.SEI, new ModuleLicenseRegistrar(ModuleType.SEI, SEILicenseObjectMapper.class, SEILocalClient.class));
   }
 
   public static Class<? extends LicenseObjectMapper> getLicenseObjectMapper(ModuleType moduleType) {

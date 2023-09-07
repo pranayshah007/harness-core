@@ -190,8 +190,8 @@ public class ModuleLicenseSummaryHelper {
           SEIModuleLicenseDTO temp = (SEIModuleLicenseDTO) moduleLicenseDTO;
           SEILicenseSummaryDTO seiLicenseSummaryDTO = (SEILicenseSummaryDTO) summaryDTO;
           if (current < temp.getExpiryTime() && temp.getNumberOfContributors() != null) {
-            seiLicenseSummaryDTO.setNumberOfContributors(
-                      ModuleLicenseUtils.computeAdd(seiLicenseSummaryDTO.getNumberOfContributors(), temp.getNumberOfContributors()));
+            seiLicenseSummaryDTO.setNumberOfContributors(ModuleLicenseUtils.computeAdd(
+                seiLicenseSummaryDTO.getNumberOfContributors(), temp.getNumberOfContributors()));
           }
         };
         break;
