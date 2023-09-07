@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 34
+version: 35
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -121,8 +121,6 @@ resourceTypes:
     permissionKey: setting
   - identifier: DEPLOYMENTFREEZE
     permissionKey: deploymentfreeze
-  - identifier: IAC_STACK
-    permissionKey: stack
   - identifier: STREAMING_DESTINATION
     permissionKey: streamingDestination
   - identifier: DOWNTIME
@@ -141,3 +139,5 @@ resourceTypes:
     permissionKey: token
   - identifier:  CET_CRITICAL_EVENT
     permissionKey: criticalevent
+  - identifier: IAC_WORKSPACE
+    permissionKey: workspace
