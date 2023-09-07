@@ -377,7 +377,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .as(CLUSTER_IDENTIFIER);
 
     return secondaryMongoTemplate.aggregate(
-        newAggregation(sortOperation, matchStage, projectionOperation, groupOperation, projectionOperation2),
+        newAggregation(matchStage, sortOperation, projectionOperation, groupOperation, projectionOperation2),
         INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfoWithEnvType.class);
   }
 
@@ -488,7 +488,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                          .as(InstanceKeys.lastPipelineExecutionName)
                          .first(InstanceKeys.lastPipelineExecutionId)
                          .as(InstanceKeys.lastPipelineExecutionId);
-    return mongoTemplate.aggregate(newAggregation(sortOperation, matchOperation, projectionOperation, groupOperation),
+    return mongoTemplate.aggregate(newAggregation(matchOperation, sortOperation, projectionOperation, groupOperation),
         INSTANCE_NG_COLLECTION, ArtifactDeploymentDetailModel.class);
   }
 
@@ -607,7 +607,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                .push(Aggregation.ROOT)
                                .as(InstanceSyncConstants.INSTANCES);
 
-    return secondaryMongoTemplate.aggregate(newAggregation(sortOperation, matchOperation, group),
+    return secondaryMongoTemplate.aggregate(newAggregation(matchOperation, sortOperation, group),
         INSTANCE_NG_COLLECTION, InstanceGroupedByPipelineExecution.class);
   }
 
