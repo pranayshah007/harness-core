@@ -197,6 +197,7 @@ ciExecutionServiceConfig:
     accessKey: "access_key"
     secretKey: "secret_key"
     region: "region"
+    projectId: "project_id"
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false

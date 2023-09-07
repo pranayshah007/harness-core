@@ -7,10 +7,13 @@
 
 package io.harness.ci.cache;
 
-import io.harness.beans.cache.api.CacheMetadataInfo;
-import io.harness.beans.cache.api.DeleteCacheResponse;
+import io.harness.beans.cache.api.CacheMetadataDetail;
+import io.harness.ci.config.CIDockerLayerCachingConfig;
 
-public interface CICacheManagementService {
-  CacheMetadataInfo getCacheMetadata(String accountId);
-  DeleteCacheResponse deleteCache(String accountId, String path, String cacheType);
+import java.util.List;
+
+public interface DlcCacheManager {
+  CIDockerLayerCachingConfig getCacheConfig(String accountId);
+  List<CacheMetadataDetail> getCacheMetadata(String accountId);
+  List<CacheMetadataDetail> deleteCache(String accountId);
 }

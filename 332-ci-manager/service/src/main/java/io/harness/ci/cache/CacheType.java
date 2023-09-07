@@ -7,10 +7,16 @@
 
 package io.harness.ci.cache;
 
-import io.harness.beans.cache.api.CacheMetadataInfo;
-import io.harness.beans.cache.api.DeleteCacheResponse;
+public enum CacheType {
+  CACHE_INTELLIGENCE("cache_intelligence"),
+  DLC("dlc");
 
-public interface CICacheManagementService {
-  CacheMetadataInfo getCacheMetadata(String accountId);
-  DeleteCacheResponse deleteCache(String accountId, String path, String cacheType);
+  private final String name;
+  CacheType(String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    return this.name;
+  }
 }
