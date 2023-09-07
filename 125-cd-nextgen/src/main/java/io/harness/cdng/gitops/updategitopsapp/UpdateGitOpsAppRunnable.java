@@ -13,23 +13,20 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.gitops.GitOpsStepUtils;
-import io.harness.cdng.gitops.syncstep.AgentApplicationTargets;
 import io.harness.cdng.gitops.syncstep.EnvironmentClusterListing;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationResource;
+import io.harness.gitops.models.ApplicationResource.ApplicationSpec;
+import io.harness.gitops.models.ApplicationResource.HelmSource;
+import io.harness.gitops.models.ApplicationResource.HelmSourceFileParameters;
+import io.harness.gitops.models.ApplicationResource.HelmSourceParameters;
+import io.harness.gitops.models.ApplicationResource.KustomizeSource;
+import io.harness.gitops.models.ApplicationResource.Replicas;
+import io.harness.gitops.models.ApplicationResource.Source;
 import io.harness.gitops.models.ApplicationUpdateRequest;
-import io.harness.gitops.models.ApplicationUpdateRequest.AppDestination;
-import io.harness.gitops.models.ApplicationUpdateRequest.AppDestination.AppDestinationBuilder;
-import io.harness.gitops.models.ApplicationUpdateRequest.AppSource;
-import io.harness.gitops.models.ApplicationUpdateRequest.AppSource.AppSourceBuilder;
 import io.harness.gitops.models.ApplicationUpdateRequest.Application.ApplicationBuilder;
-import io.harness.gitops.models.ApplicationUpdateRequest.ApplicationSpec;
-import io.harness.gitops.models.ApplicationUpdateRequest.ApplicationSpec.ApplicationSpecBuilder;
-import io.harness.gitops.models.ApplicationUpdateRequest.HelmSource;
-import io.harness.gitops.models.ApplicationUpdateRequest.HelmSource.HelmSourceBuilder;
-import io.harness.gitops.models.ApplicationUpdateRequest.HelmSourceParameters;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.logging.LogCallback;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -115,6 +112,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
       if (fetchedApplicationFromGitOps == null
           || !isApplicationValidForUpdate(fetchedApplicationFromGitOps, serviceIdsInPipelineExecution,
               envIdsInPipelineExecution, clusterIdsInPipelineExecution, logger)) {
+        notifyResponse(applicationToBeUpdated, false, logger);
         waitNotifyEngine.doneWith(taskId, UpdateGitOpsAppResponse.builder().build());
         GitOpsStepUtils.closeLogStream(ambiance, logStreamingStepClientFactory);
         return;
@@ -137,15 +135,10 @@ public class UpdateGitOpsAppRunnable implements Runnable {
   }
 
   private Application getApplicationToBeUpdated(UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters) {
-    AgentApplicationTargets agentApplicationTargetToBeUpdated =
-        updateGitOpsAppsStepParameters.getApplication().getValue();
-    if (agentApplicationTargetToBeUpdated != null) {
-      return Application.builder()
-          .agentIdentifier(agentApplicationTargetToBeUpdated.getAgentId().getValue())
-          .name(agentApplicationTargetToBeUpdated.getApplicationName().getValue())
-          .build();
-    }
-    return null;
+    return Application.builder()
+        .agentIdentifier(updateGitOpsAppsStepParameters.getAgentId().getValue())
+        .name(updateGitOpsAppsStepParameters.getApplicationName().getValue())
+        .build();
   }
 
   private ApplicationResource getApplication(
@@ -224,41 +217,128 @@ public class UpdateGitOpsAppRunnable implements Runnable {
 
   public static ApplicationUpdateRequest getUpdateRequest(
       ApplicationResource application, UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters) {
-    HelmSourceBuilder helmSourceBuilder = HelmSource.builder();
-    if (updateGitOpsAppsStepParameters.getHelmValueFiles() != null) {
-      helmSourceBuilder.valueFiles(updateGitOpsAppsStepParameters.getHelmValueFiles().getValue());
-    }
-    if (updateGitOpsAppsStepParameters.getHelmParameters() != null) {
-      List<HelmSourceParameters> helmSourceParametersList = new ArrayList<>();
-      for (UpdateGitOpsAppHelmParams updateGitOpsAppHelmParams :
-          updateGitOpsAppsStepParameters.getHelmParameters().getValue()) {
-        helmSourceParametersList.add(HelmSourceParameters.builder()
-                                         .name(updateGitOpsAppHelmParams.getHelmParamName().getValue())
-                                         .value(updateGitOpsAppHelmParams.getHelmParamValue().getValue())
-                                         .build());
-      }
-      helmSourceBuilder.parameters(helmSourceParametersList);
-    }
+    ApplicationSpec applicationSpec = application.getApp().getSpec();
 
-    //    KustomizeSourceBuilder kustomizeSourceBuilder = KustomizeSource.builder();
+    populateUpdateValues(applicationSpec, updateGitOpsAppsStepParameters);
 
-    AppSourceBuilder appSourceBuilder = AppSource.builder();
-    appSourceBuilder.helmSource(helmSourceBuilder.build());
-    //    appSourceBuilder.kustomizeSource(kustomizeSourceBuilder.build());
-
-    AppDestinationBuilder appDestinationBuilder = AppDestination.builder();
-    appDestinationBuilder.clusterURL(application.getApp().getSpec().getDestination().getServer());
-    appDestinationBuilder.namespace(application.getApp().getSpec().getDestination().getNamespace());
-
-    ApplicationSpecBuilder applicationSpecBuilder = ApplicationSpec.builder();
-    applicationSpecBuilder.project(application.getApp().getSpec().getProject());
-    applicationSpecBuilder.applicationSource(appSourceBuilder.build());
-    applicationSpecBuilder.applicationDestination(appDestinationBuilder.build());
-
-    ApplicationBuilder applicationBuilder = ApplicationUpdateRequest.Application.builder();
-    applicationBuilder.applicationSpec(applicationSpecBuilder.build());
+    ApplicationBuilder applicationBuilder =
+        ApplicationUpdateRequest.Application.builder().applicationSpec(applicationSpec);
 
     return ApplicationUpdateRequest.builder().application(applicationBuilder.build()).build();
+  }
+
+  private static void populateUpdateValues(
+      ApplicationSpec applicationSpec, UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters) {
+    Source source = applicationSpec.getSource();
+
+    if (updateGitOpsAppsStepParameters.getTargetRevision().getValue() != null) {
+      source.setTargetRevision(updateGitOpsAppsStepParameters.getTargetRevision().getValue());
+    }
+
+    if (updateGitOpsAppsStepParameters.getHelm().getValue() != null) {
+      HelmValues pmsHelmValues = updateGitOpsAppsStepParameters.getHelm().getValue();
+      populateHelmValues(source, pmsHelmValues);
+    }
+
+    if (updateGitOpsAppsStepParameters.getKustomize().getValue() != null) {
+      KustomizeValues pmsKustomizeValues = updateGitOpsAppsStepParameters.getKustomize().getValue();
+      populateKustomizeValues(source, pmsKustomizeValues);
+    }
+
+    applicationSpec.setSource(source);
+  }
+
+  private static void populateHelmValues(Source source, HelmValues pmsHelmValues) {
+    HelmSource helmSource = source.getHelm();
+    /*
+    Merging logic example -
+    existing helm parameters ->
+        {
+          "replicas": "0",
+          "ingress.annotations.kubernetes\\.io/tls-acme": "true"
+        }
+     input helm parameters ->
+        {
+          "replicas": "2",
+          "config": "files/config.json"
+        }
+
+      final result ->
+        {
+          "replicas": "2",
+          "ingress.annotations.kubernetes\\.io/tls-acme": "true",
+          "config": "files/config.json"
+        }
+     */
+
+    if (pmsHelmValues.getParameters().getValue() != null) {
+      // merge
+      Map<String, String> mapOfHelmParams = new HashMap<>();
+      for (HelmSourceParameters helmSourceParameter : helmSource.getParameters()) {
+        mapOfHelmParams.put(helmSourceParameter.getName(), helmSourceParameter.getValue());
+      }
+      for (HelmParameters helmParameter : pmsHelmValues.getParameters().getValue()) {
+        mapOfHelmParams.put(helmParameter.getName().getValue(), helmParameter.getValue().getValue());
+      }
+
+      List<HelmSourceParameters> finalHelmSourceParameters = new ArrayList<>();
+      for (Map.Entry<String, String> helmParam : mapOfHelmParams.entrySet()) {
+        finalHelmSourceParameters.add(HelmSourceParameters.builder()
+                                          .name(helmParam.getKey())
+                                          .value(helmParam.getValue())
+                                          .forceString(true)
+                                          .build());
+      }
+
+      helmSource.setParameters(finalHelmSourceParameters);
+    }
+
+    if (pmsHelmValues.getFileParameters().getValue() != null) {
+      // merge
+      Map<String, String> mapOfHelmFileParams = new HashMap<>();
+      for (HelmSourceFileParameters helmSourceFileParameter : helmSource.getFileParameters()) {
+        mapOfHelmFileParams.put(helmSourceFileParameter.getName(), helmSourceFileParameter.getPath());
+      }
+      for (HelmFileParameters helmFileParameter : pmsHelmValues.getFileParameters().getValue()) {
+        mapOfHelmFileParams.put(helmFileParameter.getName().getValue(), helmFileParameter.getPath().getValue());
+      }
+
+      List<HelmSourceFileParameters> finalHelmSourceFileParameters = new ArrayList<>();
+      for (Map.Entry<String, String> helmFileParam : mapOfHelmFileParams.entrySet()) {
+        finalHelmSourceFileParameters.add(
+            HelmSourceFileParameters.builder().name(helmFileParam.getKey()).path(helmFileParam.getValue()).build());
+      }
+
+      helmSource.setFileParameters(finalHelmSourceFileParameters);
+    }
+
+    if (pmsHelmValues.getValueFiles().getValue() != null) {
+      helmSource.setValueFiles(pmsHelmValues.getValueFiles().getValue());
+    }
+
+    source.setHelm(helmSource);
+  }
+
+  private static void populateKustomizeValues(Source source, KustomizeValues pmsKustomizeValues) {
+    KustomizeSource kustomizeSource = source.getKustomize();
+    if (pmsKustomizeValues.getImages().getValue() != null) {
+      kustomizeSource.setImages(pmsKustomizeValues.getImages().getValue());
+    }
+    if (pmsKustomizeValues.getNamespace().getValue() != null) {
+      kustomizeSource.setNamespace(pmsKustomizeValues.getNamespace().getValue());
+    }
+    if (pmsKustomizeValues.getReplicas().getValue() != null) {
+      List<Replicas> replicasList = new ArrayList<>();
+      for (KustomizeReplicas kustomizeReplicas : pmsKustomizeValues.getReplicas().getValue()) {
+        Replicas replica = Replicas.builder()
+                               .name(kustomizeReplicas.getName().getValue())
+                               .count(kustomizeReplicas.getCount().getValue())
+                               .build();
+        replicasList.add(replica);
+      }
+      kustomizeSource.setReplicas(replicasList);
+    }
+    source.setKustomize(kustomizeSource);
   }
 
   private void notifyResponse(Application application, boolean pass, LogCallback logger) {

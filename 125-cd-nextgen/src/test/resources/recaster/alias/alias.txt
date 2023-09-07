@@ -1084,7 +1084,11 @@ io.harness.cdng.gitops.revertpr.RevertPRStepNode
 io.harness.cdng.gitops.revertpr.RevertPRStepParameters
 io.harness.cdng.gitops.revertpr.RevertPROutcome
 io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepParameters
-io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppHelmParams
+io.harness.cdng.gitops.updategitopsapp.HelmValues
+io.harness.cdng.gitops.updategitopsapp.KustomizeReplicas
+io.harness.cdng.gitops.updategitopsapp.HelmFileParameters
+io.harness.cdng.gitops.updategitopsapp.KustomizeValues
+io.harness.cdng.gitops.updategitopsapp.HelmParameters
 io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepInfo
 io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode
 io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepParameters

@@ -22,17 +22,17 @@ import lombok.Data;
 
 @Data
 @Builder
-@RecasterAlias("io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppHelmParams")
-public class UpdateGitOpsAppHelmParams {
+@RecasterAlias("io.harness.cdng.gitops.updategitopsapp.KustomizeReplicas")
+public class KustomizeReplicas {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @NotNull
   @JsonProperty("name")
-  public ParameterField<String> helmParamName;
+  public ParameterField<String> name;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @NotNull
-  @JsonProperty("value")
-  public ParameterField<String> helmParamValue;
+  @JsonProperty("count")
+  public ParameterField<String> count;
 }
