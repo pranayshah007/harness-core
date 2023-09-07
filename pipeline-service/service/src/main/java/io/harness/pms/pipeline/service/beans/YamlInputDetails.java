@@ -7,8 +7,6 @@
 
 package io.harness.pms.pipeline.service.beans;
 
-import io.harness.pms.yaml.InputDetails;
-
 import lombok.Builder;
 import lombok.Data;
 
