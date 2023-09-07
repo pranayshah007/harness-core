@@ -214,7 +214,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         Thread.currentThread().interrupt();
         break;
       } catch (Throwable exception) {
-        log.error("Exception occurred while processing iterator", exception);
+        log.debug("Exception occurred while processing iterator", exception);
         iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         sleep(ofSeconds(1));
       }
@@ -274,11 +274,11 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         try {
           handler.handle(entity);
         } catch (RuntimeException exception) {
-          log.error("Catch and handle all exceptions in the entity handler", exception);
+          log.debug("Catch and handle all exceptions in the entity handler");
           iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         }
       } catch (Throwable exception) {
-        log.error("Exception while processing entity", exception);
+        log.debug("Exception while processing entity", exception);
         iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
       } finally {
         semaphore.release();
@@ -447,7 +447,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         // Work on this entity.
         handler.handle(entity);
       } catch (Exception exception) {
-        log.error("Catch and handle all exceptions in the entity handler", exception);
+        log.debug("Catch and handle all exceptions in the entity handler", exception);
         iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
       } finally {
         semaphore.release();
@@ -576,7 +576,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         log.debug("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
       }
     } catch (Exception exception) {
-      log.error("Exception while recording the processing of entity", exception);
+      log.debug("Exception while recording the processing of entity", exception);
       iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
     }
   }
