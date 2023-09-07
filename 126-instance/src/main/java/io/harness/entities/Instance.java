@@ -224,6 +224,7 @@ public class Instance {
     public static final String instanceInfoPodName = "instanceInfo.podName";
     public static final String instanceInfoNamespace = "instanceInfo.namespace";
     public static final String instanceInfoClusterIdentifier = "instanceInfo.clusterIdentifier";
+    public static final String instanceInfoHelmChartVersion = "instanceInfo.helmChartInfo.version";
     public static final String instanceInfoAgentIdentifier = "instanceInfo.agentIdentifier";
   }
 }
