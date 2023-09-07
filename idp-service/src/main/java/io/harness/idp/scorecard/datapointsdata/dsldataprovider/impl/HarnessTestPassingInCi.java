@@ -9,6 +9,7 @@ package io.harness.idp.scorecard.datapointsdata.dsldataprovider.impl;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.tiserviceclient.TIServiceClient;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory.PipelineTestSummaryReportResponseFactory;
@@ -23,6 +24,8 @@ import io.harness.spec.server.idp.v1.model.DataSourceDataPointInfo;
 
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,8 @@ public class HarnessTestPassingInCi implements DslDataProvider {
   private PipelineTestSummaryReportResponseFactory pipelineTestSummaryReportResponseFactory;
   private static final String JUNIT_REPORT = "junit";
 
+  @Inject @Named("tiServiceConfig") TIServiceConfig tiServiceConfig;
+
   @Override
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
     Map<String, Object> returnData = new HashMap<>();
@@ -48,8 +53,17 @@ public class HarnessTestPassingInCi implements DslDataProvider {
     log.info("HarnessTestPassingInCi DSL invoked for account - {} datapoints - {}", accountIdentifier,
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());
 
-    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
-        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    String ciPipelineUrl = DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml());
+
+    Map<String, Object> errorMessageForMissingNewAnnotations =
+        DslUtils.checkAndGetMissingNewAnnotationErrorMessage(ciPipelineUrl, true, null, false, dataSourceDataPointInfo);
+    if (errorMessageForMissingNewAnnotations != null) {
+      returnData.putAll(errorMessageForMissingNewAnnotations);
+      return returnData;
+    }
+
+    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(ciPipelineUrl);
+    log.info("CI Pipeline Identifiers - {}", ciIdentifiers);
     Object responseCI = null;
 
     try {
@@ -68,8 +82,7 @@ public class HarnessTestPassingInCi implements DslDataProvider {
               ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
           e);
     }
-    log.info("CI Response in HarnessTestPassingInCi - {}, CI Pipeline url - {}", responseCI,
-        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    log.info("CI Response in HarnessTestPassingInCi - {}, CI Pipeline url - {}", responseCI, ciPipelineUrl);
 
     int buildNo = DslDataProviderUtil.getRunSequenceForPipelineExecution(responseCI);
     log.info("Build no - {} in HarnessTestPassingInCi", buildNo);
@@ -85,17 +98,19 @@ public class HarnessTestPassingInCi implements DslDataProvider {
           e);
     }
 
-    String accessToken = "ApiKey " + token;
     Call<JsonObject> summaryReportCall =
-        tiServiceClient.getSummaryReport(accessToken, ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+        tiServiceClient.getSummaryReport(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
             ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
             ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY), buildNo, JUNIT_REPORT, null, null);
+            ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY), buildNo, JUNIT_REPORT, null, null, token);
 
     Response<JsonObject> response = null;
     JsonObject summaryReport = null;
     try {
       response = summaryReportCall.execute();
+      if (!response.isSuccessful()) {
+        log.info(response.errorBody().string());
+      }
       summaryReport = response.body();
     } catch (Exception e) {
       log.error(
@@ -107,6 +122,7 @@ public class HarnessTestPassingInCi implements DslDataProvider {
               ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
           e);
     }
+    log.info("Summary Report execute response - {}", response);
     log.info("Summary Report in HarnessTestPassingInCi - {}", summaryReport);
 
     List<DataPointInputValues> dataPointInputValuesList =
@@ -115,8 +131,7 @@ public class HarnessTestPassingInCi implements DslDataProvider {
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
       returnData.putAll(pipelineTestSummaryReportResponseFactory.getResponseParser(dataPointIdentifier)
-                            .getParsedValue(summaryReport, dataPointIdentifier,
-                                DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml())));
+                            .getParsedValue(summaryReport, dataPointIdentifier, ciPipelineUrl));
     }
     log.info("Return data in HarnessTestPassingInCi - {}", returnData);
 

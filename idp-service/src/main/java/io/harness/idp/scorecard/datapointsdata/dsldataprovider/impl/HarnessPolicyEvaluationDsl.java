@@ -40,9 +40,20 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
     log.info("HarnessPolicyEvaluationDsl DSL invoked for account - {} datapoints - {}", accountIdentifier,
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());
 
+    String ciPipelineUrl = DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml());
+    String serviceUrl = DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml());
+
+    Map<String, Object> returnData = new HashMap<>();
+
+    Map<String, Object> errorMessageForMissingNewAnnotations = DslUtils.checkAndGetMissingNewAnnotationErrorMessage(
+        ciPipelineUrl, true, serviceUrl, true, dataSourceDataPointInfo);
+    if (errorMessageForMissingNewAnnotations != null) {
+      returnData.putAll(errorMessageForMissingNewAnnotations);
+      return returnData;
+    }
+
     // ci pipeline detail
-    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
-        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(ciPipelineUrl);
 
     Object responseCI = null;
     try {
@@ -61,14 +72,11 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
               ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
           e);
     }
-    log.info("CI response in HarnessPolicyEvaluationDsl - {}, CI Pipeline Url - {}", responseCI,
-        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    log.info("CI response in HarnessPolicyEvaluationDsl - {}, CI Pipeline Url - {}", responseCI, ciPipelineUrl);
 
     // cd pipeline detail
-    Map<String, String> serviceIdentifiers = DslUtils.getCdServiceUrlIdentifiers(
-        DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
-    log.info("Service Url in HarnessPolicyEvaluationDsl : {}",
-        DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    Map<String, String> serviceIdentifiers = DslUtils.getCdServiceUrlIdentifiers(serviceUrl);
+    log.info("Service Url in HarnessPolicyEvaluationDsl : {}", serviceUrl);
     log.info("Service identifiers in HarnessPolicyEvaluationDsl - {}", serviceIdentifiers);
 
     long currentTime = System.currentTimeMillis();
@@ -125,13 +133,10 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
 
-    Map<String, Object> returnData = new HashMap<>();
-
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
       returnData.putAll(pipelineExecutionResponseFactory.getResponseParser(dataPointIdentifier)
-                            .getParsedValue(responseCI, responseCD, dataPointIdentifier,
-                                DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()),
+                            .getParsedValue(responseCI, responseCD, dataPointIdentifier, ciPipelineUrl,
                                 DslDataProviderUtil.getCdPipelineFromIdentifiers(serviceIdentifiers, cdPipelineId)));
     }
     log.info("Return data in HarnessPolicyEvaluationDsl - {}", returnData);
