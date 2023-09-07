@@ -520,7 +520,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   private void registerNotificationTemplates(Injector injector) {
     ExecutorService executorService =
-
         injector.getInstance(Key.get(ExecutorService.class, Names.named("freezeTemplateRegistrationExecutorService")));
     executorService.submit(injector.getInstance(FreezeNotificationTemplateRegistrar.class));
   }
