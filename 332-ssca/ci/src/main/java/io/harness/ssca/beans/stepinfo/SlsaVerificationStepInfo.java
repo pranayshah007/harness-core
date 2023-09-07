@@ -7,6 +7,7 @@
 
 package io.harness.ssca.beans.stepinfo;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
@@ -38,6 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("SlsaVerificationStepInfo")
 @NoArgsConstructor
 @AllArgsConstructor
+@RecasterAlias("io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo")
 public class SlsaVerificationStepInfo implements PluginCompatibleStep {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
