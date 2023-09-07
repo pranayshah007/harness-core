@@ -50,6 +50,7 @@
       {
         "data_source_identifier": "github",
         "data_point_identifier": "isBranchProtected",
+        "conditional_input_value": "\"refs/\"",
         "operator": "==",
         "value": "true"
       }
