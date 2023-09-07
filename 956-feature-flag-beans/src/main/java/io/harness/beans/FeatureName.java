@@ -874,7 +874,9 @@ public enum FeatureName {
   CDS_SERVICE_GITX("Onboard Service entity to GitX", HarnessTeam.CDC),
   CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC),
   CDS_ECS_BG_GREEN_SERVICE_ROLLBACK(
-      "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP);
+      "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP),
+  CD_CONTAINER_STEP_DELEGATE_SELECTOR(
+      "FF to respect stage/pipeline delegate selectors for container step", HarnessTeam.CDC);
   // keep-sorted end
 
   @Deprecated
