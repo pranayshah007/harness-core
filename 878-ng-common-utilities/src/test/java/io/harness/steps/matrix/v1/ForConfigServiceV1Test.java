@@ -16,7 +16,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.strategy.v1.StrategyConfigV1;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -55,7 +58,15 @@ public class ForConfigServiceV1Test extends CategoryTest {
     YamlField strategyField = StageYamlField.getNode().getField("strategy");
     StrategyConfigV1 strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfigV1.class);
 
-    List<ChildrenExecutableResponse.Child> children = forConfigServiceV1.fetchChildren(strategyConfig, "childNodeId");
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .putSettingToValueMap(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.name(), "false")
+                    .build())
+            .build();
+    List<ChildrenExecutableResponse.Child> children =
+        forConfigServiceV1.fetchChildren(strategyConfig, "childNodeId", ambiance);
     assertThat(children.size()).isEqualTo(3);
   }
 }

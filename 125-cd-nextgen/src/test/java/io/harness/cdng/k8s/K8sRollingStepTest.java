@@ -30,6 +30,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
@@ -41,6 +42,7 @@ import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
@@ -187,12 +189,13 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
   public void testOutcomesInResponse() {
     K8sRollingStepParameters stepParameters = new K8sRollingStepParameters();
     final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
-
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("todolist").version("0.2.0").build();
     K8sDeployResponse k8sDeployResponse = K8sDeployResponse.builder()
                                               .k8sNGTaskResponse(K8sRollingDeployResponse.builder()
                                                                      .k8sPodList(Collections.emptyList())
                                                                      .previousK8sPodList(Collections.emptyList())
                                                                      .releaseNumber(1)
+                                                                     .helmChartInfo(helmChartInfo)
                                                                      .build())
                                               .commandUnitsProgress(UnitProgressData.builder().build())
                                               .commandExecutionStatus(SUCCESS)
@@ -202,12 +205,14 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
                                                .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
                                                .outcome(DeploymentInfoOutcome.builder().build())
                                                .build();
+    ReleaseHelmChartOutcome releaseHelmChartOutcome =
+        ReleaseHelmChartOutcome.builder().name(helmChartInfo.getName()).version(helmChartInfo.getVersion()).build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
-
+    doReturn(releaseHelmChartOutcome).when(k8sStepHelper).getHelmChartOutcome(eq(helmChartInfo));
     StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
-    assertThat(response.getStepOutcomes()).hasSize(2);
+    assertThat(response.getStepOutcomes()).hasSize(3);
 
     StepOutcome outcome = response.getStepOutcomes().stream().collect(Collectors.toList()).get(0);
     assertThat(outcome.getOutcome()).isInstanceOf(K8sRollingOutcome.class);
@@ -217,6 +222,13 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
     StepOutcome deploymentInfoOutcome = new ArrayList<>(response.getStepOutcomes()).get(1);
     assertThat(deploymentInfoOutcome.getOutcome()).isInstanceOf(DeploymentInfoOutcome.class);
     assertThat(deploymentInfoOutcome.getName()).isEqualTo(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME);
+
+    StepOutcome helmChartOutcome = new ArrayList<>(response.getStepOutcomes()).get(2);
+    assertThat(helmChartOutcome.getOutcome()).isInstanceOf(ReleaseHelmChartOutcome.class);
+    assertThat(helmChartOutcome.getName()).isEqualTo(OutcomeExpressionConstants.RELEASE_HELM_CHART_OUTCOME);
+    assertThat(((ReleaseHelmChartOutcome) helmChartOutcome.getOutcome()).getName()).isEqualTo(helmChartInfo.getName());
+    assertThat(((ReleaseHelmChartOutcome) helmChartOutcome.getOutcome()).getVersion())
+        .isEqualTo(helmChartInfo.getVersion());
 
     ArgumentCaptor<K8sRollingOutcome> argumentCaptor = ArgumentCaptor.forClass(K8sRollingOutcome.class);
     verify(executionSweepingOutputService, times(1))

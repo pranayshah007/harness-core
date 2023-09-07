@@ -30,6 +30,7 @@ import io.harness.beans.FileReference;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.HelmSpecParameters;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.k8s.K8sApplyStepParameters;
 import io.harness.cdng.k8s.K8sEntityHelper;
@@ -68,6 +69,7 @@ import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
@@ -132,6 +134,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
@@ -1066,5 +1069,18 @@ public class K8sHelmCommonStepHelper {
       serviceHooks.add(serviceHook);
     });
     return serviceHooks;
+  }
+
+  public ReleaseHelmChartOutcome getHelmChartOutcome(HelmChartInfo helmChartInfo) {
+    ReleaseHelmChartOutcome releaseHelmChartOutcome = null;
+    if (ObjectUtils.isNotEmpty(helmChartInfo)) {
+      releaseHelmChartOutcome = ReleaseHelmChartOutcome.builder()
+                                    .name(helmChartInfo.getName())
+                                    .subChartPath(helmChartInfo.getSubChartPath())
+                                    .repoUrl(helmChartInfo.getRepoUrl())
+                                    .version(helmChartInfo.getVersion())
+                                    .build();
+    }
+    return releaseHelmChartOutcome;
   }
 }

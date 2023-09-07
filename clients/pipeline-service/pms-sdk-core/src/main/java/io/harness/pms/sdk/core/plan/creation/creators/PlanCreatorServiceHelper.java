@@ -44,7 +44,8 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class PlanCreatorServiceHelper {
-  private static final List<String> parentInfoKeysList = List.of(PlanCreatorConstants.YAML_VERSION);
+  private static final List<String> parentInfoKeysList = List.of(PlanCreatorConstants.YAML_VERSION,
+      PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES);
   public Optional<PartialPlanCreator<?>> findPlanCreator(
       List<PartialPlanCreator<?>> planCreators, YamlField field, String yamlVersion) {
     return planCreators.stream()

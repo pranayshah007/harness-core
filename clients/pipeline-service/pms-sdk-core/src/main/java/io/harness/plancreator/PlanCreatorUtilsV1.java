@@ -14,6 +14,9 @@ import io.harness.advisers.manualIntervention.ManualInterventionAdviserWithRollb
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
+import io.harness.advisers.retry.ManualInterventionActionConfigPostRetry;
+import io.harness.advisers.retry.RetryAdviserRollbackParameters;
+import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -50,6 +53,7 @@ import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Duration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -114,7 +119,7 @@ public class PlanCreatorUtilsV1 {
   }
 
   public HarnessValue getNodeMetadataValueFromDependency(Dependency dependency, String key) {
-    if (dependency.getNodeMetadata() != null && isNotEmpty(dependency.getNodeMetadata().getDataMap())
+    if (isNotEmpty(dependency.getNodeMetadata().getDataMap())
         && dependency.getNodeMetadata().getDataMap().containsKey(key)) {
       return dependency.getNodeMetadata().getDataMap().get(key);
     }
@@ -139,20 +144,15 @@ public class PlanCreatorUtilsV1 {
         return Optional.of(harnessValue.getStringValue());
       }
       if (harnessValue.hasBytesValue()) {
-        if (asInflatedObject) {
-          return Optional.of(kryoSerializer.asInflatedObject(harnessValue.getBytesValue().toByteArray()));
+        ByteString bytes = harnessValue.getBytesValue();
+        Optional<Object> objectOptional = getObjectFromBytes(bytes, kryoSerializer, asInflatedObject);
+        if (objectOptional.isPresent()) {
+          return objectOptional;
         }
-        return Optional.of(kryoSerializer.asObject(harnessValue.getBytesValue().toByteArray()));
       }
     }
     ByteString bytes = getMetadataValueFromDependency(dependency, key);
-    if (bytes != null) {
-      if (asInflatedObject) {
-        return Optional.of(kryoSerializer.asInflatedObject(bytes.toByteArray()));
-      }
-      return Optional.of(kryoSerializer.asObject(bytes.toByteArray()));
-    }
-    return Optional.empty();
+    return getObjectFromBytes(bytes, kryoSerializer, asInflatedObject);
   }
 
   public RepairActionCode toRepairAction(FailureConfigV1 action) {
@@ -192,24 +192,90 @@ public class PlanCreatorUtilsV1 {
         .build();
   }
 
+  // TODO: (shalini): set strategyToUuid map in RetryAdviserRollbackParameters used in stage rollback
+  private AdviserObtainment getRetryAdviserObtainment(KryoSerializer kryoSerializer, Set<FailureType> failureTypes,
+      String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureConfigV1 retryAction,
+      ParameterField<Integer> retryCount, FailureConfigV1 actionUnderRetry) {
+    return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
+        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            RetryAdviserRollbackParameters.builder()
+                .applicableFailureTypes(failureTypes)
+                .nextNodeId(nextNodeUuid)
+                .repairActionCodeAfterRetry(toRepairAction(actionUnderRetry))
+                .actionConfigPostRetry(getManualInterventionActionConfigPostRetry(actionUnderRetry))
+                .retryCount(retryCount.getValue())
+                .waitIntervalList(retryAction.getSpec()
+                                      .getIntervals()
+                                      .getValue()
+                                      .stream()
+                                      .map(s -> (int) TimeoutUtils.getTimeoutInSeconds(s, 0))
+                                      .collect(Collectors.toList()))
+                .build())))
+        .build();
+  }
+
+  private ManualInterventionActionConfigPostRetry getManualInterventionActionConfigPostRetry(
+      FailureConfigV1 actionUnderRetry) {
+    if (actionUnderRetry instanceof ManualInterventionFailureConfigV1) {
+      ManualInterventionFailureConfigV1 manualInterventionFailureConfigV1 =
+          (ManualInterventionFailureConfigV1) actionUnderRetry;
+      return ManualInterventionActionConfigPostRetry.builder()
+          .actionAfterManualInterventionTimeout(
+              toRepairAction(manualInterventionFailureConfigV1.getSpec().getTimeout_action()))
+          .timeoutInSeconds(TimeoutUtils.getTimeoutInSeconds(manualInterventionFailureConfigV1.getSpec().getTimeout(),
+              Duration.newBuilder().setSeconds(java.time.Duration.ofDays(1).toMinutes() * 60).getSeconds()))
+          .build();
+    }
+    return null;
+  }
+
   private List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer, Dependency dependency,
       YamlNode yamlNode, String nextNodeUuid, boolean isStepInsideRollback) {
     OnConfigV1 stepFailureStrategies = getFailureStrategies(yamlNode);
-    Optional<Object> stageFailureStrategiesOptional = getDeserializedObjectFromDependency(
-        dependency, kryoSerializer, PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, true);
+    OnConfigV1 stageFailureStrategies = getStageFailureStrategies(kryoSerializer, dependency);
+    OnConfigV1 stepGroupFailureStrategies = getStepGroupFailureStrategies(kryoSerializer, dependency);
+    Map<FailureConfigV1, Collection<FailureType>> actionMap = FailureStrategiesUtilsV1.priorityMergeFailureStrategies(
+        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
+    return getFailureStrategiesAdvisers(kryoSerializer, actionMap, isStepInsideRollback, nextNodeUuid);
+  }
+
+  Optional<Object> getDeserializedObjectFromParentInfo(
+      KryoSerializer kryoSerializer, Dependency dependency, String key, boolean asInflatedObject) {
+    if (dependency != null && dependency.getParentInfo().getDataMap().containsKey(key)) {
+      ByteString bytes = dependency.getParentInfo().getDataMap().get(key).getBytesValue();
+      return getObjectFromBytes(bytes, kryoSerializer, asInflatedObject);
+    }
+    return Optional.empty();
+  }
+
+  Optional<Object> getObjectFromBytes(ByteString bytes, KryoSerializer kryoSerializer, boolean asInflatedObject) {
+    if (isNotEmpty(bytes)) {
+      if (asInflatedObject) {
+        return Optional.of(kryoSerializer.asInflatedObject(bytes.toByteArray()));
+      }
+      return Optional.of(kryoSerializer.asObject(bytes.toByteArray()));
+    }
+    return Optional.empty();
+  }
+
+  OnConfigV1 getStageFailureStrategies(KryoSerializer kryoSerializer, Dependency dependency) {
+    Optional<Object> stageFailureStrategiesOptional = getDeserializedObjectFromParentInfo(
+        kryoSerializer, dependency, PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, true);
     OnConfigV1 stageFailureStrategies = null;
     if (stageFailureStrategiesOptional.isPresent()) {
       stageFailureStrategies = (OnConfigV1) stageFailureStrategiesOptional.get();
     }
-    Optional<Object> stepGroupFailureStrategiesOptional = getDeserializedObjectFromDependency(
-        dependency, kryoSerializer, PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES, true);
+    return stageFailureStrategies;
+  }
+
+  OnConfigV1 getStepGroupFailureStrategies(KryoSerializer kryoSerializer, Dependency dependency) {
+    Optional<Object> stepGroupFailureStrategiesOptional = getDeserializedObjectFromParentInfo(
+        kryoSerializer, dependency, PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES, true);
     OnConfigV1 stepGroupFailureStrategies = null;
     if (stepGroupFailureStrategiesOptional.isPresent()) {
       stepGroupFailureStrategies = (OnConfigV1) stepGroupFailureStrategiesOptional.get();
     }
-    Map<FailureConfigV1, Collection<FailureType>> actionMap = FailureStrategiesUtilsV1.priorityMergeFailureStrategies(
-        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
-    return getFailureStrategiesAdvisers(kryoSerializer, actionMap, isStepInsideRollback, nextNodeUuid);
+    return stepGroupFailureStrategies;
   }
 
   private List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer,
@@ -250,8 +316,8 @@ public class PlanCreatorUtilsV1 {
         FailureStrategiesUtilsV1.validateRetryFailureAction(retryAction);
         ParameterField<Integer> retryCount = retryAction.getSpec().getAttempts();
         FailureConfigV1 actionUnderRetry = retryAction.getSpec().getOn_failure();
-        // TODO(Shalini): Add method to get RetryAdviserObtainment and add it into adviserObtainmentList
-        break;
+        return getRetryAdviserObtainment(kryoSerializer, failureTypes, nextNodeUuid, adviserObtainmentBuilder,
+            retryAction, retryCount, actionUnderRetry);
       case MARK_AS_SUCCESS:
         return adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
             .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()

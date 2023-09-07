@@ -623,10 +623,6 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     if (isNull(manifestsOutcome)) {
       return;
     }
-    if (!featureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC)) {
-      return;
-    }
     try {
       List<ManifestSummary> manifestsSummary = mapManifestOutcomeToSummary(manifestsOutcome);
       if (isNotEmpty(manifestsSummary)) {

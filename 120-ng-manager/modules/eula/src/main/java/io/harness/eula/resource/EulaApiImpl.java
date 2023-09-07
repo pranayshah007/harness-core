@@ -7,6 +7,11 @@
 
 package io.harness.eula.resource;
 
+import static io.harness.ngsettings.SettingPermissions.SETTING_EDIT_PERMISSION;
+import static io.harness.ngsettings.SettingPermissions.SETTING_RESOURCE_TYPE;
+
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.eula.dto.EulaDTO;
 import io.harness.eula.service.EulaService;
 import io.harness.eula.utils.EulaResourceUtils;
@@ -29,7 +34,8 @@ public class EulaApiImpl implements EulaApi {
   private EulaResourceUtils eulaResourceUtils;
 
   @Override
-  public Response signEula(@Valid EulaSignRequest body, String harnessAccount) {
+  @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_EDIT_PERMISSION)
+  public Response signEula(@Valid EulaSignRequest body, @AccountIdentifier String harnessAccount) {
     EulaDTO eulaDTO = eulaResourceUtils.toEulaDTO(body, harnessAccount);
     boolean isSigned = eulaService.sign(eulaDTO);
     String responseMessage;

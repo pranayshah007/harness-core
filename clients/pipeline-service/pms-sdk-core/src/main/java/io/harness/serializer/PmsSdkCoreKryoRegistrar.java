@@ -13,6 +13,7 @@ import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackP
 import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
+import io.harness.advisers.retry.ManualInterventionActionConfigPostRetry;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
@@ -146,5 +147,6 @@ public class PmsSdkCoreKryoRegistrar implements KryoRegistrar {
     kryo.register(ManualFailureSpecConfigV1.class, 878049);
     kryo.register(RetryFailureSpecConfigV1.class, 878050);
     kryo.register(RetryStepGroupFailureSpecConfigV1.class, 878051);
+    kryo.register(ManualInterventionActionConfigPostRetry.class, 878052);
   }
 }

@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.jexl3.JexlException;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -42,7 +41,7 @@ public class GenericExpressionParser implements DataPointParser {
             "Could not find the required data by evaluating expression for data point {}", dataPoint.getIdentifier());
         dataPointResponse.put(ERROR_MESSAGE_KEY, "Missing Data");
       }
-    } catch (JexlException e) {
+    } catch (Exception e) {
       log.warn("Datapoint expression evaluation failed for data point {}", dataPoint.getIdentifier(), e);
       dataPointResponse.put(ERROR_MESSAGE_KEY, "Datapoint extraction expression evaluation failed");
     }

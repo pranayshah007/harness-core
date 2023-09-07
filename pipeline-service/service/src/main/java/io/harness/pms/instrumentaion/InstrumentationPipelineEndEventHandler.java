@@ -104,13 +104,13 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
       while (iterator.hasNext()) {
         NodeExecution currentNodeExecution = iterator.next();
 
-        String currentStepType = AmbianceUtils.getCurrentStepType(currentNodeExecution.getAmbiance()).getType();
+        String currentStepType = currentNodeExecution.getStepType().getType();
         if (allSdkSteps.contains(currentStepType)) {
           stepTypes.add(currentStepType);
           // If step is in broken status then only add to results
           if (StatusUtils.brokeStatuses().contains(currentNodeExecution.getStatus())) {
             // Add step identifier
-            failedSteps.add(AmbianceUtils.obtainCurrentLevel(currentNodeExecution.getAmbiance()).getIdentifier());
+            failedSteps.add(currentNodeExecution.getIdentifier());
             failedStepTypes.add(currentStepType);
           }
         }

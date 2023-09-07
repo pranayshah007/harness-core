@@ -27,7 +27,7 @@ public class DataSourceLocationFactory {
   private GithubMeanTimeToMergePRDsl githubMeanTimeToMergePRDsl;
   private GithubIsBranchProtectionSetDsl githubIsBranchProtectionSetDsl;
   private GithubFileExistsDsl githubFileExistsDsl;
-  private ProxyThroughDsl proxyThroughDsl;
+  private HarnessProxyThroughDsl harnessProxyThroughDsl;
   private NoOpDsl noOpDsl;
 
   public DataSourceLocation getDataSourceLocation(String identifier) {
@@ -45,7 +45,7 @@ public class DataSourceLocationFactory {
       case HARNESS_POLICY_EVALUATION_DSL:
       case HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS:
       case HARNESS_TEST_PASSING_ON_CI_IS_ZERO:
-        return proxyThroughDsl;
+        return harnessProxyThroughDsl;
 
       // Catalog
       case CATALOG:

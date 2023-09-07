@@ -43,7 +43,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import javax.ws.rs.BadRequestException;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -131,16 +130,11 @@ public class NextGenServiceImpl implements NextGenService {
       String accountIdentifier, String connectorIdentifier, String orgIdentifier, String projectIdentifier) {
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
-    ConnectorResponseDTO connectorResponse = null;
-    try {
-      connectorResponse =
-          requestExecutor
-              .execute(nextGenPrivilegedClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
-                  identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()))
-              .getData();
-    } catch (BadRequestException ex) {
-      log.warn(ex.getMessage());
-    }
+    ConnectorResponseDTO connectorResponse =
+        requestExecutor
+            .execute(nextGenPrivilegedClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
+                identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()))
+            .getData();
     return connectorResponse != null ? Optional.of(connectorResponse.getConnector()) : Optional.empty();
   }
 

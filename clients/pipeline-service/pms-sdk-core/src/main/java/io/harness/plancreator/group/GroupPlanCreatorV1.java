@@ -14,9 +14,13 @@ import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -33,8 +37,10 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.group.GroupStepParametersV1;
 import io.harness.steps.group.GroupStepV1;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
+import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,7 +68,7 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, YamlField config) {
     YamlNode specNode = config.getNode().getField(YAMLFieldNameConstants.SPEC).getNode();
-    YamlField childrenField = null;
+    YamlField childrenField;
     if (specNode.getField(YAMLFieldNameConstants.STAGES) != null) {
       childrenField = specNode.getField(YAMLFieldNameConstants.STAGES);
     } else {
@@ -73,9 +79,30 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     Map<String, YamlField> yamlFieldMap = new HashMap<>();
     yamlFieldMap.put(childrenField.getUuid(), childrenField);
     responseMap.put(childrenField.getUuid(),
-        PlanCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(yamlFieldMap)).build());
+        PlanCreationResponse.builder()
+            .dependencies(DependenciesUtils.toDependenciesProto(yamlFieldMap)
+                              .toBuilder()
+                              .putDependencyMetadata(childrenField.getUuid(), getDependencyForChildren(config))
+                              .build())
+            .build());
 
     return responseMap;
+  }
+
+  Dependency getDependencyForChildren(YamlField config) {
+    OnConfigV1 stepGroupFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(config.getNode());
+    if (stepGroupFailureStrategies != null) {
+      return Dependency.newBuilder()
+          .setParentInfo(HarnessStruct.newBuilder()
+                             .putData(PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES,
+                                 HarnessValue.newBuilder()
+                                     .setBytesValue(ByteString.copyFrom(
+                                         kryoSerializer.asDeflatedBytes(stepGroupFailureStrategies)))
+                                     .build())
+                             .build())
+          .build();
+    }
+    return Dependency.newBuilder().build();
   }
 
   @Override

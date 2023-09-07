@@ -35,4 +35,6 @@ if [[ -z "$FIX_OIP_VERSION_ID" ]]; then
   echo "fix version not found - aborting script"
   # shellcheck disable=SC2242
   exit -1
+else
+  echo "FIX_OIP_VERSION_ID=$FIX_OIP_VERSION_ID"
 fi

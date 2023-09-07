@@ -28,9 +28,4 @@ public class DeploymentStageStepParameters implements SpecParameters {
   public static DeploymentStageStepParameters getStepParameters(String childNodeID) {
     return DeploymentStageStepParameters.builder().childNodeID(childNodeID).build();
   }
-
-  @Override
-  public SpecParameters getViewJsonObject() {
-    return DeploymentStageStepParameters.builder().build();
-  }
 }

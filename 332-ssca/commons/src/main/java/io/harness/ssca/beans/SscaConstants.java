@@ -31,6 +31,9 @@ public interface SscaConstants {
   String SLSA_PROVENANCE = "provenance";
   String SLSA_PROVENANCE_NODE = "provenanceStepNode";
 
+  String SLSA_VERIFICATION = "SlsaVerification";
+  String SLSA_VERIFICATION_STEP_NODE = "SlsaVerificationStepNode";
+
   StepType SSCA_ORCHESTRATION_STEP_TYPE =
       StepType.newBuilder().setType(SSCA_ORCHESTRATION_STEP).setStepCategory(StepCategory.STEP).build();
 
@@ -44,4 +47,6 @@ public interface SscaConstants {
 
   StepType PROVENANCE_STEP_TYPE =
       StepType.newBuilder().setType(SLSA_PROVENANCE).setStepCategory(StepCategory.STEP).build();
+  StepType SLSA_VERIFICATION_STEP_TYPE =
+      StepType.newBuilder().setType(SLSA_VERIFICATION).setStepCategory(StepCategory.STEP).build();
 }

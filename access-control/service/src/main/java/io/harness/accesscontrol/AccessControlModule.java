@@ -24,7 +24,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.USERMEMBERSHIP;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 
 import io.harness.AccessControlClientModule;
 import io.harness.accesscontrol.acl.ResourceAttributeProvider;
@@ -188,7 +188,7 @@ public class AccessControlModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return config.getDistributedLockImplementation() == null ? MONGO : config.getDistributedLockImplementation();
+    return config.getDistributedLockImplementation() == null ? REDIS : config.getDistributedLockImplementation();
   }
 
   @Provides

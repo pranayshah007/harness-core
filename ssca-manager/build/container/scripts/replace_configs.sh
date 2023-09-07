@@ -103,7 +103,7 @@ if [[ "" != "$S3_BUCKET" ]]; then
 fi
 
 if [[ "" != "$S3_ENDPOINT" ]]; then
-  export S3_ENDPOINT; yq -i '.s3Config.Endpoint=env(S3_ENDPOINT)' $CONFIG_FILE
+  export S3_ENDPOINT; yq -i '.s3Config.endpoint=env(S3_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$S3_POLICY_BUCKET" ]]; then

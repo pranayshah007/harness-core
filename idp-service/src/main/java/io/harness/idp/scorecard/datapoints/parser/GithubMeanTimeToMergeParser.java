@@ -24,8 +24,7 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.IDP)
 public class GithubMeanTimeToMergeParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> strings) {
-    Map<String, Object> dataPointInfo = new HashMap<>();
+  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
     List<Map<String, Object>> edges = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "edges");
 
     int numberOfPullRequests = 0;
@@ -44,8 +43,18 @@ public class GithubMeanTimeToMergeParser implements DataPointParser {
       double meanTimeToMergeMillis = (double) totalTimeToMerge / numberOfPullRequests;
       value = (long) (meanTimeToMergeMillis / (60 * 60 * 1000));
     }
-    dataPointInfo.put(DATA_POINT_VALUE_KEY, value);
-    dataPointInfo.put(ERROR_MESSAGE_KEY, null);
-    return dataPointInfo;
+    return constructDataPointInfo(inputValues, value);
+  }
+
+  private Map<String, Object> constructDataPointInfo(Set<String> inputValues, long value) {
+    Map<String, Object> data = new HashMap<>();
+    data.put(DATA_POINT_VALUE_KEY, value);
+    data.put(ERROR_MESSAGE_KEY, null);
+    if (inputValues.isEmpty()) {
+      return data;
+    } else {
+      String inputValue = inputValues.iterator().next();
+      return Map.of(inputValue, data);
+    }
   }
 }

@@ -3023,6 +3023,7 @@
 878049:io.harness.yaml.core.failurestrategy.manualintervention.v1.ManualFailureSpecConfigV1
 878050:io.harness.yaml.core.failurestrategy.retry.v1.RetryFailureSpecConfigV1
 878051:io.harness.yaml.core.failurestrategy.retry.v1.RetryStepGroupFailureSpecConfigV1
+878052:io.harness.advisers.retry.ManualInterventionActionConfigPostRetry
 878053:io.harness.yaml.core.failurestrategy.v1.NGFailureTypeV1
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO

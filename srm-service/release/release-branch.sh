@@ -136,14 +136,15 @@ git push origin release/${PURPOSE}/${newBranch}
 
 echo "INFO: Step 12: Creating the srm fix version."
 chmod +x srm-service/release/release-branch-create-srm-versions.sh
-srm-service/release/release-branch-create-srm-versions.sh
+FIX_SRM_VERSION_ID=`srm-service/release/release-branch-create-srm-versions.sh | grep 'FIX_SRM_VERSION_ID' | sed -e 's: *FIX_SRM_VERSION_ID=::g'`
 echo "INFO: Step 13: Updating srm jiras."
 chmod +x srm-service/release/release-branch-update-srm-jiras.sh
 srm-service/release/release-branch-update-srm-jiras.sh
 
 echo "INFO: Step 14: Creating the oip fix version."
 chmod +x srm-service/release/release-branch-create-oip-versions.sh
-srm-service/release/release-branch-create-oip-versions.sh
+FIX_OIP_VERSION_ID=`srm-service/release/release-branch-create-oip-versions.sh  | grep 'FIX_OIP_VERSION_ID' | sed -e 's: *FIX_OIP_VERSION_ID=::g'`
+echo "finalVersions NEW_VERSION=$NEW_VERSION-FIX_SRM_VERSION_ID=$FIX_SRM_VERSION_ID-FIX_OIP_VERSION_ID=$FIX_OIP_VERSION_ID"
 echo "INFO: Step 15: Updating oip jiras."
 chmod +x srm-service/release/release-branch-update-oip-jiras.sh
 srm-service/release/release-branch-update-oip-jiras.sh

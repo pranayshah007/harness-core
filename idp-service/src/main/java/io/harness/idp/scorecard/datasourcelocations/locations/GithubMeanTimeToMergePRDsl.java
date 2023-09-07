@@ -57,12 +57,14 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
     Map<String, Object> data = new HashMap<>();
     response = dslClient.call(
         accountIdentifier, apiRequestDetails.getUrl(), apiRequestDetails.getMethod(), headers, requestBody);
+    Map<String, Object> convertedResponse =
+        GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
     if (response.getStatus() == 200) {
-      data.put(DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
+      data.put(DSL_RESPONSE, convertedResponse);
     } else if (response.getStatus() == 502) {
       data.put(ERROR_MESSAGE_KEY, INVALID_BRANCH_NAME_ERROR);
     } else {
-      data.put(ERROR_MESSAGE_KEY, ((Map<String, Object>) response.getEntity()).get("message"));
+      data.put(ERROR_MESSAGE_KEY, convertedResponse.get("message"));
     }
     return data;
   }

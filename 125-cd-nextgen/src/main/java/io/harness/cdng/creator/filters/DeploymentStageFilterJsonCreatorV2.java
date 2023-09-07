@@ -503,7 +503,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     ParameterField<String> serviceRef = serviceConfig.getServiceRef();
-    if (serviceRef != null && !serviceRef.isExpression()) {
+    if (serviceRef != null && !serviceRef.isExpression() && isNotEmpty(serviceRef.getValue())) {
       Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), serviceRef.getValue(), false);
