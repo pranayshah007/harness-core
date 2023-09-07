@@ -79,6 +79,9 @@ import io.harness.cdng.creator.plan.azure.webapps.ConnectionStringsPlanCreator;
 import io.harness.cdng.creator.plan.azure.webapps.StartupCommandPlanCreator;
 import io.harness.cdng.creator.plan.configfile.ConfigFilesPlanCreator;
 import io.harness.cdng.creator.plan.configfile.IndividualConfigFilePlanCreator;
+import io.harness.cdng.creator.plan.customstage.CustomStageFilterCreator;
+import io.harness.cdng.creator.plan.customstage.CustomStagePlanCreator;
+import io.harness.cdng.creator.plan.customstage.CustomStageVariableCreator;
 import io.harness.cdng.creator.plan.execution.CDExecutionPMSPlanCreator;
 import io.harness.cdng.creator.plan.manifest.IndividualManifestPlanCreator;
 import io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator;
@@ -537,6 +540,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AwsCdkDestroyStepPlanCreator());
     planCreators.add(new AwsCdkRollbackStepPlanCreator());
 
+    planCreators.add(new CustomStagePlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -555,6 +560,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new EmptyFilterJsonCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(PRIMARY, EMPTY_PRIMARY_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
+
+    filterJsonCreators.add(new CustomStageFilterCreator());
 
     injectorUtils.injectMembers(filterJsonCreators);
 
@@ -692,6 +699,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AwsCdkDeployVariableCreator());
     variableCreators.add(new AwsCdkDestroyVariableCreator());
     variableCreators.add(new AwsCdkRollbackVariableCreator());
+
+    variableCreators.add(new CustomStageVariableCreator());
 
     return variableCreators;
   }

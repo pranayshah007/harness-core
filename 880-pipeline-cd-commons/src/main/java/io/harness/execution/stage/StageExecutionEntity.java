@@ -6,6 +6,7 @@
  */
 
 package io.harness.execution.stage;
+
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
