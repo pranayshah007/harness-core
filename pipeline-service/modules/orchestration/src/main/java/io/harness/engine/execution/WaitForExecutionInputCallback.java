@@ -51,6 +51,7 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
 
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
   @Inject NodeAdviseHelper adviseHelper;
+  @Deprecated private Ambiance ambiance;
 
   String nodeExecutionId;
   String inputInstanceId;

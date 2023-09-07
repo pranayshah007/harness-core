@@ -25,7 +25,7 @@ import lombok.Builder;
 public class AbortAllInterruptCallback implements OldNotifyCallback {
   @Inject private InterruptService interruptService;
 
-  Interrupt interrupt;
+  @Deprecated Interrupt interrupt;
 
   String interruptId;
 
