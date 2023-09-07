@@ -324,4 +324,19 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
     Query query = new Query(criteria);
     return mongoTemplate.findDistinct(query, ServiceEntityKeys.repo, ServiceEntity.class, String.class);
   }
+
+  @Override
+  public Optional<ServiceEntity> getMetadataByIdentifier(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, boolean deleted) {
+    Query query = new Query(buildCriteriaForServiceIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, deleted));
+
+    ServiceEntity savedEntity = mongoTemplate.findOne(query, ServiceEntity.class);
+
+    if (savedEntity == null) {
+      return Optional.empty();
+    }
+
+    return Optional.of(savedEntity);
+  }
 }

@@ -49,4 +49,7 @@ public interface ServiceRepositoryCustom {
       boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   List<String> getListOfDistinctRepos(Criteria criteria);
+
+  Optional<ServiceEntity> getMetadataByIdentifier(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, boolean deleted);
 }

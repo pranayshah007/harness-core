@@ -410,7 +410,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       checkThatServiceIsNotReferredByOthers(serviceEntity);
     }
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
-    Optional<ServiceEntity> serviceEntityOptional = get(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
+    Optional<ServiceEntity> serviceEntityOptional =
+        serviceRepository.getMetadataByIdentifier(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
 
     if (serviceEntityOptional.isPresent()) {
       boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
