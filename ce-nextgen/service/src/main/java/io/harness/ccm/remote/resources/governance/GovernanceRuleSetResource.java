@@ -231,7 +231,6 @@ public class GovernanceRuleSetResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
-    ruleSet.toDTO();
     ruleSet.setAccountId(accountId);
     RuleSet oldRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), true);
     if (ruleSet.getCloudProvider() == null) {
@@ -300,7 +299,6 @@ public class GovernanceRuleSetResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
-    ruleSet.toDTO();
     if (!ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       throw new InvalidRequestException("Editing OOTB rule set is not allowed");
     }
