@@ -46,7 +46,7 @@ public enum ModuleType {
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS),
   @JsonProperty("IDP") IDP("Internal Developer Portal", INTERNAL, ONBOARDING_IN_PROGRESS),
   // moving SEI to Onboarded for qa
-  @JsonProperty("SEI") SEI("Software Engineering Insights", INTERNAL, ONBOARDED);
+  @JsonProperty("SEI") SEI("Software Engineering Insights", PUBLIC, ONBOARDED);
 
   String displayName;
   ModuleVisibility visibility;
