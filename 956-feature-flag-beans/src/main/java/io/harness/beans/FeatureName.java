@@ -200,6 +200,8 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
   CDS_GITHUB_APP_AUTHENTICATION("This flag enables the github app authentication fo github connector", HarnessTeam.CDP),
+  CDS_RESOURCE_CONSTRAINT_INSTANCE_OPTIMIZATION(
+      "This is to optimize resource constraint Instance read Query In CG", HarnessTeam.CDC),
   CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC),
   CD_AI_ENHANCED_REMEDIATIONS(
       "Enables use of generative AI to provide remediation information in CD step logs", HarnessTeam.CDP),
