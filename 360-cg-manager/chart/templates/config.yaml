@@ -402,6 +402,16 @@ data:
         "nextIterationMode": "TARGET",
         "targetIntervalInSeconds": 86400,
         "throttleIntervalInSeconds": 0
+      },
+      {
+        "name": "DelegateTaskFailOnDMS",
+        "enabled": true,
+        "threadPoolSize": 2,
+        "threadPoolIntervalInSeconds": 30,
+        "nextIterationMode": "TARGET",
+        "targetIntervalInSeconds": 30,
+        "throttleIntervalInSeconds": 0,
+        "iteratorMode": "PUMP"
       }
     ]
 
