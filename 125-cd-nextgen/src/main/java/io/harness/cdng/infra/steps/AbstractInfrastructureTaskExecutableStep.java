@@ -430,14 +430,16 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
   private TaskRequestData getTaskRequest(
       Ambiance ambiance, ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome) {
-    if (ServiceDefinitionType.SSH.name()
-            .toLowerCase(Locale.ROOT)
-            .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
-      return buildSshTaskRequest(ambiance, infrastructureOutcome);
-    } else if (ServiceDefinitionType.WINRM.name()
-                   .toLowerCase(Locale.ROOT)
-                   .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
-      return buildWinRmTaskRequest(ambiance, infrastructureOutcome);
+    if (serviceOutcome.getType() != null) {
+      if (ServiceDefinitionType.SSH.name()
+              .toLowerCase(Locale.ROOT)
+              .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+        return buildSshTaskRequest(ambiance, infrastructureOutcome);
+      } else if (ServiceDefinitionType.WINRM.name()
+                     .toLowerCase(Locale.ROOT)
+                     .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+        return buildWinRmTaskRequest(ambiance, infrastructureOutcome);
+      }
     }
     throw new UnsupportedOperationException(
         format("Service type %s not supported for following infrastructure step", serviceOutcome.getType()));

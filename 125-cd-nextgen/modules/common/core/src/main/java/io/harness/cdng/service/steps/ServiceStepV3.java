@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.service.steps;
+
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_ENV_OUTCOME;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_GROUP_REF;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_REF;
@@ -967,7 +968,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private Map<String, Object> getFinalVariablesMap(NGServiceV2InfoConfig serviceV2InfoConfig,
       Map<String, Object> envOrOverrideVariables, NGLogCallback logCallback) {
-    List<NGVariable> variableList = serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getVariables();
+    List<NGVariable> variableList = new ArrayList<>();
+    if (serviceV2InfoConfig != null) {
+      variableList = serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getVariables();
+    }
     Map<String, Object> variables = new HashMap<>();
     Map<String, Object> outputVariables = new VariablesSweepingOutput();
     if (isNotEmpty(variableList)) {

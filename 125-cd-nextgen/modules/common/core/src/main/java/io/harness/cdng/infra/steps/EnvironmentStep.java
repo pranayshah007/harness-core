@@ -118,7 +118,6 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
     if (stepResponse != null) {
       return stepResponse;
     }
-
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 

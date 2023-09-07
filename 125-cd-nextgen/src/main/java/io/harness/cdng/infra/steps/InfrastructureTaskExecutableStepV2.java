@@ -253,9 +253,6 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
     ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
-    if (serviceOutcome == null) {
-      serviceOutcome = ServiceStepOutcome.builder().type(null).identifier(null).build();
-    }
 
     final InfrastructureOutcome infrastructureOutcome = stepSweepingOutput.getInfrastructureOutcome();
 
@@ -416,9 +413,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   private Optional<InstancesOutcome> publishInfraOutput(NGLogCallback logCallback, ServiceStepOutcome serviceOutcome,
       InfrastructureOutcome infrastructureOutcome, Ambiance ambiance, EnvironmentOutcome environmentOutcome,
       boolean skipInstances) {
-    // if (serviceOutcome.getType() == null) {
-    // throw new InvalidRequestException("service type cannot be null");
-    //}
+    if (serviceOutcome.getType() == null) {
+      return Optional.empty();
+    }
     if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
         || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)
                .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
