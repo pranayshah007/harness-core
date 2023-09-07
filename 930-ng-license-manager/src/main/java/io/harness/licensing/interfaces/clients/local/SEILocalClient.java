@@ -24,7 +24,6 @@ import java.time.temporal.ChronoUnit;
 
 @OwnedBy(HarnessTeam.SEI)
 public class SEILocalClient implements SEIModuleLicenseClient {
-  // Note: SEI initially will only support Enterprise Trials.
   @Override
   public SEIModuleLicenseDTO createTrialLicense(Edition edition, String accountid) {
     long expiryTime = Instant.now().plus(TRIAL_DURATION, ChronoUnit.DAYS).toEpochMilli();
