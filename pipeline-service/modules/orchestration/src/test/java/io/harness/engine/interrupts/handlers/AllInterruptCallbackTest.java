@@ -21,8 +21,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.interrupts.InterruptService;
-import io.harness.interrupts.Interrupt;
-import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
@@ -40,13 +38,7 @@ public class AllInterruptCallbackTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void shouldTestNotify() {
     String interruptId = generateUuid();
-    AllInterruptCallback allInterruptCallbackTest = AllInterruptCallback.builder()
-                                                        .interrupt(Interrupt.builder()
-                                                                       .uuid(interruptId)
-                                                                       .type(InterruptType.EXPIRE_ALL)
-                                                                       .planExecutionId(generateUuid())
-                                                                       .build())
-                                                        .build();
+    AllInterruptCallback allInterruptCallbackTest = AllInterruptCallback.builder().interruptId(interruptId).build();
     Reflect.on(allInterruptCallbackTest).set("interruptService", interruptService);
     allInterruptCallbackTest.notify(ImmutableMap.of());
     verify(interruptService, times(0)).markProcessed(any(), any());
@@ -57,13 +49,7 @@ public class AllInterruptCallbackTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void shouldTestNotifyError() {
     String interruptId = generateUuid();
-    AllInterruptCallback allInterruptCallback = AllInterruptCallback.builder()
-                                                    .interrupt(Interrupt.builder()
-                                                                   .uuid(interruptId)
-                                                                   .type(InterruptType.EXPIRE_ALL)
-                                                                   .planExecutionId(generateUuid())
-                                                                   .build())
-                                                    .build();
+    AllInterruptCallback allInterruptCallback = AllInterruptCallback.builder().interruptId(interruptId).build();
     Reflect.on(allInterruptCallback).set("interruptService", interruptService);
     allInterruptCallback.notifyError(ImmutableMap.of());
     verify(interruptService).markProcessed(eq(interruptId), eq(PROCESSED_UNSUCCESSFULLY));

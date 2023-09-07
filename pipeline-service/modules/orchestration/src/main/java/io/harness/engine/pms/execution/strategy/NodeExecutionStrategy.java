@@ -21,6 +21,7 @@ import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
+import io.harness.pms.execution.utils.AmbianceUtils;
 
 import java.util.EnumSet;
 import java.util.Map;
@@ -49,6 +50,11 @@ public interface NodeExecutionStrategy<P extends Node, N extends PmsNodeExecutio
   }
 
   default void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseDataProto> response, boolean asyncError) {
+    resumeNodeExecution(AmbianceUtils.obtainCurrentRuntimeId(ambiance), response, asyncError);
+  }
+
+  default void resumeNodeExecution(
+      String nodeExecutionId, Map<String, ResponseDataProto> response, boolean asyncError) {
     throw new UnsupportedOperationException("Start execution node Supported for plan");
   }
 

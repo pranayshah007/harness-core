@@ -17,6 +17,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.engine.pms.tasks.TaskExecutor;
 import io.harness.engine.progress.EngineProgressCallback;
+import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
@@ -98,7 +99,10 @@ public class QueueTaskRequestProcessor implements SdkResponseProcessor {
       String taskId =
           Preconditions.checkNotNull(taskExecutor.queueTask(setupAbstractionsMap, taskRequest, Duration.ofSeconds(0)));
       log.info("TaskRequestQueued for NodeExecutionId : {}, TaskId; {}", nodeExecutionId, taskId);
-      EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();
+      EngineResumeCallback callback = EngineResumeCallback.builder()
+                                          .nodeExecutionId(nodeExecutionId)
+                                          .nodeType(OrchestrationUtils.currentNodeType(ambiance))
+                                          .build();
       ProgressCallback progressCallback =
           EngineProgressCallback.builder().nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance)).build();
       waitNotifyEngine.waitForAllOn(publisherName, callback, progressCallback, taskId);

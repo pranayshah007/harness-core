@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.interrupts;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -32,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 @Slf4j
 public class UserMarkedFailureInterruptCallback implements OldNotifyCallback {
-  @Inject private NodeExecutionService nodeExecutionService;
   @Inject private UserMarkedFailAllHelper userMarkedFailAllHelper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
 
@@ -40,7 +40,7 @@ public class UserMarkedFailureInterruptCallback implements OldNotifyCallback {
   String interruptId;
   InterruptConfig interruptConfig;
   InterruptType interruptType;
-  Ambiance ambiance;
+  @Deprecated Ambiance ambiance; // Just here for back ward compatibility
 
   @Builder
   public UserMarkedFailureInterruptCallback(String nodeExecutionId, String interruptId, InterruptConfig interruptConfig,
@@ -71,8 +71,7 @@ public class UserMarkedFailureInterruptCallback implements OldNotifyCallback {
   }
 
   void failNode(Map<String, ResponseData> response) {
-    userMarkedFailAllHelper.failDiscontinuingNode(
-        ambiance, nodeExecutionId, interruptType, interruptId, interruptConfig);
+    userMarkedFailAllHelper.failDiscontinuingNode(nodeExecutionId, interruptType, interruptId, interruptConfig);
     ResponseData responseData = isEmpty(response) ? null : response.values().iterator().next();
     waitNotifyEngine.doneWith(nodeExecutionId + "|" + interruptId, responseData);
   }

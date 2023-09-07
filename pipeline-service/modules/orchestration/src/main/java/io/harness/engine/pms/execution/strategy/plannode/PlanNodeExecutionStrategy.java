@@ -248,11 +248,10 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   public void processStartEventResponse(Ambiance ambiance, ExecutableResponse executableResponse) {}
 
   @Override
-  public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseDataProto> response, boolean asyncError) {
-    String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+  public void resumeNodeExecution(String nodeExecutionId, Map<String, ResponseDataProto> response, boolean asyncError) {
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForResume);
-    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(nodeExecution.getAmbiance())) {
       if (!StatusUtils.resumableStatuses().contains(nodeExecution.getStatus())) {
         log.warn("NodeExecution is no longer in RESUMABLE state Uuid: {} Status {} ", nodeExecution.getUuid(),
             nodeExecution.getStatus());
@@ -271,7 +270,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         // PlanExecution status update check is not even required if previousStatus of nodeExecution was in
         // FLOWING_STATUS
         if (!StatusUtils.flowingStatuses().contains(previousNodeExecutionStatus)) {
-          planExecutionService.calculateAndUpdateRunningStatusUnderLock(ambiance.getPlanExecutionId(), null);
+          planExecutionService.calculateAndUpdateRunningStatusUnderLock(nodeExecution.getPlanExecutionId(), null);
         }
       } else {
         // This will happen if the node is not in any paused or waiting statuses.
@@ -280,9 +279,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       resumeHelper.resume(nodeExecution, response, asyncError);
     } catch (Exception exception) {
       log.error(String.format("Exception Occurred in handling resume with nodeExecutionId %s planExecutionId %s",
-                    nodeExecutionId, ambiance.getPlanExecutionId()),
+                    nodeExecutionId, nodeExecution.getPlanExecutionId()),
           exception);
-      handleError(ambiance, exception);
+      handleError(nodeExecution.getAmbiance(), exception);
     }
   }
 

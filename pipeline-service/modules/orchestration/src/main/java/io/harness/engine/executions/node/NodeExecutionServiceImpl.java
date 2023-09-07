@@ -557,8 +557,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public void updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
-    updateNodeExecutionInternal(nodeExecutionId, ops, Sets.newHashSet(NodeExecutionKeys.uuid), true);
+  public NodeExecution updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
+    return updateNodeExecutionInternal(nodeExecutionId, ops, Sets.newHashSet(NodeExecutionKeys.uuid), true);
   }
 
   /**

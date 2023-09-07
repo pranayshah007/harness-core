@@ -19,6 +19,7 @@ import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
+import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.InitiateNodeHelper;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
@@ -138,7 +139,11 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       }
 
       // Attach a Callback to the parent for the child
-      EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();
+      EngineResumeCallback callback = EngineResumeCallback.builder()
+                                          .nodeExecutionId(nodeExecutionId)
+                                          .nodeType(OrchestrationUtils.currentNodeType(ambiance))
+                                          .build();
+      ;
       String waitInstanceId =
           waitNotifyEngine.waitForAllOn(publisherName, callback, callbackIds.toArray(new String[0]));
       log.info("SpawnChildrenRequestProcessor registered a waitInstance with id: {}", waitInstanceId);

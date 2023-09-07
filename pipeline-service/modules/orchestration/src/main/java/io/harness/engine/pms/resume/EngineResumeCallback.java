@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -23,6 +24,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 
 @OwnedBy(CDC)
 @Value
@@ -32,7 +34,10 @@ public class EngineResumeCallback implements OldNotifyCallback {
   @Inject OrchestrationEngine orchestrationEngine;
   @Inject ResponseDataMapper responseDataMapper;
 
-  Ambiance ambiance;
+  @Deprecated Ambiance ambiance;
+
+  String nodeExecutionId;
+  NodeType nodeType;
 
   @Override
   public void notify(Map<String, ResponseData> response) {
@@ -45,10 +50,19 @@ public class EngineResumeCallback implements OldNotifyCallback {
   }
 
   private void notifyWithError(Map<String, ResponseData> response, boolean asyncError) {
-    log.info("EngineResumeCallback notify is called for ambiance with nodeExecutionId {}",
-        AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    String runtimeId = getNodeExecutionId();
+    log.info("EngineResumeCallback notify is called for ambiance with nodeExecutionId {}", runtimeId);
     Map<String, ResponseDataProto> byteStringMap = responseDataMapper.toResponseDataProtoV2(response);
 
-    orchestrationEngine.resumeNodeExecution(ambiance, byteStringMap, asyncError);
+    if (ambiance != null) {
+      orchestrationEngine.resumeNodeExecution(ambiance, byteStringMap, asyncError);
+    } else {
+      orchestrationEngine.resumeNodeExecution(nodeExecutionId, nodeType, byteStringMap, asyncError);
+    }
+  }
+
+  @Nullable
+  private String getNodeExecutionId() {
+    return ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : nodeExecutionId;
   }
 }

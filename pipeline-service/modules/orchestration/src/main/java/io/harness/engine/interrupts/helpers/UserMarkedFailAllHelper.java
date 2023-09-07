@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.interrupts.helpers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eraro.ErrorCode.USER_MARKED_FAILURE;
 import static io.harness.pms.contracts.interrupts.InterruptType.USER_MARKED_FAIL_ALL;
@@ -29,7 +30,6 @@ import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.logging.AutoLogContext;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -67,8 +67,8 @@ public class UserMarkedFailAllHelper {
 
       if (nodeExecution.getMode() == ExecutionMode.SYNC || ExecutionModeUtils.isParentMode(nodeExecution.getMode())) {
         log.info("Aborting directly because mode is {}", nodeExecution.getMode());
-        failDiscontinuingNode(nodeExecution.getAmbiance(), nodeExecution.getUuid(), interrupt.getType(),
-            interrupt.getUuid(), interrupt.getInterruptConfig());
+        failDiscontinuingNode(
+            nodeExecution.getUuid(), interrupt.getType(), interrupt.getUuid(), interrupt.getInterruptConfig());
         return;
       }
 
@@ -79,7 +79,6 @@ public class UserMarkedFailAllHelper {
               .interruptId(interrupt.getUuid())
               .interruptType(interrupt.getType())
               .interruptConfig(interrupt.getInterruptConfig())
-              .ambiance(nodeExecution.getAmbiance())
               .build();
       waitNotifyEngine.waitForAllOnInList(publisherName, userMarkedFailureInterruptCallback,
           Collections.singletonList(notifyId), Duration.ofMinutes(1));
@@ -95,9 +94,9 @@ public class UserMarkedFailAllHelper {
     }
   }
 
-  public void failDiscontinuingNode(Ambiance ambiance, String nodeExecutionId, InterruptType interruptType,
-      String interruptId, InterruptConfig interruptConfig) {
-    nodeExecutionService.updateV2(nodeExecutionId,
+  public void failDiscontinuingNode(
+      String nodeExecutionId, InterruptType interruptType, String interruptId, InterruptConfig interruptConfig) {
+    NodeExecution nodeExecution = nodeExecutionService.updateV2(nodeExecutionId,
         ops
         -> ops.addToSet(NodeExecutionKeys.interruptHistories,
             InterruptEffect.builder()
@@ -106,7 +105,7 @@ public class UserMarkedFailAllHelper {
                 .interruptId(interruptId)
                 .interruptConfig(interruptConfig)
                 .build()));
-    engine.processStepResponse(ambiance,
+    engine.processStepResponse(nodeExecution.getAmbiance(),
         StepResponseProto.newBuilder()
             .setStatus(Status.FAILED)
             .setFailureInfo(FailureInfo.newBuilder()

@@ -292,7 +292,7 @@ public interface NodeExecutionService {
    * @param nodeExecutionId
    * @param ops
    */
-  void updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
+  NodeExecution updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
 
   /**
    * Use this method while updating statuses. This guarantees we are hopping from correct statuses.

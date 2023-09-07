@@ -171,7 +171,7 @@ public class UserMarkedFailAllInterruptHandler extends InterruptPropagatorHandle
     }
 
     waitNotifyEngine.waitForAllOnInList(
-        publisherName, AllInterruptCallback.builder().interrupt(updatedInterrupt).build(), notifyIds);
+        publisherName, AllInterruptCallback.builder().interruptId(updatedInterrupt.getUuid()).build(), notifyIds);
     return updatedInterrupt;
   }
 

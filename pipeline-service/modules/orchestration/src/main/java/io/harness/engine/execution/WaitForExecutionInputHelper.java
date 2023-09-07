@@ -85,7 +85,6 @@ public class WaitForExecutionInputHelper {
 
       WaitForExecutionInputCallback waitForExecutionInputCallback = WaitForExecutionInputCallback.builder()
                                                                         .nodeExecutionId(nodeExecutionId)
-                                                                        .ambiance(ambiance)
                                                                         .inputInstanceId(inputInstanceId)
                                                                         .build();
       waitNotifyEngine.waitForAllOnInList(publisherName, waitForExecutionInputCallback,

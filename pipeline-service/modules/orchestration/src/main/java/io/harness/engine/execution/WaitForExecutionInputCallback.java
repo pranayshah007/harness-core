@@ -51,7 +51,6 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
 
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
   @Inject NodeAdviseHelper adviseHelper;
-  private Ambiance ambiance;
 
   String nodeExecutionId;
   String inputInstanceId;
@@ -60,7 +59,6 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
   public WaitForExecutionInputCallback(String nodeExecutionId, String inputInstanceId, Ambiance ambiance) {
     this.nodeExecutionId = nodeExecutionId;
     this.inputInstanceId = inputInstanceId;
-    this.ambiance = ambiance;
   }
 
   @Override
@@ -101,9 +99,9 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
 
   @Override
   public void notify(Map<String, ResponseData> response) {
-    nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.QUEUED,
+    NodeExecution nodeExecution = nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.QUEUED,
         ops -> ops.unset(NodeExecutionKeys.resolvedParams), EnumSet.of(Status.INPUT_WAITING));
-    executorService.submit(() -> engine.startNodeExecution(ambiance));
+    executorService.submit(() -> engine.startNodeExecution(nodeExecution.getAmbiance()));
   }
 
   @Override

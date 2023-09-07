@@ -17,6 +17,7 @@ import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.PmsNodeExecution;
 import io.harness.execution.PmsNodeExecutionMetadata;
 import io.harness.plan.Node;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -93,9 +94,16 @@ public class OrchestrationEngine {
     strategy.processStepResponse(ambiance, stepResponse);
   }
 
+  @Deprecated
   public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseDataProto> response, boolean asyncError) {
-    NodeExecutionStrategy strategy = strategyFactory.obtainStrategy(OrchestrationUtils.currentNodeType(ambiance));
-    strategy.resumeNodeExecution(ambiance, response, asyncError);
+    resumeNodeExecution(AmbianceUtils.obtainCurrentRuntimeId(ambiance), OrchestrationUtils.currentNodeType(ambiance),
+        response, asyncError);
+  }
+
+  public void resumeNodeExecution(
+      String nodeExecutionId, NodeType nodeType, Map<String, ResponseDataProto> response, boolean asyncError) {
+    NodeExecutionStrategy strategy = strategyFactory.obtainStrategy(nodeType);
+    strategy.resumeNodeExecution(nodeExecutionId, response, asyncError);
   }
 
   public void processAdviserResponse(Ambiance ambiance, AdviserResponse adviserResponse) {

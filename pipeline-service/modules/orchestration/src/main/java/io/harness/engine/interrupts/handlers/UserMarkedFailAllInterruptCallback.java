@@ -25,20 +25,26 @@ import lombok.Builder;
 public class UserMarkedFailAllInterruptCallback implements OldNotifyCallback {
   @Inject private InterruptService interruptService;
 
-  Interrupt interrupt;
+  @Deprecated Interrupt interrupt;
+  String interruptId;
 
   @Builder
-  public UserMarkedFailAllInterruptCallback(Interrupt interrupt) {
+  public UserMarkedFailAllInterruptCallback(Interrupt interrupt, String interruptId) {
     this.interrupt = interrupt;
+    this.interruptId = interruptId;
   }
 
   @Override
   public void notify(Map<String, ResponseData> response) {
-    interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    interruptService.markProcessed(getInterruptId(), PROCESSED_SUCCESSFULLY);
   }
 
   @Override
   public void notifyError(Map<String, ResponseData> response) {
-    interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+    interruptService.markProcessed(getInterruptId(), PROCESSED_UNSUCCESSFULLY);
+  }
+
+  private String getInterruptId() {
+    return interrupt != null ? interrupt.getUuid() : interruptId;
   }
 }

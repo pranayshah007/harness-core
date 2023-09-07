@@ -27,18 +27,25 @@ public class AbortAllInterruptCallback implements OldNotifyCallback {
 
   Interrupt interrupt;
 
+  String interruptId;
+
   @Builder
-  public AbortAllInterruptCallback(Interrupt interrupt) {
+  public AbortAllInterruptCallback(Interrupt interrupt, String interruptId) {
     this.interrupt = interrupt;
+    this.interruptId = interruptId;
   }
 
   @Override
   public void notify(Map<String, ResponseData> response) {
-    interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    interruptService.markProcessed(getInterruptId(), PROCESSED_SUCCESSFULLY);
   }
 
   @Override
   public void notifyError(Map<String, ResponseData> response) {
-    interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+    interruptService.markProcessed(getInterruptId(), PROCESSED_UNSUCCESSFULLY);
+  }
+
+  private String getInterruptId() {
+    return interrupt != null ? interrupt.getUuid() : interruptId;
   }
 }

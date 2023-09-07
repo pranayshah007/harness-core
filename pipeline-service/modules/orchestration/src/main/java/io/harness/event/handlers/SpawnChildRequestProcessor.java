@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
+import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.InitiateNodeHelper;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
@@ -21,6 +22,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SpawnChildRequest;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.SdkResponseEventUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -47,7 +49,10 @@ public class SpawnChildRequestProcessor implements SdkResponseProcessor {
     initiateNodeHelper.publishEvent(ambiance, childNodeId, childInstanceId);
 
     // Attach a Callback to the parent for the child
-    EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();
+    EngineResumeCallback callback = EngineResumeCallback.builder()
+                                        .nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
+                                        .nodeType(OrchestrationUtils.currentNodeType(ambiance))
+                                        .build();
     String waitInstanceId = waitNotifyEngine.waitForAllOn(publisherName, callback, childInstanceId);
     log.info("SpawnChildRequestProcessor registered a waitInstance with id: {}", waitInstanceId);
 
