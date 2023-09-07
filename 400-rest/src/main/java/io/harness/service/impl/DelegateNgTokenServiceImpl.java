@@ -127,7 +127,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
         persistence.createUpdateOperations(DelegateToken.class)
             .set(DelegateTokenKeys.status, DelegateTokenStatus.REVOKED)
             .set(DelegateTokenKeys.validUntil,
-                Date.from(OffsetDateTime.now().plusDays(DelegateToken.TTL.toDays()).toInstant()));
+                Date.from(OffsetDateTime.now().plusDays(DelegateToken.REVOKED_TOKEN_TTL.toDays()).toInstant()));
     DelegateToken updatedDelegateToken =
         persistence.findAndModify(filterQuery, updateOperations, new FindAndModifyOptions());
 

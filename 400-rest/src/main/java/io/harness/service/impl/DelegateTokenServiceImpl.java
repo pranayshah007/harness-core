@@ -116,7 +116,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
         persistence.createUpdateOperations(DelegateToken.class)
             .set(DelegateTokenKeys.status, DelegateTokenStatus.REVOKED)
             .set(DelegateTokenKeys.validUntil,
-                Date.from(OffsetDateTime.now().plusDays(DelegateToken.TTL.toDays()).toInstant()));
+                Date.from(OffsetDateTime.now().plusDays(DelegateToken.REVOKED_TOKEN_TTL.toDays()).toInstant()));
 
     // we are not removing token from delegateTokenCache in DelegateTokenCacheHelper, since the cache has an expiry of 3
     // mins

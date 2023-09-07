@@ -10,7 +10,6 @@ package io.harness.delegate.service.impl;
 import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateTokenDetails;
-import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
