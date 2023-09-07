@@ -2623,6 +2623,15 @@ public class UserServiceImpl implements UserService {
       return true;
     }
 
+    if (user.getDefaultAccountId() != null) {
+      try {
+        Account account = accountService.get(user.getDefaultAccountId());
+        resetPasswordRequest.setIsNG(DefaultExperience.NG.equals(account.getDefaultExperience()));
+      } catch (Exception ex) {
+        log.error("Error Occured while fetching default account {} for user {} ", user.getDefaultAccountId(),
+            user.getEmail(), ex);
+      }
+    }
     String jwtPasswordSecret = configuration.getPortal().getJwtPasswordSecret();
     if (jwtPasswordSecret == null) {
       throw new InvalidRequestException(INCORRECT_PORTAL_SETUP);
