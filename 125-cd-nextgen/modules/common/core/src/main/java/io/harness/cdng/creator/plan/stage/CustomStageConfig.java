@@ -11,6 +11,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.YamlNode;
@@ -42,6 +43,7 @@ public class CustomStageConfig implements StageInfoConfig {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
+  @VariableExpression(skipVariableExpression = true) private EnvironmentYamlV2 environment;
   @NotNull @VariableExpression(skipVariableExpression = true) private ExecutionElementConfig execution;
 
   @Override

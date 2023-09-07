@@ -107,6 +107,7 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -172,8 +173,14 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   protected OutcomeSet fetchRequiredOutcomes(Ambiance ambiance) {
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
-    ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
+    ServiceStepOutcome serviceOutcome;
+    OptionalOutcome optionalServiceOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+    if (optionalServiceOutcome.isFound()) {
+      serviceOutcome = (ServiceStepOutcome) optionalServiceOutcome.getOutcome();
+    } else {
+      serviceOutcome = ServiceStepOutcome.builder().type(null).identifier(null).build();
+    }
     return new OutcomeSet(serviceOutcome, environmentOutcome);
   }
 
@@ -423,14 +430,16 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
   private TaskRequestData getTaskRequest(
       Ambiance ambiance, ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome) {
-    if (ServiceDefinitionType.SSH.name()
-            .toLowerCase(Locale.ROOT)
-            .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
-      return buildSshTaskRequest(ambiance, infrastructureOutcome);
-    } else if (ServiceDefinitionType.WINRM.name()
-                   .toLowerCase(Locale.ROOT)
-                   .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
-      return buildWinRmTaskRequest(ambiance, infrastructureOutcome);
+    if (serviceOutcome.getType() != null) {
+      if (ServiceDefinitionType.SSH.name()
+              .toLowerCase(Locale.ROOT)
+              .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+        return buildSshTaskRequest(ambiance, infrastructureOutcome);
+      } else if (ServiceDefinitionType.WINRM.name()
+                     .toLowerCase(Locale.ROOT)
+                     .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+        return buildWinRmTaskRequest(ambiance, infrastructureOutcome);
+      }
     }
     throw new UnsupportedOperationException(
         format("Service type %s not supported for following infrastructure step", serviceOutcome.getType()));

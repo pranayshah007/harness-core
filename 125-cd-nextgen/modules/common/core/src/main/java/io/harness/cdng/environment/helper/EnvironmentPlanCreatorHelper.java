@@ -91,6 +91,27 @@ public class EnvironmentPlanCreatorHelper {
         .build();
   }
 
+  public PlanNode getPlanNodeForCustomStage(
+      String envNodeUuid, StepParameters customStageEnvironmentStepParameters, ByteString advisorParameters) {
+    return PlanNode.builder()
+        .uuid(envNodeUuid)
+        .stepType(CustomStageEnvironmentStep.STEP_TYPE)
+        .name(PlanCreatorConstants.ENVIRONMENT_NODE_NAME)
+        .identifier(YamlTypes.ENVIRONMENT_YAML)
+        .stepParameters(customStageEnvironmentStepParameters)
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                .build())
+        .adviserObtainment(
+            AdviserObtainment.newBuilder()
+                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+                .setParameters(advisorParameters)
+                .build())
+        .skipExpressionChain(false)
+        .build();
+  }
+
   public EnvironmentPlanCreatorConfig getResolvedEnvRefs(PlanCreationContext ctx, EnvironmentYamlV2 environmentV2,
       boolean gitOpsEnabled, String serviceRef, ServiceOverrideService serviceOverrideService,
       EnvironmentService environmentService, InfrastructureEntityService infrastructure) {

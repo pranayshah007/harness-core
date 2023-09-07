@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.infra.steps;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.ELASTIGROUP_CONFIGURATION_OUTPUT;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
@@ -251,7 +252,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
-    final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
+    ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
 
     final InfrastructureOutcome infrastructureOutcome = stepSweepingOutput.getInfrastructureOutcome();
 
@@ -331,7 +332,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     saveExecutionLog(logCallback,
         "Environment Name: " + environmentOutcome.getName() + " , Identifier: " + environmentOutcome.getIdentifier());
 
-    final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
+    ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
     infrastructureValidator.validate(spec);
@@ -413,7 +414,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
       InfrastructureOutcome infrastructureOutcome, Ambiance ambiance, EnvironmentOutcome environmentOutcome,
       boolean skipInstances) {
     if (serviceOutcome.getType() == null) {
-      throw new InvalidRequestException("service type cannot be null");
+      return Optional.empty();
     }
     if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
         || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)

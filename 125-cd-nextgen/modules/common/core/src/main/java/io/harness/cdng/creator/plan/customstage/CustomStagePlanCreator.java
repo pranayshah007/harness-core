@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Harness Inc. All rights reserved.
+ * Copyright 2021 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -7,24 +7,34 @@
 
 package io.harness.cdng.creator.plan.customstage;
 
-import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
+import static java.lang.Boolean.parseBoolean;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.stage.CustomStageNode;
+import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -35,8 +45,10 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.SdkCoreStepUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -53,15 +65,19 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStageNode> {
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
+  @Inject private NGSettingsClient settingsClient;
+  private static final String PROJECT_SCOPED_RESOURCE_CONSTRAINT_SETTING_ID =
+      "project_scoped_resource_constraint_queue";
 
   @Override
   public Set<String> getSupportedStageTypes() {
-    return Collections.singleton(CUSTOM);
+    return Collections.singleton("Custom");
   }
 
   @Override
   public StepType getStepType(CustomStageNode stageElementConfig) {
-    return CustomStageStep.STEP_TYPE;
+    return StepType.newBuilder().setType("CUSTOM_STAGE").setStepCategory(StepCategory.STAGE).build();
   }
 
   @Override
@@ -132,19 +148,50 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
                     .build())
             .build());
 
+    String envNodeUuid = UUIDGenerator.generateUuid();
     // Adding Spec node
-    PlanCreationResponse specPlanCreationResponse = prepareDependencyForSpecNode(specField, executionField);
+    PlanCreationResponse specPlanCreationResponse = prepareDependencyForSpecNode(specField, envNodeUuid);
     planCreationResponseMap.put(specField.getNode().getUuid(), specPlanCreationResponse);
+
+    EnvironmentYamlV2 finalEnvironmentYamlV2 = field.getCustomStageConfig().getEnvironment();
+    if (finalEnvironmentYamlV2 != null && finalEnvironmentYamlV2.getEnvironmentRef() != null) {
+      String infraNodeUuid = "";
+      if (finalEnvironmentYamlV2.getInfrastructureDefinition() != null) {
+        final boolean isProjectScopedResourceConstraintQueue = isProjectScopedResourceConstraintQueueByFFOrSetting(ctx);
+        List<AdviserObtainment> adviserObtainments = addResourceConstraintDependencyWithWhenCondition(
+            planCreationResponseMap, specField, ctx, isProjectScopedResourceConstraintQueue);
+
+        PlanNode infraNode = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
+            finalEnvironmentYamlV2, adviserObtainments, null, ParameterField.createValueField(false));
+        planCreationResponseMap.put(infraNode.getUuid(), PlanCreationResponse.builder().planNode(infraNode).build());
+
+        infraNodeUuid = infraNode.getUuid();
+      }
+
+      ServiceStepV3Parameters customStageEnvironmentStepParameters =
+          ServiceStepV3Parameters.builder()
+              .envRef(finalEnvironmentYamlV2.getEnvironmentRef())
+              .serviceRef(ParameterField.createValueField("custom"))
+              .envInputs(finalEnvironmentYamlV2.getEnvironmentInputs())
+              .build();
+
+      String envNextNodeUuid = EmptyPredicate.isNotEmpty(infraNodeUuid) ? infraNodeUuid : executionField.getUuid();
+      ByteString advisorParameters = ByteString.copyFrom(
+          kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(envNextNodeUuid).build()));
+      PlanNode envNode = EnvironmentPlanCreatorHelper.getPlanNodeForCustomStage(
+          envNodeUuid, customStageEnvironmentStepParameters, advisorParameters);
+      planCreationResponseMap.put(envNode.getUuid(), PlanCreationResponse.builder().planNode(envNode).build());
+    }
 
     return planCreationResponseMap;
   }
 
-  private PlanCreationResponse prepareDependencyForSpecNode(YamlField specField, YamlField executionField) {
+  private PlanCreationResponse prepareDependencyForSpecNode(YamlField specField, String envNodeUuid) {
     Map<String, YamlField> specDependencyMap = new HashMap<>();
     specDependencyMap.put(specField.getNode().getUuid(), specField);
     Map<String, ByteString> specDependencyMetadataMap = new HashMap<>();
-    specDependencyMetadataMap.put(YAMLFieldNameConstants.CHILD_NODE_OF_SPEC,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionField.getNode().getUuid())));
+    specDependencyMetadataMap.put(
+        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(envNodeUuid)));
     return PlanCreationResponse.builder()
         .dependencies(DependenciesUtils.toDependenciesProto(specDependencyMap)
                           .toBuilder()
@@ -152,6 +199,11 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
                               Dependency.newBuilder().putAllMetadata(specDependencyMetadataMap).build())
                           .build())
         .build();
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 
   public StageElementParameters.StageElementParametersBuilder getStageParameters(CustomStageNode stageNode) {
@@ -174,8 +226,19 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     return stageBuilder;
   }
 
-  @Override
-  public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+  private List<AdviserObtainment> addResourceConstraintDependencyWithWhenCondition(
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
+      PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
+    return InfrastructurePmsPlanCreator.addResourceConstraintDependency(
+        planCreationResponseMap, specField, kryoSerializer, context, isProjectScopedResourceConstraintQueue);
+  }
+
+  private boolean isProjectScopedResourceConstraintQueueByFFOrSetting(PlanCreationContext ctx) {
+    return featureFlagHelperService.isEnabled(
+               ctx.getAccountIdentifier(), FeatureName.CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE)
+        || parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                PROJECT_SCOPED_RESOURCE_CONSTRAINT_SETTING_ID, ctx.getAccountIdentifier(), null, null))
+                            .getValue());
   }
 }
