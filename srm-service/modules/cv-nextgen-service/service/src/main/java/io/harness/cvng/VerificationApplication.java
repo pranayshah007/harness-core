@@ -954,7 +954,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .build();
     injector.injectMembers(sliDataCollectionTaskRecoverHandlerIterator);
     dataCollectionExecutor.scheduleWithFixedDelay(
-        sliDataCollectionTaskRecoverHandlerIterator::process, 0, 6, TimeUnit.HOURS);
+        sliDataCollectionTaskRecoverHandlerIterator::process, 5 + random.nextInt(10), 360, TimeUnit.MINUTES);
   }
 
   private void registerAnalysisOrchestratorQueueNextAnalysisHandler(Injector injector) {
@@ -981,7 +981,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(iterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(() -> iterator.process(), 0, 1, TimeUnit.HOURS);
+    dataCollectionExecutor.scheduleWithFixedDelay(() -> iterator.process(), 5, 60, TimeUnit.MINUTES);
   }
 
   private void registerSLORecalculationFailure(Injector injector) {
@@ -1034,7 +1034,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(sloHistoryTimescaleHandlerIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 0, 1, TimeUnit.DAYS);
+    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 1, 24, TimeUnit.HOURS);
   }
 
   private void sloHealthIndicatorTimescale(Injector injector) {
@@ -1059,7 +1059,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .build();
     injector.injectMembers(sloHealthIndicatorTimescaleHandlerIterator);
     dataCollectionExecutor.scheduleWithFixedDelay(
-        sloHealthIndicatorTimescaleHandlerIterator::process, 0, 60, TimeUnit.MINUTES);
+        sloHealthIndicatorTimescaleHandlerIterator::process, 5 + random.nextInt(5), 60, TimeUnit.MINUTES);
   }
 
   private void registerCVNGDemoPerpetualTaskIterator(Injector injector) {
@@ -1209,7 +1209,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    migrationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 15, TimeUnit.MINUTES);
+    migrationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 5, 15, TimeUnit.MINUTES);
   }
 
   private void registerNotificationTemplates(VerificationConfiguration configuration, Injector injector) {
@@ -1264,7 +1264,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    notificationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 5, TimeUnit.MINUTES);
+    notificationExecutor.scheduleWithFixedDelay(
+        dataCollectionIterator::process, random.nextInt(5), 5, TimeUnit.MINUTES);
   }
 
   private void registerMonitoredServiceNotificationIterator(Injector injector) {
