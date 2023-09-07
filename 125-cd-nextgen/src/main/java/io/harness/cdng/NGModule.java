@@ -236,6 +236,13 @@ public class NGModule extends AbstractModule {
     bind(CDLicenseUsageReportService.class).to(CDLicenseUsageReportServiceImpl.class);
     bind(ManifestTaskService.class).to(ManifestTaskServiceImpl.class);
     bind(StageExecutionEntityService.class).to(StageExecutionEntityServiceImpl.class);
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("DashboardExecutorService"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("Cd-ng-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

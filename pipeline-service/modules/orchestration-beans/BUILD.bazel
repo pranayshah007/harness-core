@@ -17,6 +17,7 @@ java_library(
     ],
     deps = [
         "//:lombok",
+        "//880-pipeline-cd-commons:module",
         "//959-timeout-engine:module",
         "//960-ng-license-beans:module",
         "//960-persistence:module",
