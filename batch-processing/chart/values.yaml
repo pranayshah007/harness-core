@@ -193,6 +193,8 @@ extraVolumes: []
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
 
+CF_CLIENT_API_KEY: "BATCH_PROCESSING_ON_PREM"
+
 lifecycleHooks: {}
 # lifecycleHooks:
 #   postStart:
