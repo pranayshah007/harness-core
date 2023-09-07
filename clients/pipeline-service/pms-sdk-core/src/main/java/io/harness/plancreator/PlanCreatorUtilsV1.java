@@ -14,6 +14,9 @@ import io.harness.advisers.manualIntervention.ManualInterventionAdviserWithRollb
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
+import io.harness.advisers.retry.ManualInterventionActionConfigPostRetry;
+import io.harness.advisers.retry.RetryAdviserRollbackParameters;
+import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -50,6 +53,7 @@ import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Duration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -187,6 +192,43 @@ public class PlanCreatorUtilsV1 {
         .build();
   }
 
+  // TODO: (shalini): set strategyToUuid map in RetryAdviserRollbackParameters used in stage rollback
+  private AdviserObtainment getRetryAdviserObtainment(KryoSerializer kryoSerializer, Set<FailureType> failureTypes,
+      String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureConfigV1 retryAction,
+      ParameterField<Integer> retryCount, FailureConfigV1 actionUnderRetry) {
+    return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
+        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            RetryAdviserRollbackParameters.builder()
+                .applicableFailureTypes(failureTypes)
+                .nextNodeId(nextNodeUuid)
+                .repairActionCodeAfterRetry(toRepairAction(actionUnderRetry))
+                .actionConfigPostRetry(getManualInterventionActionConfigPostRetry(actionUnderRetry))
+                .retryCount(retryCount.getValue())
+                .waitIntervalList(retryAction.getSpec()
+                                      .getIntervals()
+                                      .getValue()
+                                      .stream()
+                                      .map(s -> (int) TimeoutUtils.getTimeoutInSeconds(s, 0))
+                                      .collect(Collectors.toList()))
+                .build())))
+        .build();
+  }
+
+  private ManualInterventionActionConfigPostRetry getManualInterventionActionConfigPostRetry(
+      FailureConfigV1 actionUnderRetry) {
+    if (actionUnderRetry instanceof ManualInterventionFailureConfigV1) {
+      ManualInterventionFailureConfigV1 manualInterventionFailureConfigV1 =
+          (ManualInterventionFailureConfigV1) actionUnderRetry;
+      return ManualInterventionActionConfigPostRetry.builder()
+          .actionAfterManualInterventionTimeout(
+              toRepairAction(manualInterventionFailureConfigV1.getSpec().getTimeout_action()))
+          .timeoutInSeconds(TimeoutUtils.getTimeoutInSeconds(manualInterventionFailureConfigV1.getSpec().getTimeout(),
+              Duration.newBuilder().setSeconds(java.time.Duration.ofDays(1).toMinutes() * 60).getSeconds()))
+          .build();
+    }
+    return null;
+  }
+
   private List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer, Dependency dependency,
       YamlNode yamlNode, String nextNodeUuid, boolean isStepInsideRollback) {
     OnConfigV1 stepFailureStrategies = getFailureStrategies(yamlNode);
@@ -274,8 +316,8 @@ public class PlanCreatorUtilsV1 {
         FailureStrategiesUtilsV1.validateRetryFailureAction(retryAction);
         ParameterField<Integer> retryCount = retryAction.getSpec().getAttempts();
         FailureConfigV1 actionUnderRetry = retryAction.getSpec().getOn_failure();
-        // TODO(Shalini): Add method to get RetryAdviserObtainment and add it into adviserObtainmentList
-        break;
+        return getRetryAdviserObtainment(kryoSerializer, failureTypes, nextNodeUuid, adviserObtainmentBuilder,
+            retryAction, retryCount, actionUnderRetry);
       case MARK_AS_SUCCESS:
         return adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
             .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()
