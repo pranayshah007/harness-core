@@ -114,7 +114,7 @@ public class PlanCreatorUtilsV1 {
   }
 
   public HarnessValue getNodeMetadataValueFromDependency(Dependency dependency, String key) {
-    if (dependency.getNodeMetadata() != null && isNotEmpty(dependency.getNodeMetadata().getDataMap())
+    if (isNotEmpty(dependency.getNodeMetadata().getDataMap())
         && dependency.getNodeMetadata().getDataMap().containsKey(key)) {
       return dependency.getNodeMetadata().getDataMap().get(key);
     }
@@ -139,20 +139,15 @@ public class PlanCreatorUtilsV1 {
         return Optional.of(harnessValue.getStringValue());
       }
       if (harnessValue.hasBytesValue()) {
-        if (asInflatedObject) {
-          return Optional.of(kryoSerializer.asInflatedObject(harnessValue.getBytesValue().toByteArray()));
+        ByteString bytes = harnessValue.getBytesValue();
+        Optional<Object> objectOptional = getObjectFromBytes(bytes, kryoSerializer, asInflatedObject);
+        if (objectOptional.isPresent()) {
+          return objectOptional;
         }
-        return Optional.of(kryoSerializer.asObject(harnessValue.getBytesValue().toByteArray()));
       }
     }
     ByteString bytes = getMetadataValueFromDependency(dependency, key);
-    if (bytes != null) {
-      if (asInflatedObject) {
-        return Optional.of(kryoSerializer.asInflatedObject(bytes.toByteArray()));
-      }
-      return Optional.of(kryoSerializer.asObject(bytes.toByteArray()));
-    }
-    return Optional.empty();
+    return getObjectFromBytes(bytes, kryoSerializer, asInflatedObject);
   }
 
   public RepairActionCode toRepairAction(FailureConfigV1 action) {
@@ -195,21 +190,50 @@ public class PlanCreatorUtilsV1 {
   private List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer, Dependency dependency,
       YamlNode yamlNode, String nextNodeUuid, boolean isStepInsideRollback) {
     OnConfigV1 stepFailureStrategies = getFailureStrategies(yamlNode);
-    Optional<Object> stageFailureStrategiesOptional = getDeserializedObjectFromDependency(
-        dependency, kryoSerializer, PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, true);
+    OnConfigV1 stageFailureStrategies = getStageFailureStrategies(kryoSerializer, dependency);
+    OnConfigV1 stepGroupFailureStrategies = getStepGroupFailureStrategies(kryoSerializer, dependency);
+    Map<FailureConfigV1, Collection<FailureType>> actionMap = FailureStrategiesUtilsV1.priorityMergeFailureStrategies(
+        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
+    return getFailureStrategiesAdvisers(kryoSerializer, actionMap, isStepInsideRollback, nextNodeUuid);
+  }
+
+  Optional<Object> getDeserializedObjectFromParentInfo(
+      KryoSerializer kryoSerializer, Dependency dependency, String key, boolean asInflatedObject) {
+    if (dependency != null && dependency.getParentInfo().getDataMap().containsKey(key)) {
+      ByteString bytes = dependency.getParentInfo().getDataMap().get(key).getBytesValue();
+      return getObjectFromBytes(bytes, kryoSerializer, asInflatedObject);
+    }
+    return Optional.empty();
+  }
+
+  Optional<Object> getObjectFromBytes(ByteString bytes, KryoSerializer kryoSerializer, boolean asInflatedObject) {
+    if (isNotEmpty(bytes)) {
+      if (asInflatedObject) {
+        return Optional.of(kryoSerializer.asInflatedObject(bytes.toByteArray()));
+      }
+      return Optional.of(kryoSerializer.asObject(bytes.toByteArray()));
+    }
+    return Optional.empty();
+  }
+
+  OnConfigV1 getStageFailureStrategies(KryoSerializer kryoSerializer, Dependency dependency) {
+    Optional<Object> stageFailureStrategiesOptional = getDeserializedObjectFromParentInfo(
+        kryoSerializer, dependency, PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, true);
     OnConfigV1 stageFailureStrategies = null;
     if (stageFailureStrategiesOptional.isPresent()) {
       stageFailureStrategies = (OnConfigV1) stageFailureStrategiesOptional.get();
     }
-    Optional<Object> stepGroupFailureStrategiesOptional = getDeserializedObjectFromDependency(
-        dependency, kryoSerializer, PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES, true);
+    return stageFailureStrategies;
+  }
+
+  OnConfigV1 getStepGroupFailureStrategies(KryoSerializer kryoSerializer, Dependency dependency) {
+    Optional<Object> stepGroupFailureStrategiesOptional = getDeserializedObjectFromParentInfo(
+        kryoSerializer, dependency, PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES, true);
     OnConfigV1 stepGroupFailureStrategies = null;
     if (stepGroupFailureStrategiesOptional.isPresent()) {
       stepGroupFailureStrategies = (OnConfigV1) stepGroupFailureStrategiesOptional.get();
     }
-    Map<FailureConfigV1, Collection<FailureType>> actionMap = FailureStrategiesUtilsV1.priorityMergeFailureStrategies(
-        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
-    return getFailureStrategiesAdvisers(kryoSerializer, actionMap, isStepInsideRollback, nextNodeUuid);
+    return stepGroupFailureStrategies;
   }
 
   private List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer,
