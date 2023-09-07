@@ -29,7 +29,8 @@ public class SEILocalClient implements SEIModuleLicenseClient {
     long expiryTime = Instant.now().plus(TRIAL_DURATION, ChronoUnit.DAYS).toEpochMilli();
     long currentTime = Instant.now().toEpochMilli();
 
-    SEIModuleLicenseDTO.SEIModuleLicenseDTOBuilder<?, ?> builder = SEIModuleLicenseDTO.builder().startTime(currentTime).expiryTime(expiryTime).status(LicenseStatus.ACTIVE);
+    SEIModuleLicenseDTO.SEIModuleLicenseDTOBuilder<?, ?> builder =
+            SEIModuleLicenseDTO.builder().startTime(currentTime).expiryTime(expiryTime).status(LicenseStatus.ACTIVE);
     // Note: SEI initially will only support Enterprise Trials.
     if (edition == Edition.ENTERPRISE) {
       return builder.licenseType(LicenseType.TRIAL).numberOfContributors(Integer.valueOf(UNLIMITED)).build();
