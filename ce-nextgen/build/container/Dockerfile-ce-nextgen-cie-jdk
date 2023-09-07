@@ -55,5 +55,6 @@ RUN wget https://www.python.org/ftp/python/3.11.5/Python-3.11.5.tgz \
     && python3 -V \
     && rm -rf /Python-3.11.5.tgz /Python-3.11.5
 
+RUN pip3 install --upgrade setuptools==65.5.1
 RUN pip3 install c7n==0.9.30 && pip3 install c7n_azure==0.7.29
 RUN yum remove -y gcc tar wget make openssl-devel libffi-devel bzip2-devel gd gd-devel
