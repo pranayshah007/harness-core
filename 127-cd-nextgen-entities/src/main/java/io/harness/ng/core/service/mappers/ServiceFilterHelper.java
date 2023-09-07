@@ -53,17 +53,21 @@ public class ServiceFilterHelper {
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       boolean deleted, String searchTerm, ServiceDefinitionType type, Boolean gitOpsEnabled,
-      boolean includeAllServicesAccessibleAtScope) {
+      boolean includeAllServicesAccessibleAtScope, String repoName) {
     return createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, null, deleted, searchTerm, type,
-        gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        gitOpsEnabled, includeAllServicesAccessibleAtScope, repoName);
   }
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       List<String> scopedServiceRefs, boolean deleted, String searchTerm, ServiceDefinitionType type,
-      Boolean gitOpsEnabled, boolean includeAllServicesAccessibleAtScope) {
+      Boolean gitOpsEnabled, boolean includeAllServicesAccessibleAtScope, String repoName) {
     Criteria criteria = createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, scopedServiceRefs, deleted, includeAllServicesAccessibleAtScope);
     final List<Criteria> andCriterias = new ArrayList<>();
+
+    if (isNotEmpty(repoName)) {
+      criteria.and(ServiceEntityKeys.repo).is(repoName);
+    }
     if (isNotEmpty(searchTerm)) {
       Criteria searchCriteria = createSearchTermCriteria(searchTerm);
       andCriterias.add(searchCriteria);
