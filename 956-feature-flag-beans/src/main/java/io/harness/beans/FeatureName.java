@@ -12,8 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.annotations.dev.HarnessTeam.SPG;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureFlag.Scope;
 
 import lombok.Getter;
@@ -22,6 +25,13 @@ import lombok.Getter;
  * delete the feature name.
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_AMI_ASG,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY,
+        HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_COMMON_STEPS,
+        HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_TRIGGERS,
+        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_GITOPS,
+        HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   // Sorted using https://github.com/google/keep-sorted/blob/main/README.md
@@ -147,6 +157,7 @@ public enum FeatureName {
   CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
   CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN(
       "Enable the check if Vault secret manager is read only", HarnessTeam.CDP),
+  CDS_OPA_TEMPLATE_GOVERNANCE("Added OPA support for template service ", HarnessTeam.CDC),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CDS_PAUSE_JIRA_APPROVAL_CG("Pause CG Jira Approval", HarnessTeam.CDC),
@@ -537,6 +548,7 @@ public enum FeatureName {
   PIE_STORE_USED_EXPRESSIONS(
       "FF to use store the expressions used during the pipeline executions", HarnessTeam.PIPELINE),
   PIE_USE_SECRET_FUNCTOR_WITH_RBAC("Perform Rbac on secrets when used in pipeline execution", HarnessTeam.PIPELINE),
+  PIE_WEBHOOK_NOTIFICATION("Enable the webhook notifications for the pipeline execution events", PIPELINE),
   PIPELINE_GOVERNANCE,
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
   PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
