@@ -868,7 +868,10 @@ public enum FeatureName {
   PL_RUN_INVALID_AUDITS_CLEANUP("Run iterator to cleanup audits with null accountIds", HarnessTeam.PL, Scope.GLOBAL),
   SSCA_MANAGER_ENABLED("FF to use SSCA manager instead of core", HarnessTeam.SSCA),
   SSCA_ARTIFACTS_ENABLED("FF to enable SSCA Artifacts on Harness UI", HarnessTeam.SSCA),
-  CDS_JIRA_APPROVAL_OPTIMIZATION("Optimize Jira Approval to only fetch relevant fields", HarnessTeam.CDC);
+  CDS_JIRA_APPROVAL_OPTIMIZATION("Optimize Jira Approval to only fetch relevant fields", HarnessTeam.CDC),
+  CD_CONTAINER_STEP_DELEGATE_SELECTOR(
+      "FF to respect stage/pipeline delegate selectors for container step", HarnessTeam.CDC);
+  // keep-sorted end
   // keep-sorted end
 
   @Deprecated
