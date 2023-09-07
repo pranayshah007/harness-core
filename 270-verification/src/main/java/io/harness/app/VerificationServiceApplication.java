@@ -8,7 +8,7 @@
 package io.harness.app;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 import static io.harness.ng.DbAliases.DMS;
@@ -260,7 +260,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
       @Singleton
       DistributedLockImplementation distributedLockImplementation() {
         return configuration.getDistributedLockImplementation() == null
-            ? MONGO
+            ? REDIS
             : configuration.getDistributedLockImplementation();
       }
     });

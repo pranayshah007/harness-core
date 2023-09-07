@@ -10,7 +10,7 @@ package io.harness.idp.app;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
@@ -194,7 +194,7 @@ import org.springframework.core.convert.converter.Converter;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class IdpModule extends AbstractModule {
-  public static final String REDIS = "redis";
+  public static final String REDIS_CACHE = "redis";
   public static final String IN_MEMORY = "in-memory";
   private final IdpConfiguration appConfig;
   public IdpModule(IdpConfiguration appConfig) {
@@ -400,7 +400,7 @@ public class IdpModule extends AbstractModule {
 
     if (appConfig.getDelegateSelectorsCacheMode().equals(IN_MEMORY)) {
       bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
-    } else if (appConfig.getDelegateSelectorsCacheMode().equals(REDIS)) {
+    } else if (appConfig.getDelegateSelectorsCacheMode().equals(REDIS_CACHE)) {
       bind(DelegateSelectorsCache.class).to(DelegateSelectorsRedisCache.class);
     }
 
@@ -436,7 +436,7 @@ public class IdpModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return appConfig.getDistributedLockImplementation() == null ? MONGO : appConfig.getDistributedLockImplementation();
+    return appConfig.getDistributedLockImplementation() == null ? REDIS : appConfig.getDistributedLockImplementation();
   }
 
   @Provides

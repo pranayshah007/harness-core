@@ -76,7 +76,7 @@ redisLockConfig:
 
 enableAuth: false
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 logServiceConfig:
   baseUrl: https://qa.harness.io/log-service/
