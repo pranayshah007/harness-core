@@ -355,6 +355,10 @@ ciExecutionServiceConfig:
       image: harness/slsa-plugin:latest
       entrypoint:
         - /bin/slsa-plugin
+    slsaVerificationConfig:
+      image: harness/slsa-plugin:latest
+      entrypoint:
+        - /bin/slsa-plugin
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.3.3

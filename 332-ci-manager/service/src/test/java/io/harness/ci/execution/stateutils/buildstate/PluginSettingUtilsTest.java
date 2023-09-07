@@ -27,6 +27,7 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.REETIKA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.yaml.extended.ci.codebase.Build.builder;
 
@@ -69,6 +70,11 @@ import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.slsa.beans.verification.source.SlsaDockerSourceSpec;
+import io.harness.slsa.beans.verification.source.SlsaVerificationSource;
+import io.harness.slsa.beans.verification.source.SlsaVerificationSourceType;
+import io.harness.slsa.beans.verification.verify.CosignSlsaVerifyAttestation;
+import io.harness.slsa.beans.verification.verify.SlsaVerifyAttestation;
 import io.harness.ssca.beans.attestation.AttestationType;
 import io.harness.ssca.beans.attestation.verify.CosignVerifyAttestation;
 import io.harness.ssca.beans.attestation.verify.VerifyAttestation;
@@ -76,6 +82,7 @@ import io.harness.ssca.beans.policy.EnforcementPolicy;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
+import io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
 import io.harness.ssca.beans.store.HarnessStore;
 import io.harness.ssca.beans.store.PolicyStore;
@@ -1184,6 +1191,61 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
                 .type(AttestationType.COSIGN)
                 .verifyAttestationSpec(
                     CosignVerifyAttestation.builder().publicKey(ParameterField.createValueField("publicKey")).build())
+                .build())
+        .build();
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testSlsaVerificationStepEnvVariables() {
+    SlsaVerificationStepInfo slsaVerificationStepInfo = getSlsaVerificationStep();
+
+    Map<String, String> expected = new HashMap<>();
+    expected.put("PLUGIN_TAG", "tag");
+    expected.put("PLUGIN_REPO", "image");
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        slsaVerificationStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testSlsaVerificationStepSecretEnvVariables() {
+    SlsaVerificationStepInfo slsaVerificationStepInfo = getSlsaVerificationStep();
+
+    Map<String, SecretNGVariable> expected = new HashMap<>();
+    SecretRefData secretRefData = SecretRefHelper.createSecretRef("public_key");
+    expected.put("COSIGN_PUBLIC_KEY",
+        SecretNGVariable.builder()
+            .type(NGVariableType.SECRET)
+            .value(ParameterField.createValueField(secretRefData))
+            .name("COSIGN_PUBLIC_KEY")
+            .build());
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    Map<String, SecretNGVariable> actual =
+        pluginSettingUtils.getPluginCompatibleSecretVars(slsaVerificationStepInfo, "identifier");
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  private SlsaVerificationStepInfo getSlsaVerificationStep() {
+    return SlsaVerificationStepInfo.builder()
+        .source(SlsaVerificationSource.builder()
+                    .type(SlsaVerificationSourceType.DOCKER)
+                    .spec(SlsaDockerSourceSpec.builder()
+                              .connector(ParameterField.createValueField("conn1"))
+                              .image_path(ParameterField.createValueField("image"))
+                              .tag(ParameterField.createValueField("tag"))
+                              .build())
+                    .build())
+        .slsaVerifyAttestation(
+            SlsaVerifyAttestation.builder()
+                .type(AttestationType.COSIGN)
+                .slsaVerifyAttestationSpec(CosignSlsaVerifyAttestation.builder()
+                                               .publicKey(ParameterField.createValueField("public_key"))
+                                               .build())
                 .build())
         .build();
   }

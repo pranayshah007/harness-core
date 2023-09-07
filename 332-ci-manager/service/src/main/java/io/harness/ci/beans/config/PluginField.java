@@ -26,6 +26,7 @@ public enum PluginField {
   SSCA_ORCHESTRATION("sscaOrchestrationTag"),
   SSCA_ENFORCEMENT("sscaEnforcementTag"),
   PROVENANCE("provenanceTag"),
+  SLSA_VERIFICATION("slsaVerificationTag"),
   UNKNOWN("unknown");
 
   public final String label;

@@ -56,6 +56,7 @@ public class CIExecutionConfig implements PersistentEntity, UuidAware, CreatedAt
   @NotBlank String cacheS3Tag;
   @NotBlank String sscaOrchestrationTag;
   @NotBlank String sscaEnforcementTag;
+  @NotBlank String slsaVerificationTag;
   @NotBlank String provenanceTag;
   VmImageConfig vmImageConfig;
   VmContainerlessStepConfig vmContainerlessStepConfig;
