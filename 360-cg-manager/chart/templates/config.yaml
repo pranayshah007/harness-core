@@ -65,6 +65,7 @@ data:
   ACCESS_CONTROL_BASE_URL: 'http://access-control:9006/api/'
   ENABLE_AUDIT: 'true'
   AUDIT_CLIENT_BASEURL: 'http://platform-service:9005/api/'
+  NOTIFICATION_BASE_URL: 'http://platform-service:9005/api/'
   {{- end }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}

@@ -1,3 +1,4 @@
+# Moving virtual services from next-gen-ui to here as istio takes higher precendence on rules that are created earlier.
 {{- if .Values.global.istio.enabled }}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -33,4 +34,17 @@ spec:
         port:
           number: {{ .Values.service.port }}
         host: ng-manager
+  - name: next-gen-ui
+    match:
+    - uri:
+        prefix: /ng/
+    - uri:
+        prefix: /ng
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: 80
+        host: next-gen-ui
 {{ end }}
