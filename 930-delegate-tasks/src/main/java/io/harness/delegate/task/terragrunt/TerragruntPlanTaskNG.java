@@ -107,8 +107,14 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
         ? planTaskParameters.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
 
-    String baseDir =
-        TerragruntTaskService.getBaseDir(planTaskParameters.getAccountId(), planTaskParameters.getEntityId());
+    String baseDir;
+    if (planTaskParameters.isUseUniqueDirectoryForBaseDir()) {
+      baseDir = TerragruntTaskService.getBaseDirWithUniqueDirectory(
+          planTaskParameters.getAccountId(), planTaskParameters.getEntityId());
+    } else {
+      baseDir = TerragruntTaskService.getBaseDir(planTaskParameters.getAccountId(), planTaskParameters.getEntityId());
+    }
+
     try (PlanJsonLogOutputStream planJsonLogOutputStream = taskService.getPlanJsonLogOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       taskService.mapGitConfig(planTaskParameters);
