@@ -17,6 +17,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.SEIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SEIModuleLicenseDTO.SEIModuleLicenseDTOBuilder;
 import io.harness.licensing.interfaces.clients.SEIModuleLicenseClient;
 
 import java.time.Instant;
@@ -29,7 +30,7 @@ public class SEILocalClient implements SEIModuleLicenseClient {
     long expiryTime = Instant.now().plus(TRIAL_DURATION, ChronoUnit.DAYS).toEpochMilli();
     long currentTime = Instant.now().toEpochMilli();
 
-    SEIModuleLicenseDTO.SEIModuleLicenseDTOBuilder<?, ?> builder =
+    SEIModuleLicenseDTOBuilder<?, ?> builder =
         SEIModuleLicenseDTO.builder().startTime(currentTime).expiryTime(expiryTime).status(LicenseStatus.ACTIVE);
 
     if (edition == Edition.ENTERPRISE) {
