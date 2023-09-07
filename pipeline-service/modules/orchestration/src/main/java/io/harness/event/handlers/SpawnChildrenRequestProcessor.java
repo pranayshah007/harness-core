@@ -143,7 +143,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
                                           .nodeExecutionId(nodeExecutionId)
                                           .nodeType(OrchestrationUtils.currentNodeType(ambiance))
                                           .build();
-      ;
+
       String waitInstanceId =
           waitNotifyEngine.waitForAllOn(publisherName, callback, callbackIds.toArray(new String[0]));
       log.info("SpawnChildrenRequestProcessor registered a waitInstance with id: {}", waitInstanceId);
