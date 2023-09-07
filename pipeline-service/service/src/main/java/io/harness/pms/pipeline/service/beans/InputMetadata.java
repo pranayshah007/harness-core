@@ -13,8 +13,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
 @Data
+@Builder
 @AllArgsConstructor
 public class InputMetadata {
   DependencyDetails dependencyDetails;

@@ -12,8 +12,8 @@ import io.harness.pms.yaml.InputDetails;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
 @Data
+@Builder
 public class YamlInputDetails {
   InputDetails inputDetails;
   InputMetadata inputMetadata;
