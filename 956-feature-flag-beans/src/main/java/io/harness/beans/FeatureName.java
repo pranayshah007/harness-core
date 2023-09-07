@@ -879,7 +879,9 @@ public enum FeatureName {
   CDS_JIRA_APPROVAL_OPTIMIZATION("Optimize Jira Approval to only fetch relevant fields", HarnessTeam.CDC),
   CDS_REMOVE_TIME_BUCKET_GAPFILL_QUERY("This flag removes the usage of time bucket gapfill from CD", HarnessTeam.CDP),
   CDS_ENABLE_GCS_ARTIFACT_TYPE(
-      "This flag enables GCS artifact type support for SSH/WinRm deployment type", HarnessTeam.CDP);
+      "This flag enables GCS artifact type support for SSH/WinRm deployment type", HarnessTeam.CDP),
+  CD_CONTAINER_STEP_DELEGATE_SELECTOR(
+      "FF to not respect stage/pipeline delegate selectors for container step", HarnessTeam.CDC);
   // keep-sorted end
 
   @Deprecated
