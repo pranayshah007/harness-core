@@ -102,6 +102,10 @@ public class GitOpsTaskHelper {
       GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
           gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
+
+      // this is needed because we want the API token to be available for API calls like creating a branch, PR
+      setApiAccess(gitStoreDelegateConfig);
+
       SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
           gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       gitFetchFilesResult =
@@ -134,6 +138,16 @@ public class GitOpsTaskHelper {
     } else {
       GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
+      setApiAccess(gitStoreDelegateConfig);
     }
+  }
+
+  public void setApiAccess(GitStoreDelegateConfig gitStoreDelegateConfig) {
+    secretDecryptionService.decrypt(
+            GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
+            gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+            GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
+            gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
   }
 }
