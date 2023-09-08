@@ -39,6 +39,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PlanCreationParentInfoConstants;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -147,6 +148,11 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
+  }
+
+  @Override
+  public void populateParentInfo(PlanCreationContext ctx, Map<String, PlanCreationResponse> childrenResponses) {
+    PlanCreatorUtilsCommon.populateParentInfo(ctx, childrenResponses, PlanCreationParentInfoConstants.STEP_GROUP_ID);
   }
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(KryoSerializer kryoSerializer,

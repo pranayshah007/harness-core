@@ -25,9 +25,11 @@ import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
+import io.harness.pms.yaml.PlanCreationParentInfoConstants;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.PlanCreatorUtilsCommon;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -57,6 +59,11 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
       return Collections.emptyMap();
     }
     return Collections.singletonMap(YAMLFieldNameConstants.STAGE, stageTypes);
+  }
+
+  @Override
+  public void populateParentInfo(PlanCreationContext ctx, Map<String, PlanCreationResponse> childrenResponses) {
+    PlanCreatorUtilsCommon.populateParentInfo(ctx, childrenResponses, PlanCreationParentInfoConstants.STAGE_ID);
   }
 
   @Override

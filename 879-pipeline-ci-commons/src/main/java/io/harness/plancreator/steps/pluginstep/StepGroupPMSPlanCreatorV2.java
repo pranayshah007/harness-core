@@ -73,6 +73,11 @@ public class StepGroupPMSPlanCreatorV2 extends ChildrenPlanCreator<StepGroupElem
   }
 
   @Override
+  public void populateParentInfo(PlanCreationContext ctx, Map<String, PlanCreationResponse> childrenResponses) {
+    stepGroupPMSPlanCreator.populateParentInfo(ctx, childrenResponses);
+  }
+
+  @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, StepGroupElementConfig config) {
     if (config.getStepGroupInfra() == null) {
