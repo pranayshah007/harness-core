@@ -57,10 +57,12 @@ import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateResult;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateVersionRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateVersionResult;
+import com.amazonaws.services.ec2.model.DescribeLaunchTemplateVersionsResult;
 import com.amazonaws.services.ec2.model.DescribeLaunchTemplatesResult;
 import com.amazonaws.services.ec2.model.LaunchTemplate;
 import com.amazonaws.services.ec2.model.LaunchTemplateVersion;
 import com.amazonaws.services.ec2.model.RequestLaunchTemplateData;
+import com.amazonaws.services.ec2.model.ResponseLaunchTemplateData;
 import com.google.common.util.concurrent.TimeLimiter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -664,5 +666,19 @@ public class AsgSdkManagerTest extends CategoryTest {
     UpdateAutoScalingGroupResult updateAutoScalingGroupResult = mock(UpdateAutoScalingGroupResult.class);
     doReturn(updateAutoScalingGroupResult).when(amazonAutoScalingClient).updateAutoScalingGroup(any());
     asgSdkManager.downSizeToZero("abc");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getLaunchTemplateData() {
+    final String imageId = "testImg";
+    DescribeLaunchTemplateVersionsResult describeLaunchTemplateVersionsResult =
+        new DescribeLaunchTemplateVersionsResult().withLaunchTemplateVersions(List.of(
+            new LaunchTemplateVersion().withLaunchTemplateData(new ResponseLaunchTemplateData().withImageId(imageId))));
+
+    doReturn(describeLaunchTemplateVersionsResult).when(amazonEC2Client).describeLaunchTemplateVersions(any());
+    ResponseLaunchTemplateData ret = asgSdkManager.getLaunchTemplateData("templateName", "1");
+    assertThat(ret.getImageId()).isEqualTo(imageId);
   }
 }

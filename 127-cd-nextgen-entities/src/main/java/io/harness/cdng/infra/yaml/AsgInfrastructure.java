@@ -73,7 +73,7 @@ public class AsgInfrastructure extends InfrastructureDetailsAbstract
     return AsgInfraMapping.builder()
         .awsConnector(connectorRef.getValue())
         .region(region.getValue())
-        .baseAsgName(ParameterFieldHelper.getParameterFieldFinalValueString(baseAsgName))
+        .baseAsgName(baseAsgName.getValue())
         .build();
   }
 
@@ -89,7 +89,7 @@ public class AsgInfrastructure extends InfrastructureDetailsAbstract
 
   @Override
   public String[] getInfrastructureKeyValues() {
-    return new String[] {connectorRef.getValue(), region.getValue()};
+    return new String[] {connectorRef.getValue(), region.getValue(), baseAsgName.getValue()};
   }
 
   @Override
