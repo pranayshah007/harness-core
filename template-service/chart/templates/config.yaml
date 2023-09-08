@@ -2,24 +2,24 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: template-service
-  namespace: {{ .Release.Namespace }}
+  namespace: '{{ .Release.Namespace }}'
 data:
   CACHE_BACKEND: "REDIS"
   CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
-  CACHE_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  CACHE_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   DEPLOY_MODE: KUBERNETES_ONPREM
-  LOGGING_LEVEL: {{ .Values.appLogLevel }}
-  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
-  MEMORY: {{ .Values.java.memory | quote }}
+  LOGGING_LEVEL: '{{ .Values.appLogLevel }}'
+  STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
+  MEMORY: '{{ .Values.java.memory }}'
   MANAGER_TARGET: harness-manager:9879
   MANAGER_AUTHORITY: harness-manager:9879
   NG_MANAGER_GITSYNC_TARGET: ng-manager:13002
   NG_MANAGER_GITSYNC_AUTHORITY: ng-manager:13002
   SCM_SERVICE_URI: "scm-service:8091"
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   ENABLE_AUTH: "true"
