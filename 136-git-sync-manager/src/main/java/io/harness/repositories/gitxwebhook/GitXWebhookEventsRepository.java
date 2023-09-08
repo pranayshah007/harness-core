@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
 
 import java.util.List;
 import org.springframework.data.repository.CrudRepository;
@@ -21,8 +21,8 @@ import org.springframework.data.repository.CrudRepository;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @HarnessRepo
 @OwnedBy(HarnessTeam.PIPELINE)
-public interface GitXWebhookRepository extends CrudRepository<GitXWebhook, String>, GitXWebhookRepositoryCustom {
-  List<GitXWebhook> findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
-
-  GitXWebhook findByAccountIdentifierAndRepoName(String accountIdentifier, String repoName);
+public interface GitXWebhookEventsRepository
+    extends CrudRepository<GitXWebhookEvent, String>, GitXWebhookEventsRepositoryCustom {
+  List<GitXWebhookEvent> findByAccountIdentifierAndWebhookIdentifier(
+      String accountIdentifier, String webhookIdentifier);
 }

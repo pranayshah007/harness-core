@@ -140,6 +140,7 @@ import io.harness.gitsync.common.events.FullSyncMessageListener;
 import io.harness.gitsync.common.events.GitSyncProjectCleanup;
 import io.harness.gitsync.core.webhook.createbranchevent.GitBranchHookEventStreamListener;
 import io.harness.gitsync.core.webhook.pushevent.GitPushEventStreamListener;
+import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookPushEventListener;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -1164,6 +1165,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM))
         .to(GitPushEventStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkConstants.GITX_WEBHOOK_PUSH_EVENT_STREAM))
+        .to(GitXWebhookPushEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM))
         .to(GitBranchHookEventStreamListener.class);
