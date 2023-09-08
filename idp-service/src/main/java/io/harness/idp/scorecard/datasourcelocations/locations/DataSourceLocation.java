@@ -23,7 +23,8 @@ import java.util.Set;
 public interface DataSourceLocation {
   Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs);
+      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
+      Map<String, String> possibleReplaceableUrlPairs);
 
   String replaceRequestBodyInputValuePlaceholdersIfAny(
       Map<String, Set<String>> dataPointIdsAndInputValues, String requestBody);
@@ -63,5 +64,12 @@ public interface DataSourceLocation {
     Map<String, Set<String>> dataPointIdsAndInputValues = new HashMap<>();
     dataPointsAndInputValues.forEach((k, v) -> dataPointIdsAndInputValues.put(k.getIdentifier(), v));
     return dataPointIdsAndInputValues;
+  }
+
+  default String replaceUrlsPlaceholdersIfAny(String url, Map<String, String> replaceableUrls) {
+    for (Map.Entry<String, String> entry : replaceableUrls.entrySet()) {
+      url = url.replace(entry.getKey(), entry.getValue());
+    }
+    return url;
   }
 }

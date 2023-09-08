@@ -44,6 +44,7 @@ import io.harness.execution.NodeExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -64,7 +65,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.TransactionHelper;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -72,14 +72,12 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -107,12 +105,10 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private PlanExpansionService planExpansionService;
-
-  @Inject @Named("EngineExecutorService") ExecutorService executorService;
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Inject PlanExecutionService planExecutionService;
   @Inject TransactionHelper transactionHelper;
-  @Inject PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -159,15 +155,65 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     PmsStepParameters resolvedParameters = PmsStepParameters.parse(
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
 
+    // Graph step inputs calculate
+    PmsStepParameters resolvedStepInputs =
+        getResolvedStepInputs(planNode.getExcludedKeysFromStepInputs(), resolvedParameters);
+
     transactionHelper.performTransaction(() -> {
       // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
       // for maps Find a better way to do this
       nodeExecutionService.updateV2(nodeExecutionId,
           ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
+      // Graph step Inputs update
+      addResolvedStepInputs(ambiance.getPlanExecutionId(), nodeExecutionId, resolvedStepInputs);
       planExpansionService.addStepInputs(ambiance, resolvedParameters);
       return resolvedParameters;
     });
     log.info("Resolved to step parameters");
+  }
+
+  @VisibleForTesting
+  PmsStepParameters getResolvedStepInputs(List<String> stepInputsKeyExclude, PmsStepParameters resolvedParameters) {
+    if (EmptyPredicate.isEmpty(stepInputsKeyExclude) || EmptyPredicate.isEmpty(resolvedParameters)) {
+      return resolvedParameters;
+    }
+
+    PmsStepParameters clonedParameters = PmsStepParameters.parse(resolvedParameters);
+    // Iterate through the list of keys to remove
+    for (String key : stepInputsKeyExclude) {
+      // Split the key into individual parts
+      String[] keyParts = key.split("\\.");
+
+      // Traverse the cloned map to reach the innermost map
+      Map<String, Object> currentMap = clonedParameters;
+      boolean removeKey = true;
+      for (int i = 0; i < keyParts.length - 1; i++) {
+        String part = keyParts[i];
+        if (currentMap == null || !currentMap.containsKey(part)) {
+          removeKey = false;
+          break;
+        }
+        Object nextMap = currentMap.get(part);
+        if (nextMap instanceof Map) {
+          // Shallow copy the inner map only when necessary
+          currentMap.put(part, PmsStepParameters.parse((Map<String, Object>) nextMap));
+          currentMap = (Map<String, Object>) currentMap.get(part);
+        }
+      }
+
+      // Remove the final key from the required map
+      if (currentMap != null && removeKey) {
+        currentMap.remove(keyParts[keyParts.length - 1]);
+      }
+    }
+
+    return clonedParameters;
+  }
+
+  @VisibleForTesting
+  void addResolvedStepInputs(String planExecutionId, String nodeExecutionId, PmsStepParameters resolvedStepInputs) {
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, planExecutionId, resolvedStepInputs);
+    log.info("Added Resolved step Inputs");
   }
 
   @Override
@@ -259,15 +305,20 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         return;
       }
       if (nodeExecution.getStatus() != RUNNING) {
-        log.info("Marking the nodeExecution with id {} as RUNNING", nodeExecutionId);
+        Status previousNodeExecutionStatus = nodeExecution.getStatus();
+        log.info("Marking the nodeExecution with id {} as RUNNING as previous status {}", nodeExecutionId,
+            previousNodeExecutionStatus);
         nodeExecution = Preconditions.checkNotNull(
             nodeExecutionService.updateStatusWithOps(nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class)));
         // After resuming, pipeline status need to be set. Ex: Pipeline waiting on approval step, pipeline status is
         // waiting, after approval, node execution is marked as running and,  similarly we are marking for pipeline.
         // Earlier pipeline status was marked from step itself.
 
-        // Please refer the explanation added above the method - calculateAndUpdateRunningStatus(
-        planExecutionService.calculateAndUpdateRunningStatus(ambiance.getPlanExecutionId(), nodeExecutionId);
+        // PlanExecution status update check is not even required if previousStatus of nodeExecution was in
+        // FLOWING_STATUS
+        if (!StatusUtils.flowingStatuses().contains(previousNodeExecutionStatus)) {
+          planExecutionService.calculateAndUpdateRunningStatusUnderLock(ambiance.getPlanExecutionId(), null);
+        }
       } else {
         // This will happen if the node is not in any paused or waiting statuses.
         log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);

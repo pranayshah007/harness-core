@@ -27,12 +27,15 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.instance.outcome.HostOutcome;
 import io.harness.cdng.instance.outcome.InstanceOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.ssh.output.HostsOutput;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
 import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNG;
@@ -79,6 +82,7 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -216,13 +220,28 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
       instanceElements =
           InstanceMapperUtils.mapJsonToInstanceElements(INSTANCE_NAME, infrastructureOutcome.getInstanceAttributes(),
               infrastructureOutcome.getInstancesListPath(), response.getOutput(), instanceElementMapper);
+
+      String resolvedFetchScript = getResolvedFetchInstanceScript(ambiance, infrastructureOutcome);
       instanceElements.forEach(serverInstanceInfo -> {
-        serverInstanceInfo.setInstanceFetchScript(getResolvedFetchInstanceScript(ambiance, infrastructureOutcome));
+        serverInstanceInfo.setInstanceFetchScript(resolvedFetchScript);
         serverInstanceInfo.setInfrastructureKey(infrastructureOutcome.getInfrastructureKey());
       });
+
+      CustomDeploymentOutcomeMetadata customDeploymentOutcomeMetadata =
+          CustomDeploymentOutcomeMetadata.builder()
+              .instanceFetchScript(resolvedFetchScript)
+              .delegateSelectors(getDelegateSelectors(stepParameters))
+              .build();
+
+      DeploymentInfoOutcome deploymentInfoOutcome =
+          DeploymentInfoOutcome.builder()
+              .serverInstanceInfoList(
+                  instanceElements.stream().map(element -> (ServerInstanceInfo) element).collect(Collectors.toList()))
+              .deploymentOutcomeMetadata(customDeploymentOutcomeMetadata)
+              .build();
       validateInstanceElements(instanceElements, infrastructureOutcome);
-      StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
-          instanceElements.stream().map(element -> (ServerInstanceInfo) element).collect(Collectors.toList()));
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveDeploymentInfoOutcomeIntoSweepingOutput(ambiance, deploymentInfoOutcome);
       InstancesOutcome instancesOutcome = buildInstancesOutcome(instanceElements);
       executionSweepingOutputService.consume(
           ambiance, OutputExpressionConstants.INSTANCES, instancesOutcome, StepCategory.STAGE.name());
@@ -233,6 +252,12 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
     } finally {
       closeLogStream(ambiance);
     }
+  }
+
+  private Set<String> getDelegateSelectors(StepBaseParameters stepParameters) {
+    FetchInstanceScriptStepParameters stepSpec = (FetchInstanceScriptStepParameters) stepParameters.getSpec();
+    List<TaskSelector> delegateSelectors = TaskSelectorYaml.toTaskSelector(stepSpec.getDelegateSelectors());
+    return delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet());
   }
 
   private Set<String> getInstances(List<CustomDeploymentServerInstanceInfo> instanceElements) {

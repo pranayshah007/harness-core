@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 import lombok.SneakyThrows;
 import org.junit.Rule;
@@ -68,7 +69,8 @@ public class TerragruntClientImplTest extends CategoryTest {
     Path backendFilePath = Files.createFile(Paths.get("./backend-file"));
     try {
       FileIo.writeFile(backendFilePath, "backend config".getBytes(StandardCharsets.UTF_8));
-      testInit("./backend-file", TerragruntCommandUtils.init("./backend-file", TerragruntRunType.RUN_MODULE));
+      testInit("./backend-file",
+          TerragruntCommandUtils.init("./backend-file", TerragruntRunType.RUN_MODULE, "-lock-timeout=10s"));
     } finally {
       FileIo.deleteFileIfExists(backendFilePath.toString());
     }
@@ -79,7 +81,8 @@ public class TerragruntClientImplTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testInitBackendFileDoesntExist() {
-    testInit("./backend-file-2", TerragruntCommandUtils.init("./should-not-be-append", TerragruntRunType.RUN_MODULE));
+    testInit("./backend-file-2",
+        TerragruntCommandUtils.init("./should-not-be-append", TerragruntRunType.RUN_MODULE, "-lock-timeout=10s"));
   }
 
   @Test
@@ -134,13 +137,16 @@ public class TerragruntClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPlanRunModule() {
     final TerragruntClient tgClient = createClient();
-    final String expectedCommand = TerragruntCommandUtils.plan(
-        "-target=\"module.module-a\"", " -var-file=\"var-files/file1.var\"  -var-file=\"var-files/file2.var\" ", false);
+    final String expectedCommand = TerragruntCommandUtils.plan("-target=\"module.module-a\"",
+        " -var-file=\"var-files/file1.var\"  -var-file=\"var-files/file2.var\" ", false, "-lock-timeout=10s");
     final TerragruntPlanCliRequest request =
         TerragruntPlanCliRequest.builder()
             .timeoutInMillis(60000L)
             .runType(TerragruntRunType.RUN_MODULE)
             .args(TerragruntCliArgs.builder()
+                      .additionalCliArgs(new HashMap<>() {
+                        { put("PLAN", "-lock-timeout=10s"); }
+                      })
                       .targets(singletonList("module.module-a"))
                       .varFiles(asList("var-files/file1.var", "var-files/file2.var"))
                       .build())
@@ -161,9 +167,16 @@ public class TerragruntClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPlanRunAll() {
     final TerragruntClient tgClient = createClient();
-    final String expectedCommand = TerragruntCommandUtils.runAllPlan("", "", false);
-    final TerragruntPlanCliRequest request =
-        TerragruntPlanCliRequest.builder().timeoutInMillis(60000L).runType(TerragruntRunType.RUN_ALL).build();
+    final String expectedCommand = TerragruntCommandUtils.runAllPlan("", "", false, "-lock-timeout=10s");
+    final TerragruntPlanCliRequest request = TerragruntPlanCliRequest.builder()
+                                                 .timeoutInMillis(60000L)
+                                                 .args(TerragruntCliArgs.builder()
+                                                           .additionalCliArgs(new HashMap<>() {
+                                                             { put("PLAN", "-lock-timeout=10s"); }
+                                                           })
+                                                           .build())
+                                                 .runType(TerragruntRunType.RUN_ALL)
+                                                 .build();
 
     setupCliResponse(CommandExecutionStatus.FAILURE, "plan run-all error", expectedCommand, request);
 
@@ -247,13 +260,17 @@ public class TerragruntClientImplTest extends CategoryTest {
   private void testInit(String backendFile, String expectedCommand)
       throws IOException, InterruptedException, TimeoutException {
     final TerragruntClient tgClient = createClient();
-    final TerragruntCliRequest terragruntCliRequest =
-        TerragruntCliRequest.builder()
-            .envVars(ImmutableMap.of("TEST_ENV", "TEST_VALUE"))
-            .timeoutInMillis(60000L)
-            .runType(TerragruntRunType.RUN_MODULE)
-            .args(TerragruntCliArgs.builder().backendConfigFile(backendFile).build())
-            .build();
+    final TerragruntCliRequest terragruntCliRequest = TerragruntCliRequest.builder()
+                                                          .envVars(ImmutableMap.of("TEST_ENV", "TEST_VALUE"))
+                                                          .timeoutInMillis(60000L)
+                                                          .runType(TerragruntRunType.RUN_MODULE)
+                                                          .args(TerragruntCliArgs.builder()
+                                                                    .backendConfigFile(backendFile)
+                                                                    .additionalCliArgs(new HashMap<>() {
+                                                                      { put("INIT", "-lock-timeout=10s"); }
+                                                                    })
+                                                                    .build())
+                                                          .build();
     setupCliResponse(CommandExecutionStatus.SUCCESS, "init-output", expectedCommand, terragruntCliRequest);
 
     CliResponse response = tgClient.init(terragruntCliRequest, logCallback);

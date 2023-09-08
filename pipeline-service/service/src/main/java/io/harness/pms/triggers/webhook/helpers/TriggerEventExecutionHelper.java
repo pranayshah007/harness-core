@@ -128,7 +128,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class TriggerEventExecutionHelper {
   private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-  private SecretManagerClientService ngSecretService;
+  @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   private TaskExecutionUtils taskExecutionUtils;
   private final NGSettingsClient settingsClient;
   private final NGTriggerRepository ngTriggerRepository;
@@ -408,8 +408,9 @@ public class TriggerEventExecutionHelper {
         triggerPayloadBuilder.setManifestData(ManifestData.newBuilder().setVersion(build).build());
       }
       TriggerPayload triggerPayload = triggerPayloadBuilder.build();
-      PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionReques(
-          triggerDetails, triggerPayload, runtimeInputYaml);
+      PlanExecution response =
+          triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(
+              triggerDetails, triggerPayload, runtimeInputYaml);
       if (triggerPayload != null) {
         pseudoEvent.setPayload(triggerPayload.toString());
       }

@@ -10,7 +10,6 @@ package io.harness.ci.execution.execution;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
 import static io.harness.rule.OwnerRule.HARSH;
-import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
@@ -114,17 +113,6 @@ public class StageCleanupUtilityTest extends CIExecutionTestBase {
 
     assertThat(cleanupTaskParams).isNotNull();
     assertEquals(cleanupTaskParams.getType(), CICleanupTaskParams.Type.VM);
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testHandleEventWithInitialiseFailed() {
-    when(executionSweepingOutputResolver.resolveOptional(any(), any()))
-        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
-
-    CICleanupTaskParams cik8CleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
-    assertThat(cik8CleanupTaskParams).isNull();
   }
 
   @Test

@@ -64,8 +64,9 @@ public class HarnessServiceToBackstageComponent
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
     metadata.setMetadata(serviceResponseDTO.getIdentifier(),
         orgIdentifier + "-" + projectIdentifier + "-" + serviceResponseDTO.getIdentifier(),
-        truncateName(serviceResponseDTO.getIdentifier()), serviceResponseDTO.getDescription(),
-        getTags(serviceResponseDTO.getTags()), getHarnessCiCdAnnotations(serviceResponseDTO));
+        truncateName(serviceResponseDTO.getIdentifier()), serviceResponseDTO.getName(),
+        serviceResponseDTO.getDescription(), getTags(serviceResponseDTO.getTags()),
+        getHarnessCiCdAnnotations(serviceResponseDTO));
     backstageCatalogComponentEntity.setMetadata(metadata);
 
     BackstageCatalogComponentEntity.Spec spec = new BackstageCatalogComponentEntity.Spec();

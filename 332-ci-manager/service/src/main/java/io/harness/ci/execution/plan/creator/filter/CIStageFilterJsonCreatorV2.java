@@ -120,7 +120,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
     if (ciCodeBase != null) {
       Build build = ParameterFieldHelper.getParameterFieldValue(ciCodeBase.getBuild());
       if (build != null && COMMIT_SHA.equals(build.getType())) {
-        throw new CIStageExecutionException("CommitSha build type is not allowed for CI codebase");
+        throw new CIStageExecutionException("commitSha build type is not allowed for CI codebase");
       }
       if (ciCodeBase.getRepoName().getValue() != null) {
         ciFilterBuilder.repoName(ciCodeBase.getRepoName().getValue());

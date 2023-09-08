@@ -74,6 +74,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -292,6 +293,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
               .filter(serviceVariable -> StringUtils.isBlank(serviceVariable.getServiceId()))
               .collect(Collectors.toList())));
     }
+    variables.sort(Comparator.comparing(NGVariable::getName));
     return variables;
   }
 

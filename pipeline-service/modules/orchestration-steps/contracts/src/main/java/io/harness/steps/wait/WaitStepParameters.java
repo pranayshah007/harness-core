@@ -46,9 +46,4 @@ public class WaitStepParameters implements SpecParameters {
     this.duration = duration;
     this.uuid = uuid;
   }
-  @Override
-  public SpecParameters getViewJsonObject() {
-    // omit secretOutputVars since they should not be visible to users
-    return WaitStepParameters.infoBuilder().duration(this.duration).uuid(this.uuid).build();
-  }
 }

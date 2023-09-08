@@ -20,6 +20,8 @@ import io.harness.pms.sdk.core.interrupt.InterruptEventHandler;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -30,5 +32,10 @@ public class InterruptEventMessageListener extends PmsAbstractMessageListener<In
   public InterruptEventMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, InterruptEventHandler interruptEventHandler) {
     super(serviceName, InterruptEvent.class, interruptEventHandler);
+  }
+
+  @Override
+  protected InterruptEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return InterruptEvent.parseFrom(message);
   }
 }

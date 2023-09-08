@@ -130,6 +130,11 @@ public class PipelinesApiImpl implements PipelinesApi {
   }
 
   @Override
+  public Response getInputsSchemaDetails(String org, String project, String pipeline, String harnessAccount) {
+    return Response.ok().build();
+  }
+
+  @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getPipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied,

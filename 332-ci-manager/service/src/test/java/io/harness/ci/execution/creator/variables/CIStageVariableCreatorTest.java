@@ -157,6 +157,7 @@ public class CIStageVariableCreatorTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.gcpBuildPush.type", "pipeline.stages.gcpBuildPush.pipelineVariables",
             "pipeline.stages.gcpBuildPush.identifier", "pipeline.stages.gcpBuildPush.tags",
-            "pipeline.stages.gcpBuildPush.startTs", "pipeline.stages.gcpBuildPush.endTs");
+            "pipeline.stages.gcpBuildPush.startTs", "pipeline.stages.gcpBuildPush.endTs",
+            "pipeline.stages.gcpBuildPush.status");
   }
 }

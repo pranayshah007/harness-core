@@ -2137,6 +2137,33 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   }
 
   @Override
+  public List<V1Pod> getRunningPodsWithLabels(
+      KubernetesConfig kubernetesConfig, String namespace, List<String> labels) {
+    final Supplier<List<V1Pod>> podSupplier = Retry.decorateSupplier(retry, () -> {
+      try {
+        if (isEmpty(labels)) {
+          return Collections.emptyList();
+        }
+        ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
+        String labelSelector = String.join(K8S_SELECTOR_DELIMITER, labels);
+        V1PodList podList = new CoreV1Api(apiClient).listNamespacedPod(
+            namespace, null, null, null, null, labelSelector, null, null, null, null, false);
+        return podList.getItems()
+            .stream()
+            .filter(pod
+                -> pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() == null
+                    && pod.getStatus() != null && StringUtils.equals(pod.getStatus().getPhase(), RUNNING))
+            .collect(toList());
+      } catch (ApiException exception) {
+        String message = format(
+            "Unable to get running pods. Code: %s, message: %s", exception.getCode(), getErrorMessage(exception));
+        throw new InvalidRequestException(message, exception, USER);
+      }
+    });
+    return podSupplier.get();
+  }
+
+  @Override
   public V1Deployment getDeployment(KubernetesConfig kubernetesConfig, String namespace, String name) {
     if (kubernetesConfig == null || isBlank(name)) {
       return null;

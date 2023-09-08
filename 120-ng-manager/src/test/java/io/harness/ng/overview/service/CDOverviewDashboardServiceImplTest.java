@@ -683,18 +683,18 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   private List<ArtifactDeploymentDetailModel> getArtifactDeploymentDetailModelList() {
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = new ArrayList<>();
     artifactDeploymentDetailModels.add(
-        new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, 1l, PLAN_EXECUTION_1, null));
+        new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, "", 1l, PLAN_EXECUTION_1, null));
     artifactDeploymentDetailModels.add(
-        new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, 2l, PLAN_EXECUTION_2, null));
+        new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, "", 2l, PLAN_EXECUTION_2, null));
     return artifactDeploymentDetailModels;
   }
 
   private List<ArtifactDeploymentDetailModel> getArtifactDeploymentDetailModelList_ArtifactCard() {
     List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = new ArrayList<>();
     artifactDeploymentDetailModels.add(
-        new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, 1l, PLAN_EXECUTION_1, null));
+        new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, "", 1l, PLAN_EXECUTION_1, null));
     artifactDeploymentDetailModels.add(
-        new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, 2l, PLAN_EXECUTION_2, null));
+        new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, "", 2l, PLAN_EXECUTION_2, null));
     return artifactDeploymentDetailModels;
   }
 
@@ -840,8 +840,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(true).build()));
   }
 
-  private void verifyServiceEntityCall() {
-    verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+  private void verifyServiceEntityCall(int times) {
+    verify(serviceEntityServiceImpl, times(times)).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
   }
 
   private List<ServiceArtifactExecutionDetail> getServiceArtifactExecutionDetailList() {
@@ -1045,7 +1045,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             cdOverviewDashboardService1.getInstanceGroupedByArtifactList(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID));
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfo(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, SERVICE_ID, null, false);
-    verifyServiceEntityCall();
+    verifyServiceEntityCall(1);
     verify(cdOverviewDashboardService1).getInstanceGroupedByServiceListHelper(anyList());
   }
   @Test
@@ -1066,7 +1066,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             cdOverviewDashboardService1.getInstanceGroupedByArtifactList(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID));
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfo(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, SERVICE_ID, null, true);
-    verifyServiceEntityCall();
+    verifyServiceEntityCall(1);
     verify(cdOverviewDashboardService1).getInstanceGroupedByServiceListHelper(anyList());
   }
 
@@ -1203,7 +1203,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     when(instanceDashboardService.getInstanceCountForEnvironmentFilteredByService(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false))
         .thenReturn(environmentInstanceCountModels);
-    when(instanceDashboardService.getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, true, false))
+    when(instanceDashboardService.getLastDeployedInstance(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, true, false, false))
         .thenReturn(artifactDeploymentDetailModels);
     when(environmentService.fetchesNonDeletedEnvIdentifiersFromList(any(), any(), any(), any()))
         .thenReturn(Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1));
@@ -1222,9 +1223,10 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         .isEqualTo(environmentInstanceDetailResult.getEnvironmentGroupInstanceDetails().size());
     verify(instanceDashboardService)
         .getInstanceCountForEnvironmentFilteredByService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false);
-    verify(instanceDashboardService).getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, true, false);
+    verify(instanceDashboardService)
+        .getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, true, false, false);
     verify(environmentService).fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds);
-    verifyServiceEntityCall();
+    verifyServiceEntityCall(1);
   }
 
   @Test
@@ -1257,7 +1259,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             Arrays.asList(instanceDetailGroupedByPipelineExecution2, instanceDetailGroupedByPipelineExecution1);
 
     when(instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(ACCOUNT_ID, ORG_ID, PROJECT_ID,
-             SERVICE_ID, ENVIRONMENT_1, EnvironmentType.Production, INFRASTRUCTURE_1, null, DISPLAY_NAME_1, false))
+             SERVICE_ID, ENVIRONMENT_1, EnvironmentType.Production, INFRASTRUCTURE_1, null, DISPLAY_NAME_1, "", false,
+             false))
         .thenReturn(instanceDetailGroupedByPipelineExecutionList);
     mockServiceEntityForNonGitOps();
 
@@ -1267,13 +1270,13 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             .build();
     InstanceDetailGroupedByPipelineExecutionList instanceDetailGroupedByPipelineExecutionList2 =
         cdOverviewDashboardService.getInstanceDetailGroupedByPipelineExecution(ACCOUNT_ID, ORG_ID, PROJECT_ID,
-            SERVICE_ID, ENVIRONMENT_1, EnvironmentType.Production, INFRASTRUCTURE_1, null, DISPLAY_NAME_1);
+            SERVICE_ID, ENVIRONMENT_1, EnvironmentType.Production, INFRASTRUCTURE_1, null, DISPLAY_NAME_1, "");
 
     assertThat(instanceDetailGroupedByPipelineExecutionList1).isEqualTo(instanceDetailGroupedByPipelineExecutionList2);
-    verifyServiceEntityCall();
+    verifyServiceEntityCall(2);
     verify(instanceDashboardService)
         .getActiveInstanceDetailGroupedByPipelineExecution(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_1,
-            EnvironmentType.Production, INFRASTRUCTURE_1, null, DISPLAY_NAME_1, false);
+            EnvironmentType.Production, INFRASTRUCTURE_1, null, DISPLAY_NAME_1, "", false, false);
   }
 
   @Test
@@ -1284,7 +1287,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList =
         InstanceGroupedByEnvironmentList.builder().build();
     when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false, false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false, false, null, false))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
     when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
@@ -1301,7 +1304,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false, false);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false, false, null, false);
   }
 
   @Test
@@ -1313,7 +1316,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     List<Environment> environments = getEnvironmentList();
     List<String> envIds = Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1);
 
-    when(instanceDashboardService.getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false))
+    when(instanceDashboardService.getLastDeployedInstance(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false, false))
         .thenReturn(artifactDeploymentDetailModels);
     when(environmentService.fetchesNonDeletedEnvIdentifiersFromList(any(), any(), any(), any()))
         .thenReturn(Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1));
@@ -1347,9 +1351,10 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         cdOverviewDashboardService.getArtifactInstanceDetails(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
     assertThat(artifactInstanceDetails.getArtifactInstanceDetails().size())
         .isEqualTo(artifactInstanceDetailsResult.getArtifactInstanceDetails().size());
-    verify(instanceDashboardService).getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false);
+    verify(instanceDashboardService)
+        .getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false, false);
     verify(environmentService).fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds);
-    verifyServiceEntityCall();
+    verifyServiceEntityCall(1);
   }
 
   @Test
@@ -1359,7 +1364,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
     InstanceGroupedOnArtifactList instanceGroupedOnArtifactList = InstanceGroupedOnArtifactList.builder().build();
     when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true, null, false))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
     when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
@@ -1376,7 +1381,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true, null, false);
   }
 
   @Test
@@ -1619,7 +1624,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList =
         InstanceGroupedByEnvironmentList.builder().build();
     when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, null, SERVICE_ID, null, false, false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, null, SERVICE_ID, null, false, false, null, false))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
     when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
@@ -1651,7 +1656,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     assertThat(instanceGroupedByEnvironmentList1).isEqualTo(instanceGroupedByEnvironmentList);
     verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
     verify(instanceDashboardService)
-        .getActiveServiceInstanceInfoWithEnvType(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, SERVICE_ID, null, false, false);
+        .getActiveServiceInstanceInfoWithEnvType(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, null, SERVICE_ID, null, false, false, null, false);
   }
 
   @Test
@@ -1665,7 +1671,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
     InstanceGroupedOnArtifactList instanceGroupedOnArtifactList = InstanceGroupedOnArtifactList.builder().build();
     when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true, null, false))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
     when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
@@ -1685,11 +1691,12 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_1, null, DISPLAY_NAME_1, false);
 
     verify(instanceDashboardService, times(1))
-        .getActiveServiceInstanceInfoWithEnvType(any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
+        .getActiveServiceInstanceInfoWithEnvType(
+            any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), any(), anyBoolean());
     verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, false);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, false, null, false);
   }
 
   @Test
@@ -1703,7 +1710,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
     InstanceGroupedOnArtifactList instanceGroupedOnArtifactList = InstanceGroupedOnArtifactList.builder().build();
     when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true, null, false))
         .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
     when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
         .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
@@ -1723,11 +1730,12 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_1, null, "", true);
 
     verify(instanceDashboardService, times(2))
-        .getActiveServiceInstanceInfoWithEnvType(any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
+        .getActiveServiceInstanceInfoWithEnvType(
+            any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean(), any(), anyBoolean());
     verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
     verify(instanceDashboardService)
         .getActiveServiceInstanceInfoWithEnvType(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false, true);
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false, true, null, false);
   }
 
   private ActiveServiceInstanceInfoWithEnvType getActiveServiceInstanceInfoWithEnvType(

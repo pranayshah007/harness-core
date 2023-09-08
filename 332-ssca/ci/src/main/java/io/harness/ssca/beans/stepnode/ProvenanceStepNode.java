@@ -37,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.SSCA)
 @RecasterAlias("io.harness.ssca.beans.stepnode.ProvenanceStepNode")
 public class ProvenanceStepNode extends CIAbstractStepNode {
-  @JsonProperty("type") private ProvenanceStepNode.StepType type = StepType.Provenance;
+  @JsonProperty("type") private ProvenanceStepNode.StepType type = StepType.provenance;
 
   @NotNull
   @JsonProperty("spec")
@@ -55,7 +55,7 @@ public class ProvenanceStepNode extends CIAbstractStepNode {
   }
 
   enum StepType {
-    Provenance(CIStepInfoType.PROVENANCE.getDisplayName());
+    provenance(CIStepInfoType.PROVENANCE.getDisplayName());
     @Getter String name;
     StepType(String name) {
       this.name = name;

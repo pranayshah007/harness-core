@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 55
+version: 57
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1396,27 +1396,6 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
-  - identifier: iac_stack_view
-    name: View IAC Stack
-    status: STAGING
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: iac_stack_edit
-    name: Create or Edit IAC Stack
-    status: STAGING
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: iac_stack_delete
-    name: Delete IAC Stack
-    status: STAGING
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
   - identifier: core_streamingDestination_view
     name: View Streaming Destination
     status: ACTIVE
@@ -1470,7 +1449,7 @@ permissions:
       - account
       - organization
       - project
-  - identifier: code_commitCheck_report
+  - identifier: code_repo_reportCommitCheck
     name: Report a Status Check Result on a Commit
     status: ACTIVE
     allowedScopeLevels:
@@ -1585,6 +1564,55 @@ permissions:
     name: Delete CET Critical Event
     status: ACTIVE
     includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_view
+    name: View Infrastructure Workspace
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_edit
+    name: Create/Edit Infrastructure Workspace
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_delete
+    name: Delete Infrastructure Workspace
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_editvariable
+    name: Create/Edit Infrastructure Workspace Variable
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_deletevariable
+    name: Delete Infrastructure Workspace Variable
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_approve
+    name: Approve Infrastructure Workspace
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_accessstate
+    name: Access Infrastructure Workspace State
+    status: STAGING
     allowedScopeLevels:
       - account
       - organization

@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
@@ -170,6 +171,13 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
       @Singleton
       public boolean getSerializationForDelegate() {
         return false;
+      }
+
+      @Provides
+      @Singleton
+      @Named("useNewNodeEntityConfiguration")
+      public Boolean getUseNewNodeEntityConfiguration() {
+        return true;
       }
     });
 

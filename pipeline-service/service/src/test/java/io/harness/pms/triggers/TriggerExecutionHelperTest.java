@@ -20,8 +20,10 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -56,6 +58,11 @@ import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactoryRegistrySpec;
+import io.harness.ngtriggers.beans.source.artifact.EcrSpec;
+import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
+import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -68,10 +75,12 @@ import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.BuildInfo;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
+import io.harness.pms.contracts.triggers.ArtifactData;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.contracts.triggers.Type;
@@ -462,12 +471,113 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     doReturn(pipelineEntityToExecute)
         .when(pmsPipelineService)
         .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
-    assertThatThrownBy(()
-                           -> triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionReques(
-                               triggerDetails, payloadBuilder.build(), null))
+    assertThatThrownBy(
+        ()
+            -> triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(
+                triggerDetails, payloadBuilder.build(), null))
         .isInstanceOf(TriggerException.class)
         .hasMessage(
             "Failed while requesting Pipeline Execution through Trigger: Unable to continue trigger execution. Pipeline with identifier: target, with org: org, with ProjectId: proj, For Trigger: trigger has missing or empty pipelineBranchName in trigger's yaml.");
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testBuildInfoForArtifacts() {
+    // Test for defined artifact in ArtifactConfigHelper.fetchImagePath(ArtifactTriggerConfig config)
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(ngTriggerEntity)
+            .ngTriggerConfigV2(NGTriggerConfigV2.builder()
+                                   .source(NGTriggerSourceV2.builder()
+                                               .spec(ArtifactTriggerConfig.builder()
+                                                         .spec(EcrSpec.builder().imagePath("ecr/image/path").build())
+                                                         .build())
+                                               .build())
+                                   .build())
+            .build();
+    TriggerPayload payload = TriggerPayload.newBuilder()
+                                 .setType(Type.ARTIFACT)
+                                 .setArtifactData(ArtifactData.newBuilder().setBuild("1").build())
+                                 .build();
+    TriggerType type = triggerExecutionHelper.findTriggerType(payload);
+
+    BuildInfo buildinfo = triggerExecutionHelper.getBuildInfoForArtifacts(triggerDetails, type, payload);
+    assertNotNull(buildinfo);
+    assertThat(buildinfo.getBuild().equals(payload.getArtifactData().getBuild()));
+    assertThat(buildinfo.getImagePath().equals("ecr/image/path"));
+
+    // Test for undefined artifact in ArtifactConfigHelper.fetchImagePath(ArtifactTriggerConfig config)
+    triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(ngTriggerEntity)
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(
+                        NGTriggerSourceV2.builder()
+                            .spec(
+                                ArtifactTriggerConfig.builder()
+                                    .spec(ArtifactoryRegistrySpec.builder().artifactPath("artifact/image/path").build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    buildinfo = triggerExecutionHelper.getBuildInfoForArtifacts(triggerDetails, type, payload);
+    assertThat(buildinfo.getBuild().equals(payload.getArtifactData().getBuild()));
+    assertThat(buildinfo.getImagePath().equals(""));
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testBuildInfoForManifest() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(ngTriggerEntity)
+            .ngTriggerConfigV2(NGTriggerConfigV2.builder()
+                                   .source(NGTriggerSourceV2.builder()
+                                               .spec(ManifestTriggerConfig.builder()
+                                                         .spec(HelmManifestSpec.builder().chartName("test").build())
+                                                         .build())
+                                               .build())
+                                   .build())
+            .build();
+    TriggerPayload payload = TriggerPayload.newBuilder()
+                                 .setType(Type.MANIFEST)
+                                 .setArtifactData(ArtifactData.newBuilder().setBuild("1").build())
+                                 .build();
+    TriggerType type = triggerExecutionHelper.findTriggerType(payload);
+
+    BuildInfo buildinfo =
+        triggerExecutionHelper.getBuildInfoForArtifacts(triggerDetails, TriggerType.ARTIFACT, payload);
+    assertNotNull(buildinfo);
+    assertThat(buildinfo.getImagePath().equals(""));
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testBuildInfoForWebhook() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(ngTriggerEntity)
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .spec(WebhookTriggerConfigV2.builder().spec(GithubSpec.builder().build()).build())
+                                .build())
+                    .build())
+            .build();
+    TriggerPayload payload = TriggerPayload.newBuilder()
+                                 .setType(Type.WEBHOOK)
+                                 .setArtifactData(ArtifactData.newBuilder().setBuild("1").build())
+                                 .build();
+    TriggerType type = triggerExecutionHelper.findTriggerType(payload);
+
+    BuildInfo buildinfo = triggerExecutionHelper.getBuildInfoForArtifacts(triggerDetails, type, payload);
+    assertNotNull(buildinfo);
+    assertThat(buildinfo.getImagePath().equals(""));
   }
 
   @Test

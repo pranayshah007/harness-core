@@ -104,6 +104,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("tiServiceConfig") private TIServiceConfig tiServiceConfig;
   @JsonProperty("scorecardScoreComputationIteratorConfig")
   private IteratorConfig scorecardScoreComputationIteratorConfig;
+  @JsonProperty("cpu") private String cpu;
+  @JsonProperty("scoreComputerThreadsPerCore") private String scoreComputerThreadsPerCore;
   private String managerTarget;
   private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();

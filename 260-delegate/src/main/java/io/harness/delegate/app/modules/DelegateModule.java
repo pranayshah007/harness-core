@@ -343,6 +343,7 @@ import io.harness.delegate.task.googlefunction.GoogleFunctionPrepareRollbackTask
 import io.harness.delegate.task.googlefunction.GoogleFunctionRollbackTask;
 import io.harness.delegate.task.googlefunction.GoogleFunctionTrafficShiftTask;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
+import io.harness.delegate.task.helm.EcrHelmApiListTagsDelegateTask;
 import io.harness.delegate.task.helm.HelmCommandTaskNG;
 import io.harness.delegate.task.helm.HelmDeployServiceImplNG;
 import io.harness.delegate.task.helm.HelmDeployServiceNG;
@@ -2108,6 +2109,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_CLEANUP_TASK_NG).toInstance(TerraformCloudCleanupTaskNG.class);
     mapBinder.addBinding(TaskType.OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG)
         .toInstance(OciHelmDockerApiListTagsDelegateTask.class);
+    mapBinder.addBinding(TaskType.ECR_HELM_API_LIST_TAGS_TASK).toInstance(EcrHelmApiListTagsDelegateTask.class);
     mapBinder.addBinding(TaskType.K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK).toInstance(K8sTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS).toInstance(CommandTaskNG.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_MANIFEST_TASK).toInstance(HelmFetchChartManifestTask.class);

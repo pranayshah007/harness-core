@@ -32,4 +32,5 @@ public class VmImageConfig {
   String iacmTerraform;
   String sscaOrchestration;
   String sscaEnforcement;
+  String slsaVerification;
 }

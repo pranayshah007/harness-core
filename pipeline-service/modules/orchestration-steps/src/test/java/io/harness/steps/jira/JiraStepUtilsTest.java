@@ -11,37 +11,54 @@ import static io.harness.rule.OwnerRule.GARVIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.Map;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class JiraStepUtilsTest extends CategoryTest {
+  @Mock private NGLogCallback mockNgLogCallback;
+
+  @Before
+  public void setup() {
+    MockitoAnnotations.initMocks(this);
+  }
+
   @Test
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void testProcessJiraFieldsInParameters() {
-    assertThat(JiraStepUtils.processJiraFieldsInParameters(null)).isEmpty();
-    assertThat(JiraStepUtils.processJiraFieldsInParameters(Collections.emptyMap())).isEmpty();
+    doNothing().when(mockNgLogCallback).saveExecutionLog(any(), any());
+    assertThat(JiraStepUtils.processJiraFieldsInParameters(null, mockNgLogCallback)).isEmpty();
+    assertThat(JiraStepUtils.processJiraFieldsInParameters(Collections.emptyMap(), mockNgLogCallback)).isEmpty();
 
-    assertThatThrownBy(()
-                           -> JiraStepUtils.processJiraFieldsInParameters(ImmutableMap.of("a",
-                               ParameterField.createValueField("va"), "b", ParameterField.createValueField(null), "c",
-                               ParameterField.createExpressionField(true, "<+abc>", null, true))))
+    assertThatThrownBy(
+        ()
+            -> JiraStepUtils.processJiraFieldsInParameters(
+                ImmutableMap.of("a", ParameterField.createValueField("va"), "b", ParameterField.createValueField(null),
+                    "c", ParameterField.createExpressionField(true, "<+abc>", null, true)),
+                mockNgLogCallback))
         .hasMessage("Field [c] has invalid jira field value");
 
     Map<String, String> fields = JiraStepUtils.processJiraFieldsInParameters(
-        ImmutableMap.of("a", ParameterField.createValueField("va"), "b", ParameterField.createValueField(null)));
+        ImmutableMap.of("a", ParameterField.createValueField("va"), "b", ParameterField.createValueField(null)),
+        mockNgLogCallback);
     assertThat(fields.size()).isEqualTo(1);
     assertThat(fields.get("a")).isEqualTo("va");
   }

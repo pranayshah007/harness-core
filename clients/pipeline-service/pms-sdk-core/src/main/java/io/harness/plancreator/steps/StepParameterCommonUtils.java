@@ -46,9 +46,7 @@ public class StepParameterCommonUtils {
 
   public StepElementParametersBuilder getStepParameters(
       StepElementConfig stepElementConfig, OnFailRollbackParameters failRollbackParameters) {
-    StepElementParametersBuilder stepBuilder = getStepParameters(stepElementConfig);
-    stepBuilder.rollbackParameters(failRollbackParameters);
-    return stepBuilder;
+    return getStepParameters(stepElementConfig);
   }
 
   public StageElementParametersBuilder getStageParameters(StageElementConfig stageElementConfig) {

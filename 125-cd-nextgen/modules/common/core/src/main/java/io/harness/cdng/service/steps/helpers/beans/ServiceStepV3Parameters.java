@@ -19,6 +19,8 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -50,5 +52,12 @@ public class ServiceStepV3Parameters implements StepParameters {
   @Override
   public String toViewJson() {
     return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));
+  }
+
+  @Override
+  public List<String> excludeKeysFromStepInputs() {
+    return new LinkedList<>(Arrays.asList("inputs", "envRef", "infraId", "envGroupRef", "envRefs",
+        "gitOpsMultiSvcEnvEnabled", "envInputs", "envToEnvInputs", "envToSvcOverrideInputs", "serviceOverrideInputs",
+        "childrenNodeIds", "deploymentType", "environmentGroupYaml", "environmentsYaml"));
   }
 }

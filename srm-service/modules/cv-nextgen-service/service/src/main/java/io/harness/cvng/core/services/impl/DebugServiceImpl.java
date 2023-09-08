@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.change.ChangeEventDTO;
@@ -15,6 +17,8 @@ import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
+import io.harness.cvng.core.beans.ProjectDeletionResponse;
+import io.harness.cvng.core.beans.ProjectDeletionResponse.EntityDetailsDTO;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -62,6 +66,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UuidAware;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -185,19 +190,44 @@ public class DebugServiceImpl implements DebugService {
   }
 
   @Override
-  public Boolean isProjectDeleted(ProjectParams projectParams) {
+  public ProjectDeletionResponse isProjectDeleted(ProjectParams projectParams) {
+    ProjectDeletionResponse projectDeletionResponse = null;
     if (!nextGenService.isProjectDeleted(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier())) {
-      throw new RuntimeException("Project is not deleted");
+      projectDeletionResponse = ProjectDeletionResponse.builder().isProjectDeleted(false).build();
+      return projectDeletionResponse;
     }
+    projectDeletionResponse = ProjectDeletionResponse.builder().isProjectDeleted(true).build();
+
+    List<EntityDetailsDTO> entityDetailsDTOList = new ArrayList<>();
+
     for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_WITH_PROJECT_DELETION) {
       Query<? extends PersistentEntity> query = hPersistence.createQuery(clazz)
                                                     .filter("accountId", projectParams.getAccountIdentifier())
                                                     .filter("orgIdentifier", projectParams.getOrgIdentifier())
                                                     .filter("projectIdentifier", projectParams.getProjectIdentifier());
-      Preconditions.checkArgument(query.asList().isEmpty(), String.format("%s entities are not deleted", clazz));
+
+      List<? extends PersistentEntity> queryList = query.asList();
+
+      if (!queryList.isEmpty()) {
+        EntityDetailsDTO entityDetailsDTO = EntityDetailsDTO.builder().entityName(clazz.toString()).build();
+        List<String> entityIdentifiers = new ArrayList<>();
+        queryList.stream().forEach(entity -> {
+          if (entity instanceof UuidAware) {
+            UuidAware uuidAware = (UuidAware) entity;
+            if (uuidAware.getUuid() == null) {
+              uuidAware.setUuid(generateUuid());
+            }
+            entityIdentifiers.add(uuidAware.getUuid());
+          }
+        });
+        entityDetailsDTO.setEntityIdentifiers(entityIdentifiers);
+        entityDetailsDTOList.add(entityDetailsDTO);
+      }
     }
-    return true;
+    projectDeletionResponse.setEntityDetailsDTOList(entityDetailsDTOList);
+
+    return projectDeletionResponse;
   }
 
   @Override
@@ -229,6 +259,14 @@ public class DebugServiceImpl implements DebugService {
       throw new RuntimeException("Debug Mode is turned off");
     }
     return serviceLevelObjectiveV2Service.forceDelete(projectParams, sloIdentifiers);
+  }
+
+  @Override
+  public boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> compositeSloIdentifiers) {
+    if (!debugConfigService.isDebugEnabled()) {
+      throw new RuntimeException("Debug Mode is turned off");
+    }
+    return serviceLevelObjectiveV2Service.forceDeleteCompositeSLO(projectParams, compositeSloIdentifiers);
   }
 
   @Override

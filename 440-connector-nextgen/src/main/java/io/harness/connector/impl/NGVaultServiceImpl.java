@@ -397,13 +397,13 @@ public class NGVaultServiceImpl implements NGVaultService {
 
   @Override
   public void processTokenLookup(ConnectorDTO connectorDTO, String accountIdentifier) {
+    if (!isTokenLookupRequired(connectorDTO)) {
+      return;
+    }
     AccountId accountId = AccountId.newBuilder().setId(accountIdentifier).build();
     io.harness.delegate.TaskType taskType =
         io.harness.delegate.TaskType.newBuilder().setType(NG_VAULT_TOKEN_LOOKUP.name()).build();
     if (!delegateService.isTaskTypeSupported(accountId, taskType)) {
-      return;
-    }
-    if (!isTokenLookupRequired(connectorDTO)) {
       return;
     }
 

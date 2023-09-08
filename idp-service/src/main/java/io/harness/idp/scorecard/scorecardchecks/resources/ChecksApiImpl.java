@@ -31,12 +31,14 @@ import io.harness.spec.server.idp.v1.model.DefaultSaveResponse;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -58,14 +60,16 @@ public class ChecksApiImpl implements ChecksApi {
   public Response getChecks(
       Boolean custom, String harnessAccount, Integer page, Integer limit, String sort, String searchTerm) {
     int pageIndex = page == null ? 0 : page;
-    int pageLimit = limit == null ? 1000 : limit;
+    int pageLimit = limit == null ? 10 : limit;
     Pageable pageRequest = isEmpty(sort)
         ? PageRequest.of(pageIndex, pageLimit, Sort.by(Sort.Direction.DESC, CheckEntity.CheckKeys.lastUpdatedAt))
         : PageUtils.getPageRequest(pageIndex, pageLimit, List.of(sort));
-    List<CheckListItem> checkListItems =
+    Page<CheckEntity> checkEntityList =
         checkService.getChecksByAccountId(custom, harnessAccount, pageRequest, searchTerm);
+    List<CheckListItem> checkListItems = new ArrayList<>();
+    checkEntityList.getContent().forEach(checkEntity -> checkListItems.add(CheckMapper.toDTO(checkEntity)));
     return idpCommonService.buildPageResponse(
-        pageIndex, pageLimit, checkListItems.size(), CheckMapper.toResponseList(checkListItems));
+        pageIndex, pageLimit, checkEntityList.getTotalElements(), CheckMapper.toResponseList(checkListItems));
   }
 
   @Override

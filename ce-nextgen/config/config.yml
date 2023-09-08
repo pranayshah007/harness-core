@@ -119,7 +119,7 @@ ngManagerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
   
 enforcementClientConfiguration:
   enforcementCheckEnabled: false

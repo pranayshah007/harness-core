@@ -18,6 +18,7 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sBlueGreenBaseStepInfo.K8sBlueGreenBaseStepInfoKeys;
@@ -32,6 +33,7 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.mapper.K8sPodToServiceInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sBGDeployRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -227,14 +229,18 @@ public class K8sBlueGreenStep extends CdTaskChainExecutable implements K8sStepEx
                                                   .build();
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME, k8sBlueGreenOutcome, StepOutcomeGroup.STEP.name());
-
+    HelmChartInfo helmChartInfo = k8sBGDeployResponse.getHelmChartInfo();
+    ReleaseHelmChartOutcome releaseHelmChartOutcome = k8sStepHelper.getHelmChartOutcome(helmChartInfo);
     StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
-        K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(
-            k8sBGDeployResponse.getK8sPodList(), k8sBGDeployResponse.getHelmChartInfo()));
+        K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sBGDeployResponse.getK8sPodList(), helmChartInfo));
 
     return responseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).outcome(k8sBlueGreenOutcome).build())
         .stepOutcome(stepOutcome)
+        .stepOutcome(StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.RELEASE_HELM_CHART_OUTCOME)
+                         .outcome(releaseHelmChartOutcome)
+                         .build())
         .build();
   }
 }

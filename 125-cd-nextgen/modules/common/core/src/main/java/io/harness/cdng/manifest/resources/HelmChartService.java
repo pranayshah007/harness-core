@@ -15,11 +15,11 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 public interface HelmChartService {
   HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId, String connectorId,
       String chartName, String region, String bucketName, String folderPath, String lastTag, String storeType,
-      String helmVersion);
+      String ociHelmChartStoreConfigType, String helmVersion, String registryId);
 
   HelmChartResponseDTO getHelmChartVersionDetailsV2(String accountId, String orgId, String projectId, String serviceRef,
       String manifestPath, String connectorId, String chartName, String region, String bucketName, String folderPath,
-      String lastTag);
+      String lastTag, String registryId);
 
   HelmManifestInternalDTO locateManifestInService(
       String accountId, String orgId, String projectId, String serviceRef, String manifestPath);

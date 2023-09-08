@@ -32,6 +32,7 @@ import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.MissingErrorResponseDataException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
@@ -440,8 +441,8 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
       try {
         ResponseData responseData = responseDataSupplier.get();
         notify(responseData);
-      } catch (
-          NoAvailableDelegatesException | NoInstalledDelegatesException | NoEligibleDelegatesInAccountException e) {
+      } catch (NoAvailableDelegatesException | NoInstalledDelegatesException | NoEligibleDelegatesInAccountException
+          | MissingErrorResponseDataException e) {
         log.error(
             "Git request failed because of no delegate for command:[{}], changeSetId:[{}], account:[{}], response:[{}]",
             gitCommandType, changeSetId, accountId, response, e);

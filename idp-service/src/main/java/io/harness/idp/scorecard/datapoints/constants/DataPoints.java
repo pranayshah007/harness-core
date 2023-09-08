@@ -28,7 +28,9 @@ public class DataPoints {
   // Harness
   public static final String STO_ADDED_IN_PIPELINE = "stoStageAdded";
   public static final String IS_POLICY_EVALUATION_SUCCESSFUL_IN_PIPELINE = "isPolicyEvaluationSuccessful";
-  public static final String PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS = "%ofCIPipelinePassingInPast7Days";
+  public static final String PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS =
+      "PercentageOfCIPipelinePassingInPastSevenDays";
   public static final String PIPELINE_TEST_FAILING_IN_CI_IS_ZERO = "noTestsFailingInCiPipeline";
   public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
+  public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
 }

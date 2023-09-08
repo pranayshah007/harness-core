@@ -75,10 +75,11 @@ public class HelmChartVersionResource {
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @QueryParam("fqnPath") String fqnPath,
       @QueryParam("connectorRef") String connectorIdentifier, @QueryParam("chartName") String chartName,
       @QueryParam("region") String region, @QueryParam("bucketName") String bucketName,
-      @QueryParam("folderPath") String folderPath, @QueryParam("lastTag") String lastTag) {
+      @QueryParam("folderPath") String folderPath, @QueryParam("lastTag") String lastTag,
+      @QueryParam("registryId") String registryId) {
     HelmChartResponseDTO helmChartResponseDTO =
         helmChartService.getHelmChartVersionDetailsV2(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
-            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag);
+            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag, registryId);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 
@@ -93,10 +94,11 @@ public class HelmChartVersionResource {
       @NotNull @QueryParam("chartName") String chartName, @QueryParam("region") String region,
       @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
       @QueryParam("lastTag") String lastTag, @NotNull @QueryParam("storeType") String storeType,
-      @QueryParam("helmVersion") String helmVersion) {
-    HelmChartResponseDTO helmChartResponseDTO =
-        helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier, projectIdentifier, connectorIdentifier,
-            chartName, region, bucketName, folderPath, lastTag, storeType, helmVersion);
+      @QueryParam("ociHelmChartStoreConfigType") String ociHelmChartStoreConfigType,
+      @QueryParam("helmVersion") String helmVersion, @QueryParam("registryId") String registryId) {
+    HelmChartResponseDTO helmChartResponseDTO = helmChartService.getHelmChartVersionDetails(accountId, orgIdentifier,
+        projectIdentifier, connectorIdentifier, chartName, region, bucketName, folderPath, lastTag, storeType,
+        ociHelmChartStoreConfigType, helmVersion, registryId);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 
@@ -113,8 +115,8 @@ public class HelmChartVersionResource {
       @NotNull @QueryParam("fqnPath") String fqnPath, @QueryParam("connectorRef") String connectorIdentifier,
       @QueryParam("chartName") String chartName, @QueryParam("region") String region,
       @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
-      @QueryParam("lastTag") String lastTag, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull String runtimeInputYaml) {
+      @QueryParam("lastTag") String lastTag, @QueryParam("registryId") String registryId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull String runtimeInputYaml) {
     if (isNotEmpty(serviceRef)) {
       HelmChartManifest helmChartManifest =
           (HelmChartManifest) helmChartService
@@ -190,7 +192,7 @@ public class HelmChartVersionResource {
     }
     HelmChartResponseDTO helmChartResponseDTO =
         helmChartService.getHelmChartVersionDetailsV2(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,
-            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag);
+            connectorIdentifier, chartName, region, bucketName, folderPath, lastTag, registryId);
     return ResponseDTO.newResponse(helmChartResponseDTO);
   }
 }

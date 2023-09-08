@@ -12,6 +12,8 @@ import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.eraro.ErrorCode.FAILED_TO_ACQUIRE_PERSISTENT_LOCK;
+import static io.harness.exception.WingsException.SRE;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -24,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -100,6 +103,9 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.PersistentLockException;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageResponse;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.outbox.OutboxEvent;
@@ -142,16 +148,16 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Inject CVNGLogService cvngLogService;
   @Inject NotificationRuleService notificationRuleService;
   @Inject HPersistence hPersistence;
+
   @Mock CompositeSLOServiceImpl compositeSLOService;
   @Mock SideKickService sideKickService;
-
+  @Mock PersistentLocker mockedPersistentLocker;
   @Mock FakeNotificationClient notificationClient;
 
   @Inject private OutboxService outboxService;
   @Inject private SLIRecordService sliRecordService;
 
   @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
-
   @Inject private ServiceLevelObjectiveDetailsTransformer serviceLevelObjectiveDetailsTransformer;
 
   private BuilderFactory builderFactory;
@@ -182,6 +188,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(compositeSLOService, "sideKickService", sideKickService, true);
     FieldUtils.writeField(compositeSLOService, "clock", clock, true);
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "sideKickService", sideKickService, true);
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "persistentLocker", mockedPersistentLocker, true);
     when(compositeSLOService.isReferencedInCompositeSLO(any(), any())).thenCallRealMethod();
     when(compositeSLOService.getReferencedCompositeSLOs(any(), any())).thenCallRealMethod();
     when(compositeSLOService.shouldReset(any(), any())).thenCallRealMethod();
@@ -1942,6 +1949,53 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
             "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             sloDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testUpdate_whenEntityLocked() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    sloDTO.setName("newName");
+    when(mockedPersistentLocker.waitToAcquireLock(any(), any(), any()))
+        .thenThrow(new PersistentLockException("Lock not acquired", FAILED_TO_ACQUIRE_PERSISTENT_LOCK, SRE));
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO))
+        .isInstanceOf(PersistentLockException.class);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testUpdate_whenEntityLockedWhileDeleting() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    serviceLevelObjectiveV2Service.delete(projectParams, sloDTO.getIdentifier());
+    when(mockedPersistentLocker.waitToAcquireLock(any(), any(), any()))
+        .thenThrow(new PersistentLockException("Lock not acquired", FAILED_TO_ACQUIRE_PERSISTENT_LOCK, SRE));
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO))
+        .isInstanceOf(PersistentLockException.class);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testUpdate_lockClose() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    sloDTO.setName("newName");
+    AcquiredLock acquiredLock = mock(AcquiredLock.class);
+    when(mockedPersistentLocker.waitToAcquireLock(any(), any(), any())).thenReturn(acquiredLock);
+    serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO);
+    verify(acquiredLock).close();
   }
 
   @Test

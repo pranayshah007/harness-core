@@ -501,7 +501,8 @@ public enum TaskType {
   COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   TERRAGRUNT_PLAN_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task V2", false),
   TERRAGRUNT_APPLY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task V2", false),
-  TERRAGRUNT_DESTROY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task V2", false);
+  TERRAGRUNT_DESTROY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task V2", false),
+  ECR_HELM_API_LIST_TAGS_TASK(TaskGroup.HELM, "Task to query OCI Helm ECR Config Type Docker API List Tags");
 
   private final TaskGroup taskGroup;
   private final String displayName;

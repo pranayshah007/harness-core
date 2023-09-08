@@ -227,9 +227,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
-      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact) {
+      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact, String chartVersion,
+      boolean filterOnChartVersion) {
     return instanceRepository.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
-        projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact);
+        projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact, chartVersion,
+        filterOnChartVersion);
   }
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
@@ -267,9 +269,9 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard,
-      boolean isGitOps) {
-    return instanceRepository.getLastDeployedInstance(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isEnvironmentCard, isGitOps);
+      boolean isGitOps, boolean isChartVersionCard) {
+    return instanceRepository.getLastDeployedInstance(accountIdentifier, orgIdentifier, projectIdentifier,
+        serviceIdentifier, isEnvironmentCard, isGitOps, isChartVersionCard);
   }
 
   @Override
@@ -283,9 +285,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
-      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName) {
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName,
+      String chartVersion, boolean filterByChartVersion) {
     return instanceRepository.getActiveInstanceGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
-        projectIdentifier, serviceId, envId, environmentType, infraId, clusterIdentifier, displayName);
+        projectIdentifier, serviceId, envId, environmentType, infraId, clusterIdentifier, displayName, chartVersion,
+        filterByChartVersion);
   }
 
   /*

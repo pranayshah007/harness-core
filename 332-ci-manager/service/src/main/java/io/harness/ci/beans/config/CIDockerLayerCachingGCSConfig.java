@@ -23,4 +23,5 @@ public class CIDockerLayerCachingGCSConfig {
   String accessKey;
   String secretKey;
   String region;
+  String projectId;
 }

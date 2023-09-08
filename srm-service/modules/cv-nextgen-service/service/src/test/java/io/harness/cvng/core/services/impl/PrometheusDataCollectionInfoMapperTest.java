@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.cvng.beans.CVMonitoringCategory.PERFORMANCE;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
@@ -29,7 +30,10 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition.PrometheusFilter;
 import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
+import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.FeatureFlagService;
@@ -67,7 +71,7 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  public void testToDataConnectionInfo() {
+  public void testToDataCollectionInfo() {
     MetricPack metricPack = MetricPack.builder().dataCollectionDsl("metric-pack-dsl").build();
     PrometheusCVConfig cvConfig = builderFactory.prometheusCVConfigBuilder().groupName("mygroupName").build();
 
@@ -103,9 +107,44 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testNextgenMetricCVConfigToDataCollectionInfo() {
+    MetricPack metricPack = MetricPack.builder().dataCollectionDsl("metric-pack-dsl").build();
+    NextGenMetricInfo metricInfo = NextGenMetricInfo.builder()
+                                       .metricName("myMetric")
+                                       .identifier("metricIdentifier")
+                                       .metricType(TimeSeriesMetricType.RESP_TIME)
+                                       .query("up{group=\"cv\"}")
+                                       .queryParams(QueryParams.builder().serviceInstanceField("instance").build())
+                                       .build();
+    NextGenMetricCVConfig nextGenMetricCVConfig = NextGenMetricCVConfig.builder()
+                                                      .groupName("onboarding_default_group")
+                                                      .metricInfos(List.of(metricInfo))
+                                                      .dataSourceType(DataSourceType.PROMETHEUS)
+                                                      .connectorIdentifier("prom_new")
+                                                      .monitoredServiceIdentifier("onboarding_monitored_service")
+                                                      .category(PERFORMANCE)
+                                                      .build();
+    nextGenMetricCVConfig.setMetricPack(metricPack);
+    nextGenMetricCVConfig.setMetricInfos(Arrays.asList(metricInfo));
+    PrometheusDataCollectionInfo dataCollectionInfo =
+        mapper.toDataCollectionInfo(nextGenMetricCVConfig, TaskType.DEPLOYMENT);
+    assertThat(dataCollectionInfo.getGroupName()).isEqualTo("onboarding_default_group");
+    assertThat(dataCollectionInfo.getMetricCollectionInfoList()).isNotEmpty();
+    assertThat(dataCollectionInfo.getDataCollectionDsl()).isEqualTo("metric-pack-dsl");
+    List<MetricCollectionInfo> metricCollectionInfoList = dataCollectionInfo.getMetricCollectionInfoList();
+    metricCollectionInfoList.forEach(metricCollectionInfo -> {
+      assertThat(metricCollectionInfo.getMetricName()).isEqualTo("myMetric");
+      assertThat(metricCollectionInfo.getMetricIdentifier()).isEqualTo("metricIdentifier");
+      assertThat(metricCollectionInfo.getQuery()).isEqualTo("up{group=\"cv\"}");
+    });
+  }
+
+  @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
-  public void testToDataConnectionInfo_WithServiceInstances() {
+  public void testToDataCollectionInfo_WithServiceInstances() {
     MetricPack metricPack = MetricPack.builder().dataCollectionDsl("metric-pack-dsl").build();
     PrometheusCVConfig cvConfig = builderFactory.prometheusCVConfigBuilder().groupName("mygroupName").build();
 
@@ -134,7 +173,7 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
-  public void testToDataConnectionInfo_WithServiceInstancesAndFilters() {
+  public void testToDataCollectionInfo_WithServiceInstancesAndFilters() {
     MetricPack metricPack = MetricPack.builder().dataCollectionDsl("metric-pack-dsl").build();
     PrometheusCVConfig cvConfig = builderFactory.prometheusCVConfigBuilder().groupName("mygroupName").build();
 

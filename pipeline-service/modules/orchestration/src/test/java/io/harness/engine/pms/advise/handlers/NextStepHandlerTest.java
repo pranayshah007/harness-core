@@ -45,7 +45,7 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -182,9 +182,9 @@ public class NextStepHandlerTest extends CategoryTest {
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("originalNodeExecutionId"), any());
 
-    doReturn(NodeExecution.builder().uuid(YAMLFieldNameConstants.NEXT_ID).oldRetry(false).build())
+    doReturn(NodeExecution.builder().uuid(PlanCreatorConstants.NEXT_ID).oldRetry(false).build())
         .when(nodeExecutionService)
-        .getWithFieldsIncluded(eq(YAMLFieldNameConstants.NEXT_ID), any());
+        .getWithFieldsIncluded(eq(PlanCreatorConstants.NEXT_ID), any());
 
     // Since currentNode is of type planNode and parentNodeExecution.nodeType is identityPlanNode. So identityNode will
     // be created for current node.
@@ -199,7 +199,7 @@ public class NextStepHandlerTest extends CategoryTest {
     assertThat(savedIdentityNode.getIdentifier()).isEqualTo(planNode.getIdentifier());
     assertThat(savedIdentityNode.getStepType()).isEqualTo(planNode.getStepType());
     assertThat(((IdentityPlanNode) savedIdentityNode).getOriginalNodeExecutionId())
-        .isEqualTo(YAMLFieldNameConstants.NEXT_ID);
+        .isEqualTo(PlanCreatorConstants.NEXT_ID);
   }
 
   @Test

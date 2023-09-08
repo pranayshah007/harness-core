@@ -107,6 +107,7 @@ public class K8sRecommendationDAO {
   private static final String SUMMEMORY = "summemory";
   private static final String TIME = "time";
   private static final String ACCOUNT_ID = "accountid";
+  public static final String HARDCODED_MINIMUM_START_TIME = "2018-01-01T00:00:00+00";
 
   @Inject private HPersistence hPersistence;
   @Inject private DSLContext dslContext;
@@ -161,7 +162,7 @@ public class K8sRecommendationDAO {
       @NonNull String accountId, @Nullable Condition condition, @NonNull Long offset, @NonNull Long limit) {
     return dslContext.selectFrom(CE_RECOMMENDATIONS)
         .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition())))
-        .orderBy(CE_RECOMMENDATIONS.MONTHLYSAVING.desc().nullsLast())
+        .orderBy(CE_RECOMMENDATIONS.MONTHLYSAVING.desc().nullsLast(), CE_RECOMMENDATIONS.ID.asc().nullsLast())
         .offset(offset)
         .limit(limit)
         .fetchInto(CeRecommendations.class);
@@ -229,7 +230,8 @@ public class K8sRecommendationDAO {
   }
 
   private Table<? extends Record> sumResourceForEachTimeBucket(JobConstants jobConstants, NodePoolId nodePoolId) {
-    Table<? extends Record> t1 = groupByInstanceIdForEachTimeBucket(jobConstants, nodePoolId);
+    OffsetDateTime minStartTime = getMinStartTimeFromKubernetesUtilizationData(jobConstants, nodePoolId);
+    Table<? extends Record> t1 = groupByInstanceIdForEachTimeBucket(jobConstants, nodePoolId, minStartTime);
 
     SelectSelectStep<? extends Record> selectStep = select(sum(t1.field(KUBERNETES_UTILIZATION_DATA.CPU)).as(SUMCPU),
         sum(t1.field(KUBERNETES_UTILIZATION_DATA.MEMORY)).as(SUMMEMORY),
@@ -239,8 +241,24 @@ public class K8sRecommendationDAO {
     return dslContext.select(selectStep.getSelect()).from(t1).groupBy(t1.field(TIME)).asTable();
   }
 
-  private Table<? extends Record> groupByInstanceIdForEachTimeBucket(JobConstants jobConstants, NodePoolId nodePoolId) {
-    Table<? extends Record> t0 = getPodRequest(jobConstants, nodePoolId);
+  private OffsetDateTime getMinStartTimeFromKubernetesUtilizationData(
+      JobConstants jobConstants, NodePoolId nodePoolId) {
+    OffsetDateTime minStartTime =
+        dslContext.select(DSL.min(KUBERNETES_UTILIZATION_DATA.STARTTIME))
+            .from(KUBERNETES_UTILIZATION_DATA)
+            .where(KUBERNETES_UTILIZATION_DATA.ACCOUNTID.eq(jobConstants.getAccountId())
+                       .and(KUBERNETES_UTILIZATION_DATA.CLUSTERID.eq(nodePoolId.getClusterid()))
+                       .and(KUBERNETES_UTILIZATION_DATA.STARTTIME.gt(
+                           DSL.offsetDateTime(OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME)))))
+            .fetchOneInto(OffsetDateTime.class);
+
+    log.info("Min Start Time fetched from KubernetesUtilizationData table: " + minStartTime);
+    return minStartTime != null ? minStartTime : OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME);
+  }
+
+  private Table<? extends Record> groupByInstanceIdForEachTimeBucket(
+      JobConstants jobConstants, NodePoolId nodePoolId, OffsetDateTime minStartTime) {
+    Table<? extends Record> t0 = getPodRequest(jobConstants, nodePoolId, minStartTime);
 
     Field<OffsetDateTime> timeBucket =
         Routines.timeBucket2(val(YearToSecond.valueOf(Duration.ofMinutes(20))), KUBERNETES_UTILIZATION_DATA.STARTTIME)
@@ -250,10 +268,11 @@ public class K8sRecommendationDAO {
         KUBERNETES_UTILIZATION_DATA.ACTUALINSTANCEID.eq(t0.field(KUBERNETES_UTILIZATION_DATA.ACTUALINSTANCEID))
             .and(KUBERNETES_UTILIZATION_DATA.ACCOUNTID.eq(jobConstants.getAccountId())
                      .and(KUBERNETES_UTILIZATION_DATA.CLUSTERID.eq(nodePoolId.getClusterid())
-                              .and(TimescaleUtils.isAlive(KUBERNETES_UTILIZATION_DATA.STARTTIME,
-                                  KUBERNETES_UTILIZATION_DATA.ENDTIME, jobConstants.getJobStartTime(),
-                                  jobConstants.getJobEndTime()))));
-
+                              .and(TimescaleUtils
+                                       .isAlive(KUBERNETES_UTILIZATION_DATA.STARTTIME,
+                                           KUBERNETES_UTILIZATION_DATA.ENDTIME, jobConstants.getJobStartTime(),
+                                           jobConstants.getJobEndTime())
+                                       .and(KUBERNETES_UTILIZATION_DATA.STARTTIME.greaterOrEqual(minStartTime)))));
     SelectSelectStep<? extends Record> selectStepT1 = select(timeBucket,
         greatest(max(KUBERNETES_UTILIZATION_DATA.CPU), max(t0.field(POD_INFO.CPUREQUEST)))
             .as(KUBERNETES_UTILIZATION_DATA.CPU),
@@ -270,7 +289,8 @@ public class K8sRecommendationDAO {
         .asTable();
   }
 
-  private Table<? extends Record> getPodRequest(JobConstants jobConstants, NodePoolId nodePoolId) {
+  private Table<? extends Record> getPodRequest(
+      JobConstants jobConstants, NodePoolId nodePoolId, OffsetDateTime minStartTime) {
     final String kube_system_namespace = "kube-system";
     final String namespace_name_separator = "/";
 
@@ -286,7 +306,8 @@ public class K8sRecommendationDAO {
                 NODE_INFO.STARTTIME, NODE_INFO.STOPTIME, jobConstants.getJobStartTime(), jobConstants.getJobEndTime()),
             POD_INFO.NAMESPACE.notEqual(kube_system_namespace),
             TimescaleUtils.isAlive(
-                POD_INFO.STARTTIME, POD_INFO.STOPTIME, jobConstants.getJobStartTime(), jobConstants.getJobEndTime())))
+                POD_INFO.STARTTIME, POD_INFO.STOPTIME, jobConstants.getJobStartTime(), jobConstants.getJobEndTime()),
+            POD_INFO.STARTTIME.greaterOrEqual(minStartTime), NODE_INFO.STARTTIME.greaterOrEqual(minStartTime)))
         .asTable();
   }
 

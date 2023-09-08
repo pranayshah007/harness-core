@@ -13,6 +13,9 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.idp.scorecard.scores.service.ScoreService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.ScoresApi;
+import io.harness.spec.server.idp.v1.model.EntityScores;
+import io.harness.spec.server.idp.v1.model.EntityScoresResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfoResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateResponse;
@@ -21,8 +24,9 @@ import io.harness.spec.server.idp.v1.model.ScorecardScoreResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryResponse;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
+import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -107,6 +111,21 @@ public class ScoreApiImpl implements ScoresApi {
     } catch (Exception e) {
       log.error("Error in getting scores overview for scorecards details for account - {},  entity - {} ,  error = {}",
           harnessAccount, entityIdentifier, e.getMessage(), e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+  }
+
+  @Override
+  public Response getAggregatedScores(@Valid ScorecardFilter body, String harnessAccount) {
+    try {
+      List<EntityScores> entityScores = scoreService.getEntityScores(harnessAccount, body);
+      List<EntityScoresResponse> entityScoresResponse = new ArrayList<>();
+      entityScores.forEach(entityScore -> entityScoresResponse.add(new EntityScoresResponse().entity(entityScore)));
+      return Response.status(Response.Status.OK).entity(entityScoresResponse).build();
+    } catch (Exception e) {
+      log.error("Error in getting entity scores for account - {},  error = {}", harnessAccount, e.getMessage(), e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

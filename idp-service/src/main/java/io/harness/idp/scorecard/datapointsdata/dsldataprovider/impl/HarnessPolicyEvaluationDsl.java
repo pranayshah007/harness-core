@@ -37,9 +37,23 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
 
   @Override
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
+    log.info("HarnessPolicyEvaluationDsl DSL invoked for account - {} datapoints - {}", accountIdentifier,
+        dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());
+
+    String ciPipelineUrl = DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml());
+    String serviceUrl = DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml());
+
+    Map<String, Object> returnData = new HashMap<>();
+
+    Map<String, Object> errorMessageForMissingNewAnnotations = DslUtils.checkAndGetMissingNewAnnotationErrorMessage(
+        ciPipelineUrl, true, serviceUrl, true, dataSourceDataPointInfo);
+    if (errorMessageForMissingNewAnnotations != null) {
+      returnData.putAll(errorMessageForMissingNewAnnotations);
+      return returnData;
+    }
+
     // ci pipeline detail
-    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
-        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(ciPipelineUrl);
 
     Object responseCI = null;
     try {
@@ -58,10 +72,13 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
               ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
           e);
     }
+    log.info("CI response in HarnessPolicyEvaluationDsl - {}, CI Pipeline Url - {}", responseCI, ciPipelineUrl);
 
     // cd pipeline detail
-    Map<String, String> serviceIdentifiers = DslUtils.getCdServiceUrlIdentifiers(
-        DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    Map<String, String> serviceIdentifiers = DslUtils.getCdServiceUrlIdentifiers(serviceUrl);
+    log.info("Service Url in HarnessPolicyEvaluationDsl : {}", serviceUrl);
+    log.info("Service identifiers in HarnessPolicyEvaluationDsl - {}", serviceIdentifiers);
+
     long currentTime = System.currentTimeMillis();
     DeploymentsInfo serviceDeploymentInfo = null;
     try {
@@ -83,11 +100,13 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
               serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY)),
           e);
     }
+    log.info("Service deployment info in HarnessPolicyEvaluationDsl - {}", serviceDeploymentInfo);
 
     String cdPipelineId = null;
     if (serviceDeploymentInfo != null && !serviceDeploymentInfo.getDeployments().isEmpty()) {
       cdPipelineId = serviceDeploymentInfo.getDeployments().get(0).getPipelineIdentifier();
     }
+    log.info("CD pipeline id in HarnessPolicyEvaluationDsl - {}", cdPipelineId);
 
     Object responseCD = null;
 
@@ -108,19 +127,19 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
             e);
       }
     }
+    log.info("CD pipeline response in HarnessPolicyEvaluationDsl - {}, CD Pipeline url -{}", responseCD,
+        DslDataProviderUtil.getCdPipelineFromIdentifiers(serviceIdentifiers, cdPipelineId));
 
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
 
-    Map<String, Object> returnData = new HashMap<>();
-
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
       returnData.putAll(pipelineExecutionResponseFactory.getResponseParser(dataPointIdentifier)
-                            .getParsedValue(responseCI, responseCD, dataPointIdentifier,
-                                DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()),
+                            .getParsedValue(responseCI, responseCD, dataPointIdentifier, ciPipelineUrl,
                                 DslDataProviderUtil.getCdPipelineFromIdentifiers(serviceIdentifiers, cdPipelineId)));
     }
+    log.info("Return data in HarnessPolicyEvaluationDsl - {}", returnData);
     return returnData;
   }
 }

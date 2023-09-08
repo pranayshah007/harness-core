@@ -9,8 +9,10 @@ package io.harness.delegate.exceptionhandler.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG_LOCATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG_LOCATION_ARGUMENT;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_ERROR_ASKING_FOR_STATE_MIGRATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAILED_TO_GET_EXISTING_WORKSPACES;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAIL_TO_INSTALL_PROVIDER;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.GENERIC_NO_TERRAFORM_ERROR;
@@ -18,6 +20,7 @@ import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Mes
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.MESSAGE_FAILED_TO_GET_EXISTING_WORKSPACES;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -58,6 +61,8 @@ public class TerraformRuntimeExceptionHandlerTest {
   private static final String TEST_ERROR_FAILED_INSTALL_PROVIDER =
       "[31m \u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mFailed to install provider\u001B[0m  \u001B[0mError while installing hashicorp/null v3.1.0: mkdir .terraform: no such file or directory \u001B[0m\u001B[0m";
 
+  private static final String TEST_ERROR_ASKING_FOR_STATE_MIGRATION =
+      "[31m \u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mFailed to install provider\u001B[0m  \u001B[0merror asking for state migration \u001B[0m\u001B[0m";
   private static final String TEST_LONG_UNKNOWN_ERROR = StringUtils.repeat("Errr", 156);
 
   TerraformRuntimeExceptionHandler handler = new TerraformRuntimeExceptionHandler();
@@ -130,6 +135,16 @@ public class TerraformRuntimeExceptionHandlerTest {
     assertSingleErrorMessage(handler.handleException(cliRuntimeException), HINT_FAIL_TO_INSTALL_PROVIDER,
         "Error while installing hashicorp/null v3.1.0: mkdir .terraform: no such file or directory",
         "terraform init failed with: Failed to install provider");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFailedWithStateMigrationError() {
+    TerraformCliRuntimeException cliRuntimeException =
+        new TerraformCliRuntimeException("Terraform failed", "terraform init", TEST_ERROR_ASKING_FOR_STATE_MIGRATION);
+    assertSingleErrorMessage(handler.handleException(cliRuntimeException), HINT_ERROR_ASKING_FOR_STATE_MIGRATION,
+        EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION, "terraform init failed with: Failed to install provider");
   }
 
   @Test

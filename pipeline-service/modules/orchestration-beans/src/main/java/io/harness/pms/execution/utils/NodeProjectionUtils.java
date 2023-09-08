@@ -44,7 +44,7 @@ public class NodeProjectionUtils {
           NodeExecutionKeys.mode, NodeExecutionKeys.unitProgresses, NodeExecutionKeys.parentId);
 
   public static final Set<String> fieldsForInstrumentationHandler =
-      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.identifier, NodeExecutionKeys.stepType);
 
   public static final Set<String> withAmbianceAndStatus =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);

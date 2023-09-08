@@ -6,9 +6,12 @@
  */
 
 package io.harness.idp.scorecard.datasourcelocations.locations;
-
+import static io.harness.idp.common.Constants.HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS;
+import static io.harness.idp.common.Constants.HARNESS_POLICY_EVALUATION_DSL;
+import static io.harness.idp.common.Constants.HARNESS_STO_SCAN_SETUP_DSL;
+import static io.harness.idp.common.Constants.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.CATALOG;
-import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_GIT_LEAKS_FILE_EXISTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_MERGE_PR;
 
@@ -24,6 +27,7 @@ public class DataSourceLocationFactory {
   private GithubMeanTimeToMergePRDsl githubMeanTimeToMergePRDsl;
   private GithubIsBranchProtectionSetDsl githubIsBranchProtectionSetDsl;
   private GithubFileExistsDsl githubFileExistsDsl;
+  private HarnessProxyThroughDsl harnessProxyThroughDsl;
   private NoOpDsl noOpDsl;
 
   public DataSourceLocation getDataSourceLocation(String identifier) {
@@ -33,8 +37,15 @@ public class DataSourceLocationFactory {
         return githubMeanTimeToMergePRDsl;
       case GITHUB_IS_BRANCH_PROTECTION_SET:
         return githubIsBranchProtectionSetDsl;
-      case GITHUB_GIT_LEAKS_FILE_EXISTS:
+      case GITHUB_FILE_EXISTS:
         return githubFileExistsDsl;
+
+        // Harness
+      case HARNESS_STO_SCAN_SETUP_DSL:
+      case HARNESS_POLICY_EVALUATION_DSL:
+      case HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS:
+      case HARNESS_TEST_PASSING_ON_CI_IS_ZERO:
+        return harnessProxyThroughDsl;
 
       // Catalog
       case CATALOG:

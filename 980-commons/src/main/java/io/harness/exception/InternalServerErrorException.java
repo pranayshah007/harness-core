@@ -21,4 +21,9 @@ public class InternalServerErrorException extends WingsException {
     super(message, cause, ErrorCode.INTERNAL_SERVER_ERROR, Level.ERROR, USER, null);
     super.param(MESSAGE_ARG, message);
   }
+
+  public InternalServerErrorException(String message) {
+    super(message, null, ErrorCode.INTERNAL_SERVER_ERROR, Level.ERROR, USER, null);
+    super.param(MESSAGE_ARG, message);
+  }
 }

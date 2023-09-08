@@ -11,9 +11,12 @@ import static io.harness.delegate.beans.pcf.ResizeStrategy.DOWNSIZE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.DOWNSCALE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.UPSCALE_NEW_FIRST;
 
+import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepNode;
+import io.harness.cdng.tas.TasBasicAppSetupStepInfo;
+import io.harness.cdng.tas.TasBasicAppSetupStepNode;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepNode;
 import io.harness.cdng.tas.TasInstanceCountType;
@@ -72,6 +75,9 @@ public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
       state.setOlderActiveVersionCountToKeep(3);
     }
 
+    OrchestrationWorkflowType orchestrationWorkflowType =
+        context.getWorkflow().getOrchestrationWorkflow().getOrchestrationWorkflowType();
+
     if (state.isBlueGreen()) {
       TasBGAppSetupStepNode tasBGAppSetupStepNode = new TasBGAppSetupStepNode();
       baseSetup(state, tasBGAppSetupStepNode, context.getIdentifierCaseFormat());
@@ -95,6 +101,25 @@ public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
 
       tasBGAppSetupStepNode.setTasBGAppSetupStepInfo(tasBGAppSetupStepInfo);
       return tasBGAppSetupStepNode;
+    } else if (OrchestrationWorkflowType.BASIC == orchestrationWorkflowType) {
+      TasBasicAppSetupStepNode tasBasicAppSetupStepNode = new TasBasicAppSetupStepNode();
+      baseSetup(state, tasBasicAppSetupStepNode, context.getIdentifierCaseFormat());
+      ParameterField<List<String>> additionalRoutes = ParameterField.createValueField(Collections.emptyList());
+      if (state.getFinalRouteMap() != null) {
+        additionalRoutes =
+            ParameterField.createValueField(Arrays.stream(state.getFinalRouteMap()).collect(Collectors.toList()));
+      }
+      TasBasicAppSetupStepInfo tasBasicAppSetupStepInfo =
+          TasBasicAppSetupStepInfo.infoBuilder()
+              .tasInstanceCountType(getInstanceCountType(state.isUseCurrentRunningCount()))
+              .additionalRoutes(additionalRoutes)
+              .existingVersionToKeep(
+                  new ParameterField(state.getOlderActiveVersionCountToKeep(), null, false, true, null, null, false))
+              .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getTags()))
+              .build();
+
+      tasBasicAppSetupStepNode.setTasBasicAppSetupStepInfo(tasBasicAppSetupStepInfo);
+      return tasBasicAppSetupStepNode;
     } else {
       TasCanaryAppSetupStepNode tasCanaryAppSetupStepNode = new TasCanaryAppSetupStepNode();
       baseSetup(state, tasCanaryAppSetupStepNode, context.getIdentifierCaseFormat());

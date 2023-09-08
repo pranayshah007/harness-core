@@ -25,24 +25,30 @@ import java.util.Set;
 public class GithubFileExistsParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPointIdentifier, Set<String> inputValues) {
-    Map<String, Object> dataPointInfo = new HashMap<>();
+    String inputFile = inputValues.iterator().next();
     if (CommonUtils.findObjectByName(data, "object") == null) {
-      dataPointInfo.put(DATA_POINT_VALUE_KEY, null);
-      dataPointInfo.put(ERROR_MESSAGE_KEY, INVALID_BRANCH_NAME_ERROR);
-      return dataPointInfo;
+      return constructDataPointInfo(inputFile, false, INVALID_BRANCH_NAME_ERROR);
     }
     List<Map<String, Object>> entries = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "entries");
     boolean isPresent = false;
+    inputFile = inputFile.replace("\"", "");
     for (Map<String, Object> entry : entries) {
       String fileName = (String) entry.get("name");
-      if (fileName.contains(inputValues.iterator().next())) {
+      if (fileName.equals(inputFile)) {
         isPresent = true;
         break;
       }
     }
+    return constructDataPointInfo(inputFile, isPresent, null);
+  }
 
-    dataPointInfo.put(DATA_POINT_VALUE_KEY, isPresent);
-    dataPointInfo.put(ERROR_MESSAGE_KEY, null);
-    return dataPointInfo;
+  private Map<String, Object> constructDataPointInfo(String inputValue, boolean value, String errorMessage) {
+    Map<String, Object> data = new HashMap<>() {
+      {
+        put(DATA_POINT_VALUE_KEY, value);
+        put(ERROR_MESSAGE_KEY, errorMessage);
+      }
+    };
+    return Map.of(inputValue, data);
   }
 }

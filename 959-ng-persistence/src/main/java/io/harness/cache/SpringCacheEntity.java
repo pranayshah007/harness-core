@@ -52,7 +52,18 @@ public class SpringCacheEntity implements PersistentEntity {
   @Wither @FdIndex @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastUpdatedAt;
   Long entityUpdatedAt;
-
   @Version Long version;
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
+  Boolean usingKryoWithoutReference;
+
+  public Boolean getUsingKryoWithoutReference() {
+    return isUsingKryoWithoutReference();
+  }
+
+  public boolean isUsingKryoWithoutReference() {
+    if (usingKryoWithoutReference == null) {
+      return false;
+    }
+    return usingKryoWithoutReference;
+  }
 }

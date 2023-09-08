@@ -120,7 +120,7 @@ public abstract class AbstractServicesApiImpl {
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
     ServiceDefinitionType optionalType = ServiceDefinitionType.getServiceDefinitionType(type);
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        account, org, project, false, searchTerm, optionalType, gitOpsEnabled, false);
+        account, org, project, false, searchTerm, optionalType, gitOpsEnabled, false, null);
     Pageable pageRequest;
     if (isNotEmpty(services)) {
       criteria.and(ServiceEntityKeys.identifier).in(services);

@@ -6,7 +6,7 @@
 
 mkdir -p /opt/harness/logs
 
-export JAVA_OPTS="-XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heapdump -Xloggc:mygclogfilename.gc $JAVA_ADVANCED_FLAGS"
+export JAVA_OPTS="-XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heapdump -Xloggc:mygclogfilename.gc $JAVA_ADVANCED_FLAGS $JAVA_17_FLAGS"
 
 if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     node_name="-Dappdynamics.agent.nodeName=$(hostname)"

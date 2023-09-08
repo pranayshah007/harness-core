@@ -155,6 +155,7 @@ public class HelmTaskHelperBase {
   private static final String OCI_PREFIX = "oci://";
   private static final String REGISTRY_CONFIG_DIR = "registry-config-files";
   private static final String REGISTRY_CONFIG_JSON = "reg-config.json";
+  private static final String DEFAULT_BASE_PATH = "/";
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -787,6 +788,7 @@ public class HelmTaskHelperBase {
       String repoUrl = getParsedUrlForUserNamePwd(ociHelmConnectorDTO.getHelmRepoUrl());
       loginOciRegistry(repoUrl, getOciHelmUsername(ociHelmConnectorDTO), getOciHelmPassword(ociHelmConnectorDTO),
           HelmVersion.V380, timeoutInMillis, destinationDirectory, registryConfigFilePath);
+      basePath = isEmpty(basePath) ? DEFAULT_BASE_PATH : basePath;
       repoName = format(REGISTRY_URL_PREFIX, Paths.get(repoUrl, basePath).normalize());
     } else if (OciHelmAuthType.ANONYMOUS.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
       String ociUrl = getParsedURI(ociHelmConnectorDTO.getHelmRepoUrl()).toString();

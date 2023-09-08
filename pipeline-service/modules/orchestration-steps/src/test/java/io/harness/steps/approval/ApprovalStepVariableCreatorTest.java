@@ -192,7 +192,8 @@ public class ApprovalStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.harness_approval.identifier",
             "pipeline.stages.stage1.spec.execution.steps.harness_approval.type",
             "pipeline.stages.stage1.spec.execution.steps.harness_approval.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.harness_approval.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.harness_approval.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.harness_approval.status");
 
     // yaml output properties
     List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

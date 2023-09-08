@@ -100,7 +100,7 @@ public class PipelineVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.identifier", "pipeline.sequenceId", "pipeline.executionId", "pipeline.startTs",
             "pipeline.endTs", "pipeline.properties", "pipeline.triggerType", "pipeline.triggeredBy.name",
-            "pipeline.triggeredBy.email", "pipeline.triggeredBy.triggerIdentifier");
+            "pipeline.triggeredBy.email", "pipeline.triggeredBy.triggerIdentifier", "pipeline.status");
   }
 
   @Test
@@ -124,7 +124,7 @@ public class PipelineVariableCreatorTest extends CategoryTest {
   public void testGetPipelineExtraProperties() {
     YamlExtraProperties yamlExtraProperties = pipelineVariableCreator.getPipelineExtraProperties(
         PipelineInfoConfig.builder().properties(NGProperties.builder().build()).build());
-    assertEquals(yamlExtraProperties.getPropertiesList().size(), 12);
+    assertEquals(yamlExtraProperties.getPropertiesList().size(), 13);
     assertThat(yamlExtraProperties.getPropertiesList().contains(
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".sequenceId").build()));
     assertThat(yamlExtraProperties.getPropertiesList().contains(
@@ -141,6 +141,8 @@ public class PipelineVariableCreatorTest extends CategoryTest {
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".startTs").build()));
     assertThat(yamlExtraProperties.getPropertiesList().contains(
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".endTs").build()));
+    assertThat(yamlExtraProperties.getPropertiesList().contains(
+        YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".status").build()));
     String propertiesExpressionPath = "pipeline.properties.ci.codebase.build";
     assertThat(yamlExtraProperties.getPropertiesList().contains(YamlProperties.newBuilder()
                                                                     .setFqn(propertiesExpressionPath + "."

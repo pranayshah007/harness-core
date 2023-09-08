@@ -90,4 +90,9 @@ public class InitContainerV2StepInfo implements Visitable, SpecParameters, Conta
   public ContainerStepType getType() {
     return ContainerStepType.INIT_CONTAINER_V2;
   }
+
+  @Override
+  public List<String> excludeKeysFromStepInputs() {
+    return SpecParameters.super.stepInputsKeyExclude();
+  }
 }

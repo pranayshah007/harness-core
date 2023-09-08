@@ -80,18 +80,7 @@ func (b *pytestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	if len(tests) == 0 {
 		return "echo \"Skipping test run, received no tests to execute\"", nil
 	}
-	// Use only unique class
-	set := make(map[types.RunnableTest]interface{})
-	ut := []string{}
-	for _, t := range tests {
-		w := types.RunnableTest{Class: t.Class}
-		if _, ok := set[w]; ok {
-			// The test has already been added
-			continue
-		}
-		set[w] = struct{}{}
-		ut = append(ut, t.Class)
-	}
+	ut := utils.GetUniqueTestStrings(tests)
 
 	if ignoreInstr {
 		testStr := strings.Join(ut, " ")

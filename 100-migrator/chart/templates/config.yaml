@@ -61,6 +61,7 @@ data:
   TEMPLATE_SERVICE_ENDPOINT: {{ .Values.config.TEMPLATE_SERVICE_ENDPOINT | default "http://template-service:15002/api/" }}
   PIPELINE_SERVICE_CLIENT_BASEURL: {{ .Values.config.PIPELINE_SERVICE_CLIENT_BASEURL | default "http://pipeline-service:12001/api/" }}
   NG_MANAGER_CLIENT_BASEURL: {{ .Values.config.NG_MANAGER_CLIENT_BASEURL | default "http://ng-manager:7090/" }}
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
 
 ---
 apiVersion: v1

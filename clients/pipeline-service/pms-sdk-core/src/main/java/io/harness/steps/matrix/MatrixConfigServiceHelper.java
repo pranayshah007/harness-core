@@ -24,9 +24,11 @@ import io.harness.plancreator.strategy.ExcludeConfig;
 import io.harness.plancreator.strategy.ExpressionAxisConfig;
 import io.harness.plancreator.strategy.StrategyExpressionEvaluator;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
@@ -50,7 +52,8 @@ import java.util.stream.Collectors;
 public class MatrixConfigServiceHelper {
   public List<ChildrenExecutableResponse.Child> fetchChildren(List<String> keys, Map<String, AxisConfig> axes,
       Map<String, ExpressionAxisConfig> expressionAxes, ParameterField<List<ExcludeConfig>> exclude, String childNodeId,
-      String nodeName) {
+      String nodeName, Ambiance ambiance) {
+    boolean useMatrixFieldName = AmbianceUtils.shouldUseMatrixFieldName(ambiance);
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
 
@@ -92,22 +95,24 @@ public class MatrixConfigServiceHelper {
       }
 
       combinationStringMap.computeIfAbsent(variableName, k -> 0);
-
+      StrategyMetadata strategyMetadata =
+          StrategyMetadata.newBuilder()
+              .setCurrentIteration(currentIteration)
+              .setTotalIterations(totalCount)
+              .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                     .addAllMatrixCombination(matrixMetadata.get(currentIteration))
+                                     .putAllMatrixValues(combination)
+                                     .setNodeName(isNodeNameSet ? variableName : "")
+                                     .build())
+              .build();
+      String modifiedIdentifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, useMatrixFieldName);
+      strategyMetadata = strategyMetadata.toBuilder().setIdentifierPostFix(modifiedIdentifier).build();
       // Setting the nodeName in MatrixMetadata to empty string in case user has not given nodeName while defining
       // matrix This nodeName is used in AmbianceUtils.java to calculate the level identifier for the node based on the
       // default setting for the matrix labels.
       children.add(ChildrenExecutableResponse.Child.newBuilder()
                        .setChildNodeId(childNodeId)
-                       .setStrategyMetadata(
-                           StrategyMetadata.newBuilder()
-                               .setCurrentIteration(currentIteration)
-                               .setTotalIterations(totalCount)
-                               .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                                      .addAllMatrixCombination(matrixMetadata.get(currentIteration))
-                                                      .putAllMatrixValues(combination)
-                                                      .setNodeName(isNodeNameSet ? variableName : "")
-                                                      .build())
-                               .build())
+                       .setStrategyMetadata(strategyMetadata)
                        .build());
       currentIteration++;
     }
@@ -133,7 +138,7 @@ public class MatrixConfigServiceHelper {
   public StrategyInfo expandJsonNodeFromClass(List<String> keys, Map<String, AxisConfig> axes,
       Map<String, ExpressionAxisConfig> expressionAxes, ParameterField<List<ExcludeConfig>> exclude,
       ParameterField<Integer> maxConcurrencyParameterField, JsonNode jsonNode, Optional<Integer> maxExpansionLimit,
-      boolean isStepGroup, Class cls) {
+      boolean isStepGroup, Class cls, Ambiance ambiance) {
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
     fetchCombinations(new LinkedHashMap<>(), axes, expressionAxes, combinations,
@@ -152,35 +157,58 @@ public class MatrixConfigServiceHelper {
 
     List<JsonNode> jsonNodes = new ArrayList<>();
     int currentIteration = 0;
-    for (List<Integer> matrixData : matrixMetadata) {
-      Object o;
-      try {
-        if (isStepGroup) {
-          o = YamlUtils.read(jsonNode.toString(), StepGroupElementConfig.class);
-        } else {
-          o = YamlUtils.read(jsonNode.toString(), cls);
-        }
-      } catch (Exception e) {
-        throw new InvalidRequestException("Unable to read yaml.", e);
-      }
-      StrategyUtils.replaceExpressions(o, combinations.get(currentIteration), currentIteration, totalCount, null);
-      JsonNode resolvedJsonNode;
-      if (isStepGroup) {
-        resolvedJsonNode = JsonPipelineUtils.asTree(o);
-      } else {
-        resolvedJsonNode = JsonPipelineUtils.asTree(o);
-      }
 
-      StrategyUtils.modifyJsonNode(
-          resolvedJsonNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
-      jsonNodes.add(resolvedJsonNode);
-      currentIteration++;
+    boolean enableMatrixLabelsByName = AmbianceUtils.shouldUseMatrixFieldName(ambiance);
+    if (enableMatrixLabelsByName) {
+      for (Map<String, String> combination : combinations) {
+        JsonNode resolvedJsonNode =
+            getresolvedJsonNode(isStepGroup, currentIteration, totalCount, jsonNode, cls, combinations);
+        StrategyUtils.modifyJsonNode(resolvedJsonNode,
+            combination.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(t -> t.getValue().replace(".", ""))
+                .collect(Collectors.toList()));
+        jsonNodes.add(resolvedJsonNode);
+        currentIteration++;
+      }
+    } else {
+      for (List<Integer> matrixData : matrixMetadata) {
+        JsonNode resolvedJsonNode =
+            getresolvedJsonNode(isStepGroup, currentIteration, totalCount, jsonNode, cls, combinations);
+        StrategyUtils.modifyJsonNode(
+            resolvedJsonNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
+        jsonNodes.add(resolvedJsonNode);
+        currentIteration++;
+      }
     }
     int maxConcurrency = jsonNodes.size();
     if (!ParameterField.isBlank(maxConcurrencyParameterField)) {
       maxConcurrency = maxConcurrencyParameterField.getValue();
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
+  }
+
+  private JsonNode getresolvedJsonNode(boolean isStepGroup, int currentIteration, int totalCount, JsonNode jsonNode,
+      Class cls, List<Map<String, String>> combinations) {
+    Object o;
+    try {
+      if (isStepGroup) {
+        o = YamlUtils.read(jsonNode.toString(), StepGroupElementConfig.class);
+      } else {
+        o = YamlUtils.read(jsonNode.toString(), cls);
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException("Unable to read yaml.", e);
+    }
+    StrategyUtils.replaceExpressions(o, combinations.get(currentIteration), currentIteration, totalCount, null);
+    JsonNode resolvedJsonNode;
+    if (isStepGroup) {
+      resolvedJsonNode = JsonPipelineUtils.asTree(o);
+    } else {
+      resolvedJsonNode = JsonPipelineUtils.asTree(o);
+    }
+    return resolvedJsonNode;
   }
 
   // This is used by CI during the CIInitStep. CI expands the steps YAML having strategy and the expanded YAML is then
