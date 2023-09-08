@@ -393,8 +393,8 @@ portal:
   delegateDockerImage: harness/delegate:latest
   externalGraphQLRateLimitPerMinute: 500
   customDashGraphQLRateLimitPerMinute: 1000
-  optionalDelegateTaskRejectAtLimit: 5000
-  importantDelegateTaskRejectAtLimit: 5000
+  optionalDelegateTaskRejectAtLimit: 10000
+  importantDelegateTaskRejectAtLimit: 10000
   criticalDelegateTaskRejectAtLimit: 100000
 
 totp:
