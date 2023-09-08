@@ -18,12 +18,14 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -213,12 +215,16 @@ public class RuntimeInputValuesValidator {
     if (EmptyPredicate.isEmpty(inputSetValue)) {
       return null;
     }
-    ParameterField<String> inputSetField;
+    ParameterField<String> inputSetField = null;
     try {
       inputSetField = YamlUtils.read(inputSetValue, new TypeReference<ParameterField<String>>() {});
     } catch (IOException e) {
       log.error(String.format("Error mapping input set value %s to ParameterField class", inputSetValue), e);
       return null;
+    } catch (Exception e) {
+      if (e.getCause() instanceof MismatchedInputException) {
+        throw new InvalidYamlException("Please check the input value provided, Input value: " + inputSetValue);
+      }
     }
     return inputSetField;
   }

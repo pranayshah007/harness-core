@@ -7,15 +7,20 @@
 
 package io.harness.pms.yaml.validation;
 
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -51,5 +56,24 @@ public class RuntimeInputValuesValidatorTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Invalid pattern eaapps-${helmChart.version.substring(helmChart.version.indexOf('-'))} provided for validation of value someValue");
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetInputSetParameterFieldWithInvalidDefaultField() {
+    assertThatThrownBy(() -> RuntimeInputValuesValidator.getInputSetParameterField("<+input>.default(#test)"))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessageContaining("Please check the input value provided");
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetInputSetParameterFieldWithValidDefaultField() {
+    ParameterField<String> inputField = RuntimeInputValuesValidator.getInputSetParameterField("<+input>.default(test)");
+
+    assertNotNull(inputField);
+    assertEquals("test", inputField.getDefaultValue());
   }
 }
