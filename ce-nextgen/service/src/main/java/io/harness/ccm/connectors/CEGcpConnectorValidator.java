@@ -292,7 +292,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
         "compute.instances.use", "compute.instances.useReadOnly", "compute.machineTypes.list",
         "compute.networks.access", "compute.networks.get", "compute.networks.getEffectiveFirewalls",
         "compute.networks.getRegionEffectiveFirewalls", "compute.networks.list", "compute.networks.mirror",
-        "compute.regions.get", "compute.regions.list", "secretmanager.versions.access");
+        "compute.regions.get", "compute.regions.list", "secretmanager.versions.access", "compute.projects.get");
   }
 
   public ConnectorValidationResult validateAccessToBillingReport(
