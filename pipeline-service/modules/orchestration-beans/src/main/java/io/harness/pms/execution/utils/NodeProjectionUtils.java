@@ -98,14 +98,15 @@ public class NodeProjectionUtils {
 
   public static final Set<String> fieldsForIdentityStrategyStep = Sets.newHashSet(NodeExecutionKeys.identifier,
       NodeExecutionKeys.name, NodeExecutionKeys.nodeId, NodeExecutionKeys.status, NodeExecutionKeys.executableResponses,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.oldRetry, NodeExecutionKeys.planNode, NodeExecutionKeys.parentId);
+      NodeExecutionKeys.ambiance, NodeExecutionKeys.oldRetry, NodeExecutionKeys.planNode, NodeExecutionKeys.parentId,
+      NodeExecutionKeys.stepType);
 
   public static final Set<String> fieldsForNodeExecutionDelete = Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds,
       NodeExecutionKeys.adviserTimeoutInstanceIds, NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId,
-      NodeExecutionKeys.stepType, NodeExecutionKeys.executionInputConfigured);
+      NodeExecutionKeys.stepType, NodeExecutionKeys.planId, NodeExecutionKeys.executionInputConfigured);
 
-  public static final Set<String> fieldsForIdentityNodeCreation =
-      Sets.newHashSet(NodeExecutionKeys.planNode, NodeExecutionKeys.stepType, NodeExecutionKeys.uuid);
+  public static final Set<String> fieldsForIdentityNodeCreation = Sets.newHashSet(
+      NodeExecutionKeys.planNode, NodeExecutionKeys.planId, NodeExecutionKeys.stepType, NodeExecutionKeys.uuid);
 
   public static final Set<String> fieldsForNodeAndAmbiance =
       Sets.newHashSet(NodeExecutionKeys.planNode, NodeExecutionKeys.ambiance, NodeExecutionKeys.nodeId);
