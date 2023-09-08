@@ -348,3 +348,5 @@ nodeSelector: {}
 tolerations: []
 
 additionalConfigs: {}
+
+java17flags: ""

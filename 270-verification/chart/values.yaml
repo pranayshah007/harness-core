@@ -171,6 +171,8 @@ java:
 
 additionalConfigs: {}
 
+java17flags: ""
+
 virtualService:
   annotations: {}
 ingress:

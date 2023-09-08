@@ -78,6 +78,7 @@ public abstract class AbstractTerragruntTaskParameters
   List<EncryptedDataDetail> encryptedDataDetailList;
   boolean tgModuleSourceInheritSSH;
   boolean encryptDecryptPlanForHarnessSMOnManager;
+  boolean useUniqueDirectoryForBaseDir;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

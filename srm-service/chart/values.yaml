@@ -199,6 +199,8 @@ affinity: {}
 
 additionalConfigs: {}
 
+java17flags: ""
+
 # extraVolumes:
 # - name: volume-test
 #   configMap:

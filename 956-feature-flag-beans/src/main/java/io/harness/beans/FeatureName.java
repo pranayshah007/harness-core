@@ -194,12 +194,16 @@ public enum FeatureName {
       "To encrypt and decrypt terraform and terragrunt plan on manager side instead of delegate side for NG",
       HarnessTeam.CDP),
   CDS_TERRAGRUNT_CLI_OPTIONS_NG("Enable terragrunt CLI Options", HarnessTeam.CDP),
+  CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG(
+      "Enable unique directory to support terragrunt run in parallel", HarnessTeam.CDP),
   CDS_TRIGGER_ACTIVITY_PAGE("NG Triggers Activity page", HarnessTeam.CDC),
   CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
       "This is to diable checking for the HTTP status code and instead just check for a valid response",
       HarnessTeam.CDP),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
   CDS_GITHUB_APP_AUTHENTICATION("This flag enables the github app authentication fo github connector", HarnessTeam.CDP),
+  CDS_RESOURCE_CONSTRAINT_INSTANCE_OPTIMIZATION(
+      "This is to optimize resource constraint Instance read Query In CG", HarnessTeam.CDC),
   CDS_V1_EOL_BANNER("Display EOL banner for v1 CD entities", HarnessTeam.CDC),
   CD_AI_ENHANCED_REMEDIATIONS(
       "Enables use of generative AI to provide remediation information in CD step logs", HarnessTeam.CDP),
@@ -875,7 +879,9 @@ public enum FeatureName {
   CDS_JIRA_APPROVAL_OPTIMIZATION("Optimize Jira Approval to only fetch relevant fields", HarnessTeam.CDC),
   CDS_REMOVE_TIME_BUCKET_GAPFILL_QUERY("This flag removes the usage of time bucket gapfill from CD", HarnessTeam.CDP),
   CDS_ENABLE_GCS_ARTIFACT_TYPE(
-      "This flag enables GCS artifact type support for SSH/WinRm deployment type", HarnessTeam.CDP);
+      "This flag enables GCS artifact type support for SSH/WinRm deployment type", HarnessTeam.CDP),
+  CD_CONTAINER_STEP_DELEGATE_SELECTOR(
+      "FF to not respect stage/pipeline delegate selectors for container step", HarnessTeam.CDC);
   // keep-sorted end
 
   @Deprecated

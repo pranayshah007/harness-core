@@ -642,3 +642,5 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
+
+java17flags: ""
