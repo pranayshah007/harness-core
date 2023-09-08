@@ -89,44 +89,44 @@ public class PlanCreatorUtilsV1Test extends PmsSdkCoreTestBase {
     ClassLoader classLoader = this.getClass().getClassLoader();
     String fileName = "failure-strategies-v1.yaml";
     String failureStrategiesYaml =
-            Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName)), StandardCharsets.UTF_8);
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName)), StandardCharsets.UTF_8);
     List<FailureConfigV1> failureConfigs =
-            PlanCreatorUtilsV1.getFailureStrategies(new YamlNode(YamlUtils.readAsJsonNode(failureStrategiesYaml)));
+        PlanCreatorUtilsV1.getFailureStrategies(new YamlNode(YamlUtils.readAsJsonNode(failureStrategiesYaml)));
     assertEquals(failureConfigs,
-            List.of(
-                    FailureConfigV1.builder()
-                            .errors(List.of(NGFailureTypeV1.AUTHORIZATION_ERROR))
-                            .action(
-                                    RetryFailureActionConfigV1.builder()
-                                            .spec(RetryFailureSpecConfigV1.builder()
-                                                    .attempts(ParameterField.createValueField(2))
-                                                    .interval(ParameterField.createValueField(List.of(Timeout.fromString("1m"))))
-                                                    .failure(RetryFailureConfigV1.builder()
-                                                            .action(ManualInterventionFailureActionConfigV1.builder()
-                                                                    .spec(ManualFailureSpecConfigV1.builder()
-                                                                            .timeout(ParameterField.createValueField(
-                                                                                    Timeout.fromString("10s")))
-                                                                            .timeout_action(
-                                                                                    AbortFailureActionConfigV1.builder().build())
-                                                                            .build())
-                                                                    .build())
-                                                            .build())
-                                                    .build())
-                                            .build())
-                            .build()));
+        List.of(
+            FailureConfigV1.builder()
+                .errors(List.of(NGFailureTypeV1.AUTHORIZATION_ERROR))
+                .action(
+                    RetryFailureActionConfigV1.builder()
+                        .spec(RetryFailureSpecConfigV1.builder()
+                                  .attempts(ParameterField.createValueField(2))
+                                  .interval(ParameterField.createValueField(List.of(Timeout.fromString("1m"))))
+                                  .failure(RetryFailureConfigV1.builder()
+                                               .action(ManualInterventionFailureActionConfigV1.builder()
+                                                           .spec(ManualFailureSpecConfigV1.builder()
+                                                                     .timeout(ParameterField.createValueField(
+                                                                         Timeout.fromString("10s")))
+                                                                     .timeout_action(
+                                                                         AbortFailureActionConfigV1.builder().build())
+                                                                     .build())
+                                                           .build())
+                                               .build())
+                                  .build())
+                        .build())
+                .build()));
     fileName = "failure-strategies-list-v1.yaml";
     failureStrategiesYaml =
-            Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName)), StandardCharsets.UTF_8);
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(fileName)), StandardCharsets.UTF_8);
     failureConfigs =
-            PlanCreatorUtilsV1.getFailureStrategies(new YamlNode(YamlUtils.readAsJsonNode(failureStrategiesYaml)));
+        PlanCreatorUtilsV1.getFailureStrategies(new YamlNode(YamlUtils.readAsJsonNode(failureStrategiesYaml)));
     assertEquals(failureConfigs,
-            List.of(FailureConfigV1.builder()
-                            .errors(List.of(NGFailureTypeV1.AUTHENTICATION_ERROR, NGFailureTypeV1.CONNECTIVITY_ERROR))
-                            .action(IgnoreFailureActionConfigV1.builder().build())
-                            .build(),
-                    FailureConfigV1.builder()
-                            .errors(List.of(NGFailureTypeV1.ALL_ERRORS))
-                            .action(MarkAsSuccessFailureActionConfigV1.builder().build())
-                            .build()));
+        List.of(FailureConfigV1.builder()
+                    .errors(List.of(NGFailureTypeV1.AUTHENTICATION_ERROR, NGFailureTypeV1.CONNECTIVITY_ERROR))
+                    .action(IgnoreFailureActionConfigV1.builder().build())
+                    .build(),
+            FailureConfigV1.builder()
+                .errors(List.of(NGFailureTypeV1.ALL_ERRORS))
+                .action(MarkAsSuccessFailureActionConfigV1.builder().build())
+                .build()));
   }
 }
