@@ -1034,7 +1034,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(sloHistoryTimescaleHandlerIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 1, 24, TimeUnit.HOURS);
+    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 1, 6, TimeUnit.HOURS);
   }
 
   private void sloHealthIndicatorTimescale(Injector injector) {

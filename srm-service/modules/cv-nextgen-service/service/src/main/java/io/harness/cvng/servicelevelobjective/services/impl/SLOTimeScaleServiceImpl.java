@@ -55,7 +55,8 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
       + "ON CONFLICT(ACCOUNTID,ORGID,PROJECTID,SLOID) DO UPDATE SET STATUS = EXCLUDED.STATUS, ERRORBUDGETPERCENTAGE = EXCLUDED.ERRORBUDGETPERCENTAGE, ERRORBUDGETREMAINING = EXCLUDED.ERRORBUDGETREMAINING, SLIVALUE = EXCLUDED.SLIVALUE";
 
   private static final String INSERT_SLO_HISTORY =
-      "INSERT INTO SLO_HISTORY (STARTTIME,ENDTIME,ACCOUNTID,ORGID,PROJECTID,SLOID,ERRORBUDGETREMAINING,TARGETPERCENTAGE,SLIATEND,TARGETMET,PERIODLENGTH,TOTALERRORBUDGET) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+      "INSERT INTO SLO_HISTORY (STARTTIME,ENDTIME,ACCOUNTID,ORGID,PROJECTID,SLOID,ERRORBUDGETREMAINING,TARGETPERCENTAGE,SLIATEND,TARGETMET,PERIODLENGTH,TOTALERRORBUDGET) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
+      + "ON CONFLICT(ACCOUNTID,ORGID,PROJECTID,SLOID,STARTTIME,ENDTIME) DO NOTHING";
 
   @Override
   public void upsertServiceLevelObjective(AbstractServiceLevelObjective serviceLevelObjective) {
@@ -135,7 +136,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
           sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective, null).getSliStatusPercentage());
       upsertStatement.execute();
     } catch (Exception ex) {
-      log.error("error while upserting slo data. {}", ex);
+      log.error("error while upserting slo health indicator data. {}", ex);
     }
   }
 
@@ -178,7 +179,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
         insertStatement.execute();
       }
     } catch (Exception ex) {
-      log.error("error while upserting slo data. {}", ex);
+      log.error("error while upserting slo history data. {}", ex);
     }
   }
 
