@@ -53,7 +53,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
       GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhook.getIdentifier());
       GitXWebhookEvent createdGitXWebhookEvent = gitXWebhookEventsRepository.create(gitXWebhookEvent);
       log.info(
-          String.format("successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
+          String.format("Successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           format(DUP_KEY_EXP_FORMAT_STRING, webhookDTO.getEventId(), webhookDTO.getAccountId()), USER_SRE, ex);
@@ -67,9 +67,11 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     GitXWebhook gitXWebhook = gitXWebhookRepository.findByAccountIdentifierAndRepoName(accountIdentifier, repoName);
     if (gitXWebhook == null) {
       throw new InternalServerErrorException(
-          String.format("No GitXWebhook found for the given key with accountIdentifier %s and repoName %s.",
+          String.format("No GitXWebhook found for the given key with accountIdentifier %s and repo %s.",
               accountIdentifier, repoName));
     }
+    log.info(String.format("Successfully retrieved the gitx webhook [%s] from account %s and repo %s.",
+        gitXWebhook.getIdentifier(), gitXWebhook.getAccountIdentifier(), gitXWebhook.getRepoName()));
     return gitXWebhook;
   }
 
