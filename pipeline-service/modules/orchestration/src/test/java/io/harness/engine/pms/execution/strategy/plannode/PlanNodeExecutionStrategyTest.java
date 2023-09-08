@@ -13,6 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.execution.failure.FailureType.APPLICATION_FAILURE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
@@ -56,6 +57,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -95,7 +97,10 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -131,6 +136,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private OrchestrationEngine orchestrationEngine;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
+  @Mock private PmsGraphStepDetailsService pmsGraphStepDetailsService;
   private static final StepType TEST_STEP_TYPE =
       StepType.newBuilder().setType("TEST_STEP_PLAN").setStepCategory(StepCategory.STEP).build();
 
@@ -891,6 +897,32 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     executionStrategy.resolveParameters(ambiance, planNode);
     verify(pmsEngineExpressionService, times(1))
         .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode(), List.of());
+    verify(executionStrategy, times(1)).getResolvedStepInputs(any(), any());
+    verify(pmsGraphStepDetailsService, times(1)).saveNodeExecutionInfo(any(), any(), any());
     verify(nodeExecutionService, times(1)).updateV2(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testGetResolveStepInputs() {
+    Map<String, Object> stepInputs = new LinkedHashMap<>();
+    stepInputs.put("__recast", "a.b.c");
+    stepInputs.put("a", "b");
+    Map<String, Object> nestedMap = new LinkedHashMap<>();
+    nestedMap.put("d", "e");
+    nestedMap.put("g", "h");
+    stepInputs.put("c", nestedMap);
+
+    PmsStepParameters originalStepParams = PmsStepParameters.parse(stepInputs);
+
+    PmsStepParameters resolvedStepInputs =
+        executionStrategy.getResolvedStepInputs(new LinkedList<>(Arrays.asList("a", "c.d")), originalStepParams);
+    assertThat(resolvedStepInputs).isNotNull();
+    assertThat(resolvedStepInputs.size()).isEqualTo(2);
+    // Check originalStepParams are not changed
+    assertThat(originalStepParams).isNotNull();
+    assertThat(originalStepParams.size()).isEqualTo(3);
+    assertThat(((Map) originalStepParams.get("c")).containsKey("d")).isTrue();
   }
 }

@@ -47,6 +47,11 @@ public class StageElementParameters implements StepParameters {
   SpecParameters specConfig;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
+  @Override
+  public List<String> excludeKeysFromStepInputs() {
+    return specConfig.stepInputsKeyExclude();
+  }
+
   public StageElementParameters cloneParameters() {
     return StageElementParameters.builder()
         .uuid(this.uuid)

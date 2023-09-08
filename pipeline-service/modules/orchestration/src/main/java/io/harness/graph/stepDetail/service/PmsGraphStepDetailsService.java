@@ -27,6 +27,8 @@ public interface PmsGraphStepDetailsService {
 
   PmsStepParameters getStepInputs(String planExecutionId, String nodeExecutionId);
 
+  PmsStepParameters getStepInputsRecasterPruned(String planExecutionId, String nodeExecutionId);
+
   NodeExecutionsInfo getNodeExecutionsInfo(String nodeExecutionId);
 
   Map<String, PmsStepDetails> getStepDetails(String planExecutionId, String nodeExecutionId);
