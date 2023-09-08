@@ -448,9 +448,4 @@ public class StrategyUtils {
           .build();
     }
   }
-
-  public boolean isStrategyFieldPresent(PlanCreationContext ctx) {
-    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
-    return strategyField != null;
-  }
 }

@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -30,6 +29,7 @@ import io.harness.pms.yaml.PlanCreationParentInfoConstants;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.PlanCreatorUtilsCommon;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -63,15 +63,7 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
 
   @Override
   public void populateParentInfo(PlanCreationContext ctx, Map<String, PlanCreationResponse> childrenResponses) {
-    String uuid = ctx.getCurrentField().getUuid();
-    boolean isStrategyFieldPresent = StrategyUtils.isStrategyFieldPresent(ctx);
-    for (String childKey : childrenResponses.keySet()) {
-      PlanCreatorUtilsV1.putParentInfo(childrenResponses.get(childKey), PlanCreationParentInfoConstants.STAGE_ID, uuid);
-      if (isStrategyFieldPresent) {
-        PlanCreatorUtilsV1.putParentInfo(
-            childrenResponses.get(childKey), PlanCreationParentInfoConstants.STRATEGY_ID, uuid);
-      }
-    }
+    PlanCreatorUtilsCommon.populateParentInfo(ctx, childrenResponses, PlanCreationParentInfoConstants.STAGE_ID);
   }
 
   @Override
