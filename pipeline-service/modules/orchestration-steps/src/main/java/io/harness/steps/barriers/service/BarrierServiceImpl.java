@@ -146,6 +146,8 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   @Override
   public List<BarrierExecutionInstance> findManyByPlanExecutionIdAndStrategySetupId(
       String planExecutionId, String strategySetupId) {
+    /* This method is used by `BarrierWithinStrategyExpander` for fetching all BarrierExecutionInstances which
+       have positions that are children of a given strategy node. */
     return barrierNodeRepository.findManyByPlanExecutionIdAndSetupInfo_StrategySetupIds(
         planExecutionId, strategySetupId);
   }
