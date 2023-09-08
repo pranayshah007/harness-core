@@ -60,6 +60,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -353,7 +354,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
       if (asgLoadBalancerConfig == null) {
         return null;
       }
-      return List.of(asgLoadBalancerConfig);
+      return Arrays.asList(asgLoadBalancerConfig);
     }
 
     return asgBlueGreenDeployStepParameters.getLoadBalancers()
