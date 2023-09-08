@@ -312,27 +312,24 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
             .set(BarrierExecutionInstanceKeys.identifier, barrierExecutionInstance.getIdentifier())
             .set(BarrierExecutionInstanceKeys.planExecutionId, barrierExecutionInstance.getPlanExecutionId())
             .set(BarrierExecutionInstanceKeys.barrierState, STANDING)
-            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.name,
-                barrierExecutionInstance.getSetupInfo().getName())
-            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.identifier,
+            .set(BarrierExecutionInstanceKeys.setupInfoName, barrierExecutionInstance.getSetupInfo().getName())
+            .set(BarrierExecutionInstanceKeys.setupInfoIdentifier,
                 barrierExecutionInstance.getSetupInfo().getIdentifier())
-            .addToSet(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.stages)
+            .addToSet(BarrierExecutionInstanceKeys.stages)
             .each(barrierExecutionInstance.getSetupInfo().getStages())
-            .set(BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfoKeys.planExecutionId,
+            .set(BarrierExecutionInstanceKeys.positionInfoPlanExecutionId,
                 barrierExecutionInstance.getPositionInfo().getPlanExecutionId())
-            .addToSet(BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfoKeys.barrierPositionList)
+            .addToSet(BarrierExecutionInstanceKeys.positions)
             .each(barrierExecutionInstance.getPositionInfo().getBarrierPositionList());
     if (barrierExecutionInstance.getSetupInfo().getStrategySetupIds() != null) {
-      update.addToSet(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.strategySetupIds)
+      update.addToSet(BarrierExecutionInstanceKeys.strategySetupIds)
           .each(barrierExecutionInstance.getSetupInfo().getStrategySetupIds());
     }
     return update;
   }
 
   private Update obtainBarrierPositionInfoUpdate(List<BarrierPositionInfo.BarrierPosition> barrierPositions) {
-    return new Update().set(
-        BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfoKeys.barrierPositionList,
-        barrierPositions);
+    return new Update().set(BarrierExecutionInstanceKeys.positions, barrierPositions);
   }
 
   /**
