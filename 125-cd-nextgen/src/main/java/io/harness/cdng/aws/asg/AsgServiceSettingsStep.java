@@ -11,6 +11,9 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.USER_DATA;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -42,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 public class AsgServiceSettingsStep implements SyncExecutable<EmptyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
