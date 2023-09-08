@@ -370,7 +370,8 @@ public class InfrastructureMapper {
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, asgInfrastructure.getInfrastructureKeyValues()))
                 .baseAsgName(
-                    asgInfrastructure.getBaseAsgName() != null ? asgInfrastructure.getBaseAsgName().getValue() : null)
+                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
+                        asgInfrastructure.getBaseAsgName(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
                 .build();
         setInfraIdentifierAndName(
             asgInfrastructureOutcome, asgInfrastructure.getInfraIdentifier(), asgInfrastructure.getInfraName());
