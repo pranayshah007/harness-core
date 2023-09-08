@@ -20,7 +20,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
-import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
