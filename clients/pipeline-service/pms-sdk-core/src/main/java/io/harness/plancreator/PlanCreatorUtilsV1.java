@@ -448,7 +448,7 @@ public class PlanCreatorUtilsV1 {
 
   @FunctionalInterface
   public interface GetAdviserForActionType {
-    AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureConfigV1 action,
+    AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureStrategyActionConfigV1 action,
         Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType, String nextNodeUuid);
   }
 }
