@@ -29,12 +29,12 @@
     "rules": [
       {
         "data_source_identifier": "catalog",
-        "data_point_identifier": "pagerdutyAnnotation",
-        "operator": "!=",
-        "value": "null"
+        "data_point_identifier": "pagerdutyAnnotationExists",
+        "operator": "==",
+        "value": "true"
       }
     ],
-    "expression": "catalog.pagerdutyAnnotation != null",
+    "expression": "catalog.pagerdutyAnnotationExists == true",
     "tags": ["DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Pagerduty is not setup"
@@ -69,12 +69,12 @@
     "rules": [
       {
         "data_source_identifier": "catalog",
-        "data_point_identifier": "techDocsAnnotation",
-        "operator": "!=",
-        "value": "null"
+        "data_point_identifier": "techDocsAnnotationExists",
+        "operator": "==",
+        "value": "true"
       }
     ],
-    "expression": "catalog.techDocsAnnotation != null",
+    "expression": "catalog.techDocsAnnotationExists == true",
     "tags": ["Software quality", "Development maturity" ,"DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Tech docs doesn't exists"
@@ -89,12 +89,12 @@
     "rules": [
       {
         "data_source_identifier": "catalog",
-        "data_point_identifier": "specOwner",
-        "operator": "!=",
-        "value": "null"
+        "data_point_identifier": "specOwnerExists",
+        "operator": "==",
+        "value": "true"
       }
     ],
-    "expression": "catalog.specOwner != null",
+    "expression": "catalog.specOwnerExists == true",
     "tags": ["Software quality", "Development maturity" ,"DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Spec owner doesn't exists"

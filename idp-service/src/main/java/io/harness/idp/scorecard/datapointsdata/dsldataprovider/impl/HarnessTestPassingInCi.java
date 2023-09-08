@@ -90,8 +90,7 @@ public class HarnessTestPassingInCi implements DslDataProvider {
     String token = null;
     log.info("Account id - {}", ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY));
     try {
-      token = tiServiceUtils.getTIServiceToken(
-          ciIdentifiers.get(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY)));
+      token = tiServiceUtils.getTIServiceToken(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY));
     } catch (Exception e) {
       log.error(String.format("Error in getting the token for ti-service in account - %s",
                     ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY)),
