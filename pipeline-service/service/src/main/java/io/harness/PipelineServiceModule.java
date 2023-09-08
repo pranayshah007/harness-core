@@ -443,14 +443,8 @@ public class PipelineServiceModule extends AbstractModule {
     bind(NodeTypeLookupService.class).to(NodeTypeLookupServiceImpl.class);
 
     bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("syncTaskPollExecutor"))
-        .toInstance(new ManagedScheduledExecutorService("SyncTaskPoll-Thread"));
-    bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("asyncTaskPollExecutor"))
-        .toInstance(new ManagedScheduledExecutorService("AsyncTaskPoll-Thread"));
-    bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("progressTaskPollExecutor"))
-        .toInstance(new ManagedScheduledExecutorService("ProgressTaskPoll-Thread"));
+        .annotatedWith(Names.named("taskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("progressUpdateServiceExecutor"))
         .toInstance(new ManagedScheduledExecutorService("ProgressUpdateServiceExecutor-Thread"));

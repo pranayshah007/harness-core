@@ -877,13 +877,13 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
   }
 
   private void registerScheduledJobs(Injector injector, PipelineServiceConfiguration appConfig) {
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("syncTaskPollExecutor")))
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L,
             appConfig.getDelegatePollingConfig().getSyncDelay(), TimeUnit.MILLISECONDS);
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("asyncTaskPollExecutor")))
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateAsyncServiceImpl.class), 0L,
             appConfig.getDelegatePollingConfig().getAsyncDelay(), TimeUnit.MILLISECONDS);
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("progressTaskPollExecutor")))
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateProgressServiceImpl.class), 0L,
             appConfig.getDelegatePollingConfig().getProgressDelay(), TimeUnit.MILLISECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("progressUpdateServiceExecutor")))
