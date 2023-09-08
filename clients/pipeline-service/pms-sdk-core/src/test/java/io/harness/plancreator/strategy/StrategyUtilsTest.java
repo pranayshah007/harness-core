@@ -8,7 +8,6 @@
 package io.harness.plancreator.strategy;
 
 import static io.harness.rule.OwnerRule.SAHIL;
-import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YAGYANSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -328,47 +327,5 @@ public class StrategyUtilsTest extends PmsSdkCoreTestBase {
     assertThatThrownBy(() -> StrategyValidationUtils.validateStrategyNode(strategyConfig))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("No Axes defined in matrix. Please define at least one axis");
-  }
-
-  @Test
-  @Owner(developers = VINICIUS)
-  @Category(UnitTests.class)
-  public void testIsStrategyFieldPresentTrue() throws IOException {
-    MockitoAnnotations.initMocks(this);
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
-    assertThat(testFile).isNotNull();
-    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
-    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
-
-    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
-    assertThat(pipelineYamlField).isNotNull();
-    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
-    assertThat(stagesYamlField).isNotNull();
-    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
-    YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    PlanCreationContext context = PlanCreationContext.builder().currentField(approvalStageYamlField).build();
-    assertThat(StrategyUtils.isStrategyFieldPresent(context)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = VINICIUS)
-  @Category(UnitTests.class)
-  public void testIsStrategyFieldPresentFalse() throws IOException {
-    MockitoAnnotations.initMocks(this);
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    final URL testFile = classLoader.getResource("complex_pipeline.yaml");
-    assertThat(testFile).isNotNull();
-    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
-    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
-
-    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
-    assertThat(pipelineYamlField).isNotNull();
-    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
-    assertThat(stagesYamlField).isNotNull();
-    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
-    YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    PlanCreationContext context = PlanCreationContext.builder().currentField(approvalStageYamlField).build();
-    assertThat(StrategyUtils.isStrategyFieldPresent(context)).isFalse();
   }
 }

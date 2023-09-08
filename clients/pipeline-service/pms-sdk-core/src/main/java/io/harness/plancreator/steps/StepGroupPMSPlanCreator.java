@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -153,16 +152,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
 
   @Override
   public void populateParentInfo(PlanCreationContext ctx, Map<String, PlanCreationResponse> childrenResponses) {
-    String uuid = ctx.getCurrentField().getUuid();
-    boolean isStrategyFieldPresent = StrategyUtils.isStrategyFieldPresent(ctx);
-    for (String childKey : childrenResponses.keySet()) {
-      PlanCreatorUtilsV1.putParentInfo(
-          childrenResponses.get(childKey), PlanCreationParentInfoConstants.STEP_GROUP_ID, uuid);
-      if (isStrategyFieldPresent) {
-        PlanCreatorUtilsV1.putParentInfo(
-            childrenResponses.get(childKey), PlanCreationParentInfoConstants.STRATEGY_ID, uuid);
-      }
-    }
+    PlanCreatorUtilsCommon.populateParentInfo(ctx, childrenResponses, PlanCreationParentInfoConstants.STEP_GROUP_ID);
   }
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(KryoSerializer kryoSerializer,

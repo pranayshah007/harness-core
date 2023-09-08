@@ -20,10 +20,19 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PlanCreationParentInfoConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -142,5 +151,53 @@ public class PlanCreatorUtilsCommon {
     }
     return FailureStrategiesUtils.priorityMergeFailureStrategies(
         stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
+  }
+
+  public void putParentInfo(PlanCreationResponse response, String key, String value) {
+    putParentInfoInternal(response, key, HarnessValue.newBuilder().setStringValue(value).build());
+  }
+
+  public void putParentInfo(PlanCreationResponse response, String key, boolean value) {
+    putParentInfoInternal(response, key, HarnessValue.newBuilder().setBoolValue(value).build());
+  }
+
+  public void putParentInfoInternal(PlanCreationResponse response, String key, HarnessValue value) {
+    // No dependencies, so return.
+    if (response.getDependencies() == null) {
+      return;
+    }
+    Dependencies.Builder dependencies = response.getDependencies().toBuilder();
+    for (String depKey : response.getDependencies().getDependenciesMap().keySet()) {
+      Dependency dependencyMetadata = response.getDependencies().getDependencyMetadataMap().get(depKey);
+      // If dependencyMetadata not present for a uuid then create empty metadata.
+      if (dependencyMetadata == null) {
+        dependencyMetadata = Dependency.newBuilder().build();
+      }
+      HarnessStruct.Builder parentInfoOfCurrentNode = dependencyMetadata.getParentInfo().toBuilder();
+      parentInfoOfCurrentNode.putData(key, value).build();
+      dependencies.putDependencyMetadata(
+          depKey, dependencyMetadata.toBuilder().setParentInfo(parentInfoOfCurrentNode.build()).build());
+    }
+    response.setDependencies(dependencies.build());
+  }
+
+  public HarnessValue getFromParentInfo(String key, PlanCreationContext ctx) {
+    HarnessValue result = ctx.getDependency().getParentInfo().getDataMap().get(key);
+    if (result == null) {
+      return HarnessValue.newBuilder().build();
+    }
+    return result;
+  }
+
+  public void populateParentInfo(
+      PlanCreationContext ctx, Map<String, PlanCreationResponse> childrenResponses, String parentIdKey) {
+    String uuid = ctx.getCurrentField().getUuid();
+    boolean isStrategyFieldPresent = StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField());
+    for (String childKey : childrenResponses.keySet()) {
+      putParentInfo(childrenResponses.get(childKey), parentIdKey, uuid);
+      if (isStrategyFieldPresent) {
+        putParentInfo(childrenResponses.get(childKey), PlanCreationParentInfoConstants.STRATEGY_ID, uuid);
+      }
+    }
   }
 }

@@ -455,40 +455,4 @@ public class PlanCreatorUtilsV1 {
     AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureConfigV1 action,
         Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType, String nextNodeUuid);
   }
-
-  public void putParentInfo(PlanCreationResponse response, String key, String value) {
-    putParentInfoInternal(response, key, HarnessValue.newBuilder().setStringValue(value).build());
-  }
-
-  public void putParentInfo(PlanCreationResponse response, String key, boolean value) {
-    putParentInfoInternal(response, key, HarnessValue.newBuilder().setBoolValue(value).build());
-  }
-
-  public void putParentInfoInternal(PlanCreationResponse response, String key, HarnessValue value) {
-    // No dependencies, so return.
-    if (response.getDependencies() == null) {
-      return;
-    }
-    Dependencies.Builder dependencies = response.getDependencies().toBuilder();
-    for (String depKey : response.getDependencies().getDependenciesMap().keySet()) {
-      Dependency dependencyMetadata = response.getDependencies().getDependencyMetadataMap().get(depKey);
-      // If dependencyMetadata not present for a uuid then create empty metadata.
-      if (dependencyMetadata == null) {
-        dependencyMetadata = Dependency.newBuilder().build();
-      }
-      HarnessStruct.Builder parentInfoOfCurrentNode = dependencyMetadata.getParentInfo().toBuilder();
-      parentInfoOfCurrentNode.putData(key, value).build();
-      dependencies.putDependencyMetadata(
-          depKey, dependencyMetadata.toBuilder().setParentInfo(parentInfoOfCurrentNode.build()).build());
-    }
-    response.setDependencies(dependencies.build());
-  }
-
-  public HarnessValue getFromParentInfo(String key, PlanCreationContext ctx) {
-    HarnessValue result = ctx.getDependency().getParentInfo().getDataMap().get(key);
-    if (result == null) {
-      return HarnessValue.newBuilder().build();
-    }
-    return result;
-  }
 }
