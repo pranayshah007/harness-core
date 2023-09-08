@@ -20,6 +20,7 @@ import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
+import io.harness.gitsync.common.dtos.GitDiffResultFileDTO;
 import io.harness.gitsync.gitxwebhooks.entity.Author;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
@@ -27,6 +28,7 @@ import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
 import io.harness.repositories.gitxwebhook.GitXWebhookRepository;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 
@@ -37,6 +39,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   @Inject GitXWebhookEventsRepository gitXWebhookEventsRepository;
 
   @Inject GitXWebhookRepository gitXWebhookRepository;
+
+  @Inject GitXWebhookEventHelper gitXWebhookEventHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "GitX Webhook event with event identifier [%s] already exists in the account [%s].";
@@ -97,7 +101,13 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
       log.info(String.format(
           "The webhook with identifier [%s] is enabled. Checking for the folder paths.", gitXWebhook.getIdentifier()));
       //      TODO: will complete this in the following pr
+      List<GitDiffResultFileDTO> gitDiffResultFileDTOS = gitXWebhookEventHelper.getDiffFilesUsingSCM(
+          gitXWebhook.getAccountIdentifier(), gitXWebhook.getConnectorRef(), gitXWebhook.getRepoName(),
+          webhookDTO.getParsedResponse().getPush().getBefore(), webhookDTO.getParsedResponse().getPush().getAfter());
+      log.info("asdfasdf");
     }
     return false;
   }
+
+  //  TODO: check for a single file path and then extend it to multiple
 }

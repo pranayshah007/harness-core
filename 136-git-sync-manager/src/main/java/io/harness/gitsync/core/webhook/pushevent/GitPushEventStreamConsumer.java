@@ -46,7 +46,7 @@ public class GitPushEventStreamConsumer extends RedisTraceConsumer {
       @Named(GITX_WEBHOOK_PUSH_EVENT_STREAM) MessageListener gitXWebhookPushEventListener) {
     this.redisConsumer = redisConsumer;
     messageListenersList = new ArrayList<>();
-    messageListenersList.add(gitPushEventListener);
+    //    messageListenersList.add(gitPushEventListener);
     messageListenersList.add(gitXWebhookPushEventListener);
   }
 
