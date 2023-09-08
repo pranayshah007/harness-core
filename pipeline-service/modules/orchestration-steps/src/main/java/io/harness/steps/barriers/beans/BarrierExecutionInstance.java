@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.barrier.Barrier.State;
+import io.harness.execution.NodeExecution;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -20,6 +21,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.BarrierPositionKeys;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPositionInfoKeys;
 import io.harness.steps.barriers.beans.BarrierSetupInfo.BarrierSetupInfoKeys;
@@ -87,12 +89,19 @@ public final class BarrierExecutionInstance implements PersistentEntity, UuidAwa
     public static final String stages = BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.stages;
     public static final String stagesIdentifier =
         BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.stages + "." + StageDetailKeys.identifier;
+    public static final String setupInfoName = BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.name;
+    public static final String setupInfoIdentifier =
+        BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.identifier;
+    public static final String positionInfoPlanExecutionId =
+        BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfoKeys.planExecutionId;
     public static final String positions =
         BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfoKeys.barrierPositionList;
 
     public static final String stagePositionSetupId = positions + "." + BarrierPositionKeys.stageSetupId;
     public static final String stepGroupPositionSetupId = positions + "." + BarrierPositionKeys.stepGroupSetupId;
     public static final String stepPositionSetupId = positions + "." + BarrierPositionKeys.stepSetupId;
+    public static final String strategySetupIds =
+        BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfoKeys.strategySetupIds;
   }
 
   public static List<MongoIndex> mongoIndexes() {
@@ -114,12 +123,11 @@ public final class BarrierExecutionInstance implements PersistentEntity, UuidAwa
                  .field(BarrierExecutionInstanceKeys.barrierState)
                  .field(BarrierExecutionInstanceKeys.nextIteration)
                  .build())
-        .add(
-            CompoundMongoIndex.builder()
-                .name("planExecutionId_setupInfo_strategySetupIds_idx")
-                .field(BarrierExecutionInstanceKeys.planExecutionId)
-                .field(BarrierExecutionInstanceKeys.setupInfo.concat(".").concat(BarrierSetupInfoKeys.strategySetupIds))
-                .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("planExecutionId_setupInfo_strategySetupIds_idx")
+                 .field(BarrierExecutionInstanceKeys.planExecutionId)
+                 .field(BarrierExecutionInstanceKeys.strategySetupIds)
+                 .build())
         .build();
   }
 }
