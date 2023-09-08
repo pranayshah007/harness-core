@@ -132,7 +132,7 @@ public class CustomStagePlanCreatorTest extends CategoryTest {
 
     MockedStatic<YamlUtils> yamlUtilsMockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
     MockedStatic<StrategyUtils> strategyUtilsMockSettings = Mockito.mockStatic(StrategyUtils.class, RETURNS_MOCKS);
-    strategyUtilsMockSettings.when(() -> StrategyUtils.isStrategyFieldPresent(any())).thenReturn(true);
+    strategyUtilsMockSettings.when(() -> StrategyUtils.isWrappedUnderStrategy(any(YamlField.class))).thenReturn(true);
     when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(fullYamlFieldWithUuiD.getNode());
     Map<String, PlanCreationResponse> childrenResponses =
         customStagePlanCreator.createPlanForChildrenNodes(ctx, customStageNode);

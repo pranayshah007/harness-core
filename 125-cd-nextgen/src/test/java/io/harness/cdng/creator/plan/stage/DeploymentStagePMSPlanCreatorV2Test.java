@@ -728,7 +728,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
           SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
       when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(new YamlNode("spec", jsonNode));
       when(NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
-      when(StrategyUtils.isStrategyFieldPresent(any())).thenReturn(true);
+      when(StrategyUtils.isWrappedUnderStrategy(any(YamlField.class))).thenReturn(true);
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
           deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
       deploymentStagePMSPlanCreator.populateParentInfo(ctx, planCreationResponseMap);
