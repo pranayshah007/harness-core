@@ -7,22 +7,22 @@
 
 package io.harness.gitsync.gitxwebhooks.service;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.gitsync.common.dtos.GitDiffResultFileDTO;
 import io.harness.gitsync.common.dtos.GitDiffResultFileListDTO;
-import io.harness.gitsync.common.dtos.GitFileChangeDTO;
 import io.harness.gitsync.common.helper.GitRepoHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,11 +37,9 @@ public class GitXWebhookEventHelper {
 
   private final GitRepoHelper gitRepoHelper;
 
-  public List<GitDiffResultFileDTO> getDiffFilesUsingSCM(
-      String accountIdentifier, String connectorRef, String repoName, String initialCommitId, String finalCommitId) {
+  public List<String> getDiffFilesUsingSCM(
+      String accountIdentifier, ScmConnector scmConnector, String initialCommitId, String finalCommitId) {
     // TODO: add global try
-    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnector(accountIdentifier, "", "", connectorRef);
-    scmConnector.setUrl(gitRepoHelper.getRepoUrl(scmConnector, repoName));
     GitDiffResultFileListDTO gitDiffResultFileListDTO =
         scmOrchestratorService.processScmRequest(scmClientFacilitatorService
             -> scmClientFacilitatorService.listCommitsDiffFiles(
@@ -54,17 +52,16 @@ public class GitXWebhookEventHelper {
         prFile -> gitDiffResultFileList.append(prFile.toString()).append(" :::: "));
     log.info(gitDiffResultFileList.toString());
 
-    return gitDiffResultFileListDTO.getPrFileList();
+    return emptyIfNull(gitDiffResultFileListDTO.getPrFileList())
+        .stream()
+        .map(GitDiffResultFileDTO::getPath)
+        .distinct()
+        .collect(Collectors.toList());
   }
 
-  private List<GitFileChangeDTO> getAllFileContent(
-      YamlGitConfigDTO yamlGitConfigDTO, List<GitDiffResultFileDTO> prFile, String finalCommitId) {
-    List<String> filePaths = new ArrayList<>();
-    prFile.forEach(file -> filePaths.add(file.getPath()));
-
-    return scmOrchestratorService.processScmRequest(scmClientFacilitatorService
-        -> scmClientFacilitatorService.listFilesByCommitId(yamlGitConfigDTO, filePaths, finalCommitId),
-        yamlGitConfigDTO.getProjectIdentifier(), yamlGitConfigDTO.getOrganizationIdentifier(),
-        yamlGitConfigDTO.getAccountIdentifier());
+  public ScmConnector getScmConnector(String accountIdentifier, String connectorRef, String repoName) {
+    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnector(accountIdentifier, "", "", connectorRef);
+    scmConnector.setUrl(gitRepoHelper.getRepoUrl(scmConnector, repoName));
+    return scmConnector;
   }
 }

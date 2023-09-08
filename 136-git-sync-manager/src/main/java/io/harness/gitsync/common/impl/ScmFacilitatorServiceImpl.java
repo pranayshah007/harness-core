@@ -49,38 +49,7 @@ import io.harness.gitsync.caching.beans.GitFileCacheObject;
 import io.harness.gitsync.caching.beans.GitFileCacheResponse;
 import io.harness.gitsync.caching.service.GitFileCacheService;
 import io.harness.gitsync.common.beans.ScmApis;
-import io.harness.gitsync.common.dtos.ApiResponseDTO;
-import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
-import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
-import io.harness.gitsync.common.dtos.GitBranchDetailsDTO;
-import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
-import io.harness.gitsync.common.dtos.GitListBranchesResponse;
-import io.harness.gitsync.common.dtos.GitListRepositoryResponse;
-import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
-import io.harness.gitsync.common.dtos.PaginationDetails;
-import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
-import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
-import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
-import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
-import io.harness.gitsync.common.dtos.ScmFileGitDetailsDTO;
-import io.harness.gitsync.common.dtos.ScmGetBatchFileRequestIdentifier;
-import io.harness.gitsync.common.dtos.ScmGetBatchFilesByBranchRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetBatchFilesResponseDTO;
-import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileResponseV2DTO;
-import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
-import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
-import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
-import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
-import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
-import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
-import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
-import io.harness.gitsync.common.dtos.UserRepoResponse;
+import io.harness.gitsync.common.dtos.*;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitDefaultBranchCacheHelper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
@@ -481,6 +450,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         gitDefaultBranchCacheHelper.isGitDefaultBranch(scope.getAccountIdentifier(), scmConnector,
             scmGetFileByBranchRequestDTO.getRepoName(), scmGetFileByBranchRequestDTO.getBranchName(),
             gitFileResponse.getBranch()));
+  }
+
+  @Override
+  public ScmUpdateGitFileCacheResponseDTO updateGitFileCache(
+      ScmUpdateGitFileCacheRequestDTO scmUpdateGitFileCacheRequestDTO) {
+    //        TODO: 1. create a get file request
+    //        TODO:     1.1. check if these file paths are in the git cache
+    //        TODO: 2. once we update cache, change the webhook event status to Success
+
+    return null;
   }
 
   @Override

@@ -34,6 +34,8 @@ import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.ScmUpdateGitFileCacheRequestDTO;
+import io.harness.gitsync.common.dtos.ScmUpdateGitFileCacheResponseDTO;
 import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
@@ -64,6 +66,8 @@ public interface ScmFacilitatorService {
   ScmGetFileResponseDTO getFileByBranch(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO);
 
   ScmGetFileResponseDTO getFileByBranchV2(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO);
+
+  ScmUpdateGitFileCacheResponseDTO updateGitFileCache(ScmUpdateGitFileCacheRequestDTO scmUpdateGitFileCacheRequestDTO);
 
   ScmGetBatchFilesResponseDTO getBatchFilesByBranch(
       ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO);

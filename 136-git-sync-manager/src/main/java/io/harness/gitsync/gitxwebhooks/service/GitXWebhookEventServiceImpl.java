@@ -16,14 +16,17 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
-import io.harness.gitsync.common.dtos.GitDiffResultFileDTO;
 import io.harness.gitsync.gitxwebhooks.entity.Author;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
+import io.harness.gitsync.gitxwebhooks.runnable.FetchFilesFromGitHelper;
+import io.harness.gitsync.gitxwebhooks.utils.GitXWebhookUtils;
+import io.harness.product.ci.scm.proto.Repository;
 import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
 import io.harness.repositories.gitxwebhook.GitXWebhookRepository;
 
@@ -42,6 +45,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
 
   @Inject GitXWebhookEventHelper gitXWebhookEventHelper;
 
+  @Inject FetchFilesFromGitHelper fetchFilesFromGitHelper;
+
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "GitX Webhook event with event identifier [%s] already exists in the account [%s].";
 
@@ -50,14 +55,22 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     try {
       GitXWebhook gitXWebhook =
           fetchGitXWebhook(webhookDTO.getAccountId(), webhookDTO.getParsedResponse().getPush().getRepo().getName());
-      if (!shouldParsePayload(gitXWebhook, webhookDTO)) {
-        log.info("The webhook event will not be parsed as the webhook is disabled or the folder paths don't match.");
-        return;
-      }
       GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhook.getIdentifier());
       GitXWebhookEvent createdGitXWebhookEvent = gitXWebhookEventsRepository.create(gitXWebhookEvent);
       log.info(
           String.format("Successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
+
+      ScmConnector scmConnector = gitXWebhookEventHelper.getScmConnector(
+          gitXWebhook.getAccountIdentifier(), gitXWebhook.getConnectorRef(), gitXWebhook.getRepoName());
+      List<String> filesToBeFetched = shouldParsePayload(gitXWebhook, webhookDTO, scmConnector);
+      if (filesToBeFetched == null || filesToBeFetched.isEmpty()) {
+        log.info("The webhook event will not be parsed as the webhook is disabled or the folder paths don't match.");
+        return;
+      }
+      fetchFilesFromGitHelper.submitTask(gitXWebhook.getAccountIdentifier(),
+          webhookDTO.getParsedResponse().getPush().getRepo().getName(),
+          webhookDTO.getParsedResponse().getPush().getRepo().getBranch(), scmConnector, webhookDTO.getEventId(),
+          filesToBeFetched);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           format(DUP_KEY_EXP_FORMAT_STRING, webhookDTO.getEventId(), webhookDTO.getAccountId()), USER_SRE, ex);
@@ -96,17 +109,20 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     return Author.builder().name(webhookDTO.getParsedResponse().getPush().getCommit().getAuthor().getName()).build();
   }
 
-  private boolean shouldParsePayload(GitXWebhook gitXWebhook, WebhookDTO webhookDTO) {
+  private List<String> shouldParsePayload(GitXWebhook gitXWebhook, WebhookDTO webhookDTO, ScmConnector scmConnector) {
     if (gitXWebhook.getIsEnabled()) {
       log.info(String.format(
           "The webhook with identifier [%s] is enabled. Checking for the folder paths.", gitXWebhook.getIdentifier()));
       //      TODO: will complete this in the following pr
-      List<GitDiffResultFileDTO> gitDiffResultFileDTOS = gitXWebhookEventHelper.getDiffFilesUsingSCM(
-          gitXWebhook.getAccountIdentifier(), gitXWebhook.getConnectorRef(), gitXWebhook.getRepoName(),
-          webhookDTO.getParsedResponse().getPush().getBefore(), webhookDTO.getParsedResponse().getPush().getAfter());
-      log.info("asdfasdf");
+      List<String> modifiedFolderPaths = gitXWebhookEventHelper.getDiffFilesUsingSCM(gitXWebhook.getAccountIdentifier(),
+          scmConnector, webhookDTO.getParsedResponse().getPush().getBefore(),
+          webhookDTO.getParsedResponse().getPush().getAfter());
+
+      log.info(String.format("Successfully fetched %d of modified folder paths", modifiedFolderPaths.size()));
+      //       return GitXWebhookUtils.compareFolderPaths(gitXWebhook.getFolderPaths(), modifiedFolderPaths);
+      return modifiedFolderPaths;
     }
-    return false;
+    return null;
   }
 
   //  TODO: check for a single file path and then extend it to multiple
