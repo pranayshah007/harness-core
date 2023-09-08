@@ -38,21 +38,24 @@ public class GitXWebhookPushEventListener implements MessageListener {
         WebhookDTO webhookDTO = WebhookDTO.parseFrom(message.getMessage().getData());
         processWebhookEvent(webhookDTO);
       } catch (InvalidProtocolBufferException e) {
-        log.error("Encountered error while deserialzing the webhook for the message {}", message.getId(), e);
+        log.error("Encountered error while deserialzing the webhook for the message {} in the GitXWebhookListener",
+            message.getId(), e);
         throw new InvalidRequestException(
             String.format(
-                "Exception in unpacking/processing of WebhookDTO event for the push message %s", message.getId()),
+                "Exception in unpacking/processing of WebhookDTO event for the push message %s in the GitXWebhookListener",
+                message.getId()),
             e);
       }
     } else {
-      log.error("The message for processing a webhook event was null or has no message {}", message);
+      log.error("The message for processing a webhook event was null or has no message {} in the GitXWebhookListener",
+          message);
     }
     return true;
   }
 
   private void processWebhookEvent(WebhookDTO webhookDTO) {
     try (AutoLogContext ignore2 = new WebhookEventAutoLogContext(webhookDTO.getEventId(), OVERRIDE_ERROR)) {
-      log.info("Starting processing of gitx webhook event {}", webhookDTO.getEventId());
+      log.info("Starting processing of gitx webhook event {} in the GitXWebhookListener", webhookDTO.getEventId());
       gitXWebhookEventService.processEvent(webhookDTO);
     }
   }
