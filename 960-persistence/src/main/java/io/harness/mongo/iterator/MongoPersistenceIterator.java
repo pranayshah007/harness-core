@@ -6,6 +6,7 @@
  */
 
 package io.harness.mongo.iterator;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
@@ -199,7 +200,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
           break;
         }
 
-        T next = persistenceProvider.findInstance(clazz, fieldName, filterExpander, isDelegateTaskMigrationEnabled);
+        T next = persistenceProvider.findInstance(
+            clazz, fieldName, filterExpander, unsorted, isDelegateTaskMigrationEnabled);
 
         long sleepMillis = calculateSleepDuration(next).toMillis();
         // Do not sleep with 0, it is actually infinite sleep
@@ -353,7 +355,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         log.debug("Redis Batch Iterator Mode - time to acquire Redis lock {}", processTime);
 
         startTime = currentTimeMillis();
-        Iterator<T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, limit);
+        Iterator<T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, unsorted, limit);
         processTime = currentTimeMillis() - startTime;
         log.debug("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
 
