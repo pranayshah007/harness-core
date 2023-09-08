@@ -46,7 +46,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     try {
       GitXWebhook gitXWebhook =
           fetchGitXWebhook(webhookDTO.getAccountId(), webhookDTO.getParsedResponse().getPush().getRepo().getName());
-      if (shouldParsePayload(gitXWebhook, webhookDTO)) {
+      if (!shouldParsePayload(gitXWebhook, webhookDTO)) {
         log.info("The webhook event will not be parsed as the webhook is disabled or the folder paths don't match.");
         return;
       }
@@ -66,6 +66,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   private GitXWebhook fetchGitXWebhook(String accountIdentifier, String repoName) {
     GitXWebhook gitXWebhook = gitXWebhookRepository.findByAccountIdentifierAndRepoName(accountIdentifier, repoName);
     if (gitXWebhook == null) {
+      log.info(String.format("No GitXWebhook found for the given key with accountIdentifier %s and repo %s.",
+          accountIdentifier, repoName));
       throw new InternalServerErrorException(
           String.format("No GitXWebhook found for the given key with accountIdentifier %s and repo %s.",
               accountIdentifier, repoName));
@@ -94,6 +96,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     if (gitXWebhook.getIsEnabled()) {
       log.info(String.format(
           "The webhook with identifier [%s] is enabled. Checking for the folder paths.", gitXWebhook.getIdentifier()));
+      //      TODO: will complete this in the following pr
     }
     return false;
   }
