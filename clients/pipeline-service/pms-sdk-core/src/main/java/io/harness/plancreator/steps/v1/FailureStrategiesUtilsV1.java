@@ -116,7 +116,7 @@ public class FailureStrategiesUtilsV1 {
     if (retryCount.getValue() == null) {
       throw new InvalidRequestException("Retry Count cannot be null or empty");
     }
-    if (retryAction.getSpec().getIntervals().getValue() == null) {
+    if (retryAction.getSpec().getInterval().getValue() == null) {
       throw new InvalidRequestException("Retry Interval cannot be null or empty");
     }
     if (retryAction.getSpec().getOn_failure() == null) {
@@ -125,7 +125,7 @@ public class FailureStrategiesUtilsV1 {
     if (retryCount.isExpression()) {
       throw new InvalidRequestException("RetryCount fixed value is not given.");
     }
-    if (retryAction.getSpec().getIntervals().isExpression()) {
+    if (retryAction.getSpec().getInterval().isExpression()) {
       throw new InvalidRequestException("RetryIntervals cannot be expression/runtime input. Please give values.");
     }
     FailureConfigV1 actionUnderRetry = retryAction.getSpec().getOn_failure();
@@ -199,13 +199,13 @@ public class FailureStrategiesUtilsV1 {
     if (retryCount.getValue() == null) {
       throw new InvalidRequestException("Retry Count cannot be null or empty");
     }
-    if (retryAction.getSpec().getIntervals().getValue() == null) {
+    if (retryAction.getSpec().getInterval().getValue() == null) {
       throw new InvalidRequestException("Retry Interval cannot be null or empty");
     }
     if (retryCount.isExpression()) {
       throw new InvalidRequestException("RetryCount fixed value is not given.");
     }
-    if (retryAction.getSpec().getIntervals().isExpression()) {
+    if (retryAction.getSpec().getInterval().isExpression()) {
       throw new InvalidRequestException("RetryIntervals cannot be expression/runtime input. Please give values.");
     }
   }

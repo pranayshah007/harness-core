@@ -11,7 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.PlanCreatorUtilsV1;
+import io.harness.plancreator.steps.v1.FailureStrategiesUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -37,11 +39,13 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.group.GroupStepParametersV1;
 import io.harness.steps.group.GroupStepV1;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -125,7 +129,7 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .adviserObtainments(getAdviserObtainmentFromMetaData(ctx))
+        .adviserObtainments(getAdviserObtainmentFromMetaData(ctx, config))
         .whenCondition(RunInfoUtilsV1.getStageWhenCondition(config))
         .skipExpressionChain(true)
         .build();
@@ -177,13 +181,32 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     return GraphLayoutResponse.builder().layoutNodes(layoutNodeMap).build();
   }
 
-  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(PlanCreationContext ctx) {
+  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(PlanCreationContext ctx, YamlField field) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    List<AdviserObtainment> failureStrategiesAdvisers = getFailureStrategiesAdvisers(field, ctx);
+    if (failureStrategiesAdvisers != null) {
+      adviserObtainments.addAll(failureStrategiesAdvisers);
+    }
     AdviserObtainment nextStepAdviser = PlanCreatorUtilsV1.getNextStepAdviser(kryoSerializer, ctx.getDependency());
     if (nextStepAdviser != null) {
       adviserObtainments.add(nextStepAdviser);
     }
     return adviserObtainments;
+  }
+
+  private List<AdviserObtainment> getFailureStrategiesAdvisers(YamlField field, PlanCreationContext ctx) {
+    OnConfigV1 stageFailureStrategies =
+        PlanCreatorUtilsV1.getStageFailureStrategies(kryoSerializer, ctx.getDependency());
+    OnConfigV1 stepGroupFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(field.getNode());
+    if (stepGroupFailureStrategies == null) {
+      return null;
+    }
+    Map<FailureConfigV1, Collection<FailureType>> actionMap = FailureStrategiesUtilsV1.priorityMergeFailureStrategies(
+        null, stepGroupFailureStrategies, stageFailureStrategies);
+    String nextNodeUuid = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, ctx.getDependency());
+    return PlanCreatorUtilsV1.getFailureStrategiesAdvisers(kryoSerializer, actionMap,
+        PlanCreatorUtilsV1.isStepInsideRollback(ctx.getDependency()), nextNodeUuid,
+        PlanCreatorUtilsV1::getAdviserObtainmentForStepGroup);
   }
 
   @Override
