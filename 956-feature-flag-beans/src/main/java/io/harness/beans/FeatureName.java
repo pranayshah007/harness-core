@@ -881,7 +881,10 @@ public enum FeatureName {
   CDS_ENABLE_GCS_ARTIFACT_TYPE(
       "This flag enables GCS artifact type support for SSH/WinRm deployment type", HarnessTeam.CDP),
   CD_CONTAINER_STEP_DELEGATE_SELECTOR(
-      "FF to not respect stage/pipeline delegate selectors for container step", HarnessTeam.CDC);
+      "FF to not respect stage/pipeline delegate selectors for container step", HarnessTeam.CDC),
+  CDS_IMPROVED_HELM_DEPLOYMENT_TRACKING(
+      "Feature Flag enables improved tracking for Helm deployments that use workloads label selectors to track deployed pods",
+      HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated
