@@ -20,8 +20,6 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.ASYNC_WAITING;
 import static io.harness.pms.contracts.execution.Status.EXPIRED;
-import static io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPositionInfoKeys;
-import static io.harness.steps.barriers.beans.BarrierSetupInfo.BarrierSetupInfoKeys;
 
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
@@ -48,7 +46,6 @@ import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.BarrierNodeRepository;
@@ -59,6 +56,7 @@ import io.harness.steps.barriers.beans.BarrierExecutionInstance.BarrierExecution
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.BarrierPositionKeys;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.BarrierPositionType;
+import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.StrategyNodeType;
 import io.harness.steps.barriers.beans.BarrierResponseData;
 import io.harness.steps.barriers.beans.BarrierResponseData.BarrierError;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
@@ -268,7 +266,7 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
             Criteria.where(position.concat(".").concat(BarrierPositionKeys.stageSetupId)).is(positionSetupId);
         if (addFiltersForBarriersWithinLoopingStrategy) {
           stageCriteria = stageCriteria.and(position.concat(".").concat(BarrierPositionKeys.strategyNodeType))
-                              .nin(List.of(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.STEP_GROUP));
+                              .nin(List.of(StrategyNodeType.STAGE.name(), StrategyNodeType.STEP_GROUP.name()));
         }
         update = new Update()
                      .set(positions.concat(BarrierPositionKeys.stageRuntimeId), positionExecutionId)
@@ -279,7 +277,7 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
             Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepGroupSetupId)).is(positionSetupId);
         if (addFiltersForBarriersWithinLoopingStrategy) {
           stepGroupCriteria = stepGroupCriteria.and(position.concat(".").concat(BarrierPositionKeys.strategyNodeType))
-                                  .ne(YAMLFieldNameConstants.STEP_GROUP);
+                                  .ne(StrategyNodeType.STEP_GROUP.name());
         }
         update = new Update()
                      .set(positions.concat(BarrierPositionKeys.stepGroupRuntimeId), positionExecutionId)

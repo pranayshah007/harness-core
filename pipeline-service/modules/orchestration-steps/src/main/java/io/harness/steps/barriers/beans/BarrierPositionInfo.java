@@ -43,11 +43,18 @@ public class BarrierPositionInfo {
     String stepSetupId;
     String stepRuntimeId;
 
+    /* `strategySetupId` contains the setupId of the closest parent node containing a looping strategy
+     (if there is any). */
     String strategySetupId;
-    String strategyNodeType;
+
+    /* `strategyNodeType` is used to store whether the closest parent node containing a looping strategy
+     is of type STEP_GROUP or STAGE. This field is used in `BarrierServiceImpl.obtainRuntimeIdUpdate` and
+    `BarrierWithinStrategyExpander` for updating runtime info related to a given BarrierPosition. */
+    StrategyNodeType strategyNodeType;
 
     boolean stepGroupRollback;
 
     public enum BarrierPositionType { STAGE, STEP_GROUP, STEP }
+    public enum StrategyNodeType { STEP_GROUP, STAGE }
   }
 }
