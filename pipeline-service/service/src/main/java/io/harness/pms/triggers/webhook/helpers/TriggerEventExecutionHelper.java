@@ -408,8 +408,9 @@ public class TriggerEventExecutionHelper {
         triggerPayloadBuilder.setManifestData(ManifestData.newBuilder().setVersion(build).build());
       }
       TriggerPayload triggerPayload = triggerPayloadBuilder.build();
-      PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionReques(
-          triggerDetails, triggerPayload, runtimeInputYaml);
+      PlanExecution response =
+          triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(
+              triggerDetails, triggerPayload, runtimeInputYaml);
       if (triggerPayload != null) {
         pseudoEvent.setPayload(triggerPayload.toString());
       }
