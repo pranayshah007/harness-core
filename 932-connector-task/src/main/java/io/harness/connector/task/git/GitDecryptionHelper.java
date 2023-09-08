@@ -7,12 +7,13 @@
 
 package io.harness.connector.task.git;
 
-import static io.harness.connector.helper.GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity;
-import static io.harness.connector.helper.GitApiAccessDecryptionHelper.hasApiAccess;
-
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
+import static io.harness.connector.helper.GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity;
+import static io.harness.connector.helper.GitApiAccessDecryptionHelper.hasApiAccess;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitAuthenticationDTO;
@@ -20,9 +21,6 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.List;
 
 @Singleton

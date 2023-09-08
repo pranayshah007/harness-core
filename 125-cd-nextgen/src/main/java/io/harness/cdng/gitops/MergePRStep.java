@@ -7,10 +7,8 @@
 
 package io.harness.cdng.gitops;
 
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.exception.WingsException.USER;
-
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -20,11 +18,14 @@ import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import io.harness.connector.ConnectorInfoDTO;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
@@ -36,6 +37,7 @@ import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
+import static io.harness.exception.WingsException.USER;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.impl.scm.ScmGitProviderHelper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -61,14 +63,10 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.ConnectorUtils;
 import io.harness.utils.IdentifierRefHelper;
-
-import software.wings.beans.TaskType;
-
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import software.wings.beans.TaskType;
 
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
@@ -172,10 +170,12 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
 
     GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
     GitApiTaskParams gitApiTaskParams;
-    switch (gitStoreDelegateConfig.getGitConfigDTO().getConnectorType()) {
+    switch (connectorDetails.getConnectorType()) {
       case GITHUB:
-        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
-        gitApiTaskParams =
+//        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+        GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
+        GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder().connectionType(gitConfigDTO.getGitConnectionType()).url(gitConfigDTO.getUrl()).build();
+                gitApiTaskParams =
             GitApiTaskParams.builder()
                 .gitRepoType(GitRepoType.GITHUB)
                 .requestType(GitApiRequestType.MERGE_PR)

@@ -7,22 +7,23 @@
 
 package io.harness.delegate.task.git;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.inject.Inject;
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.git.model.ChangeType.MODIFY;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
-
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
-
-import static java.lang.String.format;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -51,6 +52,7 @@ import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.gitops.GitOpsTaskHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.helper.BitbucketHelper;
+import static io.harness.git.model.ChangeType.MODIFY;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
@@ -59,28 +61,16 @@ import io.harness.git.model.GitFileChange;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
-
-import software.wings.beans.LogColor;
-import software.wings.beans.LogWeight;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.inject.Inject;
 import java.io.IOException;
+import static java.lang.String.format;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,6 +89,11 @@ import org.jooq.tools.json.JSONObject;
 import org.jooq.tools.json.JSONParser;
 import org.jooq.tools.json.ParseException;
 import org.jose4j.lang.JoseException;
+import software.wings.beans.LogColor;
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import software.wings.beans.LogWeight;
+import static software.wings.beans.LogWeight.Bold;
 
 @Slf4j
 @OwnedBy(GITOPS)
@@ -293,9 +288,18 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
       String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
       String newBranch = baseBranch + "_" + RandomStringUtils.randomAlphabetic(12);
-      ScmConnector scmConnector =
-          gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
+      GitStoreDelegateConfig gitStoreDelegateConfig = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig();
+      ScmConnector scmConnector = gitStoreDelegateConfig.getGitConfigDTO();
+
+      // if OPTIMIZED_GIT_FETCH_FILES FF is disabled
+      // set the scmConnector with decrypted creds
+      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(scmConnector);
+      gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
+
+      //goal - scmConnector should have the decrypted value set, because scmConnector is passed to createNewBranch()
+      //currently, gitConfigDTO is having the decrypted value set
+      //somehow the value should be populated from gitConfigDTO to scmConnector
       createNewBranch(scmConnector, newBranch, baseBranch);
       CommitAndPushResult gitCommitAndPushResult = commit(gitOpsTaskParams, fetchFilesResult, COMMIT_MSG, newBranch);
 
