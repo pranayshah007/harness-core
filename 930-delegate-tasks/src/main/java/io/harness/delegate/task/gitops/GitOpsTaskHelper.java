@@ -86,12 +86,7 @@ public class GitOpsTaskHelper {
     FetchFilesResult gitFetchFilesResult;
     if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
       executionLogCallback.saveExecutionLog("Using optimized file fetch");
-      secretDecryptionService.decrypt(
-          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
-          gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
-          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
-          gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
+      setApiAccess(gitStoreDelegateConfig);
       if (gitFetchFilesConfig.isSucceedIfFileNotFound()) {
         gitFetchFilesResult =
             scmFetchFilesHelper.fetchAnyFilesFromRepoWithScm(gitStoreDelegateConfig, filePathsToFetch);
@@ -127,27 +122,21 @@ public class GitOpsTaskHelper {
   public void setGitConfigCred(GitFetchFilesConfig gitFetchFilesConfig, LogCallback executionLogCallback) {
     executionLogCallback.saveExecutionLog("Setting git configs");
     GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
+    setApiAccess(gitStoreDelegateConfig);
     if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
       executionLogCallback.saveExecutionLog("Using optimized file fetch");
-      secretDecryptionService.decrypt(
-          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
-          gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
-          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
-          gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
     } else {
       GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
-      setApiAccess(gitStoreDelegateConfig);
     }
   }
 
-  public void setApiAccess(GitStoreDelegateConfig gitStoreDelegateConfig) {
+  private void setApiAccess(GitStoreDelegateConfig gitStoreDelegateConfig) {
     secretDecryptionService.decrypt(
-            GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
-            gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
+        GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
+        gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
     ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
-            GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
-            gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
+        GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
+        gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
   }
 }
