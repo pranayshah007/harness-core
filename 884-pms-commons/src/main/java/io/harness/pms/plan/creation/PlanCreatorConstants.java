@@ -20,4 +20,8 @@ public class PlanCreatorConstants {
   public final String YAML_VERSION = "yamlVersion";
   public final String STAGE_FAILURE_STRATEGIES = "stageFailureStrategies";
   public final String STEP_GROUP_FAILURE_STRATEGIES = "stepGroupFailureStrategies";
+  public final String STAGE_ID = "stageId";
+  public final String STEP_GROUP_ID = "stepGroupId";
+  public final String STRATEGY_ID = "strategyId";
+  public final String STRATEGY_NODE_TYPE = "strategyNodeType";
 }

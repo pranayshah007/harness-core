@@ -169,12 +169,20 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
-  public void testAddCDExecutionDependencies() throws IOException {
+  @Parameters(method = "getDeploymentStageConfig")
+  @PrepareForTest(YamlUtils.class)
+  public void testAddCDExecutionDependencies(DeploymentStageNode node) throws IOException {
     YamlField executionField = getYamlFieldFromPath("cdng/plan/service.yml");
 
     String executionNodeId = executionField.getNode().getUuid();
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-    deploymentStagePMSPlanCreator.addCDExecutionDependencies(planCreationResponseMap, executionField);
+    JsonNode jsonNode = mapper.valueToTree(node);
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .globalContext(Map.of("metadata",
+                                      PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
+                                  .currentField(new YamlField(new YamlNode("spec", jsonNode)))
+                                  .build();
+    deploymentStagePMSPlanCreator.addCDExecutionDependencies(planCreationResponseMap, executionField, ctx, node);
     assertThat(planCreationResponseMap.containsKey(executionNodeId)).isEqualTo(true);
   }
 

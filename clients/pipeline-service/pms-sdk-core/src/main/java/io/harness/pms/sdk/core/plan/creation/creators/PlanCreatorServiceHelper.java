@@ -14,20 +14,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.logging.AutoLogContext;
-import io.harness.pms.contracts.plan.Dependencies;
-import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.HarnessStruct;
-import io.harness.pms.contracts.plan.HarnessValue;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
-import io.harness.pms.contracts.plan.RollbackModeBehaviour;
-import io.harness.pms.contracts.plan.SetupMetadata;
+import io.harness.pms.contracts.plan.*;
 import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PlanCreationParentInfoConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -46,9 +39,9 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class PlanCreatorServiceHelper {
   private static final List<String> parentInfoKeysList =
-      List.of(PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, PlanCreationParentInfoConstants.STAGE_ID,
-          PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES, PlanCreationParentInfoConstants.STEP_GROUP_ID,
-          PlanCreationParentInfoConstants.STRATEGY_ID, PlanCreatorConstants.YAML_VERSION);
+      List.of(PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, PlanCreatorConstants.STAGE_ID,
+          PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES, PlanCreatorConstants.STEP_GROUP_ID,
+          PlanCreatorConstants.STRATEGY_ID, PlanCreatorConstants.STRATEGY_NODE_TYPE, PlanCreatorConstants.YAML_VERSION);
   public Optional<PartialPlanCreator<?>> findPlanCreator(
       List<PartialPlanCreator<?>> planCreators, YamlField field, String yamlVersion) {
     return planCreators.stream()

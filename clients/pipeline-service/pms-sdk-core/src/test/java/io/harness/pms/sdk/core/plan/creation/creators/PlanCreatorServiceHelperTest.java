@@ -29,7 +29,6 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.PipelineVersion;
-import io.harness.pms.yaml.PlanCreationParentInfoConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -239,16 +238,16 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
   public void testDecorateResponseWithParentInfo() {
     Dependency initialDependencies =
         Dependency.newBuilder()
-            .setParentInfo(HarnessStruct.newBuilder()
-                               .putData(PlanCreatorConstants.YAML_VERSION,
-                                   HarnessValue.newBuilder().setStringValue(PipelineVersion.V0).build())
-                               .putData(PlanCreationParentInfoConstants.STAGE_ID,
-                                   HarnessValue.newBuilder().setStringValue("stageId").build())
-                               .putData(PlanCreationParentInfoConstants.STEP_GROUP_ID,
-                                   HarnessValue.newBuilder().setStringValue("stepGroupId").build())
-                               .putData(PlanCreationParentInfoConstants.STRATEGY_ID,
-                                   HarnessValue.newBuilder().setStringValue("strategyId").build())
-                               .build())
+            .setParentInfo(
+                HarnessStruct.newBuilder()
+                    .putData(PlanCreatorConstants.YAML_VERSION,
+                        HarnessValue.newBuilder().setStringValue(PipelineVersion.V0).build())
+                    .putData(PlanCreatorConstants.STAGE_ID, HarnessValue.newBuilder().setStringValue("stageId").build())
+                    .putData(PlanCreatorConstants.STEP_GROUP_ID,
+                        HarnessValue.newBuilder().setStringValue("stepGroupId").build())
+                    .putData(PlanCreatorConstants.STRATEGY_ID,
+                        HarnessValue.newBuilder().setStringValue("strategyId").build())
+                    .build())
             .build();
     PlanCreationResponse planCreationResponse = PlanCreationResponse.builder().build();
     PlanCreatorServiceHelper.decorateResponseWithParentInfo(initialDependencies, planCreationResponse);
@@ -270,15 +269,15 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
         .isEqualTo(HarnessValue.newBuilder().setStringValue(PipelineVersion.V0).build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreationParentInfoConstants.STAGE_ID))
+            PlanCreatorConstants.STAGE_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("stageId").build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreationParentInfoConstants.STEP_GROUP_ID))
+            PlanCreatorConstants.STEP_GROUP_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("stepGroupId").build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreationParentInfoConstants.STRATEGY_ID))
+            PlanCreatorConstants.STRATEGY_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("strategyId").build());
 
     newDependencies =
@@ -289,11 +288,11 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
                     .setParentInfo(HarnessStruct.newBuilder()
                                        .putData(PlanCreatorConstants.YAML_VERSION,
                                            HarnessValue.newBuilder().setStringValue(PipelineVersion.V1).build())
-                                       .putData(PlanCreationParentInfoConstants.STAGE_ID,
+                                       .putData(PlanCreatorConstants.STAGE_ID,
                                            HarnessValue.newBuilder().setStringValue("otherStageId").build())
-                                       .putData(PlanCreationParentInfoConstants.STEP_GROUP_ID,
+                                       .putData(PlanCreatorConstants.STEP_GROUP_ID,
                                            HarnessValue.newBuilder().setStringValue("otherStepGroupId").build())
-                                       .putData(PlanCreationParentInfoConstants.STRATEGY_ID,
+                                       .putData(PlanCreatorConstants.STRATEGY_ID,
                                            HarnessValue.newBuilder().setStringValue("otherStrategyId").build())
                                        .build())
                     .build())
@@ -308,15 +307,15 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
         .isEqualTo(HarnessValue.newBuilder().setStringValue(PipelineVersion.V1).build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreationParentInfoConstants.STAGE_ID))
+            PlanCreatorConstants.STAGE_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStageId").build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreationParentInfoConstants.STEP_GROUP_ID))
+            PlanCreatorConstants.STEP_GROUP_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStepGroupId").build());
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
-            PlanCreationParentInfoConstants.STRATEGY_ID))
+            PlanCreatorConstants.STRATEGY_ID))
         .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStrategyId").build());
   }
 }

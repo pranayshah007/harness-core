@@ -17,10 +17,10 @@ import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PlanCreationParentInfoConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -159,7 +159,7 @@ public class PlanCreatorUtilsCommonTest extends PmsSdkCoreTestBase {
                                         .build();
     Map<String, PlanCreationResponse> responseMap = Map.of("dep", response);
 
-    PlanCreatorUtilsCommon.populateParentInfo(context, responseMap, PlanCreationParentInfoConstants.STEP_GROUP_ID);
+    PlanCreatorUtilsCommon.populateParentInfo(context, responseMap, PlanCreatorConstants.STEP_GROUP_ID);
     PlanCreationResponse newResponse = responseMap.get("dep");
     assertThat(newResponse.getDependencies()).isNotNull();
     assertThat(newResponse.getDependencies()

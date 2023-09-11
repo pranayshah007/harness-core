@@ -36,8 +36,6 @@ public abstract class ChildrenPlanCreator<T> implements PartialPlanCreator<T> {
     return GraphLayoutResponse.builder().build();
   }
 
-  public void populateParentInfo(PlanCreationContext ctx, Map<String, PlanCreationResponse> childrenResponses) {}
-
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, T config) {
     PlanCreationResponse finalResponse = PlanCreationResponse.builder().build();
@@ -47,7 +45,6 @@ public abstract class ChildrenPlanCreator<T> implements PartialPlanCreator<T> {
     }
 
     LinkedHashMap<String, PlanCreationResponse> childrenResponses = createPlanForChildrenNodes(ctx, config);
-    populateParentInfo(ctx, childrenResponses);
     List<String> childrenNodeIds = new LinkedList<>();
     for (Map.Entry<String, PlanCreationResponse> entry : childrenResponses.entrySet()) {
       finalResponse.merge(entry.getValue());

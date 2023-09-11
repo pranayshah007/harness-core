@@ -70,11 +70,14 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
@@ -205,7 +208,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
+
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
       adviserObtainments = getAdviserObtainmentFromMetaData(ctx.getCurrentField(), ctx.getDependency());
@@ -213,7 +216,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     // We need to swap the ids if strategy is present
     PlanNodeBuilder builder =
         PlanNode.builder()
-            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, uuid))
+            .uuid(getFinalPlanNodeId(ctx, stageNode))
             .name(stageNode.getName())
             .identifier(stageNode.getIdentifier())
             .group(StepOutcomeGroup.STAGE.name())
@@ -283,7 +286,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         addServiceDependency(planCreationResponseMap, specField, stageNode, serviceField);
       }
 
-      addCDExecutionDependencies(planCreationResponseMap, executionField);
+      addCDExecutionDependencies(planCreationResponseMap, executionField, ctx, stageNode);
       addMultiDeploymentDependency(planCreationResponseMap, stageNode, ctx, specField);
 
       StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), stageNode.getName(),
@@ -316,7 +319,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     String serviceNodeId = addServiceNodeForGitOps(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
     addSpecNode(planCreationResponseMap, specField, serviceNodeId);
 
-    addCDExecutionDependencies(planCreationResponseMap, executionField);
+    addCDExecutionDependencies(planCreationResponseMap, executionField, ctx, stageNode);
     addMultiDeploymentDependencyForGitOps(planCreationResponseMap, stageNode, ctx, specField);
 
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), stageNode.getName(),
@@ -785,7 +788,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     Map<String, ByteString> specDependencyMap = new HashMap<>();
     specDependencyMap.put(
         YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(childNodeUuid)));
-
     Dependency specDependency = Dependency.newBuilder().putAllMetadata(specDependencyMap).build();
     return DependenciesUtils.toDependenciesProto(specYamlFieldMap)
         .toBuilder()
@@ -793,14 +795,17 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         .build();
   }
 
-  public void addCDExecutionDependencies(
-      Map<String, PlanCreationResponse> planCreationResponseMap, YamlField executionField) {
+  public void addCDExecutionDependencies(Map<String, PlanCreationResponse> planCreationResponseMap,
+      YamlField executionField, PlanCreationContext ctx, DeploymentStageNode stageNode) {
     Map<String, YamlField> executionYamlFieldMap = new HashMap<>();
     executionYamlFieldMap.put(executionField.getNode().getUuid(), executionField);
-
     planCreationResponseMap.put(executionField.getNode().getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(DependenciesUtils.toDependenciesProto(executionYamlFieldMap))
+            .dependencies(DependenciesUtils.toDependenciesProto(executionYamlFieldMap)
+                              .toBuilder()
+                              .putDependencyMetadata(executionField.getNode().getUuid(),
+                                  Dependency.newBuilder().setParentInfo(generateParentInfo(ctx, stageNode)).build())
+                              .build())
             .build());
   }
 
@@ -843,5 +848,24 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   private boolean isGitopsEnabled(DeploymentStageConfig deploymentStageConfig) {
     return deploymentStageConfig.getGitOpsEnabled();
+  }
+
+  private HarnessStruct generateParentInfo(PlanCreationContext ctx, DeploymentStageNode stageNode) {
+    YamlField field = ctx.getCurrentField();
+    HarnessStruct.Builder parentInfo = HarnessStruct.newBuilder();
+    parentInfo.putData(PlanCreatorConstants.STAGE_ID,
+        HarnessValue.newBuilder().setStringValue(getFinalPlanNodeId(ctx, stageNode)).build());
+    if (StrategyUtils.isWrappedUnderStrategy(field)) {
+      parentInfo.putData(
+          PlanCreatorConstants.STRATEGY_ID, HarnessValue.newBuilder().setStringValue(stageNode.getUuid()).build());
+      parentInfo.putData(PlanCreatorConstants.STRATEGY_NODE_TYPE,
+          HarnessValue.newBuilder().setStringValue(YAMLFieldNameConstants.STAGE).build());
+    }
+    return parentInfo.build();
+  }
+
+  private String getFinalPlanNodeId(PlanCreationContext ctx, DeploymentStageNode stageNode) {
+    String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
+    return StrategyUtils.getSwappedPlanNodeId(ctx, uuid);
   }
 }
