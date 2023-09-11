@@ -126,15 +126,19 @@ public class ChronicleEventTailer extends AbstractScheduledService {
       log.info("index.read-tailer={},  index.sent-tailer={}, index.end={}, excerptCount={}", readIndex, sentIndex,
           endIndex, excerptCount);
     } catch (OverlappingFileLockException exception) {
-      log.error("======== OverlappingFileLockException has bene thrown =======");
-      deleteQueueFiles();
-      // And start the Tailer Service.
-      log.info("EX::: Starting chronicle event trailer");
-      this.startAsync().awaitRunning();
-      log.info("EX--- Started chronicle event trailer");
+      log.error("======== OverlappingFileLockException has been thrown =======");
+      deleteFilesAndStartTailerService();
     } catch (Exception e) {
       log.error("Exception in printStats", e);
     }
+  }
+
+  public void deleteFilesAndStartTailerService() {
+    deleteQueueFiles();
+    // And start the Tailer Service.
+    log.info("EX::: Starting chronicle event trailer");
+    this.startAsync().awaitRunning();
+    log.info("EX--- Started chronicle event trailer");
   }
 
   private void deleteQueueFiles() {
@@ -230,6 +234,9 @@ public class ChronicleEventTailer extends AbstractScheduledService {
         fileDeletionManager.setSentIndex(readTailer.index());
         sampler.sampled(() -> log.info("Skipping message publish as batch is empty"));
       }
+    } catch (OverlappingFileLockException exception) {
+      log.error("======== OverlappingFileLockException has been thrown =======");
+      deleteFilesAndStartTailerService();
     } catch (Exception e) {
       log.error("Encountered exception", e);
     } finally {

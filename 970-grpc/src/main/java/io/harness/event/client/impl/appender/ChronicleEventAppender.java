@@ -9,13 +9,21 @@ package io.harness.event.client.impl.appender;
 
 import io.harness.event.PublishMessage;
 import io.harness.event.client.EventPublisher;
+import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.io.File;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import net.openhft.chronicle.queue.impl.RollingChronicleQueue;
 import net.openhft.chronicle.wire.DocumentContext;
@@ -30,6 +38,7 @@ class ChronicleEventAppender extends EventPublisher {
   private final RollingChronicleQueue queue;
   private final AtomicBoolean shutDown;
   private final ChronicleQueueMonitor queueMonitor;
+  @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
 
   @Inject
   ChronicleEventAppender(@Named("appender") RollingChronicleQueue queue, ChronicleQueueMonitor queueMonitor,
@@ -51,12 +60,16 @@ class ChronicleEventAppender extends EventPublisher {
       return;
     }
     byte[] bytes = publishMessage.toByteArray();
-    DocumentContext dc = queue.acquireAppender().writingDocument();
+    DocumentContext dc = null;
     try {
+      dc = queue.acquireAppender().writingDocument();
       Wire wire = dc.wire();
       if (wire != null) {
         wire.getValueOut().bytes(bytes);
       }
+    } catch (OverlappingFileLockException exception) {
+      log.error("======== OverlappingFileLockException has been thrown =======");
+      chronicleEventTailer.deleteFilesAndStartTailerService();
     } catch (Throwable t) {
       dc.rollbackOnClose();
       throw t;
