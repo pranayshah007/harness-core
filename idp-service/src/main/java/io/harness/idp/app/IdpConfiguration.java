@@ -36,6 +36,7 @@ import io.harness.secret.ConfigSecret;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import io.dropwizard.Configuration;
@@ -66,15 +67,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.Collections;
 import javax.ws.rs.Path;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
+
 
 @Getter
 @OwnedBy(HarnessTeam.IDP)
@@ -234,7 +235,6 @@ public class IdpConfiguration extends Configuration {
   }
 
   public static Collection<Class<?>> getOAS3ResourceClassesOnly(Collection<Class<?>> allResourceClasses) {
-    //return allResourceClasses.stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
     return allResourceClasses.stream().collect(Collectors.toList());
   }
 

@@ -320,18 +320,17 @@ public class IdpApplication extends Application<IdpConfiguration> {
     NGMigrationSdkInitHelper.initialize(injector, config);
   }
 
-  public SwaggerBundleConfiguration getSwaggerConfiguration(IdpConfiguration appConfig) {
+  public SwaggerBundleConfiguration getSwaggerConfiguration( IdpConfiguration appConfig) {
     Collection<Class<?>> classes = HARNESS_RESOURCE_CLASSES;
     SwaggerBundleConfiguration defaultSwaggerBundleConfiguration =
             SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration(classes);
     String resourcePackage = String.join(",", getUniquePackages(classes));
     defaultSwaggerBundleConfiguration.setResourcePackage(resourcePackage);
     defaultSwaggerBundleConfiguration.setSchemes(new String[] {"https", "http"});
-    defaultSwaggerBundleConfiguration.setHost("localhost");
-    defaultSwaggerBundleConfiguration.setUriPrefix("");
+    defaultSwaggerBundleConfiguration.setHost(appConfig.hostname);
+    defaultSwaggerBundleConfiguration.setUriPrefix(appConfig.basePathPrefix);
     defaultSwaggerBundleConfiguration.setVersion("1.0");
     defaultSwaggerBundleConfiguration.setSchemes(new String[] {"https", "http"});
-    defaultSwaggerBundleConfiguration.setHost("{{host}}");
     defaultSwaggerBundleConfiguration.setTitle("IDP Service API Reference");
     return defaultSwaggerBundleConfiguration;
   }
