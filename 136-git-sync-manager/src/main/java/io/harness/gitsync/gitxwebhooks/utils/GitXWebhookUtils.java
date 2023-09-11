@@ -25,15 +25,15 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class GitXWebhookUtils {
-  public List<String> compareFolderPaths(List<String> webhookFolderPaths, List<String> modifiedFolderPaths) {
+  public List<String> compareFolderPaths(List<String> webhookFolderPaths, List<String> modifiedFilePaths) {
     ArrayList<String> matchingFolderPaths = new ArrayList<>();
-    if (modifiedFolderPaths == null || modifiedFolderPaths.isEmpty()) {
+    if (modifiedFilePaths == null || modifiedFilePaths.isEmpty()) {
       return matchingFolderPaths;
     }
-    modifiedFolderPaths.forEach(modifiedFolderPath -> {
+    modifiedFilePaths.forEach(modifiedFolderPath -> {
       if (modifiedFolderPath.endsWith(".yaml")) {
-        String parsedModifiedFolderPath = parseModifiedFolderPath(modifiedFolderPath);
-        if (webhookFolderPaths.contains(parsedModifiedFolderPath)) {
+        String parsedModifiedFilePath = parseModifiedFolderPath(modifiedFolderPath);
+        if (webhookFolderPaths.contains(parsedModifiedFilePath)) {
           matchingFolderPaths.add(modifiedFolderPath);
         }
       }
