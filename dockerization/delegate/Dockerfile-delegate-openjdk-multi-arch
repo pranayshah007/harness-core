@@ -29,7 +29,7 @@ RUN ./client_tools.sh false $TARGETARCH && chmod -R 755 /opt/harness-delegate
 COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9 /opt/java/openjdk/ ./jdk-11.0.14+9-jre/
 
 ARG watcher_version
-RUN curl -#k https://app.harness.io/public/shared/watchers/builds/openjdk-8u242/$watcher_version/watcher.jar -o watcher.jar
+RUN curl -#k https://qa.harness.io/public/shared/watchers/builds/openjdk-8u242/$watcher_version/watcher.jar -o watcher.jar
 
 CMD ./entrypoint.sh && bash -c ' \
     while [[ ! -e watcher.log ]]; do sleep 1s; done; tail -F watcher.log & \
