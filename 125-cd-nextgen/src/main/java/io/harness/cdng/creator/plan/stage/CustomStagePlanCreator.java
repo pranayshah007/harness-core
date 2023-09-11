@@ -9,8 +9,12 @@ package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
+import static java.lang.Boolean.parseBoolean;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.steps.CustomStageEnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -20,10 +24,12 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -41,8 +47,10 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.SdkCoreStepUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -59,6 +67,10 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStageNode> {
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
+  @Inject private NGSettingsClient settingsClient;
+  private static final String PROJECT_SCOPED_RESOURCE_CONSTRAINT_SETTING_ID =
+      "project_scoped_resource_constraint_queue";
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -144,14 +156,24 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     boolean envNodeExists = finalEnvironmentYamlV2 != null && finalEnvironmentYamlV2.getEnvironmentRef() != null;
     String envNodeUuid = UUIDGenerator.generateUuid();
 
-    // Adding Spec node
-    String specNextNodeUuid = envNodeExists ? envNodeUuid : executionFieldUuid;
-    PlanCreationResponse specPlanCreationResponse = prepareDependencyForSpecNode(specField, specNextNodeUuid);
-    planCreationResponseMap.put(specField.getNode().getUuid(), specPlanCreationResponse);
+    String specNextNodeUuid = executionFieldUuid;
 
-    // Adding Env node
     if (envNodeExists) {
+      specNextNodeUuid = envNodeUuid;
       String envNextNodeUuid = executionFieldUuid;
+
+      if (finalEnvironmentYamlV2.getInfrastructureDefinition() != null) {
+        final boolean isProjectScopedResourceConstraintQueue = isProjectScopedResourceConstraintQueueByFFOrSetting(ctx);
+        List<AdviserObtainment> adviserObtainments = addResourceConstraintDependencyWithWhenCondition(
+            planCreationResponseMap, specField, ctx, isProjectScopedResourceConstraintQueue);
+
+        PlanNode infraNode = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
+            finalEnvironmentYamlV2, adviserObtainments, null, ParameterField.createValueField(false));
+        planCreationResponseMap.put(infraNode.getUuid(), PlanCreationResponse.builder().planNode(infraNode).build());
+
+        envNextNodeUuid = infraNode.getUuid();
+      }
+
       final CustomStageEnvironmentStepParameters stepParameters =
           CustomStageEnvironmentStepParameters.builder().build();
       ByteString advisorParameters = ByteString.copyFrom(
@@ -160,6 +182,9 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
           EnvironmentPlanCreatorHelper.getPlanNodeForCustomStage(envNodeUuid, stepParameters, advisorParameters);
       planCreationResponseMap.put(envNode.getUuid(), PlanCreationResponse.builder().planNode(envNode).build());
     }
+
+    PlanCreationResponse specPlanCreationResponse = prepareDependencyForSpecNode(specField, specNextNodeUuid);
+    planCreationResponseMap.put(specField.getNode().getUuid(), specPlanCreationResponse);
 
     return planCreationResponseMap;
   }
@@ -202,5 +227,21 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
   @Override
   public Set<String> getSupportedYamlVersions() {
     return Set.of(PipelineVersion.V0);
+  }
+
+  private List<AdviserObtainment> addResourceConstraintDependencyWithWhenCondition(
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
+      PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
+    return InfrastructurePmsPlanCreator.addResourceConstraintDependency(
+        planCreationResponseMap, specField, kryoSerializer, context, isProjectScopedResourceConstraintQueue);
+  }
+
+  private boolean isProjectScopedResourceConstraintQueueByFFOrSetting(PlanCreationContext ctx) {
+    return featureFlagHelperService.isEnabled(
+               ctx.getAccountIdentifier(), FeatureName.CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE)
+        || parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                PROJECT_SCOPED_RESOURCE_CONSTRAINT_SETTING_ID, ctx.getAccountIdentifier(), null, null))
+                            .getValue());
   }
 }

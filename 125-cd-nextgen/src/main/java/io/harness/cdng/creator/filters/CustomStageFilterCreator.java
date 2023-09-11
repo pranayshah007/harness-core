@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.filters;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
@@ -15,8 +16,14 @@ import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.cdng.environment.filters.Entity;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.data.structure.HarnessStringUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.pms.cdng.sample.cd.creator.filters.CdFilter;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.pipeline.filter.PipelineFilter;
@@ -24,11 +31,18 @@ import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 
+import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CustomStageFilterCreator extends GenericStageFilterJsonCreatorV2<CustomStageNode> {
+  @Inject private InfrastructureEntityService infraService;
+  @Inject private EnvironmentService environmentService;
+
   @Override
   public Set<String> getSupportedStageTypes() {
     return Collections.singleton(CUSTOM);
@@ -69,7 +83,56 @@ public class CustomStageFilterCreator extends GenericStageFilterJsonCreatorV2<Cu
                   YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
         }
       }
+
+      if (!environmentRef.isExpression()) {
+        Optional<Environment> environmentEntityOptional =
+            environmentService.get(filterCreationContext.getSetupMetadata().getAccountId(),
+                filterCreationContext.getSetupMetadata().getOrgId(),
+                filterCreationContext.getSetupMetadata().getProjectId(), environmentRef.getValue(), false);
+        environmentEntityOptional.ifPresent(environment -> {
+          filterBuilder.environmentName(environment.getName());
+          final List<InfraStructureDefinitionYaml> infraList = getInfraStructureDefinitionYamlsList(env);
+          addFiltersForInfraYamlList(filterCreationContext, filterBuilder, environment, infraList);
+        });
+      }
     }
+  }
+
+  private void addFiltersForInfraYamlList(FilterCreationContext filterCreationContext,
+      CdFilter.CdFilterBuilder filterBuilder, Environment entity, List<InfraStructureDefinitionYaml> infraList) {
+    if (isEmpty(infraList)) {
+      return;
+    }
+    List<InfrastructureEntity> infrastructureEntities = infraService.getAllInfrastructureFromIdentifierList(
+        filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
+        filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
+        infraList.stream()
+            .map(InfraStructureDefinitionYaml::getIdentifier)
+            .filter(field -> !field.isExpression())
+            .map(ParameterField::getValue)
+            .collect(Collectors.toList()));
+    for (InfrastructureEntity infrastructureEntity : infrastructureEntities) {
+      if (infrastructureEntity.getType() == null) {
+        throw new InvalidRequestException(String.format(
+            "Infrastructure Definition [%s] in environment [%s] does not have an associated type. Please select a type for the infrastructure and try again",
+            infrastructureEntity.getIdentifier(), infrastructureEntity.getEnvIdentifier()));
+      }
+      filterBuilder.infrastructureType(infrastructureEntity.getType().getDisplayName());
+    }
+  }
+
+  private List<InfraStructureDefinitionYaml> getInfraStructureDefinitionYamlsList(EnvironmentYamlV2 env) {
+    List<InfraStructureDefinitionYaml> infraList = new ArrayList<>();
+    if (ParameterField.isNotNull(env.getInfrastructureDefinitions())) {
+      if (!env.getInfrastructureDefinitions().isExpression()) {
+        infraList.addAll(env.getInfrastructureDefinitions().getValue());
+      }
+    } else if (ParameterField.isNotNull(env.getInfrastructureDefinition())) {
+      if (!env.getInfrastructureDefinition().isExpression()) {
+        infraList.add(env.getInfrastructureDefinition().getValue());
+      }
+    }
+    return infraList;
   }
 
   @Override

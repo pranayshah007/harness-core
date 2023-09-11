@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.infra.steps;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.ELASTIGROUP_CONFIGURATION_OUTPUT;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
@@ -413,7 +414,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
       InfrastructureOutcome infrastructureOutcome, Ambiance ambiance, EnvironmentOutcome environmentOutcome,
       boolean skipInstances) {
     if (serviceOutcome.getType() == null) {
-      throw new InvalidRequestException("service type cannot be null");
+      return Optional.empty();
     }
     if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
         || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)

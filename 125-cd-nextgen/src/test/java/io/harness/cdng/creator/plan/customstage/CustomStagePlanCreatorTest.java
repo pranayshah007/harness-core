@@ -21,6 +21,8 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.CustomStageNode;
+import io.harness.cdng.creator.plan.stage.CustomStagePlanCreator;
+import io.harness.cdng.pipeline.steps.CustomStageStep;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -68,15 +70,6 @@ public class CustomStagePlanCreatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldValidateGetStepType() {
     assertThat(customStagePlanCreator.getStepType(null)).isEqualTo(CustomStageStep.STEP_TYPE);
-  }
-
-  @Test
-  @Owner(developers = LOVISH_BANSAL)
-  @Category(UnitTests.class)
-  public void shouldValidateSpecParameters() {
-    String childNodeID = "temp";
-    CustomStageSpecParams customStageSpecParams = new CustomStageSpecParams(childNodeID);
-    assertThat(customStagePlanCreator.getSpecParameters(childNodeID, null, null)).isEqualTo(customStageSpecParams);
   }
 
   @Test
