@@ -2510,6 +2510,9 @@ public class DelegateServiceImpl implements DelegateService {
       log.info("Registering delegate for Hostname: {} IP: {}", delegate.getHostName(), delegate.getIp());
     }
 
+    if (assignDelegateService != null) {
+      assignDelegateService.refresh(delegate.getAccountId());
+    }
     if (ECS.equals(delegate.getDelegateType())) {
       return registerResponseFromDelegate(handleEcsDelegateRequest(delegate));
     } else {

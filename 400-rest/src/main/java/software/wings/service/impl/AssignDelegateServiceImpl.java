@@ -1070,6 +1070,11 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   @Override
+  public void refresh(String accountId) {
+    accountDelegatesCache.refresh(accountId);
+  }
+
+  @Override
   public List<String> getEligibleDelegatesToExecuteTaskV2(DelegateTask task) throws WingsException {
     // If task comes with eligibleToExecuteDelegateIds then no need to do assignment logic.
     if (isNotEmpty(task.getEligibleToExecuteDelegateIds())) {
