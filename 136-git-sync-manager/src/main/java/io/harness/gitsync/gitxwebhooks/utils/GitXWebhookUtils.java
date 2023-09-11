@@ -9,15 +9,18 @@ package io.harness.gitsync.gitxwebhooks.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Slf4j
 @UtilityClass
 @OwnedBy(PIPELINE)
@@ -27,19 +30,23 @@ public class GitXWebhookUtils {
     if (modifiedFolderPaths == null || modifiedFolderPaths.isEmpty()) {
       return matchingFolderPaths;
     }
-    for (String webhookFolderPath : webhookFolderPaths) {
-      Pattern webhookPattern = Pattern.compile(webhookFolderPath);
-      for (String modifiedFolderPath : modifiedFolderPaths) {
-        Matcher m = webhookPattern.matcher(modifiedFolderPath);
-        if (m.find()) {
+    modifiedFolderPaths.forEach(modifiedFolderPath -> {
+      if (modifiedFolderPath.endsWith(".yaml")) {
+        String parsedModifiedFolderPath = parseModifiedFolderPath(modifiedFolderPath);
+        if (webhookFolderPaths.contains(parsedModifiedFolderPath)) {
           matchingFolderPaths.add(modifiedFolderPath);
         }
       }
-    }
+    });
     return matchingFolderPaths;
   }
 
-  public String massageInputStringIntoRegex(String folderPath) {
-    return null;
+  private String parseModifiedFolderPath(String modifiedFolderPath) {
+    List<String> folders = new ArrayList<>(Arrays.asList(modifiedFolderPath.split("/")));
+    if (folders.isEmpty()) {
+      return null;
+    }
+    folders.remove(folders.size() - 1);
+    return String.join("/", folders);
   }
 }

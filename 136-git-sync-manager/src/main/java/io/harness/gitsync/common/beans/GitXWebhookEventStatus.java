@@ -11,17 +11,4 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.Arrays;
-import java.util.List;
-
-@OwnedBy(PIPELINE)
-public enum GitXWebhookEventStatus {
-  QUEUED,
-  FAILED,
-  SUCCESSFUL,
-  SKIPPED;
-
-  public static List<GitXWebhookEventStatus> getTerminalStatusList() {
-    return Arrays.asList(FAILED, SUCCESSFUL, SKIPPED);
-  }
-}
+@OwnedBy(PIPELINE) public enum GitXWebhookEventStatus { QUEUED, FAILED, SUCCESSFUL, SKIPPED }

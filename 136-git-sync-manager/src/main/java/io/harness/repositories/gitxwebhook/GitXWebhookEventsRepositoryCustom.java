@@ -15,9 +15,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
 
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @HarnessRepo
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface GitXWebhookEventsRepositoryCustom {
   GitXWebhookEvent create(GitXWebhookEvent gitXWebhookEvent);
+
+  GitXWebhookEvent update(Query query, Update update);
 }

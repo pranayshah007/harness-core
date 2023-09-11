@@ -10,9 +10,8 @@ package io.harness.gitsync.gitxwebhooks.runnable;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
+import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.common.dtos.ScmUpdateGitFileCacheRequestDTO;
-import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -28,7 +27,8 @@ public class FetchFilesFromGitHelper {
   private Injector injector;
 
   @Inject
-  public FetchFilesFromGitHelper(@Named("abcd") ExecutorService executor, Injector injector) {
+  public FetchFilesFromGitHelper(
+      @Named(GitSyncModule.GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME) ExecutorService executor, Injector injector) {
     this.executor = executor;
     this.injector = injector;
   }

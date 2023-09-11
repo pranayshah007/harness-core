@@ -24,9 +24,9 @@ import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 import io.harness.gitsync.gitxwebhooks.entity.Author;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent.GitXWebhookEventKeys;
 import io.harness.gitsync.gitxwebhooks.runnable.FetchFilesFromGitHelper;
 import io.harness.gitsync.gitxwebhooks.utils.GitXWebhookUtils;
-import io.harness.product.ci.scm.proto.Repository;
 import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
 import io.harness.repositories.gitxwebhook.GitXWebhookRepository;
 
@@ -34,6 +34,9 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Slf4j
@@ -64,7 +67,8 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
           gitXWebhook.getAccountIdentifier(), gitXWebhook.getConnectorRef(), gitXWebhook.getRepoName());
       List<String> filesToBeFetched = shouldParsePayload(gitXWebhook, webhookDTO, scmConnector);
       if (filesToBeFetched == null || filesToBeFetched.isEmpty()) {
-        log.info("The webhook event will not be parsed as the webhook is disabled or the folder paths don't match.");
+        log.info("The webhook event will be SKIPPED as the webhook is disabled or the folder paths don't match.");
+        updateGitXWebhookEvent(createdGitXWebhookEvent, webhookDTO);
         return;
       }
       fetchFilesFromGitHelper.submitTask(gitXWebhook.getAccountIdentifier(),
@@ -113,17 +117,34 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     if (gitXWebhook.getIsEnabled()) {
       log.info(String.format(
           "The webhook with identifier [%s] is enabled. Checking for the folder paths.", gitXWebhook.getIdentifier()));
-      //      TODO: will complete this in the following pr
       List<String> modifiedFolderPaths = gitXWebhookEventHelper.getDiffFilesUsingSCM(gitXWebhook.getAccountIdentifier(),
           scmConnector, webhookDTO.getParsedResponse().getPush().getBefore(),
           webhookDTO.getParsedResponse().getPush().getAfter());
 
       log.info(String.format("Successfully fetched %d of modified folder paths", modifiedFolderPaths.size()));
-      //       return GitXWebhookUtils.compareFolderPaths(gitXWebhook.getFolderPaths(), modifiedFolderPaths);
-      return modifiedFolderPaths;
+      return GitXWebhookUtils.compareFolderPaths(gitXWebhook.getFolderPaths(), modifiedFolderPaths);
     }
     return null;
   }
 
-  //  TODO: check for a single file path and then extend it to multiple
+  private void updateGitXWebhookEvent(GitXWebhookEvent gitXWebhookEvent, WebhookDTO webhookDTO) {
+    Criteria criteria = buildCriteria(gitXWebhookEvent.getAccountIdentifier(), gitXWebhookEvent.getEventIdentifier());
+    Query query = new Query(criteria);
+    Update update = buildUpdate(webhookDTO);
+    gitXWebhookEventsRepository.update(query, update);
+  }
+
+  private Criteria buildCriteria(String accountIdentifier, String eventIdentifier) {
+    return Criteria.where(GitXWebhookEventKeys.accountIdentifier)
+        .is(accountIdentifier)
+        .and(GitXWebhookEventKeys.eventIdentifier)
+        .is(eventIdentifier);
+  }
+
+  private Update buildUpdate(WebhookDTO webhookDTO) {
+    Update update = new Update();
+    update.set(GitXWebhookEventKeys.eventStatus, GitXWebhookEventStatus.SKIPPED.name());
+    update.set(GitXWebhookEventKeys.payload, webhookDTO.getJsonPayload());
+    return update;
+  }
 }
