@@ -131,6 +131,9 @@ public class ScoreServiceImpl implements ScoreService {
         try {
           Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, dataPointsAndInputValues);
           compute(accountIdentifier, entity, scorecardsAndChecks, data);
+        } catch (Exception e) {
+          log.error("Could not fetch data and compute score for account: {}, entity: {}", accountIdentifier,
+              entity.getMetadata().getUid(), e);
         } finally {
           latch.countDown();
         }
