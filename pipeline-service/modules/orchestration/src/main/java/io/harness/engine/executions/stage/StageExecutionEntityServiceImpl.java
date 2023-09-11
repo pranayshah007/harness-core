@@ -6,7 +6,6 @@
  */
 
 package io.harness.engine.executions.stage;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
