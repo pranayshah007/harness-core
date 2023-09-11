@@ -5,11 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.yaml.core.failurestrategy.marksuccess.v1;
+package io.harness.yaml.core.failurestrategy.retry.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureStrategyActionConfigV1;
 import io.harness.yaml.core.failurestrategy.v1.NGFailureActionTypeV1;
 
 import lombok.Builder;
@@ -18,6 +18,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
-public class MarkAsSuccessFailureConfigV1 extends FailureConfigV1 {
-  NGFailureActionTypeV1 type = NGFailureActionTypeV1.MARK_AS_SUCCESS;
+public class RetryFailureActionConfigV1 extends FailureStrategyActionConfigV1 {
+  NGFailureActionTypeV1 type = NGFailureActionTypeV1.RETRY;
+  RetryFailureSpecConfigV1 spec;
 }

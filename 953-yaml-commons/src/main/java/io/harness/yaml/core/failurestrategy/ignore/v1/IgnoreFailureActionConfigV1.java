@@ -9,7 +9,7 @@ package io.harness.yaml.core.failurestrategy.ignore.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureStrategyActionConfigV1;
 import io.harness.yaml.core.failurestrategy.v1.NGFailureActionTypeV1;
 
 import lombok.Builder;
@@ -18,6 +18,6 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
-public class IgnoreFailureConfigV1 extends FailureConfigV1 {
+public class IgnoreFailureActionConfigV1 extends FailureStrategyActionConfigV1 {
   NGFailureActionTypeV1 type = NGFailureActionTypeV1.IGNORE;
 }

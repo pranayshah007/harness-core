@@ -40,7 +40,7 @@ import io.harness.steps.group.GroupStepParametersV1;
 import io.harness.steps.group.GroupStepV1;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
 import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
-import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureStrategyActionConfigV1;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -94,7 +94,7 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   }
 
   Dependency getDependencyForChildren(YamlField config) {
-    OnConfigV1 stepGroupFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(config.getNode());
+    List<FailureConfigV1> stepGroupFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(config.getNode());
     if (stepGroupFailureStrategies != null) {
       return Dependency.newBuilder()
           .setParentInfo(HarnessStruct.newBuilder()
@@ -195,14 +195,15 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   }
 
   private List<AdviserObtainment> getFailureStrategiesAdvisers(YamlField field, PlanCreationContext ctx) {
-    OnConfigV1 stageFailureStrategies =
+    List<FailureConfigV1> stageFailureStrategies =
         PlanCreatorUtilsV1.getStageFailureStrategies(kryoSerializer, ctx.getDependency());
-    OnConfigV1 stepGroupFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(field.getNode());
+    List<FailureConfigV1> stepGroupFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(field.getNode());
     if (stepGroupFailureStrategies == null) {
       return null;
     }
-    Map<FailureConfigV1, Collection<FailureType>> actionMap = FailureStrategiesUtilsV1.priorityMergeFailureStrategies(
-        null, stepGroupFailureStrategies, stageFailureStrategies);
+    Map<FailureStrategyActionConfigV1, Collection<FailureType>> actionMap =
+        FailureStrategiesUtilsV1.priorityMergeFailureStrategies(
+            null, stepGroupFailureStrategies, stageFailureStrategies);
     String nextNodeUuid = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, ctx.getDependency());
     return PlanCreatorUtilsV1.getFailureStrategiesAdvisers(kryoSerializer, actionMap,
         PlanCreatorUtilsV1.isStepInsideRollback(ctx.getDependency()), nextNodeUuid,

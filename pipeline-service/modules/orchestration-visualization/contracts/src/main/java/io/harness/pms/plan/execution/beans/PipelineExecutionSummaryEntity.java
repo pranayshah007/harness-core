@@ -292,6 +292,10 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "triggerType";
     public String triggeredBy = PlanExecutionSummaryKeys.executionTriggerInfo + "."
         + "triggeredBy";
+    public String triggerIdentifier = PlanExecutionSummaryKeys.executionTriggerInfo + "."
+        + "triggeredBy"
+        + "."
+        + "triggerIdentifier";
     public String rootExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."
         + "rootExecutionId";
     public String parentExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."

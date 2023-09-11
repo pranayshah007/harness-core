@@ -144,6 +144,7 @@ public final class HelmConstants {
 
   public static final long DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(60);
   public static final String HELM_RELEASE_LABEL = "release";
+  public static final String HELM_INSTANCE_LABEL = "app.kubernetes.io/instance";
   public static final String HELM_HOOK_ANNOTATION = "helm.sh/hook";
 
   public static final String DEFAULT_HELM_VALUE_YAML = "# Enter your Helm value YAML\n"

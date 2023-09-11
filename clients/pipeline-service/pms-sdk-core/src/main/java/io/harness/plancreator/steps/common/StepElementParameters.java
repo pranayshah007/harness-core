@@ -63,6 +63,11 @@ public class StepElementParameters implements StepBaseParameters {
     return DEFAULT;
   }
 
+  @Override
+  public List<String> excludeKeysFromStepInputs() {
+    return spec.stepInputsKeyExclude();
+  }
+
   public StepElementParameters cloneParameters(boolean includeUuid, boolean includeSpec) {
     return StepElementParameters.builder()
         .uuid(includeUuid ? this.uuid : null)

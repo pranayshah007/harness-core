@@ -111,6 +111,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .stepType(node1.getStepType())
                          .identifier(node1.getIdentifier())
                          .module(node1.getServiceName())
+                         .group(null)
                          .skipGraphType(node1.getSkipGraphType())
                          .build();
 
@@ -129,6 +130,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .resolvedParams(PmsStepParameters.parse(prepareStepParameters("bo")))
             .parentId(nodeExecution1Id)
             .nextId(nodeExecution1Id)
+            .group(null)
             .build();
 
     PlanNode node3 = preparePlanNode(true, "c");
@@ -146,6 +148,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .resolvedParams(PmsStepParameters.parse(prepareStepParameters("co")))
             .parentId(nodeExecution1Id)
             .previousId(nodeExecution2Id)
+            .group(null)
             .build();
 
     PlanNode node4 = preparePlanNode(false, "d", "di1", "STAGE");
@@ -169,6 +172,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .skipGraphType(node4.getSkipGraphType())
             .parentId(nodeExecution3Id)
             .nextId(nodeExecution5Id)
+            .group("STAGE")
             .build();
 
     PlanNode node5 = preparePlanNode(false, "d", "di2");
@@ -183,6 +187,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .stepType(node5.getStepType())
                          .identifier(node5.getIdentifier())
                          .module(node5.getServiceName())
+                         .group(null)
                          .skipGraphType(node5.getSkipGraphType())
                          .resolvedParams(PmsStepParameters.parse(prepareStepParameters("do2")))
                          .parentId(nodeExecution3Id)
@@ -205,6 +210,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .skipGraphType(node6.getSkipGraphType())
                          .resolvedParams(PmsStepParameters.parse(prepareStepParameters("eo")))
                          .parentId(nodeExecution4Id)
+                         .group(null)
                          .build();
 
     PlanNode node7 = preparePlanNode(false, "f");
@@ -225,6 +231,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .resolvedParams(PmsStepParameters.parse(prepareStepParameters("eo")))
                          .parentId(nodeExecution6Id)
                          .nextId(nodeExecution8Id)
+                         .group(null)
                          .build();
 
     PlanNode node8 = preparePlanNode(false, "g");
@@ -245,6 +252,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .resolvedParams(PmsStepParameters.parse(prepareStepParameters("eo")))
                          .parentId(nodeExecution6Id)
                          .previousId(nodeExecution7Id)
+                         .group(null)
                          .build();
 
     when(nodeExecutionService.getWithFieldsIncluded(

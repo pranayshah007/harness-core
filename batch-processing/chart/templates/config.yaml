@@ -54,6 +54,7 @@ data:
   USE_WORKLOAD_IDENTITY: {{ .Values.workloadIdentity.enabled | quote }}
   AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED: {{ .Values.awsAccountTagsCollectionJobConfig.enabled | quote }}
   GCP_BQ_UPDATE_BATCH_ENABLED: "false"
+  CF_CLIENT_API_KEY: {{ .Values.CF_CLIENT_API_KEY | quote }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}

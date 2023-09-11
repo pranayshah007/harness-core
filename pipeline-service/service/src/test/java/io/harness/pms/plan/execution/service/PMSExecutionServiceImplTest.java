@@ -44,6 +44,7 @@ import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
+import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.ManifestData;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.contracts.triggers.Type;
@@ -62,6 +63,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanEx
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 import io.harness.security.SecurityContextBuilder;
@@ -184,6 +186,25 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     assertThat(form.getCriteriaObject().containsKey("executionTriggerInfo")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("isLatestExecution")).isNotEqualTo(false);
     assertThat(form.getCriteriaObject().get("executionMode")).isNotEqualTo(false);
+
+    PipelineExecutionFilterPropertiesDTO pipelineExecutionFilterPropertiesDTO =
+        PipelineExecutionFilterPropertiesDTO.builder()
+            .triggerIdentifiers(Collections.singletonList("triggerIdentifier"))
+            .build();
+    Criteria form1 = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+        null, pipelineExecutionFilterPropertiesDTO, null, null, null, false, !PIPELINE_DELETED, true);
+    assertThat(form1.getCriteriaObject().toString())
+        .isEqualTo(
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=basichttpFail, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggeredBy.triggerIdentifier=Document{{$in=[triggerIdentifier]}}}}]}}]}}");
+    PipelineExecutionFilterPropertiesDTO pipelineExecutionFilterPropertiesDTO1 =
+        PipelineExecutionFilterPropertiesDTO.builder()
+            .triggerTypes(Collections.singletonList(TriggerType.WEBHOOK))
+            .build();
+    Criteria form2 = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+        null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, true);
+    assertThat(form2.getCriteriaObject().toString())
+        .isEqualTo(
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=basichttpFail, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
   }
 
   @Test

@@ -1835,6 +1835,7 @@
 55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
 55440:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskParams
 55441:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskResponse
+55442:io.harness.delegate.beans.connector.helm.EcrHelmApiListTagsTaskParams
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo

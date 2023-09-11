@@ -882,6 +882,27 @@ paths:
       tags:
         - Scores
     parameters: []
+  /v1/scores/aggregate:
+    post:
+      summary: Get Aggregated Scores for backstage entities
+      responses:
+        '200':
+          $ref: '#/components/responses/EntityScoresResponseList'
+      operationId: get-aggregated-scores
+      x-stoplight:
+        id: 9lsmkuhvar4oq
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScorecardFilter'
+      x-internal: true
+      tags:
+        - Scores
   /v1/scores/graph:
     get:
       summary: Get Data for check status for graph
@@ -2894,6 +2915,50 @@ components:
       required:
         - scorecard_scores
         - overall_score
+    EntityScores:
+      title: EntityScores
+      x-stoplight:
+        id: n2dicxs6lh84a
+      type: object
+      x-internal: true
+      description: Scores for each backstage entity
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 9nod4yjzwiuu5
+        title:
+          type: string
+          x-stoplight:
+            id: sfc7haown85th
+        kind:
+          type: string
+          x-stoplight:
+            id: sfc7hawwn15th
+        namespace:
+          type: string
+          x-stoplight:
+            id: sfc7oaown85th
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScorecardScore'
+      required:
+        - name
+        - title
+        - kind
+        - namespace
+        - scores
+    EntityScoresResponse:
+      title: EntityScoresResponse
+      x-stoplight:
+        id: d0ug6nkr91o10
+      type: object
+      description: Response for each entity scores
+      x-internal: true
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityScores'
     ScorecardGraphSummaryInfo:
       title: ScorecardGraphSummaryInfo
       x-stoplight:
@@ -3635,6 +3700,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ScorecardScoreResponse'
+    EntityScoresResponseList:
+      description: Response for all the entity scores
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/EntityScoresResponse'
     ScorecardGraphSummaryResponse:
       description: Response for scorecard's score summary for graph
       content:

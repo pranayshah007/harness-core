@@ -7,6 +7,7 @@
 
 package io.harness.idp.scorecard.datasourcelocations.locations;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY_ESCAPED;
@@ -25,20 +26,16 @@ import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEnt
 
 import com.google.inject.Inject;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
-import org.apache.commons.collections.CollectionUtils;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class GithubIsBranchProtectionSetDsl implements DataSourceLocation {
-  private static final String BRANCH_PROTECTION_REPLACER = "{BRANCH_PROTECTION_REPLACER}";
-  private static final String REPOSITORY_BRANCH_NAME_TEMPLATE =
-      "\\n    %s {\\n      name\\n      branchProtectionRule{\\n          allowsDeletions\\n          allowsForcePushes\\n      }\\n    },\\n  ";
+  private static final String REPOSITORY_BRANCH_NAME_REPLACER = "{REPOSITORY_BRANCH_NAME_REPLACER}";
   DslClientFactory dslClientFactory;
 
   @Override
@@ -47,8 +44,7 @@ public class GithubIsBranchProtectionSetDsl implements DataSourceLocation {
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
       Map<String, String> possibleReplaceableUrlPairs) {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
-    Map<String, String> headers = apiRequestDetails.getHeaders();
-    matchAndReplaceHeaders(headers, replaceableHeaders);
+    matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
     Map<String, Object> data = new HashMap<>();
 
     Optional<Map.Entry<DataPointEntity, Set<String>>> dataPointAndInputValuesOpt =
@@ -62,21 +58,20 @@ public class GithubIsBranchProtectionSetDsl implements DataSourceLocation {
     }
     DataPointEntity dataPoint = dataPointAndInputValuesOpt.get().getKey();
     Set<String> inputValues = dataPointAndInputValuesOpt.get().getValue();
+    String tempRequestBody = apiRequestDetails.getRequestBody(); // using temp variable to store unchanged requestBody
 
     for (String inputValue : inputValues) {
-      Map<DataPointEntity, Set<String>> dataPointsAndInputValuesToFetch = new HashMap<>();
-      Set<String> inputValuesToFetch = new HashSet<>();
-      inputValuesToFetch.add(inputValue);
-      dataPointsAndInputValuesToFetch.put(dataPoint, inputValuesToFetch);
+      apiRequestDetails.setRequestBody(tempRequestBody);
+      Map<DataPointEntity, String> dataPointAndInputValueToFetch = new HashMap<>() {
+        { put(dataPoint, inputValue); }
+      };
       String requestBody =
-          constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPointsAndInputValuesToFetch);
+          constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPointAndInputValueToFetch);
+      apiRequestDetails.setRequestBody(requestBody);
       DslClient dslClient =
           dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
-
-      Response response;
+      Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
       Map<String, Object> inputValueData = new HashMap<>();
-      response = dslClient.call(accountIdentifier, apiRequestDetails.getUrl(), apiRequestDetails.getMethod(),
-          apiRequestDetails.getHeaders(), requestBody);
       Map<String, Object> convertedResponse =
           GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
       if (response.getStatus() == 200) {
@@ -91,20 +86,15 @@ public class GithubIsBranchProtectionSetDsl implements DataSourceLocation {
 
   @Override
   public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, Set<String>> dataPointsAndInputValues, String requestBody) {
-    if (dataPointsAndInputValues.containsKey(GITHUB_IS_BRANCH_PROTECTED)
-        && !CollectionUtils.isEmpty(dataPointsAndInputValues.get(GITHUB_IS_BRANCH_PROTECTED))) {
-      Set<String> inputValues = dataPointsAndInputValues.get(GITHUB_IS_BRANCH_PROTECTED);
-      StringBuilder branchProtectionBuilder = new StringBuilder();
-      for (String inputValue : inputValues) {
-        if (inputValue != null && !inputValue.equals(GITHUB_DEFAULT_BRANCH_KEY_ESCAPED)) {
-          branchProtectionBuilder.append(
-              String.format(REPOSITORY_BRANCH_NAME_TEMPLATE, "ref(qualifiedName: \\\"" + inputValue + "\\\")"));
-        } else {
-          branchProtectionBuilder.append(String.format(REPOSITORY_BRANCH_NAME_TEMPLATE, "defaultBranchRef"));
-        }
+      Map<String, String> dataPointsAndInputValue, String requestBody) {
+    if (!isEmpty(dataPointsAndInputValue.get(GITHUB_IS_BRANCH_PROTECTED))) {
+      String inputValue = dataPointsAndInputValue.get(GITHUB_IS_BRANCH_PROTECTED);
+      if (!inputValue.equals(GITHUB_DEFAULT_BRANCH_KEY_ESCAPED)) {
+        requestBody =
+            requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER, "ref(qualifiedName: \\\"" + inputValue + "\\\")");
+      } else {
+        requestBody = requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER, "defaultBranchRef");
       }
-      requestBody = requestBody.replace(BRANCH_PROTECTION_REPLACER, branchProtectionBuilder.toString());
     }
     return requestBody;
   }

@@ -51,14 +51,11 @@ public class PlanNode {
   Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode;
   @Singular List<FacilitatorObtainment> facilitatorObtainments;
   @Singular List<SdkTimeoutObtainment> timeoutObtainments;
-
   // Skip
   String skipCondition;
   String whenCondition;
-
   // stage fqn
   @NonFinal @lombok.Setter String stageFqn;
-
   // Config
   boolean skipExpressionChain;
   @Builder.Default @NotNull ExpressionMode expressionMode = ExpressionMode.RETURN_NULL_IF_UNRESOLVED;

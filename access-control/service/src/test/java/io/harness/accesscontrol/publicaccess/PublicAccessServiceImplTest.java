@@ -12,6 +12,7 @@ import static io.harness.accesscontrol.publicaccess.PublicAccessUtils.PUBLIC_RES
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -21,6 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.AccessControlTestBase;
+import io.harness.accesscontrol.common.filter.ManagedFilter;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupFactory;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcetypes.ResourceType;
@@ -43,11 +46,13 @@ import io.harness.spec.server.accesscontrol.v1.model.Scope;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import retrofit2.Call;
@@ -69,6 +74,12 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
   private static final String RESOURCE_TYPE = "PIPELINE";
   private static final String RESOURCE_ID = randomAlphabetic(10);
 
+  HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder()
+                                              .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                              .orgIdentifier(ORG_IDENTIFIER)
+                                              .projectIdentifier(PROJECT_IDENTIFIER)
+                                              .build();
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -81,18 +92,13 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
   public void testEnablePublicAccess_enablingFirstResourceInAScope() {
-    HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder()
-                                                .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                                .orgIdentifier(ORG_IDENTIFIER)
-                                                .projectIdentifier(PROJECT_IDENTIFIER)
-                                                .build();
     Scope scope = new Scope();
     scope.account(ACCOUNT_IDENTIFIER);
     scope.org(ORG_IDENTIFIER);
     scope.project(PROJECT_IDENTIFIER);
     ResourceType resourceType =
         ResourceType.builder().identifier(RESOURCE_TYPE).isPublic(true).permissionKey(RESOURCE_TYPE).build();
-    mockStatic(NGRestUtils.class);
+    final MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = mockStatic(NGRestUtils.class);
     when(resourceGroupClient.getResourceGroup(
              PUBLIC_RESOURCE_GROUP_IDENTIFIER, scope.getAccount(), scope.getOrg(), scope.getProject()))
         .thenReturn(null);
@@ -112,6 +118,7 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
         .createResourceGroup(eq(ACCOUNT_IDENTIFIER), eq(ORG_IDENTIFIER), eq(PROJECT_IDENTIFIER), any());
     verify(resourceGroupService, times(1)).upsert(any());
     verify(roleAssignmentService, times(2)).create(any());
+    ngRestUtilsMockedStatic.close();
   }
 
   @Test
@@ -136,7 +143,7 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
         .thenReturn(request);
     when(NGRestUtils.getResponse(request)).thenReturn(resourceGroupResponse);
 
-    boolean result = publicAccessService.enable(RESOURCE_ID, resourceType, scope);
+    boolean result = publicAccessService.enable("test", resourceType, scope);
     verify(resourceGroupClient, times(1))
         .updateResourceGroup(eq(PUBLIC_RESOURCE_GROUP_IDENTIFIER), eq(ACCOUNT_IDENTIFIER), eq(ORG_IDENTIFIER),
             eq(PROJECT_IDENTIFIER), any());
@@ -144,11 +151,76 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
     verify(roleAssignmentService, times(0)).create(any());
   }
 
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testIsResourcePublic_publicResourceGroupDoesNotExist() {
+    Scope scope = new Scope();
+    scope.account(ACCOUNT_IDENTIFIER);
+    scope.org(ORG_IDENTIFIER);
+    scope.project(PROJECT_IDENTIFIER);
+    ResourceType resourceType =
+        ResourceType.builder().identifier(RESOURCE_TYPE).isPublic(true).permissionKey(RESOURCE_TYPE).build();
+    when(scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams)))
+        .thenReturn(io.harness.accesscontrol.scopes.core.Scope.builder().level(HarnessScopeLevel.ACCOUNT).build());
+    when(resourceGroupService.get(PUBLIC_RESOURCE_GROUP_IDENTIFIER, scope.toString(), ManagedFilter.NO_FILTER))
+        .thenReturn(null);
+    boolean result = publicAccessService.isResourcePublic(RESOURCE_ID, resourceType, scope);
+    assertThat(result).isNotNull();
+    assertThat(result).isFalse();
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testIsResourcePublic_publicResourceGroupExist_resourceIsPublic() {
+    Scope scope = new Scope();
+    scope.account(ACCOUNT_IDENTIFIER);
+    scope.org(ORG_IDENTIFIER);
+    scope.project(PROJECT_IDENTIFIER);
+    io.harness.accesscontrol.scopes.core.Scope scope1 =
+        io.harness.accesscontrol.scopes.core.Scope.builder()
+            .level(HarnessScopeLevel.PROJECT)
+            .instanceId(PROJECT_IDENTIFIER)
+            .parentScope(io.harness.accesscontrol.scopes.core.Scope.builder()
+                             .level(HarnessScopeLevel.ORGANIZATION)
+                             .instanceId(ORG_IDENTIFIER)
+                             .parentScope(io.harness.accesscontrol.scopes.core.Scope.builder()
+                                              .level(HarnessScopeLevel.ACCOUNT)
+                                              .instanceId(ACCOUNT_IDENTIFIER)
+                                              .build())
+                             .build())
+            .build();
+    ResourceGroup resourceGroup = buildResourceGroup(scope1);
+
+    ResourceType resourceType =
+        ResourceType.builder().identifier(RESOURCE_TYPE).isPublic(true).permissionKey(RESOURCE_TYPE).build();
+    when(scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams))).thenReturn(scope1);
+    when(resourceGroupService.get(PUBLIC_RESOURCE_GROUP_IDENTIFIER, scope1.toString(), ManagedFilter.NO_FILTER))
+        .thenReturn(Optional.of(resourceGroup));
+    boolean result = publicAccessService.isResourcePublic(RESOURCE_ID, resourceType, scope);
+    assertThat(result).isNotNull();
+    assertThat(result).isTrue();
+  }
+
+  private ResourceGroup buildResourceGroup(io.harness.accesscontrol.scopes.core.Scope scope) {
+    String selector = scope.toString().concat("$/PIPELINE/").concat(RESOURCE_ID);
+    return ResourceGroup.builder()
+        .identifier(PUBLIC_RESOURCE_GROUP_IDENTIFIER)
+        .name(PUBLIC_RESOURCE_GROUP_NAME)
+        .managed(false)
+        .resourceSelectorsV2(Set.of(
+            io.harness.accesscontrol.resources.resourcegroups.ResourceSelector.builder().selector(selector).build()))
+        .build();
+  }
+
   private ResourceGroupResponse buildResourceGroupResponse() {
     List<String> identifiers = new ArrayList<>();
     identifiers.add("testpipeline");
+    identifiers.add(RESOURCE_ID);
     List<ResourceSelector> resourceSelectors = new ArrayList<>();
     resourceSelectors.add(ResourceSelector.builder().resourceType("PIPELINE").identifiers(identifiers).build());
+    resourceSelectors.add(ResourceSelector.builder().resourceType("CONNECTOR").identifiers(identifiers).build());
     return ResourceGroupResponse.builder()
         .resourceGroup(ResourceGroupDTO.builder()
                            .identifier(PUBLIC_RESOURCE_GROUP_IDENTIFIER)

@@ -9,9 +9,13 @@ package io.harness.accesscontrol.publicaccess;
 
 import static io.harness.accesscontrol.publicaccess.PublicAccessUtils.PUBLIC_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.publicaccess.PublicAccessUtils.PUBLIC_RESOURCE_GROUP_NAME;
+import static io.harness.accesscontrol.scopes.core.Scope.PATH_DELIMITER;
+import static io.harness.accesscontrol.scopes.core.Scope.SCOPE_DELIMITER;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupFactory;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcetypes.ResourceType;
@@ -43,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -93,14 +98,30 @@ public class PublicAccessServiceImpl implements PublicAccessService {
     return true;
   }
 
+  @Override
+  public boolean isResourcePublic(String resourceIdentifier, ResourceType resourceType, Scope resourceScope) {
+    io.harness.accesscontrol.scopes.core.Scope scope = getScopeFromResourceScope(resourceScope);
+    String matchSelector = scope.toString()
+                               .concat(SCOPE_DELIMITER)
+                               .concat(PATH_DELIMITER)
+                               .concat(resourceType.getIdentifier())
+                               .concat(PATH_DELIMITER)
+                               .concat(resourceIdentifier);
+    Optional<ResourceGroup> existingResourceGroupOptional =
+        resourceGroupService.get(PUBLIC_RESOURCE_GROUP_IDENTIFIER, scope.toString(), ManagedFilter.NO_FILTER);
+    if (existingResourceGroupOptional.isPresent()) {
+      ResourceGroup existingResourceGroup = existingResourceGroupOptional.get();
+      Set<io.harness.accesscontrol.resources.resourcegroups.ResourceSelector> resourceSelectors =
+          existingResourceGroup.getResourceSelectorsV2();
+      if (resourceSelectors != null) {
+        return resourceSelectors.stream().anyMatch(x -> x.getSelector().equals(matchSelector));
+      }
+    }
+    return false;
+  }
+
   private void createRoleAssignment(ResourceType resourceType, Scope resourceScope) {
-    HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder()
-                                                .accountIdentifier(resourceScope.getAccount())
-                                                .orgIdentifier(resourceScope.getOrg())
-                                                .projectIdentifier(resourceScope.getProject())
-                                                .build();
-    io.harness.accesscontrol.scopes.core.Scope scope =
-        scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams));
+    io.harness.accesscontrol.scopes.core.Scope scope = getScopeFromResourceScope(resourceScope);
     List<String> publicRoles = getPublicRoles();
     final List<PublicAccessRoleAssignmentMapping> filteredMappings =
         publicAccessRoleAssignmentMappings.stream()
@@ -118,6 +139,16 @@ public class PublicAccessServiceImpl implements PublicAccessService {
           publicAccessRoleAssignmentMapping.getPrincipalIdentifier());
       roleAssignmentService.create(roleAssignment);
     }
+  }
+
+  private io.harness.accesscontrol.scopes.core.Scope getScopeFromResourceScope(Scope resourceScope) {
+    HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder()
+                                                .accountIdentifier(resourceScope.getAccount())
+                                                .orgIdentifier(resourceScope.getOrg())
+                                                .projectIdentifier(resourceScope.getProject())
+                                                .build();
+
+    return scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams));
   }
 
   private List<String> getPublicRoles() {

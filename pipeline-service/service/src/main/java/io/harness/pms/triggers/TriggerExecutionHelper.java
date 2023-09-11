@@ -289,6 +289,7 @@ public class TriggerExecutionHelper {
     TriggeredBy.Builder builder = TriggeredBy.newBuilder()
                                       .setIdentifier(ngTriggerEntity.getIdentifier())
                                       .setTriggerIdentifier(ngTriggerEntity.getIdentifier())
+                                      .setTriggerName(ngTriggerEntity.getName())
                                       .setUuid("systemUser");
     if (triggerWebhookEvent != null && triggerWebhookEvent.getPrincipal() != null) {
       /* If principal is available in `triggerWebhookEvent`, we set some information in `TriggeredBy` based on it,

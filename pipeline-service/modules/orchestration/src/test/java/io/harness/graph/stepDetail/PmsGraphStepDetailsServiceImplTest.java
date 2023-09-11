@@ -45,6 +45,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -116,6 +117,33 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
     pmsGraphStepDetailsService.getStepInputs(planExecutionId, nodeExecutionId);
 
     verify(nodeExecutionsInfoRepositoryMock, times(1)).findByNodeExecutionId(nodeExecutionId);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testGetStepInputsRecasterPruned() {
+    String nodeExecutionId = generateUuid();
+    String planExecutionId = generateUuid();
+
+    Map<String, Object> stepInputs = new LinkedHashMap<>();
+    stepInputs.put("__recast", "a.b.c");
+    stepInputs.put("uuid", generateUuid());
+    stepInputs.put("a", "b");
+    Map<String, Object> nestedMap = new LinkedHashMap<>();
+    nestedMap.put("d", "e");
+    stepInputs.put("c", nestedMap);
+
+    when(nodeExecutionsInfoRepositoryMock.findByNodeExecutionId(nodeExecutionId))
+        .thenReturn(
+            Optional.of(NodeExecutionsInfo.builder().resolvedInputs(PmsStepParameters.parse(stepInputs)).build()));
+    doNothing().when(stepDetailsUpdateObserverSubject).fireInform(any());
+
+    PmsStepParameters stepInputsRecasterPruned =
+        pmsGraphStepDetailsService.getStepInputsRecasterPruned(planExecutionId, nodeExecutionId);
+    verify(nodeExecutionsInfoRepositoryMock, times(1)).findByNodeExecutionId(nodeExecutionId);
+    assertThat(stepInputsRecasterPruned).isNotNull();
+    assertThat(stepInputsRecasterPruned.size()).isEqualTo(2);
   }
 
   @Test

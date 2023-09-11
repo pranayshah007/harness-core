@@ -103,7 +103,7 @@ import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import net.minidev.json.JSONArray;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.transaction.support.TransactionTemplate;

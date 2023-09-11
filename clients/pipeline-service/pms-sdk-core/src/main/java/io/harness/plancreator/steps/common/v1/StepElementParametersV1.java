@@ -17,7 +17,7 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 
 import java.util.List;
 import lombok.AccessLevel;
@@ -38,7 +38,7 @@ public class StepElementParametersV1 implements StepBaseParameters {
   String name;
   String desc;
   ParameterField<String> timeout;
-  OnConfigV1 on;
+  List<FailureConfigV1> failure;
 
   String when;
 
@@ -70,7 +70,7 @@ public class StepElementParametersV1 implements StepBaseParameters {
         .id(this.id)
         .timeout(this.timeout)
         .enforce(this.enforce)
-        .on(this.on)
+        .failure(this.failure)
         .when(this.when)
         .delegateSelectors(this.delegateSelectors)
         .build();

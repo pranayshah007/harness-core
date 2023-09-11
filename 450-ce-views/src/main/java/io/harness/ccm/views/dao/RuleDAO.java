@@ -112,6 +112,9 @@ public class RuleDAO {
         }
       }
     }
+    if (governancePolicyFilter.getResourceType() != null) {
+      rules.field(RuleId.resourceType).equal(governancePolicyFilter.getResourceType());
+    }
     final FindOptions options = new FindOptions();
     options.collation(Collation.builder().locale(LOCALE_EN).build());
     options.limit(governancePolicyFilter.getLimit());

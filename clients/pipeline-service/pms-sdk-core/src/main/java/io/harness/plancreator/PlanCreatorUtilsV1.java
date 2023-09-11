@@ -46,18 +46,17 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.TimeoutUtils;
-import io.harness.yaml.core.failurestrategy.manualintervention.v1.ManualInterventionFailureConfigV1;
-import io.harness.yaml.core.failurestrategy.retry.v1.RetryFailureConfigV1;
-import io.harness.yaml.core.failurestrategy.retry.v1.RetrySGFailureConfigV1;
+import io.harness.yaml.core.failurestrategy.manualintervention.v1.ManualInterventionFailureActionConfigV1;
+import io.harness.yaml.core.failurestrategy.retry.v1.RetryFailureActionConfigV1;
+import io.harness.yaml.core.failurestrategy.retry.v1.RetrySGFailureActionConfigV1;
 import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureStrategyActionConfigV1;
 import io.harness.yaml.core.failurestrategy.v1.NGFailureActionTypeV1;
-import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -158,7 +157,7 @@ public class PlanCreatorUtilsV1 {
     return getObjectFromBytes(bytes, kryoSerializer, asInflatedObject);
   }
 
-  public RepairActionCode toRepairAction(FailureConfigV1 action) {
+  public RepairActionCode toRepairAction(FailureStrategyActionConfigV1 action) {
     switch (action.getType()) {
       case IGNORE:
         return RepairActionCode.IGNORE;
@@ -184,7 +183,8 @@ public class PlanCreatorUtilsV1 {
 
   private AdviserObtainment getManualInterventionAdviserObtainment(KryoSerializer kryoSerializer,
       Set<FailureType> failureTypes, AdviserObtainment.Builder adviserObtainmentBuilder,
-      ManualInterventionFailureConfigV1 actionConfig, FailureConfigV1 actionUnderManualIntervention) {
+      ManualInterventionFailureActionConfigV1 actionConfig,
+      FailureStrategyActionConfigV1 actionUnderManualIntervention) {
     return adviserObtainmentBuilder.setType(ManualInterventionAdviserWithRollback.ADVISER_TYPE)
         .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
             ManualInterventionAdviserRollbackParameters.builder()
@@ -197,8 +197,8 @@ public class PlanCreatorUtilsV1 {
 
   // TODO: (shalini): set strategyToUuid map in RetryAdviserRollbackParameters used in stage rollback
   private AdviserObtainment getRetryAdviserObtainment(KryoSerializer kryoSerializer, Set<FailureType> failureTypes,
-      String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureConfigV1 retryAction,
-      ParameterField<Integer> retryCount, FailureConfigV1 actionUnderRetry) {
+      String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfigV1 retryAction,
+      ParameterField<Integer> retryCount, FailureStrategyActionConfigV1 actionUnderRetry) {
     return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
         .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
             RetryAdviserRollbackParameters.builder()
@@ -218,10 +218,10 @@ public class PlanCreatorUtilsV1 {
   }
 
   private ManualInterventionActionConfigPostRetry getManualInterventionActionConfigPostRetry(
-      FailureConfigV1 actionUnderRetry) {
-    if (actionUnderRetry instanceof ManualInterventionFailureConfigV1) {
-      ManualInterventionFailureConfigV1 manualInterventionFailureConfigV1 =
-          (ManualInterventionFailureConfigV1) actionUnderRetry;
+      FailureStrategyActionConfigV1 actionUnderRetry) {
+    if (actionUnderRetry instanceof ManualInterventionFailureActionConfigV1) {
+      ManualInterventionFailureActionConfigV1 manualInterventionFailureConfigV1 =
+          (ManualInterventionFailureActionConfigV1) actionUnderRetry;
       return ManualInterventionActionConfigPostRetry.builder()
           .actionAfterManualInterventionTimeout(
               toRepairAction(manualInterventionFailureConfigV1.getSpec().getTimeout_action()))
@@ -234,11 +234,12 @@ public class PlanCreatorUtilsV1 {
 
   private List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer, Dependency dependency,
       YamlNode yamlNode, String nextNodeUuid, boolean isStepInsideRollback) {
-    OnConfigV1 stepFailureStrategies = getFailureStrategies(yamlNode);
-    OnConfigV1 stageFailureStrategies = getStageFailureStrategies(kryoSerializer, dependency);
-    OnConfigV1 stepGroupFailureStrategies = getStepGroupFailureStrategies(kryoSerializer, dependency);
-    Map<FailureConfigV1, Collection<FailureType>> actionMap = FailureStrategiesUtilsV1.priorityMergeFailureStrategies(
-        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
+    List<FailureConfigV1> stepFailureStrategies = getFailureStrategies(yamlNode);
+    List<FailureConfigV1> stageFailureStrategies = getStageFailureStrategies(kryoSerializer, dependency);
+    List<FailureConfigV1> stepGroupFailureStrategies = getStepGroupFailureStrategies(kryoSerializer, dependency);
+    Map<FailureStrategyActionConfigV1, Collection<FailureType>> actionMap =
+        FailureStrategiesUtilsV1.priorityMergeFailureStrategies(
+            stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
     return getFailureStrategiesAdvisers(
         kryoSerializer, actionMap, isStepInsideRollback, nextNodeUuid, PlanCreatorUtilsV1::getAdviserObtainmentForStep);
   }
@@ -262,32 +263,32 @@ public class PlanCreatorUtilsV1 {
     return Optional.empty();
   }
 
-  public OnConfigV1 getStageFailureStrategies(KryoSerializer kryoSerializer, Dependency dependency) {
+  public List<FailureConfigV1> getStageFailureStrategies(KryoSerializer kryoSerializer, Dependency dependency) {
     Optional<Object> stageFailureStrategiesOptional = getDeserializedObjectFromParentInfo(
         kryoSerializer, dependency, PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, true);
-    OnConfigV1 stageFailureStrategies = null;
+    List<FailureConfigV1> stageFailureStrategies = null;
     if (stageFailureStrategiesOptional.isPresent()) {
-      stageFailureStrategies = (OnConfigV1) stageFailureStrategiesOptional.get();
+      stageFailureStrategies = (List<FailureConfigV1>) stageFailureStrategiesOptional.get();
     }
     return stageFailureStrategies;
   }
 
-  OnConfigV1 getStepGroupFailureStrategies(KryoSerializer kryoSerializer, Dependency dependency) {
+  List<FailureConfigV1> getStepGroupFailureStrategies(KryoSerializer kryoSerializer, Dependency dependency) {
     Optional<Object> stepGroupFailureStrategiesOptional = getDeserializedObjectFromParentInfo(
         kryoSerializer, dependency, PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES, true);
-    OnConfigV1 stepGroupFailureStrategies = null;
+    List<FailureConfigV1> stepGroupFailureStrategies = null;
     if (stepGroupFailureStrategiesOptional.isPresent()) {
-      stepGroupFailureStrategies = (OnConfigV1) stepGroupFailureStrategiesOptional.get();
+      stepGroupFailureStrategies = (List<FailureConfigV1>) stepGroupFailureStrategiesOptional.get();
     }
     return stepGroupFailureStrategies;
   }
 
   public List<AdviserObtainment> getFailureStrategiesAdvisers(KryoSerializer kryoSerializer,
-      Map<FailureConfigV1, Collection<FailureType>> actionMap, boolean isStepInsideRollback, String nextNodeUuid,
-      GetAdviserForActionType function) {
+      Map<FailureStrategyActionConfigV1, Collection<FailureType>> actionMap, boolean isStepInsideRollback,
+      String nextNodeUuid, GetAdviserForActionType function) {
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
-    for (Map.Entry<FailureConfigV1, Collection<FailureType>> entry : actionMap.entrySet()) {
-      FailureConfigV1 action = entry.getKey();
+    for (Map.Entry<FailureStrategyActionConfigV1, Collection<FailureType>> entry : actionMap.entrySet()) {
+      FailureStrategyActionConfigV1 action = entry.getKey();
       Set<FailureType> failureTypes = new HashSet<>(entry.getValue());
       NGFailureActionTypeV1 actionType = action.getType();
 
@@ -305,12 +306,13 @@ public class PlanCreatorUtilsV1 {
     return adviserObtainmentList;
   }
 
-  public AdviserObtainment getAdviserObtainmentForStepGroup(KryoSerializer kryoSerializer, FailureConfigV1 action,
-      Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType, String nextNodeUuid) {
+  public AdviserObtainment getAdviserObtainmentForStepGroup(KryoSerializer kryoSerializer,
+      FailureStrategyActionConfigV1 action, Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType,
+      String nextNodeUuid) {
     AdviserObtainment.Builder adviserObtainmentBuilder = AdviserObtainment.newBuilder();
     switch (actionType) {
       case RETRY_STEP_GROUP:
-        RetrySGFailureConfigV1 retrySGAction = (RetrySGFailureConfigV1) action;
+        RetrySGFailureActionConfigV1 retrySGAction = (RetrySGFailureActionConfigV1) action;
         FailureStrategiesUtilsV1.validateRetrySGFailureAction(retrySGAction);
         ParameterField<Integer> retrySGCount = retrySGAction.getSpec().getAttempts();
         return getRetryStepGroupAdviserObtainment(
@@ -324,7 +326,7 @@ public class PlanCreatorUtilsV1 {
   // TODO: (shalini): set strategyToUuid map in RetryAdviserRollbackParameters used in stage rollback
   @VisibleForTesting
   AdviserObtainment getRetryStepGroupAdviserObtainment(KryoSerializer kryoSerializer, Set<FailureType> failureTypes,
-      String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetrySGFailureConfigV1 retryAction,
+      String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetrySGFailureActionConfigV1 retryAction,
       ParameterField<Integer> retryCount) {
     return adviserObtainmentBuilder.setType(RetryStepGroupAdvisor.ADVISER_TYPE)
         .setParameters(ByteString.copyFrom(
@@ -342,7 +344,7 @@ public class PlanCreatorUtilsV1 {
         .build();
   }
 
-  AdviserObtainment getAdviserObtainmentForStep(KryoSerializer kryoSerializer, FailureConfigV1 action,
+  AdviserObtainment getAdviserObtainmentForStep(KryoSerializer kryoSerializer, FailureStrategyActionConfigV1 action,
       Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType, String nextNodeUuid) {
     AdviserObtainment.Builder adviserObtainmentBuilder = AdviserObtainment.newBuilder();
     switch (actionType) {
@@ -354,10 +356,10 @@ public class PlanCreatorUtilsV1 {
                                                                           .build())))
             .build();
       case RETRY:
-        RetryFailureConfigV1 retryAction = (RetryFailureConfigV1) action;
+        RetryFailureActionConfigV1 retryAction = (RetryFailureActionConfigV1) action;
         FailureStrategiesUtilsV1.validateRetryFailureAction(retryAction);
         ParameterField<Integer> retryCount = retryAction.getSpec().getAttempts();
-        FailureConfigV1 actionUnderRetry = retryAction.getSpec().getOn_failure();
+        FailureStrategyActionConfigV1 actionUnderRetry = retryAction.getSpec().getFailure().getAction();
         return getRetryAdviserObtainment(kryoSerializer, failureTypes, nextNodeUuid, adviserObtainmentBuilder,
             retryAction, retryCount, actionUnderRetry);
       case MARK_AS_SUCCESS:
@@ -378,9 +380,9 @@ public class PlanCreatorUtilsV1 {
             .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(null)))
             .build();
       case MANUAL_INTERVENTION:
-        ManualInterventionFailureConfigV1 actionConfig = (ManualInterventionFailureConfigV1) action;
+        ManualInterventionFailureActionConfigV1 actionConfig = (ManualInterventionFailureActionConfigV1) action;
         FailureStrategiesUtilsV1.validateManualInterventionFailureAction(actionConfig);
-        FailureConfigV1 actionUnderManualIntervention = actionConfig.getSpec().getTimeout_action();
+        FailureStrategyActionConfigV1 actionUnderManualIntervention = actionConfig.getSpec().getTimeout_action();
         return getManualInterventionAdviserObtainment(
             kryoSerializer, failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention);
       case PIPELINE_ROLLBACK:
@@ -402,22 +404,21 @@ public class PlanCreatorUtilsV1 {
     return null;
   }
 
-  public OnConfigV1 getFailureStrategies(YamlNode node) {
-    YamlField onConfigV1 = node.getField("on");
-    ParameterField<OnConfigV1> onConfigV1ParameterField = null;
+  public List<FailureConfigV1> getFailureStrategies(YamlNode node) {
+    YamlField failureConfigV1 = node.getField("failure");
+    ParameterField<List<FailureConfigV1>> failureConfigListV1ParameterField = null;
 
     try {
-      if (onConfigV1 != null) {
-        onConfigV1ParameterField =
-            YamlUtils.read(onConfigV1.getNode().toString(), new TypeReference<ParameterField<OnConfigV1>>() {});
+      if (failureConfigV1 != null) {
+        failureConfigListV1ParameterField = getFailureStrategiesListParameterField(failureConfigV1.getNode());
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new InvalidRequestException("Invalid yaml", e);
     }
     // If failureStrategies configured as <+input> and no value is given, failureStrategyConfigs.getValue() will still
     // be null and handled as empty list
-    if (ParameterField.isNotNull(onConfigV1ParameterField)) {
-      return onConfigV1ParameterField.getValue();
+    if (ParameterField.isNotNull(failureConfigListV1ParameterField)) {
+      return failureConfigListV1ParameterField.getValue();
     } else {
       return null;
     }
@@ -428,9 +429,26 @@ public class PlanCreatorUtilsV1 {
     return false;
   }
 
+  ParameterField<List<FailureConfigV1>> getFailureStrategiesListParameterField(YamlNode failureConfigNode)
+      throws Exception {
+    ParameterField<List<FailureConfigV1>> failureConfigListV1ParameterField = null;
+    if (failureConfigNode.isArray()) {
+      failureConfigListV1ParameterField =
+          YamlUtils.read(failureConfigNode.toString(), new TypeReference<ParameterField<List<FailureConfigV1>>>() {});
+    } else {
+      ParameterField<FailureConfigV1> failureConfigV1ParameterField =
+          YamlUtils.read(failureConfigNode.toString(), new TypeReference<ParameterField<FailureConfigV1>>() {});
+      if (ParameterField.isNotNull(failureConfigV1ParameterField)) {
+        failureConfigListV1ParameterField =
+            ParameterField.createValueField(new ArrayList<>(List.of(failureConfigV1ParameterField.getValue())));
+      }
+    }
+    return failureConfigListV1ParameterField;
+  }
+
   @FunctionalInterface
   public interface GetAdviserForActionType {
-    AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureConfigV1 action,
+    AdviserObtainment getAdviserForActionType(KryoSerializer kryoSerializer, FailureStrategyActionConfigV1 action,
         Set<FailureType> failureTypes, NGFailureActionTypeV1 actionType, String nextNodeUuid);
   }
 }
