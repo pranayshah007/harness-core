@@ -217,10 +217,10 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
         .build();
   }
 
-  public StageElementParametersBuilder getStageParameters(CustomStageNode stageNode) {
+  public StageElementParameters.StageElementParametersBuilder getStageParameters(CustomStageNode stageNode) {
     TagUtils.removeUuidFromTags(stageNode.getTags());
 
-    StageElementParametersBuilder stageBuilder = StageElementParameters.builder();
+    StageElementParameters.StageElementParametersBuilder stageBuilder = StageElementParameters.builder();
     stageBuilder.name(stageNode.getName());
     stageBuilder.identifier(stageNode.getIdentifier());
     stageBuilder.description(SdkCoreStepUtils.getParameterFieldHandleValueNull(stageNode.getDescription()));
