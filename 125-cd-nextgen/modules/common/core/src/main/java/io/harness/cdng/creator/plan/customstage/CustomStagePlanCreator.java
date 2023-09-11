@@ -12,8 +12,12 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.stage.CustomStageNode;
+import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
+import io.harness.cdng.environment.steps.CustomStageEnvironmentStepParameters;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -25,6 +29,7 @@ import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -132,19 +137,38 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
                     .build())
             .build());
 
+    String executionFieldUuid = executionField.getNode().getUuid();
+
+    EnvironmentYamlV2 finalEnvironmentYamlV2 = field.getCustomStageConfig().getEnvironment();
+    boolean envNodeExists = finalEnvironmentYamlV2 != null && finalEnvironmentYamlV2.getEnvironmentRef() != null;
+    String envNodeUuid = UUIDGenerator.generateUuid();
+
     // Adding Spec node
-    PlanCreationResponse specPlanCreationResponse = prepareDependencyForSpecNode(specField, executionField);
+    String specNextNodeUuid = envNodeExists ? envNodeUuid : executionFieldUuid;
+    PlanCreationResponse specPlanCreationResponse = prepareDependencyForSpecNode(specField, specNextNodeUuid);
     planCreationResponseMap.put(specField.getNode().getUuid(), specPlanCreationResponse);
+
+    // Adding Env node
+    if (envNodeExists) {
+      String envNextNodeUuid = executionFieldUuid;
+      final CustomStageEnvironmentStepParameters stepParameters =
+          CustomStageEnvironmentStepParameters.builder().build();
+      ByteString advisorParameters = ByteString.copyFrom(
+          kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(envNextNodeUuid).build()));
+      final PlanNode envNode =
+          EnvironmentPlanCreatorHelper.getPlanNodeForCustomStage(envNodeUuid, stepParameters, advisorParameters);
+      planCreationResponseMap.put(envNode.getUuid(), PlanCreationResponse.builder().planNode(envNode).build());
+    }
 
     return planCreationResponseMap;
   }
 
-  private PlanCreationResponse prepareDependencyForSpecNode(YamlField specField, YamlField executionField) {
+  private PlanCreationResponse prepareDependencyForSpecNode(YamlField specField, String uuid) {
     Map<String, YamlField> specDependencyMap = new HashMap<>();
     specDependencyMap.put(specField.getNode().getUuid(), specField);
     Map<String, ByteString> specDependencyMetadataMap = new HashMap<>();
-    specDependencyMetadataMap.put(YAMLFieldNameConstants.CHILD_NODE_OF_SPEC,
-        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionField.getNode().getUuid())));
+    specDependencyMetadataMap.put(
+        YAMLFieldNameConstants.CHILD_NODE_OF_SPEC, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
     return PlanCreationResponse.builder()
         .dependencies(DependenciesUtils.toDependenciesProto(specDependencyMap)
                           .toBuilder()
