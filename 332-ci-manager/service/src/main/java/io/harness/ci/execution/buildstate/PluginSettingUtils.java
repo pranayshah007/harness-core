@@ -201,13 +201,14 @@ public class PluginSettingUtils extends PluginServiceImpl {
             (SscaEnforcementStepInfo) stepInfo, identifier, ambiance, infraType);
       case SLSA_VERIFICATION:
         return slsaVerificationPluginHelper.getSlsaVerificationStepEnvVariables(
-            (SlsaVerificationStepInfo) stepInfo, identifier);
+            (SlsaVerificationStepInfo) stepInfo, identifier, ambiance);
       case IACM_TERRAFORM_PLUGIN:
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMTerraformPluginInfo) stepInfo);
       case IACM_APPROVAL:
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMApprovalInfo) stepInfo);
       case PROVENANCE:
-        return provenancePluginHelper.getProvenanceStepEnvVariables((ProvenanceStepInfo) stepInfo, identifier);
+        return provenancePluginHelper.getProvenanceStepEnvVariables(
+            (ProvenanceStepInfo) stepInfo, identifier, ambiance);
       default:
         throw new IllegalStateException(
             "Unexpected value in getPluginCompatibleEnvVariables: " + stepInfo.getNonYamlInfo().getStepInfoType());

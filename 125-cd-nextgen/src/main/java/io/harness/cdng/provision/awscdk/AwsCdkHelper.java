@@ -79,8 +79,9 @@ public class AwsCdkHelper {
   public HashMap<String, String> getCommonEnvVariables(
       String appPath, List<String> commandOptions, ParameterField<Map<String, String>> envVariables) {
     HashMap<String, String> environmentVariablesMap = new HashMap<>();
-    environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, appPath);
-
+    if (isNotEmpty(appPath)) {
+      environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, appPath);
+    }
     if (isNotEmpty(commandOptions)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_COMMAND_OPTIONS, String.join(" ", commandOptions));
     }
@@ -95,7 +96,11 @@ public class AwsCdkHelper {
     Map<String, String> processedOutput = new HashMap<>();
     stepOutput.getMap().forEach((key, value) -> {
       if (OUTPUT_KEYS.contains(key)) {
-        processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+        try {
+          processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+        } catch (Exception e) {
+          log.error("Failed to decode: {} :", key, e);
+        }
       } else {
         processedOutput.put(key, value);
       }

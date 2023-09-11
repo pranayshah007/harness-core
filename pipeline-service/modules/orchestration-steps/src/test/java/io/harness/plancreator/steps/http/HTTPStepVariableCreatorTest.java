@@ -250,7 +250,8 @@ public class HTTPStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.step1.identifier",
             "pipeline.stages.stage1.spec.execution.steps.step1.type",
             "pipeline.stages.stage1.spec.execution.steps.step1.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.step1.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.step1.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.step1.status");
 
     // yaml extra properties
     List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

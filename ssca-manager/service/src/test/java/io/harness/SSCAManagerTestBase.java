@@ -16,7 +16,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 @OwnedBy(HarnessTeam.SSCA)
-public class SSCAManagerTestBase extends CategoryTest {
+public abstract class SSCAManagerTestBase extends CategoryTest {
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Rule public SSCAManagerTestRule coreTestRule = new SSCAManagerTestRule(lifecycleRule.getClosingFactory());

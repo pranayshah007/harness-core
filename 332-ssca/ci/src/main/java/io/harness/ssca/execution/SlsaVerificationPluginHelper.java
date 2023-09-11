@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.slsa.beans.verification.source.SlsaDockerSourceSpec;
 import io.harness.slsa.beans.verification.source.SlsaVerificationSourceType;
@@ -36,9 +38,11 @@ public class SlsaVerificationPluginHelper {
   private static final String COSIGN_PUBLIC_KEY = "COSIGN_PUBLIC_KEY";
   private static final String PLUGIN_TAG = "PLUGIN_TAG";
   private static final String PLUGIN_DIGEST = "PLUGIN_DIGEST";
+  public static final String PLUGIN_TYPE = "PLUGIN_TYPE";
+  public static final String STEP_EXECUTION_ID = "STEP_EXECUTION_ID";
 
   public Map<String, String> getSlsaVerificationStepEnvVariables(
-      SlsaVerificationStepInfo slsaVerificationStepInfo, String identifier) {
+      SlsaVerificationStepInfo slsaVerificationStepInfo, String identifier, Ambiance ambiance) {
     Map<String, String> envMap = new HashMap<>();
     if (slsaVerificationStepInfo.getSource() != null
         && slsaVerificationStepInfo.getSource().getType() == SlsaVerificationSourceType.DOCKER) {
@@ -49,6 +53,9 @@ public class SlsaVerificationPluginHelper {
       envMap.put(
           PLUGIN_TAG, resolveStringParameter("tag", SscaConstants.SLSA_VERIFICATION, identifier, spec.getTag(), true));
     }
+    String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    envMap.put(STEP_EXECUTION_ID, stepExecutionId);
+    envMap.put(PLUGIN_TYPE, "verify");
     return envMap;
   }
 

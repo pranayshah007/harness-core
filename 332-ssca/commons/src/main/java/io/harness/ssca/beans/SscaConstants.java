@@ -49,4 +49,6 @@ public interface SscaConstants {
       StepType.newBuilder().setType(SLSA_PROVENANCE).setStepCategory(StepCategory.STEP).build();
   StepType SLSA_VERIFICATION_STEP_TYPE =
       StepType.newBuilder().setType(SLSA_VERIFICATION).setStepCategory(StepCategory.STEP).build();
+
+  String PREDICATE_TYPE = "https://slsa.dev/provenance/v1";
 }

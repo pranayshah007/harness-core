@@ -86,7 +86,11 @@ public class AwsCdkSynthStep extends AbstractContainerStepV2<StepElementParamete
       Map<String, String> processedOutput = new HashMap<>();
       stepOutput.getMap().forEach((key, value) -> {
         if (key.endsWith("template.json")) {
-          processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+          try {
+            processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+          } catch (Exception e) {
+            log.error("Failed to decode: {} :", key, e);
+          }
         } else {
           processedOutput.put(key, value);
         }

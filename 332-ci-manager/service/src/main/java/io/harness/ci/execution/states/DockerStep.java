@@ -34,6 +34,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.ssca.beans.SscaConstants;
 
 import com.google.inject.Inject;
 
@@ -41,7 +42,6 @@ import com.google.inject.Inject;
 public class DockerStep extends AbstractStepExecutable {
   public static final StepType STEP_TYPE = DockerStepInfo.STEP_TYPE;
   private static final String DOCKER_URL_FORMAT = "https://hub.docker.com/layers/%s/%s/images/%s/";
-  private static final String PREDICATE_TYPE = "https://slsa.dev/provenance/v1";
 
   @Inject CIExecutionConfigService ciExecutionConfigService;
   @Inject CIFeatureFlagService featureFlagService;
@@ -119,6 +119,6 @@ public class DockerStep extends AbstractStepExecutable {
             .build();
     ProvenancePredicate predicate = provenanceGenerator.buildProvenancePredicate(provenanceBuilder);
     stepArtifactsBuilder.provenanceArtifact(
-        ProvenanceArtifact.builder().predicateType(PREDICATE_TYPE).predicate(predicate).build());
+        ProvenanceArtifact.builder().predicateType(SscaConstants.PREDICATE_TYPE).predicate(predicate).build());
   }
 }

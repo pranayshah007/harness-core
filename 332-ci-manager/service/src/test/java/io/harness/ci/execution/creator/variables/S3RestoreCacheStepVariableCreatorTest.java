@@ -100,7 +100,8 @@ public class S3RestoreCacheStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.type",
             "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.identifier",
             "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.startTs",
-            "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.endTs");
+            "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.endTs",
+            "pipeline.stages.s3_restore_cache.spec.execution.steps.restoreCacheTar.status");
 
     List<String> fqnExtraPropertiesList1 =
         variablesForParentNodeV2.getYamlExtraProperties()

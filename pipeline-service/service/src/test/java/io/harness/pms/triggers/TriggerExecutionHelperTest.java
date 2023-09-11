@@ -175,6 +175,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                           .projectIdentifier("proj")
                           .targetIdentifier("target")
                           .identifier("trigger")
+                          .name("triggerName")
                           .build();
 
     String simplifiedYaml = readFile("simplified-pipeline.yaml");

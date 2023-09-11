@@ -103,7 +103,8 @@ public class ShellScriptStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.shellScriptStep.identifier",
             "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.type",
             "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.status");
 
     List<String> fqnExtraPropertiesForShellScriptSource =
         variablesForParentNodeV2.getYamlExtraProperties()

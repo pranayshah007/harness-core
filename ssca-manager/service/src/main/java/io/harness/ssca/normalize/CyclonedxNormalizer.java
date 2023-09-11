@@ -35,14 +35,14 @@ public class CyclonedxNormalizer implements Normalizer<CyclonedxDTO> {
           NormalizedSBOMComponentEntity.builder()
               .sbomVersion(sbom.getBomFormat() + sbom.getSpecVersion())
               .artifactId(settings.getArtifactID())
-              .artifactURL(settings.getArtifactURL())
+              .artifactUrl(settings.getArtifactURL())
               .artifactName(component.getName())
               .createdOn(
                   new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(sbom.getMetadata().getTimestamp()).toInstant())
               .toolVersion(settings.getTool().getVersion())
               .toolName(settings.getTool().getName())
               .toolVendor(settings.getTool().getVendor())
-              .packageID(component.getBomRef())
+              .packageId(component.getBomRef())
               .packageName(component.getName())
               .packageDescription(component.getDescription())
               .packageLicense(getPackageLicense(component.getLicenses()))
@@ -51,7 +51,7 @@ public class CyclonedxNormalizer implements Normalizer<CyclonedxDTO> {
               .pipelineIdentifier(settings.getPipelineIdentifier())
               .projectIdentifier(settings.getProjectIdentifier())
               .orgIdentifier(settings.getOrgIdentifier())
-              .accountID(settings.getAccountID());
+              .accountId(settings.getAccountID());
 
       if (component.getPublisher() != null && component.getPublisher().contains(":")) {
         String[] splitOriginator = Strings.split(component.getPublisher(), ':');

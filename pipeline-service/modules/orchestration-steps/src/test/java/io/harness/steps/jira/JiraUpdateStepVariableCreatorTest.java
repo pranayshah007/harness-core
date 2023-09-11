@@ -126,7 +126,8 @@ public class JiraUpdateStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.jira_update.identifier",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.type",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.jira_update.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.jira_update.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.jira_update.status");
   }
 
   @Test

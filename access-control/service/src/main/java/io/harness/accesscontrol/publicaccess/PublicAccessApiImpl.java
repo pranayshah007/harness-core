@@ -48,6 +48,16 @@ public class PublicAccessApiImpl implements PublicAccessApi {
     return Response.status(Response.Status.OK).entity(true).build();
   }
 
+  @Override
+  public Response isResourcePublic(@Valid PublicAccessRequest body, String harnessAccount) {
+    Scope resourceScope = body.getResourceScope();
+    validateAccount(resourceScope.getAccount(), harnessAccount);
+    validateIfPublicAccessIsEnabled(harnessAccount);
+    ResourceType resourceType = validateAndGetResourceType(body.getResourceType());
+    boolean isPublic = publicAccessService.isResourcePublic(body.getResourceIdentifier(), resourceType, resourceScope);
+    return Response.status(Response.Status.OK).entity(isPublic).build();
+  }
+
   private void validateIfPublicAccessIsEnabled(String harnessAccount) {
     AccountDTO accountDTO = getResponse(accountClient.getAccountDTO(harnessAccount));
     if (accountDTO == null) {

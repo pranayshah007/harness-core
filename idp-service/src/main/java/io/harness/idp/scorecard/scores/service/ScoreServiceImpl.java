@@ -7,6 +7,7 @@
 
 package io.harness.idp.scorecard.scores.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.common.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
@@ -44,6 +45,7 @@ import io.harness.idp.scorecard.scores.repositories.ScoreEntityByScorecardIdenti
 import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
 import io.harness.logging.AutoLogContext;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
+import io.harness.spec.server.idp.v1.model.EntityScores;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.Scorecard;
 import io.harness.spec.server.idp.v1.model.ScorecardDetails;
@@ -235,6 +237,27 @@ public class ScoreServiceImpl implements ScoreService {
           latestComputedScoreForScorecard, scorecardDetails.getName(), scorecardDetails.getDescription());
     }
     return null;
+  }
+
+  @Override
+  public List<EntityScores> getEntityScores(String harnessAccount, ScorecardFilter filter) {
+    Set<BackstageCatalogEntity> backstageCatalogEntities = getAllEntities(harnessAccount, null, List.of(filter));
+    List<EntityScores> entityScores = new ArrayList<>();
+    for (BackstageCatalogEntity backstageCatalogEntity : backstageCatalogEntities) {
+      BackstageCatalogEntity.Metadata metadata = backstageCatalogEntity.getMetadata();
+      List<ScorecardScore> scorecardScores = getScorecardScoreOverviewForAnEntity(harnessAccount, metadata.getUid());
+      if (isEmpty(scorecardScores)) {
+        continue;
+      }
+      EntityScores entity = new EntityScores();
+      entity.setName(metadata.getName());
+      entity.setTitle(isEmpty(metadata.getTitle()) ? metadata.getName() : metadata.getTitle());
+      entity.setKind(backstageCatalogEntity.getKind());
+      entity.setNamespace(metadata.getNamespace());
+      entity.setScores(scorecardScores);
+      entityScores.add(entity);
+    }
+    return entityScores;
   }
 
   private void saveAll(List<CheckEntity> checks, List<DataPointEntity> dataPoints, List<DataSourceEntity> dataSources,

@@ -89,6 +89,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private boolean skipSteadyStateCheck;
   private boolean sendTaskProgressEvents;
   private boolean disableFabric8;
+  private boolean improvedHelmTracking;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

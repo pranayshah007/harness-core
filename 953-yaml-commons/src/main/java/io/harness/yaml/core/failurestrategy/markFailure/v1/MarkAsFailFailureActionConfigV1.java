@@ -5,11 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.yaml.core.failurestrategy.abort.v1;
+package io.harness.yaml.core.failurestrategy.markFailure.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureStrategyActionConfigV1;
 import io.harness.yaml.core.failurestrategy.v1.NGFailureActionTypeV1;
 
 import lombok.Builder;
@@ -18,6 +18,6 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
-public class AbortFailureConfigV1 extends FailureConfigV1 {
-  NGFailureActionTypeV1 type = NGFailureActionTypeV1.ABORT;
+public class MarkAsFailFailureActionConfigV1 extends FailureStrategyActionConfigV1 {
+  NGFailureActionTypeV1 type = NGFailureActionTypeV1.MARK_AS_FAILURE;
 }

@@ -39,7 +39,7 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.customstage.CustomStageSpecParams;
 import io.harness.steps.customstage.CustomStageStep;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
-import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -111,7 +111,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   }
 
   Dependency getDependencyForSteps(YamlField field) {
-    OnConfigV1 stageFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(field.getNode());
+    List<FailureConfigV1> stageFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(field.getNode());
     if (stageFailureStrategies != null) {
       return Dependency.newBuilder()
           .setParentInfo(

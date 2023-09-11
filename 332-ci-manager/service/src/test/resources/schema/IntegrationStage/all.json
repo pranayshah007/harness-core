@@ -10968,6 +10968,9 @@
         {
           "type": "object",
           "properties": {
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
             "source": {
               "$ref": "#/definitions/SlsaVerificationSource"
             },

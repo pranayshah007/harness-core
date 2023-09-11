@@ -7,8 +7,10 @@
 
 package io.harness.idp.scorecard.datasourcelocations.locations;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY_ESCAPED;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPO_SCM;
@@ -26,11 +28,11 @@ import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEnt
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -45,48 +47,62 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
       Map<String, String> possibleReplaceableUrlPairs) {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
-    Map<String, String> headers = apiRequestDetails.getHeaders();
-    matchAndReplaceHeaders(headers, replaceableHeaders);
-    String requestBody =
-        constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPointsAndInputValues);
-
-    DslClient dslClient =
-        dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
-
-    Response response;
+    matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
     Map<String, Object> data = new HashMap<>();
-    response = dslClient.call(
-        accountIdentifier, apiRequestDetails.getUrl(), apiRequestDetails.getMethod(), headers, requestBody);
-    Map<String, Object> convertedResponse =
-        GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
-    if (response.getStatus() == 200) {
-      data.put(DSL_RESPONSE, convertedResponse);
-    } else if (response.getStatus() == 502) {
-      data.put(ERROR_MESSAGE_KEY, INVALID_BRANCH_NAME_ERROR);
-    } else {
-      data.put(ERROR_MESSAGE_KEY, convertedResponse.get("message"));
+
+    Optional<Map.Entry<DataPointEntity, Set<String>>> dataPointAndInputValuesOpt =
+        dataPointsAndInputValues.entrySet()
+            .stream()
+            .filter(entry -> entry.getKey().getIdentifier().equals(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE))
+            .findFirst();
+
+    if (dataPointAndInputValuesOpt.isEmpty()) {
+      return data;
+    }
+    DataPointEntity dataPoint = dataPointAndInputValuesOpt.get().getKey();
+    Set<String> inputValues = dataPointAndInputValuesOpt.get().getValue();
+    String tempRequestBody = apiRequestDetails.getRequestBody(); // using temp variable to store unchanged requestBody
+
+    for (String inputValue : inputValues) {
+      apiRequestDetails.setRequestBody(tempRequestBody);
+      Map<DataPointEntity, String> dataPointAndInputValueToFetch = new HashMap<>() {
+        { put(dataPoint, inputValue); }
+      };
+      String requestBody =
+          constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPointAndInputValueToFetch);
+      apiRequestDetails.setRequestBody(requestBody);
+      DslClient dslClient =
+          dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
+      Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
+      Map<String, Object> inputValueData = new HashMap<>();
+      Map<String, Object> convertedResponse =
+          GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
+      if (response.getStatus() == 200) {
+        inputValueData.put(DSL_RESPONSE, convertedResponse);
+      } else if (response.getStatus() == 502) {
+        inputValueData.put(ERROR_MESSAGE_KEY, INVALID_BRANCH_NAME_ERROR);
+      } else {
+        inputValueData.put(ERROR_MESSAGE_KEY, convertedResponse.get("message"));
+      }
+      data.put(inputValue, inputValueData);
     }
     return data;
   }
 
   @Override
   public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, Set<String>> dataPointsAndInputValues, String requestBody) {
-    if (dataPointsAndInputValues.containsKey(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE)
-        && !CollectionUtils.isEmpty(dataPointsAndInputValues.get(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE))) {
-      String dataPointInputValue =
-          dataPointsAndInputValues.get(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE).iterator().next();
-      if (dataPointInputValue != null) {
+      Map<String, String> dataPointsAndInputValue, String requestBody) {
+    if (!isEmpty(dataPointsAndInputValue.get(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE))) {
+      String inputValue = dataPointsAndInputValue.get(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE);
+      if (!inputValue.equals(GITHUB_DEFAULT_BRANCH_KEY_ESCAPED)) {
         requestBody = requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER,
             ",baseRefName:"
                 + "\\"
-                + "\"" + dataPointInputValue + "\\"
+                + "\"" + inputValue + "\\"
                 + "\"");
       } else {
         requestBody = requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER, "");
       }
-    } else {
-      requestBody = requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER, "");
     }
     return requestBody;
   }

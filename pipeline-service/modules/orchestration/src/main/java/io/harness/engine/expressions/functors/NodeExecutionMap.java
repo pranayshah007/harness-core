@@ -141,6 +141,7 @@ public class NodeExecutionMap extends LateBindingMap {
      * c) a Pipeline Stage -> which is same as normal stage
      */
     String pipelineExecutionUrl = "<+pipeline." + OrchestrationConstants.EXECUTION_URL + ">";
+    // Todo: Fetch Ambiance on demand
     Ambiance nodeAmbiance = nodeExecution.getAmbiance();
     boolean currentLevelInsideStage = AmbianceUtils.isCurrentLevelInsideStage(nodeAmbiance);
     // If any other node expression is called, then return pipeline execution url.

@@ -5,17 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.yaml.core.failurestrategy.v1;
+package io.harness.delegate.task.stepstatus.artifact;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.Builder;
 import lombok.Value;
 
 @Value
-@OwnedBy(HarnessTeam.PIPELINE)
-public class OnConfigV1 {
-  @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) List<FailureConfigV1> failure;
+@Builder
+@JsonTypeName(ArtifactMetadataTypes.PROVENANCE_ARTIFACT_METADATA)
+@OwnedBy(HarnessTeam.SSCA)
+public class ProvenanceMetaData implements ArtifactMetadataSpec {
+  String provenance;
 }

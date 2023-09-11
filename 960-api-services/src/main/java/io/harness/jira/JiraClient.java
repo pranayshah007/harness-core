@@ -21,10 +21,11 @@ import io.harness.exception.JiraClientException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.network.Http;
 import io.harness.network.SafeHttpCall;
+import io.harness.retry.RetryHelper;
 import io.harness.validation.Validator;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.io.IOException;
+import io.github.resilience4j.retry.Retry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONArray;
@@ -71,6 +73,7 @@ public class JiraClient {
 
   private final JiraInternalConfig config;
   private final JiraRestClient restClient;
+  private final Retry retry;
 
   /**
    * Create a new jira client instance.
@@ -80,6 +83,12 @@ public class JiraClient {
   public JiraClient(JiraInternalConfig config) {
     this.config = config;
     this.restClient = createRestClient();
+    this.retry = RetryHelper.getExponentialRetryOnException("JiraClient", createRetryOnException());
+  }
+
+  @VisibleForTesting
+  Predicate<Throwable> createRetryOnException() {
+    return t -> t instanceof HttpResponseException && ((HttpResponseException) t).getStatusCode() == 429;
   }
 
   public JiraInstanceData getInstanceData() {
@@ -523,10 +532,10 @@ public class JiraClient {
   private <T> T executeCall(Call<T> call, String action) {
     try {
       log.info("Sending request for: {}", action);
-      T resp = SafeHttpCall.executeWithExceptions(call);
+      T resp = Retry.decorateCallable(retry, () -> SafeHttpCall.executeWithExceptions(call)).call();
       log.info("Response received from: {}", action);
       return resp;
-    } catch (IOException | HttpResponseException ex) {
+    } catch (Exception ex) {
       throw new JiraClientException(String.format("Error %s at url [%s]", action, config.getJiraUrl()), ex);
     }
   }

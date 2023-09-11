@@ -7,9 +7,6 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
-import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
-import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
-import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY;
 import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY_ESCAPED;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_ADMIN_PERMISSION_ERROR;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
@@ -31,11 +28,7 @@ public class GithubIsBranchProtectedParser implements DataPointParser {
 
     for (String inputValue : inputValues) {
       if (!data.containsKey(inputValue)) {
-        if (inputValue.equals(GITHUB_DEFAULT_BRANCH_KEY_ESCAPED)) {
-          dataPointData.putAll(constructDataPointInfo(GITHUB_DEFAULT_BRANCH_KEY, false, INVALID_BRANCH_NAME_ERROR));
-        } else {
-          dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
-        }
+        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
         continue;
       }
 
@@ -64,16 +57,5 @@ public class GithubIsBranchProtectedParser implements DataPointParser {
       }
     }
     return dataPointData;
-  }
-
-  private Map<String, Object> constructDataPointInfo(String inputValue, boolean value, String errorMessage) {
-    Map<String, Object> data = new HashMap<>();
-    data.put(DATA_POINT_VALUE_KEY, value);
-    data.put(ERROR_MESSAGE_KEY, errorMessage);
-    if (inputValue.equals(GITHUB_DEFAULT_BRANCH_KEY_ESCAPED)) {
-      return Map.of(GITHUB_DEFAULT_BRANCH_KEY, data);
-    } else {
-      return Map.of(inputValue, data);
-    }
   }
 }

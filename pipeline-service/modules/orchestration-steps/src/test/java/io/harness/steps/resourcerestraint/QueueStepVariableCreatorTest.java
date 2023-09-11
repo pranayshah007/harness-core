@@ -61,9 +61,10 @@ public class QueueStepVariableCreatorTest {
     YamlExtraProperties extraProperties =
         variableCreator.getStepExtraProperties("fqn", "localName", new QueueStepNode());
     List<YamlProperties> properties = extraProperties.getPropertiesList();
-    assertThat(properties).hasSize(2);
+    assertThat(properties).hasSize(3);
     assertYamlProperties(properties.get(0), "fqn.startTs", "localName.startTs", false);
     assertYamlProperties(properties.get(1), "fqn.endTs", "localName.endTs", false);
+    assertYamlProperties(properties.get(2), "fqn.status", "localName.status", false);
   }
 
   private void assertYamlProperties(YamlProperties yaml, String fqn, String localName, boolean visible) {

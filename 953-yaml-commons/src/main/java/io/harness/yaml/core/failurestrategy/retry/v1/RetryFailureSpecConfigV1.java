@@ -10,7 +10,6 @@ package io.harness.yaml.core.failurestrategy.retry.v1;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -24,5 +23,5 @@ import lombok.Value;
 public class RetryFailureSpecConfigV1 {
   ParameterField<Integer> attempts;
   @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) ParameterField<List<Timeout>> interval;
-  FailureConfigV1 on_failure;
+  RetryFailureConfigV1 failure;
 }
