@@ -46,6 +46,7 @@ public interface AssignDelegateService {
   List<String> getEligibleDelegatesToExecuteTask(DelegateTask task);
 
   void refresh(String accountId);
+
   List<String> getEligibleDelegatesToExecuteTaskV2(DelegateTask task);
 
   /**

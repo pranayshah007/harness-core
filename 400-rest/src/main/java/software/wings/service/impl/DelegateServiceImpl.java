@@ -2685,6 +2685,10 @@ public class DelegateServiceImpl implements DelegateService {
 
     final Delegate delegate = delegateBuilder.build();
 
+    if (assignDelegateService != null) {
+      assignDelegateService.refresh(delegate.getAccountId());
+    }
+
     if (ECS.equals(delegateParams.getDelegateType())) {
       DelegateRegisterResponse delegateRegisterResponse =
           registerResponseFromDelegate(handleEcsDelegateRequest(delegate));
