@@ -146,6 +146,9 @@ public final class EventsFrameworkConstants {
   public static final String SRM_STATEMACHINE_LOCK = "srm_statemachine_lock";
   public static final int SRM_STATEMACHINE_LOCK_TIMEOUT = 10;
   public static final int SRM_STATEMACHINE_LOCK_WAIT_TIMEOUT = 5;
+  public static final String SRM_SLO_CRUD_LOCK = "srm_slo_crud_lock_";
+  public static final int SRM_SLO_CRUD_LOCK_TIMEOUT = 5;
+  public static final int SRM_SLO_CRUD_LOCK_WAIT_TIMEOUT = 5;
 
   public static final String CUSTOM_CHANGE_EVENT = "srm_custom_change";
 

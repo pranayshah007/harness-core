@@ -208,6 +208,8 @@ public class PipelineVariableCreator extends ChildrenVariableCreator<PipelineInf
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".startTs").build();
     YamlProperties endTsProperty =
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".endTs").build();
+    YamlProperties statusProperty =
+        YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".status").build();
     YamlExtraProperties.Builder yamlExtraPropertyBuilder = YamlExtraProperties.newBuilder();
 
     // ci build properties
@@ -228,6 +230,7 @@ public class PipelineVariableCreator extends ChildrenVariableCreator<PipelineInf
         .addProperties(triggeredByNameProperty)
         .addProperties(triggeredByEmailProperty)
         .addProperties(triggeredByTriggerIdentifierProperty)
+        .addProperties(statusProperty)
         .build();
   }
 }

@@ -138,7 +138,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public static final String ERROR_CONNECTING_TO_SYSTEMS_UPSTREAM = "Error connecting to systems upstream";
   public static final String EVENTS_FRAMEWORK_IS_DOWN_FOR_PIPELINE_SERVICE =
       "Events framework is down for Pipeline Service.";
-  public static String TEMPLATE_REF_PIPELINE = "template_ref_by_pipeline";
+  public static final String TEMPLATE_REF_PIPELINE = "template_ref_by_pipeline";
   public static final String INVALID_YAML_IN_NODE = "Invalid yaml in node [%s]";
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PmsSdkInstanceService pmsSdkInstanceService;
@@ -663,8 +663,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     try {
-      boolean isForceDeleteEnabledBySettings = isForceDeleteFFEnabledViaSettings(accountIdentifier);
-      return isForceDeleteEnabledBySettings;
+      return isForceDeleteFFEnabledViaSettings(accountIdentifier);
     } catch (Exception e) {
       log.error("Failed to fetch feature flag info for force delete ", e);
       return false;

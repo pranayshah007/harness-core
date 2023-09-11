@@ -66,7 +66,7 @@ public class ResourceRestraintRegistryImpl implements ResourceRestraintRegistry 
   }
 
   @Override
-  public List<Consumer> loadConsumers(ConstraintId id, ConstraintUnit unit) {
+  public List<Consumer> loadConsumers(ConstraintId id, ConstraintUnit unit, boolean hitSecondaryNode) {
     List<Consumer> consumers = new ArrayList<>();
 
     List<ResourceRestraintInstance> instances =

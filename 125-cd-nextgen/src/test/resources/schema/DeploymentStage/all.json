@@ -1615,6 +1615,19 @@
                 }
               ]
             },
+            "envVariables": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "image": {
               "type": "string"
             },
@@ -1712,6 +1725,19 @@
                   "type": "string",
                   "pattern": "(<\\+.+>.*)",
                   "minLength": 1
+                }
+              ]
+            },
+            "envVariables": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
                 }
               ]
             },
@@ -1829,6 +1855,19 @@
                 }
               ]
             },
+            "envVariables": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "image": {
               "type": "string"
             },
@@ -1934,6 +1973,19 @@
                 }
               ]
             },
+            "envVariables": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "image": {
               "type": "string"
             },
@@ -2017,6 +2069,19 @@
                 }
               ]
             },
+            "envVariables": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "provisionerIdentifier": {
               "type": "string"
             }
@@ -2070,6 +2135,19 @@
                   "type": "string",
                   "pattern": "(<\\+.+>.*)",
                   "minLength": 1
+                }
+              ]
+            },
+            "envVariables": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
                 }
               ]
             },
@@ -4017,28 +4095,12 @@
             "branch",
             "tag",
             "PR",
-            "CommitSha"
+            "commitSha"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "CommitSha"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CommitShaBuildSpec"
-              }
-            }
-          }
-        },
         {
           "if": {
             "properties": {
@@ -4067,6 +4129,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BranchBuildSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "commitSha"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CommitShaBuildSpec"
               }
             }
           }

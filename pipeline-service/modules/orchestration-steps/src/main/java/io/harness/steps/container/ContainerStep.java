@@ -15,7 +15,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
@@ -47,6 +49,7 @@ import io.harness.steps.plugin.ContainerStepPassThroughData;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.InitialiseTaskUtils;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.SerializationFormat;
@@ -56,6 +59,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
@@ -68,8 +72,8 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   @Inject private OutcomeService outcomeService;
   @Inject private ContainerStepRbacHelper containerStepRbacHelper;
   @Inject private ContainerStepExecutionResponseHelper executionResponseHelper;
-
   @Inject private InitialiseTaskUtils initialiseTaskUtils;
+  @Inject private PmsFeatureFlagService featureFlagService;
 
   public static final StepType STEP_TYPE = ContainerStepSpecTypeConstants.CONTAINER_STEP_TYPE;
 
@@ -113,11 +117,15 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
         containerStepInitHelper.getK8InitializeTaskParams(containerStepInfo, ambiance, logPrefix);
     String stageId = ambiance.getStageExecutionId();
 
+    final List<TaskSelector> delegateSelectors = featureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance),
+                                                     FeatureName.CD_CONTAINER_STEP_DELEGATE_SELECTOR)
+        ? TaskSelectorYaml.toTaskSelector(containerStepInfo.getDelegateSelectors())
+        : new ArrayList<>();
+
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
     TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(containerStepInfo.getDelegateSelectors()), Scope.PROJECT, EnvironmentType.ALL,
-        false, new ArrayList<>(), false, stageId);
+        delegateSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
 
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)

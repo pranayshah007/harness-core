@@ -32,7 +32,6 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
@@ -54,8 +53,8 @@ public class AwsCdkBaseStepInfo {
 
   private ContainerResource resources;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
+  @YamlSchemaTypes({string})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
   private ParameterField<Map<String, String>> envVariables;
 
   @YamlSchemaTypes({runtime})

@@ -26,6 +26,8 @@ public interface RoleService {
 
   PageResponse<Role> list(
       @NotNull PageRequest pageRequest, @Valid @NotNull RoleFilter roleFilter, boolean hideInternal);
+  PageResponse<RoleWithPrincipalCount> listWithPrincipalCount(
+      @NotNull PageRequest pageRequest, @Valid @NotNull RoleFilter roleFilter, boolean hideInternal);
 
   Optional<Role> get(@NotEmpty String identifier, String scopeIdentifier, @NotNull ManagedFilter managedFilter);
 

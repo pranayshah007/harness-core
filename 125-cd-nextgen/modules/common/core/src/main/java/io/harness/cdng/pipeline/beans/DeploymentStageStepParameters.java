@@ -13,6 +13,9 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.common.SpecParameters;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -30,7 +33,7 @@ public class DeploymentStageStepParameters implements SpecParameters {
   }
 
   @Override
-  public SpecParameters getViewJsonObject() {
-    return DeploymentStageStepParameters.builder().build();
+  public List<String> stepInputsKeyExclude() {
+    return new LinkedList<>(Arrays.asList("specConfig"));
   }
 }

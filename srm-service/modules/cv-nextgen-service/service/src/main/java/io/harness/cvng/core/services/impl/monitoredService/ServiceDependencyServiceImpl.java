@@ -46,6 +46,9 @@ public class ServiceDependencyServiceImpl implements ServiceDependencyService {
     }
     List<ServiceDependency> dependencies = new ArrayList<>();
     fromMonitoredServiceIdentifiers.forEach(fromServiceIdentifier -> {
+      if (fromServiceIdentifier.getDependencyMetadata() != null) {
+        fromServiceIdentifier.getDependencyMetadata().setType(fromServiceIdentifier.getType());
+      }
       dependencies.add(ServiceDependency.builder()
                            .accountId(projectParams.getAccountIdentifier())
                            .orgIdentifier(projectParams.getOrgIdentifier())
@@ -118,6 +121,7 @@ public class ServiceDependencyServiceImpl implements ServiceDependencyService {
         .map(d
             -> ServiceDependencyDTO.builder()
                    .monitoredServiceIdentifier(d.getFromMonitoredServiceIdentifier())
+                   .type(d.getServiceDependencyMetadata() == null ? null : d.getServiceDependencyMetadata().getType())
                    .dependencyMetadata(d.getServiceDependencyMetadata())
                    .build())
         .collect(Collectors.toSet());

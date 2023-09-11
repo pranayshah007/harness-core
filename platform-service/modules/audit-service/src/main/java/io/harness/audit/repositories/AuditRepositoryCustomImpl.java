@@ -8,6 +8,7 @@
 package io.harness.audit.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.entities.AuditEvent;
@@ -52,7 +53,7 @@ public class AuditRepositoryCustomImpl implements AuditRepositoryCustom {
 
   @Override
   public List<String> fetchDistinctAccountIdentifiers() {
-    Query query = new Query();
+    Query query = new Query().limit(NO_LIMIT);
     return secondaryMongoTemplate.findDistinct(
         query, AuditEventKeys.ACCOUNT_IDENTIFIER_KEY, AuditEvent.class, String.class);
   }

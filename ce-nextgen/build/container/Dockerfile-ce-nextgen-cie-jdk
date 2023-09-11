@@ -43,6 +43,17 @@ RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness
 USER root
 RUN microdnf install -y yum \
 && microdnf clean all
-RUN yum install -y procps vim hostname tar gzip python3 iputils nc
-RUN pip3 install setuptools-rust && pip3 install --upgrade pip
-RUN pip3 install c7n && pip3 install c7n_azure
+RUN yum install -y sqlite-devel procps vim hostname tar gzip iputils nc wget openssl-devel bzip2-devel libffi-devel gcc glibc glibc-common gd gd-devel make
+
+RUN wget https://www.python.org/ftp/python/3.11.5/Python-3.11.5.tgz \
+    && tar -xzf Python-3.11.5.tgz \
+    && cd Python-3.11.5 \
+    && ./configure \
+    && make \
+    && make install \
+    && python3 -V \
+    && rm -rf /Python-3.11.5.tgz /Python-3.11.5
+
+RUN pip3 install --upgrade setuptools==65.5.1
+RUN pip3 install c7n==0.9.30 && pip3 install c7n_azure==0.7.29
+RUN yum remove -y gcc tar wget make openssl-devel libffi-devel bzip2-devel gd gd-devel

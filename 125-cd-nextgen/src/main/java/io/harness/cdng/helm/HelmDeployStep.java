@@ -36,6 +36,7 @@ import io.harness.delegate.beans.instancesync.mapper.K8sContainerToHelmServiceIn
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.HelmNGException;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmInstallCmdResponseNG;
 import io.harness.delegate.task.helm.HelmInstallCommandRequestNG;
@@ -202,17 +203,21 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
     nativeHelmDeployOutcome = nativeHelmDeployOutcomeBuilder.build();
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.HELM_DEPLOY_OUTCOME,
         nativeHelmDeployOutcome, StepOutcomeGroup.STEP.name());
-
+    HelmChartInfo helmChartInfo = helmInstallCmdResponseNG.getHelmChartInfo();
+    ReleaseHelmChartOutcome releaseHelmChartOutcome = nativeHelmStepHelper.getHelmChartOutcome(helmChartInfo);
     StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
         K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
-            helmInstallCmdResponseNG.getContainerInfoList(), helmInstallCmdResponseNG.getHelmChartInfo(),
-            helmInstallCmdResponseNG.getHelmVersion()));
+            helmInstallCmdResponseNG.getContainerInfoList(), helmChartInfo, helmInstallCmdResponseNG.getHelmVersion()));
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(stepOutcome)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.HELM_DEPLOY_OUTCOME)
                          .outcome(nativeHelmDeployOutcome)
+                         .build())
+        .stepOutcome(StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.RELEASE_HELM_CHART_OUTCOME)
+                         .outcome(releaseHelmChartOutcome)
                          .build())
         .build();
   }

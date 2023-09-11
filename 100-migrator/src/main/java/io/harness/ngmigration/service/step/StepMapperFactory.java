@@ -284,6 +284,8 @@ public class StepMapperFactory {
       case "ARTIFACT_CHECK":
       case "ECS_STEADY_STATE_CHECK":
       case "ECS_SERVICE_DEPLOY":
+      case "AWS_AMI_SERVICE_DEPLOY":
+      case "CVNG":
         return emptyStepMapper;
       case "SPOTINST_SETUP":
         return elastigroupSetupStepMapper;
@@ -344,8 +346,6 @@ public class StepMapperFactory {
         return asgBlueGreenSwapStepMapper;
       case "AWS_AMI_ROLLBACK_SWITCH_ROUTES":
         return asgBlueGreenRollbackStepMapper;
-      case "AWS_AMI_SERVICE_DEPLOY":
-        return emptyStepMapper;
       case "ASG_AMI_ALB_SHIFT_SWITCH_ROUTES":
       case "ASG_AMI_SERVICE_ALB_SHIFT_DEPLOY":
       case "ASG_AMI_SERVICE_ALB_SHIFT_SETUP":

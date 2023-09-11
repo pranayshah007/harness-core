@@ -50,7 +50,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 					WithField("time", time.Now().Format(time.RFC3339)).
 					WithField("ConsumerGroup", cfg.ConsumerWorker.ConsumerGroup).
 					WithError(err).
-					Errorln("consumer execute: continuing to poll redis queue")
+					Infoln("consumer execute: continuing to poll redis queue")
 				continue
 			}
 			logEntryWorker.

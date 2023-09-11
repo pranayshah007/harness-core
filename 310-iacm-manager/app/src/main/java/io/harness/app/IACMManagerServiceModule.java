@@ -14,7 +14,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_B
 import static io.harness.eventsframework.EventsFrameworkConstants.IACM_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELEGATE_ENTITY;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import io.harness.AccessControlClientModule;
@@ -208,7 +208,7 @@ public class IACMManagerServiceModule extends AbstractModule {
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
     return iacmManagerConfiguration.getDistributedLockImplementation() == null
-        ? MONGO
+        ? REDIS
         : iacmManagerConfiguration.getDistributedLockImplementation();
   }
 

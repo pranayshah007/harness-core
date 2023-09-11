@@ -68,7 +68,6 @@ public class StepParametersUtils {
   public StepElementParametersBuilder getStepParameters(
       PmsAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters) {
     StepElementParametersBuilder stepBuilder = getStepParameters(stepElementConfig);
-    stepBuilder.rollbackParameters(failRollbackParameters);
     return stepBuilder;
   }
 }

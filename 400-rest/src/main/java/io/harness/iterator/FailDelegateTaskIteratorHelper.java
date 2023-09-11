@@ -133,7 +133,7 @@ public class FailDelegateTaskIteratorHelper {
                              .filter(task -> isNotEmpty(task.getWaitId()))
                              .collect(toMap(DelegateTask::getUuid, DelegateTask::getWaitId)));
     } catch (Exception e1) {
-      log.error("Failed to deserialize {} tasks. Trying individually...", taskIds.size(), e1);
+      log.debug("Failed to deserialize {} tasks. Trying individually...", taskIds.size(), e1);
       for (String taskId : taskIds) {
         try {
           DelegateTask task =

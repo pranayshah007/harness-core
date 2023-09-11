@@ -39,7 +39,8 @@ public interface InstanceDashboardService {
       boolean isGitOps);
   List<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
-      String displayName, boolean isGitOps, boolean filterOnArtifact);
+      String displayName, boolean isGitOps, boolean filterOnArtifact, String chartVersion,
+      boolean filterOnChartVersion);
   List<EnvironmentInstanceCountModel> getInstanceCountForEnvironmentFilteredByService(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isGitOps);
   List<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
@@ -48,14 +49,16 @@ public interface InstanceDashboardService {
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
       long timestampInMs, String infraId, String clusterId, String pipelineExecutionId, Boolean isGitops);
   List<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard, boolean isGitOps);
+      String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard, boolean isGitOps,
+      boolean isChartVersionCard);
   InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
       String pipelineExecutionId, String buildId, Boolean isGitops);
   List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
   getActiveInstanceDetailGroupedByPipelineExecution(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, EnvironmentType environmentType, String infraId,
-      String clusterIdentifier, String displayName, boolean isGitOps);
+      String clusterIdentifier, String displayName, String chartVersion, boolean isGitOps,
+      boolean filterOnChartVersion);
   InstanceCountDetailsByEnvTypeAndServiceId getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
 }

@@ -38,7 +38,7 @@ public interface SRMAnalysisStepService {
 
   SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String executionDetailId);
   List<SRMAnalysisStepDetailDTO> getSRMAnalysisSummaries(
-      String monitoredServiceIdentifier, String planExecutionId, String stageId);
+      String accountId, String orgIdentifier, String projectIdentifier, String planExecutionId, String stageId);
 
   List<HarnessCDEventMetadata.SRMAnalysisStepDetails> getSRMAnalysisStepDetails(List<String> executionDetailIds);
 

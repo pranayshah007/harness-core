@@ -21,9 +21,11 @@ import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -77,20 +79,29 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
     StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
     StrategyStepParameters stepParameters =
         StrategyStepParameters.builder().childNodeId("childNodeId").strategyConfig(strategyConfig).build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
 
-    when(forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId")).thenReturn(new ArrayList<>());
+    when(forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance))
+        .thenReturn(new ArrayList<>());
 
-    strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
+    strategyStep.obtainChildren(ambiance, stepParameters, StepInputPackage.builder().build());
 
-    verify(forLoopStrategyConfigService).fetchChildren(strategyConfig, "childNodeId");
+    verify(forLoopStrategyConfigService).fetchChildren(strategyConfig, "childNodeId", ambiance);
 
     strategyConfig.getRepeat().setMaxConcurrency(ParameterField.ofNull());
 
-    when(forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId")).thenReturn(new ArrayList<>());
+    when(forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance))
+        .thenReturn(new ArrayList<>());
 
-    strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
+    strategyStep.obtainChildren(ambiance, stepParameters, StepInputPackage.builder().build());
 
-    verify(forLoopStrategyConfigService, times(2)).fetchChildren(strategyConfig, "childNodeId");
+    verify(forLoopStrategyConfigService, times(2)).fetchChildren(strategyConfig, "childNodeId", ambiance);
   }
 
   @Test
@@ -117,11 +128,20 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
     StrategyStepParameters stepParameters =
         StrategyStepParameters.builder().childNodeId("childNodeId").strategyConfig(strategyConfig).build();
 
-    when(parallelismStrategyConfigService.fetchChildren(strategyConfig, "childNodeId")).thenReturn(new ArrayList<>());
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
 
-    strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
+    when(parallelismStrategyConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance))
+        .thenReturn(new ArrayList<>());
 
-    verify(parallelismStrategyConfigService).fetchChildren(strategyConfig, "childNodeId");
+    strategyStep.obtainChildren(ambiance, stepParameters, StepInputPackage.builder().build());
+
+    verify(parallelismStrategyConfigService).fetchChildren(strategyConfig, "childNodeId", ambiance);
   }
 
   @Test
@@ -147,11 +167,19 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
     StrategyStepParameters stepParameters =
         StrategyStepParameters.builder().childNodeId("childNodeId").strategyConfig(strategyConfig).build();
 
-    when(matrixConfigService.fetchChildren(strategyConfig, "childNodeId")).thenReturn(new ArrayList<>());
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
 
-    strategyStep.obtainChildren(Ambiance.newBuilder().build(), stepParameters, StepInputPackage.builder().build());
+    when(matrixConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance)).thenReturn(new ArrayList<>());
 
-    verify(matrixConfigService).fetchChildren(strategyConfig, "childNodeId");
+    strategyStep.obtainChildren(ambiance, stepParameters, StepInputPackage.builder().build());
+
+    verify(matrixConfigService).fetchChildren(strategyConfig, "childNodeId", ambiance);
   }
 
   @Test

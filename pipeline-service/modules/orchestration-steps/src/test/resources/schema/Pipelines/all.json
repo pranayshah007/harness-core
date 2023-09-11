@@ -1007,28 +1007,12 @@
             "branch",
             "tag",
             "PR",
-            "CommitSha"
+            "commitSha"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "CommitSha"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CommitShaBuildSpec"
-              }
-            }
-          }
-        },
         {
           "if": {
             "properties": {
@@ -1057,6 +1041,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BranchBuildSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "commitSha"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CommitShaBuildSpec"
               }
             }
           }

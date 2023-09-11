@@ -80,7 +80,7 @@ public class AwsCdkRollbackPluginInfoProvider extends AbstractPluginInfoProvider
       if (containerResource.getLimits() != null) {
         limits = ContainerResource.Limits.builder()
                      .memory(ParameterField.<String>builder().value(containerResource.getLimits().getMemory()).build())
-                     .cpu(ParameterField.<String>builder().value(containerResource.getLimits().getMemory()).build())
+                     .cpu(ParameterField.<String>builder().value(containerResource.getLimits().getCpu()).build())
                      .build();
       }
       return ContainerResource.builder().requests(requests).limits(limits).build();

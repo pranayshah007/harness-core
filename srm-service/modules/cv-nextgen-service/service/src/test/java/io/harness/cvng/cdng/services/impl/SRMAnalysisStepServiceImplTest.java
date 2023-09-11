@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
@@ -121,11 +120,6 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
         builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, stepName,
         serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
-    SRMStepAnalysisActivity stepAnalysisActivity = builderFactory.getSRMStepAnalysisActivityBuilder()
-                                                       .executionNotificationDetailsId(analysisExecutionDetailsId)
-                                                       .build();
-    stepAnalysisActivity.setUuid(analysisExecutionDetailsId);
-    activityId = activityService.createActivity(stepAnalysisActivity);
     FieldUtils.writeField(srmAnalysisStepService, "clock", clock, true);
   }
 
@@ -226,7 +220,8 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
   public void testGetSummaryOfStep() {
     SRMAnalysisStepExecutionDetail stepExecutionDetail =
         srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
-    SRMAnalysisStepDetailDTO analysisStepDetailDTO = srmAnalysisStepService.getSRMAnalysisSummary(activityId);
+    SRMAnalysisStepDetailDTO analysisStepDetailDTO =
+        srmAnalysisStepService.getSRMAnalysisSummary(analysisExecutionDetailsId);
 
     assertThat(analysisStepDetailDTO.getAccountId()).isEqualTo(builderFactory.getContext().getAccountId());
     assertThat(analysisStepDetailDTO.getOrgIdentifier()).isEqualTo(builderFactory.getContext().getOrgIdentifier());

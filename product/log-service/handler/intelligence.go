@@ -95,6 +95,67 @@ Here is the logs, remember to give the response only in json format like the exa
 %s
 ` + "```"
 
+	genAICDPlainTextPrompt = `
+Provide root cause and remediation from the below logs preserving the markdown format.
+Remediation is required in the response - root cause can be truncated if needed, but make sure to preserve the markdown format. %s
+
+
+Logs:
+` + "```" + `
+%s
+%s
+` + "```"
+
+	genAICDAzurePlainTextPrompt = `
+Provide root cause and remediation from the below logs preserving the markdown format.
+Remediation is required in the response - root cause can be truncated if needed, but make sure to preserve the markdown format. %s
+
+Logs:
+` + "```" + `
+%s
+%s
+` + "```" + `
+
+Provide your output in the following format:
+` + "```" + `
+## Root cause
+<Root cause>
+
+## Remediation
+<Remediation>
+` + "```"
+
+	genAICDJSONPrompt = `
+Provide root cause and remediation from the below logs. Remediation is required in the response - root cause can be truncated if needed, but make sure to preserve the markdown format. Return list of json object with three keys using the following format {"error", "cause", "remediation"}. %s
+
+Logs:
+` + "```" + `
+%s
+%s
+` + "```"
+
+	genAICDBisonJSONPrompt = `
+I have a set of logs. The logs contain error messages. I want you to find the error messages in the logs, and suggest root cause and remediation or fix suggestions. Remediation is required in the response - error message and root cause can be truncated if needed, but make sure to preserve the markdown format. I want you to give me the response in JSON format, no text before or after the JSON. Example of response:
+[
+	{
+		"error": "error_1",
+		"cause": "cause_1",
+		"remediation": "fix line 2 of the command"
+	},
+	{
+		"error": "error_2",
+		"cause": "cause_2",
+		"remediation": "fix line 5 of the command"
+	}
+]
+%s
+
+Here is the logs, remember to give the response only in json format like the example provided above, no text before or after the json object:
+` + "```" + `
+%s
+%s
+` + "```"
+
 	genAITemperature = 0.0
 	genAITopP        = 1.0
 	genAITopK        = 1
@@ -116,6 +177,74 @@ const (
 	genAIResponseJSONFirstChar rune = '['
 	genAIResponseJSONLastChar  rune = ']'
 )
+
+const (
+	K8sBlueGreenDeploy                   = "K8sBlueGreenDeploy"
+	K8sRollingDeploy                     = "K8sRollingDeploy"
+	K8sRollingRollback                   = "K8sRollingRollback"
+	K8sApply                             = "K8sApply"
+	K8sScale                             = "K8sScale"
+	K8sCanaryDeploy                      = "K8sCanaryDeploy"
+	K8sBGSwapServices                    = "K8sBGSwapServices"
+	K8sDelete                            = "K8sDelete"
+	K8sCanaryDelete                      = "K8sCanaryDelete"
+	K8sDryRun                            = "K8sDryRun"
+	ServerlessAwsLambdaDeploy            = "ServerlessAwsLambdaDeploy"
+	ServerlessAwsLambdaRollback          = "ServerlessAwsLambdaRollback"
+	ServerlessAwsLambdaPrepareRollbackV2 = "ServerlessAwsLambdaPrepareRollbackV2"
+	ServerlessAwsLambdaRollbackV2        = "ServerlessAwsLambdaRollbackV2"
+	ServerlessAwsLambdaDeployV2          = "ServerlessAwsLambdaDeployV2"
+	ServerlessAwsLambdaPackageV2         = "ServerlessAwsLambdaPackageV2"
+	EcsRollingDeploy                     = "EcsRollingDeploy"
+	EcsRollingRollback                   = "EcsRollingRollback"
+	EcsCanaryDeploy                      = "EcsCanaryDeploy"
+	EcsCanaryDelete                      = "EcsCanaryDelete"
+	EcsBlueGreenCreateService            = "EcsBlueGreenCreateService"
+	EcsBlueGreenRollback                 = "EcsBlueGreenRollback"
+	EcsRunTask                           = "EcsRunTask"
+	HelmDeploy                           = "HelmDeploy"
+	HelmRollback                         = "HelmRollback"
+	CanaryAppSetup                       = "CanaryAppSetup"
+	BGAppSetup                           = "BGAppSetup"
+	BasicAppSetup                        = "BasicAppSetup"
+	AppResize                            = "AppResize"
+	SwapRoutes                           = "SwapRoutes"
+	SwapRollback                         = "SwapRollback"
+	TasRollingDeploy                     = "TasRollingDeploy"
+	TasRollingRollback                   = "TasRollingRollback"
+	RouteMapping                         = "RouteMapping"
+	TerraformApply                       = "TerraformApply"
+	TerraformPlan                        = "TerraformPlan"
+	TerraformDestroy                     = "TerraformDestroy"
+	TerraformRollback                    = "TerraformRollback"
+	TerraformCloudRun                    = "TerraformCloudRun"
+	TerraformCloudRollback               = "TerraformCloudRollback"
+	AwsCdkBootstrap                      = "AwsCdkBootstrap"
+	AwsCdkSynth                          = "AwsCdkSynth"
+	AwsCdkDiff                           = "AwsCdkDiff"
+	AwsCdkDeploy                         = "AwsCdkDeploy"
+	AwsCdkDestroy                        = "AwsCdkDestroy"
+	AwsSamDeploy                         = "AwsSamDeploy"
+	AwsSamBuild                          = "AwsSamBuild"
+	AwsSamRollback                       = "AwsSamRollback"
+)
+
+func IsCDTypeStep(stepType string) bool {
+	switch stepType {
+	case K8sBlueGreenDeploy, K8sRollingDeploy, K8sRollingRollback, K8sApply, K8sScale, K8sCanaryDeploy,
+		K8sBGSwapServices, K8sDelete, K8sCanaryDelete, K8sDryRun, ServerlessAwsLambdaDeploy,
+		ServerlessAwsLambdaRollback, ServerlessAwsLambdaPrepareRollbackV2, ServerlessAwsLambdaRollbackV2,
+		ServerlessAwsLambdaDeployV2, ServerlessAwsLambdaPackageV2, EcsRollingDeploy, EcsRollingRollback,
+		EcsCanaryDeploy, EcsCanaryDelete, EcsBlueGreenCreateService, EcsBlueGreenRollback, EcsRunTask,
+		HelmDeploy, HelmRollback, CanaryAppSetup, BGAppSetup, BasicAppSetup, AppResize, SwapRoutes, SwapRollback,
+		TasRollingDeploy, TasRollingRollback, RouteMapping, TerraformApply, TerraformPlan, TerraformDestroy,
+		TerraformRollback, TerraformCloudRun, TerraformCloudRollback, AwsCdkBootstrap, AwsCdkSynth, AwsCdkDiff,
+		AwsCdkDeploy, AwsCdkDestroy, AwsSamDeploy, AwsSamBuild, AwsSamRollback:
+		return true
+	default:
+		return false
+	}
+}
 
 type (
 	RCAReport struct {
@@ -209,15 +338,31 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
 	logs string, maxOutputTokens int, useJSONResponse bool, r *http.Request) (
 	*RCAReport, string, error) {
+	stepType := r.FormValue(stepTypeParam)
 	promptTmpl := genAIPlainTextPrompt
-	if useJSONResponse {
-		promptTmpl = genAIJSONPrompt
-		if provider == vertexAIProvider {
-			promptTmpl = genAIBisonJSONPrompt
+
+	if IsCDTypeStep(stepType) {
+		promptTmpl = genAICDPlainTextPrompt
+		if useJSONResponse {
+			promptTmpl = genAICDJSONPrompt
+			if provider == vertexAIProvider {
+				promptTmpl = genAICDBisonJSONPrompt
+			}
+		} else {
+			if provider == azureAIProvider {
+				promptTmpl = genAICDAzurePlainTextPrompt
+			}
 		}
 	} else {
-		if provider == azureAIProvider {
-			promptTmpl = genAIAzurePlainTextPrompt
+		if useJSONResponse {
+			promptTmpl = genAIJSONPrompt
+			if provider == vertexAIProvider {
+				promptTmpl = genAIBisonJSONPrompt
+			}
+		} else {
+			if provider == azureAIProvider {
+				promptTmpl = genAIAzurePlainTextPrompt
+			}
 		}
 	}
 

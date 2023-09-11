@@ -517,6 +517,66 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testdownloadChartFilesFromOciRepoWithEmptyBasePath() throws Exception {
+    String repoUrl = "test.azurecr.io";
+    String username = "username";
+    char[] password = "password".toCharArray();
+    String chartOutput = "/directory";
+    long timeout = 90000L;
+
+    HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .chartName(CHART_NAME)
+            .useCache(true)
+            .chartVersion(CHART_VERSION)
+            .helmVersion(V3)
+            .helmCommandFlag(emptyHelmCommandFlag)
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder()
+                    .repoName(REPO_NAME)
+                    .repoDisplayName(REPO_DISPLAY_NAME)
+                    .ociHelmConnector(
+                        OciHelmConnectorDTO.builder()
+                            .helmRepoUrl(repoUrl)
+                            .auth(OciHelmAuthenticationDTO.builder()
+                                      .authType(OciHelmAuthType.USER_PASSWORD)
+                                      .credentials(
+                                          OciHelmUsernamePasswordDTO.builder()
+                                              .username(username)
+                                              .passwordRef(SecretRefData.builder().decryptedValue(password).build())
+                                              .build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+
+    String updatedRepoName = "oci://test.azurecr.io";
+
+    doReturn("reg-config.json").when(helmTaskHelperBase).getRegFileConfigPath();
+    doNothing()
+        .when(helmTaskHelperBase)
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),
+            eq("reg-config.json"));
+    doNothing()
+        .when(helmTaskHelperBase)
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), anyString(),
+            eq("reg-config.json"));
+
+    helmTaskHelperBase.downloadChartFilesFromOciRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
+
+    verify(helmTaskHelperBase, times(1))
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),
+            eq("reg-config.json"));
+    verify(helmTaskHelperBase, times(1))
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), anyString(),
+            eq("reg-config.json"));
+  }
+
+  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testDownloadChartFilesFromHttpRepoAnonymousAuth() {

@@ -17,6 +17,7 @@ import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -64,8 +65,8 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
   /**
    * Adds the nextStageAdviser to the given node if it is not the end stage
    */
-  protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField stageField) {
-    return StrategyUtils.getAdviserObtainments(stageField, kryoSerializer, true);
+  protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField stageField, Dependency dependency) {
+    return StrategyUtils.getAdviserObtainments(stageField, kryoSerializer, true, dependency);
   }
 
   /**

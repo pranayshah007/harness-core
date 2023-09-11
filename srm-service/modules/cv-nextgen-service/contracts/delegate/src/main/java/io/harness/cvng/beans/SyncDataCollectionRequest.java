@@ -64,7 +64,7 @@ public class SyncDataCollectionRequest extends DataCollectionRequest<ConnectorCo
 
   public Map<String, Object> fetchDslEnvVariables() {
     Map<String, Object> dslVariables = dataCollectionInfo.getDslEnvVariables(getConnectorConfigDTO());
-    dslVariables.put("collectHostData", dataCollectionInfo.isCollectHostData());
+    dslVariables.put("collectHostData", Boolean.toString(dataCollectionInfo.isCollectHostData()));
     dslVariables.put("startTimeMillis", startTime.toEpochMilli());
     dslVariables.put("endTimeMillis", endTime.toEpochMilli());
     return dslVariables;

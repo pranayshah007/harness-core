@@ -54,9 +54,11 @@ public interface SwaggerConstants {
   String STAGE_WHEN_CLASSPATH = "io.harness.when.beans.StageWhenCondition";
   String STEP_WHEN_CLASSPATH = "io.harness.when.beans.StepWhenCondition";
   String STRATEGY_CLASSPATH = "io.harness.plancreator.strategy.StrategyConfig";
-  String GITOPS_AGENT_DETAILS_CLASSPATH = "io.harness.cdng.gitops.syncstep.AgentApplicationTargets";
   String GITOPS_AGENT_DETAILS_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.syncstep.AgentApplicationTargets;";
-  String GITOPS_HELM_PARAMS_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppHelmParams;";
-
+  String GITOPS_HELM_VALUES_CLASSPATH = "io.harness.cdng.gitops.updategitopsapp.HelmValues";
+  String GITOPS_HELM_PARAMS_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.updategitopsapp.HelmParameters;";
+  String GITOPS_HELM_FILE_PARAMS_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.updategitopsapp.HelmFileParameters;";
+  String GITOPS_KUSTOMIZE_VALUES_CLASSPATH = "io.harness.cdng.gitops.updategitopsapp.KustomizeValues";
+  String GITOPS_KUSTOMIZE_REPLICAS_LIST_CLASSPATH = "[Lio.harness.cdng.gitops.updategitopsapp.KustomizeReplicas;";
   String RESIZE_STRATEGY_TAS_CLASSPATH = "io.harness.delegate.beans.pcf.TasResizeStrategyType";
 }

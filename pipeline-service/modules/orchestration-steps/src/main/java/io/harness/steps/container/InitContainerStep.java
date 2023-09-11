@@ -13,6 +13,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
@@ -22,6 +24,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
@@ -33,6 +36,7 @@ import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.InitialiseTaskUtils;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.SerializationFormat;
@@ -41,6 +45,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
@@ -53,6 +58,7 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
   @Inject private ContainerStepRbacHelper containerStepRbacHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private InitialiseTaskUtils initialiseTaskUtils;
+  @Inject private PmsFeatureFlagService featureFlagService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -77,10 +83,13 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
     String stageId = ambiance.getStageExecutionId();
 
     TaskData taskData = getTaskData(stepElementParameters, buildSetupTaskParams);
+    final List<TaskSelector> delegateSelectors = featureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance),
+                                                     FeatureName.CD_CONTAINER_STEP_DELEGATE_SELECTOR)
+        ? ContainerSpecUtils.getDelegateSelectors(containerStepSpec)
+        : new ArrayList<>();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
-        ContainerSpecUtils.getDelegateSelectors(containerStepSpec), Scope.PROJECT, EnvironmentType.ALL, false,
-        new ArrayList<>(), false, stageId);
+        delegateSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
   }
 
   @Override

@@ -61,7 +61,6 @@ import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
@@ -178,30 +177,16 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   private void validateV2(FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
-    if (usesServiceFromAnotherStage(deploymentStageConfig)) {
-      if (hasNoSiblingStages(filterCreationContext.getCurrentField())) {
-        throw new InvalidYamlRuntimeException(
-            "Stage template that propagates service from another stage cannot be saved. Please remove useFromStage and set the serviceRef to fixed value, runtime or an expression and try again");
-      }
-      String useFromStageIdentifier = deploymentStageConfig.getService().getUseFromStage().getStage();
-      if (referredStageForPropagationDoesNotExist(filterCreationContext.getCurrentField(), useFromStageIdentifier)) {
-        throw new InvalidYamlRuntimeException(String.format(
-            "Stage with identifier [%s] given for service propagation does not exist. Please add it and try again.",
-            useFromStageIdentifier));
-      }
+    if (usesServiceFromAnotherStage(deploymentStageConfig)
+        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+      throw new InvalidYamlRuntimeException(
+          "Stage template that propagates service from another stage cannot be saved. Please remove useFromStage and set the serviceRef to fixed value, runtime or an expression and try again");
     }
 
-    if (usesEnvironmentFromAnotherStage(deploymentStageConfig)) {
-      if (hasNoSiblingStages(filterCreationContext.getCurrentField())) {
-        throw new InvalidYamlRuntimeException(
-            "Stage template that propagates environment from another stage cannot be saved. Please remove useFromStage and set the environmentRef to fixed value, runtime or an expression and try again");
-      }
-      String useFromStageIdentifier = deploymentStageConfig.getEnvironment().getUseFromStage().getStage();
-      if (referredStageForPropagationDoesNotExist(filterCreationContext.getCurrentField(), useFromStageIdentifier)) {
-        throw new InvalidYamlRuntimeException(String.format(
-            "Stage with identifier [%s] given for environment propagation does not exist. Please add it and try again.",
-            useFromStageIdentifier));
-      }
+    if (usesEnvironmentFromAnotherStage(deploymentStageConfig)
+        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+      throw new InvalidYamlRuntimeException(
+          "Stage template that propagates environment from another stage cannot be saved. Please remove useFromStage and set the environmentRef to fixed value, runtime or an expression and try again");
     }
     if (deploymentStageConfig.getInfrastructure() != null) {
       throw new InvalidYamlRuntimeException(format(
@@ -229,13 +214,6 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     // spec -> stage -> null
     return currentField != null && currentField.getNode().getParentNode() != null
         && currentField.getNode().getParentNode().getParentNode() == null;
-  }
-
-  private boolean referredStageForPropagationDoesNotExist(YamlField currentField, String stageIdentifier) {
-    return currentField != null && currentField.getNode().getParentNode() != null
-        && YamlNodeUtils.findFirstNodeMatchingFieldName(
-               currentField.getNode().getParentNode().getParentNode(), stageIdentifier)
-        == null;
   }
 
   private boolean usesServiceFromAnotherStage(DeploymentStageConfig deploymentStageConfig) {
@@ -525,7 +503,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     ParameterField<String> serviceRef = serviceConfig.getServiceRef();
-    if (serviceRef != null && !serviceRef.isExpression()) {
+    if (serviceRef != null && !serviceRef.isExpression() && isNotEmpty(serviceRef.getValue())) {
       Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), serviceRef.getValue(), false);

@@ -65,4 +65,6 @@ public interface AwsClient {
       String crossAccountRoleArn, String externalId, String awsAccessKey, String awsSecretKey);
 
   Map<String, String> listIAMRoles(AwsInternalConfig awsInternalConfig);
+
+  String getEcrImageUrl(AwsInternalConfig awsConfig, String registryId, String region, String imageName);
 }

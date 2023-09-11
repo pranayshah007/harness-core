@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.strategy;
+
 import static io.harness.plancreator.strategy.StrategyConstants.CURRENT_GLOBAL_ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
@@ -26,9 +27,11 @@ import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -110,8 +113,13 @@ public class StrategyUtils {
     return identifier;
   }
 
+  // TODO: Remove this method. User the below overloaded method directly.
   public List<AdviserObtainment> getAdviserObtainments(
       YamlField stageField, KryoSerializer kryoSerializer, boolean checkForStrategy) {
+    return getAdviserObtainments(stageField, kryoSerializer, checkForStrategy, null);
+  }
+  public List<AdviserObtainment> getAdviserObtainments(
+      YamlField stageField, KryoSerializer kryoSerializer, boolean checkForStrategy, Dependency dependency) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (stageField != null && stageField.getNode() != null) {
       // if parent is parallel, then we need not add nextStepAdvise as all the executions will happen in parallel
@@ -121,11 +129,20 @@ public class StrategyUtils {
       if (checkForStrategy && isWrappedUnderStrategy(stageField)) {
         return adviserObtainments;
       }
-      YamlField siblingField = stageField.getNode().nextSiblingFromParentArray(
-          stageField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
+
+      // if siblingFieldUuid is notNull then its coming from the V1 parent. So we will consider it. Else calculate the
+      // sibling from stageField.
+      String siblingFieldUuid = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, dependency);
+      if (EmptyPredicate.isEmpty(siblingFieldUuid)) {
+        YamlField siblingField = stageField.getNode().nextSiblingFromParentArray(
+            stageField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
+        if (siblingField != null && siblingField.getNode().getUuid() != null) {
+          siblingFieldUuid = siblingField.getNode().getUuid();
+        }
+      }
+
       String pipelineRollbackStageId = getPipelineRollbackStageId(stageField);
-      if (siblingField != null && siblingField.getNode().getUuid() != null) {
-        String siblingFieldUuid = siblingField.getNode().getUuid();
+      if (EmptyPredicate.isNotEmpty(siblingFieldUuid)) {
         adviserObtainments.add(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())

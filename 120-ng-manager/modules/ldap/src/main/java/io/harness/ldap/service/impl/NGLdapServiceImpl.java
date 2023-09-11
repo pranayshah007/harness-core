@@ -426,7 +426,7 @@ public class NGLdapServiceImpl implements NGLdapService {
     }
 
     if (delegateResponseData instanceof ErrorNotifyResponseData) {
-      throw buildDelegateNotAvailableHintException(delegateDownErrorMessage);
+      throw buildDelegateNotAvailableHintException(((ErrorNotifyResponseData) delegateResponseData).getErrorMessage());
     }
     return delegateResponseData;
   }

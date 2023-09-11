@@ -24,7 +24,8 @@ import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Url;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public interface RefreshTokenRestClient {
   @FormUrlEncoded
   @Headers({"Content-Type: application/x-www-form-urlencoded; charset=utf-8", "Accept: application/json"})

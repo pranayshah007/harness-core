@@ -23,11 +23,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.activity.entities.Activity;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
-import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.beans.CVNGDeploymentImpactStepParameter;
 import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
@@ -241,22 +238,11 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
         (CVNGAnalyzeDeploymentStep.AnalyzeDeploymentStepOutcome) new ArrayList<>(stepResponse.getStepOutcomes())
             .get(0)
             .getOutcome();
-    Activity activity = activityService.get(stepOutcome.getActivityId());
-    assertThat(activity.getType()).isEqualTo(ActivityType.SRM_STEP_ANALYSIS);
-    SRMStepAnalysisActivity srmStepAnalysisActivity = (SRMStepAnalysisActivity) activity;
-    assertThat(srmStepAnalysisActivity.getActivityStartTime()).isEqualTo(builderFactory.getClock().instant());
-    assertThat(srmStepAnalysisActivity.getPlanExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
-    assertThat(srmStepAnalysisActivity.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
-    assertThat(srmStepAnalysisActivity.getArtifactTag()).isEqualTo("tag");
-    assertThat(srmStepAnalysisActivity.getArtifactType()).isEqualTo(ArtifactSourceType.GCR.getDisplayName());
-    assertThat(srmStepAnalysisActivity.getActivityName())
-        .isEqualTo("SRM Step Analysis of " + monitoredServiceDTO.getIdentifier());
-    SRMAnalysisStepExecutionDetail stepExecutionDetail = srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(
-        srmStepAnalysisActivity.getExecutionNotificationDetailsId());
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(stepOutcome.getExecutionDetailsId());
     assertThat(stepExecutionDetail.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(stepExecutionDetail.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
     assertThat(stepExecutionDetail.getPipelineName()).isEqualTo("Mocked Pipeline");
-    assertThat(activity.getUuid()).isEqualTo(stepExecutionDetail.getUuid());
   }
 
   @Test
@@ -359,16 +345,9 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
         (CVNGAnalyzeDeploymentStep.AnalyzeDeploymentStepOutcome) new ArrayList<>(stepResponse.getStepOutcomes())
             .get(0)
             .getOutcome();
-    Activity activity = activityService.get(stepOutcome.getActivityId());
-    assertThat(activity.getType()).isEqualTo(ActivityType.SRM_STEP_ANALYSIS);
-    SRMStepAnalysisActivity srmStepAnalysisActivity = (SRMStepAnalysisActivity) activity;
-    assertThat(srmStepAnalysisActivity.getActivityStartTime()).isEqualTo(builderFactory.getClock().instant());
-    assertThat(srmStepAnalysisActivity.getPlanExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
-    assertThat(srmStepAnalysisActivity.getMonitoredServiceIdentifier()).isEqualTo(configuredMonitoredServiceRef);
-    assertThat(srmStepAnalysisActivity.getActivityName())
-        .isEqualTo("SRM Step Analysis of " + configuredMonitoredServiceRef);
-    SRMAnalysisStepExecutionDetail stepExecutionDetail = srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(
-        srmStepAnalysisActivity.getExecutionNotificationDetailsId());
+
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(stepOutcome.getExecutionDetailsId());
     assertThat(stepExecutionDetail.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(stepExecutionDetail.getMonitoredServiceIdentifier()).isEqualTo(configuredMonitoredServiceRef);
     assertThat(stepExecutionDetail.getPipelineName()).isEqualTo("Mocked Pipeline");

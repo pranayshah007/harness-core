@@ -202,7 +202,6 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.oldRetry)
                  .build())
-        // Used by fetchNodeExecutionsStatusesWithoutOldRetries
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_status_idx")
                  .field(NodeExecutionKeys.planExecutionId)

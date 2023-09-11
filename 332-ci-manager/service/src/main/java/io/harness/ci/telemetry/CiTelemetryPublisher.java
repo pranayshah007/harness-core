@@ -15,6 +15,7 @@ import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.core.ci.dashboard.CIOverviewDashboardService;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;

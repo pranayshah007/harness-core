@@ -8,7 +8,8 @@
 package io.harness.pms.triggers.webhook.service;
 
 import io.harness.eventsframework.webhookpayloads.webhookdata.TriggerExecutionDTO;
+import io.harness.pms.sdk.execution.events.PmsCommonsBaseEventHandler;
 
-public interface TriggerWebhookEventExecutionService {
+public interface TriggerWebhookEventExecutionService extends PmsCommonsBaseEventHandler<TriggerExecutionDTO> {
   void processEvent(TriggerExecutionDTO triggerExecutionDTO);
 }

@@ -41,6 +41,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.hsqs.client.model.QueueServiceClientConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -218,6 +219,7 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .managerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build())
             .ngManagerServiceSecret("IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
             .apiUrl("https://localhost:8181/#/")
+            .distributedLockImplementation(DistributedLockImplementation.NOOP)
             .build();
 
     modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));

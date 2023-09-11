@@ -29,7 +29,7 @@ public class HarnessOrgToBackstageDomain
 
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
     metadata.setMetadata(organizationDTO.getIdentifier(), organizationDTO.getIdentifier(),
-        truncateName(organizationDTO.getIdentifier()), organizationDTO.getDescription(),
+        truncateName(organizationDTO.getIdentifier()), organizationDTO.getName(), organizationDTO.getDescription(),
         getTags(organizationDTO.getTags()), null);
     backstageCatalogDomainEntity.setMetadata(metadata);
 

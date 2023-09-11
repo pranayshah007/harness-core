@@ -47,19 +47,19 @@ orchestrationVisualizationThreadPoolConfig:
 orchestrationPoolConfig:
   corePoolSize: ${ORCHESTRATION_POOL_CORE_SIZE:-20}
   maxPoolSize: ${ORCHESTRATION_POOL_MAX_SIZE:-100}
-  idleTime: ${ORCHESTRATION_POOL_IDLE_TIME:-500}
+  idleTime: ${ORCHESTRATION_POOL_IDLE_TIME:-60}
   timeUnit: ${ORCHESTRATION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-20}
   maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-100}
-  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkOrchestrationEventPoolConfig:
   corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-10}
   maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-50}
-  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 podCleanUpThreadPoolConfig:
@@ -611,7 +611,7 @@ eventsFrameworkSnapshotDebezium:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-true}
 
 cfClientConfig:
   apiKey: ""
@@ -665,3 +665,7 @@ webhookEventHsqsDequeueConfig:
   threadSleepTimeInMillis: ${WEBHOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
 
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
+
+useNewNodeEntityConfiguration: ${USE_NEW_NODE_ENTITY_CONFIGURATION:-false}
+
+graphConsumerSleepIntervalMs: ${GRAPH_CONSUMER_SLEEP_INTERVAL_MS:-0}

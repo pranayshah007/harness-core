@@ -537,6 +537,40 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AttestationSpecV1": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AttestationV1": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignAttestationV1"
+              }
+            }
+          }
+        }
+      ]
+    },
     "AwsEcrStepInfo": {
       "allOf": [
         {
@@ -1612,28 +1646,12 @@
             "branch",
             "tag",
             "PR",
-            "CommitSha"
+            "commitSha"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "CommitSha"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CommitShaBuildSpec"
-              }
-            }
-          }
-        },
         {
           "if": {
             "properties": {
@@ -1662,6 +1680,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BranchBuildSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "commitSha"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CommitShaBuildSpec"
               }
             }
           }
@@ -2879,6 +2913,41 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CosignAttestationV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AttestationSpecV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "password": {
+              "type": "string"
+            },
+            "private_key": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignSlsaVerifyAttestation": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SlsaVerifyAttestationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "public_key": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CosignVerifyAttestation": {
       "allOf": [
         {
@@ -3503,6 +3572,42 @@
     },
     "DockerRuntimeSpec": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProvenanceSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "repo",
+            "tags"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "repo": {
+              "type": "string"
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DockerStepInfo": {
@@ -8002,6 +8107,59 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ProvenanceSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "docker"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "docker"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DockerSourceSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ProvenanceSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ProvenanceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "attestation": {
+              "$ref": "#/definitions/AttestationV1"
+            },
+            "source": {
+              "$ref": "#/definitions/ProvenanceSource"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ProwlerStepInfo": {
       "allOf": [
         {
@@ -10679,6 +10837,119 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SlsaDockerSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SlsaVerificationSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "image_path",
+            "tag"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "image_path": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaVerificationSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Docker"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Docker"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SlsaDockerSourceSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SlsaVerificationSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaVerificationStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "source": {
+              "$ref": "#/definitions/SlsaVerificationSource"
+            },
+            "verify_attestation": {
+              "$ref": "#/definitions/SlsaVerifyAttestation"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaVerifyAttestation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignSlsaVerifyAttestation"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SlsaVerifyAttestationSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SniperStepInfo": {
       "allOf": [
         {
@@ -12174,6 +12445,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "SlsaVerification"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SlsaVerificationStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Sniper"
               }
             }
@@ -12374,6 +12661,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/PluginStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "provenance"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ProvenanceStepInfo"
               }
             }
           }

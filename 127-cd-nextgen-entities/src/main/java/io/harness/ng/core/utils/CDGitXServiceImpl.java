@@ -6,14 +6,12 @@
  */
 
 package io.harness.ng.core.utils;
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 
 import com.google.inject.Inject;
@@ -37,18 +35,6 @@ public class CDGitXServiceImpl implements CDGitXService {
     } else {
       return true;
     }
-  }
-
-  @Override
-  public String getErrorMessageForGitSimplification(String orgIdentifier, String projectIdentifier) {
-    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
-      return format("Remote git simplification was not enabled for Project [%s] in Organisation [%s]",
-          projectIdentifier, orgIdentifier);
-    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
-      return format(
-          "Remote git simplification or feature flag was not enabled for Organisation [%s] or Account", orgIdentifier);
-    }
-    return "Remote git simplification or feature flag was not enabled for Account";
   }
 
   private boolean isGitSimplificationEnabledForAProject(
