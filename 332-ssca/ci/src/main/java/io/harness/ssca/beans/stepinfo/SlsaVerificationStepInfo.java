@@ -11,6 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
+import io.harness.filters.WithConnectorRef;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
@@ -25,7 +26,9 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @RecasterAlias("io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo")
-public class SlsaVerificationStepInfo implements PluginCompatibleStep {
+public class SlsaVerificationStepInfo implements PluginCompatibleStep, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -48,6 +51,7 @@ public class SlsaVerificationStepInfo implements PluginCompatibleStep {
 
   private SlsaVerificationSource source;
   @JsonProperty("verify_attestation") private SlsaVerifyAttestation slsaVerifyAttestation;
+  ContainerResource resources;
 
   @Override
   public TypeInfo getNonYamlInfo() {
@@ -72,12 +76,6 @@ public class SlsaVerificationStepInfo implements PluginCompatibleStep {
 
   @Override
   @ApiModelProperty(hidden = true)
-  public ContainerResource getResources() {
-    return null;
-  }
-
-  @Override
-  @ApiModelProperty(hidden = true)
   public ParameterField<Integer> getRunAsUser() {
     return null;
   }
@@ -91,5 +89,16 @@ public class SlsaVerificationStepInfo implements PluginCompatibleStep {
   @ApiModelProperty(hidden = true)
   public ParameterField<List<String>> getBaseImageConnectorRefs() {
     return new ParameterField<>();
+  }
+
+  @Override
+  public Map<String, ParameterField<String>> extractConnectorRefs() {
+    Map<String, ParameterField<String>> connectorMap = new HashMap<>();
+    if (source != null) {
+      if (source.getType() == SlsaVerificationSourceType.DOCKER) {
+        connectorMap.put("source.spec.connector", ((SlsaDockerSourceSpec) source.getSpec()).getConnector());
+      }
+    }
+    return connectorMap;
   }
 }

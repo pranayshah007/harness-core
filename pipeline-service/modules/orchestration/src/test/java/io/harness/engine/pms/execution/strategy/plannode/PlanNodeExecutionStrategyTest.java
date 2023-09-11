@@ -47,6 +47,7 @@ import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.advise.handlers.NextStepHandler;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
 import io.harness.engine.pms.execution.strategy.EndNodeExecutionHelper;
 import io.harness.engine.pms.resume.NodeResumeHelper;
@@ -737,6 +738,9 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .stepType(stepType)
                                       .nodeId(nodeId)
                                       .group("grp")
+                                      .nodeType(node.getNodeType().name())
+                                      .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+                                      .skipExpressionChain(false)
                                       .build();
     when(nodeExecutionService.save(any(NodeExecution.class))).thenReturn(nodeExecution);
     NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node, null, "NID", "PaID", "PrID");

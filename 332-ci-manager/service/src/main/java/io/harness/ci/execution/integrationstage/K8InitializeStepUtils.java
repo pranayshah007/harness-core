@@ -1069,6 +1069,7 @@ public class K8InitializeStepUtils {
       case IACM_TERRAFORM_PLUGIN:
       case IACM_APPROVAL:
       case PROVENANCE:
+      case SLSA_VERIFICATION:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(

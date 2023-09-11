@@ -1586,6 +1586,36 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
+  /v1/gitx-webhook-events:
+    get:
+      summary: Lists all the GitX Webhooks events
+      tags:
+        - GitX Webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/ListGitXWebhookEventResponse'
+      operationId: list-gitx-webhook-events
+      description: List GitX webhook Events
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - schema:
+            type: string
+          in: query
+          name: webhook_identifier
+        - schema:
+            type: integer
+          in: query
+          name: event_start_time
+        - schema:
+            type: integer
+          in: query
+
+          name: event_end_time
+      x-internal: true
 components:
   schemas:
     Service:
@@ -1862,9 +1892,58 @@ components:
       type: object
       properties:
         project:
-          $ref: '#/components/schemas/Project'
+          $ref: '#/components/schemas/ProjectRequest'
       required:
         - project
+    ProjectRequest:
+      description: Project model
+      type: object
+      x-examples:
+        example-1:
+          identifier: example_project_identifier
+          name: example-project-name
+          color: '#0063F7'
+          modules:
+            - CD
+          description: This is a example project
+          tags:
+            property1: value1
+            property2: value2
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          description: Project identifier
+          maxLength: 128
+        name:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+          description: Project name
+          maxLength: 128
+        color:
+          type: string
+          description: Project color
+        modules:
+          type: array
+          maxItems: 1024
+          description: List of modules for project
+          items:
+            $ref: '#/components/schemas/ModuleType'
+        description:
+          type: string
+          maxLength: 1024
+          description: Project description
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Project tags
+      required:
+        - identifier
+        - name
     Project:
       description: Project model
       type: object
@@ -1872,6 +1951,7 @@ components:
         example-1:
           identifier: example_project_identifier
           name: example-project-name
+          org: example_org_identifier
           color: '#0063F7'
           modules:
             - CD
@@ -1977,7 +2057,7 @@ components:
       type: object
       properties:
         project:
-          $ref: '#/components/schemas/Project'
+          $ref: '#/components/schemas/ProjectRequest'
       required:
         - project
     SecretSpec:
@@ -2682,6 +2762,27 @@ components:
             type: string
         is_enabled:
           type: boolean
+        event_trigger_time:
+          type: integer
+          format: int64
+    GitXWebhookEventResponse:
+      title: GitXWebhookEventResponse
+      x-stoplight:
+        id: 3axdiau0eh30h
+      type: object
+      description: Contains information about the GitX webhook Events
+      properties:
+        author_name:
+          type: string
+        event_identifier:
+          type: string
+        webhook_identifier:
+          type: string
+        payload:
+          type: string
+        event_trigger_time:
+          type: integer
+          format: int64
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3302,6 +3403,35 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/GitXWebhookResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    GitXWebhookEventResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: string
+    ListGitXWebhookEventResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/GitXWebhookEventResponse'
       headers:
         X-Total-Elements:
           schema:

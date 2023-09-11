@@ -32,6 +32,7 @@ import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
+import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.pms.execution.strategy.AbstractNodeExecutionStrategy;
 import io.harness.engine.pms.execution.strategy.EndNodeExecutionHelper;
 import io.harness.engine.pms.resume.NodeResumeHelper;
@@ -133,6 +134,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             .nodeId(node.getUuid())
             .stageFqn(node.getStageFqn())
             .group(node.getGroup())
+            .skipExpressionChain(node.isSkipExpressionChain())
+            .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+            .nodeType(node.getNodeType().name())
             .build();
     return nodeExecutionService.save(nodeExecution);
   }

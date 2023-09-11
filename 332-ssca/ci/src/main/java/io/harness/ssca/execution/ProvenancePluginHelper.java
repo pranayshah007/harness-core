@@ -20,6 +20,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -51,8 +52,11 @@ public class ProvenancePluginHelper {
   private static final String PLUGIN_TAGS = "PLUGIN_TAGS";
   private static final String PLUGIN_DIGESTS = "PLUGIN_DIGESTS";
   private static final String PROVENANCE_PREDICATE = "PROVENANCE_PREDICATE";
+  public static final String PLUGIN_TYPE = "PLUGIN_TYPE";
+  public static final String STEP_EXECUTION_ID = "STEP_EXECUTION_ID";
 
-  public Map<String, String> getProvenanceStepEnvVariables(ProvenanceStepInfo provenanceStepInfo, String identifier) {
+  public Map<String, String> getProvenanceStepEnvVariables(
+      ProvenanceStepInfo provenanceStepInfo, String identifier, Ambiance ambiance) {
     Map<String, String> envMap = new HashMap<>();
     if (provenanceStepInfo.getSource() != null
         && provenanceStepInfo.getSource().getType() == ProvenanceSourceType.DOCKER) {
@@ -65,6 +69,9 @@ public class ProvenancePluginHelper {
       envMap.put(PLUGIN_DIGESTS, "");
       envMap.put(PROVENANCE_PREDICATE, "");
     }
+    String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    envMap.put(STEP_EXECUTION_ID, stepExecutionId);
+    envMap.put(PLUGIN_TYPE, "attest");
     return envMap;
   }
 
@@ -127,6 +134,9 @@ public class ProvenancePluginHelper {
       envMap.put(PLUGIN_TAGS, listToStringSlice(tags));
       envMap.put(PROVENANCE_PREDICATE, JsonUtils.asJson(provenanceArtifact.getPredicate()));
     }
+    String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    envMap.put(STEP_EXECUTION_ID, stepExecutionId);
+    envMap.put(PLUGIN_TYPE, "attest");
     return envMap;
   }
 

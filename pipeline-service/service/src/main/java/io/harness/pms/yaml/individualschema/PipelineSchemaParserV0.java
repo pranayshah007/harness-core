@@ -14,12 +14,14 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.yaml.schema.beans.SchemaConstants;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashSet;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +31,16 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
   static final String PIPELINE_DEFINITION_PATH = "#/definitions/pipeline/pipeline";
+  static final String PIPELINE_V0 = "v0";
 
   static final String STEP_NODE_REF_SUFFIX_UNDER_EXECUTIONS_WRAPPER_CONFIG = "ExecutionWrapperConfig/step/oneOf";
   static final String STAGES_NODE_ONE_OF_PATH = "#/definitions/pipeline/stages/stages/stage/oneOf";
+  @Inject SchemaFetcher schemaFetcher;
 
   @Override
-  void init(JsonNode rootSchemaNode) {
+  void init() {
+    JsonNode rootSchemaNode = schemaFetcher.fetchPipelineStaticYamlSchema(PIPELINE_V0);
+    rootSchemaJsonNode = rootSchemaNode;
     // Populating the pipeline schema in the nodeToResolvedSchemaMap with rootSchemaNode because we already have the
     // complete pipeline schema so no need to calculate.
     nodeToResolvedSchemaMap.put(YAMLFieldNameConstants.PIPELINE, (ObjectNode) rootSchemaNode);
