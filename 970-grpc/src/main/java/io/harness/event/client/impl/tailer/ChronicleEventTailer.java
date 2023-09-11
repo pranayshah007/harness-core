@@ -24,9 +24,15 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.io.File;
 import java.io.IOException;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import net.openhft.chronicle.queue.ExcerptTailer;
@@ -119,8 +125,40 @@ public class ChronicleEventTailer extends AbstractScheduledService {
       long excerptCount = queue.countExcerpts(readIndex, endIndex);
       log.info("index.read-tailer={},  index.sent-tailer={}, index.end={}, excerptCount={}", readIndex, sentIndex,
           endIndex, excerptCount);
+    } catch (OverlappingFileLockException exception) {
+      log.error("======== OverlappingFileLockException has bene thrown =======");
+      deleteQueueFiles();
+      // And start the Tailer Service.
+      log.info("EX::: Starting chronicle event trailer");
+      this.startAsync().awaitRunning();
+      log.info("EX--- Started chronicle event trailer");
     } catch (Exception e) {
       log.error("Exception in printStats", e);
+    }
+  }
+
+  private void deleteQueueFiles() {
+    // Close the ChronicleQueue
+    queue.close();
+
+    File[] filesInDir = queue.file().listFiles();
+    log.info("Total files in the Queue: {}", filesInDir.length);
+    if (filesInDir == null) {
+      log.info("No files to delete.");
+      return;
+    }
+    boolean anyFilesDeleted = false;
+    List<File> olderFiles = Arrays.stream(filesInDir).sorted().collect(Collectors.toList());
+    if (!olderFiles.isEmpty()) {
+      log.info("Deleting files {}", olderFiles);
+      for (File file : olderFiles) {
+        try {
+          anyFilesDeleted = Files.deleteIfExists(file.toPath()) || anyFilesDeleted;
+        } catch (Exception e) {
+          log.error("Failed to delete {}", file.toPath(), e);
+        }
+      }
+      log.info("File deletion completed. anyFilesDeleted: {}", anyFilesDeleted);
     }
   }
 
