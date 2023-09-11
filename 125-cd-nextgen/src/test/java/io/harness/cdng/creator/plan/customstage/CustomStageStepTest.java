@@ -7,7 +7,7 @@
 
 package io.harness.cdng.creator.plan.customstage;
 
-import static io.harness.rule.OwnerRule.SOUMYAJIT;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,14 +36,14 @@ public class CustomStageStepTest {
   @InjectMocks CustomStageStep customStageStep;
 
   @Test
-  @Owner(developers = SOUMYAJIT)
+  @Owner(developers = LOVISH_BANSAL)
   @Category(UnitTests.class)
   public void shouldValidateStepParametersClass() {
     assertThat(customStageStep.getStepParametersClass()).isInstanceOf(Class.class);
   }
 
   @Test
-  @Owner(developers = SOUMYAJIT)
+  @Owner(developers = LOVISH_BANSAL)
   @Category(UnitTests.class)
   public void shouldValidateObtainChild() {
     String id = "tempid";

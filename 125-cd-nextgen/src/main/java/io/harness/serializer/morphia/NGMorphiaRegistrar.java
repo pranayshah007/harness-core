@@ -6,6 +6,7 @@
  */
 
 package io.harness.serializer.morphia;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -32,7 +33,6 @@ import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
 import io.harness.cdng.provision.terragrunt.TerragruntConfig;
 import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.usage.task.CDLicenseReportAccounts;
-import io.harness.execution.stage.StageExecutionEntity;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.polling.bean.PollingDocument;
@@ -65,7 +65,6 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(StageExecutionInstanceInfo.class);
     set.add(CDLicenseReportAccounts.class);
     set.add(AwsCdkConfig.class);
-    set.add(StageExecutionEntity.class);
   }
 
   @Override

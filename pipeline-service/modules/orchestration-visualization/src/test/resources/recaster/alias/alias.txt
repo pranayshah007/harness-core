@@ -226,7 +226,3 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcome
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialOutcomeDTO
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
-io.harness.steps.shellscript.HarnessFileStoreSource
-io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
-io.harness.steps.shellscript.ShellScriptInlineSource
-io.harness.steps.shellscript.ShellScriptSourceWrapper
