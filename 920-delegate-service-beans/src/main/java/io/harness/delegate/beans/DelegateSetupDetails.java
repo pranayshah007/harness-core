@@ -13,6 +13,8 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -29,7 +31,7 @@ public class DelegateSetupDetails implements YamlDTO {
   private String projectIdentifier;
   @NotNull private String name;
   private String description;
-  private DelegateSize size;
+  @NotNull private DelegateSize size;
   private String hostName;
   // TODO: Remove delegateCongigId once we drop this from UI.
   private String delegateConfigurationId;
@@ -37,11 +39,22 @@ public class DelegateSetupDetails implements YamlDTO {
   // Custom limit for delegate-name as 63 characters because kubernetes component name can be at most 63 characters.
   @EntityIdentifier(allowBlank = true, maxLength = 63) private String identifier;
 
-  private K8sConfigDetails k8sConfigDetails;
+  @NotNull private K8sConfigDetails k8sConfigDetails;
 
   private Set<String> tags;
 
-  @NotNull private String delegateType;
+  @Schema(description = "Currently KUBERNETES and HELM_DELEGATE are supported.") @NotNull private String delegateType;
   private String tokenName;
   private Boolean runAsRoot;
+
+  public void setSize(DelegateSize size) {
+    this.size = Objects.requireNonNullElse(size, DelegateSize.SMALL);
+  }
+  public void setK8sConfigDetails(K8sConfigDetails k8sConfigDetails) {
+    this.k8sConfigDetails = Objects.requireNonNullElse(k8sConfigDetails,
+        K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.CLUSTER_VIEWER).namespace("").build());
+  }
+  public void setDelegateType(String delegateType) {
+    this.delegateType = Objects.requireNonNullElse(delegateType, "");
+  }
 }
