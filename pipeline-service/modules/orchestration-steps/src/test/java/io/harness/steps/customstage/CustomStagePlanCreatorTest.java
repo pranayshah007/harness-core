@@ -133,17 +133,22 @@ public class CustomStagePlanCreatorTest extends CategoryTest {
     MockedStatic<YamlUtils> yamlUtilsMockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
     MockedStatic<StrategyUtils> strategyUtilsMockSettings = Mockito.mockStatic(StrategyUtils.class, RETURNS_MOCKS);
     strategyUtilsMockSettings.when(() -> StrategyUtils.isWrappedUnderStrategy(any(YamlField.class))).thenReturn(true);
+    YamlField strategyField = fullYamlFieldWithUuiD.getNode().getField("strategy");
+    strategyUtilsMockSettings.when(() -> StrategyUtils.getSwappedPlanNodeId(any(), any()))
+        .thenReturn(strategyField.getUuid());
     when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(fullYamlFieldWithUuiD.getNode());
     Map<String, PlanCreationResponse> childrenResponses =
         customStagePlanCreator.createPlanForChildrenNodes(ctx, customStageNode);
-    customStagePlanCreator.populateParentInfo(ctx, childrenResponses);
-    for (String key : childrenResponses.keySet()) {
-      PlanCreationResponse response = childrenResponses.get(key);
-      Map<String, HarnessValue> parentInfo =
-          response.getDependencies().getDependencyMetadataMap().get(key).getParentInfo().getDataMap();
-      assertThat(parentInfo.get("stageId").getStringValue()).isEqualTo(ctx.getCurrentField().getUuid());
-      assertThat(parentInfo.get("strategyId").getStringValue()).isEqualTo(ctx.getCurrentField().getUuid());
-    }
+
+    YamlField executionField = fullYamlFieldWithUuiD.getNode().getField("spec").getNode().getField("execution");
+    PlanCreationResponse stepsResponse = childrenResponses.get(executionField.getUuid());
+    Map<String, HarnessValue> parentInfo = stepsResponse.getDependencies()
+                                               .getDependencyMetadataMap()
+                                               .get(executionField.getUuid())
+                                               .getParentInfo()
+                                               .getDataMap();
+    assertThat(parentInfo.get("stageId").getStringValue()).isEqualTo(strategyField.getUuid());
+    assertThat(parentInfo.get("strategyId").getStringValue()).isEqualTo(customStageNode.getUuid());
     yamlUtilsMockSettings.close();
     strategyUtilsMockSettings.close();
   }

@@ -123,7 +123,7 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
   @Test
   @Owner(developers = VINICIUS)
   @Category(UnitTests.class)
-  public void testPopulateParentInfo() throws IOException {
+  public void testCreatePlanForChildrenWithParentInfo() throws IOException {
     YamlField stepGroupYamlField1 = getStepGroupYamlField("complex_pipeline_with_strategy.yaml");
     assertThat(stepGroupYamlField1).isNotNull();
     stepElementConfig = YamlUtils.read(stepGroupYamlField1.getNode().toString(), StepGroupElementConfig.class);
@@ -133,9 +133,9 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
                       PlanCreationContextValue.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build())
                   .build();
     YamlField stepsField = stepGroupYamlField1.getNode().getField("steps");
+    YamlField strategyField = stepGroupYamlField1.getNode().getField("strategy");
     LinkedHashMap<String, PlanCreationResponse> planForChildrenNodes =
         stepGroupPMSPlanCreator.createPlanForChildrenNodes(context, stepElementConfig);
-    stepGroupPMSPlanCreator.populateParentInfo(context, planForChildrenNodes);
     assertThat(planForChildrenNodes.containsKey(stepsField.getNode().getUuid())).isTrue();
     PlanCreationResponse stepsResponse = planForChildrenNodes.get(stepsField.getNode().getUuid());
     assertThat(stepsResponse.getDependencies()).isNotNull();
@@ -146,7 +146,7 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
                    .getDataMap()
                    .get("stepGroupId")
                    .getStringValue())
-        .isEqualTo(stepGroupYamlField1.getUuid());
+        .isEqualTo(strategyField.getUuid());
     assertThat(stepsResponse.getDependencies()
                    .getDependencyMetadataMap()
                    .get(stepsField.getNode().getUuid())

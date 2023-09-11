@@ -14,9 +14,7 @@ import io.harness.plancreator.stages.AbstractPmsStagePlanCreator;
 import io.harness.plancreator.stages.PmsAbstractStageNode;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.HarnessStruct;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -27,7 +25,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.approval.stage.ApprovalStageSpecParameters;
 import io.harness.steps.approval.stage.ApprovalStageStep;
 import io.harness.utils.CommonPlanCreatorUtils;
-import io.harness.utils.PlanCreatorUtilsCommon;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
