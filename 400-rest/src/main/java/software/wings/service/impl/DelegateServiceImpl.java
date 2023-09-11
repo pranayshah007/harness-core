@@ -720,8 +720,10 @@ public class DelegateServiceImpl implements DelegateService {
     if (isBlank(delegateSetupDetails.getTokenName())) {
       throw new InvalidRequestException("Delegate Token must be provided.", USER);
     }
+    DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(
+        delegateSetupDetails.getOrgIdentifier(), delegateSetupDetails.getProjectIdentifier());
     DelegateTokenDetails delegateTokenDetails =
-        delegateNgTokenService.getDelegateToken(accountId, delegateSetupDetails.getTokenName());
+        delegateNgTokenService.getDelegateToken(accountId, owner, delegateSetupDetails.getTokenName());
     if (delegateTokenDetails == null) {
       throw new InvalidRequestException("Provided delegate token does not exist.", USER);
     }
@@ -1688,12 +1690,13 @@ public class DelegateServiceImpl implements DelegateService {
     final Account account = accountService.get(inquiry.getAccountId());
     if (isNotBlank(inquiry.getDelegateTokenName())) {
       if (isNg) {
-        var tokenDetails =
-            delegateNgTokenService.getDelegateToken(inquiry.getAccountId(), inquiry.getDelegateTokenName(), false);
+        var tokenDetails = delegateNgTokenService.getDelegateToken(
+            inquiry.getAccountId(), null, inquiry.getDelegateTokenName(), false);
         if (Objects.isNull(tokenDetails) || tokenDetails.getStatus().equals(REVOKED)) {
           return null;
         }
-        return delegateNgTokenService.getDelegateTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
+        return delegateNgTokenService.getDelegateTokenValue(
+            inquiry.getAccountId(), null, inquiry.getDelegateTokenName());
       } else {
         return delegateTokenService.getTokenValue(inquiry.getAccountId(), inquiry.getDelegateTokenName());
       }
@@ -4456,7 +4459,7 @@ public class DelegateServiceImpl implements DelegateService {
       String accountId, Optional<String> delegateTokenName) {
     if (delegateTokenName.isPresent()) {
       DelegateTokenDetails delegateTokenDetails =
-          delegateNgTokenService.getDelegateToken(accountId, delegateTokenName.get());
+          delegateNgTokenService.getDelegateToken(accountId, null, delegateTokenName.get());
       return delegateTokenDetails != null ? Optional.ofNullable(
                  DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(delegateTokenDetails.getOwnerIdentifier()))
                                           : Optional.empty();
@@ -4468,7 +4471,7 @@ public class DelegateServiceImpl implements DelegateService {
       String accountId, Optional<String> delegateTokenName) {
     if (delegateTokenName.isPresent()) {
       DelegateTokenDetails delegateTokenDetails =
-          delegateNgTokenService.getDelegateToken(accountId, delegateTokenName.get());
+          delegateNgTokenService.getDelegateToken(accountId, null, delegateTokenName.get());
       return delegateTokenDetails != null
           ? Optional.ofNullable(
               DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegateTokenDetails.getOwnerIdentifier()))

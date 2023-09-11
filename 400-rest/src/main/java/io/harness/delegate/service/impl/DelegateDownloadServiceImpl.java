@@ -103,7 +103,8 @@ public class DelegateDownloadServiceImpl implements DelegateDownloadService {
     if (isEmpty(delegateTokenName)) {
       delegateTokenName = delegateNgTokenService.getDefaultTokenName(owner);
     }
-    DelegateTokenDetails delegateTokenDetails = delegateNgTokenService.getDelegateToken(accountId, delegateTokenName);
+    DelegateTokenDetails delegateTokenDetails =
+        delegateNgTokenService.getDelegateToken(accountId, owner, delegateTokenName);
     if (delegateTokenDetails == null || DelegateTokenStatus.REVOKED.equals(delegateTokenDetails.getStatus())) {
       throw new InvalidRequestException(format(
           "Can not use %s delegate token. This token does not exists or has been revoked. Please specify a valid delegate token.",

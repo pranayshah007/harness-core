@@ -21,7 +21,7 @@ public interface DelegateNgTokenService extends OwnedByAccount {
 
   DelegateTokenDetails createToken(String accountId, DelegateEntityOwner owner, String name, Long revokeAfter);
 
-  DelegateTokenDetails revokeDelegateToken(String accountId, String tokenName);
+  DelegateTokenDetails revokeDelegateToken(String accountId, String tokenName, DelegateEntityOwner owner);
 
   List<DelegateTokenDetails> getDelegateTokens(
       String accountId, DelegateEntityOwner owner, DelegateTokenStatus status, boolean includeValue);
@@ -29,29 +29,32 @@ public interface DelegateNgTokenService extends OwnedByAccount {
   /**
    * Get delegate token detailed information
    * @param accountId
+   * @param owner
    * @param name
    * @param includeValue whether to include delegate token based64 encoded value
    * @return
    */
-  DelegateTokenDetails getDelegateToken(String accountId, String name, boolean includeValue);
+  DelegateTokenDetails getDelegateToken(String accountId, DelegateEntityOwner owner, String name, boolean includeValue);
 
   DelegateTokenDetails getDefaultTokenOrOldestActiveDelegateToken(String accountId, DelegateEntityOwner owner);
 
   /**
    * Get delegate token detailed information, exclude delegate token value
    * @param accountId
+   * @param owner
    * @param name
    * @return
    */
-  DelegateTokenDetails getDelegateToken(String accountId, String name);
+  DelegateTokenDetails getDelegateToken(String accountId, DelegateEntityOwner owner, String name);
 
   /**
    * Get delegate token value that is NOT base64 encoded
    * @param accountId
+   * @param owner
    * @param name
    * @return
    */
-  String getDelegateTokenValue(String accountId, String name);
+  String getDelegateTokenValue(String accountId, DelegateEntityOwner owner, String name);
 
   DelegateTokenDetails upsertDefaultToken(String accountIdentifier, DelegateEntityOwner owner, boolean skipIfExists);
 

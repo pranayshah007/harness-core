@@ -968,7 +968,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     K8sConfigDetails k8sConfigDetails =
         K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.NAMESPACE_ADMIN).namespace("namespace").build();
     final ImmutableSet<String> tags = ImmutableSet.of("sometag", "anothertag");
-    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, TOKEN_NAME))
+    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, null, TOKEN_NAME))
         .thenReturn(DelegateTokenDetails.builder()
                         .name(TOKEN_NAME)
                         .accountId(ACCOUNT_ID)

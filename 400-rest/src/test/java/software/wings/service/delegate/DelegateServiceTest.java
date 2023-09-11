@@ -370,11 +370,11 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(versionInfoManager.getVersionInfo()).thenReturn(VersionInfo.builder().version(VERSION).build());
     when(delegateVersionService.getWatcherJarVersions(ACCOUNT_ID)).thenReturn(VERSION);
 
-    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, TOKEN_NAME, false))
+    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, null, TOKEN_NAME, false))
         .thenReturn(DelegateTokenDetails.builder().status(DelegateTokenStatus.ACTIVE).build());
-    when(delegateNgTokenService.getDelegateTokenValue(ACCOUNT_ID, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
+    when(delegateNgTokenService.getDelegateTokenValue(ACCOUNT_ID, null, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
     when(delegateTokenService.getTokenValue(ACCOUNT_ID, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
-    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, TOKEN_NAME))
+    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, null, TOKEN_NAME))
         .thenReturn(DelegateTokenDetails.builder()
                         .name(TOKEN_NAME)
                         .accountId(ACCOUNT_ID)
@@ -3576,7 +3576,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                                     .ownerIdentifier(owner.getIdentifier())
                                                     .build();
 
-    when(delegateNgTokenService.getDelegateToken(accountId, TOKEN_NAME)).thenReturn(delegateTokenDetails);
+    when(delegateNgTokenService.getDelegateToken(accountId, null, TOKEN_NAME)).thenReturn(delegateTokenDetails);
 
     if (!GlobalContextManager.isAvailable()) {
       GlobalContextManager.set(new GlobalContext());

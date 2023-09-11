@@ -118,8 +118,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   }
 
   @Override
-  public DelegateTokenDetails revokeDelegateToken(String accountId, String tokenName) {
-    Query<DelegateToken> filterQuery = matchNameTokenQuery(accountId, tokenName);
+  public DelegateTokenDetails revokeDelegateToken(String accountId, String tokenName, DelegateEntityOwner owner) {
+    Query<DelegateToken> filterQuery = matchNameTokenQuery(accountId, tokenName, owner);
     validateTokenToBeRevoked(filterQuery.get());
 
     log.info("Revoking delegate token: {} for account: {}", tokenName, accountId);
@@ -163,13 +163,14 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   }
 
   @Override
-  public DelegateTokenDetails getDelegateToken(String accountId, String name) {
-    return getDelegateToken(accountId, name, false);
+  public DelegateTokenDetails getDelegateToken(String accountId, DelegateEntityOwner owner, String name) {
+    return getDelegateToken(accountId, owner, name, false);
   }
 
   @Override
-  public DelegateTokenDetails getDelegateToken(String accountId, String name, boolean includeValue) {
-    DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
+  public DelegateTokenDetails getDelegateToken(
+      String accountId, DelegateEntityOwner owner, String name, boolean includeValue) {
+    DelegateToken delegateToken = matchNameTokenQuery(accountId, name, owner).get();
     if (delegateToken != null) {
       return getDelegateTokenDetails(delegateToken, includeValue);
     }
@@ -178,7 +179,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public DelegateTokenDetails getDefaultTokenOrOldestActiveDelegateToken(String accountId, DelegateEntityOwner owner) {
-    DelegateTokenDetails defaultTokenInScope = getDelegateToken(accountId, getDefaultTokenName(owner), true);
+    DelegateTokenDetails defaultTokenInScope = getDelegateToken(accountId, null, getDefaultTokenName(owner), true);
     if (Objects.nonNull(defaultTokenInScope) && defaultTokenInScope.getStatus().equals(DelegateTokenStatus.ACTIVE)) {
       return defaultTokenInScope;
     }
@@ -201,8 +202,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   // some old ng delegates are using accountKey as token, and the value of acccountKey is same as default token in cg
   // which is not encoded. So we should not decode it.
   @Override
-  public String getDelegateTokenValue(String accountId, String name) {
-    DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
+  public String getDelegateTokenValue(String accountId, DelegateEntityOwner owner, String name) {
+    DelegateToken delegateToken = matchNameTokenQuery(accountId, name, owner).get();
     if (delegateToken != null) {
       return delegateSecretManager.getDelegateTokenValue(delegateToken);
     }
@@ -301,20 +302,23 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                                 .project(DelegateTokenKeys.accountId, true)
                                                 .project(DelegateTokenKeys.name, true)
                                                 .asList();
-    delegateTokenList.forEach(
-        delegateToken -> revokeDelegateToken(delegateToken.getAccountId(), delegateToken.getName()));
+    delegateTokenList.forEach(delegateToken
+        -> revokeDelegateToken(delegateToken.getAccountId(), delegateToken.getName(), delegateToken.getOwner()));
   }
 
-  private Query<DelegateToken> matchNameTokenQuery(String accountId, String tokenName) {
+  private Query<DelegateToken> matchNameTokenQuery(String accountId, String tokenName, DelegateEntityOwner owner) {
     return persistence.createQuery(DelegateToken.class)
         .field(DelegateTokenKeys.accountId)
         .equal(accountId)
         .field(DelegateTokenKeys.name)
-        .equal(tokenName);
+        .equal(tokenName)
+        .field(DelegateTokenKeys.owner)
+        .equal(owner);
   }
 
   private DelegateTokenDetails getDelegateTokenDetails(DelegateToken delegateToken, boolean includeTokenValue) {
     DelegateTokenDetailsBuilder delegateTokenDetailsBuilder = DelegateTokenDetails.builder()
+                                                                  .uuid(delegateToken.getUuid())
                                                                   .accountId(delegateToken.getAccountId())
                                                                   .name(delegateToken.getName())
                                                                   .createdAt(delegateToken.getCreatedAt())

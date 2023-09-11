@@ -94,7 +94,7 @@ public class DelegateNgTokenInternalResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "Delegate Token name") @QueryParam("tokenName") @NotNull String tokenName) {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
-    return new RestResponse<>(delegateTokenService.revokeDelegateToken(accountIdentifier, tokenName));
+    return new RestResponse<>(delegateTokenService.revokeDelegateToken(accountIdentifier, tokenName, owner));
   }
 
   @GET
@@ -120,7 +120,7 @@ public class DelegateNgTokenInternalResource {
       return new RestResponse<>(delegateTokenService.getDelegateTokens(accountIdentifier, owner, status, includeValue));
     } else {
       final DelegateTokenDetails tokenDetails =
-          delegateTokenService.getDelegateToken(accountIdentifier, delegateTokenName, includeValue);
+          delegateTokenService.getDelegateToken(accountIdentifier, owner, delegateTokenName, includeValue);
       return new RestResponse<>(Objects.isNull(tokenDetails) ? List.of() : List.of(tokenDetails));
     }
   }
@@ -138,7 +138,8 @@ public class DelegateNgTokenInternalResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "tokenName") @QueryParam("delegateTokenName") String tokenValue) {
-    return new RestResponse<>(delegateTokenService.getDelegateTokenValue(accountIdentifier, tokenValue));
+    DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+    return new RestResponse<>(delegateTokenService.getDelegateTokenValue(accountIdentifier, owner, tokenValue));
   }
 
   @GET
