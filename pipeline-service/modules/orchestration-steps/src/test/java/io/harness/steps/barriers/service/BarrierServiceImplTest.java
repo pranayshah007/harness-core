@@ -37,7 +37,6 @@ import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.BarrierPositionType;
-import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.StrategyNodeType;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
 import io.harness.steps.barriers.beans.StageDetail;
 import io.harness.waiter.WaitNotifyEngine;
@@ -550,19 +549,19 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
             .barrierPositionList(List.of(BarrierPosition.builder()
                                              .stepSetupId(planNodeId)
                                              .stepGroupSetupId("sgSetup1")
-                                             .strategyNodeType(StrategyNodeType.STEP_GROUP)
+                                             .strategyNodeType(BarrierPositionType.STEP_GROUP)
                                              .build(),
                 BarrierPosition.builder()
                     .stepSetupId(planNodeId)
                     .stepGroupSetupId("sgSetup1")
-                    .strategyNodeType(StrategyNodeType.STAGE)
+                    .strategyNodeType(BarrierPositionType.STAGE)
                     .build(),
                 BarrierPosition.builder().stepSetupId(planNodeId).stepGroupSetupId("sgSetup1").build(),
                 BarrierPosition.builder().stepSetupId(planNodeId).stepGroupSetupId("sgSetup2").build(),
                 BarrierPosition.builder()
                     .stepSetupId(planNodeId)
                     .stepGroupSetupId("sgSetup2")
-                    .strategyNodeType(StrategyNodeType.STAGE)
+                    .strategyNodeType(BarrierPositionType.STAGE)
                     .build()))
             .build());
     barrierService.save(barrierExecutionInstance);
@@ -579,7 +578,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     assertThat(result.get(0).getPositionInfo().getBarrierPositionList().size()).isEqualTo(5);
     for (BarrierPosition position : result.get(0).getPositionInfo().getBarrierPositionList()) {
       if ("sgSetup1".equals(position.getStepGroupSetupId())
-          && !StrategyNodeType.STEP_GROUP.equals(position.getStrategyNodeType())) {
+          && !BarrierPositionType.STEP_GROUP.equals(position.getStrategyNodeType())) {
         assertThat(position.getStepGroupRuntimeId()).isEqualTo("sgRuntime1");
       } else {
         assertThat(position.getStepGroupRuntimeId()).isNull();
@@ -638,12 +637,12 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
             .barrierPositionList(List.of(BarrierPosition.builder()
                                              .stepSetupId(planNodeId)
                                              .stageSetupId("stageSetup1")
-                                             .strategyNodeType(StrategyNodeType.STEP_GROUP)
+                                             .strategyNodeType(BarrierPositionType.STEP_GROUP)
                                              .build(),
                 BarrierPosition.builder()
                     .stepSetupId(planNodeId)
                     .stageSetupId("stageSetup1")
-                    .strategyNodeType(StrategyNodeType.STAGE)
+                    .strategyNodeType(BarrierPositionType.STAGE)
                     .build(),
                 BarrierPosition.builder().stepSetupId(planNodeId).stageSetupId("stageSetup1").build(),
                 BarrierPosition.builder().stepSetupId(planNodeId).stageSetupId("stageSetup2").build()))
@@ -662,8 +661,8 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     assertThat(result.get(0).getPositionInfo().getBarrierPositionList().size()).isEqualTo(4);
     for (BarrierPosition position : result.get(0).getPositionInfo().getBarrierPositionList()) {
       if ("stageSetup1".equals(position.getStageSetupId())
-          && !StrategyNodeType.STEP_GROUP.equals(position.getStrategyNodeType())
-          && !StrategyNodeType.STAGE.equals(position.getStrategyNodeType())) {
+          && !BarrierPositionType.STEP_GROUP.equals(position.getStrategyNodeType())
+          && !BarrierPositionType.STAGE.equals(position.getStrategyNodeType())) {
         assertThat(position.getStageRuntimeId()).isEqualTo("stageRuntime1");
       } else {
         assertThat(position.getStageRuntimeId()).isNull();
@@ -839,13 +838,13 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
             .barrierPositionList(List.of(BarrierPosition.builder()
                                              .stageSetupId("stageId1")
                                              .stepSetupId("stepSetupId1")
-                                             .strategyNodeType(StrategyNodeType.STAGE)
+                                             .strategyNodeType(BarrierPositionType.STAGE)
                                              .stageRuntimeId("stageRuntimeId1")
                                              .build(),
                 BarrierPosition.builder()
                     .stageSetupId("stageId2")
                     .stepSetupId("stepSetupId2")
-                    .strategyNodeType(StrategyNodeType.STAGE)
+                    .strategyNodeType(BarrierPositionType.STAGE)
                     .stageRuntimeId("stageRuntimeId2")
                     .build()))
             .build();
@@ -923,7 +922,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
                    .stream()
                    .map(BarrierPosition::getStrategyNodeType)
                    .collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder(StrategyNodeType.STAGE);
+        .containsExactlyInAnyOrder(BarrierPositionType.STAGE);
   }
 
   private BarrierExecutionInstance obtainBarrierExecutionInstance() {

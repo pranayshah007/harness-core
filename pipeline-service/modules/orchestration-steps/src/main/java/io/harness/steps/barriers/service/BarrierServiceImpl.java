@@ -56,7 +56,6 @@ import io.harness.steps.barriers.beans.BarrierExecutionInstance.BarrierExecution
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.BarrierPositionKeys;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.BarrierPositionType;
-import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.StrategyNodeType;
 import io.harness.steps.barriers.beans.BarrierResponseData;
 import io.harness.steps.barriers.beans.BarrierResponseData.BarrierError;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
@@ -96,6 +95,7 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private BarrierNodeRepository barrierNodeRepository;
   @Inject private MongoTemplate mongoTemplate;
+  @Inject private MongoTemplate hMongoTemplate;
   @Inject private PlanExecutionService planExecutionService;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
@@ -213,12 +213,12 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   @Override
   public List<BarrierExecutionInstance> updatePosition(String planExecutionId, BarrierPositionType positionType,
       String positionSetupId, String positionExecutionId, String stageExecutionId, String stepGroupExecutionId,
-      boolean addFiltersForBarriersWithinLoopingStrategy) {
+      boolean isNewBarrierUpdateFlow) {
     List<BarrierExecutionInstance> barrierExecutionInstances =
         findByPosition(planExecutionId, positionType, positionSetupId);
 
     Update update = obtainRuntimeIdUpdate(positionType, positionSetupId, positionExecutionId, stageExecutionId,
-        stepGroupExecutionId, addFiltersForBarriersWithinLoopingStrategy);
+        stepGroupExecutionId, isNewBarrierUpdateFlow);
 
     // mongo does not support multiple documents atomic update, let's update one by one
     barrierExecutionInstances.forEach(instance
@@ -235,30 +235,27 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   @Override
   public void upsert(BarrierExecutionInstance barrierExecutionInstance) {
     Update update = obtainInstanceUpdate(barrierExecutionInstance);
-    HMongoTemplate.retry(()
-                             -> mongoTemplate.upsert(query(Criteria.where(BarrierExecutionInstanceKeys.identifier)
-                                                               .is(barrierExecutionInstance.getIdentifier())
-                                                               .and(BarrierExecutionInstanceKeys.planExecutionId)
-                                                               .is(barrierExecutionInstance.getPlanExecutionId())),
-                                 update, BarrierExecutionInstance.class));
+    hMongoTemplate.upsert(query(Criteria.where(BarrierExecutionInstanceKeys.identifier)
+                                    .is(barrierExecutionInstance.getIdentifier())
+                                    .and(BarrierExecutionInstanceKeys.planExecutionId)
+                                    .is(barrierExecutionInstance.getPlanExecutionId())),
+        update, BarrierExecutionInstance.class);
   }
 
   @Override
   public void updateBarrierPositionInfoList(
       String barrierIdentifier, String planExecutionId, List<BarrierPositionInfo.BarrierPosition> barrierPositions) {
     Update update = obtainBarrierPositionInfoUpdate(barrierPositions);
-    HMongoTemplate.retry(
-        ()
-            -> mongoTemplate.findAndModify(query(Criteria.where(BarrierExecutionInstanceKeys.identifier)
-                                                     .is(barrierIdentifier)
-                                                     .and(BarrierExecutionInstanceKeys.planExecutionId)
-                                                     .is(planExecutionId)),
-                update, BarrierExecutionInstance.class));
+    hMongoTemplate.findAndModify(query(Criteria.where(BarrierExecutionInstanceKeys.identifier)
+                                           .is(barrierIdentifier)
+                                           .and(BarrierExecutionInstanceKeys.planExecutionId)
+                                           .is(planExecutionId)),
+        update, BarrierExecutionInstance.class);
   }
 
   private Update obtainRuntimeIdUpdate(BarrierPositionType positionType, String positionSetupId,
       String positionExecutionId, String stageExecutionId, String stepGroupExecutionId,
-      boolean addFiltersForBarriersWithinLoopingStrategy) {
+      boolean isNewBarrierUpdateFlow) {
     String position = "position";
     final String positions = BarrierExecutionInstanceKeys.positions + ".$[" + position + "].";
     Update update;
@@ -266,9 +263,8 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
       case STAGE:
         Criteria stageCriteria =
             Criteria.where(position.concat(".").concat(BarrierPositionKeys.stageSetupId)).is(positionSetupId);
-        if (addFiltersForBarriersWithinLoopingStrategy) {
-          stageCriteria = stageCriteria.and(position.concat(".").concat(BarrierPositionKeys.strategyNodeType))
-                              .nin(List.of(StrategyNodeType.STAGE.name(), StrategyNodeType.STEP_GROUP.name()));
+        if (isNewBarrierUpdateFlow) {
+          stageCriteria = stageCriteria.and(position.concat(".").concat(BarrierPositionKeys.strategyNodeType)).isNull();
         }
         update = new Update()
                      .set(positions.concat(BarrierPositionKeys.stageRuntimeId), positionExecutionId)
@@ -277,9 +273,9 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
       case STEP_GROUP:
         Criteria stepGroupCriteria =
             Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepGroupSetupId)).is(positionSetupId);
-        if (addFiltersForBarriersWithinLoopingStrategy) {
+        if (isNewBarrierUpdateFlow) {
           stepGroupCriteria = stepGroupCriteria.and(position.concat(".").concat(BarrierPositionKeys.strategyNodeType))
-                                  .ne(StrategyNodeType.STEP_GROUP.name());
+                                  .in(BarrierPositionType.STAGE, null);
         }
         update = new Update()
                      .set(positions.concat(BarrierPositionKeys.stepGroupRuntimeId), positionExecutionId)
@@ -288,7 +284,7 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
       case STEP:
         Criteria stepCriteria =
             Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepSetupId)).is(positionSetupId);
-        if (addFiltersForBarriersWithinLoopingStrategy) {
+        if (isNewBarrierUpdateFlow) {
           stepCriteria = stepCriteria.and(position.concat(".").concat(BarrierPositionKeys.stageRuntimeId))
                              .is(stageExecutionId)
                              .and(position.concat(".").concat(BarrierPositionKeys.stepGroupRuntimeId))
