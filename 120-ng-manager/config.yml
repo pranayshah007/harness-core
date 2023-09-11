@@ -500,11 +500,6 @@ pmsPlanCreatorServicePoolConfig:
   idleTime: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
-dashboardExecutorServiceConfig:
-  corePoolSize: ${DASHBOARD_EXECUTOR_POOL_CORE_SIZE:-3}
-  maxPoolSize: ${DASHBOARD_EXECUTOR_POOL_MAX_SIZE:-15}
-  idleTime: ${DASHBOARD_EXECUTOR_POOL_IDLE_TIME:-30}
-  timeUnit: ${DASHBOARD_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 debeziumConsumersConfigs:
   planExecutionsSummaryStreaming:

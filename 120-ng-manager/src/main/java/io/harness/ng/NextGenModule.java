@@ -446,17 +446,6 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("DashboardExecutorService")
-  public ExecutorService DashboardExecutorServiceThreadPool() {
-    return ThreadPool.create(appConfig.getDashboardExecutorServiceConfig().getCorePoolSize(),
-        appConfig.getDashboardExecutorServiceConfig().getMaxPoolSize(),
-        appConfig.getDashboardExecutorServiceConfig().getIdleTime(),
-        appConfig.getDashboardExecutorServiceConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("DashboardExecutorService-%d").build());
-  }
-
-  @Provides
-  @Singleton
   CiDefaultEntityConfiguration getCiDefaultConfiguration() {
     return appConfig.getCiDefaultEntityConfiguration();
   }
