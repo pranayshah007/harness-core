@@ -7,7 +7,6 @@
 
 package io.harness.ssca.services;
 
-import io.harness.repositories.ArtifactRepository;
 import io.harness.spec.server.ssca.v1.model.Artifact;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomRequestBody;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomResponseBody;
@@ -30,7 +29,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 public class EnforcementStepServiceImpl implements EnforcementStepService {
-  @Inject ArtifactRepository artifactRepository;
+  @Inject ArtifactService artifactService;
   @Inject ExecutorRegistry executorRegistry;
   @Inject RuleEngineService ruleEngineService;
   @Inject EnforcementSummaryService enforcementSummaryService;
@@ -39,10 +38,16 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
   @Override
   public EnforceSbomResponseBody enforceSbom(
       String accountId, String orgIdentifier, String projectIdentifier, EnforceSbomRequestBody body) {
+    String artifactId =
+        artifactService.generateArtifactId(body.getArtifact().getRegistryUrl(), body.getArtifact().getName());
     ArtifactEntity artifactEntity =
-        artifactRepository
-            .findFirstByUrlLike(body.getArtifact().getRegistryUrl(), Sort.by(ArtifactEntityKeys.createdOn).descending())
-            .get();
+        artifactService
+            .getArtifact(accountId, orgIdentifier, projectIdentifier, artifactId,
+                Sort.by(ArtifactEntityKeys.createdOn).descending())
+            .orElseThrow(()
+                             -> new NotFoundException(
+                                 String.format("Artifact with image name [%s] and registry Url [%s] is not found",
+                                     body.getArtifact().getName(), body.getArtifact().getRegistryUrl())));
 
     RuleDTO ruleDTO = ruleEngineService.getRules(accountId, orgIdentifier, projectIdentifier, body.getPolicyFileId());
 

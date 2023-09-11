@@ -83,6 +83,26 @@ paths:
       tags:
         - Public Access
       x-internal: true
+  /v1/public-access/is-resource-public:
+    parameters: []
+    post:
+      summary: Returns if a Resource is public or not
+      operationId: is-resource-public
+      description: 'Returns if a Resource is public or not '
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/PublicAccessRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/PublicAccessResponse'
+        '':
+          $ref: '#/components/responses/PublicAccessResponse'
+      security:
+        - x-api-key: []
+      tags:
+        - Public Access
+      x-internal: true
   '/v1/roles/{role}':
     parameters:
       - $ref: '#/components/parameters/RoleParam'
@@ -1057,7 +1077,7 @@ components:
       content:
         application/json:
           schema:
-            type: object
+            type: boolean
   requestBodies:
     CreateRoleRequest:
       content:

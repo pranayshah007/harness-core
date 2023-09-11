@@ -15,4 +15,6 @@ import io.harness.spec.server.accesscontrol.v1.model.Scope;
 @OwnedBy(HarnessTeam.PL)
 public interface PublicAccessService {
   boolean enable(String resourceIdentifier, ResourceType resourceType, Scope resourceScope);
+
+  boolean isResourcePublic(String resourceIdentifier, ResourceType resourceType, Scope resourceScope);
 }
