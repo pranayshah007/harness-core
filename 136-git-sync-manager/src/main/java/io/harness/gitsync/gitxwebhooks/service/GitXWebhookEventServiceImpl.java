@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.gitxwebhooks.service;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import static java.lang.String.format;
@@ -68,9 +69,10 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
       List<String> filesToBeFetched = shouldParsePayload(gitXWebhook, webhookDTO, scmConnector);
       if (filesToBeFetched == null || filesToBeFetched.isEmpty()) {
         log.info("The webhook event will be SKIPPED as the webhook is disabled or the folder paths don't match.");
-        updateGitXWebhookEvent(createdGitXWebhookEvent, webhookDTO);
+        updateGitXWebhookEvent(createdGitXWebhookEvent, null, GitXWebhookEventStatus.SKIPPED);
         return;
       }
+      updateGitXWebhookEvent(createdGitXWebhookEvent, webhookDTO.getJsonPayload(), GitXWebhookEventStatus.QUEUED);
       fetchFilesFromGitHelper.submitTask(gitXWebhook.getAccountIdentifier(),
           webhookDTO.getParsedResponse().getPush().getRepo().getName(),
           webhookDTO.getParsedResponse().getPush().getRepo().getBranch(), scmConnector, webhookDTO.getEventId(),
@@ -127,10 +129,11 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     return null;
   }
 
-  private void updateGitXWebhookEvent(GitXWebhookEvent gitXWebhookEvent, WebhookDTO webhookDTO) {
+  private void updateGitXWebhookEvent(
+      GitXWebhookEvent gitXWebhookEvent, String payload, GitXWebhookEventStatus gitXWebhookEventStatus) {
     Criteria criteria = buildCriteria(gitXWebhookEvent.getAccountIdentifier(), gitXWebhookEvent.getEventIdentifier());
     Query query = new Query(criteria);
-    Update update = buildUpdate(webhookDTO);
+    Update update = buildGitXWebhookEventUpdate(payload, gitXWebhookEventStatus);
     gitXWebhookEventsRepository.update(query, update);
   }
 
@@ -141,10 +144,12 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
         .is(eventIdentifier);
   }
 
-  private Update buildUpdate(WebhookDTO webhookDTO) {
+  private Update buildGitXWebhookEventUpdate(String payload, GitXWebhookEventStatus gitXWebhookEventStatus) {
     Update update = new Update();
-    update.set(GitXWebhookEventKeys.eventStatus, GitXWebhookEventStatus.SKIPPED.name());
-    update.set(GitXWebhookEventKeys.payload, webhookDTO.getJsonPayload());
+    update.set(GitXWebhookEventKeys.eventStatus, gitXWebhookEventStatus.name());
+    if (isNotEmpty(payload)) {
+      update.set(GitXWebhookEventKeys.payload, payload);
+    }
     return update;
   }
 }
