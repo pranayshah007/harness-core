@@ -10,7 +10,6 @@ package software.wings.scheduler;
 import io.harness.scheduler.BackgroundExecutorService;
 import io.harness.scheduler.PersistentScheduler;
 
-import software.wings.graphql.datafetcher.instance.InstanceTimeSeriesDataHelper;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.service.intfc.instance.stats.InstanceStatService;
 import software.wings.service.intfc.instance.stats.ServerlessInstanceStatService;
@@ -46,7 +45,6 @@ public class InstancesPurgeJob implements Job {
   @Inject private InstanceService instanceService;
   @Inject private InstanceStatService instanceStatsService;
   @Inject private ServerlessInstanceStatService serverlessInstanceStatService;
-  @Inject InstanceTimeSeriesDataHelper instanceTimeSeriesDataHelper;
 
   public static void add(PersistentScheduler jobScheduler) {
     JobDetail job = JobBuilder.newJob(InstancesPurgeJob.class)

@@ -81,7 +81,6 @@ import software.wings.graphql.datafetcher.budget.BudgetDataFetcher;
 import software.wings.graphql.datafetcher.budget.BudgetListDataFetcher;
 import software.wings.graphql.datafetcher.budget.BudgetNotificationsDataFetcher;
 import software.wings.graphql.datafetcher.budget.BudgetTrendStatsDataFetcher;
-import software.wings.graphql.datafetcher.ce.CeHealthStatusDataFetcher;
 import software.wings.graphql.datafetcher.ce.activePods.CeActivePodCountDataFetcher;
 import software.wings.graphql.datafetcher.ce.exportData.CeClusterBillingDataDataFetcher;
 import software.wings.graphql.datafetcher.ce.recommendation.K8sWorkloadHistogramDataFetcher;
@@ -124,7 +123,6 @@ import software.wings.graphql.datafetcher.infraDefinition.batch.InfrastructureDe
 import software.wings.graphql.datafetcher.infraDefinition.batch.InfrastructureDefinitionBatchDataLoader;
 import software.wings.graphql.datafetcher.instance.InstanceConnectionDataFetcher;
 import software.wings.graphql.datafetcher.instance.InstanceCountDataFetcher;
-import software.wings.graphql.datafetcher.instance.InstanceStatsDataFetcher;
 import software.wings.graphql.datafetcher.instance.instanceInfo.AutoScalingGroupInstanceController;
 import software.wings.graphql.datafetcher.instance.instanceInfo.CodeDeployInstanceController;
 import software.wings.graphql.datafetcher.instance.instanceInfo.Ec2InstanceController;
@@ -305,7 +303,6 @@ public class WingsGraphQLModule extends AbstractModule {
     bindDataFetcherWithAnnotation(ClusterDataFetcher.class);
     bindDataFetcherWithAnnotation(ClusterConnectionDataFetcher.class);
     bindDataFetcherWithAnnotation(ConnectorConnectionDataFetcher.class);
-    bindDataFetcherWithAnnotation(CeHealthStatusDataFetcher.class);
     bindDataFetcherWithAnnotation(CeConnectorDataFetcher.class);
     bindDataFetcherWithAnnotation(CeActivePodCountDataFetcher.class);
     bindDataFetcherWithAnnotation(ConnectorStatsDataFetcher.class);
@@ -339,7 +336,6 @@ public class WingsGraphQLModule extends AbstractModule {
     bindDataFetcherWithAnnotation(OverviewPageStatsDataFetcher.class);
     bindDataFetcherWithAnnotation(InstanceConnectionDataFetcher.class);
     bindDataFetcherWithAnnotation(InstanceCountDataFetcher.class);
-    bindDataFetcherWithAnnotation(InstanceStatsDataFetcher.class);
 
     bindDataFetcherWithAnnotation(InfrastructureDefinitionDataFetcher.class);
     bindDataFetcherWithAnnotation(InfrastructureDefinitionConnectionDataFetcher.class);
