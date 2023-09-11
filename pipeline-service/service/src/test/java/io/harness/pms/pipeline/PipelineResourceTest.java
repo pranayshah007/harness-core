@@ -29,6 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionNode;
 import io.harness.beans.FeatureName;
@@ -139,13 +140,14 @@ public class PipelineResourceTest extends CategoryTest {
   PipelineExecutionSummaryEntity executionSummaryEntity;
   OrchestrationGraphDTO orchestrationGraph;
   EntityGitDetails entityGitDetails;
+  AccessControlClient accessControlClient;
 
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.openMocks(this);
     pipelineResource = new PipelineResourceImpl(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
         nodeExecutionToExecutioNodeMapper, pipelineTemplateHelper, featureFlagHelper, variableCreatorMergeService,
-        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService);
+        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService, accessControlClient);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "failure-strategy.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);

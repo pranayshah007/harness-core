@@ -16,6 +16,11 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -76,6 +81,7 @@ import com.google.inject.Inject;
 import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -105,6 +111,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
+  private final AccessControlClient accessControlClient;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Deprecated
@@ -309,7 +316,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         accountId, orgId, projectId, pipelineId, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<Page<PMSPipelineSummaryResponseDTO>> getListOfPipelines(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, int page, int size, List<String> sort,
@@ -329,6 +335,10 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
     List<String> pipelineIdentifiers =
         pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());
+
+    // access pipeline with view permission
+    pipelineIdentifiers = getPermitted(accountId, orgId, projectId, pipelineIdentifiers);
+
     Map<String, PipelineMetadataV2> pipelineMetadataMap =
         pipelineMetadataService.getMetadataForGivenPipelineIds(accountId, orgId, projectId, pipelineIdentifiers);
 
@@ -336,6 +346,30 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
 
     return ResponseDTO.newResponse(pipelines);
+  }
+
+  public List<String> getPermitted(
+      String accountIdentifier, String orgId, String projectId, List<String> pipelineIdentifiers) {
+    List<String> permittedPipelineIdentifier = new ArrayList<>();
+    List<PermissionCheckDTO> permissionChecks =
+        pipelineIdentifiers.stream()
+            .map(identifier
+                -> PermissionCheckDTO.builder()
+                       .permission(PipelineRbacPermissions.PIPELINE_VIEW)
+                       .resourceIdentifier(identifier)
+                       .resourceScope(ResourceScope.of(accountIdentifier, orgId, projectId))
+                       .resourceType("PIPELINE")
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
+
+    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedPipelineIdentifier.add(accessControlDTO.getResourceIdentifier());
+      }
+    }
+
+    return permittedPipelineIdentifier;
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)

@@ -354,7 +354,6 @@ public interface PipelineResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Paginated list of pipelines.")
       })
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   ResponseDTO<Page<PMSPipelineSummaryResponseDTO>>
   getListOfPipelines(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
