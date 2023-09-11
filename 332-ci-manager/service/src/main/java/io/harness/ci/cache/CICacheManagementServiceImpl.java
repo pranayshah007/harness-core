@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cache;
+package io.harness.ci.cache;
 
 import io.harness.ModuleType;
 import io.harness.beans.cache.api.CacheMetadataDetail;
@@ -13,6 +13,7 @@ import io.harness.beans.cache.api.CacheMetadataInfo;
 import io.harness.beans.cache.api.DeleteCacheResponse;
 import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.execution.CIDockerLayerCachingConfigService;
 import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.repositories.ModuleLicenseRepository;
@@ -38,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 
 public class CICacheManagementServiceImpl implements CICacheManagementService {
+  private final CIDockerLayerCachingConfigService ciDockerLayerCachingConfigService;
   private final CIExecutionServiceConfig ciExecutionServiceConfig;
   private final ModuleLicenseRepository moduleLicenseRepository;
   private final Storage storage;
@@ -46,10 +48,12 @@ public class CICacheManagementServiceImpl implements CICacheManagementService {
   private final String DEFAULT_SERVICE_KEY = "gcp_service_key";
 
   @Inject
-  CICacheManagementServiceImpl(
-      CIExecutionServiceConfig ciExecutionServiceConfig, ModuleLicenseRepository moduleLicenseRepository) {
+  CICacheManagementServiceImpl(CIExecutionServiceConfig ciExecutionServiceConfig,
+      ModuleLicenseRepository moduleLicenseRepository,
+      CIDockerLayerCachingConfigService ciDockerLayerCachingConfigService) {
     this.ciExecutionServiceConfig = ciExecutionServiceConfig;
     this.moduleLicenseRepository = moduleLicenseRepository;
+    this.ciDockerLayerCachingConfigService = ciDockerLayerCachingConfigService;
     CICacheIntelligenceConfig cacheIntelligenceConfig = ciExecutionServiceConfig.getCacheIntelligenceConfig();
     // workaround for local when service key isn't needed
     if (cacheIntelligenceConfig.getServiceKey().equals(DEFAULT_SERVICE_KEY)) {
@@ -93,9 +97,13 @@ public class CICacheManagementServiceImpl implements CICacheManagementService {
         .build();
   }
 
-  public DeleteCacheResponse deleteCache(String accountId, String path) {
-    CICacheIntelligenceConfig cacheIntelligenceConfig = ciExecutionServiceConfig.getCacheIntelligenceConfig();
+  public DeleteCacheResponse deleteCache(String accountId, String path, String cacheType) {
+    if (CacheType.DLC.getName().equals(cacheType)) {
+      List<CacheMetadataDetail> deletedList = ciDockerLayerCachingConfigService.purgeDockerLayerCache(accountId);
+      return DeleteCacheResponse.builder().deleted(deletedList).build();
+    }
 
+    CICacheIntelligenceConfig cacheIntelligenceConfig = ciExecutionServiceConfig.getCacheIntelligenceConfig();
     String bucketName = cacheIntelligenceConfig.getBucket();
     Page<Blob> blobs = storage.list(bucketName, Storage.BlobListOption.prefix(accountId));
     List<CacheMetadataDetail> deletedList = new ArrayList<>();

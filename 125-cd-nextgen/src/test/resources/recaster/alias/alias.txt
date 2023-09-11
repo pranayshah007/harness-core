@@ -24,6 +24,7 @@ io.harness.steps.group.GroupStepParametersV1
 io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig
 io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig
 io.harness.cdng.helm.NativeHelmDeployOutcome
+io.harness.cdng.helm.ReleaseHelmChartOutcome
 io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepNode
 io.harness.cdng.infra.beans.host.HostFilter
 io.harness.cdng.k8s.K8sRollingStepInfo
@@ -1084,7 +1085,11 @@ io.harness.cdng.gitops.revertpr.RevertPRStepNode
 io.harness.cdng.gitops.revertpr.RevertPRStepParameters
 io.harness.cdng.gitops.revertpr.RevertPROutcome
 io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepParameters
-io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppHelmParams
+io.harness.cdng.gitops.updategitopsapp.HelmValues
+io.harness.cdng.gitops.updategitopsapp.KustomizeReplicas
+io.harness.cdng.gitops.updategitopsapp.HelmFileParameters
+io.harness.cdng.gitops.updategitopsapp.KustomizeValues
+io.harness.cdng.gitops.updategitopsapp.HelmParameters
 io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepInfo
 io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode
 io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepParameters

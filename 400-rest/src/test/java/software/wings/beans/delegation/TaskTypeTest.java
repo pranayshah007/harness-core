@@ -496,6 +496,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(456, "TERRAGRUNT_PLAN_TASK_NG_V2");
     taskTypeOrdinalMapping.put(457, "TERRAGRUNT_APPLY_TASK_NG_V2");
     taskTypeOrdinalMapping.put(458, "TERRAGRUNT_DESTROY_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(459, "ECR_HELM_API_LIST_TAGS_TASK");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

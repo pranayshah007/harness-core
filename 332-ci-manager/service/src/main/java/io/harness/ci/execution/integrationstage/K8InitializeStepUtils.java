@@ -323,6 +323,7 @@ public class K8InitializeStepUtils {
       case IACM_TERRAFORM_PLUGIN:
       case IACM_APPROVAL:
       case PROVENANCE:
+      case SLSA_VERIFICATION:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, stageNode,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
@@ -1068,6 +1069,7 @@ public class K8InitializeStepUtils {
       case IACM_TERRAFORM_PLUGIN:
       case IACM_APPROVAL:
       case PROVENANCE:
+      case SLSA_VERIFICATION:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(

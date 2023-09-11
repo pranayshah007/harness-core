@@ -7,9 +7,8 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
-import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
-import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_FILE_NAME_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,26 +24,34 @@ import java.util.Set;
 public class GithubFileExistsParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPointIdentifier, Set<String> inputValues) {
-    Map<String, Object> dataPointInfo = new HashMap<>();
-    if (CommonUtils.findObjectByName(data, "object") == null) {
-      dataPointInfo.put(DATA_POINT_VALUE_KEY, null);
-      dataPointInfo.put(ERROR_MESSAGE_KEY, INVALID_BRANCH_NAME_ERROR);
-      return dataPointInfo;
-    }
-    List<Map<String, Object>> entries = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "entries");
-    boolean isPresent = false;
-    String inputFile = inputValues.iterator().next();
-    inputFile = inputFile.replace("\"", "");
-    for (Map<String, Object> entry : entries) {
-      String fileName = (String) entry.get("name");
-      if (fileName.equals(inputFile)) {
-        isPresent = true;
-        break;
-      }
-    }
+    Map<String, Object> dataPointData = new HashMap<>();
 
-    dataPointInfo.put(inputFile, Map.of(DATA_POINT_VALUE_KEY, isPresent));
-    dataPointInfo.put(ERROR_MESSAGE_KEY, null);
-    return dataPointInfo;
+    for (String inputValue : inputValues) {
+      if (!data.containsKey(inputValue)) {
+        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_FILE_NAME_ERROR));
+        continue;
+      }
+
+      Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
+      if (CommonUtils.findObjectByName(inputValueData, "object") == null) {
+        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+        continue;
+      }
+      List<Map<String, Object>> entries =
+          (List<Map<String, Object>>) CommonUtils.findObjectByName(inputValueData, "entries");
+      boolean isPresent = false;
+      inputValue = inputValue.replace("\"", "");
+      int lastSlash = inputValue.lastIndexOf("/");
+      String inputFile = (lastSlash != -1) ? inputValue.substring(lastSlash + 1) : inputValue;
+      for (Map<String, Object> entry : entries) {
+        String fileName = (String) entry.get("name");
+        if (fileName.equals(inputFile)) {
+          isPresent = true;
+          break;
+        }
+      }
+      dataPointData.putAll(constructDataPointInfo(inputValue, isPresent, null));
+    }
+    return dataPointData;
   }
 }

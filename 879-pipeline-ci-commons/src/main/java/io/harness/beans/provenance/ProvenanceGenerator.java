@@ -21,13 +21,15 @@ import java.util.Map;
 public class ProvenanceGenerator {
   @Inject private VersionInfoManager versionInfoManager;
 
-  public ProvenancePredicate buildProvenancePredicate(ProvenanceBuilderData data) {
+  public ProvenancePredicate buildProvenancePredicate(
+      ProvenanceBuilderData data, ExternalParameters externalParameters) {
     Map<String, String> versionMap = new HashMap<>();
     versionMap.put("ci-manager", versionInfoManager.getFullVersion());
     if (EmptyPredicate.isNotEmpty(data.getPluginInfo())) {
       String[] plugin = data.getPluginInfo().split(":");
       versionMap.put(plugin[0], plugin[1]);
     }
+
     return ProvenancePredicate.builder()
         .buildDefinition(BuildDefinition.builder()
                              .buildType("https://developer.harness.io/docs/continuous-integration")
@@ -36,17 +38,18 @@ public class ProvenanceGenerator {
                                                      .pipelineExecutionId(data.getPipelineExecutionId())
                                                      .pipelineIdentifier(data.getPipelineIdentifier())
                                                      .build())
+                             .externalParameters(externalParameters)
                              .build())
         .runDetails(RunDetails.builder()
                         .builder(ProvenanceBuilder.builder()
                                      .id("https://developer.harness.io/docs/continuous-integration")
                                      .version(versionMap)
                                      .build())
-                        .metadata(BuildMetadata.builder()
-                                      .invocationId(data.getStepExecutionId())
-                                      .startedOn(new DateTime(data.getStartTime()).toStringRfc3339())
-                                      .finishedOn(new DateTime(System.currentTimeMillis()).toStringRfc3339())
-                                      .build())
+                        .runDetailsMetadata(RunDetailsMetadata.builder()
+                                                .invocationId(data.getStepExecutionId())
+                                                .startedOn(new DateTime(data.getStartTime()).toStringRfc3339())
+                                                .finishedOn(new DateTime(System.currentTimeMillis()).toStringRfc3339())
+                                                .build())
                         .build())
         .build();
   }

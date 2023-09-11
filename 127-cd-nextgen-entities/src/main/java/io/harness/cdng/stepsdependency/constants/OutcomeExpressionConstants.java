@@ -38,6 +38,8 @@ public class OutcomeExpressionConstants {
   public final String K8S_CANARY_DELETE_OUTCOME = "k8sCanaryDeleteOutcome";
   public final String K8S_BG_SWAP_SERVICES_OUTCOME = "k8sBGSwapServicesOutcome";
   public final String OUTPUT = "output";
+  public final String RELEASE_HELM_CHART_OUTCOME = "releaseHelmChartOutcome";
+
   public final String INFRA_TASK_EXECUTABLE_STEP_OUTPUT = "InfrastructureStepOutput";
   public final String TERRAFORM_CONFIG = "terraformConfig";
   public final String TERRAGRUNT_CONFIG = "terragruntConfig";

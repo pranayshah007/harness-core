@@ -38,4 +38,5 @@ public class CIExecutionImages {
   @NotBlank String sscaOrchestrationTag;
   @NotBlank String sscaEnforcementTag;
   @NotBlank String provenanceTag;
+  @NotBlank String slsaVerificationTag;
 }

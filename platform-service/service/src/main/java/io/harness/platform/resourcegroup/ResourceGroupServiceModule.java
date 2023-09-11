@@ -9,7 +9,7 @@ package io.harness.platform.resourcegroup;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
@@ -159,7 +159,7 @@ public class ResourceGroupServiceModule extends AbstractModule {
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
     return appConfig.getResoureGroupServiceConfig().getDistributedLockImplementation() == null
-        ? MONGO
+        ? REDIS
         : appConfig.getResoureGroupServiceConfig().getDistributedLockImplementation();
   }
 

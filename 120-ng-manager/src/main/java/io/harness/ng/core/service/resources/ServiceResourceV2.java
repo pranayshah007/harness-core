@@ -467,7 +467,7 @@ public class ServiceResourceV2 {
       @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
           "repoName") String repoName) {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
-        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope, repoName);
     Pageable pageRequest;
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
@@ -562,7 +562,7 @@ public class ServiceResourceV2 {
     checkAccessForListingAtScope(accountId, orgIdentifier, projectIdentifier, serviceIdentifiers);
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false);
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false, null);
 
     Pageable pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
 
@@ -664,7 +664,7 @@ public class ServiceResourceV2 {
         "Unauthorized to list services");
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
-        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope, null);
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }

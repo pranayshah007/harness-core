@@ -22,6 +22,7 @@ import static io.harness.ngtriggers.Constants.TRIGGER_EXECUTION_TAG_TAG_VALUE_DE
 import static io.harness.ngtriggers.Constants.TRIGGER_PAYLOAD_BRANCH;
 import static io.harness.ngtriggers.Constants.TRIGGER_REF;
 import static io.harness.ngtriggers.Constants.TRIGGER_REF_DELIMITER;
+import static io.harness.pms.contracts.plan.TriggerType.ARTIFACT;
 import static io.harness.pms.contracts.plan.TriggerType.WEBHOOK;
 import static io.harness.pms.contracts.plan.TriggerType.WEBHOOK_CUSTOM;
 import static io.harness.pms.plan.execution.PlanExecutionInterruptType.ABORTALL;
@@ -52,9 +53,13 @@ import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
+import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
+import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAware;
 import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
+import io.harness.ngtriggers.helpers.ArtifactConfigHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
 import io.harness.ngtriggers.utils.WebhookTriggerFilterUtils;
@@ -62,6 +67,7 @@ import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.TriggerIssuer;
+import io.harness.pms.contracts.plan.BuildInfo;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
@@ -112,15 +118,20 @@ public class TriggerExecutionHelper {
   private final WebhookEventPayloadParser webhookEventPayloadParser;
   private final PipelineServiceClient pipelineServiceClient;
 
-  public PlanExecution resolveRuntimeInputAndSubmitExecutionReques(
+  public PlanExecution resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(
       TriggerDetails triggerDetails, TriggerPayload triggerPayload, String runTimeInputYaml) {
     String executionTag = generateExecutionTagForEvent(triggerDetails, triggerPayload);
     TriggeredBy embeddedUser =
         generateTriggerdBy(executionTag, triggerDetails.getNgTriggerEntity(), triggerPayload, null);
 
     TriggerType triggerType = findTriggerType(triggerPayload);
-    ExecutionTriggerInfo triggerInfo =
-        ExecutionTriggerInfo.newBuilder().setTriggerType(triggerType).setTriggeredBy(embeddedUser).build();
+    BuildInfo buildInfo = getBuildInfoForArtifacts(triggerDetails, triggerType, triggerPayload);
+    ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder()
+                                           .setTriggerType(triggerType)
+                                           .setTriggeredBy(embeddedUser)
+                                           .setBuildInfo(buildInfo)
+                                           .build();
+
     return createPlanExecution(
         triggerDetails, triggerPayload, null, null, executionTag, triggerInfo, null, runTimeInputYaml);
   }
@@ -137,6 +148,29 @@ public class TriggerExecutionHelper {
         ExecutionTriggerInfo.newBuilder().setTriggerType(triggerType).setTriggeredBy(embeddedUser).build();
     return createPlanExecution(triggerDetails, triggerPayload, payload, header, executionTagForGitEvent, triggerInfo,
         triggerWebhookEvent, runTimeInputYaml);
+  }
+  @VisibleForTesting
+  BuildInfo getBuildInfoForArtifacts(
+      TriggerDetails triggerDetails, TriggerType triggerType, TriggerPayload triggerPayload) {
+    BuildInfo.Builder buildInfo = BuildInfo.newBuilder();
+
+    if (triggerType != ARTIFACT) {
+      return buildInfo.build();
+    }
+
+    NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
+    NGTriggerSourceV2 source = ngTriggerConfigV2.getSource();
+    NGTriggerSpecV2 spec = source.getSpec();
+
+    if (spec != null && ArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
+      String imagePath = ArtifactConfigHelper.fetchImagePath((ArtifactTriggerConfig) spec);
+      String build = triggerPayload.getArtifactData().getBuild();
+
+      buildInfo.setBuild(build);
+      buildInfo.setImagePath(imagePath != null ? imagePath : "");
+    }
+
+    return buildInfo.build();
   }
 
   public PlanExecution createPlanExecution(TriggerDetails triggerDetails, TriggerPayload triggerPayload, String payload,
@@ -255,6 +289,7 @@ public class TriggerExecutionHelper {
     TriggeredBy.Builder builder = TriggeredBy.newBuilder()
                                       .setIdentifier(ngTriggerEntity.getIdentifier())
                                       .setTriggerIdentifier(ngTriggerEntity.getIdentifier())
+                                      .setTriggerName(ngTriggerEntity.getName())
                                       .setUuid("systemUser");
     if (triggerWebhookEvent != null && triggerWebhookEvent.getPrincipal() != null) {
       /* If principal is available in `triggerWebhookEvent`, we set some information in `TriggeredBy` based on it,

@@ -1862,9 +1862,58 @@ components:
       type: object
       properties:
         project:
-          $ref: '#/components/schemas/Project'
+          $ref: '#/components/schemas/ProjectRequest'
       required:
         - project
+    ProjectRequest:
+      description: Project model
+      type: object
+      x-examples:
+        example-1:
+          identifier: example_project_identifier
+          name: example-project-name
+          color: '#0063F7'
+          modules:
+            - CD
+          description: This is a example project
+          tags:
+            property1: value1
+            property2: value2
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          description: Project identifier
+          maxLength: 128
+        name:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+          description: Project name
+          maxLength: 128
+        color:
+          type: string
+          description: Project color
+        modules:
+          type: array
+          maxItems: 1024
+          description: List of modules for project
+          items:
+            $ref: '#/components/schemas/ModuleType'
+        description:
+          type: string
+          maxLength: 1024
+          description: Project description
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Project tags
+      required:
+        - identifier
+        - name
     Project:
       description: Project model
       type: object
@@ -1872,6 +1921,7 @@ components:
         example-1:
           identifier: example_project_identifier
           name: example-project-name
+          org: example_org_identifier
           color: '#0063F7'
           modules:
             - CD
@@ -1977,7 +2027,7 @@ components:
       type: object
       properties:
         project:
-          $ref: '#/components/schemas/Project'
+          $ref: '#/components/schemas/ProjectRequest'
       required:
         - project
     SecretSpec:

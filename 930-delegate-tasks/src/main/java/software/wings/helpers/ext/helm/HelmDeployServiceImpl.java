@@ -313,8 +313,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
           containerDeploymentDelegateHelper.getKubernetesConfig(commandRequest.getContainerServiceParams());
       // if skip steady state check is enabled, due to that we're fetching only running pods this may result in not
       // picking all the pods correctly. Overall correct number of pods would be handled by instance sync
-      containerInfos.addAll(k8sTaskHelperBase.getContainerInfos(
-          kubernetesConfig, commandRequest.getReleaseName(), kubernetesConfig.getNamespace(), timeoutInMillis));
+      containerInfos.addAll(k8sTaskHelperBase.getContainerInfos(kubernetesConfig, commandRequest.getReleaseName(),
+          kubernetesConfig.getNamespace(), Collections.emptyMap(), timeoutInMillis));
       executionLogCallback.saveExecutionLog(
           format("Currently running %d container(s) for release %s and namespace %s%n%n", containerInfos.size(),
               commandRequest.getReleaseName(), kubernetesConfig.getNamespace()));
@@ -361,8 +361,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         KubernetesConfig kubernetesConfig =
             containerDeploymentDelegateHelper.getKubernetesConfig(commandRequest.getContainerServiceParams());
         String releaseName = commandRequest.getReleaseName();
-        List<ContainerInfo> containerInfos =
-            k8sTaskHelperBase.getContainerInfos(kubernetesConfig, releaseName, namespace, timeoutInMillis);
+        List<ContainerInfo> containerInfos = k8sTaskHelperBase.getContainerInfos(
+            kubernetesConfig, releaseName, namespace, Collections.emptyMap(), timeoutInMillis);
         containerInfoList.addAll(containerInfos);
       }
     }

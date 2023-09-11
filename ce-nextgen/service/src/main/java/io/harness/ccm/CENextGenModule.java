@@ -24,7 +24,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CCM_BU
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CCM_RULE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETTINGS;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 
 import io.harness.AccessControlClientModule;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
@@ -564,7 +564,7 @@ public class CENextGenModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return configuration.getDistributedLockImplementation() == null ? MONGO
+    return configuration.getDistributedLockImplementation() == null ? REDIS
                                                                     : configuration.getDistributedLockImplementation();
   }
 

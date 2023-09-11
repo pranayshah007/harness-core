@@ -283,6 +283,7 @@ io.harness.beans.sweepingoutputs.K8PodDetails
 io.harness.beans.steps.stepinfo.InitializeStepInfo
 io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo
 io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo
+io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo
 io.harness.beans.steps.nodes.V1.BitriseStepNodeV1
 io.harness.ci.pipeline.executions.beans.TIBuildDetails
 io.harness.beans.stages.IntegrationStageStepParametersPMS
@@ -332,6 +333,7 @@ io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo
 io.harness.ssca.beans.stepnode.SscaOrchestrationStepNode
 io.harness.ssca.beans.stepnode.SscaEnforcementStepNode
 io.harness.ssca.beans.stepnode.ProvenanceStepNode
+io.harness.ssca.beans.stepnode.SlsaVerificationStepNode
 io.harness.beans.steps.nodes.SaveCacheGCSNode
 io.harness.beans.yaml.extended.TISplitStrategy
 io.harness.beans.steps.nodes.security.ProwlerScanNode
@@ -535,4 +537,5 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcome
 io.harness.slsa.beans.SlsaConfig
 io.harness.beans.steps.nodes.iacm.IACMCostEstimationStepNode
 io.harness.beans.steps.stepinfo.IACMCostEstimationInfo
+io.harness.app.beans.entities.StepExecutionParameters
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata

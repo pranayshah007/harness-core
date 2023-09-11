@@ -101,7 +101,8 @@ public class S3SaveCacheStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.type",
             "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.identifier",
             "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.startTs",
-            "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.endTs");
+            "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.endTs",
+            "pipeline.stages.s3_save_cache.spec.execution.steps.saveCacheTar.status");
 
     List<String> fqnExtraPropertiesList1 = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get(saveCacheS3Node.getSaveCacheS3StepInfo().getUuid()) // step uuid

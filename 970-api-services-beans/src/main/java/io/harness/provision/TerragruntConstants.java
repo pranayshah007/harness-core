@@ -46,6 +46,8 @@ public final class TerragruntConstants {
   public static final String TERRAGRUNT_VERSION_COMMAND = "terragrunt --version";
 
   public static final String TG_BASE_DIR = "./terragrunt-working-dir/${ACCOUNT_ID}/${ENTITY_ID}";
+  public static final String TG_BASE_DIR_UNIQUE_DIRECTORY =
+      "./terragrunt-working-dir/${ACCOUNT_ID}/${ENTITY_ID}/${UNIQUE_DIRECTORY}";
   public static final String TG_SCRIPT_DIR = "terragrunt-script-repository";
   public static final String TERRAGRUNT_INTERNAL_CACHE_FOLDER = ".terragrunt-cache";
   public static final String TERRAGRUNT_LOCK_FILE_NAME = ".terraform.lock.hcl";

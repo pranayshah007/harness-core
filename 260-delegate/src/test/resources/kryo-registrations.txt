@@ -1835,6 +1835,7 @@
 55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
 55440:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskParams
 55441:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskResponse
+55442:io.harness.delegate.beans.connector.helm.EcrHelmApiListTagsTaskParams
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
@@ -2708,6 +2709,7 @@
 9800013:io.harness.delegate.task.ssh.artifact.AcrArtifactDelegateConfig
 9800014:io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig
 9800015:io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig
+9800016:io.harness.licensing.beans.modules.SEIModuleLicenseDTO
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO

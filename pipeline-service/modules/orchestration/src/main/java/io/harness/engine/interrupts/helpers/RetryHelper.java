@@ -17,6 +17,7 @@ import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
+import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.NodeExecution;
@@ -158,6 +159,9 @@ public class RetryHelper {
         .nodeId(nodeExecution.getNodeId())
         .stageFqn(nodeExecution.getStageFqn())
         .group(nodeExecution.getGroup())
+        .skipExpressionChain(nodeExecution.getSkipExpressionChain())
+        .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+        .nodeType(AmbianceUtils.obtainNodeType(ambiance))
         .build();
   }
 

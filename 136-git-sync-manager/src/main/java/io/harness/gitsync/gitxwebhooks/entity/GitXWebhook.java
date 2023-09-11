@@ -71,10 +71,15 @@ public class GitXWebhook implements PersistentEntity, UuidAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountIdentifier_identifier_repoName_unique_idx")
+                 .name("accountIdentifier_identifier_unique_idx")
                  .unique(true)
                  .field(GitXWebhookKeys.accountIdentifier)
                  .field(GitXWebhookKeys.identifier)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdentifier_repoName_unique_idx")
+                 .unique(true)
+                 .field(GitXWebhookKeys.accountIdentifier)
                  .field(GitXWebhookKeys.repoName)
                  .build())
         .build();

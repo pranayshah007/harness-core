@@ -109,7 +109,8 @@ public class ServiceNowUpdateStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.snow_update.identifier",
             "pipeline.stages.stage1.spec.execution.steps.snow_update.type",
             "pipeline.stages.stage1.spec.execution.steps.snow_update.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.snow_update.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.snow_update.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.snow_update.status");
 
     List<YamlProperties> outputProperties = variablesForParentNodeV2.getYamlExtraProperties()
                                                 .get("WKlNrJ8FTtKAazSDLog2DA") // uuid for step node
@@ -118,7 +119,7 @@ public class ServiceNowUpdateStepVariableCreatorTest extends CategoryTest {
                                           .get("WKlNrJ8FTtKAazSDLog2DA") // uuid for step node
                                           .getPropertiesList();
     assertThat(outputProperties).hasSize(3);
-    assertThat(properties).hasSize(4);
+    assertThat(properties).hasSize(5);
     assertYamlProperties(outputProperties.get(0),
         "pipeline.stages.stage1.spec.execution.steps.snow_update.ticket.ticketUrl",
         "execution.steps.snow_update.ticket.ticketUrl", "", true);
@@ -136,6 +137,8 @@ public class ServiceNowUpdateStepVariableCreatorTest extends CategoryTest {
         "execution.steps.snow_update.startTs", "", false);
     assertYamlProperties(properties.get(3), "pipeline.stages.stage1.spec.execution.steps.snow_update.endTs",
         "execution.steps.snow_update.endTs", "", false);
+    assertYamlProperties(properties.get(4), "pipeline.stages.stage1.spec.execution.steps.snow_update.status",
+        "execution.steps.snow_update.status", "", false);
   }
 
   private void assertYamlProperties(

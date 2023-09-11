@@ -8,6 +8,12 @@
 package io.harness.cdng.infra.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.pipeline.steptype.NGStepType.AWS_CDK_BOOTSTRAP;
+import static io.harness.cdng.pipeline.steptype.NGStepType.AWS_CDK_DEPLOY;
+import static io.harness.cdng.pipeline.steptype.NGStepType.AWS_CDK_DESTROY;
+import static io.harness.cdng.pipeline.steptype.NGStepType.AWS_CDK_DIFF;
+import static io.harness.cdng.pipeline.steptype.NGStepType.AWS_CDK_ROLLBACK;
+import static io.harness.cdng.pipeline.steptype.NGStepType.AWS_CDK_SYNTH;
 import static io.harness.cdng.pipeline.steptype.NGStepType.AZURE_CREATE_ARM_RESOURCE;
 import static io.harness.cdng.pipeline.steptype.NGStepType.AZURE_CREATE_BP_RESOURCE;
 import static io.harness.cdng.pipeline.steptype.NGStepType.AZURE_ROLLBACK_ARM_RESOURCE;
@@ -42,15 +48,17 @@ public enum ProvisionerType {
   AZURE_BLUEPRINT("Blueprint"),
   SHELL_SCRIPT_PROVISIONER("Script"),
   TERRAGRUNT("Terragrunt"),
-  TERRAFORM_CLOUD("TerraformCloud");
+  TERRAFORM_CLOUD("TerraformCloud"),
+  AWS_CDK("AwsCdk");
 
-  private static final Set<ProvisionerType> supportedTypes = ImmutableSet.of(
-      TERRAFORM, CLOUD_FORMATION, AZURE_ARM, AZURE_BLUEPRINT, SHELL_SCRIPT_PROVISIONER, TERRAGRUNT, TERRAFORM_CLOUD);
+  private static final Set<ProvisionerType> supportedTypes = ImmutableSet.of(TERRAFORM, CLOUD_FORMATION, AZURE_ARM,
+      AZURE_BLUEPRINT, SHELL_SCRIPT_PROVISIONER, TERRAGRUNT, TERRAFORM_CLOUD, AWS_CDK);
   private static final List<NGStepType> supportedSteps =
       Arrays.asList(TERRAFORM_APPLY, TERRAFORM_PLAN, TERRAFORM_DESTROY, TERRAFORM_ROLLBACK, CF_CREATE_STACK,
           CF_DELETE_STACK, CF_ROLLBACK_STACK, AZURE_CREATE_ARM_RESOURCE, AZURE_CREATE_BP_RESOURCE,
           AZURE_ROLLBACK_ARM_RESOURCE, NGStepType.SHELL_SCRIPT_PROVISIONER, TERRAGRUNT_PLAN, TERRAGRUNT_APPLY,
-          TERRAGRUNT_DESTROY, TERRAGRUNT_ROLLBACK, TERRAFORM_CLOUD_RUN, TERRAFORM_CLOUD_ROLLBACK);
+          TERRAGRUNT_DESTROY, TERRAGRUNT_ROLLBACK, TERRAFORM_CLOUD_RUN, TERRAFORM_CLOUD_ROLLBACK, AWS_CDK_BOOTSTRAP,
+          AWS_CDK_SYNTH, AWS_CDK_DIFF, AWS_CDK_DEPLOY, AWS_CDK_DESTROY, AWS_CDK_ROLLBACK);
 
   @Getter private final String displayName;
   ProvisionerType(String displayName) {

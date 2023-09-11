@@ -701,7 +701,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         MetricCVConfig<?> metricCVConfig = (MetricCVConfig<?>) cvConfig;
         List<? extends AnalysisInfo> deploymentRelatedMetricInfos =
             AnalysisInfoUtility.filterApplicableForDataCollection(metricCVConfig.getMetricInfos(), TaskType.DEPLOYMENT);
-        if (CollectionUtils.isNotEmpty(deploymentRelatedMetricInfos)) {
+        if (cvConfigHasOnlyMetricPackQueries(metricCVConfig)
+            || CollectionUtils.isNotEmpty(deploymentRelatedMetricInfos)) {
           deploymentCvConfigs.add(cvConfig);
         }
       } else {
@@ -709,6 +710,10 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
       }
     }
     return deploymentCvConfigs;
+  }
+
+  private static boolean cvConfigHasOnlyMetricPackQueries(MetricCVConfig<?> metricCVConfig) {
+    return CollectionUtils.isEmpty(metricCVConfig.getMetricInfos());
   }
   private void createDataCollectionTasks(
       VerificationJobInstance verificationJobInstance, VerificationJob verificationJob, List<CVConfig> cvConfigs) {

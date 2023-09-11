@@ -37,7 +37,7 @@ public class NoOpDsl implements DataSourceLocation {
 
   @Override
   public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, Set<String>> dataPointIdsAndInputValues, String requestBody) {
+      Map<String, String> dataPointIdsAndInputValues, String requestBody) {
     return null;
   }
 }

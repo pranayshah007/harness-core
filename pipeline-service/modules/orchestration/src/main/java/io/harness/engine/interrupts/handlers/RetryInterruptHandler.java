@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.interrupts.handlers;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
@@ -24,6 +25,7 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
+import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -57,7 +59,9 @@ public class RetryInterruptHandler implements InterruptHandler {
         interrupt.getNodeExecutionId(), NodeProjectionUtils.fieldsForRetryInterruptHandler);
     Ambiance ambiance = nodeExecution.getAmbiance();
     boolean isStepGroupRetry =
-        (StepCategory.STEP_GROUP.name()).equals(AmbianceUtils.obtainCurrentLevel(ambiance).getStepType().getType());
+        (StepCategory.STEP_GROUP.name()).equals(AmbianceUtils.obtainCurrentLevel(ambiance).getStepType().getType())
+        || (NGCommonUtilPlanCreationConstants.GROUP)
+               .equals(AmbianceUtils.obtainCurrentLevel(ambiance).getStepType().getType());
     if (!StatusUtils.retryableStatuses().contains(nodeExecution.getStatus())) {
       throw new InvalidRequestException(
           "NodeExecution is not in a retryable status. Current Status: " + nodeExecution.getStatus());

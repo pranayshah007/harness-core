@@ -51,6 +51,7 @@ public class EmailMessageGenerator {
       templateString = addClusterInfo(templateString, anomalyEntity);
       templateString = addNamespaceInfo(templateString, anomalyEntity);
       templateString = addWorkloadInfo(templateString, anomalyEntity);
+      templateString = addServiceInfo(templateString, anomalyEntity);
       templateString = addGcpProjectInfo(templateString, anomalyEntity);
       templateString = addGcpProductInfo(templateString, anomalyEntity);
       templateString = addGcpSkuInfo(templateString, anomalyEntity);
@@ -109,6 +110,19 @@ public class EmailMessageGenerator {
     return templateString;
   }
 
+  private String addServiceInfo(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getServiceName())) {
+      if (anomaly.getEntityType().equals(EntityType.SERVICE)) {
+        templateString = templateString
+            + String.format(ANOMALY_DETAILS_ITEM_FORMAT_WITH_LINK, "Service", "${SERVICE_URL}",
+                "${" + AnomalyEntityKeys.serviceName + "}");
+      } else {
+        templateString = templateString
+            + String.format(ANOMALY_DETAILS_ITEM_FORMAT, "Service", "${" + AnomalyEntityKeys.serviceName + "}");
+      }
+    }
+    return templateString;
+  }
   private String addGcpProjectInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpProject())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_PROJECT)) {
@@ -195,6 +209,8 @@ public class EmailMessageGenerator {
         .workloadName(anomaly.getEntity().getWorkloadName())
         .workloadType(anomaly.getEntity().getWorkloadType())
         .namespace(anomaly.getEntity().getNamespace())
+        .service(anomaly.getEntity().getService())
+        .serviceName(anomaly.getEntity().getServiceName())
         .actualCost(anomaly.getActualAmount())
         .expectedCost(anomaly.getExpectedAmount())
         .build();

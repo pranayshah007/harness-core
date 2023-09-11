@@ -93,8 +93,15 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
         ? applyTaskParameters.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
     LogCallback applyLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), APPLY, commandUnitsProgress);
-    String baseDir =
-        TerragruntTaskService.getBaseDir(applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId());
+
+    String baseDir;
+    if (applyTaskParameters.isUseUniqueDirectoryForBaseDir()) {
+      baseDir = TerragruntTaskService.getBaseDirWithUniqueDirectory(
+          applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId());
+    } else {
+      baseDir = TerragruntTaskService.getBaseDir(applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId());
+    }
+
     TerragruntApplyTaskResponse applyTaskResponse;
 
     try {

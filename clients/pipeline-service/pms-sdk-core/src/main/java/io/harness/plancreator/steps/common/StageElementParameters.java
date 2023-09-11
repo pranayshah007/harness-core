@@ -13,7 +13,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.when.beans.StageWhenCondition;
@@ -49,10 +48,8 @@ public class StageElementParameters implements StepParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Override
-  public String toViewJson() {
-    StageElementParameters stageElementParameters = cloneParameters();
-    stageElementParameters.setSpecConfig(specConfig.getViewJsonObject());
-    return RecastOrchestrationUtils.toJson(stageElementParameters);
+  public List<String> excludeKeysFromStepInputs() {
+    return specConfig.stepInputsKeyExclude();
   }
 
   public StageElementParameters cloneParameters() {

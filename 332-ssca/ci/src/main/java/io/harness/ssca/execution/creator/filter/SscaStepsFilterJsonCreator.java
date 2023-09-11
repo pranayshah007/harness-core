@@ -19,7 +19,7 @@ import java.util.Set;
 public class SscaStepsFilterJsonCreator extends GenericStepPMSFilterJsonCreatorV2 {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet(
-        SscaConstants.SSCA_ORCHESTRATION_STEP, SscaConstants.SSCA_ENFORCEMENT, SscaConstants.SLSA_PROVENANCE);
+    return Sets.newHashSet(SscaConstants.SSCA_ORCHESTRATION_STEP, SscaConstants.SSCA_ENFORCEMENT,
+        SscaConstants.SLSA_PROVENANCE, SscaConstants.SLSA_VERIFICATION);
   }
 }

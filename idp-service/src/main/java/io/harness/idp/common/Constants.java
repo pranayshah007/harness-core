@@ -85,4 +85,6 @@ public class Constants {
   public static final String HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS = "harness_ci_success_percent_in_seven_days";
 
   public static final String HARNESS_TEST_PASSING_ON_CI_IS_ZERO = "harness_test_passing_on_ci_is_zero";
+  public static final String GITHUB_DEFAULT_BRANCH_KEY = "refs/";
+  public static final String GITHUB_DEFAULT_BRANCH_KEY_ESCAPED = "\"refs/\"";
 }

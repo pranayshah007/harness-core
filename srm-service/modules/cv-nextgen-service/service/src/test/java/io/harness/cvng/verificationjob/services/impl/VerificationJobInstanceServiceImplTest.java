@@ -28,6 +28,10 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
@@ -46,6 +50,7 @@ import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisServ
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
+import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
@@ -57,15 +62,20 @@ import io.harness.cvng.cdng.beans.v2.Baseline;
 import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.VerificationManagerService;
+import io.harness.cvng.core.beans.HealthSourceQueryType;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
+import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
+import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo.MetricInfoBuilder;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
@@ -218,6 +228,41 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     assertThat(
         verificationJobInstanceService.getEmbeddedCVConfig(cvConfig.getUuid(), verificationJobInstance.getUuid()))
         .isEqualTo(cvConfig);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testProcessVerificationJobInstance_checkNumberOfCVConfigsUsedForCreatingDataCollectionTasks()
+      throws IllegalAccessException {
+    DataCollectionTaskService spiedDtaCollectionTaskService = spy(dataCollectionTaskService);
+    FieldUtils.writeField(
+        verificationJobInstanceService, "dataCollectionTaskService", spiedDtaCollectionTaskService, true);
+    VerificationJobInstance verificationJobInstance = newVerificationJobInstance();
+    verificationJobInstance.getResolvedJob().setCvConfigs(null);
+    verificationJobInstance.setCvConfigMap(null);
+    CustomHealthMetricCVConfig customHealthMetricCVConfig =
+        CustomHealthMetricCVConfig.builder()
+            .metricDefinitions(
+                List.of(CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
+                            .metricType(TimeSeriesMetricType.ERROR)
+                            .metricResponseMapping(MetricResponseMapping.builder().build())
+                            .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().build())
+                            .sli(SLI.builder().build())
+                            .deploymentVerification(DeploymentVerification.builder().enabled(false).build())
+                            .build()))
+            .queryType(HealthSourceQueryType.SERVICE_BASED)
+            .uuid(generateUuid())
+            .build();
+    AppDynamicsCVConfig appDynamicsCVConfig =
+        (AppDynamicsCVConfig) builderFactory.appDynamicsCVConfigBuilder().uuid(generateUuid()).build();
+    verificationJobInstance.getResolvedJob().setCvConfigs(List.of(customHealthMetricCVConfig, appDynamicsCVConfig));
+    List<String> verificationJobInstanceIds =
+        verificationJobInstanceService.create(Arrays.asList(verificationJobInstance));
+    VerificationJobInstance savedVerificationJobInstance =
+        verificationJobInstanceService.get(verificationJobInstanceIds).get(0);
+    verificationJobInstanceService.processVerificationJobInstance(savedVerificationJobInstance);
+    verify(spiedDtaCollectionTaskService, times(1)).createSeqTasks(anyList());
   }
 
   @Test

@@ -219,6 +219,10 @@ if [[ "" != "$DLC_GCS_REGION" ]]; then
   export DLC_GCS_REGION; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.region=env(DLC_GCS_REGION)' $CONFIG_FILE
 fi
 
+if [[ "" != "DLC_GCS_PROJECT_ID" ]]; then
+  export DLC_GCS_PROJECT_ID; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.projectId=env(DLC_GCS_PROJECT_ID)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_LINUX_AMD64_POOL)' $CONFIG_FILE
 fi

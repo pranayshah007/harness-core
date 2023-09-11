@@ -32,4 +32,5 @@ public enum HarnessTeam {
   SSCA,
   CDB,
   CET,
+  SEI
 }

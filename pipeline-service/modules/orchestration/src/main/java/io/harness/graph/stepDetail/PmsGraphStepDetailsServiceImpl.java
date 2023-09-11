@@ -24,6 +24,7 @@ import io.harness.observer.Subject;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
 
 import com.google.inject.Inject;
@@ -86,6 +87,12 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
       log.warn("Could not find nodeExecutionsInfo with the given nodeExecutionId: " + nodeExecutionId);
       return new PmsStepParameters(new HashMap<>());
     }
+  }
+
+  @Override
+  public PmsStepParameters getStepInputsRecasterPruned(String planExecutionId, String nodeExecutionId) {
+    PmsStepParameters stepInputs = getStepInputs(planExecutionId, nodeExecutionId);
+    return PmsStepParameters.parse(RecastOrchestrationUtils.pruneRecasterAdditions(stepInputs));
   }
 
   @Override

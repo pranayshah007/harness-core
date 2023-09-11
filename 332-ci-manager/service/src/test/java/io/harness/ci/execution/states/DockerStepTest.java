@@ -7,24 +7,30 @@
 
 package io.harness.ci.execution.states;
 
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.beans.execution.PublishedImageArtifact;
+import io.harness.beans.execution.*;
+import io.harness.beans.provenance.*;
+import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
-import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
-import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
+import io.harness.beans.sweepingoutputs.*;
 import io.harness.category.element.UnitTests;
+import io.harness.ci.config.StepImageConfig;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
 import io.harness.ci.execution.integrationstage.K8InitializeStepUtilsHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -42,8 +48,9 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.*;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -75,10 +82,14 @@ public class DockerStepTest extends CIExecutionTestBase {
   @InjectMocks DockerStep dockerStep;
   @Mock SerializedResponseDataHelper serializedResponseDataHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
+  @Mock private CIExecutionConfigService ciExecutionConfigService;
+  @Mock protected ProvenanceGenerator provenanceGenerator;
   @Mock protected CIFeatureFlagService featureFlagService;
   @Mock protected CIStageOutputRepository ciStageOutputRepository;
   private Ambiance ambiance;
   private StepElementParameters stepElementParameters;
+
+  private DockerStepInfo stepInfo;
   private HashMap<String, String> setupAbstractions = new HashMap<>();
 
   @Before
@@ -87,23 +98,42 @@ public class DockerStepTest extends CIExecutionTestBase {
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "projectId");
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
 
-    ambiance =
-        Ambiance.newBuilder()
-            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
-            .putAllSetupAbstractions(setupAbstractions)
-            .addLevels(Level.newBuilder()
-                           .setRuntimeId("runtimeId")
-                           .setIdentifier("identifierId")
-                           .setOriginalIdentifier("originalIdentifierId")
-                           .setRetryIndex(1)
-                           .build())
-            .build();
-    DockerStepInfo stepInfo = DockerStepInfo.builder()
-                                  .identifier(STEP_ID)
-                                  .connectorRef(ParameterField.createValueField("connectorRef"))
-                                  .repo(ParameterField.createValueField("test"))
-                                  .tags(ParameterField.createValueField(Arrays.asList("1.0", "2.0")))
-                                  .build();
+    ambiance = Ambiance.newBuilder()
+                   .setMetadata(ExecutionMetadata.newBuilder()
+                                    .setPipelineIdentifier("pipelineId")
+                                    .setRunSequence(1)
+                                    .setExecutionUuid("pipelineExecutionUuid")
+                                    .setTriggerInfo(
+                                        ExecutionTriggerInfo.newBuilder()
+                                            .setTriggeredBy(TriggeredBy.newBuilder().setIdentifier("triggerBy").build())
+                                            .build())
+                                    .build())
+                   .putAllSetupAbstractions(setupAbstractions)
+                   .addLevels(Level.newBuilder()
+                                  .setRuntimeId("runtimeId")
+                                  .setIdentifier("identifierId")
+                                  .setOriginalIdentifier("originalIdentifierId")
+                                  .setRetryIndex(1)
+                                  .build())
+                   .build();
+
+    Map<String, String> buildArgs = new HashMap<>();
+    buildArgs.put("build1", "build2");
+
+    Map<String, String> labels = new HashMap<>();
+    labels.put("lable1", "label2");
+
+    stepInfo = DockerStepInfo.builder()
+                   .identifier(STEP_ID)
+                   .connectorRef(ParameterField.createValueField("connectorRef"))
+                   .repo(ParameterField.createValueField("image"))
+                   .tags(ParameterField.createValueField(Arrays.asList("1.0", "2.0")))
+                   .buildArgs(ParameterField.createValueField(buildArgs))
+                   .context(ParameterField.createValueField("context"))
+                   .dockerfile(ParameterField.createValueField("dockerFile"))
+                   .labels(ParameterField.createValueField(labels))
+                   .build();
+
     stepElementParameters =
         StepElementParameters.builder().identifier("identifier").name("name").spec(stepInfo).build();
     when(featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, "accountId")).thenReturn(false);
@@ -113,6 +143,7 @@ public class DockerStepTest extends CIExecutionTestBase {
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
   public void shouldHandleArtifact() {
+    when(featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, "accountId")).thenReturn(true);
     StepElementParameters stepElementParameters =
         StepElementParameters.builder()
             .identifier("stepId")
@@ -139,6 +170,25 @@ public class DockerStepTest extends CIExecutionTestBase {
                               .build())
                       .build())
             .build();
+
+    StepImageConfig defaultImageConfig = StepImageConfig.builder()
+                                             .image("plugins/kaniko:1.7.5")
+                                             .entrypoint(Arrays.asList("/kaniko/kaniko-docker"))
+                                             .build();
+
+    when(ciExecutionConfigService.getPluginVersionForK8(
+             CIStepInfoType.DOCKER, ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.accountId)))
+        .thenReturn(defaultImageConfig);
+
+    BuildDefinition buildDefinition = getBuildDefinition(ambiance);
+    RunDetails runDetails =
+        RunDetails.builder().runDetailsMetadata(RunDetailsMetadata.builder().invocationId("12").build()).build();
+
+    ProvenancePredicate predicate =
+        ProvenancePredicate.builder().buildDefinition(buildDefinition).runDetails(runDetails).build();
+
+    doReturn(predicate).when(provenanceGenerator).buildProvenancePredicate(any(), any());
+
     StepArtifacts stepArtifacts = dockerStep.handleArtifact(artifactMetadata, stepElementParameters, ambiance);
     assertThat(stepArtifacts).isNotNull();
     assertThat(stepArtifacts.getPublishedImageArtifacts())
@@ -157,6 +207,70 @@ public class DockerStepTest extends CIExecutionTestBase {
                     "https://hub.docker.com/layers/harness/ci-unittest/latest/images/sha256-49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f71/")
                 .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f71")
                 .build());
+
+    assertThat(stepArtifacts.getProvenanceArtifacts())
+        .contains(
+            ProvenanceArtifact.builder().predicate(predicate).predicateType("https://slsa.dev/provenance/v1").build());
+  }
+  private BuildDefinition getBuildDefinition(Ambiance ambiance) {
+    TriggerMetadata triggerMetadata = getTriggerMetadata(ambiance);
+    CodeMetadata codeMetadata = getCodeMetada(ambiance);
+    BuildMetadata buildMetadata = getBuildMetadata(stepInfo);
+
+    ExternalParameters externalParameters = ExternalParameters.builder()
+                                                .triggerMetadata(triggerMetadata)
+                                                .buildMetadata(buildMetadata)
+                                                .codeMetadata(codeMetadata)
+                                                .build();
+
+    InternalParameters internalParameters = InternalParameters.builder()
+                                                .pipelineExecutionId("pipelineExecutionUuid")
+                                                .pipelineIdentifier("pipelineId")
+                                                .accountId("accountId")
+                                                .build();
+
+    BuildDefinition buildDefinition = BuildDefinition.builder()
+                                          .buildType("https://developer.harness.io/docs/continuous-integration")
+                                          .externalParameters(externalParameters)
+                                          .internalParameters(internalParameters)
+                                          .build();
+    return buildDefinition;
+  }
+  private TriggerMetadata getTriggerMetadata(Ambiance ambiance) {
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(StageDetails.builder()
+                                    .executionSource(WebhookExecutionSource.builder()
+                                                         .webhookEvent(ReleaseWebhookEvent.builder().build())
+                                                         .build())
+                                    .build())
+                        .build());
+    TriggerMetadata triggerMetadata = new TriggerMetadata("WEBHOOK", "triggerBy", "RELEASE");
+    return triggerMetadata;
+  }
+
+  private CodeMetadata getCodeMetada(Ambiance ambiance) {
+    when(executionSweepingOutputResolver.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CODEBASE)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(CodebaseSweepingOutput.builder()
+                                    .tag("tag")
+                                    .repoUrl("repoUrl")
+                                    .commitSha("commitSha")
+                                    .branch("branch")
+                                    .prNumber("PrNumber")
+                                    .build())
+                        .build());
+    CodeMetadata codeMetadata = new CodeMetadata("repoUrl", "branch", "PrNumber", "tag", "commitSha");
+    return codeMetadata;
+  }
+
+  private BuildMetadata getBuildMetadata(DockerStepInfo stepInfo) {
+    BuildMetadata buildMetadata = new BuildMetadata(stepInfo.getRepo(), stepInfo.getBuildArgs(), stepInfo.getContext(),
+        stepInfo.getDockerfile(), stepInfo.getLabels());
+    return buildMetadata;
   }
 
   @Test
@@ -188,7 +302,7 @@ public class DockerStepTest extends CIExecutionTestBase {
     PublishedImageArtifact expectedArtifact = PublishedImageArtifact.builder()
                                                   .imageName("imageName")
                                                   .tag("1.0")
-                                                  .url("https://hub.docker.com/layers/test/1.0/images/digest/")
+                                                  .url("https://hub.docker.com/layers/image/1.0/images/digest/")
                                                   .digest("digest")
                                                   .build();
 
@@ -261,7 +375,7 @@ public class DockerStepTest extends CIExecutionTestBase {
     PublishedImageArtifact expectedArtifact = PublishedImageArtifact.builder()
                                                   .imageName("test/test-repo")
                                                   .tag("1.0")
-                                                  .url("https://hub.docker.com/layers/test/1.0/images/sha256-digest/")
+                                                  .url("https://hub.docker.com/layers/image/1.0/images/sha256-digest/")
                                                   .digest("sha256:digest")
                                                   .build();
 
@@ -331,7 +445,7 @@ public class DockerStepTest extends CIExecutionTestBase {
     PublishedImageArtifact expectedArtifact = PublishedImageArtifact.builder()
                                                   .imageName("imageName")
                                                   .tag("1.0")
-                                                  .url("https://hub.docker.com/layers/test/1.0/images/digest/")
+                                                  .url("https://hub.docker.com/layers/image/1.0/images/digest/")
                                                   .digest("digest")
                                                   .build();
 

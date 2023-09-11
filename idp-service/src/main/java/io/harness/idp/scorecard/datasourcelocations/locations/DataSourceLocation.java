@@ -12,12 +12,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
+import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import javax.ws.rs.core.Response;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface DataSourceLocation {
@@ -27,20 +29,18 @@ public interface DataSourceLocation {
       Map<String, String> possibleReplaceableUrlPairs);
 
   String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, Set<String>> dataPointIdsAndInputValues, String requestBody);
+      Map<String, String> dataPointIdsAndInputValue, String requestBody);
 
   default ApiRequestDetails fetchApiRequestDetails(DataSourceLocationEntity dataSourceLocationEntity) {
     return ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
   }
 
   default String constructRequestBody(ApiRequestDetails apiRequestDetails,
-      Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<DataPointEntity, Set<String>> dataPointsAndInputValues) {
+      Map<String, String> possibleReplaceableRequestBodyPairs, Map<DataPointEntity, String> dataPointAndInputValue) {
     String requestBody = apiRequestDetails.getRequestBody();
     requestBody = replaceRequestBodyPlaceholdersIfAny(possibleReplaceableRequestBodyPairs, requestBody);
-    Map<String, Set<String>> dataPointIdsAndInputValues =
-        convertDataPointEntityMapToDataPointIdMap(dataPointsAndInputValues);
-    return replaceRequestBodyInputValuePlaceholdersIfAny(dataPointIdsAndInputValues, requestBody);
+    Map<String, String> dataPointIdAndInputValue = convertDataPointEntityMapToDataPointIdMap(dataPointAndInputValue);
+    return replaceRequestBodyInputValuePlaceholdersIfAny(dataPointIdAndInputValue, requestBody);
   }
 
   default void matchAndReplaceHeaders(Map<String, String> headers, Map<String, String> replaceableHeaders) {
@@ -59,11 +59,11 @@ public interface DataSourceLocation {
     return requestBody;
   }
 
-  default Map<String, Set<String>> convertDataPointEntityMapToDataPointIdMap(
-      Map<DataPointEntity, Set<String>> dataPointsAndInputValues) {
-    Map<String, Set<String>> dataPointIdsAndInputValues = new HashMap<>();
-    dataPointsAndInputValues.forEach((k, v) -> dataPointIdsAndInputValues.put(k.getIdentifier(), v));
-    return dataPointIdsAndInputValues;
+  default Map<String, String> convertDataPointEntityMapToDataPointIdMap(
+      Map<DataPointEntity, String> dataPointsAndInputValue) {
+    Map<String, String> dataPointIdsAndInputValue = new HashMap<>();
+    dataPointsAndInputValue.forEach((k, v) -> dataPointIdsAndInputValue.put(k.getIdentifier(), v));
+    return dataPointIdsAndInputValue;
   }
 
   default String replaceUrlsPlaceholdersIfAny(String url, Map<String, String> replaceableUrls) {
@@ -71,5 +71,9 @@ public interface DataSourceLocation {
       url = url.replace(entry.getKey(), entry.getValue());
     }
     return url;
+  }
+
+  default Response getResponse(ApiRequestDetails apiRequestDetails, DslClient dslClient, String accountIdentifier) {
+    return dslClient.call(accountIdentifier, apiRequestDetails);
   }
 }
