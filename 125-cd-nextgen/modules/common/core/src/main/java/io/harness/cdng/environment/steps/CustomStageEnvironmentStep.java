@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
@@ -30,25 +29,25 @@ import lombok.extern.slf4j.Slf4j;
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
-public class CustomStageEnvironmentStep implements ChildrenExecutable<ServiceStepV3Parameters> {
+public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStageEnvironmentStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.CUSTOM_STAGE_ENVIRONMENT.getName())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
   @Override
-  public Class<ServiceStepV3Parameters> getStepParametersClass() {
-    return ServiceStepV3Parameters.class;
+  public Class<CustomStageEnvironmentStepParameters> getStepParametersClass() {
+    return CustomStageEnvironmentStepParameters.class;
   }
 
   public ChildrenExecutableResponse obtainChildren(
-      Ambiance ambiance, ServiceStepV3Parameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, CustomStageEnvironmentStepParameters stepParameters, StepInputPackage inputPackage) {
     return ChildrenExecutableResponse.newBuilder().build();
   }
 
   @Override
-  public StepResponse handleChildrenResponse(
-      Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
+  public StepResponse handleChildrenResponse(Ambiance ambiance, CustomStageEnvironmentStepParameters stepParameters,
+      Map<String, ResponseData> responseDataMap) {
     return StepResponse.builder().build();
   }
 }
