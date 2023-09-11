@@ -10,6 +10,7 @@ package io.harness.delegate.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 
@@ -19,4 +20,5 @@ import lombok.Data;
 public class SupportedDelegateVersion {
   private final String latestSupportedVersion;
   private final String latestSupportedMinimalVersion;
+  private final Set<String> currentDelegateVersions;
 }

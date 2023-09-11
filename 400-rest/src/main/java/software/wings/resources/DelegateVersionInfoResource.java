@@ -14,6 +14,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_
 import static java.util.Collections.emptyList;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.SupportedDelegateVersion;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
@@ -24,6 +25,7 @@ import io.harness.service.intfc.DelegateRingService;
 
 import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.AccountService;
+import software.wings.service.intfc.AssignDelegateService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -31,6 +33,8 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -48,6 +52,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class DelegateVersionInfoResource {
   private final AccountService accountService;
   private final DelegateRingService delegateRingService;
+  private final AssignDelegateService assignDelegateService;
 
   @GET
   @Path("/delegate/{ring}")
@@ -90,12 +95,15 @@ public class DelegateVersionInfoResource {
   public RestResponse<SupportedDelegateVersion> getSupportedDelegateVersion(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountId) {
     String latestSupportedDelegateImage = delegateRingService.getDelegateImageTag(accountId);
+    List<Delegate> delegateList = assignDelegateService.getAccountDelegates(accountId);
+    Set<String> currentDelegateVersions = delegateList.stream().map(Delegate::getVersion).collect(Collectors.toSet());
     String[] split = latestSupportedDelegateImage.split(":");
     String latestVersion = split[1];
     SupportedDelegateVersion supportedDelegateVersion =
         SupportedDelegateVersion.builder()
             .latestSupportedVersion(latestVersion)
             .latestSupportedMinimalVersion(latestVersion.concat(".minimal"))
+            .currentDelegateVersions(currentDelegateVersions)
             .build();
     return new RestResponse<>(supportedDelegateVersion);
   }
