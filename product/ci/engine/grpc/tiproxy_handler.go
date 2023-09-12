@@ -108,6 +108,7 @@ func (h *tiProxyHandler) WriteTests(stream pb.TiProxy_WriteTestsServer) error {
 	skipVerify := false
 	tiClient := getRemoteTiClient(repo, sha, commitLink, skipVerify)
 
+	h.log.Infow("TIProxy - starting write API call", "step_id", stepID)
 	// Write API call
 	report := "junit" // get from proto if we need other reports in the future
 	err := tiClient.Write(stream.Context(), stepID, report, tests)
@@ -115,11 +116,14 @@ func (h *tiProxyHandler) WriteTests(stream pb.TiProxy_WriteTestsServer) error {
 		h.log.Errorw("could not write test cases: ", zap.Error(err))
 		return err
 	}
+	h.log.Infow("TIProxy - completed write API call", "step_id", stepID)
+	h.log.Infow("TIProxy - starting SendAndClose call", "step_id", stepID)
 	err = stream.SendAndClose(&pb.WriteTestsResponse{})
 	if err != nil {
 		h.log.Errorw("could not close test case data protobuf stream", zap.Error(err))
 		return err
 	}
+	h.log.Infow("TIProxy - completed SendAndClose call", "step_id", stepID)
 	h.log.Infow("parsed test cases", "num_cases", len(tests))
 	return nil
 }

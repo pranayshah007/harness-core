@@ -210,7 +210,9 @@ func (b *RemoteWriter) Open() error {
 // Close closes the writer and uploads the full contents to
 // the server.
 func (b *RemoteWriter) Close() error {
+	b.log.Infow("attempting to close the stream", "key", b.key)
 	if b.stop() {
+		b.log.Infow("attempting to flush lines before closing", "key", b.key)
 		// Flush anything waiting on a new line
 		if len(b.prev) > 0 {
 			b.Write([]byte("\n"))
@@ -225,11 +227,13 @@ func (b *RemoteWriter) Close() error {
 	if errc := b.client.Close(context.Background(), b.key); errc != nil {
 		b.log.Errorw("failed to close log stream", "key", b.key, zap.Error(errc))
 	}
+	b.log.Infow("closed the stream", "key", b.key, "error", err)
 	return err
 }
 
 // upload uploads the full log history to the server.
 func (b *RemoteWriter) upload() error {
+	b.log.Infow("attempting to upload logs", "key", b.key)
 	// Write history to a file and use that for upload.
 	data := new(bytes.Buffer)
 	l := len(b.history)
@@ -275,21 +279,24 @@ func (b *RemoteWriter) upload() error {
 			return err
 		}
 	}
+	b.log.Infow("finished upload logs", "key", b.key)
 	return nil
 }
 
 // flush batch uploads all buffered logs to the server.
 func (b *RemoteWriter) flush() error {
+	b.log.Infow("attempting to flush lines", "key", b.key)
 	if !b.opened {
 		return nil
 	}
 	b.Lock()
-        defer b.Unlock()
+	defer b.Unlock()
 	lines := b.copy()
 	b.clear()
 	if len(lines) == 0 {
 		return nil
 	}
+	b.log.Infow("attempting to flush lines - starting write rpc call", "key", b.key)
 	err := b.client.Write(context.Background(), b.key, lines)
 	if err != nil {
 		b.log.Errorw("failed to flush lines", "key", b.key, "num_lines", len(lines), zap.Error(err))
@@ -337,6 +344,8 @@ func (b *RemoteWriter) stopped() bool {
 
 // Start starts a periodic loop to flush logs to the live stream
 func (b *RemoteWriter) Start() error {
+
+	b.log.Infow("starting periodic process for flushing lines")
 	intervalTimer := time.NewTimer(b.interval)
 	for {
 		select {
