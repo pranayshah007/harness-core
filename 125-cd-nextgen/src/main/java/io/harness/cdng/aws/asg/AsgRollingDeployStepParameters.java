@@ -14,7 +14,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
-import io.harness.cdng.elastigroup.ElastigroupInstances;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
@@ -38,7 +37,7 @@ public class AsgRollingDeployStepParameters extends AsgRollingDeployBaseStepInfo
   public AsgRollingDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> skipMatching, ParameterField<Boolean> useAlreadyRunningInstances,
       ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage,
-      ElastigroupInstances instances) {
+      AsgInstances instances) {
     super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
         instances);
   }

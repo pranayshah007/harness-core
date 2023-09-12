@@ -30,10 +30,6 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.aws.asg.AsgRollingPrepareRollbackDataOutcome.AsgRollingPrepareRollbackDataOutcomeBuilder;
-import io.harness.cdng.elastigroup.ElastigroupFixedInstances;
-import io.harness.cdng.elastigroup.ElastigroupInstances;
-import io.harness.cdng.elastigroup.ElastigroupInstancesType;
-import io.harness.cdng.elastigroup.LoadBalancer;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -752,7 +748,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
     throw new GeneralException("Invalid asg command response instance");
   }
 
-  public AsgCapacityConfig getAsgCapacityConfig(ElastigroupInstances instances) {
+  public AsgCapacityConfig getAsgCapacityConfig(AsgInstances instances) {
     if (instances == null) {
       return null;
     }
@@ -761,7 +757,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
       case CURRENT_RUNNING:
         return null;
       case FIXED:
-        ElastigroupFixedInstances fixed = (ElastigroupFixedInstances) instances.getSpec();
+        AsgFixedInstances fixed = (AsgFixedInstances) instances.getSpec();
         Integer minSize = ParameterFieldHelper.getIntegerParameterFieldValue(fixed.getMin());
         Integer maxSize = ParameterFieldHelper.getIntegerParameterFieldValue(fixed.getMax());
         Integer desiredSize = ParameterFieldHelper.getIntegerParameterFieldValue(fixed.getDesired());
@@ -771,16 +767,16 @@ public class AsgStepCommonHelper extends CDStepHelper {
     }
   }
 
-  public boolean isUseAlreadyRunningInstances(ElastigroupInstances instances, boolean useAlreadyRunningInstances) {
+  public boolean isUseAlreadyRunningInstances(AsgInstances instances, boolean useAlreadyRunningInstances) {
     if (instances == null) {
       return useAlreadyRunningInstances;
     }
 
-    return ElastigroupInstancesType.CURRENT_RUNNING == instances.getType();
+    return AsgInstancesType.CURRENT_RUNNING == instances.getType();
   }
 
-  public boolean isV2Feature(Map<String, List<String>> asgStoreManifestsContent, ElastigroupInstances instances,
-      List<LoadBalancer> loadBalancers) {
+  public boolean isV2Feature(Map<String, List<String>> asgStoreManifestsContent, AsgInstances instances,
+      List<AwsAsgLoadBalancerConfigYaml> loadBalancers) {
     if (isNotEmpty(asgStoreManifestsContent)
         && isNotEmpty(asgStoreManifestsContent.get(OutcomeExpressionConstants.USER_DATA))) {
       return true;

@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -40,6 +41,7 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResult;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -352,15 +354,16 @@ public class AsgBlueGreenDeployStepTest extends CategoryTest {
     assertThat(ret).isNull();
 
     // not all fields present (stageListenerRuleArn missing)
-    asgBlueGreenDeployStepParameters = AsgBlueGreenDeployStepParameters.infoBuilder()
-                                           .loadBalancer(ParameterField.createValueField("loadBalancer"))
-                                           .prodListener(ParameterField.createValueField("prodListener"))
-                                           .prodListenerRuleArn(ParameterField.createValueField("prodListenerRuleArn"))
-                                           .stageListener(ParameterField.createValueField("stageListener"))
-                                           .build();
+    AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters2 =
+        AsgBlueGreenDeployStepParameters.infoBuilder()
+            .loadBalancer(ParameterField.createValueField("loadBalancer"))
+            .prodListener(ParameterField.createValueField("prodListener"))
+            .prodListenerRuleArn(ParameterField.createValueField("prodListenerRuleArn"))
+            .stageListener(ParameterField.createValueField("stageListener"))
+            .build();
 
-    ret = asgBlueGreenDeployStep.getLoadBalancers(asgBlueGreenDeployStepParameters);
-    assertThat(ret).isNull();
+    assertThatThrownBy(() -> asgBlueGreenDeployStep.getLoadBalancers(asgBlueGreenDeployStepParameters2))
+        .isInstanceOf(InvalidRequestException.class);
 
     asgBlueGreenDeployStepParameters =
         AsgBlueGreenDeployStepParameters.infoBuilder()
@@ -382,17 +385,13 @@ public class AsgBlueGreenDeployStepTest extends CategoryTest {
     // loadBalancers of type AwsAsgLoadBalancerConfigYaml provided
     asgBlueGreenDeployStepParameters =
         AsgBlueGreenDeployStepParameters.infoBuilder()
-            .loadBalancers(
-                List.of(LoadBalancer.builder()
-                            .type(LoadBalancerType.AWS_ASG_LOAD_BALANCER_CONFIG)
-                            .spec(AwsAsgLoadBalancerConfigYaml.builder()
-                                      .loadBalancer(ParameterField.createValueField("loadBalancer"))
-                                      .prodListener(ParameterField.createValueField("prodListener"))
-                                      .prodListenerRuleArn(ParameterField.createValueField("prodListenerRuleArn"))
-                                      .stageListener(ParameterField.createValueField("stageListener"))
-                                      .stageListenerRuleArn(ParameterField.createValueField("stageListenerRuleArn"))
-                                      .build())
-                            .build()))
+            .loadBalancers(List.of(AwsAsgLoadBalancerConfigYaml.builder()
+                                       .loadBalancer(ParameterField.createValueField("loadBalancer"))
+                                       .prodListener(ParameterField.createValueField("prodListener"))
+                                       .prodListenerRuleArn(ParameterField.createValueField("prodListenerRuleArn"))
+                                       .stageListener(ParameterField.createValueField("stageListener"))
+                                       .stageListenerRuleArn(ParameterField.createValueField("stageListenerRuleArn"))
+                                       .build()))
             .build();
 
     ret = asgBlueGreenDeployStep.getLoadBalancers(asgBlueGreenDeployStepParameters);
@@ -440,13 +439,9 @@ public class AsgBlueGreenDeployStepTest extends CategoryTest {
         .isEqualTo(asgLoadBalancerConfig.getProdListenerArn());
     assertThat(awsAsgLoadBalancerConfigYaml.getProdListenerRuleArn().getValue())
         .isEqualTo(asgLoadBalancerConfig.getProdListenerRuleArn());
-    assertThat(awsAsgLoadBalancerConfigYaml.getProdTargetGroupArnList().getValue())
-        .isEqualTo(asgLoadBalancerConfig.getProdTargetGroupArnsList());
     assertThat(awsAsgLoadBalancerConfigYaml.getStageListener().getValue())
         .isEqualTo(asgLoadBalancerConfig.getStageListenerArn());
     assertThat(awsAsgLoadBalancerConfigYaml.getStageListenerRuleArn().getValue())
         .isEqualTo(asgLoadBalancerConfig.getStageListenerRuleArn());
-    assertThat(awsAsgLoadBalancerConfigYaml.getStageTargetGroupArnList().getValue())
-        .isEqualTo(asgLoadBalancerConfig.getStageTargetGroupArnsList());
   }
 }

@@ -15,14 +15,10 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.elastigroup.LoadBalancerSpec;
-import io.harness.cdng.elastigroup.LoadBalancerType;
 import io.harness.pms.yaml.ParameterField;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -38,7 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("AWSAsgLoadBalancerConfig")
 @TypeAlias("AwsAsgLoadBalancerConfigYaml")
 @RecasterAlias("io.harness.cdng.aws.asg.AwsAsgLoadBalancerConfigYaml")
-public class AwsAsgLoadBalancerConfigYaml implements LoadBalancerSpec {
+public class AwsAsgLoadBalancerConfigYaml {
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
@@ -63,16 +59,4 @@ public class AwsAsgLoadBalancerConfigYaml implements LoadBalancerSpec {
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<String> stageListenerRuleArn;
-
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> prodTargetGroupArnList;
-
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> stageTargetGroupArnList;
-
-  @Override
-  @JsonIgnore
-  public LoadBalancerType getType() {
-    return LoadBalancerType.AWS_ASG_LOAD_BALANCER_CONFIG;
-  }
 }

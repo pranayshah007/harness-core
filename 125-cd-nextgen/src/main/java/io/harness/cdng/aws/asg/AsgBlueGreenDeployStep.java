@@ -62,6 +62,8 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -305,6 +307,8 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
               .prodListenerRuleArn(loadBalancerConfig.getProdListenerRuleArn())
               .prodTargetGroupArnsList(loadBalancerConfig.getProdTargetGroupArnsList())
               .loadBalancerConfigs(loadBalancerConfigs)
+              .prodTargetGroupArnListForLoadBalancer(getProdTargetGroupArnListForLoadBalancer(loadBalancers))
+              .stageTargetGroupArnListForLoadBalancer(getStageTargetGroupArnListForLoadBalancer(loadBalancers))
               .build();
 
       executionSweepingOutputService.consume(ambiance,
@@ -349,21 +353,19 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
       if (asgLoadBalancerConfig == null) {
         return null;
       }
-      return List.of(asgLoadBalancerConfig);
+      return Arrays.asList(asgLoadBalancerConfig);
     }
 
     return asgBlueGreenDeployStepParameters.getLoadBalancers()
         .stream()
-        .map(lb -> {
-          AwsAsgLoadBalancerConfigYaml awsAsgLB = (AwsAsgLoadBalancerConfigYaml) lb.getSpec();
-          return AsgLoadBalancerConfig.builder()
-              .loadBalancer(awsAsgLB.getLoadBalancer().getValue())
-              .stageListenerArn(awsAsgLB.getStageListener().getValue())
-              .stageListenerRuleArn(awsAsgLB.getStageListenerRuleArn().getValue())
-              .prodListenerArn(awsAsgLB.getProdListener().getValue())
-              .prodListenerRuleArn(awsAsgLB.getProdListenerRuleArn().getValue())
-              .build();
-        })
+        .map(lb
+            -> AsgLoadBalancerConfig.builder()
+                   .loadBalancer(lb.getLoadBalancer().getValue())
+                   .stageListenerArn(lb.getStageListener().getValue())
+                   .stageListenerRuleArn(lb.getStageListenerRuleArn().getValue())
+                   .prodListenerArn(lb.getProdListener().getValue())
+                   .prodListenerRuleArn(lb.getProdListenerRuleArn().getValue())
+                   .build())
         .collect(Collectors.toList());
   }
 
@@ -417,9 +419,27 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
                    .prodListenerRuleArn(ParameterField.createValueField(lb.getProdListenerRuleArn()))
                    .stageListener(ParameterField.createValueField(lb.getStageListenerArn()))
                    .stageListenerRuleArn(ParameterField.createValueField(lb.getStageListenerRuleArn()))
-                   .prodTargetGroupArnList(ParameterField.createValueField(lb.getProdTargetGroupArnsList()))
-                   .stageTargetGroupArnList(ParameterField.createValueField(lb.getStageTargetGroupArnsList()))
                    .build())
         .collect(Collectors.toList());
+  }
+
+  Map<String, List<String>> getProdTargetGroupArnListForLoadBalancer(List<AsgLoadBalancerConfig> loadBalancers) {
+    if (isEmpty(loadBalancers)) {
+      return null;
+    }
+
+    Map<String, List<String>> ret = new HashMap<>();
+    loadBalancers.stream().forEach(lb -> ret.put(lb.getLoadBalancer(), lb.getProdTargetGroupArnsList()));
+    return ret;
+  }
+
+  Map<String, List<String>> getStageTargetGroupArnListForLoadBalancer(List<AsgLoadBalancerConfig> loadBalancers) {
+    if (isEmpty(loadBalancers)) {
+      return null;
+    }
+
+    Map<String, List<String>> ret = new HashMap<>();
+    loadBalancers.stream().forEach(lb -> ret.put(lb.getLoadBalancer(), lb.getStageTargetGroupArnsList()));
+    return ret;
   }
 }

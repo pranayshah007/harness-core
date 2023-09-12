@@ -16,10 +16,6 @@ import io.harness.CategoryTest;
 import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.elastigroup.ElastigroupFixedInstances;
-import io.harness.cdng.elastigroup.ElastigroupInstances;
-import io.harness.cdng.elastigroup.ElastigroupInstancesType;
-import io.harness.cdng.elastigroup.LoadBalancer;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -87,19 +83,17 @@ public class AsgStepCommonHelperTest extends CategoryTest {
     AsgCapacityConfig ret = asgStepCommonHelper.getAsgCapacityConfig(null);
     assertThat(ret).isNull();
 
-    ElastigroupInstances instances =
-        ElastigroupInstances.builder().type(ElastigroupInstancesType.CURRENT_RUNNING).build();
+    AsgInstances instances = AsgInstances.builder().type(AsgInstancesType.CURRENT_RUNNING).build();
 
     ret = asgStepCommonHelper.getAsgCapacityConfig(instances);
     assertThat(ret).isNull();
 
-    ElastigroupFixedInstances elastigroupFixedInstances = ElastigroupFixedInstances.builder()
-                                                              .min(ParameterField.createValueField(1))
-                                                              .max(ParameterField.createValueField(3))
-                                                              .desired(ParameterField.createValueField(2))
-                                                              .build();
-    instances =
-        ElastigroupInstances.builder().type(ElastigroupInstancesType.FIXED).spec(elastigroupFixedInstances).build();
+    AsgFixedInstances asgFixedInstances = AsgFixedInstances.builder()
+                                              .min(ParameterField.createValueField(1))
+                                              .max(ParameterField.createValueField(3))
+                                              .desired(ParameterField.createValueField(2))
+                                              .build();
+    instances = AsgInstances.builder().type(AsgInstancesType.FIXED).spec(asgFixedInstances).build();
 
     ret = asgStepCommonHelper.getAsgCapacityConfig(instances);
     assertThat(ret.getMin()).isEqualTo(1);
@@ -116,12 +110,11 @@ public class AsgStepCommonHelperTest extends CategoryTest {
     ret = asgStepCommonHelper.isUseAlreadyRunningInstances(null, false);
     assertThat(ret).isEqualTo(false);
 
-    ElastigroupInstances instances =
-        ElastigroupInstances.builder().type(ElastigroupInstancesType.CURRENT_RUNNING).build();
+    AsgInstances instances = AsgInstances.builder().type(AsgInstancesType.CURRENT_RUNNING).build();
     ret = asgStepCommonHelper.isUseAlreadyRunningInstances(instances, false);
     assertThat(ret).isEqualTo(true);
 
-    instances = ElastigroupInstances.builder().type(ElastigroupInstancesType.FIXED).build();
+    instances = AsgInstances.builder().type(AsgInstancesType.FIXED).build();
     ret = asgStepCommonHelper.isUseAlreadyRunningInstances(instances, true);
     assertThat(ret).isEqualTo(false);
   }
@@ -136,10 +129,10 @@ public class AsgStepCommonHelperTest extends CategoryTest {
     boolean ret = asgStepCommonHelper.isV2Feature(asgStoreManifestsContent, null, null);
     assertThat(ret).isEqualTo(true);
 
-    ret = asgStepCommonHelper.isV2Feature(null, ElastigroupInstances.builder().build(), null);
+    ret = asgStepCommonHelper.isV2Feature(null, AsgInstances.builder().build(), null);
     assertThat(ret).isEqualTo(true);
 
-    ret = asgStepCommonHelper.isV2Feature(null, null, List.of(LoadBalancer.builder().build()));
+    ret = asgStepCommonHelper.isV2Feature(null, null, List.of(AwsAsgLoadBalancerConfigYaml.builder().build()));
     assertThat(ret).isEqualTo(true);
   }
 }

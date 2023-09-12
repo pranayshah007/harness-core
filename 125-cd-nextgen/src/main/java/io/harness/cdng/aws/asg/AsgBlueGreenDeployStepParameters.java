@@ -14,8 +14,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
-import io.harness.cdng.elastigroup.ElastigroupInstances;
-import io.harness.cdng.elastigroup.LoadBalancer;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
@@ -39,8 +37,8 @@ public class AsgBlueGreenDeployStepParameters extends AsgBlueGreenDeployBaseStep
   public AsgBlueGreenDeployStepParameters(ParameterField<String> loadBalancer, ParameterField<String> prodListener,
       ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
       ParameterField<String> stageListenerRuleArn, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Boolean> useAlreadyRunningInstances, ElastigroupInstances instances,
-      List<LoadBalancer> loadBalancers) {
+      ParameterField<Boolean> useAlreadyRunningInstances, AsgInstances instances,
+      List<AwsAsgLoadBalancerConfigYaml> loadBalancers) {
     super(loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn, delegateSelectors,
         useAlreadyRunningInstances, instances, loadBalancers);
   }

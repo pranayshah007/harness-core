@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.cdng.elastigroup.ElastigroupInstances;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AsgRollingDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -58,7 +57,7 @@ public class AsgRollingDeployStepInfo extends AsgRollingDeployBaseStepInfo imple
   public AsgRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> skipMatching, ParameterField<Boolean> useAlreadyRunningInstances,
       ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage,
-      ElastigroupInstances instances) {
+      AsgInstances instances) {
     super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
         instances);
   }

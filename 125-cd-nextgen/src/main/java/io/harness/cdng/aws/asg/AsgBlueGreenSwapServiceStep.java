@@ -250,9 +250,29 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
                    .prodListenerRuleArn(lb.getProdListenerRuleArn().getValue())
                    .stageListenerArn(lb.getStageListener().getValue())
                    .stageListenerRuleArn(lb.getStageListenerRuleArn().getValue())
-                   .prodTargetGroupArnsList(lb.getProdTargetGroupArnList().getValue())
-                   .stageTargetGroupArnsList(lb.getStageTargetGroupArnList().getValue())
+                   .prodTargetGroupArnsList(getProdTargetGroupArnListForLoadBalancer(
+                       asgBlueGreenPrepareRollbackDataOutcome, lb.getLoadBalancer().getValue()))
+                   .stageTargetGroupArnsList(getStageTargetGroupArnListForLoadBalancer(
+                       asgBlueGreenPrepareRollbackDataOutcome, lb.getLoadBalancer().getValue()))
                    .build())
         .collect(Collectors.toList());
+  }
+
+  public static List<String> getProdTargetGroupArnListForLoadBalancer(
+      AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome, String loadBalancer) {
+    if (isEmpty(asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArnListForLoadBalancer())) {
+      return null;
+    }
+
+    return asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArnListForLoadBalancer().get(loadBalancer);
+  }
+
+  public static List<String> getStageTargetGroupArnListForLoadBalancer(
+      AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome, String loadBalancer) {
+    if (isEmpty(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnListForLoadBalancer())) {
+      return null;
+    }
+
+    return asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnListForLoadBalancer().get(loadBalancer);
   }
 }

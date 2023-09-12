@@ -305,13 +305,13 @@ public class AsgBlueGreenSwapServiceStepTest extends CategoryTest {
             .prodListenerRuleArn(ParameterField.createValueField(prodListenerRuleArn))
             .stageListener(ParameterField.createValueField(stageListenerArn))
             .stageListenerRuleArn(ParameterField.createValueField(stageListenerRuleArn))
-            .prodTargetGroupArnList(ParameterField.createValueField(prodTargetGroupArnsList))
-            .stageTargetGroupArnList(ParameterField.createValueField(stageTargetGroupArnsList))
             .build();
 
     AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
         AsgBlueGreenPrepareRollbackDataOutcome.builder()
             .loadBalancerConfigs(List.of(awsAsgLoadBalancerConfigYaml))
+            .prodTargetGroupArnListForLoadBalancer(Map.of(loadBalancer, prodTargetGroupArnsList))
+            .stageTargetGroupArnListForLoadBalancer(Map.of(loadBalancer, stageTargetGroupArnsList))
             .build();
 
     List<AsgLoadBalancerConfig> ret =

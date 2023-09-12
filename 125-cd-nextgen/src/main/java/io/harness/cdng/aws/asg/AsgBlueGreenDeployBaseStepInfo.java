@@ -15,8 +15,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.elastigroup.ElastigroupInstances;
-import io.harness.cdng.elastigroup.LoadBalancer;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
@@ -60,8 +58,8 @@ public class AsgBlueGreenDeployBaseStepInfo {
   @Deprecated
   ParameterField<Boolean> useAlreadyRunningInstances;
 
-  @ApiModelProperty(dataType = SwaggerConstants.INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH)
-  ElastigroupInstances instances;
+  @ApiModelProperty(dataType = SwaggerConstants.ASG_INSTANCES_CLASSPATH) AsgInstances instances;
 
-  @ApiModelProperty(dataType = SwaggerConstants.LOAD_BALANCER_CONFIGURATION_CLASSPATH) List<LoadBalancer> loadBalancers;
+  @ApiModelProperty(dataType = SwaggerConstants.ASG_LOAD_BALANCER_CONFIGURATION_CLASSPATH)
+  List<AwsAsgLoadBalancerConfigYaml> loadBalancers;
 }

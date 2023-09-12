@@ -51,6 +51,7 @@ public class AsgRollingDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<AsgR
         stepElement.getAsgRollingDeployStepInfo().getUseAlreadyRunningInstances());
     asgRollingDeployStepParameters.setDelegateSelectors(
         stepElement.getAsgRollingDeployStepInfo().getDelegateSelectors());
+    asgRollingDeployStepParameters.setInstances(stepElement.getAsgRollingDeployStepInfo().getInstances());
 
     return stepParameters;
   }
