@@ -56,7 +56,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
     IndexCreator indexCreator = buildIndexCreator(collection, "foo", 1).build();
     assertThat(createCollectionSession(collection).findIndexByFields(indexCreator)).isNull();
 
-    session.create(indexCreator);
+    session.create(indexCreator, true);
 
     DBObject dbObject = createCollectionSession(collection).findIndexByFields(indexCreator);
     assertThat(dbObject.get("name")).isEqualTo("foo");
@@ -77,7 +77,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
     IndexCreator indexCreator = buildIndexCreator(collection, "foo", 1).build();
     assertThat(createCollectionSession(collection).findIndexByFieldsAndDirection(indexCreator)).isNull();
 
-    session.create(indexCreator);
+    session.create(indexCreator, true);
 
     DBObject dbObject = createCollectionSession(collection).findIndexByFieldsAndDirection(indexCreator);
     assertThat(dbObject.get("name")).isEqualTo("foo");
@@ -95,7 +95,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
     DBCollection collection = persistence.getCollection(TestIndexEntity.class);
 
-    session.create(buildIndexCreator(collection, "index", 1).build());
+    session.create(buildIndexCreator(collection, "index", 1).build(), true);
 
     assertThat(createCollectionSession(collection).findIndexByName("index")).isNotNull();
     assertThat(createCollectionSession(collection).findIndexByName("foo")).isNull();
@@ -113,7 +113,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
     IndexCreator indexCreator = buildIndexCreator(collection, "foo", 1).build();
     assertThat(createCollectionSession(collection).isRebuildNeeded(indexCreator)).isFalse();
 
-    session.create(indexCreator);
+    session.create(indexCreator, true);
 
     assertThat(createCollectionSession(collection).isRebuildNeeded(indexCreator)).isFalse();
 
@@ -141,7 +141,7 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
     IndexCreator indexCreator = buildIndexCreator(collection, "foo", 1).build();
     assertThat(createCollectionSession(collection).isCreateNeeded(indexCreator)).isTrue();
 
-    session.create(indexCreator);
+    session.create(indexCreator, true);
 
     assertThat(createCollectionSession(collection).isCreateNeeded(indexCreator)).isFalse();
   }
@@ -159,8 +159,8 @@ public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
     Set<String> names = ImmutableSet.<String>builder().add(index2).build();
 
     String index1 = generateUuid();
-    session.create(buildIndexCreator(collection, index1, 1).build());
-    session.create(buildIndexCreator(collection, index2, -1).build());
+    session.create(buildIndexCreator(collection, index1, 1).build(), true);
+    session.create(buildIndexCreator(collection, index2, -1).build(), true);
 
     List<String> obsoleteIndexes = createCollectionSession(collection).obsoleteIndexes(names);
 

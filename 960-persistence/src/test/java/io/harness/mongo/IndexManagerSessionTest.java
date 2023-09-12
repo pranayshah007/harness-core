@@ -34,6 +34,9 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -43,15 +46,14 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-
-  public void testMongoBehaviorCreateIndexWithExistingMatchingFields() {
+  public void testMongoBehaviorCreateIndexWithExistingMatchingFields() throws ExecutionException, InterruptedException {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
     DBCollection collection = persistence.getCollection(TestIndexEntity.class);
 
     String index1 = generateUuid();
     IndexCreator original = buildIndexCreator(collection, index1, 1).build();
-    session.create(original);
+    session.create(original, true);
 
     String index2 = generateUuid();
     IndexCreator indexCreator = buildIndexCreator(collection, index2, 1).build();
@@ -59,7 +61,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
     DBObject dbObject = createCollectionSession(collection).findIndexByFields(indexCreator);
     assertThat(dbObject.get("name")).isEqualTo(index1);
 
-    assertThat(session.rebuildIndex(createCollectionSession(collection), indexCreator, ofSeconds(0))).isTrue();
+    assertThat(session.rebuildIndex(createCollectionSession(collection), indexCreator, ofSeconds(0), true)).isTrue();
 
     DBObject dbObject2 = createCollectionSession(collection).findIndexByFields(indexCreator);
     assertThat(dbObject2.get("name")).isEqualTo(index2);
@@ -68,41 +70,39 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-
   public void testMongoBehaviorCreateIndexWithExistingNonMatchingFields() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
     DBCollection collection = persistence.getCollection(TestIndexEntity.class);
 
     IndexCreator original = buildIndexCreator(collection, "foo", 1).build();
-    session.create(original);
+    session.create(original, true);
 
     IndexCreator indexCreator = buildIndexCreator(collection, "foo", -1).build();
 
     DBObject dbObject = createCollectionSession(collection).findIndexByFields(original);
     assertThat(dbObject.get("name")).isEqualTo("foo");
 
-    assertThat(session.rebuildIndex(createCollectionSession(collection), indexCreator, ofSeconds(0))).isTrue();
+    assertThat(session.rebuildIndex(createCollectionSession(collection), indexCreator, ofSeconds(0), true)).isTrue();
     session.create(indexCreator);
   }
 
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-
   public void testMongoRebuiltIndexInTime() {
     IndexManagerSession session =
         new IndexManagerSession(persistence.getDatastore(TestIndexEntity.class), emptyMap(), AUTO);
     DBCollection collection = persistence.getCollection(TestIndexEntity.class);
 
     IndexCreator original = buildIndexCreator(collection, "foo", 1).build();
-    session.create(original);
+    session.create(original, true);
 
     assertThat(collection.getIndexInfo()).hasSize(2);
 
     IndexCreator indexCreator = buildIndexCreator(collection, "foo2", 1).build();
 
-    assertThat(session.rebuildIndex(createCollectionSession(collection), indexCreator, ofSeconds(120))).isFalse();
+    assertThat(session.rebuildIndex(createCollectionSession(collection), indexCreator, ofSeconds(120), true)).isFalse();
 
     // The rebuild did not drop the original but created the temporary one
     assertThat(collection.getIndexInfo()).hasSize(3);
@@ -110,7 +110,7 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
     DBObject dbObject2 = createCollectionSession(collection).findIndexByFields(indexCreator);
     assertThat(dbObject2.get("name")).isEqualTo("foo");
 
-    assertThat(session.rebuildIndex(createCollectionSession(collection), indexCreator, ofSeconds(0))).isTrue();
+    assertThat(session.rebuildIndex(createCollectionSession(collection), indexCreator, ofSeconds(0), true)).isTrue();
 
     // The original is dropped and regenerated
     assertThat(collection.getIndexInfo()).hasSize(3);
@@ -129,7 +129,6 @@ public class IndexManagerSessionTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-
   public void testIndexCreators() {
     Morphia morphia = new Morphia();
     morphia.map(TestIndexEntity.class);

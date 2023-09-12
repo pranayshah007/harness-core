@@ -46,9 +46,11 @@ import io.harness.mongo.log.CollectionLogContext;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.store.Store;
 import io.harness.threading.Morpheus;
+import io.harness.threading.ThreadPool;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.mongodb.AggregationOptions;
 import com.mongodb.BasicDBObject;
 import com.mongodb.Cursor;
@@ -78,6 +80,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -97,6 +103,9 @@ public class IndexManagerSession {
   public static final Duration SOAKING_PERIOD = ofDays(1);
   // We do not want to drop temporary index before we created the new one. Make the soaking period smaller.
   public static final Duration REBUILD_SOAKING_PERIOD = SOAKING_PERIOD.minus(ofHours(1));
+
+  private ExecutorService createIndexExecutorService = ThreadPool.create(
+      1, 15, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("CreateIndexExecutorService-%d").build());
   public static final List<String> exceptionCollections =
       ImmutableList.of("instance", "verificationServiceConfigurations", "artifactStream", "infrastructureMapping",
           "entityVersions", "commands", "environments", "configFiles", "serviceTemplates", "pipelines", "triggers",
@@ -367,6 +376,10 @@ public class IndexManagerSession {
   private static final AtomicInteger step = new AtomicInteger(0);
 
   public void create(IndexCreator indexCreator) {
+    create(indexCreator, false);
+  }
+
+  public void create(IndexCreator indexCreator, boolean completeFuture) {
     if (migrators != null) {
       String migratorKey = indexCreator.getCollection().getName() + "."
           + (indexCreator.getOriginalName() == null ? indexCreator.name() : indexCreator.getOriginalName());
@@ -383,7 +396,14 @@ public class IndexManagerSession {
         log.warn("Creating index {} {}", indexCreator.getOptions().toString(), indexCreator.getKeys().toString());
         for (int i = 0; i < 10; i++) {
           try {
-            indexCreator.getCollection().createIndex(indexCreator.getKeys(), indexCreator.getOptions());
+            Future<?> future = createIndexExecutorService.submit(() -> {
+              indexCreator.getCollection().createIndex(indexCreator.getKeys(), indexCreator.getOptions());
+              log.warn(
+                  "Created index done {} {}", indexCreator.getOptions().toString(), indexCreator.getKeys().toString());
+            });
+            if (completeFuture) {
+              future.get();
+            }
             break;
           } catch (MongoCommandException exception) {
             // Creating too many indexes at the same time might overwhelm mongo. Give it some time to catch up.
@@ -392,6 +412,9 @@ public class IndexManagerSession {
             } else {
               throw exception;
             }
+
+          } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
           }
         }
         break;
@@ -429,6 +452,11 @@ public class IndexManagerSession {
 
   public boolean rebuildIndex(
       IndexManagerCollectionSession collectionSession, IndexCreator indexCreator, Duration waitFor) {
+    return rebuildIndex(collectionSession, indexCreator, waitFor, false);
+  }
+
+  public boolean rebuildIndex(IndexManagerCollectionSession collectionSession, IndexCreator indexCreator,
+      Duration waitFor, boolean completeCreateFuture) {
     if (!collectionSession.isRebuildNeeded(indexCreator)) {
       return false;
     }
@@ -456,7 +484,7 @@ public class IndexManagerSession {
     // Lets see if we already have this one created from before
     DBObject triIndex = collectionSession.findIndexByFieldsAndDirection(tempCreator);
     if (triIndex == null) {
-      create(tempCreator);
+      create(tempCreator, completeCreateFuture);
       collectionSession.reset(tempCreator.getCollection());
       triIndex = collectionSession.findIndexByFieldsAndDirection(tempCreator);
       if (triIndex == null) {
@@ -484,7 +512,7 @@ public class IndexManagerSession {
     }
 
     // Lets create the target index
-    create(indexCreator);
+    create(indexCreator, completeCreateFuture);
     return true;
   }
 
