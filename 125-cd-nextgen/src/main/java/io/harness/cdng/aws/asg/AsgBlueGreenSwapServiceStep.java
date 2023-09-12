@@ -230,8 +230,6 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
         .stageListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerArn())
         .stageListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
         .stageTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnsList())
-        .prodTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArnsList())
-        .stageTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnsList())
         .build();
   }
 

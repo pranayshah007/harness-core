@@ -777,6 +777,11 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public boolean isV2Feature(Map<String, List<String>> asgStoreManifestsContent, AsgInstances instances,
       List<AwsAsgLoadBalancerConfigYaml> loadBalancers) {
+    // TODO enable this in last PR
+    if (true) {
+      return false;
+    }
+
     if (isNotEmpty(asgStoreManifestsContent)
         && isNotEmpty(asgStoreManifestsContent.get(OutcomeExpressionConstants.USER_DATA))) {
       return true;
