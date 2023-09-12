@@ -1087,7 +1087,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Jenkins Build")
             .setType(StepSpecTypeConstants.JENKINS_BUILD)
-            .setFeatureRestrictionName(FeatureRestrictionName.JENKINS_BUILD.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
             .build();
 
