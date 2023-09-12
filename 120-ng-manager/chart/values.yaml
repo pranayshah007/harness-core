@@ -3,6 +3,8 @@
 # Declare variables to be passed into your templates.
 global:
   kubeVersion: ""
+  cg:
+    enabled: false
   secrets:
     app:
       external:
