@@ -217,7 +217,7 @@ func (b *RemoteWriter) Close() error {
 		if len(b.prev) > 0 {
 			b.Write([]byte("\n"))
 		}
-		b.flush()
+		b.flush(-1)
 	}
 	err := b.upload()
 	// Close the log stream once upload has completed. Log in case of any error
@@ -284,8 +284,8 @@ func (b *RemoteWriter) upload() error {
 }
 
 // flush batch uploads all buffered logs to the server.
-func (b *RemoteWriter) flush() error {
-	b.log.Infow("attempting to flush lines", "key", b.key)
+func (b *RemoteWriter) flush(iteration int) error {
+	b.log.Infow("attempting to flush lines", "key", b.key, "iteration", iteration)
 	if !b.opened {
 		return nil
 	}
@@ -296,13 +296,13 @@ func (b *RemoteWriter) flush() error {
 	if len(lines) == 0 {
 		return nil
 	}
-	b.log.Infow("attempting to flush lines - starting write rpc call", "key", b.key)
+	b.log.Infow("attempting to flush lines - starting write rpc call", "key", b.key, "iteration", iteration)
 	err := b.client.Write(context.Background(), b.key, lines)
 	if err != nil {
 		b.log.Errorw("failed to flush lines", "key", b.key, "num_lines", len(lines), zap.Error(err))
 		return err
 	}
-	b.log.Infow("successfully flushed lines", "key", b.key, "num_lines", len(lines))
+	b.log.Infow("successfully flushed lines", "key", b.key, "num_lines", len(lines), "iteration", iteration)
 	return nil
 }
 
@@ -347,6 +347,7 @@ func (b *RemoteWriter) Start() error {
 
 	b.log.Infow("starting periodic process for flushing lines")
 	intervalTimer := time.NewTimer(b.interval)
+	iterationCounter := 0
 	for {
 		select {
 		case <-b.close:
@@ -359,13 +360,14 @@ func (b *RemoteWriter) Start() error {
 			case <-intervalTimer.C:
 				// we intentionally ignore errors. log streams
 				// are ephemeral and are considered low priority
-				err := b.flush()
+				err := b.flush(iterationCounter)
 				// Write the error to help with debugging
 				if err != nil {
 					b.log.Errorw("errored while trying to flush lines", "key", b.key, zap.Error(err))
 				}
 			}
 		}
+		iterationCounter += 1
 	}
 }
 
