@@ -4,6 +4,8 @@
 global:
   kubeVersion: ""
   loadbalancerURL: ""
+  opa:
+    enabled: false
   database:
     postgres:
       ## - installed = true if installed within cluster
