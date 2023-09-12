@@ -585,6 +585,8 @@ public enum FeatureName {
   PL_USER_DELETION_V2("Modularising user deletion flows separately for CG and NG ", HarnessTeam.PL),
   PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
       "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
+  PL_AI_SUPPORT_CHATBOT("Enables the chatbot for a user", HarnessTeam.PL),
+  PL_EULA_ENABLED("Enables End User License Agreement According in Default Settings", HarnessTeam.PL),    
   POST_PROD_ROLLBACK("Flag to enable/disable PostProd Rollback", HarnessTeam.PIPELINE),
   PRUNE_KUBERNETES_RESOURCES,
   PURGE_DANGLING_APP_ENV_REFS("Explicitly purge dangling references of app/env", HarnessTeam.SPG),
