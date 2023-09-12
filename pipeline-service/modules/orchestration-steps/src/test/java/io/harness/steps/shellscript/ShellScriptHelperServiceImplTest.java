@@ -496,7 +496,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
 
     ShellScriptTaskParametersNG taskParams =
         (ShellScriptTaskParametersNG) shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(
-            ambiance, stepParameters);
+            ambiance, stepParameters, null);
     assertThat(taskParams.getScript()).isEqualTo(script);
     assertThat(taskParams.getK8sInfraDelegateConfig()).isEqualTo(k8sInfraDelegateConfig);
     assertThat(taskParams.getWorkingDirectory()).isEqualTo("/tmp");

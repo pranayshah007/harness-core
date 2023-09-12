@@ -831,8 +831,9 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
     doReturn(iterator)
         .when(nodeExecutionService)
-        .fetchNodeExecutionsFromAnalytics("EXECUTION_1", NodeProjectionUtils.fieldsForNodeExecutionDelete);
-    nodeExecutionService.deleteAllNodeExecutionAndMetadata("EXECUTION_1");
+        .fetchNodeExecutionsFromAnalytics(
+            new HashSet<>(Arrays.asList("EXECUTION_1")), NodeProjectionUtils.fieldsForNodeExecutionDelete);
+    nodeExecutionService.deleteAllNodeExecutionAndMetadata(new HashSet<>(Arrays.asList("EXECUTION_1")));
     verify(nodeDeleteObserverSubject, times(2)).fireInform(any(), any());
 
     verify(mongoTemplateMock, times(1))
@@ -887,5 +888,64 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   public void testGetTimeoutInstanceIdsForSkippedNode() {
     List<String> timeoutInstanceIds = nodeExecutionService.getTimeoutInstanceIds(Status.SKIPPED, generateUuid());
     assertThat(timeoutInstanceIds).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testFetchNonFinalStatuses() {
+    String planExecutionUuid = generateUuid();
+    String parentId = generateUuid();
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(SUCCEEDED)
+            .build();
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(Status.QUEUED_LICENSE_LIMIT_REACHED)
+            .build();
+    NodeExecution nodeExecution2 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(Status.APPROVAL_WAITING)
+            .build();
+
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+
+    nodeExecutionService.save(nodeExecution);
+    nodeExecutionService.save(nodeExecution1);
+    nodeExecutionService.save(nodeExecution2);
+
+    List<Status> statuses = nodeExecutionService.fetchNonFlowingAndNonFinalStatuses(planExecutionUuid);
+    assertThat(statuses).contains(Status.QUEUED_LICENSE_LIMIT_REACHED, Status.APPROVAL_WAITING);
   }
 }

@@ -163,13 +163,14 @@ message Dependency {
   map<string, bytes> metadata = 2;
   RollbackModeBehaviour rollbackModeBehaviour = 3;
   HarnessStruct nodeMetadata = 4;
+  HarnessStruct parentInfo = 5;
 }
 
 // We are not using this struct from protobuf library:
 // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto#L51 because it doesn't have a
 // type value bytes in the value which is required in our case for passing kryo serialized complex objects
 message HarnessStruct {
-  map<string, HarnessValue> fields = 1;
+  map<string, HarnessValue> data = 1;
 }
 
 message HarnessValue {
@@ -184,7 +185,9 @@ message HarnessValue {
   }
 }
 
-enum NullValue { NULL_VALUE = 0; }
+enum NullValue {
+  NULL_VALUE = 0;
+}
 
 message ListValue {
   repeated HarnessValue values = 1;

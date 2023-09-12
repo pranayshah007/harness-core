@@ -33,6 +33,7 @@ public final class EventsFrameworkConstants {
   public static final String POLLING_EVENTS_STREAM = "polling_events_stream";
   public static final String TRIGGER_EXECUTION_EVENTS_STREAM = "trigger_execution_events_stream";
   public static final String GIT_PUSH_EVENT_STREAM = "git_push_event_stream";
+  public static final String GITX_WEBHOOK_PUSH_EVENT_STREAM = "gitx_webhook_push_event_stream";
   public static final String GIT_PR_EVENT_STREAM = "git_pr_event_stream";
   public static final String WEBHOOK_PUSH_EVENT = "WebhookPushEvent";
   public static final String WEBHOOK_BRANCH_HOOK_EVENT = "WebhookBranchHookEvent";
@@ -146,6 +147,9 @@ public final class EventsFrameworkConstants {
   public static final String SRM_STATEMACHINE_LOCK = "srm_statemachine_lock";
   public static final int SRM_STATEMACHINE_LOCK_TIMEOUT = 10;
   public static final int SRM_STATEMACHINE_LOCK_WAIT_TIMEOUT = 5;
+  public static final String SRM_SLO_CRUD_LOCK = "srm_slo_crud_lock_";
+  public static final int SRM_SLO_CRUD_LOCK_TIMEOUT = 5;
+  public static final int SRM_SLO_CRUD_LOCK_WAIT_TIMEOUT = 5;
 
   public static final String CUSTOM_CHANGE_EVENT = "srm_custom_change";
 

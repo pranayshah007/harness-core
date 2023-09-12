@@ -6,7 +6,7 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl;
 
-import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
+import io.harness.idp.common.Constants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserUtils;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineTestSummaryReport;
 
@@ -14,7 +14,9 @@ import com.google.gson.JsonObject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class PipelineTestSummaryReportParser implements PipelineTestSummaryReport {
   @Override
   public Map<String, Object> getParsedValue(
@@ -24,11 +26,15 @@ public class PipelineTestSummaryReportParser implements PipelineTestSummaryRepor
 
     if (reportSummary != null) {
       int totalTestCases = reportSummary.get("total_tests").getAsInt();
+      log.info("Total number of test cases for ciPipeline - {}, pipeline link - {}", totalTestCases, ciPipelineUrl);
       int failedTestCases = reportSummary.get("failed_tests").getAsInt();
-      dataPointInfo.put(ValueParserConstants.DATA_POINT_VALUE_KEY, totalTestCases > 0 && failedTestCases == 0);
+      log.info(
+          "Total number of failed test cases for ciPipeline - {}, pipeline link - {}", failedTestCases, ciPipelineUrl);
+      dataPointInfo.put(Constants.DATA_POINT_VALUE_KEY, totalTestCases > 0 && failedTestCases == 0);
     }
     Map<String, Object> returnMap = new HashMap<>();
     returnMap.put(dataPointIdentifier, dataPointInfo);
+    log.info("Harness Data Source -> PipelineTestSummaryReportParser returned value {}", returnMap);
     return returnMap;
   }
 }

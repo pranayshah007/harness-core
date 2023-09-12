@@ -99,7 +99,8 @@ public class QueueTaskRequestProcessor implements SdkResponseProcessor {
           Preconditions.checkNotNull(taskExecutor.queueTask(setupAbstractionsMap, taskRequest, Duration.ofSeconds(0)));
       log.info("TaskRequestQueued for NodeExecutionId : {}, TaskId; {}", nodeExecutionId, taskId);
       EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();
-      ProgressCallback progressCallback = EngineProgressCallback.builder().ambiance(ambiance).build();
+      ProgressCallback progressCallback =
+          EngineProgressCallback.builder().nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance)).build();
       waitNotifyEngine.waitForAllOn(publisherName, callback, progressCallback, taskId);
       return taskId;
     } catch (Exception ex) {

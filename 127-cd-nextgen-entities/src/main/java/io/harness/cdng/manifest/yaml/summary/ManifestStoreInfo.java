@@ -17,7 +17,7 @@ import lombok.Builder;
 import lombok.Value;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 @Value
-@Builder
+@Builder(toBuilder = true)
 @RecasterAlias("io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo")
 public class ManifestStoreInfo {
   String branch;

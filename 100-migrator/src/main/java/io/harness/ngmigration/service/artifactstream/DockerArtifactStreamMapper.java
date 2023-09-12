@@ -39,7 +39,7 @@ public class DockerArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     DockerArtifactStream dockerArtifactStream = (DockerArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(dockerArtifactStream.getSettingId()).build())
@@ -49,7 +49,7 @@ public class DockerArtifactStreamMapper implements ArtifactStreamMapper {
         .spec(DockerHubArtifactConfig.builder()
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .imagePath(ParameterField.createValueField(dockerArtifactStream.getImageName()))
-                  .tag(ParameterField.createValueField("<+input>"))
+                  .tag(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }

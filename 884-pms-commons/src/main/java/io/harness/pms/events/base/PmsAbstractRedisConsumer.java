@@ -22,7 +22,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.eventsframework.impl.redis.RedisAbstractConsumer;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.logging.AutoLogContext;
 import io.harness.queue.QueueController;
@@ -122,7 +121,7 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
         redisConsumer.acknowledge(messageId);
       }
     }
-    if (messages.size() < ((RedisAbstractConsumer) this.redisConsumer).getBatchSize()) {
+    if (messages.size() < this.redisConsumer.getBatchSize()) {
       // Adding thread sleep when the events read are less than the batch-size. This way when the load is high, consumer
       // will query the events quickly. And in case of low load, thread will sleep for some time.
       TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS);

@@ -46,6 +46,7 @@ public class WinRmShellScriptTaskParametersNG implements TaskParameters, Executi
   SecretSpecDTO sshKeySpecDTO;
   List<EncryptedDataDetail> encryptionDetails;
   String host;
+  Long sessionTimeout;
 
   // WinRm specific fields
   boolean disableCommandEncoding;

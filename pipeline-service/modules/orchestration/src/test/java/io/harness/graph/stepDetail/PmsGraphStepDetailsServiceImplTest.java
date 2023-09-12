@@ -34,6 +34,7 @@ import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
@@ -45,6 +46,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -97,8 +99,17 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
   public void addStepInputs() {
     String nodeExecutionId = generateUuid();
     String planExecutionId = generateUuid();
-    PmsStepParameters pmsStepDetails = new PmsStepParameters(new HashMap<>());
-    pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, planExecutionId, pmsStepDetails);
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, planExecutionId, null);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testSaveNodeExecutionInfo() {
+    String nodeExecutionId = generateUuid();
+    String planExecutionId = generateUuid();
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(
+        nodeExecutionId, planExecutionId, StrategyMetadata.newBuilder().build());
     verify(stepDetailsUpdateObserverSubject, times(1)).fireInform(any(), any());
     verify(nodeExecutionsInfoRepositoryMock, times(1)).save(any());
   }
@@ -116,6 +127,33 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
     pmsGraphStepDetailsService.getStepInputs(planExecutionId, nodeExecutionId);
 
     verify(nodeExecutionsInfoRepositoryMock, times(1)).findByNodeExecutionId(nodeExecutionId);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testGetStepInputsRecasterPruned() {
+    String nodeExecutionId = generateUuid();
+    String planExecutionId = generateUuid();
+
+    Map<String, Object> stepInputs = new LinkedHashMap<>();
+    stepInputs.put("__recast", "a.b.c");
+    stepInputs.put("uuid", generateUuid());
+    stepInputs.put("a", "b");
+    Map<String, Object> nestedMap = new LinkedHashMap<>();
+    nestedMap.put("d", "e");
+    stepInputs.put("c", nestedMap);
+
+    when(nodeExecutionsInfoRepositoryMock.findByNodeExecutionId(nodeExecutionId))
+        .thenReturn(
+            Optional.of(NodeExecutionsInfo.builder().resolvedInputs(PmsStepParameters.parse(stepInputs)).build()));
+    doNothing().when(stepDetailsUpdateObserverSubject).fireInform(any());
+
+    PmsStepParameters stepInputsRecasterPruned =
+        pmsGraphStepDetailsService.getStepInputsRecasterPruned(planExecutionId, nodeExecutionId);
+    verify(nodeExecutionsInfoRepositoryMock, times(1)).findByNodeExecutionId(nodeExecutionId);
+    assertThat(stepInputsRecasterPruned).isNotNull();
+    assertThat(stepInputsRecasterPruned.size()).isEqualTo(2);
   }
 
   @Test

@@ -333,14 +333,33 @@ public abstract class WorkflowHandler {
       MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase) {
     List<PhaseStep> phaseSteps = phase != null ? phase.getPhaseSteps() : Collections.emptyList();
     List<ExecutionWrapperConfig> stepGroups = new ArrayList<>();
+    boolean addLoopingStrategy = false;
     if (EmptyPredicate.isNotEmpty(phaseSteps)) {
-      stepGroups = phaseSteps.stream()
-                       .filter(phaseStep -> EmptyPredicate.isNotEmpty(phaseStep.getSteps()))
-                       .map(phaseStep -> getStepGroup(migrationContext, context, phase, phaseStep))
-                       .filter(Objects::nonNull)
-                       .collect(Collectors.toList());
+      for (PhaseStep phaseStep : phaseSteps) {
+        if (EmptyPredicate.isNotEmpty(phaseStep.getSteps())) {
+          ExecutionWrapperConfig stepGroup =
+              getStepGroup(migrationContext, context, phase, phaseStep, addLoopingStrategy);
+          // check if next steps needs to be looped
+          if (!addLoopingStrategy) {
+            addLoopingStrategy = checkIfLoopNextSteps(phaseStep);
+          }
+          if (stepGroup != null) {
+            stepGroups.add(stepGroup);
+          }
+        }
+      }
     }
     return stepGroups;
+  }
+
+  private boolean checkIfLoopNextSteps(PhaseStep phaseStep) {
+    List<GraphNode> stepYamls = phaseStep.getSteps();
+    for (GraphNode stepYaml : stepYamls) {
+      if (shouldAddLoopingInNextSteps(stepYaml.getType())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   boolean areSimilarPhase(StepMapperFactory stepMapperFactory, WorkflowPhase phase1, WorkflowPhase phase2) {
@@ -388,8 +407,8 @@ public abstract class WorkflowHandler {
     return true;
   }
 
-  ExecutionWrapperConfig getStepGroup(
-      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep) {
+  ExecutionWrapperConfig getStepGroup(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, PhaseStep phaseStep, boolean addLoopingStrategy) {
     List<GraphNode> stepYamls = phaseStep.getSteps();
 
     List<ExecutionWrapperConfig> steps = getStepWrappers(migrationContext, context, phase, phaseStep, stepYamls);
@@ -432,6 +451,14 @@ public abstract class WorkflowHandler {
                 .name(MigratorUtility.generateName(phaseStep.getName()))
                 .steps(allSteps)
                 .skipCondition(null)
+                .strategy(
+                    addLoopingStrategy ? ParameterField.createValueField(
+                        StrategyConfig.builder()
+                            .repeat(HarnessForConfig.builder()
+                                        .items(ParameterField.createValueField(Arrays.asList("<+stage.output.hosts>")))
+                                        .build())
+                            .build())
+                                       : null)
                 .when(ParameterField.createValueField(when))
                 .failureStrategies(null)
                 .build()))
@@ -825,7 +852,7 @@ public abstract class WorkflowHandler {
   // This is for multi-service only
   DeploymentStageNode buildPrePostDeploySteps(
       MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep) {
-    ExecutionWrapperConfig wrapper = getStepGroup(migrationContext, context, phase, phaseStep);
+    ExecutionWrapperConfig wrapper = getStepGroup(migrationContext, context, phase, phaseStep, false);
     if (wrapper == null) {
       return null;
     }
@@ -911,7 +938,7 @@ public abstract class WorkflowHandler {
         stepGroupWrappers.addAll(phase.getPhaseSteps()
                                      .stream()
                                      .peek(phaseStep -> phaseStep.setName(prefix + "-" + phaseStep.getName()))
-                                     .map(phaseStep -> getStepGroup(migrationContext, context, phase, phaseStep))
+                                     .map(phaseStep -> getStepGroup(migrationContext, context, phase, phaseStep, false))
                                      .filter(Objects::nonNull)
                                      .collect(Collectors.toList()));
       }
@@ -939,7 +966,7 @@ public abstract class WorkflowHandler {
             phase.getPhaseSteps()
                 .stream()
                 .peek(phaseStep -> phaseStep.setName(prefix + "-" + phaseStep.getName()))
-                .map(phaseStep -> getStepGroup(migrationContext, context, phase, phaseStep))
+                .map(phaseStep -> getStepGroup(migrationContext, context, phase, phaseStep, false))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
       }

@@ -16,6 +16,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
 import com.google.common.collect.ImmutableList;
@@ -49,6 +50,7 @@ public class NodeExecutionsInfo {
   PmsStepParameters resolvedInputs;
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
   ConcurrentChildInstance concurrentChildInstance;
+  StrategyMetadata strategyMetadata;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

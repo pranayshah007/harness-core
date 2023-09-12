@@ -393,13 +393,9 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     return CIStepGroupUtils.getUniqueStepIdentifier(ambiance.getLevelsList(), stepIdentifier);
   }
 
-  protected StepArtifacts handleArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters) {
-    return null;
-  }
-
   protected StepArtifacts handleArtifactForVm(
       ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
-    return handleArtifact(artifactMetadata, stepParameters);
+    return handleArtifact(artifactMetadata, stepParameters, ambiance);
   }
 
   protected boolean shouldPublishArtifactForVm(CommandExecutionStatus commandExecutionStatus) {
@@ -443,6 +439,8 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       case SSCA_ENFORCEMENT:
       case IACM_TERRAFORM_PLUGIN:
       case IACM_APPROVAL:
+      case PROVENANCE:
+      case SLSA_VERIFICATION:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
             stepName, os, ambiance, podName);

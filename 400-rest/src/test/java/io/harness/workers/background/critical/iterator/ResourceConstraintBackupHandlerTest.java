@@ -7,6 +7,7 @@
 
 package io.harness.workers.background.critical.iterator;
 
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -17,9 +18,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator.MongoPersistenceIteratorBuilder;
@@ -45,6 +48,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class ResourceConstraintBackupHandlerTest extends WingsBaseTest {
   @Mock private ResourceConstraintService mockResourceConstraintService;
   @Mock private PersistenceIteratorFactory mockPersistenceIteratorFactory;
+  @Mock private FeatureFlagService featureFlagService;
   @InjectMocks @Inject private ResourceConstraintBackupHandler resourceConstraintBackupHandler;
 
   private ResourceConstraintInstance resourceConstraintInstance;
@@ -54,6 +58,7 @@ public class ResourceConstraintBackupHandlerTest extends WingsBaseTest {
     resourceConstraintInstance = ResourceConstraintInstance.builder()
                                      .resourceConstraintId(ResourceConstraintTestConstants.RESOURCE_CONSTRAINT_ID)
                                      .build();
+    when(featureFlagService.isEnabled(any(FeatureName.class), any())).thenReturn(false);
   }
 
   @Test
@@ -109,5 +114,50 @@ public class ResourceConstraintBackupHandlerTest extends WingsBaseTest {
         .updateActiveConstraintForInstance(resourceConstraintInstance);
     resourceConstraintBackupHandler.handle(resourceConstraintInstance);
     verify(mockResourceConstraintService, never()).updateBlockedConstraints(any());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testHandleBlockedInstanceV2() {
+    when(featureFlagService.isEnabled(any(FeatureName.class), any())).thenReturn(true);
+    resourceConstraintInstance.setState(State.BLOCKED.name());
+    resourceConstraintBackupHandler.handle(resourceConstraintInstance);
+    verify(mockResourceConstraintService, times(1))
+        .updateBlockedConstraintsV2(Sets.newHashSet(resourceConstraintInstance.getResourceConstraintId()), true);
+    verify(mockResourceConstraintService, never()).updateActiveConstraintForInstance(any());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testHandleActiveInstanceV2() {
+    when(featureFlagService.isEnabled(any(FeatureName.class), any())).thenReturn(true);
+    resourceConstraintInstance.setState(State.ACTIVE.name());
+    when(mockResourceConstraintService.updateActiveConstraintForInstance(resourceConstraintInstance)).thenReturn(true);
+    resourceConstraintBackupHandler.handle(resourceConstraintInstance);
+    verify(mockResourceConstraintService, times(1))
+        .updateBlockedConstraintsV2(Sets.newHashSet(resourceConstraintInstance.getResourceConstraintId()), false);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testCatchExceptionInUpdateResourceConstraintV2() {
+    when(featureFlagService.isEnabled(any(FeatureName.class), any())).thenReturn(true);
+    resourceConstraintInstance.setState(State.ACTIVE.name());
+    doThrow(new InvalidRequestException("error"))
+        .when(mockResourceConstraintService)
+        .updateActiveConstraintForInstance(resourceConstraintInstance);
+    resourceConstraintBackupHandler.handle(resourceConstraintInstance);
+    verify(mockResourceConstraintService, never())
+        .updateBlockedConstraintsV2(Sets.newHashSet(resourceConstraintInstance.getResourceConstraintId()), false);
+
+    doThrow(new RuntimeException())
+        .when(mockResourceConstraintService)
+        .updateActiveConstraintForInstance(resourceConstraintInstance);
+    resourceConstraintBackupHandler.handle(resourceConstraintInstance);
+    verify(mockResourceConstraintService, never())
+        .updateBlockedConstraintsV2(Sets.newHashSet(resourceConstraintInstance.getResourceConstraintId()), false);
   }
 }

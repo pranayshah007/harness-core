@@ -8,6 +8,7 @@ package io.harness.idp.scorecard.datapointsdata.datapointvalueparser;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.common.Constants;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,9 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ValueParserUtils {
   public Map<String, Object> getDataPointsInfoMap(Object dataPointValue, List<String> pipelinesForErrorMessage) {
     Map<String, Object> dataPointsInfo = new HashMap<>();
-    dataPointsInfo.put(ValueParserConstants.DATA_POINT_VALUE_KEY, dataPointValue);
-    dataPointsInfo.put(ValueParserConstants.ERROR_MESSAGE_FOR_CHECKS_KEY,
-        getErrorMessageForChecksFromPipelineUrls(pipelinesForErrorMessage));
+    dataPointsInfo.put(Constants.DATA_POINT_VALUE_KEY, dataPointValue);
+    dataPointsInfo.put(Constants.ERROR_MESSAGE_KEY, getErrorMessageForChecksFromPipelineUrls(pipelinesForErrorMessage));
     return dataPointsInfo;
   }
 

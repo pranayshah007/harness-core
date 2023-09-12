@@ -882,6 +882,27 @@ paths:
       tags:
         - Scores
     parameters: []
+  /v1/scores/aggregate:
+    post:
+      summary: Get Aggregated Scores for backstage entities
+      responses:
+        '200':
+          $ref: '#/components/responses/EntityScoresResponseList'
+      operationId: get-aggregated-scores
+      x-stoplight:
+        id: 9lsmkuhvar4oq
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScorecardFilter'
+      x-internal: true
+      tags:
+        - Scores
   /v1/scores/graph:
     get:
       summary: Get Data for check status for graph
@@ -924,13 +945,18 @@ paths:
           in: header
           name: Harness-Account
           description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
-        - $ref: '#/components/parameters/EntityIdentifier'
         - schema:
             type: string
           in: query
           name: scorecard_identifier
           description: 'Identifier for score card '
-          required: true
+          required: false
+        - schema:
+            type: string
+          in: query
+          name: entity_identifier
+          required: false
+          description: 'Identifier for entity to get the scores for score card '
     parameters: []
   /v1/checks:
     get:
@@ -1147,29 +1173,29 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CatalogKind'
   '/v1/data-sources/{data-source}/data-point/values':
-    get:
-      summary: Get data points data for data source
-      responses:
-        '200':
-          $ref: '#/components/responses/DataSourceDataPointInfoResponse'
-      operationId: get-data-source-data-point-values
-      x-stoplight:
-        id: n763zvcv8fxcy
-      x-internal: true
-      security:
-        - x-api-key: []
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/DataSourceDataPointInfoRequest'
-      tags:
-        - DataPointsData
     parameters:
       - schema:
           type: string
         name: data-source
         in: path
         required: true
+    post:
+      summary: Get data points data for data source
+      operationId: get-data-source-data-point-values
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointInfoResponse'
+      x-stoplight:
+        id: zfs23nua6987g
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/DataSourceDataPointInfoRequest'
+      x-internal: true
+      tags:
+        - DataPointsData
   /v1/data-sources/data-points/map:
     get:
       summary: Get Data Sources and Data Points Map for Account
@@ -2278,7 +2304,7 @@ components:
           type: string
           x-stoplight:
             id: ps0abyx9gk9is
-        labels:
+        tags:
           type: array
           x-stoplight:
             id: jvxsddo5xl3u2
@@ -2728,12 +2754,17 @@ components:
           type: string
           x-stoplight:
             id: 9kth5poytqeum
+        data_point_identifier:
+          type: string
+          x-stoplight:
+            id: cpgj19ppw2qjm
       required:
         - type
         - name
         - description
         - is_conditional
         - conditional_input_description
+        - data_point_identifier
     DataPointsResponse:
       title: DataPointResponse
       x-stoplight:
@@ -2812,12 +2843,17 @@ components:
           type: string
           x-stoplight:
             id: mp6ecvb3rzwui
+        scorecard_identifier:
+          type: string
+          x-stoplight:
+            id: ajvvlct3rnppd
       required:
         - scorecard_name
         - timestamp
         - score
         - checks_statuses
         - description
+        - scorecard_identifier
     ScorecardSummaryResponse:
       title: ScorecardSummaryResponse
       x-stoplight:
@@ -2879,6 +2915,50 @@ components:
       required:
         - scorecard_scores
         - overall_score
+    EntityScores:
+      title: EntityScores
+      x-stoplight:
+        id: n2dicxs6lh84a
+      type: object
+      x-internal: true
+      description: Scores for each backstage entity
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 9nod4yjzwiuu5
+        title:
+          type: string
+          x-stoplight:
+            id: sfc7haown85th
+        kind:
+          type: string
+          x-stoplight:
+            id: sfc7hawwn15th
+        namespace:
+          type: string
+          x-stoplight:
+            id: sfc7oaown85th
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScorecardScore'
+      required:
+        - name
+        - title
+        - kind
+        - namespace
+        - scores
+    EntityScoresResponse:
+      title: EntityScoresResponse
+      x-stoplight:
+        id: d0ug6nkr91o10
+      type: object
+      description: Response for each entity scores
+      x-internal: true
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityScores'
     ScorecardGraphSummaryInfo:
       title: ScorecardGraphSummaryInfo
       x-stoplight:
@@ -2980,13 +3060,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DataPointInputValues'
-        data_source_location_identifier:
-          type: string
-          x-stoplight:
-            id: wu0w94s9gbsdn
       required:
         - data_points
-        - data_source_location_identifier
     DataSourceDataPointInfoResponse:
       title: DataSourceDataPointInfoResponse
       x-stoplight:
@@ -3625,6 +3700,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ScorecardScoreResponse'
+    EntityScoresResponseList:
+      description: Response for all the entity scores
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/EntityScoresResponse'
     ScorecardGraphSummaryResponse:
       description: Response for scorecard's score summary for graph
       content:

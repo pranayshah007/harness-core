@@ -30,6 +30,7 @@ import io.harness.engine.interrupts.helpers.AbortHelper;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.interrupts.Interrupt;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptType;
@@ -98,6 +99,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
     NodeExecution stages =
         NodeExecution.builder()
@@ -113,6 +115,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
     NodeExecution stage =
         NodeExecution.builder()
@@ -128,6 +132,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
     NodeExecution execution =
         NodeExecution.builder()
@@ -143,6 +149,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
     NodeExecution step =
         NodeExecution.builder()
@@ -158,6 +166,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
 
     when(planExecutionService.getPlanExecutionMetadata(planExecutionId)).thenReturn(planExecution);
@@ -232,6 +242,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
     NodeExecution stage =
         NodeExecution.builder()
@@ -247,6 +259,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
     NodeExecution execution =
         NodeExecution.builder()
@@ -262,6 +276,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
 
     NodeExecution fork =
@@ -278,6 +294,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
 
     NodeExecution sg1 = NodeExecution.builder()
@@ -293,6 +311,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
                             .identifier(generateUuid())
                             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
                             .nodeId(generateUuid())
+                            .nodeType(NodeType.PLAN_NODE.name())
+
                             .build();
 
     NodeExecution stepSg1 =
@@ -309,6 +329,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
 
     NodeExecution sg2 = NodeExecution.builder()
@@ -324,6 +346,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
                             .identifier(generateUuid())
                             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
                             .nodeId(generateUuid())
+                            .nodeType(NodeType.PLAN_NODE.name())
+
                             .build();
 
     NodeExecution stepSg2 =
@@ -340,6 +364,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
 
     when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
@@ -419,6 +445,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
     NodeExecution stages =
         NodeExecution.builder()
@@ -434,6 +462,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
     NodeExecution stage =
         NodeExecution.builder()
@@ -449,6 +479,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
     NodeExecution execution =
         NodeExecution.builder()
@@ -464,6 +495,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution fork =
@@ -480,6 +512,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution sg1 = NodeExecution.builder()
@@ -495,6 +528,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
                             .identifier(generateUuid())
                             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
                             .nodeId(generateUuid())
+                            .nodeType(NodeType.PLAN_NODE.name())
                             .build();
 
     NodeExecution stepSg1 =
@@ -511,6 +545,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution sg2 = NodeExecution.builder()
@@ -526,6 +561,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
                             .identifier(generateUuid())
                             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
                             .nodeId(generateUuid())
+                            .nodeType(NodeType.PLAN_NODE.name())
+
                             .build();
 
     NodeExecution stepSg2 =
@@ -542,6 +579,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
+
             .build();
 
     when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
@@ -601,7 +640,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .stageFqn(generateUuid())
             .group("STEP")
             .module("CD")
-
+            .nodeType(NodeType.PLAN_NODE.name())
             .name(generateUuid())
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
@@ -621,6 +660,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
     NodeExecution stage =
         NodeExecution.builder()
@@ -636,6 +676,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
     NodeExecution execution =
         NodeExecution.builder()
@@ -651,6 +692,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution fork =
@@ -667,6 +709,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution sg1 = NodeExecution.builder()
@@ -682,6 +725,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
                             .identifier(generateUuid())
                             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
                             .nodeId(generateUuid())
+                            .nodeType(NodeType.PLAN_NODE.name())
                             .build();
 
     NodeExecution stepSg1 =
@@ -698,6 +742,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution sg2 = NodeExecution.builder()
@@ -713,6 +758,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
                             .identifier(generateUuid())
                             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
                             .nodeId(generateUuid())
+                            .nodeType(NodeType.PLAN_NODE.name())
                             .build();
 
     NodeExecution stepSg2 =
@@ -729,6 +775,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
@@ -785,6 +832,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
     NodeExecution stages =
         NodeExecution.builder()
@@ -815,6 +863,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
     NodeExecution execution =
         NodeExecution.builder()
@@ -830,6 +879,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution fork =
@@ -846,6 +896,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution sg1 = NodeExecution.builder()
@@ -877,6 +928,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution sg2 = NodeExecution.builder()
@@ -908,6 +960,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
@@ -963,6 +1016,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
     NodeExecution stages =
         NodeExecution.builder()
@@ -978,6 +1032,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
     NodeExecution stage =
         NodeExecution.builder()
@@ -993,6 +1048,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
     NodeExecution execution =
         NodeExecution.builder()
@@ -1008,6 +1064,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution fork =
@@ -1024,6 +1081,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution sg1 = NodeExecution.builder()
@@ -1039,6 +1097,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
                             .identifier(generateUuid())
                             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
                             .nodeId(generateUuid())
+                            .nodeType(NodeType.PLAN_NODE.name())
                             .build();
 
     NodeExecution stepSg1 =
@@ -1055,6 +1114,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     NodeExecution sg2 = NodeExecution.builder()
@@ -1070,6 +1130,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
                             .identifier(generateUuid())
                             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
                             .nodeId(generateUuid())
+                            .nodeType(NodeType.PLAN_NODE.name())
                             .build();
 
     NodeExecution stepSg2 =
@@ -1086,6 +1147,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .identifier(generateUuid())
             .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
             .nodeId(generateUuid())
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);

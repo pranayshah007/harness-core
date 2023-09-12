@@ -68,6 +68,7 @@ import io.harness.cdng.bamboo.BambooCreateStepPlanCreator;
 import io.harness.cdng.chaos.ChaosStepFilterJsonCreator;
 import io.harness.cdng.chaos.ChaosStepPlanCreator;
 import io.harness.cdng.chaos.ChaosStepVariableCreator;
+import io.harness.cdng.creator.filters.CustomStageFilterCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
@@ -85,6 +86,7 @@ import io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator;
 import io.harness.cdng.creator.plan.rollback.ExecutionStepsRollbackPMSPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreator;
+import io.harness.cdng.creator.plan.stage.CustomStagePlanCreator;
 import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.AzureARMRollbackResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateARMResourceStepPlanCreator;
@@ -193,6 +195,7 @@ import io.harness.cdng.creator.variables.AsgCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.AsgRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
+import io.harness.cdng.creator.variables.CustomStageVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
 import io.harness.cdng.creator.variables.DownloadManifestsStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsBlueGreenCreateServiceStepVariableCreator;
@@ -537,6 +540,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AwsCdkDestroyStepPlanCreator());
     planCreators.add(new AwsCdkRollbackStepPlanCreator());
 
+    planCreators.add(new CustomStagePlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -555,6 +560,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new EmptyFilterJsonCreator(ENVIRONMENT_YAML, EMPTY_ENVIRONMENT_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(PRIMARY, EMPTY_PRIMARY_TYPES));
     filterJsonCreators.add(new EmptyFilterJsonCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
+
+    filterJsonCreators.add(new CustomStageFilterCreator());
 
     injectorUtils.injectMembers(filterJsonCreators);
 
@@ -692,6 +699,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AwsCdkDeployVariableCreator());
     variableCreators.add(new AwsCdkDestroyVariableCreator());
     variableCreators.add(new AwsCdkRollbackVariableCreator());
+
+    variableCreators.add(new CustomStageVariableCreator());
 
     return variableCreators;
   }
@@ -1087,7 +1096,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Jenkins Build")
             .setType(StepSpecTypeConstants.JENKINS_BUILD)
-            .setFeatureRestrictionName(FeatureRestrictionName.JENKINS_BUILD.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
             .build();
 

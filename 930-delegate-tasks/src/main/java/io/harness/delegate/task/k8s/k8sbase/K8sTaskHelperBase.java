@@ -20,6 +20,7 @@ import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
+import static io.harness.helm.HelmConstants.HELM_INSTANCE_LABEL;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.HELM_RELEASE_LABEL;
 import static io.harness.k8s.K8sConstants.KUBERNETES_CHANGE_CAUSE_ANNOTATION;
@@ -215,6 +216,7 @@ import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
 import io.kubernetes.client.openapi.models.V1LoadBalancerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
@@ -233,6 +235,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -436,34 +439,52 @@ public class K8sTaskHelperBase {
       Map<String, String> labels, long timeoutinMillis) throws Exception {
     return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeoutinMillis),
         ()
-            -> kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, namespace, labels)
-                   .stream()
-                   .filter(pod
-                       -> pod.getMetadata() != null && pod.getStatus() != null
-                           && pod.getStatus().getContainerStatuses() != null)
-                   .map(pod -> {
-                     V1ObjectMeta metadata = pod.getMetadata();
-                     return K8sPod.builder()
-                         .uid(metadata.getUid())
-                         .name(metadata.getName())
-                         .podIP(pod.getStatus().getPodIP())
-                         .namespace(metadata.getNamespace())
-                         .releaseName(releaseName)
-                         .containerList(pod.getStatus()
-                                            .getContainerStatuses()
-                                            .stream()
-                                            .map(container
-                                                -> K8sContainer.builder()
-                                                       .containerId(container.getContainerID())
-                                                       .name(container.getName())
-                                                       .image(container.getImage())
-                                                       .build())
-                                            .collect(toList()))
-                         // Need to ensure that we're storing labels as registered by kryo map implementation
-                         .labels(metadata.getLabels() != null ? new HashMap<>(metadata.getLabels()) : null)
-                         .build();
-                   })
-                   .collect(toList()));
+            -> mapV1PodsToK8sPods(
+                kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, namespace, labels), releaseName));
+  }
+
+  public List<K8sPod> getPodDetailsWithLabels(KubernetesConfig kubernetesConfig, String namespace, String releaseName,
+      List<String> labels, long timeoutinMillis) {
+    try {
+      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeoutinMillis),
+          ()
+              -> mapV1PodsToK8sPods(
+                  kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, namespace, labels),
+                  releaseName));
+
+    } catch (Exception e) {
+      log.warn(format("Failed to get pods for namespace [%s] release [%s] ", namespace, releaseName), e);
+      return Collections.emptyList();
+    }
+  }
+
+  private List<K8sPod> mapV1PodsToK8sPods(List<V1Pod> pods, String releaseName) {
+    return pods.stream()
+        .filter(pod
+            -> pod.getMetadata() != null && pod.getStatus() != null && pod.getStatus().getContainerStatuses() != null)
+        .map(pod -> {
+          V1ObjectMeta metadata = pod.getMetadata();
+          return K8sPod.builder()
+              .uid(metadata.getUid())
+              .name(metadata.getName())
+              .podIP(pod.getStatus().getPodIP())
+              .namespace(metadata.getNamespace())
+              .releaseName(releaseName)
+              .containerList(pod.getStatus()
+                                 .getContainerStatuses()
+                                 .stream()
+                                 .map(container
+                                     -> K8sContainer.builder()
+                                            .containerId(container.getContainerID())
+                                            .name(container.getName())
+                                            .image(container.getImage())
+                                            .build())
+                                 .collect(toList()))
+              // Need to ensure that we're storing labels as registered by kryo map implementation
+              .labels(metadata.getLabels() != null ? new HashMap<>(metadata.getLabels()) : null)
+              .build();
+        })
+        .collect(toList());
   }
 
   public List<K8sPod> getPodDetailsWithTrack(KubernetesConfig kubernetesConfig, String namespace, String releaseName,
@@ -662,15 +683,30 @@ public class K8sTaskHelperBase {
     return isEmpty(pod.getContainerList()) ? EMPTY : pod.getContainerList().get(0).getContainerId();
   }
 
-  private List<K8sPod> getHelmPodDetails(
-      KubernetesConfig kubernetesConfig, String namespace, String releaseName, long timeoutInMillis) throws Exception {
-    Map<String, String> labels = ImmutableMap.of(HELM_RELEASE_LABEL, releaseName);
-    return getPodDetailsWithLabels(kubernetesConfig, namespace, releaseName, labels, timeoutInMillis);
+  private List<K8sPod> getHelmPodDetails(KubernetesConfig kubernetesConfig, String namespace, String releaseName,
+      Map<String, List<String>> workloadLabelSelectors, long timeoutInMillis) throws Exception {
+    if (isNotEmpty(workloadLabelSelectors)) {
+      Set<K8sPod> pods = new HashSet<>();
+      workloadLabelSelectors.forEach(
+          (key, value)
+              -> pods.addAll(getPodDetailsWithLabels(kubernetesConfig, namespace, releaseName, value, timeoutInMillis)
+                                 .stream()
+                                 .filter(this::filterByHelmInstanceLabel)
+                                 .filter(this::filterByHelmReleaseLabel)
+                                 .filter(pod -> filterByWorkloadName(pod, key))
+                                 .collect(toList())));
+      return new ArrayList<>(pods);
+
+    } else {
+      Map<String, String> labels = ImmutableMap.of(HELM_RELEASE_LABEL, releaseName);
+      return getPodDetailsWithLabels(kubernetesConfig, namespace, releaseName, labels, timeoutInMillis);
+    }
   }
 
-  public List<ContainerInfo> getContainerInfos(
-      KubernetesConfig kubernetesConfig, String releaseName, String namespace, long timeoutInMillis) throws Exception {
-    List<K8sPod> helmPods = getHelmPodDetails(kubernetesConfig, namespace, releaseName, timeoutInMillis);
+  public List<ContainerInfo> getContainerInfos(KubernetesConfig kubernetesConfig, String releaseName, String namespace,
+      Map<String, List<String>> workloadLabelSelectors, long timeoutInMillis) throws Exception {
+    List<K8sPod> helmPods =
+        getHelmPodDetails(kubernetesConfig, namespace, releaseName, workloadLabelSelectors, timeoutInMillis);
 
     return helmPods.stream()
         .map(pod
@@ -687,12 +723,12 @@ public class K8sTaskHelperBase {
         .collect(Collectors.toList());
   }
 
-  public List<K8sPod> getHelmPodList(
-      long timeoutInMillis, KubernetesConfig kubernetesConfig, String releaseName, LogCallback logCallback) {
+  public List<K8sPod> getHelmPodList(long timeoutInMillis, KubernetesConfig kubernetesConfig, String releaseName,
+      Map<String, List<String>> workloadLabelSelectors, LogCallback logCallback) {
     String namespace = kubernetesConfig.getNamespace();
     try {
       logCallback.saveExecutionLog("\nFetching existing pod list.");
-      return getHelmPodDetails(kubernetesConfig, namespace, releaseName, timeoutInMillis);
+      return getHelmPodDetails(kubernetesConfig, namespace, releaseName, workloadLabelSelectors, timeoutInMillis);
     } catch (Exception e) {
       logCallback.saveExecutionLog(e.getMessage(), ERROR, FAILURE);
     }
@@ -2329,7 +2365,7 @@ public class K8sTaskHelperBase {
 
         String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlFolderPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
-        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
+        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams,
             kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback,
             kustomizeManifest.getCommandFlags());
 
@@ -2381,9 +2417,9 @@ public class K8sTaskHelperBase {
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
-        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), manifestFilesDirectory, filesList, true, manifestOverrideFiles,
-            executionLogCallback, kustomizeManifest.getCommandFlags());
+        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams, kustomizeManifest.getPluginPath(),
+            manifestFilesDirectory, filesList, true, manifestOverrideFiles, executionLogCallback,
+            kustomizeManifest.getCommandFlags());
 
       default:
         throw new UnsupportedOperationException(
@@ -3271,5 +3307,19 @@ public class K8sTaskHelperBase {
       log.warn("Unable to retrieve helmChartInfo from the Chart Yaml: " + ExceptionUtils.getMessage(ex));
       return null;
     }
+  }
+
+  private boolean filterByHelmInstanceLabel(K8sPod pod) {
+    return !pod.getLabels().containsKey(HELM_INSTANCE_LABEL)
+        || pod.getLabels().get(HELM_INSTANCE_LABEL).equals(pod.getReleaseName());
+  }
+
+  private boolean filterByHelmReleaseLabel(K8sPod pod) {
+    return !pod.getLabels().containsKey(HELM_RELEASE_LABEL)
+        || pod.getLabels().get(HELM_RELEASE_LABEL).equals(pod.getReleaseName());
+  }
+
+  private boolean filterByWorkloadName(K8sPod pod, String workloadName) {
+    return pod.getName().startsWith(workloadName);
   }
 }

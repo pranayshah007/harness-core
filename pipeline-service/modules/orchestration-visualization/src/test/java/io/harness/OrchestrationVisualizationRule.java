@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -165,6 +166,13 @@ public class OrchestrationVisualizationRule implements MethodRule, InjectorRuleM
       public boolean getSerializationForDelegate() {
         return false;
       }
+
+      @Provides
+      @Singleton
+      @Named("useNewNodeEntityConfiguration")
+      public Boolean getUseNewNodeEntityConfiguration() {
+        return true;
+      }
     });
 
     modules.add(mongoTypeModule(annotations));
@@ -251,7 +259,7 @@ public class OrchestrationVisualizationRule implements MethodRule, InjectorRuleM
         EventsFrameworkConfiguration.builder()
             .redisConfig(RedisConfig.builder().redisUrl("dummyRedisUrl").build())
             .build(),
-        ThreadPoolConfig.builder().build()));
+        ThreadPoolConfig.builder().build(), 200));
     return modules;
   }
 

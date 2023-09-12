@@ -11,8 +11,8 @@ metadata:
     {{- if .Values.ingress.annotations }}
     {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
     {{- end }}
-    {{- if .Values.global.commonAnnotation }}
-    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
     {{- if .Values.global.ingress.objects.annotations }}
     {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
@@ -248,6 +248,20 @@ spec:
                 port:
                   number: {{ $.Values.service.port }}
             path: /(v1/eula/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/gitx-webhooks/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/gitx-webhooks)
             pathType: ImplementationSpecific
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}

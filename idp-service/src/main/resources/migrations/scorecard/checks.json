@@ -10,12 +10,13 @@
       {
         "data_source_identifier": "github",
         "data_point_identifier": "meanTimeToMerge",
+        "conditional_input_value": "\"refs/\"",
         "operator": "<",
         "value": "48"
       }
     ],
     "expression": "github.meanTimeToMerge < 48",
-    "labels": ["Development maturity"],
+    "tags": ["Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Mean time to merge PR is more than 2 days"
   },
@@ -29,13 +30,13 @@
     "rules": [
       {
         "data_source_identifier": "catalog",
-        "data_point_identifier": "pagerdutyAnnotation",
-        "operator": "!=",
-        "value": "null"
+        "data_point_identifier": "pagerdutyAnnotationExists",
+        "operator": "==",
+        "value": "true"
       }
     ],
-    "expression": "catalog.pagerdutyAnnotation != null",
-    "labels": ["DevOps maturity"],
+    "expression": "catalog.pagerdutyAnnotationExists == true",
+    "tags": ["DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Pagerduty is not setup"
   },
@@ -50,12 +51,13 @@
       {
         "data_source_identifier": "github",
         "data_point_identifier": "isBranchProtected",
+        "conditional_input_value": "\"refs/\"",
         "operator": "==",
         "value": "true"
       }
     ],
     "expression": "github.isBranchProtected == true",
-    "labels": ["Software quality", "Development maturity"],
+    "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Branch protection is not set"
   },
@@ -69,13 +71,13 @@
     "rules": [
       {
         "data_source_identifier": "catalog",
-        "data_point_identifier": "techDocsAnnotation",
-        "operator": "!=",
-        "value": "null"
+        "data_point_identifier": "techDocsAnnotationExists",
+        "operator": "==",
+        "value": "true"
       }
     ],
-    "expression": "catalog.techDocsAnnotation != null",
-    "labels": ["Software quality", "Development maturity" ,"DevOps maturity"],
+    "expression": "catalog.techDocsAnnotationExists == true",
+    "tags": ["Software quality", "Development maturity" ,"DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Tech docs doesn't exists"
   },
@@ -89,14 +91,115 @@
     "rules": [
       {
         "data_source_identifier": "catalog",
-        "data_point_identifier": "specOwner",
-        "operator": "!=",
-        "value": "null"
+        "data_point_identifier": "specOwnerExists",
+        "operator": "==",
+        "value": "true"
       }
     ],
-    "expression": "catalog.specOwner != null",
-    "labels": ["Software quality", "Development maturity" ,"DevOps maturity"],
+    "expression": "catalog.specOwnerExists == true",
+    "tags": ["Software quality", "Development maturity" ,"DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Spec owner doesn't exists"
+  },
+  {
+    "id": "64ede62a8b4004661f8e59aa",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__b9a99e87-d9c1-4c5e-9ba6-4605a771dbc4",
+    "name": "Gitleaks file exists",
+    "description": "Gitleaks file exists",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "github",
+        "data_point_identifier": "isFileExists",
+        "conditional_input_value": "\".gitleaks.toml\"",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "github.isFileExists.\".gitleaks.toml\" == true",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Gitleaks file does not exist"
+  },
+  {
+    "id": "64ef7bb0f616c89330020df9",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__dfc93822-604a-4dfe-8e65-b71928034897",
+    "name": "Is STO scan stage setup In Pipeline",
+    "description": "Check will pass if sto stage is added in Pipelines",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "harness",
+        "data_point_identifier": "stoStageAdded",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "harness.stoStageAdded == true",
+    "tags": ["Software quality"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "STO stage is not setup in Pipelines"
+  },
+  {
+    "id": "64ef7cfff616c89330020dfa",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__76549f1d-f342-4875-ac1c-ff33036aa1f0",
+    "name": "Is Policy Evaluation Successful for Pipelines",
+    "description": "Check will pass if policy evaluation will be successful for pipelines",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "harness",
+        "data_point_identifier": "isPolicyEvaluationSuccessful",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "harness.isPolicyEvaluationSuccessful == true",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "STO stage is not setup in CI and CD pipeline"
+  },
+  {
+    "id": "64ef7d8bf616c89330020dfb",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__d4bc06ee-6f27-43f6-b095-f90b48d6061c",
+    "name": "Percentage of ci pipelines passing in past 7 days is more than 80",
+    "description": "Percentage of ci pipelines passing in past 7 days is more than 80",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "harness",
+        "data_point_identifier": "PercentageOfCIPipelinePassingInPastSevenDays",
+        "operator": ">",
+        "value": "80"
+      }
+    ],
+    "expression": "harness.%ofCIPipelinePassingInPast7Days > 80",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Percentage of ci pipeline is less than 80 in past 7 days"
+  },
+  {
+    "id": "64ef7e41f616c89330020dfc",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__b5e32af1-1c66-4501-9bdf-571ba9cdee16",
+    "name": "No test failing on CI Pipeline is zero",
+    "description": "No test failing on CI Pipeline is zero",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "harness",
+        "data_point_identifier": "noTestsFailingInCiPipeline",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "harness.noTestsFailingInCiPipeline == 0",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Tests are failing on CI Pipeline"
   }
 ]

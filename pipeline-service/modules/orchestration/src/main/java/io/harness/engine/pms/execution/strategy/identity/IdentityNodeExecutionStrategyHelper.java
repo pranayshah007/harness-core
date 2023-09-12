@@ -16,6 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
+import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
@@ -93,6 +94,9 @@ public class IdentityNodeExecutionStrategyHelper {
                                   .resolvedParams(originalExecution.getResolvedParams())
                                   .resolvedInputs(originalExecution.getResolvedInputs())
                                   .executionInputConfigured(originalExecution.getExecutionInputConfigured())
+                                  .skipExpressionChain(node.isSkipExpressionChain())
+                                  .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+                                  .nodeType(AmbianceUtils.obtainNodeType(ambiance))
                                   .build();
     NodeExecution nodeExecution = nodeExecutionService.save(execution);
     pmsGraphStepDetailsService.copyStepDetailsForRetry(
@@ -154,6 +158,9 @@ public class IdentityNodeExecutionStrategyHelper {
         .stepType(node.getStepType())
         .nodeId(node.getUuid())
         .stageFqn(node.getStageFqn())
+        .skipExpressionChain(node.isSkipExpressionChain())
+        .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+        .nodeType(node.getNodeType().name())
         .group(node.getGroup())
         .notifyId(notifyId)
         .parentId(parentId)

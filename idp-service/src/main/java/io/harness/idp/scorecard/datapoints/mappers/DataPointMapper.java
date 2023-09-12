@@ -23,6 +23,7 @@ public class DataPointMapper {
     dataPoint.setType(dataPointEntity.getType().toString());
     dataPoint.setIsConditional(dataPointEntity.isConditional());
     dataPoint.setDescription(dataPointEntity.getConditionalInputValueDescription());
+    dataPoint.setDataPointIdentifier(dataPointEntity.getIdentifier());
     return dataPoint;
   }
 }

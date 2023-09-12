@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.creation;
+
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.async.plan.PlanNotifyEventConsumer.PMS_PLAN_CREATION;
 
@@ -28,6 +29,8 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ErrorResponse;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.plan.PartialPlanResponse;
 import io.harness.pms.contracts.plan.PlanCreationBlobRequest;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
@@ -157,6 +160,13 @@ public class PlanCreatorMergeService {
           Dependencies.newBuilder()
               .setYaml(planExecutionMetadata.getProcessedYaml())
               .putDependencies(pipelineField.getNode().getUuid(), pipelineField.getNode().getYamlPath())
+              .putDependencyMetadata(pipelineField.getNode().getUuid(),
+                  Dependency.newBuilder()
+                      .setParentInfo(HarnessStruct.newBuilder()
+                                         .putData(PlanCreatorConstants.YAML_VERSION,
+                                             HarnessValue.newBuilder().setStringValue(version).build())
+                                         .build())
+                      .build())
               .build();
 
       PlanCreationBlobResponse finalResponse = createPlanForDependenciesRecursive(

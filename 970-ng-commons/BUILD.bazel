@@ -31,6 +31,7 @@ java_library(
         "//970-ng-commons/src/main/java/io/harness/beans/webhook:module",
         "//970-ng-commons/src/main/java/io/harness/ccm:module",
         "//970-ng-commons/src/main/java/io/harness/cd:module",
+        "//970-ng-commons/src/main/java/io/harness/code:module",
         "//970-ng-commons/src/main/java/io/harness/common:module",
         "//970-ng-commons/src/main/java/io/harness/connector:module",
         "//970-ng-commons/src/main/java/io/harness/constants:module",

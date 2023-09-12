@@ -6,6 +6,7 @@
  */
 
 package io.harness.generator;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.execution.ExecutionModeUtils.isChainMode;
 
@@ -77,10 +78,10 @@ public class OrchestrationAdjacencyListGenerator {
     // compute adjList
     String parentId = null;
     List<String> prevIds = new ArrayList<>();
-    if (isIdPresent(nodeExecution.getPreviousId())) {
+    if (isIdPresent(nodeExecution.getPreviousId()) && adjacencyList.containsKey(nodeExecution.getPreviousId())) {
       adjacencyList.get(nodeExecution.getPreviousId()).getNextIds().add(currentUuid);
       prevIds.add(nodeExecution.getPreviousId());
-    } else if (isIdPresent(nodeExecution.getParentId())) {
+    } else if (isIdPresent(nodeExecution.getParentId()) && adjacencyList.containsKey(nodeExecution.getParentId())) {
       parentId = nodeExecution.getParentId();
       EdgeListInternal parentEdgeList = Objects.requireNonNull(adjacencyList.get(parentId),
           String.format("[GRAPH_ERROR] ParentId: [%s] not present in the adjacency list. Please debug", parentId));
@@ -107,13 +108,11 @@ public class OrchestrationAdjacencyListGenerator {
 
     String currentUuid = nodeExecution.getUuid();
 
-    String parentId;
-    if (isIdPresent(nodeExecution.getPreviousId())) {
+    if (isIdPresent(nodeExecution.getPreviousId()) && adjacencyList.containsKey(nodeExecution.getPreviousId())) {
       EdgeListInternal previousEdgeList = adjacencyList.get(nodeExecution.getPreviousId());
       previousEdgeList.getNextIds().remove(currentUuid);
-    } else if (isIdPresent(nodeExecution.getParentId())) {
-      parentId = nodeExecution.getParentId();
-      EdgeListInternal parentEdgeList = adjacencyList.get(parentId);
+    } else if (isIdPresent(nodeExecution.getParentId()) && adjacencyList.containsKey(nodeExecution.getParentId())) {
+      EdgeListInternal parentEdgeList = adjacencyList.get(nodeExecution.getParentId());
       parentEdgeList.getEdges().remove(currentUuid);
     }
 

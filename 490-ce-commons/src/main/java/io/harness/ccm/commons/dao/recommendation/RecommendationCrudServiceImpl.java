@@ -17,11 +17,15 @@ import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
 import io.harness.ccm.commons.beans.recommendation.ResourceId;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
+import io.harness.timescaledb.tables.pojos.CeRecommendations;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 import lombok.NonNull;
 
@@ -33,6 +37,21 @@ import lombok.NonNull;
 @OwnedBy(HarnessTeam.CE)
 public class RecommendationCrudServiceImpl implements RecommendationCrudService {
   @Inject private K8sRecommendationDAO k8sRecommendationDAO;
+
+  @Override
+  public List<NodePoolId> getNodepoolsAlreadyUpdated(@NonNull String accountId, @NonNull JobConstants jobConstants,
+      List<String> clusterNames, Map<String, String> clusterNameToClusterId) {
+    List<CeRecommendations> ceRecommendations =
+        k8sRecommendationDAO.getNodepoolsAlreadyUpdated(accountId, jobConstants, clusterNames);
+    List<NodePoolId> nodePoolIds = new ArrayList<>();
+    for (CeRecommendations ceRecommendation : ceRecommendations) {
+      nodePoolIds.add(NodePoolId.builder()
+                          .nodepoolname(ceRecommendation.getName())
+                          .clusterid(clusterNameToClusterId.get(ceRecommendation.getClustername()))
+                          .build());
+    }
+    return nodePoolIds;
+  }
 
   @Override
   public void upsertWorkloadRecommendation(@NonNull String uuid, @NonNull ResourceId workloadId,

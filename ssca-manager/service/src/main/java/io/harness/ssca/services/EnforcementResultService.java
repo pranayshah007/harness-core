@@ -7,6 +7,7 @@
 
 package io.harness.ssca.services;
 
+import io.harness.spec.server.ssca.v1.model.EnforcementResultDTO;
 import io.harness.ssca.beans.AllowList.AllowListItem;
 import io.harness.ssca.beans.AllowList.AllowListRuleType;
 import io.harness.ssca.beans.DenyList.DenyListItem;
@@ -22,9 +23,11 @@ public interface EnforcementResultService {
   List<EnforcementResultEntity> getEnforcementResults(List<NormalizedSBOMComponentEntity> violatedComponents,
       String violationType, String violationDetails, ArtifactEntity artifact, String enforcementId);
 
-  Page<EnforcementResultEntity> getPolicyViolations(
-      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId, Pageable pageable);
+  Page<EnforcementResultEntity> getPolicyViolations(String accountId, String orgIdentifier, String projectIdentifier,
+      String enforcementId, String searchText, Pageable pageable);
   String getViolationDetails(NormalizedSBOMComponentEntity pkg, AllowListItem allowListItem, AllowListRuleType type);
 
   String getViolationDetails(DenyListItem denyListItem);
+
+  void create(EnforcementResultDTO enforcementResultDTO);
 }

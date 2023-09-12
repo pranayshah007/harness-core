@@ -21,7 +21,6 @@ import lombok.experimental.SuperBuilder;
 
 @Data
 @SuperBuilder
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
@@ -30,6 +29,11 @@ public class BackstageCatalogResourceEntity extends BackstageCatalogEntity {
 
   public BackstageCatalogResourceEntity() {
     super.setKind(BackstageCatalogEntityTypes.RESOURCE.kind);
+  }
+
+  public BackstageCatalogResourceEntity(Spec spec) {
+    super.setKind(BackstageCatalogEntityTypes.RESOURCE.kind);
+    this.spec = spec;
   }
 
   @Data

@@ -15,6 +15,8 @@ import io.harness.pms.events.base.PmsAbstractMessageListener;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 public class PartialPlanResponseEventMessageListener
     extends PmsAbstractMessageListener<PartialPlanResponse, PartialPlanResponseEventHandler> {
@@ -22,6 +24,11 @@ public class PartialPlanResponseEventMessageListener
   public PartialPlanResponseEventMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, PartialPlanResponseEventHandler partialPlanResponseEventHandler) {
     super(serviceName, PartialPlanResponse.class, partialPlanResponseEventHandler);
+  }
+
+  @Override
+  protected PartialPlanResponse extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return PartialPlanResponse.parseFrom(message);
   }
 
   @Override

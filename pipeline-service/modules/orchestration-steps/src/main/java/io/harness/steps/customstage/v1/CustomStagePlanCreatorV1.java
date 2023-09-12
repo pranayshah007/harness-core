@@ -9,7 +9,6 @@ package io.harness.steps.customstage.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
@@ -21,7 +20,9 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -38,9 +39,11 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.customstage.CustomStageSpecParams;
 import io.harness.steps.customstage.CustomStageStep;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -80,8 +83,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     dependenciesNodeMap.put(stepsField.getNode().getUuid(), stepsField);
 
     // adding support for strategy
-    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
-        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, getBuild(ctx.getDependency()));
+    Dependency strategyDependency = getDependencyForStrategy(dependenciesNodeMap, field, ctx);
 
     // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
     // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
@@ -90,29 +92,45 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
         PlanCreationResponse.builder()
             .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                               .toBuilder()
-                              .putDependencyMetadata(field.getUuid(),
-                                  Dependency.newBuilder()
-                                      .putAllMetadata(dependencyMetadata.getMetadataMap())
-                                      .setNodeMetadata(HarnessStruct.newBuilder()
-                                                           .putAllFields(dependencyMetadata.getNodeMetadataMap())
-                                                           .build())
-                                      .build())
+                              .putDependencyMetadata(field.getUuid(), strategyDependency)
+                              .putDependencyMetadata(stepsField.getNode().getUuid(), getDependencyForSteps(field))
                               .build())
             .build());
 
     return planCreationResponseMap;
   }
 
+  Dependency getDependencyForStrategy(
+      Map<String, YamlField> dependenciesNodeMap, YamlField field, PlanCreationContext ctx) {
+    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, getBuild(ctx.getDependency()));
+    return Dependency.newBuilder()
+        .putAllMetadata(dependencyMetadata.getMetadataMap())
+        .setNodeMetadata(HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
+        .build();
+  }
+
+  Dependency getDependencyForSteps(YamlField field) {
+    List<FailureConfigV1> stageFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(field.getNode());
+    if (stageFailureStrategies != null) {
+      return Dependency.newBuilder()
+          .setParentInfo(
+              HarnessStruct.newBuilder()
+                  .putData(PlanCreatorConstants.STAGE_FAILURE_STRATEGIES,
+                      HarnessValue.newBuilder()
+                          .setBytesValue(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(stageFailureStrategies)))
+                          .build())
+                  .build())
+          .build();
+    }
+    return Dependency.newBuilder().setNodeMetadata(HarnessStruct.newBuilder().build()).build();
+  }
+
   @Override
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, YamlField config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField stageYamlField = context.getCurrentField();
-    String nextNodeUuid = null;
-    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey(YAMLFieldNameConstants.NEXT_ID)) {
-      nextNodeUuid = (String) kryoSerializer.asObject(
-          context.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
-    }
+    String nextNodeUuid = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, context.getDependency());
     if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
     }

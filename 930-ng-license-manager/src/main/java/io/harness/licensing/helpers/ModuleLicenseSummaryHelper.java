@@ -16,6 +16,7 @@ import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ChaosModuleLicenseDTO;
 import io.harness.licensing.beans.modules.IACMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SEIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.beans.summary.CDLicenseSummaryDTO;
@@ -27,6 +28,7 @@ import io.harness.licensing.beans.summary.CVLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.ChaosLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.IACMLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
+import io.harness.licensing.beans.summary.SEILicenseSummaryDTO;
 import io.harness.licensing.beans.summary.STOLicenseSummaryDTO;
 import io.harness.licensing.utils.ModuleLicenseUtils;
 
@@ -179,6 +181,17 @@ public class ModuleLicenseSummaryHelper {
               cetLicenseSummaryDTO.setNumberOfAgents(
                   ModuleLicenseUtils.computeAdd(cetLicenseSummaryDTO.getNumberOfAgents(), temp.getNumberOfAgents()));
             }
+          }
+        };
+        break;
+      case SEI:
+        licensesWithSummaryDTO = SEILicenseSummaryDTO.builder().build();
+        summaryHandler = (moduleLicenseDTO, summaryDTO, current) -> {
+          SEIModuleLicenseDTO temp = (SEIModuleLicenseDTO) moduleLicenseDTO;
+          SEILicenseSummaryDTO seiLicenseSummaryDTO = (SEILicenseSummaryDTO) summaryDTO;
+          if (current < temp.getExpiryTime() && temp.getNumberOfContributors() != null) {
+            seiLicenseSummaryDTO.setNumberOfContributors(ModuleLicenseUtils.computeAdd(
+                seiLicenseSummaryDTO.getNumberOfContributors(), temp.getNumberOfContributors()));
           }
         };
         break;

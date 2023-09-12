@@ -1069,12 +1069,15 @@ def ingest_data_to_unified(jsonData):
 
 
 def fetch_ingestion_filters(jsonData):
-    year, month = jsonData["reportYear"], jsonData["reportMonth"]
-    date_start = "%s-%s-01" % (year, month)
-    date_end = "%s-%s-%s" % (year, month, monthrange(int(year), int(month))[1])
-
+    billing_period_filters = ""
+    if jsonData["accountId"] == "pC_7h33wQTeZ_j-libvF4A":
+        billing_period_filters = " AND DATE(awsbillingperiodstartdate) = '%s'" \
+                                 " AND DATE(awsbillingperiodenddate) = '%s'" \
+                                 % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
     return """ DATE(startTime) >= '%s' AND DATE(startTime) <= '%s' 
-    AND cloudProvider = "AWS" AND awsUsageAccountId IN (%s) """ % (date_start, date_end, jsonData["usageaccountid"])
+    AND cloudProvider = "AWS" AND awsUsageAccountId IN (%s) %s""" % (jsonData["min_usagestartdate"],
+                                                                   jsonData["max_usagestartdate"],
+                                                                   jsonData["usageaccountid"], billing_period_filters)
 
 
 def ingest_data_to_costagg(jsonData):

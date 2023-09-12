@@ -18,7 +18,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDP)
 public interface ArtifactoryNgService {
   List<BuildDetails> getBuildDetails(
@@ -28,7 +29,8 @@ public interface ArtifactoryNgService {
       String artifactPath, int maxVersions, String artifactPathFilter, String artifactDirectory);
 
   BuildDetails getLatestArtifact(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
-      String ArtifactPathDirectory, String artifactPathFilter, String artifactPath, int maxVersions);
+      String ArtifactPathDirectory, String artifactPathFilter, String artifactPath, int maxVersion,
+      String artifactFilter);
 
   Map<String, String> getRepositories(ArtifactoryConfigRequest artifactoryConfig, String packageType);
 

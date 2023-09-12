@@ -24,7 +24,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.USERMEMBERSHIP;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 
 import io.harness.AccessControlClientModule;
 import io.harness.accesscontrol.acl.ResourceAttributeProvider;
@@ -64,6 +64,9 @@ import io.harness.accesscontrol.principals.users.HarnessUserService;
 import io.harness.accesscontrol.principals.users.HarnessUserServiceImpl;
 import io.harness.accesscontrol.principals.users.UserValidator;
 import io.harness.accesscontrol.principals.users.events.UserMembershipEventConsumer;
+import io.harness.accesscontrol.publicaccess.PublicAccessApiImpl;
+import io.harness.accesscontrol.publicaccess.PublicAccessService;
+import io.harness.accesscontrol.publicaccess.PublicAccessServiceImpl;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupServiceImpl;
 import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupEventConsumer;
@@ -130,6 +133,7 @@ import io.harness.spec.server.accesscontrol.v1.OrgRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.OrganizationRolesApi;
 import io.harness.spec.server.accesscontrol.v1.ProjectRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.ProjectRolesApi;
+import io.harness.spec.server.accesscontrol.v1.PublicAccessApi;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
@@ -184,7 +188,7 @@ public class AccessControlModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return config.getDistributedLockImplementation() == null ? MONGO : config.getDistributedLockImplementation();
+    return config.getDistributedLockImplementation() == null ? REDIS : config.getDistributedLockImplementation();
   }
 
   @Provides
@@ -348,6 +352,8 @@ public class AccessControlModule extends AbstractModule {
     scopesByKey.addBinding(PROJECT.toString()).toInstance(PROJECT);
 
     bind(HarnessScopeService.class).to(HarnessScopeServiceImpl.class);
+    bind(PublicAccessApi.class).to(PublicAccessApiImpl.class);
+    bind(PublicAccessService.class).to(PublicAccessServiceImpl.class);
 
     bind(HarnessResourceGroupService.class).to(HarnessResourceGroupServiceImpl.class);
     bind(HarnessUserGroupService.class).to(HarnessUserGroupServiceImpl.class);

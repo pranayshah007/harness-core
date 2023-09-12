@@ -13,6 +13,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.AbstractConsumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -25,6 +26,7 @@ import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.vavr.control.Try;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -246,9 +248,12 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   }
 
   @Override
-  public void acknowledge(String messageId) {
+  public void acknowledge(String... messageIds) {
     Supplier<Void> acknowledgeSupplier = () -> {
-      acknowledgeInternal(messageId);
+      if (EmptyPredicate.isEmpty(messageIds)) {
+        return null;
+      }
+      acknowledgeInternal(messageIds);
       return null;
     };
 
@@ -262,8 +267,10 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
         .get();
   }
 
-  private void acknowledgeInternal(String messageId) {
-    stream.ack(getGroupName(), RedisUtils.getStreamId(messageId));
+  private void acknowledgeInternal(String... messageIds) {
+    StreamMessageId[] streamMessageIds =
+        Arrays.stream(messageIds).map(RedisUtils::getStreamId).toArray(StreamMessageId[] ::new);
+    stream.ack(getGroupName(), streamMessageIds);
   }
 
   private void createConsumerGroupIfNotPresent(Throwable e) {

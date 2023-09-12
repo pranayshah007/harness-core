@@ -7,6 +7,7 @@
 
 package io.harness.cd;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.CDS_REMOVE_TIME_BUCKET_GAPFILL_QUERY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.ENVIRONMENTS;
 import static io.harness.timescaledb.Tables.NG_INSTANCE_STATS;
@@ -15,6 +16,8 @@ import static io.harness.timescaledb.Tables.SERVICES;
 import static io.harness.timescaledb.Tables.SERVICES_LICENSE_DAILY_REPORT;
 import static io.harness.timescaledb.Tables.SERVICE_INFRA_INFO;
 import static io.harness.timescaledb.Tables.SERVICE_INSTANCES_LICENSE_DAILY_REPORT;
+
+import static org.jooq.impl.DSL.val;
 
 import io.harness.aggregates.AggregateProjectInfo;
 import io.harness.aggregates.AggregateServiceInfo;
@@ -26,6 +29,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.usage.pojos.LicenseDailyUsage;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.dashboards.GroupBy;
+import io.harness.timescaledb.Routines;
 import io.harness.timescaledb.tables.pojos.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.pojos.ServiceInfraInfo;
 import io.harness.timescaledb.tables.pojos.ServiceInstancesLicenseDailyReport;
@@ -33,6 +37,7 @@ import io.harness.timescaledb.tables.pojos.Services;
 import io.harness.timescaledb.tables.pojos.ServicesLicenseDailyReport;
 import io.harness.timescaledb.tables.records.ServiceInstancesLicenseDailyReportRecord;
 import io.harness.timescaledb.tables.records.ServicesLicenseDailyReportRecord;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.time.LocalDate;
@@ -59,6 +64,7 @@ public class TimeScaleDAL {
   public static final int BULK_INSERT_LIMIT = 100;
 
   @Inject private DSLContext dsl;
+  @Inject NGFeatureFlagHelperService featureFlagHelperService;
 
   public List<ServiceInfraInfo> getDistinctServiceWithExecutionInTimeRange(
       @NotNull final String accountId, Long startIntervalInMillis, Long endIntervalInMillis) {
@@ -300,10 +306,39 @@ public class TimeScaleDAL {
   public List<TimeWiseExecutionSummary> getTimeExecutionStatusWiseDeploymentCount(String accountIdentifier,
       long startInterval, long endInterval, GroupBy groupBy, Table<Record2<String, String>> orgProjectTable,
       List<String> statusList) {
-    Field<Long> epoch = DSL.field("time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", {0})", Long.class,
-        PIPELINE_EXECUTION_SUMMARY_CD.STARTTS);
-
     try {
+      if (featureFlagHelperService.isEnabled(accountIdentifier, CDS_REMOVE_TIME_BUCKET_GAPFILL_QUERY)) {
+        Field<Long> tb_status_startts = DSL.field("tb_status.startts", Long.class);
+        Field<String> tb_status_status = DSL.field("tb_status.status", String.class);
+        Field<Long> t3_startts = DSL.field("t3.startts", Long.class);
+        Field<String> t3_status = DSL.field("t3.status", String.class);
+        Field<Integer> caseConditionStep = DSL.case_().when(t3_status.isNotNull(), DSL.count()).otherwise(0);
+        return dsl.select(tb_status_startts.as("time_bucket_gapfill"), tb_status_status, caseConditionStep.as("count"))
+            .from(dsl.select(DSL.asterisk())
+                      .from(Routines.timeBucketListCdStatus(val(groupBy.getNoOfMilliseconds()), val(startInterval),
+                          val(endInterval), val(statusList.toArray(new String[0])), val(Boolean.FALSE)))
+                      .asTable("tb_status"))
+            .leftJoin(dsl.select(DSL.asterisk())
+                          .from(PIPELINE_EXECUTION_SUMMARY_CD)
+                          .where(PIPELINE_EXECUTION_SUMMARY_CD.ACCOUNTID.eq(accountIdentifier)
+                                     .and(PIPELINE_EXECUTION_SUMMARY_CD.STARTTS.greaterOrEqual(startInterval))
+                                     .and(PIPELINE_EXECUTION_SUMMARY_CD.STARTTS.lessThan(endInterval))
+                                     .and(PIPELINE_EXECUTION_SUMMARY_CD.STATUS.in(statusList)))
+                          .andExists(dsl.selectOne()
+                                         .from(orgProjectTable)
+                                         .where(PIPELINE_EXECUTION_SUMMARY_CD.ORGIDENTIFIER
+                                                    .eq((Field<String>) orgProjectTable.field(ORG_ID))
+                                                    .and(PIPELINE_EXECUTION_SUMMARY_CD.PROJECTIDENTIFIER.eq(
+                                                        (Field<String>) orgProjectTable.field(PROJECT_ID)))))
+                          .asTable("t3"))
+            .on(tb_status_status.eq(t3_status))
+            .and(tb_status_startts.eq(t3_startts.subtract(t3_startts.mod(groupBy.getNoOfMilliseconds()))))
+            .groupBy(tb_status_startts, t3_status, tb_status_status)
+            .orderBy(tb_status_startts)
+            .fetchInto(TimeWiseExecutionSummary.class);
+      }
+      Field<Long> epoch = DSL.field("time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", {0})", Long.class,
+          PIPELINE_EXECUTION_SUMMARY_CD.STARTTS);
       return dsl.select(epoch, PIPELINE_EXECUTION_SUMMARY_CD.STATUS, DSL.count().as("count"))
           .from(PIPELINE_EXECUTION_SUMMARY_CD)
           .where(PIPELINE_EXECUTION_SUMMARY_CD.ACCOUNTID.eq(accountIdentifier)

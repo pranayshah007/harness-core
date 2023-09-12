@@ -42,7 +42,7 @@ public class ECRArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     EcrArtifactStream ecrArtifactStream = (EcrArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(ecrArtifactStream.getSettingId()).build())
@@ -53,7 +53,7 @@ public class ECRArtifactStreamMapper implements ArtifactStreamMapper {
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .region(ParameterField.createValueField(ecrArtifactStream.getRegion()))
                   .imagePath(ParameterField.createValueField(ecrArtifactStream.getImageName()))
-                  .tag(ParameterField.createValueField("<+input>"))
+                  .tag(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }

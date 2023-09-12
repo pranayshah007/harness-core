@@ -27,8 +27,6 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.progress.publisher.ProgressEventPublisher;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.BinaryResponseData;
@@ -55,14 +53,13 @@ public class EngineProgressCallbackTest extends OrchestrationTestBase {
 
   @Before
   public void setUp() {
-    engineProgressCallback =
-        EngineProgressCallback.builder()
-            .nodeExecutionService(nodeExecutionService)
-            .kryoSerializer(kryoSerializer)
-            .referenceFalseKryoSerializer(referenceFalseKryoSerializer)
-            .progressEventPublisher(progressEventPublisher)
-            .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build()).build())
-            .build();
+    engineProgressCallback = EngineProgressCallback.builder()
+                                 .nodeExecutionService(nodeExecutionService)
+                                 .kryoSerializer(kryoSerializer)
+                                 .referenceFalseKryoSerializer(referenceFalseKryoSerializer)
+                                 .progressEventPublisher(progressEventPublisher)
+                                 .nodeExecutionId(nodeExecutionId)
+                                 .build();
   }
 
   @Test

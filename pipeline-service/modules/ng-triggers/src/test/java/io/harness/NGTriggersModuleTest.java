@@ -22,6 +22,7 @@ import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eventsframework.api.Producer;
 import io.harness.ff.FeatureFlagService;
+import io.harness.filter.service.FilterService;
 import io.harness.govern.ProviderModule;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.TriggerConfiguration;
@@ -224,6 +225,13 @@ public class NGTriggersModuleTest extends CategoryTest {
       @Singleton
       DelegateAsyncService getDelegateAsyncService() {
         return mock(DelegateAsyncService.class);
+      }
+    });
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      FilterService getFilterService() {
+        return mock(FilterService.class);
       }
     });
     modules.add(new ProviderModule() {

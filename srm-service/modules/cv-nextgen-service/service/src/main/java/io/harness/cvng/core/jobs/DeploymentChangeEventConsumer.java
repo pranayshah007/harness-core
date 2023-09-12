@@ -62,6 +62,7 @@ public class DeploymentChangeEventConsumer extends AbstractStreamConsumer {
       harnessCDEventMetaDataBuilder.planExecutionId(deploymentEventDTO.getExecutionDetails().getPlanExecutionId());
       harnessCDEventMetaDataBuilder.stageId(deploymentEventDTO.getExecutionDetails().getStageId());
       harnessCDEventMetaDataBuilder.pipelineId(deploymentEventDTO.getExecutionDetails().getPipelineId());
+      harnessCDEventMetaDataBuilder.runSequence(deploymentEventDTO.getExecutionDetails().getRunSequence());
     }
     if (deploymentEventDTO.hasArtifactDetails()) {
       harnessCDEventMetaDataBuilder.artifactType(deploymentEventDTO.getArtifactDetails().getArtifactType());

@@ -11,7 +11,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
+import io.harness.eraro.ResponseMessage;
+import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 
 import java.util.Map;
 import java.util.Objects;
@@ -31,10 +32,15 @@ public class DirectDslClient implements DslClient {
   private static final String GET_METHOD = "GET";
 
   @Override
-  public Response call(String accountIdentifier, String url, String method, Map<String, String> headers, String body) {
+  public Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails) {
     OkHttpClient client = buildOkHttpClient();
-    log.info("Executing request through direct DSL for url = {}, method = {}", url, method);
-    Request request = buildRequest(url, method, headers, body);
+    String url = apiRequestDetails.getUrl();
+    String method = apiRequestDetails.getMethod();
+    String body = apiRequestDetails.getRequestBody();
+    log.info("Executing request through direct DSL for url = {}, method = {}, body - {}", url, method, body);
+    Request request = buildRequest(url, method, apiRequestDetails.getHeaders(), body);
+    log.info("Request - {}", request.body());
+    log.info("Request - {} ", request.toString());
     return executeRequest(client, request);
   }
 
@@ -55,6 +61,7 @@ public class DirectDslClient implements DslClient {
 
     switch (method) {
       case POST_METHOD:
+        log.info("Request body for build Request - {}", body);
         RequestBody requestBody = RequestBody.create(body, MediaType.parse(APPLICATION_JSON));
         requestBuilder.post(requestBody);
         return requestBuilder.build();
@@ -71,7 +78,9 @@ public class DirectDslClient implements DslClient {
       return Response.status(response.code()).entity(Objects.requireNonNull(response.body()).string()).build();
     } catch (Exception e) {
       log.error("Error in request execution through direct dsl client. Error = {}", e.getMessage(), e);
-      throw new InvalidRequestException("Request execution failed in direct dsl client");
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message("Error occurred while fetching data").build())
+          .build();
     }
   }
 }

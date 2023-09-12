@@ -130,7 +130,7 @@ sed -i "s:^version.*:version\: ${NEW_HELM_VERSION}:g" ${CHART_FILE}
 git add ${CHART_FILE}
 git add ${VALUES_FILE}
 git add ${VERSION_FILE}
-git commit -m "Creating new helm chart version ${NEW_HELM_VERSION} with app version: ${NEW_VERSION}xx"
+git commit -m "Creating new helm chart version ${NEW_HELM_VERSION} with app version: ${VERSION}xx"
 git push origin develop
 print_err "$?" "Pushing helm chart updates for ${PURPOSE} to develop branch failed"
 

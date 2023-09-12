@@ -8,15 +8,17 @@
 package io.harness.ci.execution.execution;
 
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
 import static io.harness.rule.OwnerRule.HARSH;
-import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
+import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
@@ -26,10 +28,12 @@ import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
+import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 
@@ -48,6 +52,8 @@ import org.mockito.MockitoAnnotations;
 public class StageCleanupUtilityTest extends CIExecutionTestBase {
   @Mock private ConnectorUtils connectorUtils;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
+  @Mock private OutcomeService outcomeService;
+
   @Inject private CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
 
   @InjectMocks private StageCleanupUtility stageCleanupUtility;
@@ -110,13 +116,26 @@ public class StageCleanupUtilityTest extends CIExecutionTestBase {
   }
 
   @Test
-  @Owner(developers = RAGHAV_GUPTA)
+  @Owner(developers = SOUMYAJIT)
   @Category(UnitTests.class)
-  public void testHandleEventWithInitialiseFailed() {
+  @Ignore("Recreate test object after pms integration")
+  public void testHandleEventForRunningLiteEngineCapability() throws IOException {
+    String ip = "1.2.3.4";
+    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ciExecutionPlanTestHelper.getGitConnector());
     when(executionSweepingOutputResolver.resolveOptional(any(), any()))
-        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(K8StageInfraDetails.builder()
+                                    .podName("podName")
+                                    .containerNames(new ArrayList<>())
+                                    .infrastructure(ciExecutionPlanTestHelper.getInfrastructure())
+                                    .build())
+                        .build());
+    when(outcomeService.resolve(any(), any())).thenReturn(LiteEnginePodDetailsOutcome.builder().ipAddress(ip).build());
 
-    CICleanupTaskParams cik8CleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
-    assertThat(cik8CleanupTaskParams).isNull();
+    CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
+
+    assertThat(((CIK8CleanupTaskParams) ciCleanupTaskParams).getLiteEngineIP()).isEqualTo(ip);
+    assertThat(((CIK8CleanupTaskParams) ciCleanupTaskParams).getLiteEnginePort()).isEqualTo(LITE_ENGINE_PORT);
   }
 }

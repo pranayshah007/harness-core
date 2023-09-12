@@ -2176,8 +2176,13 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       List<String> envNames = activeDTO.getEnvNames();
       List<String> envIdentifierList = monitoredService.getEnvironmentIdentifierList();
       for (String envIdentifier : envIdentifierList) {
-        EnvironmentResponseDTO environmentResponseDTO = nextGenService.getEnvironment(monitoredService.getAccountId(),
-            monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier(), envIdentifier);
+        EnvironmentResponseDTO environmentResponseDTO = null;
+        try {
+          environmentResponseDTO = nextGenService.getEnvironment(monitoredService.getAccountId(),
+              monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier(), envIdentifier);
+        } catch (Exception e) {
+          log.info("Error fetching the environment.");
+        }
         if (environmentResponseDTO != null) {
           envNames.add(environmentResponseDTO.getName());
         }
@@ -2201,20 +2206,33 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
       ProjectDTO projectDTO = null;
       OrganizationDTO organizationDTO = null;
-      ServiceResponseDTO serviceDTO = nextGenService.getService(serviceParams.getAccountIdentifier(),
-          serviceParams.getOrgIdentifier(), serviceParams.getProjectIdentifier(), serviceParams.getServiceIdentifier());
+      ServiceResponseDTO serviceDTO = null;
+      try {
+        serviceDTO = nextGenService.getService(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier(),
+            serviceParams.getProjectIdentifier(), serviceParams.getServiceIdentifier());
+      } catch (Exception e) {
+        log.info("Error fetching the service.");
+      }
       if (serviceParams.getProjectIdentifier() != null) {
-        projectDTO = nextGenService.getProject(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier(),
-            serviceParams.getProjectIdentifier());
+        try {
+          projectDTO = nextGenService.getProject(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier(),
+              serviceParams.getProjectIdentifier());
+        } catch (Exception e) {
+          log.info("Error fetching the project.");
+        }
       }
       if (serviceParams.getOrgIdentifier() != null) {
-        organizationDTO =
-            nextGenService.getOrganization(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier());
+        try {
+          organizationDTO =
+              nextGenService.getOrganization(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier());
+        } catch (Exception e) {
+          log.info("Error fetching the organization.");
+        }
       }
 
-      activeServiceDTO.setOrgName(organizationDTO != null ? organizationDTO.getName() : null);
-      activeServiceDTO.setProjectName(projectDTO != null ? projectDTO.getName() : null);
-      activeServiceDTO.setName(serviceDTO != null ? serviceDTO.getName() : null);
+      activeServiceDTO.setOrgName(organizationDTO != null ? organizationDTO.getName() : "Deleted");
+      activeServiceDTO.setProjectName(projectDTO != null ? projectDTO.getName() : "Deleted");
+      activeServiceDTO.setName(serviceDTO != null ? serviceDTO.getName() : "Deleted");
       activeServiceDTOList.add(activeServiceDTO);
     }
 

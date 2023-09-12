@@ -224,3 +224,4 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureClientSecretKeyO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialOutcomeDTO
+io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata

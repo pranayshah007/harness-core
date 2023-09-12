@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
@@ -23,9 +24,15 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PmsGraphStepDetailsService {
   void addStepDetail(String nodeExecutionId, String planExecutionId, PmsStepDetails stepDetails, String name);
-  void saveNodeExecutionInfo(String nodeExecutionId, String planExecutionId, PmsStepParameters stepParameters);
+
+  // TODO: Make this better this should be called from no where else
+  void saveNodeExecutionInfo(String nodeExecutionId, String planExecutionId, StrategyMetadata metadata);
+
+  void addStepInputs(String nodeExecutionId, PmsStepParameters resolvedInputs);
 
   PmsStepParameters getStepInputs(String planExecutionId, String nodeExecutionId);
+
+  PmsStepParameters getStepInputsRecasterPruned(String planExecutionId, String nodeExecutionId);
 
   NodeExecutionsInfo getNodeExecutionsInfo(String nodeExecutionId);
 

@@ -10,7 +10,7 @@ KEYS=$(git log --pretty=oneline --abbrev-commit |\
 echo $KEYS
 
 #FIX_SRM_VERSION value to be same as used in release-branch-create-srm-version.sh
-FIX_SRM_VERSION="SRM_""$VERSION"00
+FIX_SRM_VERSION="SRM_""$VERSION"
 
 for KEY in ${KEYS}
   do

@@ -438,7 +438,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     if (shouldPublishArtifact(stepStatus)) {
       publishArtifact(ambiance, stepParameters, stepIdentifier, stepStatus, stepResponseBuilder);
     }
-    if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
+    if (shouldPublishOutcome(stepStatus)) {
       if (stepStatus.getOutput() != null) {
         populateCIStageOutputs(((StepMapOutput) stepStatus.getOutput()).getMap(), AmbianceUtils.getAccountId(ambiance),
             ambiance.getStageExecutionId());
@@ -471,7 +471,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       StepStatus stepStatus, StepResponseBuilder stepResponseBuilder) {
     modifyStepStatus(ambiance, stepStatus, stepIdentifier);
 
-    StepArtifacts stepArtifacts = handleArtifact(stepStatus.getArtifactMetadata(), stepParameters);
+    StepArtifacts stepArtifacts = handleArtifact(stepStatus.getArtifactMetadata(), stepParameters, ambiance);
     if (stepArtifacts != null) {
       // since jexl doesn't understand - therefore we are adding a new outcome with artifact_ appended
       // Also to have backward compatibility we'll save the old outcome as an output variable.
@@ -574,6 +574,10 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     return stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS;
   }
 
+  protected boolean shouldPublishOutcome(StepStatus stepStatus) {
+    return stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS;
+  }
+
   private String maskTransportExceptionError(String errorMessage) {
     final String defaultTransportExceptionMessage =
         "Communication between Container and Lite-engine seems to be broken. Please review the resources allocated to the Step";
@@ -583,6 +587,11 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     } else {
       return errorMessage;
     }
+  }
+
+  protected StepArtifacts handleArtifact(
+      ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
+    return handleArtifact(artifactMetadata, stepParameters);
   }
 
   protected StepArtifacts handleArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters) {

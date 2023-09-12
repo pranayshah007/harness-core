@@ -17,6 +17,8 @@ import io.harness.pms.events.base.PmsAbstractMessageListener;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class CreatePartialPlanMessageListener
@@ -25,5 +27,10 @@ public class CreatePartialPlanMessageListener
   public CreatePartialPlanMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, CreatePartialPlanEventHandler createPartialPlanEventHandler) {
     super(serviceName, CreatePartialPlanEvent.class, createPartialPlanEventHandler);
+  }
+
+  @Override
+  protected CreatePartialPlanEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return CreatePartialPlanEvent.parseFrom(message);
   }
 }

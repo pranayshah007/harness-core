@@ -116,7 +116,6 @@ public class CoreDelegateResource {
                               .setUses(getImage(delegateTaskPackage.getData().getTaskType()))
                               .setResource(resources)
                               .build())
-              .setLoggingToken(delegateTaskPackage.getLogStreamingToken())
               .build();
       final var emptyDir = EmptyDirVolume.newBuilder().setName("marko-dir").setPath("/harness/marko").build();
       final var k8SInfra = K8SInfra
@@ -127,6 +126,7 @@ public class CoreDelegateResource {
                                .setWorkingDir("pera")
                                .addResources(Resource.newBuilder().setSpec(Any.pack(emptyDir)).build())
                                .setLogPrefix(logPrefix)
+                               .setLogToken(delegateTaskPackage.getLogStreamingToken())
                                .build();
 
       final TaskPayload task =

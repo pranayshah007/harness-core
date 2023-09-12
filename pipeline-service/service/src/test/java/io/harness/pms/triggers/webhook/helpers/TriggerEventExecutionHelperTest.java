@@ -135,7 +135,7 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
             .build();
     doReturn(planExecution)
         .when(triggerExecutionHelper)
-        .resolveRuntimeInputAndSubmitExecutionReques(any(), any(), any());
+        .resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(any(), any(), any());
     doReturn(triggerDetails.getNgTriggerConfigV2())
         .when(ngTriggerElementMapper)
         .toTriggerConfigV2(any(NGTriggerEntity.class));

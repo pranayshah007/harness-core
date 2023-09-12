@@ -35,8 +35,20 @@ public class HarnessPipelineSuccessPercent implements DslDataProvider {
 
   @Override
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
-    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
-        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
+    log.info("HarnessPipelineSuccessPercent DSL invoked - for {} datapoints - {}", accountIdentifier,
+        dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());
+
+    String ciPipelineUrl = DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml());
+    Map<String, Object> returnData = new HashMap<>();
+
+    Map<String, Object> errorMessageForMissingNewAnnotations =
+        DslUtils.checkAndGetMissingNewAnnotationErrorMessage(ciPipelineUrl, true, null, false, dataSourceDataPointInfo);
+    if (errorMessageForMissingNewAnnotations != null) {
+      returnData.putAll(errorMessageForMissingNewAnnotations);
+      return returnData;
+    }
+
+    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(ciPipelineUrl);
 
     long currentTime = System.currentTimeMillis();
 
@@ -59,18 +71,18 @@ public class HarnessPipelineSuccessPercent implements DslDataProvider {
               ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
           e);
     }
+    log.info(
+        "Dashboard response in HarnessPipelineSuccessPercent - {}, CI Pipeline url - {}", dashboard, ciPipelineUrl);
 
-    Map<String, Object> returnData = new HashMap<>();
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
 
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
       returnData.putAll(pipelineSuccessPercentResponseFactory.getResponseParser(dataPointIdentifier)
-                            .getParsedValue(dashboard, dataPointIdentifier,
-                                DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml())));
+                            .getParsedValue(dashboard, dataPointIdentifier, ciPipelineUrl));
     }
-
+    log.info("Return data in HarnessPipelineSuccessPercent DSL - {}, CI  Pipeline url - {}", returnData, ciPipelineUrl);
     return returnData;
   }
 }

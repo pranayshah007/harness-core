@@ -25,6 +25,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -67,6 +68,7 @@ import io.harness.k8s.oidc.OidcTokenRetriever;
 import io.harness.rule.Owner;
 
 import com.github.scribejava.apis.openid.OpenIdOAuth2AccessToken;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.gson.reflect.TypeToken;
@@ -142,6 +144,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1733,6 +1736,82 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     } catch (Exception e) {
       Assertions.fail("Exception thrown while checking permissions: " + e.getMessage());
     }
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetRunningPodsWithLabelsAsList() throws Exception {
+    V1PodStatus runningStatus = new V1PodStatusBuilder().withPhase("Running").build();
+    V1PodStatus terminatedStatus = new V1PodStatusBuilder().withPhase("Terminated").build();
+    List<String> labels =
+        ImmutableList.of("label1=value1", "label2=value2", "label3 in (value4, value5)", "label4 notin (label6)");
+    V1PodList v1PodList = new V1PodListBuilder()
+                              .addNewItem() // With running status
+                              .withNewMetadata()
+                              .withName("pod-1")
+                              .endMetadata()
+                              .withStatus(runningStatus)
+                              .endItem()
+                              .addNewItem() // With deletion timestamp
+                              .withNewMetadata()
+                              .withName("pod-2")
+                              .withDeletionTimestamp(OffsetDateTime.now())
+                              .endMetadata()
+                              .withStatus(terminatedStatus)
+                              .endItem()
+                              .addNewItem() // Without status
+                              .withNewMetadata()
+                              .withName("pod-3")
+                              .endMetadata()
+                              .endItem()
+                              .addNewItem() // With terminated status
+                              .withNewMetadata()
+                              .withName("pod-4")
+                              .endMetadata()
+                              .withStatus(terminatedStatus)
+                              .endItem()
+                              .build();
+
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1PodList.class).getType()))
+        .thenReturn(new ApiResponse<>(200, emptyMap(), v1PodList));
+
+    List<V1Pod> result = kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels);
+    ArgumentCaptor<List<Pair>> queryParamsCaptor = ArgumentCaptor.forClass((Class) List.class);
+    verify(k8sApiClient, times(1))
+        .buildCall(anyString(), eq("GET"), queryParamsCaptor.capture(), anyList(), any(), anyMap(), anyMap(), anyMap(),
+            any(String[].class), any());
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getMetadata().getName()).isEqualTo("pod-1");
+    Optional<Pair> labelSelector =
+        queryParamsCaptor.getValue().stream().filter(pair -> "labelSelector".equals(pair.getName())).findAny();
+    assertThat(labelSelector).isPresent();
+    assertThat(labelSelector.get().getValue())
+        .isEqualTo("label1=value1,label2=value2,label3 in (value4, value5),label4 notin (label6)");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetRunningPodsWithLabelsAsListException() throws Exception {
+    List<String> labels = ImmutableList.of("label1=value1");
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1PodList.class).getType()))
+        .thenThrow(new ApiException(401, emptyMap(), "{\"error\": \"unauthorized\"}"));
+
+    assertThatThrownBy(() -> kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels))
+        .hasMessageContaining(
+            "Unable to get running pods. Code: 401, message:  Response body: {\"error\": \"unauthorized\"}");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetRunningPodsWithLabelsAsListIsEmpty() {
+    List<String> labels = Collections.emptyList();
+
+    List<V1Pod> result = kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels);
+
+    assertThat(result).isEmpty();
   }
 
   private static final String EXPECTED_KUBECONFIG = "apiVersion: v1\n"

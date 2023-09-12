@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.resources;
 
+import static io.harness.cvng.core.services.impl.MetricPackServiceImpl.DATADOG_DSL;
+import static io.harness.cvng.core.services.impl.MetricPackServiceImpl.PROMETHEUS_DSL;
 import static io.harness.cvng.core.services.impl.MetricPackServiceImpl.SIGNALFX_DSL;
 import static io.harness.cvng.core.services.impl.MetricPackServiceImpl.SUMOLOGIC_DSL;
 import static io.harness.rule.OwnerRule.ANSUMAN;
@@ -23,11 +25,15 @@ import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.DatadogLogDataCollectionInfo;
+import io.harness.cvng.beans.DatadogMetricsDataCollectionInfo;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.cvng.beans.PrometheusDataCollectionInfo;
 import io.harness.cvng.beans.SignalFXMetricDataCollectionInfo;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
 import io.harness.cvng.beans.SumologicMetricDataCollectionInfo;
 import io.harness.cvng.beans.SyncDataCollectionRequest;
+import io.harness.cvng.beans.datadog.DatadogLogDefinition;
 import io.harness.cvng.beans.elk.ELKIndexCollectionRequest;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest;
@@ -347,6 +353,38 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
       metricDataCollectionInfo.setCollectHostData(false);
       metricDataCollectionInfo.setDataCollectionDsl(SIGNALFX_DSL);
     }
+    if (type == DataSourceType.DATADOG_METRICS) {
+      metricDataCollectionInfo =
+          DatadogMetricsDataCollectionInfo.builder()
+              .metricDefinitions(List.of(
+                  DatadogMetricsDataCollectionInfo.MetricCollectionInfo.builder()
+                      .metricName("onboarding_sample_metric")
+                      .metricIdentifier("onboarding_sample_metric")
+                      .query(metricQuery)
+                      .formula("query1")
+                      .serviceInstanceIdentifierTag("container")
+                      .formulaQueries(List.of(
+                          "kubernetes.kubelet.container.log_filesystem.used_bytes{instance-id:2104767817663186867}by{container}.rollup(avg, 60)"))
+                      .build()))
+              .groupName("onboarding_default_group")
+              .build();
+      metricDataCollectionInfo.setCollectHostData(true);
+      metricDataCollectionInfo.setDataCollectionDsl(DATADOG_DSL);
+    }
+    if (type == DataSourceType.PROMETHEUS) {
+      metricDataCollectionInfo =
+          PrometheusDataCollectionInfo.builder()
+              .metricCollectionInfoList(List.of(PrometheusDataCollectionInfo.MetricCollectionInfo.builder()
+                                                    .metricName("onboarding_sample_metric")
+                                                    .metricIdentifier("onboarding_sample_metric")
+                                                    .query(metricQuery)
+                                                    .serviceInstanceField("instance")
+                                                    .build()))
+              .groupName("onboarding_default_group")
+              .build();
+      metricDataCollectionInfo.setCollectHostData(true);
+      metricDataCollectionInfo.setDataCollectionDsl(PROMETHEUS_DSL);
+    }
 
     DataCollectionRequest request = SyncDataCollectionRequest.builder()
                                         .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
@@ -605,5 +643,152 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
         .contains(getTimeseriesFromResponse(timeSeriesRecords2, "host2"));
     assertThat(metricRecordsResponse.getTimeSeriesData())
         .contains(getTimeseriesFromResponse(timeSeriesRecords3, "host3"));
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void fetchDatadogMetricChart() throws JsonProcessingException, IllegalAccessException {
+    long startTime = 1693624923344L;
+    long endTime = Instant.ofEpochMilli(startTime).plus(120, ChronoUnit.MINUTES).toEpochMilli();
+    String metricQuery = "kubernetes.kubelet.container.log_filesystem.used_bytes{instance-id:2104767817663186867}";
+    QueryRecordsRequest queryRecordsRequest = new QueryRecordsRequest();
+    queryRecordsRequest.setStartTime(startTime);
+    queryRecordsRequest.setEndTime(endTime);
+    queryRecordsRequest.setConnectorIdentifier(connectorIdentifier);
+    queryRecordsRequest.setQuery(metricQuery);
+    queryRecordsRequest.setProviderType(DataSourceType.DATADOG_METRICS);
+    queryRecordsRequest.setHealthSourceParams(HealthSourceParamsDTO.builder().build());
+    queryRecordsRequest.setHealthSourceQueryParams(QueryParamsDTO.builder().serviceInstanceField("container").build());
+    OnboardingRequestDTO onboardingRequestDTO =
+        createOnboardingRequestDTOForMetric(startTime, endTime, metricQuery, DataSourceType.DATADOG_METRICS);
+    String groupName = "onboarding_default_group";
+    String metricIdentifier = "onboarding_sample_metric";
+    List<TimeSeriesRecord> timeSeriesRecords1 = generateTimeSeriesRecordData(
+        "gke-metrics-agent", groupName, metricIdentifier, "onboarding_sample_metric", startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecords2 = generateTimeSeriesRecordData(
+        "prd1-ms-newrelic-appd", groupName, metricIdentifier, "onboarding_sample_metric", startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecords3 = generateTimeSeriesRecordData(
+        "container-watcher", groupName, metricIdentifier, "onboarding_sample_metric", startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecordList = Stream.of(timeSeriesRecords1, timeSeriesRecords2, timeSeriesRecords3)
+                                                      .flatMap(Collection::stream)
+                                                      .collect(Collectors.toList());
+    mockOnboardingService(onboardingRequestDTO, timeSeriesRecordList);
+    Response response = RESOURCES.client()
+                            .target(baseURL + "/health-source/metric-records")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(objectMapper.writeValueAsString(queryRecordsRequest)));
+
+    MetricRecordsResponse metricRecordsResponse =
+        response.readEntity(new GenericType<RestResponse<MetricRecordsResponse>>() {}).getResource();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(metricRecordsResponse.getTimeSeriesData())
+        .contains(getTimeseriesFromResponse(timeSeriesRecords1, "gke-metrics-agent"));
+    assertThat(metricRecordsResponse.getTimeSeriesData())
+        .contains(getTimeseriesFromResponse(timeSeriesRecords2, "prd1-ms-newrelic-appd"));
+    assertThat(metricRecordsResponse.getTimeSeriesData())
+        .contains(getTimeseriesFromResponse(timeSeriesRecords3, "container-watcher"));
+    assertThat(metricRecordsResponse.getServiceInstances())
+        .containsAll(List.of("container-watcher", "prd1-ms-newrelic-appd", "gke-metrics-agent"));
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void fetchDatadogLogData() throws IllegalAccessException, JsonProcessingException {
+    String logQuery = "service:todolist*";
+    long startTime = 1693618323344L;
+    long endTime = 1693655523344L;
+    QueryRecordsRequest queryRecordsRequest = new QueryRecordsRequest();
+    queryRecordsRequest.setStartTime(startTime);
+    queryRecordsRequest.setEndTime(endTime);
+    queryRecordsRequest.setConnectorIdentifier(connectorIdentifier);
+    queryRecordsRequest.setQuery(logQuery);
+    queryRecordsRequest.setProviderType(DataSourceType.DATADOG_LOG);
+    queryRecordsRequest.setHealthSourceQueryParams(
+        QueryParamsDTO.builder().serviceInstanceField("host").index("main").build());
+    queryRecordsRequest.setHealthSourceParams(HealthSourceParamsDTO.builder().build());
+    List<LogDataRecord> logDataRecords = generateLogRecordData(
+        "gke-chi-play-delegate-non-preemptible-5a4eed4e-x64v.c.chi-play.internal", startTime, endTime);
+    logDataRecords.addAll(generateLogRecordData(
+        "gke-chi-play-delegate-non-preemptible-4dsvsd34-x64v.c.chi-play.internal", startTime, endTime));
+    DataCollectionInfo<?> datadogLogDataCollectionInfo = DatadogLogDataCollectionInfo.builder()
+                                                             .logDefinition(DatadogLogDefinition.builder()
+                                                                                .name("onboarding_query_name")
+                                                                                .indexes(List.of("main"))
+                                                                                .query(logQuery)
+                                                                                .serviceInstanceIdentifier("host")
+                                                                                .build())
+                                                             .build();
+    datadogLogDataCollectionInfo.setCollectHostData(false);
+    datadogLogDataCollectionInfo.setDataCollectionDsl(DATADOG_DSL);
+    DataCollectionRequest<?> request = SyncDataCollectionRequest.builder()
+                                           .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
+                                           .dataCollectionInfo(datadogLogDataCollectionInfo)
+                                           .endTime(Instant.ofEpochMilli(endTime))
+                                           .startTime(Instant.ofEpochMilli(startTime))
+                                           .build();
+    OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
+                                                    .dataCollectionRequest(request)
+                                                    .connectorIdentifier(connectorIdentifier)
+                                                    .accountId(accountIdentifier)
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .projectIdentifier(projectIdentifier)
+                                                    .tracingId(tracingId)
+                                                    .build();
+    mockOnboardingService(onboardingRequestDTO, logDataRecords);
+    Response response = RESOURCES.client()
+                            .target(baseURL + "/health-source/log-records")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(objectMapper.writeValueAsString(queryRecordsRequest)));
+    LogRecordsResponse logRecordsResponse =
+        response.readEntity(new GenericType<RestResponse<LogRecordsResponse>>() {}).getResource();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(logRecordsResponse.getLogRecords().size()).isEqualTo(logDataRecords.size());
+    assertThat(logRecordsResponse.getLogRecords()).isEqualTo(getLogRecordFromResponse(logDataRecords));
+    assertThat(logRecordsResponse.getServiceInstances())
+        .containsAll(List.of("gke-chi-play-delegate-non-preemptible-5a4eed4e-x64v.c.chi-play.internal",
+            "gke-chi-play-delegate-non-preemptible-4dsvsd34-x64v.c.chi-play.internal"));
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void fetchPrometheusMetricChart() throws JsonProcessingException, IllegalAccessException {
+    long startTime = 1693624923344L;
+    long endTime = Instant.ofEpochMilli(startTime).plus(120, ChronoUnit.MINUTES).toEpochMilli();
+    String metricQuery = "up{group=\"cv\"}";
+    QueryRecordsRequest queryRecordsRequest = new QueryRecordsRequest();
+    queryRecordsRequest.setStartTime(startTime);
+    queryRecordsRequest.setEndTime(endTime);
+    queryRecordsRequest.setConnectorIdentifier(connectorIdentifier);
+    queryRecordsRequest.setQuery(metricQuery);
+    queryRecordsRequest.setProviderType(DataSourceType.PROMETHEUS);
+    queryRecordsRequest.setHealthSourceParams(HealthSourceParamsDTO.builder().build());
+    queryRecordsRequest.setHealthSourceQueryParams(QueryParamsDTO.builder().serviceInstanceField("instance").build());
+    OnboardingRequestDTO onboardingRequestDTO =
+        createOnboardingRequestDTOForMetric(startTime, endTime, metricQuery, DataSourceType.PROMETHEUS);
+    String groupName = "onboarding_default_group";
+    String metricIdentifier = "onboarding_sample_metric";
+    List<TimeSeriesRecord> timeSeriesRecords1 = generateTimeSeriesRecordData(
+        "prometheuscv.cie-demo.co.uk:80", groupName, metricIdentifier, "onboarding_sample_metric", startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecords2 = generateTimeSeriesRecordData(
+        "prometheus1cv.cie-demo.co.uk:80", groupName, metricIdentifier, "onboarding_sample_metric", startTime, endTime);
+    List<TimeSeriesRecord> timeSeriesRecordList =
+        Stream.of(timeSeriesRecords1, timeSeriesRecords2).flatMap(Collection::stream).collect(Collectors.toList());
+    mockOnboardingService(onboardingRequestDTO, timeSeriesRecordList);
+    Response response = RESOURCES.client()
+                            .target(baseURL + "/health-source/metric-records")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(objectMapper.writeValueAsString(queryRecordsRequest)));
+    MetricRecordsResponse metricRecordsResponse =
+        response.readEntity(new GenericType<RestResponse<MetricRecordsResponse>>() {}).getResource();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(metricRecordsResponse.getTimeSeriesData())
+        .contains(getTimeseriesFromResponse(timeSeriesRecords1, "prometheuscv.cie-demo.co.uk:80"));
+    assertThat(metricRecordsResponse.getTimeSeriesData())
+        .contains(getTimeseriesFromResponse(timeSeriesRecords2, "prometheus1cv.cie-demo.co.uk:80"));
+    assertThat(metricRecordsResponse.getServiceInstances())
+        .containsAll(List.of("prometheuscv.cie-demo.co.uk:80", "prometheus1cv.cie-demo.co.uk:80"));
   }
 }

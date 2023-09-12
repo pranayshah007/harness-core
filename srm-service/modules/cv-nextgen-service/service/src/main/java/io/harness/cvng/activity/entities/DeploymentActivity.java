@@ -49,6 +49,7 @@ public class DeploymentActivity extends Activity {
   @Getter(AccessLevel.NONE) @NotNull Long verificationStartTime;
   @FdSparseIndex String planExecutionId;
   String pipelineId;
+  String runSequence;
   String stageStepId;
   String stageId;
   String artifactType;
@@ -145,6 +146,7 @@ public class DeploymentActivity extends Activity {
       setCommonUpdateOperations(updateOperations, activity);
       updateOperations.set(DeploymentActivityKeys.planExecutionId, activity.getPlanExecutionId())
           .set(DeploymentActivityKeys.pipelineId, activity.getPipelineId())
+          .set(DeploymentActivityKeys.runSequence, activity.getRunSequence())
           .set(DeploymentActivityKeys.stageStepId, activity.getStageStepId())
           .set(DeploymentActivityKeys.stageId, activity.getStageId());
       if (activity.getArtifactType() != null) {

@@ -44,6 +44,7 @@ import io.harness.exception.YamlException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.events.ServiceCreateEvent;
@@ -113,6 +114,8 @@ import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
@@ -176,13 +179,18 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
+
+      // cannot rely on Mongo repository throwing DuplicateKeyException since we're saving to git first
+      validateIdentifierIsUnique(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
+          serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier());
+
       Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(serviceEntity);
       ServiceEntityValidator serviceEntityValidator =
           serviceEntityValidatorFactory.getServiceEntityValidator(serviceEntity);
       serviceEntityValidator.validate(serviceEntity);
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity service = serviceRepository.save(serviceEntity);
+            ServiceEntity service = serviceRepository.saveGitAware(serviceEntity);
             outboxService.save(getServiceCreateEvent(serviceEntity));
             return service;
           }));
@@ -190,11 +198,22 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
           serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdService;
-    } catch (DuplicateKeyException ex) {
+    } catch (Exception ex) {
+      log.error(String.format("Error while saving service [%s]", serviceEntity.getIdentifier()), ex);
+      throw new InvalidRequestException(
+          String.format("Error while saving service [%s]: %s", serviceEntity.getIdentifier(), ex.getMessage()));
+    }
+  }
+
+  private void validateIdentifierIsUnique(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    Optional<ServiceEntity> serviceEntity =
+        serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+    if (serviceEntity.isPresent()) {
       throw new DuplicateFieldException(
-          getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
-              serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()),
-          USER_SRE, ex);
+          getDuplicateServiceExistsErrorMessage(accountId, orgIdentifier, projectIdentifier, serviceIdentifier),
+          USER_SRE);
     }
   }
 
@@ -221,23 +240,33 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public Optional<ServiceEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
-    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
-
-    return getServiceByRef(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted);
+    // default behavior to not load from cache and fallback branch
+    return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false);
   }
 
-  private Optional<ServiceEntity> getServiceByRef(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
+  @Override
+  public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
+
+    return getServiceByRef(
+        accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache, loadFromFallbackBranch);
+  }
+
+  private Optional<ServiceEntity> getServiceByRef(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
     String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    // converted to service identifier
     if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted);
+          accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted, loadFromCache, loadFromFallbackBranch);
     } else {
       IdentifierRef serviceIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted);
+          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted, loadFromCache,
+          loadFromFallbackBranch);
     }
   }
 
@@ -1101,5 +1130,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       throw new InvalidRequestException(
           String.format("Error occurred while fetching list of manifests for service %s", serviceIdentifier), e);
     }
+  }
+
+  @Override
+  public RepoListResponseDTO getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllServicesAccessibleAtScope) {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, null, false, includeAllServicesAccessibleAtScope);
+
+    List<String> uniqueRepos = serviceRepository.getListOfDistinctRepos(criteria);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
+
+    return RepoListResponseDTO.builder().repositories(uniqueRepos).build();
   }
 }

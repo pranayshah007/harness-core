@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 32
+version : 33
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -393,6 +393,42 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
+  - identifier: enable_slack_notification
+    name: Enable Slack Notifications
+    category: NOTIFICATIONS
+    groupIdentifier: slack_notification_settings
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_msTeams_notification
+    name: Enable MS Teams Notifications
+    category: NOTIFICATIONS
+    groupIdentifier: msTeam_notification_settings
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_webhook_notification
+    name: Enable Webhook Notifications
+    category: NOTIFICATIONS
+    groupIdentifier: webhook_notification_settings
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_pagerduty_notification
+    name: Enable Pager Duty Notifications
+    category: NOTIFICATIONS
+    groupIdentifier: pagerduty_notification_settings
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
   - identifier: trigger_for_all_artifacts_or_manifests
     name: Execute Triggers With All Collected Artifacts or Manifests
     category: PMS
@@ -446,5 +482,14 @@ settings :
     category: GIT_EXPERIENCE
     defaultValue: false
     valueType: BOOLEAN
+    allowedScopes:
+      - ACCOUNT
+  - identifier: do_not_delete_pipeline_execution_details
+    name: Do Not Delete Pipeline Execution Details
+    category: PMS
+    groupIdentifier: pms_execution_settings
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
     allowedScopes:
       - ACCOUNT

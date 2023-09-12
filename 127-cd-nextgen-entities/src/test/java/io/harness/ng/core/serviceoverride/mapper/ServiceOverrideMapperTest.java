@@ -21,15 +21,11 @@ import io.harness.ng.core.NGCoreTestBase;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
-import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.yaml.core.variables.NGServiceOverrides;
-import io.harness.yaml.core.variables.StringNGVariable;
 
 import java.io.InputStream;
-import java.util.List;
 import java.util.Scanner;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,20 +66,15 @@ public class ServiceOverrideMapperTest extends NGCoreTestBase {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testToResponseWrapperHandlingFromV2Api() {
-    NGServiceOverridesEntity entity =
-        NGServiceOverridesEntity.builder()
-            .accountId("ACCOUNT_IDENTIFIER")
-            .orgIdentifier("ORG_IDENTIFIER")
-            .projectIdentifier("PROJECT_IDENTIFIER")
-            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
-            .environmentRef("ENVIRONMENT_REF")
-            .serviceRef("SERVICE_REF")
-            .spec(
-                ServiceOverridesSpec.builder()
-                    .variables(List.of(
-                        StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build()))
-                    .build())
-            .build();
+    NGServiceOverridesEntity entity = NGServiceOverridesEntity.builder()
+                                          .accountId("ACCOUNT_IDENTIFIER")
+                                          .orgIdentifier("ORG_IDENTIFIER")
+                                          .projectIdentifier("PROJECT_IDENTIFIER")
+                                          .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+                                          .environmentRef("ENVIRONMENT_REF")
+                                          .serviceRef("SERVICE_REF")
+                                          .yamlInternal(OVERRIDE_YAML)
+                                          .build();
 
     ServiceOverrideResponseDTO responseDTO = ServiceOverridesMapper.toResponseWrapper(entity, true);
     assertThat(responseDTO.getYaml()).isEqualTo(OVERRIDE_YAML);

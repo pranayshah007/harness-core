@@ -10,7 +10,7 @@ package io.harness.entities.deploymentinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,7 +24,7 @@ public class CustomDeploymentNGDeploymentInfo extends DeploymentInfo {
   @NotNull private String infratructureKey;
   private String instanceFetchScript;
   private String scriptOutput;
-  private List<String> tags;
+  private Set<String> tags;
   private String artifactName;
   private String artifactSourceName;
   private String artifactStreamId;

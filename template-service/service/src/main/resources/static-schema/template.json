@@ -410,6 +410,8 @@
               }, {
                 "$ref" : "#/definitions/pipeline/steps/iacm/IACMTerraformPluginStepNode_template"
               }, {
+                "$ref" : "#/definitions/pipeline/steps/iacm/IACMCostEstimationStepNode_template"
+              }, {
                 "$ref" : "#/definitions/pipeline/steps/common/AwsCdkBootstrapStepNode_template"
               }, {
                 "$ref" : "#/definitions/pipeline/steps/common/AwsCdkSynthStepNode_template"
@@ -3832,7 +3834,7 @@
               },
               "type" : {
                 "type" : "string",
-                "enum" : [ "Generic" ]
+                "enum" : [ "Generic", "ECR" ]
               },
               "description" : {
                 "desc" : "This is the description for OciHelmChartStoreConfigWrapper"
@@ -3840,6 +3842,21 @@
             },
             "$schema" : "http://json-schema.org/draft-07/schema#",
             "allOf" : [ {
+              "if" : {
+                "properties" : {
+                  "type" : {
+                    "const" : "ECR"
+                  }
+                }
+              },
+              "then" : {
+                "properties" : {
+                  "spec" : {
+                    "$ref" : "#/definitions/pipeline/steps/cd/OciHelmChartStoreEcrConfig"
+                  }
+                }
+              }
+            }, {
               "if" : {
                 "properties" : {
                   "type" : {
@@ -3855,6 +3872,33 @@
                 }
               }
             } ]
+          },
+          "OciHelmChartStoreEcrConfig" : {
+            "title" : "OciHelmChartStoreEcrConfig",
+            "allOf" : [ { }, {
+              "type" : "object",
+              "required" : [ "connectorRef", "region" ],
+              "properties" : {
+                "connectorRef" : {
+                  "type" : "string"
+                },
+                "metadata" : {
+                  "type" : "string"
+                },
+                "region" : {
+                  "type" : "string"
+                },
+                "registryId" : {
+                  "type" : "string"
+                }
+              }
+            } ],
+            "$schema" : "http://json-schema.org/draft-07/schema#",
+            "properties" : {
+              "description" : {
+                "desc" : "This is the description for OciHelmChartStoreEcrConfig"
+              }
+            }
           },
           "OciHelmChartStoreGenericConfig" : {
             "title" : "OciHelmChartStoreGenericConfig",
@@ -17833,6 +17877,12 @@
             "type" : "object",
             "required" : [ "type" ],
             "properties" : {
+              "commandFlags" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/pipeline/steps/cd/TerragruntCliOptionFlag"
+                }
+              },
               "spec" : {
                 "$ref" : "#/definitions/pipeline/steps/cd/TerragruntExecutionData"
               },
@@ -17842,6 +17892,24 @@
               },
               "description" : {
                 "desc" : "This is the description for TerragruntStepConfiguration"
+              }
+            },
+            "$schema" : "http://json-schema.org/draft-07/schema#"
+          },
+          "TerragruntCliOptionFlag" : {
+            "title" : "TerragruntCliOptionFlag",
+            "type" : "object",
+            "required" : [ "commandType", "flag" ],
+            "properties" : {
+              "commandType" : {
+                "type" : "string",
+                "enum" : [ "INIT", "WORKSPACE", "PLAN", "APPLY", "DESTROY" ]
+              },
+              "flag" : {
+                "type" : "string"
+              },
+              "description" : {
+                "desc" : "This is the description for TerragruntCliOptionFlag"
               }
             },
             "$schema" : "http://json-schema.org/draft-07/schema#"
@@ -18399,6 +18467,12 @@
                 "type" : "string",
                 "enum" : [ "Apply", "Destroy" ]
               },
+              "commandFlags" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/pipeline/steps/cd/TerragruntCliOptionFlag"
+                }
+              },
               "configFiles" : {
                 "$ref" : "#/definitions/pipeline/steps/cd/TerragruntConfigFilesWrapper"
               },
@@ -18525,6 +18599,12 @@
               "type" : "object",
               "required" : [ "provisionerIdentifier" ],
               "properties" : {
+                "commandFlags" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/pipeline/steps/cd/TerragruntCliOptionFlag"
+                  }
+                },
                 "delegateSelectors" : {
                   "oneOf" : [ {
                     "type" : "array",
@@ -18546,6 +18626,12 @@
             "type" : "object",
             "required" : [ "provisionerIdentifier" ],
             "properties" : {
+              "commandFlags" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/pipeline/steps/cd/TerragruntCliOptionFlag"
+                }
+              },
               "delegateSelectors" : {
                 "oneOf" : [ {
                   "type" : "array",
@@ -27641,7 +27727,7 @@
             "properties" : {
               "type" : {
                 "type" : "string",
-                "enum" : [ "SetFeatureFlagState", "SetOnVariation", "SetOffVariation", "SetDefaultVariations", "AddRule", "UpdateRule", "AddTargetsToVariationTargetMap", "RemoveTargetsToVariationTargetMap", "AddSegmentToVariationTargetMap" ]
+                "enum" : [ "SetFeatureFlagState", "SetOnVariation", "SetOffVariation", "SetDefaultVariations", "AddRule", "UpdateRule", "AddTargetsToVariationTargetMap", "RemoveTargetsToVariationTargetMap", "AddSegmentToVariationTargetMap", "RemoveSegmentsToVariationTargetMap" ]
               },
               "description" : {
                 "desc" : "This is the description for PatchInstruction"
@@ -44118,6 +44204,12 @@
                     "minLength" : 1
                   } ]
                 },
+                "parameters" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  }
+                },
                 "privileged" : {
                   "oneOf" : [ {
                     "type" : "boolean"
@@ -44195,6 +44287,12 @@
                   "pattern" : "(<\\+.+>.*)",
                   "minLength" : 1
                 } ]
+              },
+              "parameters" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
+                }
               },
               "privileged" : {
                 "oneOf" : [ {
@@ -49389,6 +49487,16 @@
                   "minLength" : 1
                 } ]
               },
+              "imagePullPolicy" : {
+                "oneOf" : [ {
+                  "type" : "string",
+                  "enum" : [ "Always", "Never", "IfNotPresent" ]
+                }, {
+                  "type" : "string",
+                  "pattern" : "(<\\+.+>.*)",
+                  "minLength" : 1
+                } ]
+              },
               "description" : {
                 "desc" : "This is the description for K8sDirectInfraYamlSpec"
               }
@@ -51366,7 +51474,7 @@
             "properties" : {
               "type" : {
                 "type" : "string",
-                "enum" : [ "branch", "tag", "PR" ]
+                "enum" : [ "branch", "tag", "PR", "CommitSha" ]
               },
               "description" : {
                 "desc" : "This is the description for Build"
@@ -51415,6 +51523,21 @@
                 "properties" : {
                   "spec" : {
                     "$ref" : "#/definitions/pipeline/steps/ci/TagBuildSpec"
+                  }
+                }
+              }
+            }, {
+              "if" : {
+                "properties" : {
+                  "type" : {
+                    "const" : "CommitSha"
+                  }
+                }
+              },
+              "then" : {
+                "properties" : {
+                  "spec" : {
+                    "$ref" : "#/definitions/pipeline/steps/ci/CommitShaBuildSpec"
                   }
                 }
               }
@@ -51487,6 +51610,26 @@
             "properties" : {
               "description" : {
                 "desc" : "This is the description for TagBuildSpec"
+              }
+            }
+          },
+          "CommitShaBuildSpec" : {
+            "title" : "CommitShaBuildSpec",
+            "allOf" : [ {
+              "$ref" : "#/definitions/pipeline/steps/ci/BuildSpec"
+            }, {
+              "type" : "object",
+              "required" : [ "commitSha" ],
+              "properties" : {
+                "commitSha" : {
+                  "type" : "string"
+                }
+              }
+            } ],
+            "$schema" : "http://json-schema.org/draft-07/schema#",
+            "properties" : {
+              "description" : {
+                "desc" : "This is the description for CommitShaBuildSpec"
               }
             }
           },
@@ -51933,7 +52076,7 @@
                 "buildTool" : {
                   "oneOf" : [ {
                     "type" : "string",
-                    "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest" , "Rspec" ]
+                    "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest" ]
                   }, {
                     "type" : "string",
                     "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -51982,7 +52125,7 @@
                 "language" : {
                   "oneOf" : [ {
                     "type" : "string",
-                    "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python", "Ruby" ]
+                    "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python" ]
                   }, {
                     "type" : "string",
                     "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -52110,7 +52253,7 @@
               "buildTool" : {
                 "oneOf" : [ {
                   "type" : "string",
-                  "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest", "Rspec" ]
+                  "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest" ]
                 }, {
                   "type" : "string",
                   "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -52159,7 +52302,7 @@
               "language" : {
                 "oneOf" : [ {
                   "type" : "string",
-                  "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python", "Ruby" ]
+                  "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python" ]
                 }, {
                   "type" : "string",
                   "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -55218,6 +55361,94 @@
               }
             }
           },
+          "IACMCostEstimationStepNode_template" : {
+            "title" : "IACMCostEstimationStepNode_template",
+            "type" : "object",
+            "required" : [ "spec", "type" ],
+            "properties" : {
+              "enforce" : {
+                "$ref" : "#/definitions/pipeline/common/PolicyConfig"
+              },
+              "failureStrategies" : {
+                "oneOf" : [ {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/pipeline/common/FailureStrategyConfig"
+                  }
+                }, {
+                  "type" : "string",
+                  "pattern" : "^<\\+input>$",
+                  "minLength" : 1
+                } ]
+              },
+              "strategy" : {
+                "oneOf" : [ {
+                  "$ref" : "#/definitions/pipeline/common/StrategyConfig"
+                }, {
+                  "type" : "string",
+                  "pattern" : "^<\\+input>$",
+                  "minLength" : 1
+                } ]
+              },
+              "timeout" : {
+                "type" : "string",
+                "pattern" : "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+              },
+              "type" : {
+                "type" : "string",
+                "enum" : [ "IACMCostEstimation" ]
+              },
+              "when" : {
+                "oneOf" : [ {
+                  "$ref" : "#/definitions/pipeline/common/StepWhenCondition"
+                }, {
+                  "type" : "string",
+                  "pattern" : "^<\\+input>$",
+                  "minLength" : 1
+                } ]
+              }
+            },
+            "$schema" : "http://json-schema.org/draft-07/schema#",
+            "allOf" : [ {
+              "if" : {
+                "properties" : {
+                  "type" : {
+                    "const" : "IACMCostEstimation"
+                  }
+                }
+              },
+              "then" : {
+                "properties" : {
+                  "spec" : {
+                    "$ref" : "#/definitions/pipeline/steps/iacm/IACMCostEstimationInfo"
+                  }
+                }
+              }
+            } ]
+          },
+          "IACMCostEstimationInfo" : {
+            "title" : "IACMCostEstimationInfo",
+            "allOf" : [ {
+              "$ref" : "#/definitions/pipeline/common/StepSpecType"
+            }, {
+              "type" : "object",
+              "properties" : {
+                "image" : {
+                  "type" : "string"
+                }
+              }
+            } ],
+            "$schema" : "http://json-schema.org/draft-07/schema#",
+            "type" : "object",
+            "properties" : {
+              "image" : {
+                "type" : "string"
+              },
+              "description" : {
+                "desc" : "This is the description for IACMCostEstimationInfo"
+              }
+            }
+          },
           "IACMTerraformPluginStepNode" : {
             "title" : "IACMTerraformPluginStepNode",
             "type" : "object",
@@ -55367,6 +55598,83 @@
                 "properties" : {
                   "spec" : {
                     "$ref" : "#/definitions/pipeline/steps/iacm/IACMApprovalInfo"
+                  }
+                }
+              }
+            } ]
+          },
+          "IACMCostEstimationStepNode" : {
+            "title" : "IACMCostEstimationStepNode",
+            "type" : "object",
+            "required" : [ "identifier", "name", "spec", "type" ],
+            "properties" : {
+              "description" : {
+                "type" : "string",
+                "desc" : "This is the description for IACMCostEstimationStepNode"
+              },
+              "enforce" : {
+                "$ref" : "#/definitions/pipeline/common/PolicyConfig"
+              },
+              "failureStrategies" : {
+                "oneOf" : [ {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/pipeline/common/FailureStrategyConfig"
+                  }
+                }, {
+                  "type" : "string",
+                  "pattern" : "^<\\+input>$",
+                  "minLength" : 1
+                } ]
+              },
+              "identifier" : {
+                "type" : "string",
+                "pattern" : "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+              },
+              "name" : {
+                "type" : "string",
+                "pattern" : "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
+              },
+              "strategy" : {
+                "oneOf" : [ {
+                  "$ref" : "#/definitions/pipeline/common/StrategyConfig"
+                }, {
+                  "type" : "string",
+                  "pattern" : "^<\\+input>$",
+                  "minLength" : 1
+                } ]
+              },
+              "timeout" : {
+                "type" : "string",
+                "pattern" : "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+              },
+              "type" : {
+                "type" : "string",
+                "enum" : [ "IACMCostEstimation" ]
+              },
+              "when" : {
+                "oneOf" : [ {
+                  "$ref" : "#/definitions/pipeline/common/StepWhenCondition"
+                }, {
+                  "type" : "string",
+                  "pattern" : "^<\\+input>$",
+                  "minLength" : 1
+                } ]
+              }
+            },
+            "$schema" : "http://json-schema.org/draft-07/schema#",
+            "allOf" : [ {
+              "if" : {
+                "properties" : {
+                  "type" : {
+                    "const" : "IACMCostEstimation"
+                  }
+                }
+              },
+              "then" : {
+                "properties" : {
+                  "spec" : {
+                    "$ref" : "#/definitions/pipeline/steps/iacm/IACMCostEstimationInfo"
                   }
                 }
               }
@@ -62301,8 +62609,10 @@
             "type" : "object",
             "properties" : {
               "metadata" : {
-                "readOnly" : true,
                 "$ref" : "#/definitions/pipeline/stages/cd/ServicesMetadata"
+              },
+              "useFromStage" : {
+                "$ref" : "#/definitions/pipeline/stages/cd/ServiceUseFromStageV2"
               },
               "values" : {
                 "oneOf" : [ {
@@ -65776,6 +66086,8 @@
                   "$ref" : "#/definitions/pipeline/steps/iacm/IACMTerraformPluginStepNode"
                 }, {
                   "$ref" : "#/definitions/pipeline/steps/iacm/IACMApprovalStepNode"
+                }, {
+                  "$ref" : "#/definitions/pipeline/steps/iacm/IACMCostEstimationStepNode"
                 } ]
               },
               "description" : {

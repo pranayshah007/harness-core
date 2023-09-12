@@ -34,6 +34,6 @@ public interface PMSYamlSchemaService {
   JsonNode getStaticSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String identifier,
       EntityType entityType, Scope scope, String version);
 
-  ObjectNode getIndividualStaticSchema(
-      String accountIdentifier, String nodeGroup, String nodeType, String nodeGroupDifferentiator);
+  ObjectNode getStaticSchemaForAllEntities(
+      String nodeGroup, String nodeType, String nodeGroupDifferentiator, String version);
 }

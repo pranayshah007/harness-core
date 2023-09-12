@@ -6,7 +6,7 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl;
 
-import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
+import io.harness.idp.common.Constants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserUtils;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineSuccessPercent;
 
@@ -14,8 +14,10 @@ import com.google.gson.Gson;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 
+@Slf4j
 public class PipelineSuccessPercentParser implements PipelineSuccessPercent {
   @Override
   public Map<String, Object> getParsedValue(
@@ -28,14 +30,18 @@ public class PipelineSuccessPercentParser implements PipelineSuccessPercent {
       JSONObject success = (JSONObject) executions.get("success");
       percentage = success.get("percent");
     }
+    log.info(
+        "Harness Data Source -> Success percent for pipeline - {}, pipeline  link - {}", percentage, ciPipelineUrl);
 
     Map<String, Object> dataPointInfo =
         ValueParserUtils.getDataPointsInfoMap(0, Collections.singletonList(ciPipelineUrl));
     if (dashboardPipelineHealthInfoObject != null) {
-      dataPointInfo.put(ValueParserConstants.DATA_POINT_VALUE_KEY, percentage);
+      dataPointInfo.put(Constants.DATA_POINT_VALUE_KEY, percentage);
     }
     Map<String, Object> returnMap = new HashMap<>();
     returnMap.put(dataPointIdentifier, dataPointInfo);
+
+    log.info("Harness Data Source -> PipelineSuccessPercentParser returned value {}", returnMap);
     return returnMap;
   }
 }

@@ -8,7 +8,6 @@
 package io.harness.ng.core.remote;
 
 import static io.harness.NGCommonEntityConstants.DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM;
-import static io.harness.NGCommonEntityConstants.DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
@@ -98,9 +97,6 @@ public class OrgProjectApiImpl implements OrgProjectApi {
   @Override
   public Response updateOrgScopedProject(UpdateProjectRequest updateProjectRequest, @OrgIdentifier String org,
       @ResourceIdentifier String project, @AccountIdentifier String account) {
-    if (!Objects.equals(updateProjectRequest.getProject().getOrg(), org)) {
-      throw new InvalidRequestException(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM, USER);
-    }
     if (!Objects.equals(updateProjectRequest.getProject().getIdentifier(), project)) {
       throw new InvalidRequestException(DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM, USER);
     }
@@ -108,9 +104,6 @@ public class OrgProjectApiImpl implements OrgProjectApi {
   }
 
   private Response createProject(CreateProjectRequest createProjectRequest, String account, String org) {
-    if (!Objects.equals(org, createProjectRequest.getProject().getOrg())) {
-      throw new InvalidRequestException(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM, USER);
-    }
     Project createdProject = projectService.create(account, org, projectApiUtils.getProjectDto(createProjectRequest));
     ProjectResponse projectResponse = projectApiUtils.getProjectResponse(createdProject);
 

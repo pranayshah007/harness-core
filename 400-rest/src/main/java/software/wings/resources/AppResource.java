@@ -21,6 +21,7 @@ import io.harness.limits.LimitCheckerFactory;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.Application;
+import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.ListAPI;
 import software.wings.security.annotations.Scope;
@@ -139,6 +140,7 @@ public class AppResource {
   @Path("{appId}")
   @Timed
   @ExceptionMetered
+  @AuthRule(permissionType = MANAGE_APPLICATIONS, action = Action.READ)
   public RestResponse<Application> get(
       @PathParam("appId") String appId, @QueryParam("details") @DefaultValue("true") boolean details) {
     return new RestResponse<>(appService.get(appId, true));

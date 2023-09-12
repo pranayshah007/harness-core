@@ -18,9 +18,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.rule.Owner;
 
 import org.junit.Test;
@@ -39,7 +39,7 @@ public class GraphLayoutDtoMapperTest extends CategoryTest {
                                           .setName("Node name")
                                           .setNodeGroup("goodNodes")
                                           .setEdgeLayoutList(EdgeLayoutList.newBuilder()
-                                                                 .addNextIds(YAMLFieldNameConstants.NEXT_ID)
+                                                                 .addNextIds(PlanCreatorConstants.NEXT_ID)
                                                                  .addCurrentNodeChildren("child")
                                                                  .build())
                                           .build();
@@ -55,6 +55,6 @@ public class GraphLayoutDtoMapperTest extends CategoryTest {
     assertThat(edgeLayoutList.getCurrentNodeChildren()).hasSize(1);
     assertThat(edgeLayoutList.getCurrentNodeChildren()).contains("child");
     assertThat(edgeLayoutList.getNextIds()).hasSize(1);
-    assertThat(edgeLayoutList.getNextIds()).contains(YAMLFieldNameConstants.NEXT_ID);
+    assertThat(edgeLayoutList.getNextIds()).contains(PlanCreatorConstants.NEXT_ID);
   }
 }

@@ -21,6 +21,7 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.collation.CollationLocale;
 import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
@@ -66,7 +67,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("io.harness.ng.core.service.entity.ServiceEntity")
 @ChangeDataCapture(table = "services", dataStore = "ng-harness", fields = {}, handler = "Services")
 @ChangeDataCapture(table = "tags_info_ng", dataStore = "ng-harness", fields = {}, handler = "TagsInfoNGCD")
-public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
+public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware, GitSyncableEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -157,5 +158,20 @@ public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
   @Override
   public void setData(String data) {
     this.yaml = data;
+  }
+
+  @Override
+  public String getUuid() {
+    return id;
+  }
+
+  @Override
+  public String getInvalidYamlString() {
+    return yaml;
+  }
+
+  @Override
+  public String getAccountIdentifier() {
+    return accountId;
   }
 }

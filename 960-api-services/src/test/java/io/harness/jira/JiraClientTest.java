@@ -8,6 +8,7 @@
 package io.harness.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,8 +16,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.HttpResponseException;
 import io.harness.rule.Owner;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
@@ -122,5 +125,21 @@ public class JiraClientTest extends CategoryTest {
         .isEqualTo(6);
     assertThat(jiraIssueCreateMetadataNG.getProjects().get("TES").getIssueTypes().get("Task").getFields().get("Labels"))
         .isEqualTo(jiraFieldNG5);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldRetryOnExceptionNotMatch() {
+    assertThat(jiraClient.createRetryOnException().test(new IOException())).isFalse();
+    assertThat(jiraClient.createRetryOnException().test(new HttpResponseException(404, "NOT_FOUND"))).isFalse();
+    assertThat(jiraClient.createRetryOnException().test(new HttpResponseException(500, "SERVER_ERROR"))).isFalse();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldRetryOnExceptionMatch() {
+    assertThat(jiraClient.createRetryOnException().test(new HttpResponseException(429, "TOO_MANY_REQUESTS"))).isTrue();
   }
 }

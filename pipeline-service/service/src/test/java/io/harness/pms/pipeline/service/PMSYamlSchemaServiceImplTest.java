@@ -12,11 +12,16 @@ import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.STE
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.TRIGGER_NODE;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -38,6 +43,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -46,7 +52,7 @@ import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.individualschema.StaticSchemaParserFactory;
+import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PmsFeatureFlagService;
@@ -93,7 +99,7 @@ public class PMSYamlSchemaServiceImplTest {
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
   @Mock private ExecutorService yamlSchemaExecutor;
-  @Mock StaticSchemaParserFactory staticSchemaParserFactory;
+  @Mock AbstractStaticSchemaParser abstractStaticSchemaParser;
 
   PipelineServiceConfiguration pipelineServiceConfiguration;
 
@@ -105,7 +111,7 @@ public class PMSYamlSchemaServiceImplTest {
   public void setUp() throws ExecutionException, InterruptedException, TimeoutException {
     MockitoAnnotations.initMocks(this);
     pmsYamlSchemaService = new PMSYamlSchemaServiceImpl(yamlSchemaProvider, yamlSchemaValidator, pmsSdkInstanceService,
-        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor, pmsFeatureFlagService, staticSchemaParserFactory);
+        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor, pmsFeatureFlagService);
   }
 
   @Test
@@ -171,6 +177,60 @@ public class PMSYamlSchemaServiceImplTest {
 
     assertThat(result).isNotNull();
     assertThat(result.get(DEFINITIONS_NODE).get("StepSpecType")).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void staticSchemaForTrigger() throws IOException {
+    JsonNode expected = readJsonNode("trigger-short.json");
+    when(schemaFetcher.fetchTriggerStaticYamlSchema()).thenReturn(expected);
+
+    final JsonNode result = pmsYamlSchemaService.getStaticSchemaForAllEntities("trigger", null, null, "v0");
+
+    assertThat(result).isNotNull();
+    assertThat(result.get(PROPERTIES_NODE).get(TRIGGER_NODE).get("$ref").asText())
+        .isEqualTo("#/definitions/trigger/trigger");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void staticSchemaForPipeline() throws IOException {
+    JsonNode expected = readJsonNode("pipeline-short.json");
+    when(schemaFetcher.fetchPipelineStaticYamlSchema("v0")).thenReturn(expected);
+
+    final JsonNode result = pmsYamlSchemaService.getStaticSchemaForAllEntities("pipeline", null, null, "v0");
+
+    assertThat(result).isNotNull();
+    assertThat(result.get(PROPERTIES_NODE).get(PIPELINE_NODE).get("$ref").asText())
+        .isEqualTo("#/definitions/pipeline/pipeline");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void staticSchemaForPipelineV1() throws IOException {
+    JsonNode expected = readJsonNode("pipeline-short.json");
+    when(schemaFetcher.fetchPipelineStaticYamlSchema("v1")).thenReturn(expected);
+
+    final JsonNode result = pmsYamlSchemaService.getStaticSchemaForAllEntities("pipeline", null, null, "v1");
+
+    assertThat(result).isNotNull();
+    assertThat(result.get(PROPERTIES_NODE).get(PIPELINE_NODE).get("$ref").asText())
+        .isEqualTo("#/definitions/pipeline/pipeline");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void staticSchemaForPipelineInvalidVersion() {
+    when(schemaFetcher.fetchPipelineStaticYamlSchema("v2x"))
+        .thenThrow(new InvalidRequestException(
+            "[PMS] Incorrect version [v2x] of Pipeline Schema passed, Valid values are [v0, v1]"));
+    assertThatThrownBy(() -> pmsYamlSchemaService.getStaticSchemaForAllEntities("pipeline", null, null, "v2x"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("[PMS] Incorrect version [v2x] of Pipeline Schema passed, Valid values are [v0, v1]");
   }
 
   @Test

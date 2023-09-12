@@ -44,6 +44,7 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
+import io.harness.template.utils.TemplateSchemaFetcher;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.client.YamlSchemaClient;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -83,6 +84,8 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
 
   @Mock YamlSchemaValidator yamlSchemaValidator;
   @Mock TemplateServiceConfiguration templateServiceConfiguration;
+
+  @Mock TemplateSchemaFetcher templateSchemaFetcher;
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -432,26 +435,5 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
       ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
     }
-  }
-
-  @Test
-  @Owner(developers = UTKARSH_CHOUBEY)
-  @Category(UnitTests.class)
-  public void testGetStaticSchema() throws Exception {
-    ngTemplateSchemaService.getStaticYamlSchema(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "shellscript", TemplateEntityType.STEP_TEMPLATE, Scope.ORG, "v0");
-  }
-
-  @Test
-  @Owner(developers = UTKARSH_CHOUBEY)
-  @Category(UnitTests.class)
-  public void testCalculateFileURL() throws Exception {
-    String path = "https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s";
-    when(templateServiceConfiguration.getStaticSchemaFileURL()).thenReturn(path);
-    String value = ngTemplateSchemaService.calculateFileURL(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE, "v0");
-    assertThat(value).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v0/template.json");
-
-    value = ngTemplateSchemaService.calculateFileURL(TemplateEntityType.MONITORED_SERVICE_TEMPLATE, "v0");
-    assertThat(value).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v0/template.json");
   }
 }

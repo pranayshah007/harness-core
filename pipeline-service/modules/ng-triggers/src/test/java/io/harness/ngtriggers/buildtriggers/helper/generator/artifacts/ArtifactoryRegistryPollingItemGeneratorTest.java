@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.buildtriggers.helper.generator.artifacts;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +45,9 @@ public class ArtifactoryRegistryPollingItemGeneratorTest extends CategoryTest {
   String artifactory_pipeline_artifact_snippet_runtime_all;
   String artifactory_pipeline_artifact_snippet_runtime_artifactPathonly;
   String ngTriggerYaml_artifact_artifactory;
+  String artifactory_artifact_filter_pipeline_artifact_snippet_runtime_all;
+  String artifactory_artifact_filter_pipeline_artifact_snippet_runtime_artifactPathonly;
+  String ngTriggerYaml_artifact_artifactFilter_artifactory;
   String artifactory_docker_pipeline_artifact_snippet_runtime_all;
   String artifactory_docker_pipeline_artifact_snippet_runtime_tagonly;
   String ngTriggerYaml_artifact_artifactory_docker;
@@ -60,9 +64,21 @@ public class ArtifactoryRegistryPollingItemGeneratorTest extends CategoryTest {
         Objects.requireNonNull(
             classLoader.getResource("artifactory_pipeline_artifact_snippet_runtime_artifactpathonly.yaml")),
         StandardCharsets.UTF_8);
-
     ngTriggerYaml_artifact_artifactory =
         Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-artifact-artifactory.yaml")),
+            StandardCharsets.UTF_8);
+
+    ngTriggerYaml_artifact_artifactFilter_artifactory = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("ng-trigger-artifact-artifactFilter-artifactory.yaml")),
+        StandardCharsets.UTF_8);
+
+    artifactory_artifact_filter_pipeline_artifact_snippet_runtime_all = Resources.toString(
+        Objects.requireNonNull(
+            classLoader.getResource("artifactory_artifact_filter_pipeline_artifact_snippet_runtime_all.yaml")),
+        StandardCharsets.UTF_8);
+    artifactory_artifact_filter_pipeline_artifact_snippet_runtime_artifactPathonly =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(
+                               "artifactory_artifact_filter_pipeline_artifact_snippet_runtime_artifactpathonly.yaml")),
             StandardCharsets.UTF_8);
 
     artifactory_docker_pipeline_artifact_snippet_runtime_all = Resources.toString(
@@ -128,6 +144,68 @@ public class ArtifactoryRegistryPollingItemGeneratorTest extends CategoryTest {
     assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload()).isNotNull();
     assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getArtifactDirectory())
         .isEqualTo("artifactstest");
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getRepository())
+        .isEqualTo("automation-repo-do-not-delete");
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getArtifactPath()).isEqualTo("");
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getRepositoryFormat())
+        .isEqualTo("generic");
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload()).isNotNull();
+
+    // As All data is already prepared, Testing buildTriggerHelper.validateBuildType
+    PollingItemGeneratorTestHelper.validateBuildType(buildTriggerOpsData, buildTriggerHelper);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void
+  testArtifactoryGenericPollingItemGenerationArtifactFilter_pipelineContainsFixedValuesExceptArtifactoryPath()
+      throws Exception {
+    TriggerDetails triggerDetails = ngTriggerElementMapper.toTriggerDetails(
+        "acc", "org", "proj", ngTriggerYaml_artifact_artifactFilter_artifactory, false);
+    triggerDetails.getNgTriggerEntity().getMetadata().getBuildMetadata().setPollingConfig(
+        PollingConfig.builder().signature("sig1").build());
+    BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(
+        triggerDetails, artifactory_artifact_filter_pipeline_artifact_snippet_runtime_artifactPathonly);
+    PollingItem pollingItem = artifactoryRegistryPollingItemGenerator.generatePollingItem(buildTriggerOpsData);
+
+    PollingItemGeneratorTestHelper.baseAssert(pollingItem, io.harness.polling.contracts.Category.ARTIFACT);
+
+    assertThat(pollingItem.getPollingPayloadData()).isNotNull();
+    assertThat(pollingItem.getPollingPayloadData().getConnectorRef()).isEqualTo("conn1");
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload()).isNotNull();
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getArtifactFilter())
+        .isEqualTo("filter");
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getRepository())
+        .isEqualTo("automation-repo-do-not-delete1");
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getArtifactPath()).isEqualTo("");
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getRepositoryFormat())
+        .isEqualTo("generic");
+
+    // As All data is already prepared, Testing buildTriggerHelper.validateBuildType
+    PollingItemGeneratorTestHelper.validateBuildType(buildTriggerOpsData, buildTriggerHelper);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testArtifactoryGenericPollingItemGenerationArtifactFilter_pipelineContainsAllRuntimeInputs()
+      throws Exception {
+    TriggerDetails triggerDetails = ngTriggerElementMapper.toTriggerDetails(
+        "acc", "org", "proj", ngTriggerYaml_artifact_artifactFilter_artifactory, false);
+    triggerDetails.getNgTriggerEntity().getMetadata().getBuildMetadata().setPollingConfig(
+        PollingConfig.builder().signature("sig1").build());
+    BuildTriggerOpsData buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(
+        triggerDetails, artifactory_artifact_filter_pipeline_artifact_snippet_runtime_all);
+    PollingItem pollingItem = artifactoryRegistryPollingItemGenerator.generatePollingItem(buildTriggerOpsData);
+
+    PollingItemGeneratorTestHelper.baseAssert(pollingItem, io.harness.polling.contracts.Category.ARTIFACT);
+
+    assertThat(pollingItem.getPollingPayloadData()).isNotNull();
+    assertThat(pollingItem.getPollingPayloadData().getConnectorRef()).isEqualTo("account.conn");
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload()).isNotNull();
+    assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getArtifactFilter())
+        .isEqualTo("filter");
     assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getRepository())
         .isEqualTo("automation-repo-do-not-delete");
     assertThat(pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload().getArtifactPath()).isEqualTo("");

@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.artifacts.resources.acr;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;

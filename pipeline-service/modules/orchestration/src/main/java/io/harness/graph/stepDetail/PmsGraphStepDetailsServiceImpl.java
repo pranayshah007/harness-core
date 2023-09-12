@@ -22,8 +22,10 @@ import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
 
 import com.google.inject.Inject;
@@ -46,6 +48,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
+// Todo(Sahil): Rename to NodeExecutionInfoService
 public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsService {
   @Inject NodeExecutionsInfoRepository nodeExecutionsInfoRepository;
   @Inject @Getter private final Subject<StepDetailsUpdateObserver> stepDetailsUpdateObserverSubject = new Subject<>();
@@ -63,17 +66,24 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
 
   // TODO: Make this better this should be called from no where else
   @Override
-  public void saveNodeExecutionInfo(String nodeExecutionId, String planExecutionId, PmsStepParameters resolvedInputs) {
+  public void saveNodeExecutionInfo(String nodeExecutionId, String planExecutionId, StrategyMetadata metadata) {
     NodeExecutionsInfoBuilder nodeExecutionsInfoBuilder =
         NodeExecutionsInfo.builder().nodeExecutionId(nodeExecutionId).planExecutionId(planExecutionId);
-    if (resolvedInputs == null) {
+    if (metadata == null) {
       nodeExecutionsInfoRepository.save(nodeExecutionsInfoBuilder.build());
       return;
     }
-    nodeExecutionsInfoBuilder.resolvedInputs(resolvedInputs);
+    nodeExecutionsInfoBuilder.strategyMetadata(metadata);
     nodeExecutionsInfoRepository.save(nodeExecutionsInfoBuilder.build());
     stepDetailsUpdateObserverSubject.fireInform(StepDetailsUpdateObserver::onStepInputsAdd,
         StepDetailsUpdateInfo.builder().nodeExecutionId(nodeExecutionId).planExecutionId(planExecutionId).build());
+  }
+
+  @Override
+  public void addStepInputs(String nodeExecutionId, PmsStepParameters resolvedInputs) {
+    Update update = new Update().set(NodeExecutionsInfoKeys.resolvedInputs, resolvedInputs);
+    Criteria criteria = Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).is(nodeExecutionId);
+    mongoTemplate.findAndModify(new Query(criteria), update, NodeExecutionsInfo.class);
   }
 
   @Override
@@ -86,6 +96,12 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
       log.warn("Could not find nodeExecutionsInfo with the given nodeExecutionId: " + nodeExecutionId);
       return new PmsStepParameters(new HashMap<>());
     }
+  }
+
+  @Override
+  public PmsStepParameters getStepInputsRecasterPruned(String planExecutionId, String nodeExecutionId) {
+    PmsStepParameters stepInputs = getStepInputs(planExecutionId, nodeExecutionId);
+    return PmsStepParameters.parse(RecastOrchestrationUtils.pruneRecasterAdditions(stepInputs));
   }
 
   @Override
@@ -117,6 +133,7 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
               .nodeExecutionId(newNodeExecutionId)
               .planExecutionId(planExecutionId)
               .resolvedInputs(originalExecutionInfo.getResolvedInputs())
+              .strategyMetadata(originalExecutionInfo.getStrategyMetadata())
               .build();
       nodeExecutionsInfoRepository.save(newNodeExecutionsInfo);
       stepDetailsUpdateObserverSubject.fireInform(StepDetailsUpdateObserver::onStepInputsAdd,

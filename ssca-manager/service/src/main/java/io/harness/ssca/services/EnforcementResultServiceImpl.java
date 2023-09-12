@@ -6,7 +6,9 @@
  */
 
 package io.harness.ssca.services;
+
 import io.harness.repositories.EnforcementResultRepo;
+import io.harness.spec.server.ssca.v1.model.EnforcementResultDTO;
 import io.harness.ssca.beans.AllowLicense;
 import io.harness.ssca.beans.AllowList.AllowListItem;
 import io.harness.ssca.beans.AllowList.AllowListRuleType;
@@ -16,11 +18,15 @@ import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.EnforcementResultEntity.EnforcementResultEntityKeys;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+import io.harness.ssca.transformers.EnforcementResultTransformer;
 
 import com.google.inject.Inject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.regex.Pattern;
 import javax.ws.rs.BadRequestException;
 import org.eclipse.jgit.ignore.internal.Strings;
 import org.springframework.data.domain.Page;
@@ -39,7 +45,7 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
                                            .artifactId(component.getArtifactId())
                                            .tag(artifact.getTag())
                                            .imageName(artifact.getName())
-                                           .accountId(component.getAccountID())
+                                           .accountId(component.getAccountId())
                                            .orgIdentifier(component.getOrgIdentifier())
                                            .projectIdentifier(component.getProjectIdentifier())
                                            .orchestrationID(artifact.getOrchestrationId())
@@ -61,8 +67,8 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
   }
 
   @Override
-  public Page<EnforcementResultEntity> getPolicyViolations(
-      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId, Pageable pageable) {
+  public Page<EnforcementResultEntity> getPolicyViolations(String accountId, String orgIdentifier,
+      String projectIdentifier, String enforcementId, String searchText, Pageable pageable) {
     Criteria criteria = Criteria.where(EnforcementResultEntityKeys.accountId)
                             .is(accountId)
                             .and(EnforcementResultEntityKeys.orgIdentifier)
@@ -71,6 +77,17 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
                             .is(projectIdentifier)
                             .and(EnforcementResultEntityKeys.enforcementID)
                             .is(enforcementId);
+
+    Criteria searchCriteria = new Criteria();
+    Pattern pattern = Pattern.compile("[.]*" + searchText + "[.]*");
+    if (Objects.nonNull(searchText) && !searchText.isEmpty()) {
+      searchCriteria.orOperator(Arrays.asList(Criteria.where(EnforcementResultEntityKeys.name).regex(pattern),
+          Criteria.where(EnforcementResultEntityKeys.license).regex(pattern),
+          Criteria.where(EnforcementResultEntityKeys.supplier).regex(pattern)));
+    }
+
+    criteria = criteria.andOperator(searchCriteria);
+
     return enforcementResultRepo.findAll(criteria, pageable);
   }
 
@@ -110,6 +127,11 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
     }
 
     return violation.substring(0, violation.length() - 1);
+  }
+
+  @Override
+  public void create(EnforcementResultDTO enforcementResultDTO) {
+    enforcementResultRepo.save(EnforcementResultTransformer.toEntity(enforcementResultDTO));
   }
 
   private String getSupplierViolationDetails(String packageName, String packageSupplier, List<Supplier> suppliers) {

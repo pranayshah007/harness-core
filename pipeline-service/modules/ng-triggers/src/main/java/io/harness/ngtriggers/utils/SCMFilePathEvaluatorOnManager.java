@@ -19,6 +19,7 @@ import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
 import io.harness.exception.ConnectorNotFoundException;
@@ -67,6 +68,10 @@ public class SCMFilePathEvaluatorOnManager extends SCMFilePathEvaluator {
           getScmPathFilterEvaluationTaskParams(filterRequestData, pathCondition, connectorDetails, scmConnector);
       decrypt(scmConnector, connectorDetails.getEncryptedDataDetails());
       Set<String> changedFiles = getChangedFileset(params, scmConnector, connectorDetails.getIdentifier());
+
+      if (scmConnector instanceof AzureRepoConnectorDTO) {
+        changedFiles = GitClientHelper.sanitiseFilesForAzureRepo(changedFiles);
+      }
 
       for (String filepath : changedFiles) {
         if (ConditionEvaluator.evaluate(filepath, params.getStandard(), params.getOperator())) {

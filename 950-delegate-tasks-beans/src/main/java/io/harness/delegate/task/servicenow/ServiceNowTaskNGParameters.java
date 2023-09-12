@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.servicenow;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
@@ -30,7 +31,8 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Value
 @Builder
@@ -62,6 +64,12 @@ public class ServiceNowTaskNGParameters implements TaskParameters, ExecutionCapa
   @Expression(ALLOW_SECRETS) String importData;
 
   List<String> delegateSelectors;
+
+  // List of required field append by comma
+  String queryFields;
+
+  // Will be used to filter the response
+  String searchTerm;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

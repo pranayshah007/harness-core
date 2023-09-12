@@ -413,6 +413,8 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
     assertThat(ciExecutionImages.getSecurityTag()).isEqualTo("sc:1.2.3");
     assertThat(ciExecutionImages.getSscaOrchestrationTag()).isEqualTo("sscaorchestrate:0.0.1");
     assertThat(ciExecutionImages.getSscaEnforcementTag()).isEqualTo("sscaEnforcement:0.0.1");
+    assertThat(ciExecutionImages.getSlsaVerificationTag()).isEqualTo("slsaVerification:0.0.1");
+    assertThat(ciExecutionImages.getProvenanceTag()).isEqualTo("provenance:0.0.1");
   }
 
   @Test

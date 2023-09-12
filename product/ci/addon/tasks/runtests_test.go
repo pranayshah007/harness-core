@@ -152,7 +152,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -226,7 +226,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: true,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -297,7 +297,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{}, errors.New("error in selection")
 	}
 
@@ -365,7 +365,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{}, nil
 	}
 
@@ -388,7 +388,6 @@ echo y`
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since it's a manual execution
 	assert.Equal(t, got, want)
 }
-
 
 func TestGetCmd_PushTrigger_CommitInfoError(t *testing.T) {
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
@@ -471,7 +470,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{}, nil
 	}
@@ -570,7 +569,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{}, nil
 	}
@@ -669,7 +668,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{}, nil
 	}
@@ -768,7 +767,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{}, nil
 	}
@@ -785,7 +784,6 @@ echo y`
 	assert.Equal(t, got, want)
 	assert.Equal(t, called, 3)
 }
-
 
 func TestGetCmd_PushTrigger_SelectAll(t *testing.T) {
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
@@ -872,7 +870,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{
 			SelectAll: true,
@@ -1302,7 +1300,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{}, nil
 	}
 
@@ -1469,7 +1467,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -1591,7 +1589,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -1710,7 +1708,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -1825,7 +1823,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil

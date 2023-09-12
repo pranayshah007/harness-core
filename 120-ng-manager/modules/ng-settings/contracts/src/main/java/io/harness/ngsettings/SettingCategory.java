@@ -27,5 +27,6 @@ public enum SettingCategory {
   SCIM,
   GIT_EXPERIENCE,
   CONNECTORS,
-  EULA
+  EULA,
+  NOTIFICATIONS
 }

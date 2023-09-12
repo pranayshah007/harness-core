@@ -19,7 +19,6 @@ import io.harness.engine.observers.NodeStatusUpdateHandler;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -36,11 +35,8 @@ public class ResumeStepStatusUpdate implements NodeStatusUpdateHandler {
     if (resumePlan) {
       // Why excluding current node -> as status update for this node is queued, this we dont want to mark pipeline
       // status as queued.
-      Status planStatus = planExecutionService.calculateStatusExcluding(
-          nodeStatusUpdateInfo.getPlanExecutionId(), nodeStatusUpdateInfo.getNodeExecutionId());
-      if (!StatusUtils.isFinalStatus(planStatus)) {
-        planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), planStatus);
-      }
+      planExecutionService.calculateAndUpdateRunningStatusUnderLock(
+          nodeStatusUpdateInfo.getPlanExecutionId(), Status.QUEUED);
     }
   }
 
