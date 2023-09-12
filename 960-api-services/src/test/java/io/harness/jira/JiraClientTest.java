@@ -12,12 +12,20 @@ import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HttpResponseException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -51,6 +59,7 @@ public class JiraClientTest extends CategoryTest {
   private static final String INVALID_ISSUE_KEY = "TJI-321";
 
   private static final String FILTER_FIELDS = "priority,project,issuetype,status,timetracking,labels";
+  private static final String USER_QUERY = "userquery";
 
   @Before
   public void setup() {
@@ -279,5 +288,317 @@ public class JiraClientTest extends CategoryTest {
 
     // throws a 404 exception but is ignored
     assertThat(jiraClient.getIssue(INVALID_ISSUE_KEY)).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testSetUserTypeCustomFieldsIfPresent_WithNoUserTypeFieldsInMetadata() {
+    Map<String, JiraFieldNG> metadataFields = new HashMap<>();
+    metadataFields.put("key1",
+        JiraFieldNG.builder()
+            .name("name1")
+            .key("key1")
+            .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build())
+            .build());
+    metadataFields.put("key2",
+        JiraFieldNG.builder()
+            .name("name2")
+            .key("key2")
+            .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build())
+            .build());
+    Map<String, String> fields = new HashMap<>();
+    fields.put("key1", "value1");
+    fields.put("key2", "value2");
+    jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields);
+    assertThat(fields).hasSize(2);
+    assertThat(fields).containsEntry("key1", "value1");
+    assertThat(fields).containsEntry("key2", "value2");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testSetUserTypeCustomFieldsIfPresent_WithNoUserFieldsPresent_OrValueEmpty() {
+    Map<String, JiraFieldNG> metadataFields = new HashMap<>();
+    metadataFields.put("key1",
+        JiraFieldNG.builder()
+            .name("name1")
+            .key("key1")
+            .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build())
+            .build());
+    metadataFields.put("key2",
+        JiraFieldNG.builder()
+            .name("name2")
+            .key("key2")
+            .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build())
+            .build());
+    Map<String, String> fields = new HashMap<>();
+    fields.put("key3", "value3");
+    fields.put("key2", "");
+    stubFor(get(urlEqualTo("/rest/api/2/serverInfo"))
+                .willReturn(aResponse().withStatus(200).withBody("{\n"
+                    + "    \"deploymentType\" : \"SERVER\",\n"
+                    + "    \"version\" : \"1.0\"\n"
+                    + "}")));
+    jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields);
+    assertThat(fields).hasSize(2);
+    assertThat(fields).containsEntry("key3", "value3");
+    assertThat(fields).containsEntry("key2", "");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testSetUserTypeCustomFieldsIfPresent_Server_OneUserFieldPresentWithKey() {
+    Map<String, JiraFieldNG> metadataFields = new HashMap<>();
+    metadataFields.put("key1",
+        JiraFieldNG.builder()
+            .name("name1")
+            .key("key1")
+            .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build())
+            .build());
+    Map<String, String> fields = new HashMap<>();
+    fields.put("key1", "JIRAUSER1");
+    fields.put("key2", "value2");
+    stubFor(get(urlEqualTo("/rest/api/2/serverInfo"))
+                .willReturn(aResponse().withStatus(200).withBody("{\n"
+                    + "    \"deploymentType\" : \"SERVER\",\n"
+                    + "    \"version\" : \"1.0\"\n"
+                    + "}")));
+    stubFor(get(urlMatching("^/rest/api/2/user.*"))
+                .withQueryParam("key", equalTo("JIRAUSER1"))
+                .willReturn(aResponse().withStatus(200).withBody("{\n"
+                    + "    \"key\" : \"JIRAUSER1\",\n"
+                    + "    \"name\" : \"user1\",\n"
+                    + "    \"displayName\" : \"user 1\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "}")));
+    jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields);
+    assertThat(fields).hasSize(2);
+    assertThat(fields).containsEntry("key1", "user1");
+    assertThat(fields).containsEntry("key2", "value2");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testSetUserTypeCustomFieldsIfPresent_Server_OneUserField_MultipleCases() {
+    Map<String, JiraFieldNG> metadataFields = new HashMap<>();
+    metadataFields.put("key1",
+        JiraFieldNG.builder()
+            .name("name1")
+            .key("key1")
+            .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build())
+            .build());
+    Map<String, String> fields = new HashMap<>();
+    fields.put("key1", USER_QUERY);
+    fields.put("key2", "value2");
+    stubFor(get(urlEqualTo("/rest/api/2/serverInfo"))
+                .willReturn(aResponse().withStatus(200).withBody("{\n"
+                    + "    \"deploymentType\" : \"SERVER\",\n"
+                    + "    \"version\" : \"1.0\"\n"
+                    + "}")));
+    // no matching users fetched
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("username", equalTo(USER_QUERY))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[]")));
+    assertThatThrownBy(() -> jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Found no jira users with this query : [userquery]");
+
+    // exactly one matching user
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("username", equalTo(USER_QUERY))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[{\n"
+                    + "    \"key\" : \"JIRAUSER1\",\n"
+                    + "    \"name\" : \"user1\",\n"
+                    + "    \"displayName\" : \"userquery\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "}]")));
+    jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields);
+    assertThat(fields).hasSize(2);
+    assertThat(fields).containsEntry("key1", "user1");
+    assertThat(fields).containsEntry("key2", "value2");
+
+    // resetting
+    fields.put("key1", USER_QUERY);
+    // two matching user, and one by exact match
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("username", equalTo(USER_QUERY))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[{\n"
+                    + "    \"key\" : \"JIRAUSER1\",\n"
+                    + "    \"name\" : \"userquery\",\n"
+                    + "    \"displayName\" : \"user query\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "},\n"
+                    + "{\n"
+                    + "    \"key\" : \"JIRAUSER2\",\n"
+                    + "    \"name\" : \"userquery1\",\n"
+                    + "    \"displayName\" : \"user query\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "}]")));
+    jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields);
+    assertThat(fields).hasSize(2);
+    assertThat(fields).containsEntry("key1", USER_QUERY);
+    assertThat(fields).containsEntry("key2", "value2");
+
+    // two matching user, and none by exact match
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("username", equalTo(USER_QUERY))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[{\n"
+                    + "    \"key\" : \"JIRAUSER1\",\n"
+                    + "    \"name\" : \"user1\",\n"
+                    + "    \"displayName\" : \"user query\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "},\n"
+                    + "{\n"
+                    + "    \"key\" : \"JIRAUSER2\",\n"
+                    + "    \"name\" : \"user2\",\n"
+                    + "    \"displayName\" : \"user query\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "}]")));
+    assertThatThrownBy(() -> jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Found no jira users with exact match for this query : [userquery]");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testSetUserTypeCustomFieldsIfPresent_Cloud_OneUserFieldPresentWithAccountId() {
+    Map<String, JiraFieldNG> metadataFields = new HashMap<>();
+    metadataFields.put("key1",
+        JiraFieldNG.builder()
+            .name("name1")
+            .key("key1")
+            .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build())
+            .build());
+    Map<String, String> fields = new HashMap<>();
+    fields.put("key1", "accountId");
+    fields.put("key2", "value2");
+    stubFor(get(urlEqualTo("/rest/api/2/serverInfo"))
+                .willReturn(aResponse().withStatus(200).withBody("{\n"
+                    + "    \"deploymentType\" : \"CLOUD\",\n"
+                    + "    \"version\" : \"1.0\"\n"
+                    + "}")));
+
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("accountId", equalTo("accountId"))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[{\n"
+                    + "    \"accountId\" : \"accountId\",\n"
+                    + "    \"displayName\" : \"user 1\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "}]")));
+
+    jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields);
+    assertThat(fields).hasSize(2);
+    assertThat(fields).containsEntry("key1", "accountId");
+    assertThat(fields).containsEntry("key2", "value2");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testSetUserTypeCustomFieldsIfPresent_Cloud_OneUserFieldPresent_WithUserQuery() {
+    Map<String, JiraFieldNG> metadataFields = new HashMap<>();
+    metadataFields.put("key1",
+        JiraFieldNG.builder()
+            .name("name1")
+            .key("key1")
+            .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.USER).build())
+            .build());
+    Map<String, String> fields = new HashMap<>();
+    fields.put("key1", USER_QUERY);
+    fields.put("key2", "value2");
+    stubFor(get(urlEqualTo("/rest/api/2/serverInfo"))
+                .willReturn(aResponse().withStatus(200).withBody("{\n"
+                    + "    \"deploymentType\" : \"CLOUD\",\n"
+                    + "    \"version\" : \"1.0\"\n"
+                    + "}")));
+    // accountId search returns nothing
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("accountId", equalTo(USER_QUERY))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[]")));
+
+    // no matching users fetched
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("query", equalTo(USER_QUERY))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[]")));
+    assertThatThrownBy(() -> jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Found no jira users with this query : [userquery]");
+
+    // exactly one matching user
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("query", equalTo(USER_QUERY))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[{\n"
+                    + "    \"accountId\" : \"accountId\",\n"
+                    + "    \"displayName\" : \"user query\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "}]")));
+    jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields);
+    assertThat(fields).hasSize(2);
+    assertThat(fields).containsEntry("key1", "accountId");
+    assertThat(fields).containsEntry("key2", "value2");
+
+    // resetting
+    fields.put("key1", USER_QUERY);
+    // two matching user, and one by exact match
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("query", equalTo(USER_QUERY))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[{\n"
+                    + "    \"accountId\" : \"accountId\",\n"
+                    + "    \"displayName\" : \"user query\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user@test.io\"\n"
+                    + "},\n"
+                    + "{\n"
+                    + "    \"accountId\" : \"userquery\",\n"
+                    + "    \"displayName\" : \"user query 1\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "}]")));
+    jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields);
+    assertThat(fields).hasSize(2);
+    assertThat(fields).containsEntry("key1", USER_QUERY);
+    assertThat(fields).containsEntry("key2", "value2");
+
+    // two matching user, and none by exact match
+    stubFor(get(urlMatching("^/rest/api/2/user/search.*"))
+                .withQueryParam("query", equalTo(USER_QUERY))
+                .withQueryParam("maxResults", equalTo("10"))
+                .willReturn(aResponse().withStatus(200).withBody("[{\n"
+                    + "    \"accountId\" : \"accountId1\",\n"
+                    + "    \"displayName\" : \"user query\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user1@test.io\"\n"
+                    + "},\n"
+                    + "{\n"
+                    + "    \"accountId\" : \"accountId2\",\n"
+                    + "    \"displayName\" : \"user query\",\n"
+                    + "    \"active\" : true,\n"
+                    + "    \"emailAddress\" : \"user2@test.io\"\n"
+                    + "}]")));
+    assertThatThrownBy(() -> jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Found no jira users with exact match for this query : [userquery]");
   }
 }

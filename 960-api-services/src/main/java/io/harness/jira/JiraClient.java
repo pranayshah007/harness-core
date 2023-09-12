@@ -664,7 +664,8 @@ public class JiraClient {
     return issueType;
   }
 
-  private void setUserTypeCustomFieldsIfPresent(
+  @VisibleForTesting
+  protected void setUserTypeCustomFieldsIfPresent(
       @NotNull Map<String, JiraFieldNG> metadataFields, @NotNull Map<String, String> fields) {
     // getting user type fields from metadata
     Set<String> userTypeFields = metadataFields.entrySet()
@@ -703,6 +704,9 @@ public class JiraClient {
 
   private List<JiraUserData> getJiraUserDataList(String userQuery, JiraInstanceData jiraInstanceData) {
     List<JiraUserData> userDataList;
+    if (isNull(jiraInstanceData) || isNull(jiraInstanceData.deploymentType)) {
+      return null;
+    }
     if (jiraInstanceData.getDeploymentType() == JiraDeploymentType.CLOUD) {
       userDataList = getUsers(null, userQuery, null, jiraInstanceData);
       if (userDataList.isEmpty()) {
