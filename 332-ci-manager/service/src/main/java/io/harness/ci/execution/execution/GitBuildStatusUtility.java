@@ -288,7 +288,7 @@ public class GitBuildStatusUtility {
 
     return CIBuildStatusPushParameters.builder()
         .detailsUrl(detailsUrl)
-        .desc(generateDesc(ambiance.getMetadata().getPipelineIdentifier(), ambiance.getMetadata().getExecutionUuid(),
+        .desc(generateDesc(ambiance.getMetadata().getPipelineIdentifier(), ambiance.getPlanExecutionId(),
             buildStatusUpdateParameter.getName(), status.name()))
         .sha(commitSha)
         .prNumber(prNumber)
@@ -502,7 +502,7 @@ public class GitBuildStatusUtility {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String baseUrl = getNgBaseUrl(getVanityUrl(ngAccess.getAccountIdentifier()), ngBaseUrl);
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
-    String executionId = ambiance.getMetadata().getExecutionUuid();
+    String executionId = ambiance.getPlanExecutionId();
     return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl, stageSetupId, stageExecutionId);
   }
 

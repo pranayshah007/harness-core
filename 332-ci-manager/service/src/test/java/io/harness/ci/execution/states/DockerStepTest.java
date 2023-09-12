@@ -119,12 +119,12 @@ public class DockerStepTest extends CIExecutionTestBase {
                    .setMetadata(ExecutionMetadata.newBuilder()
                                     .setPipelineIdentifier("pipelineId")
                                     .setRunSequence(1)
-                                    .setExecutionUuid("pipelineExecutionUuid")
                                     .setTriggerInfo(
                                         ExecutionTriggerInfo.newBuilder()
                                             .setTriggeredBy(TriggeredBy.newBuilder().setIdentifier("triggerBy").build())
                                             .build())
                                     .build())
+                   .setPlanExecutionId("pipelineExecutionUuid")
                    .putAllSetupAbstractions(setupAbstractions)
                    .addLevels(Level.newBuilder()
                                   .setRuntimeId("runtimeId")

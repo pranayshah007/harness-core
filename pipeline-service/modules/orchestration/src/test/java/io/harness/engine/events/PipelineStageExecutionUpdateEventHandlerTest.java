@@ -8,7 +8,6 @@
 package io.harness.engine.events;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -57,26 +56,24 @@ public class PipelineStageExecutionUpdateEventHandlerTest extends CategoryTest {
   private static final String RUNTIME_ID = "runtimeId";
   private static final String SETUP_ID = "setupId";
   private static final String STAGE_ID = "stepId";
-  private final Ambiance ambiance = Ambiance.newBuilder()
-                                        .setPlanExecutionId(PLAN_EXECUTION_ID)
-                                        .putAllSetupAbstractions(ImmutableMap.of("accountId", ACCOUNT_IDENTIFIER,
-                                            "orgIdentifier", ORG_IDENTIFIER, "projectIdentifier", PROJECT_IDENTIFIER))
-                                        .setStageExecutionId(STAGE_EXECUTION_ID)
-                                        .setMetadata(ExecutionMetadata.newBuilder()
-                                                         .setExecutionUuid(generateUuid())
-                                                         .setPipelineIdentifier(PIPELINE_ID)
-                                                         .build())
-                                        .addLevels(Level.newBuilder()
-                                                       .setIdentifier(STAGE_ID)
-                                                       .setStepType(StepType.newBuilder()
-                                                                        .setType(OrchestrationStepTypes.CUSTOM_STAGE)
-                                                                        .setStepCategory(StepCategory.STAGE)
-                                                                        .build())
-                                                       .setRuntimeId(RUNTIME_ID)
-                                                       .setStartTs(2)
-                                                       .setSetupId(SETUP_ID)
-                                                       .build())
-                                        .build();
+  private final Ambiance ambiance =
+      Ambiance.newBuilder()
+          .setPlanExecutionId(PLAN_EXECUTION_ID)
+          .putAllSetupAbstractions(ImmutableMap.of("accountId", ACCOUNT_IDENTIFIER, "orgIdentifier", ORG_IDENTIFIER,
+              "projectIdentifier", PROJECT_IDENTIFIER))
+          .setStageExecutionId(STAGE_EXECUTION_ID)
+          .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier(PIPELINE_ID).build())
+          .addLevels(Level.newBuilder()
+                         .setIdentifier(STAGE_ID)
+                         .setStepType(StepType.newBuilder()
+                                          .setType(OrchestrationStepTypes.CUSTOM_STAGE)
+                                          .setStepCategory(StepCategory.STAGE)
+                                          .build())
+                         .setRuntimeId(RUNTIME_ID)
+                         .setStartTs(2)
+                         .setSetupId(SETUP_ID)
+                         .build())
+          .build();
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -118,10 +115,7 @@ public class PipelineStageExecutionUpdateEventHandlerTest extends CategoryTest {
             .putAllSetupAbstractions(ImmutableMap.of("accountId", ACCOUNT_IDENTIFIER, "orgIdentifier", ORG_IDENTIFIER,
                 "projectIdentifier", PROJECT_IDENTIFIER))
             .setStageExecutionId(STAGE_EXECUTION_ID)
-            .setMetadata(ExecutionMetadata.newBuilder()
-                             .setExecutionUuid(generateUuid())
-                             .setPipelineIdentifier(PIPELINE_ID)
-                             .build())
+            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier(PIPELINE_ID).build())
             .addLevels(Level.newBuilder()
                            .setIdentifier(STAGE_ID)
                            .setStepType(

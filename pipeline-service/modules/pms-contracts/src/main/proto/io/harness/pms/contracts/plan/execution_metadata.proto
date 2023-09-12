@@ -18,6 +18,7 @@ message ExecutionMetadata {
   int32 runSequence = 1;
   ExecutionTriggerInfo triggerInfo = 2;
   string pipelineIdentifier = 4;
+  // Not used anymore so please don't use it during pipeline execution and only in planCreation.
   string executionUuid = 6;
   ExecutionPrincipalInfo principalInfo = 8;
   bytes gitSyncBranchContext = 10;

@@ -76,13 +76,13 @@ public class InternalContainerParamsProviderTest extends CIExecutionTestBase {
     setupAbstractions.put("projectIdentifier", "project");
     setupAbstractions.put("orgIdentifier", "org");
     when(featureFlagService.isEnabled(FeatureName.CI_INDIRECT_LOG_UPLOAD, "account")).thenReturn(true);
-    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
-                                              .setExecutionUuid(generateUuid())
-                                              .setRunSequence(buildID)
-                                              .setPipelineIdentifier("pipeline")
-                                              .build();
-    Ambiance ambiance =
-        Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).setMetadata(executionMetadata).build();
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setRunSequence(buildID).setPipelineIdentifier("pipeline").build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(generateUuid())
+                            .putAllSetupAbstractions(setupAbstractions)
+                            .setMetadata(executionMetadata)
+                            .build();
     K8PodDetails k8PodDetails = K8PodDetails.builder().stageID("stage").build();
 
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
