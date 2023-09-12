@@ -11,13 +11,16 @@ import static io.harness.idp.common.JacksonUtils.readValue;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.repositories.DataPointsRepository;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
+import io.harness.idp.scorecard.scorecardchecks.beans.ScorecardAndChecks;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
+import io.harness.idp.scorecard.scorecardchecks.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
 import io.harness.idp.scorecard.scorecardchecks.service.ScorecardService;
 import io.harness.idp.scorecard.scores.entities.ScoreEntity;
@@ -36,8 +39,10 @@ import io.harness.springdata.TransactionHelper;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -71,10 +76,15 @@ public class ScoreServiceImpl implements ScoreService {
 
   @Override
   public List<ScorecardSummaryInfo> getScoresSummaryForAnEntity(String accountIdentifier, String entityIdentifier) {
-    Map<String, Scorecard> scorecardIdentifierEntityMapping =
-        scorecardService.getAllScorecardsAndChecksDetails(accountIdentifier)
-            .stream()
-            .collect(Collectors.toMap(Scorecard::getIdentifier, Function.identity()));
+    List<ScorecardAndChecks> scorecardAndChecks = scorecardService.getAllScorecardAndChecks(accountIdentifier, null);
+
+    BackstageCatalogEntity entity =
+        getCatalogEntityForEntityFromScoreCardFiltersInAccount(accountIdentifier, scorecardAndChecks, entityIdentifier);
+
+    List<ScorecardEntity> scorecardEntities =
+        scorecardAndChecks.stream().map(ScorecardAndChecks::getScorecard).collect(Collectors.toList());
+    Map<String, ScorecardEntity> scorecardIdentifierEntityMapping =
+        scorecardEntities.stream().collect(Collectors.toMap(ScorecardEntity::getIdentifier, Function.identity()));
 
     Map<String, ScoreEntity> lastComputedScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
         scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
@@ -84,14 +94,15 @@ public class ScoreServiceImpl implements ScoreService {
     deleteScoresForDeletedScoreCards(
         accountIdentifier, scorecardIdentifierEntityMapping, lastComputedScoresForScorecards);
 
-    return lastComputedScoresForScorecards.keySet()
-        .stream()
-        .filter(scoreCardIdentifier -> scorecardIdentifierEntityMapping.get(scoreCardIdentifier).isPublished())
-        .map(scoreCardIdentifier
-            -> ScorecardSummaryInfoMapper.toDTO(lastComputedScoresForScorecards.get(scoreCardIdentifier),
-                scorecardIdentifierEntityMapping.get(scoreCardIdentifier).getName(),
-                scorecardIdentifierEntityMapping.get(scoreCardIdentifier).getDescription()))
-        .collect(Collectors.toList());
+    List<ScorecardSummaryInfo> returnData = new ArrayList<>();
+
+    for (Map.Entry<String, ScorecardEntity> entry : scorecardIdentifierEntityMapping.entrySet()) {
+      if (scoreComputerService.isFilterMatchingWithAnEntity(entry.getValue().getFilter(), entity)) {
+        returnData.add(ScorecardSummaryInfoMapper.toDTO(lastComputedScoresForScorecards.get(entry.getKey()),
+            entry.getValue().getName(), entry.getValue().getDescription()));
+      }
+    }
+    return returnData;
   }
 
   @Override
@@ -105,10 +116,15 @@ public class ScoreServiceImpl implements ScoreService {
 
   @Override
   public List<ScorecardScore> getScorecardScoreOverviewForAnEntity(String accountIdentifier, String entityIdentifier) {
-    Map<String, Scorecard> scorecardIdentifierEntityMapping =
-        scorecardService.getAllScorecardsAndChecksDetails(accountIdentifier)
-            .stream()
-            .collect(Collectors.toMap(Scorecard::getIdentifier, Function.identity()));
+    List<ScorecardAndChecks> scorecardAndChecks = scorecardService.getAllScorecardAndChecks(accountIdentifier, null);
+
+    BackstageCatalogEntity entity =
+        getCatalogEntityForEntityFromScoreCardFiltersInAccount(accountIdentifier, scorecardAndChecks, entityIdentifier);
+
+    List<ScorecardEntity> scorecardEntities =
+        scorecardAndChecks.stream().map(ScorecardAndChecks::getScorecard).collect(Collectors.toList());
+    Map<String, ScorecardEntity> scorecardIdentifierEntityMapping =
+        scorecardEntities.stream().collect(Collectors.toMap(ScorecardEntity::getIdentifier, Function.identity()));
 
     Map<String, ScoreEntity> lastComputedScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
         scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
@@ -118,14 +134,15 @@ public class ScoreServiceImpl implements ScoreService {
     deleteScoresForDeletedScoreCards(
         accountIdentifier, scorecardIdentifierEntityMapping, lastComputedScoresForScorecards);
 
-    return lastComputedScoresForScorecards.keySet()
-        .stream()
-        .filter(scorecardIdentifier -> scorecardIdentifierEntityMapping.get(scorecardIdentifier).isPublished())
-        .map(scorecardIdentifier
-            -> ScorecardScoreMapper.toDTO(lastComputedScoresForScorecards.get(scorecardIdentifier),
-                scorecardIdentifierEntityMapping.get(scorecardIdentifier).getName(),
-                scorecardIdentifierEntityMapping.get(scorecardIdentifier).getDescription()))
-        .collect(Collectors.toList());
+    List<ScorecardScore> returnData = new ArrayList<>();
+
+    for (Map.Entry<String, ScorecardEntity> entry : scorecardIdentifierEntityMapping.entrySet()) {
+      if (scoreComputerService.isFilterMatchingWithAnEntity(entry.getValue().getFilter(), entity)) {
+        returnData.add(ScorecardScoreMapper.toDTO(lastComputedScoresForScorecards.get(entry.getKey()),
+            entry.getValue().getName(), entry.getValue().getDescription()));
+      }
+    }
+    return returnData;
   }
 
   @Override
@@ -175,7 +192,7 @@ public class ScoreServiceImpl implements ScoreService {
   }
 
   private void deleteScoresForDeletedScoreCards(String accountIdentifier,
-      Map<String, Scorecard> scorecardIdentifierMapping, Map<String, ScoreEntity> lastComputedScores) {
+      Map<String, ScorecardEntity> scorecardIdentifierMapping, Map<String, ScoreEntity> lastComputedScores) {
     List<String> scoreIdsToBeDeleted = new ArrayList<>();
 
     for (Map.Entry<String, ScoreEntity> lastComputedScore : lastComputedScores.entrySet()) {
@@ -184,5 +201,22 @@ public class ScoreServiceImpl implements ScoreService {
       }
     }
     scoreRepository.deleteAllByAccountIdentifierAndIdIn(accountIdentifier, scoreIdsToBeDeleted);
+  }
+
+  BackstageCatalogEntity getCatalogEntityForEntityFromScoreCardFiltersInAccount(
+      String accountIdentifier, List<ScorecardAndChecks> scorecardAndChecks, String entityIdentifier) {
+    Set<? extends BackstageCatalogEntity> entities =
+        scoreComputerService.getBackstageEntitiesForScorecardsAndEntityIdentifiers(
+            accountIdentifier, scorecardAndChecks, Collections.singletonList(entityIdentifier));
+
+    Iterator<? extends BackstageCatalogEntity> iterator = entities.iterator();
+
+    if (!iterator.hasNext()) {
+      log.info(
+          "No scorecards filters are matching with entity - {} in account - {}", entityIdentifier, accountIdentifier);
+      throw new UnsupportedOperationException("No scorecard is present for given entity");
+    }
+
+    return iterator.next();
   }
 }

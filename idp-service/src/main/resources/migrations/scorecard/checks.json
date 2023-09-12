@@ -124,8 +124,8 @@
     "id": "64ef7bb0f616c89330020df9",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__dfc93822-604a-4dfe-8e65-b71928034897",
-    "name": "Is STO scan stage setup In Pipeline",
-    "description": "Check will pass if sto stage is added in Pipelines",
+    "name": "Is STO scan stage setup in pipeline",
+    "description": "Check will pass if STO stage is added in pipeline",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -138,13 +138,13 @@
     "expression": "harness.stoStageAdded == true",
     "tags": ["Software quality"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "STO stage is not setup in Pipelines"
+    "failMessage": "STO stage is not setup in pipeline"
   },
   {
     "id": "64ef7cfff616c89330020dfa",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__76549f1d-f342-4875-ac1c-ff33036aa1f0",
-    "name": "Is Policy Evaluation Successful for Pipelines",
+    "name": "Is policy evaluation successful for pipelines",
     "description": "Check will pass if policy evaluation will be successful for pipelines",
     "ruleStrategy": "ALL_OF",
     "rules": [
@@ -158,14 +158,14 @@
     "expression": "harness.isPolicyEvaluationSuccessful == true",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "STO stage is not setup in CI and CD pipeline"
+    "failMessage": "Policy evaluation is failing for pipelines"
   },
   {
     "id": "64ef7d8bf616c89330020dfb",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__d4bc06ee-6f27-43f6-b095-f90b48d6061c",
-    "name": "Percentage of ci pipelines passing in past 7 days is more than 80",
-    "description": "Percentage of ci pipelines passing in past 7 days is more than 80",
+    "name": "Percentage of CI pipelines passing in past 7 days is more than 80",
+    "description": "Percentage of CI pipelines passing in past 7 days is more than 80",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -178,14 +178,14 @@
     "expression": "harness.%ofCIPipelinePassingInPast7Days > 80",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "Percentage of ci pipeline is less than 80 in past 7 days"
+    "failMessage": "Percentage of CI pipelines passing is less than 80 in past 7 days"
   },
   {
     "id": "64ef7e41f616c89330020dfc",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__b5e32af1-1c66-4501-9bdf-571ba9cdee16",
-    "name": "No test failing on CI Pipeline is zero",
-    "description": "No test failing on CI Pipeline is zero",
+    "name": "No test failing on CI pipeline",
+    "description": "No test failing on CI pipeline",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -198,6 +198,6 @@
     "expression": "harness.noTestsFailingInCiPipeline == 0",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "Tests are failing on CI Pipeline"
+    "failMessage": "Tests are failing on CI pipeline"
   }
 ]
