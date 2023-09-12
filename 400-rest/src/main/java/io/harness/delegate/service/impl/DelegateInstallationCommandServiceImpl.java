@@ -36,7 +36,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
   private final MainConfiguration mainConfiguration;
   private static final String TERRAFORM_TEMPLATE_FLE = "/delegatetemplates/delegate-terraform-example-module.ftl";
 
-  private static final String ONPREM_HELM_REPO_SUFFIX = "storage/harness-download/delegate-helm-chart/";
+  private static final String ONPREM_HELM_REPO_SUFFIX = "/storage/harness-download/delegate-helm-chart/";
 
   private static final String DOCKER_COMMAND = "docker run --cpus=1 --memory=2g \\\n"
       + "  -e DELEGATE_NAME=docker-delegate \\\n"
