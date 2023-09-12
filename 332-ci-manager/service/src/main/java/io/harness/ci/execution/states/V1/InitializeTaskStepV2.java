@@ -55,6 +55,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.buildstate.BuildSetupUtils;
 import io.harness.ci.execution.buildstate.ConnectorUtils;
@@ -145,6 +146,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -164,7 +166,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private ExceptionManager exceptionManager;
   @Inject private AccountClient accountClient;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
-
+  @Inject CIBuildEnforcer buildEnforcer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CIFeatureFlagService ciFeatureFlagService;
   @Inject private BuildSetupUtils buildSetupUtils;
@@ -211,7 +213,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     addExecutionRecord(ambiance, stepParameters, accountId);
     boolean queueConcurrencyEnabled =
         ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));
-    if (queueConcurrencyEnabled) {
+    boolean availableCapacity = buildEnforcer.checkBuildEnforcement(
+        AmbianceUtils.getAccountId(ambiance), Arrays.asList(Status.RUNNING.toString(), Status.QUEUED.toString()));
+
+    if (queueConcurrencyEnabled && !availableCapacity) {
       String topic = ciExecutionServiceConfig.getQueueServiceClientConfig().getTopic();
       log.info("start executeAsyncAfterRbac for initialize step with queue. Topic: {}", topic);
       taskId = generateUuid();
@@ -232,6 +237,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
             AmbianceUtils.getStageRuntimeIdAmbiance(ambiance)));
       }
     } else {
+      ciExecutionRepository.updateExecutionStatus(
+          AmbianceUtils.getAccountId(ambiance), ambiance.getStageExecutionId(), Status.RUNNING.toString());
       taskId = executeBuild(ambiance, stepParameters);
     }
 
@@ -240,7 +247,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
             CollectionUtils.emptyIfNull(singletonList(logKey)));
 
     // Sending the status if feature flag is enabled
-    if (queueConcurrencyEnabled) {
+    if (queueConcurrencyEnabled && !availableCapacity) {
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
     } else {
       InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
