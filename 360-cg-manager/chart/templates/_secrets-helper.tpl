@@ -81,7 +81,7 @@ spec:
     name:  {{ $externalSecret.secretStore.name }}
     kind: {{ $externalSecret.secretStore.kind }}
   target:
-    name: {{ printf "%s-external-secrets" $.secretNamePrefix }}
+    name: {{ printf "%s-external-secret-%d" $.secretNamePrefix $externalSecretIdx }}
     template:
       engineVersion: v2
       data:
@@ -100,6 +100,25 @@ spec:
   {{- end }}
             {{- end }}
 {{ indent 0 "---"  }}
+          {{- end -}}
+      {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+
+
+{{/*
+{{ include "harnesscommon.secrets.ExternalSecretRefs" (dict "secretsCtx" .Values.secrets "secretNamePrefix" "my-secret") }}
+*/}}
+{{- define "harnesscommon.secrets.ExternalSecretRefs" -}}
+{{- if not (empty .secretsCtx) -}}
+  {{- with .secretsCtx.secretManagement -}}
+      {{- with .externalSecretsOperator -}}
+          {{- range $externalSecretIdx, $externalSecret := . -}}
+            {{- if and $externalSecret.secretStore $externalSecret.secretStore.name $externalSecret.secretStore.kind }}
+- secretRef:
+    name: {{ printf "%s-external-secret-%d" $.secretNamePrefix $externalSecretIdx }}
+            {{- end }}
           {{- end -}}
       {{- end -}}
   {{- end -}}
