@@ -180,25 +180,15 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
     List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
     List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgStoreManifestsContent);
-    String userData = asgTaskHelper.getUserData(asgStoreManifestsContent);
 
     Map<String, Object> asgLaunchTemplateOverrideProperties = new HashMap<>();
     asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
-    if (isNotEmpty(userData)) {
-      asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.userData, userData);
-    }
+    asgTaskHelper.overrideLaunchTemplateWithUserData(asgLaunchTemplateOverrideProperties, asgStoreManifestsContent);
 
     Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>();
     asgConfigurationOverrideProperties.put(
         AsgConfigurationManifestHandler.OverrideProperties.targetGroupARNs, targetGroupArnList);
-    if (asgCapacityConfig != null) {
-      asgConfigurationOverrideProperties.put(
-          AsgConfigurationManifestHandler.OverrideProperties.minSize, asgCapacityConfig.getMinSize());
-      asgConfigurationOverrideProperties.put(
-          AsgConfigurationManifestHandler.OverrideProperties.maxSize, asgCapacityConfig.getMaxSize());
-      asgConfigurationOverrideProperties.put(
-          AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, asgCapacityConfig.getDesiredSize());
-    }
+    asgTaskHelper.overrideCapacity(asgConfigurationOverrideProperties, asgCapacityConfig);
 
     // Chain factory code to handle each manifest one by one in a chain
     AsgManifestHandlerChainState chainState =

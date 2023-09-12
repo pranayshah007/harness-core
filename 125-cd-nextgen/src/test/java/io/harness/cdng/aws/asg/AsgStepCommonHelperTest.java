@@ -102,9 +102,9 @@ public class AsgStepCommonHelperTest extends CategoryTest {
         ElastigroupInstances.builder().type(ElastigroupInstancesType.FIXED).spec(elastigroupFixedInstances).build();
 
     ret = asgStepCommonHelper.getAsgCapacityConfig(instances);
-    assertThat(ret.getMinSize()).isEqualTo(1);
-    assertThat(ret.getMaxSize()).isEqualTo(3);
-    assertThat(ret.getDesiredSize()).isEqualTo(2);
+    assertThat(ret.getMin()).isEqualTo(1);
+    assertThat(ret.getMax()).isEqualTo(3);
+    assertThat(ret.getDesired()).isEqualTo(2);
   }
   @Test
   @Owner(developers = OwnerRule.VITALIE)

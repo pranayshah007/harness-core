@@ -157,7 +157,7 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
 
   private void executeRollbackTraffic(AsgSdkManager asgSdkManager, String prodAsgName, String stageAsgName,
       List<AsgLoadBalancerConfig> lbConfigs, String region, AwsInternalConfig awsInternalConfig) {
-    List<AsgLoadBalancerConfig> rollbackLbConfigs = getRollbackLbConfigs(lbConfigs);
+    List<AsgLoadBalancerConfig> rollbackLbConfigs = createRollbackLbConfigsForSwapping(lbConfigs);
 
     AsgManifestHandlerChainFactory.builder()
         .initialChainState(AsgManifestHandlerChainState.builder().asgName(stageAsgName).newAsgName(prodAsgName).build())
@@ -218,7 +218,7 @@ public class AsgBlueGreenRollbackCommandTaskHandler extends AsgCommandTaskNGHand
     }
   }
 
-  private List<AsgLoadBalancerConfig> getRollbackLbConfigs(List<AsgLoadBalancerConfig> lbConfigs) {
+  private List<AsgLoadBalancerConfig> createRollbackLbConfigsForSwapping(List<AsgLoadBalancerConfig> lbConfigs) {
     return lbConfigs.stream()
         .map(lbConfig
             -> AsgLoadBalancerConfig.builder()

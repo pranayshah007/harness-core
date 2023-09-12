@@ -38,6 +38,7 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResult;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
@@ -391,7 +392,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     // removed @NotNull for all fields from yaml schema so need validation as all fields are empty or all not empty
     if (isEmpty(loadBalancer) || isEmpty(stageListenerArn) || isEmpty(stageListenerRuleArn) || isEmpty(prodListenerArn)
         || isEmpty(prodListenerRuleArn)) {
-      return null;
+      throw new InvalidRequestException("LoadBalancer defined has missing fields");
     }
 
     return AsgLoadBalancerConfig.builder()

@@ -14,11 +14,15 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgUserData;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
+import io.harness.aws.asg.manifest.AsgConfigurationManifestHandler;
+import io.harness.aws.asg.manifest.AsgLaunchTemplateManifestHandler;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -248,6 +252,26 @@ public class AsgTaskHelper {
       return AutoScalingGroupContainerToServerInstanceInfoMapper.toServerInstanceInfoList(autoScalingGroupContainer,
           asgInfraConfig.getInfraStructureKey(), asgInfraConfig.getRegion(), executionStrategy, asgNameWithoutSuffix,
           true);
+    }
+  }
+
+  public void overrideLaunchTemplateWithUserData(
+      Map<String, Object> asgLaunchTemplateOverrideProperties, Map<String, List<String>> asgStoreManifestsContent) {
+    String userData = getUserData(asgStoreManifestsContent);
+    if (isNotEmpty(userData)) {
+      asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.userData, userData);
+    }
+  }
+
+  public void overrideCapacity(
+      Map<String, Object> asgConfigurationOverrideProperties, AsgCapacityConfig asgCapacityConfig) {
+    if (asgCapacityConfig != null) {
+      asgConfigurationOverrideProperties.put(
+          AsgConfigurationManifestHandler.OverrideProperties.minSize, asgCapacityConfig.getMin());
+      asgConfigurationOverrideProperties.put(
+          AsgConfigurationManifestHandler.OverrideProperties.maxSize, asgCapacityConfig.getMax());
+      asgConfigurationOverrideProperties.put(
+          AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, asgCapacityConfig.getDesired());
     }
   }
 }

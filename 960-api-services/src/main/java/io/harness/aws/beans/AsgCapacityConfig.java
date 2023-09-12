@@ -17,7 +17,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgCapacityConfig {
-  int minSize;
-  int maxSize;
-  int desiredSize;
+  int min;
+  int max;
+  int desired;
 }

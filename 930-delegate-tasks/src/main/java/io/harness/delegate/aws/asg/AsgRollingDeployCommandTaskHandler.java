@@ -13,7 +13,6 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -28,7 +27,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
-import io.harness.aws.asg.manifest.AsgConfigurationManifestHandler;
 import io.harness.aws.asg.manifest.AsgLaunchTemplateManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
@@ -137,7 +135,6 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
     List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
     List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgStoreManifestsContent);
-    String userData = asgTaskHelper.getUserData(asgStoreManifestsContent);
 
     // Get ASG name from asg configuration manifest
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
@@ -149,19 +146,12 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
 
     Map<String, Object> asgLaunchTemplateOverrideProperties = new HashMap<>();
     asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
-    if (isNotEmpty(userData)) {
-      asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.userData, userData);
-    }
+    asgTaskHelper.overrideLaunchTemplateWithUserData(asgLaunchTemplateOverrideProperties, asgStoreManifestsContent);
 
     Map<String, Object> asgConfigurationOverrideProperties = null;
     if (asgCapacityConfig != null) {
       asgConfigurationOverrideProperties = new HashMap<>();
-      asgConfigurationOverrideProperties.put(
-          AsgConfigurationManifestHandler.OverrideProperties.minSize, asgCapacityConfig.getMinSize());
-      asgConfigurationOverrideProperties.put(
-          AsgConfigurationManifestHandler.OverrideProperties.maxSize, asgCapacityConfig.getMaxSize());
-      asgConfigurationOverrideProperties.put(
-          AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, asgCapacityConfig.getDesiredSize());
+      asgTaskHelper.overrideCapacity(asgConfigurationOverrideProperties, asgCapacityConfig);
     }
 
     // Chain factory code to handle each manifest one by one in a chain

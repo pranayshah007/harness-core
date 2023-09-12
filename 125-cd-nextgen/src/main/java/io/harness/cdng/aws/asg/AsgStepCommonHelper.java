@@ -765,7 +765,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
         Integer minSize = ParameterFieldHelper.getIntegerParameterFieldValue(fixed.getMin());
         Integer maxSize = ParameterFieldHelper.getIntegerParameterFieldValue(fixed.getMax());
         Integer desiredSize = ParameterFieldHelper.getIntegerParameterFieldValue(fixed.getDesired());
-        return AsgCapacityConfig.builder().minSize(minSize).maxSize(maxSize).desiredSize(desiredSize).build();
+        return AsgCapacityConfig.builder().min(minSize).max(maxSize).desired(desiredSize).build();
       default:
         throw new InvalidRequestException(format("Invalid instances type provided: %s", instances.getType()));
     }
