@@ -53,10 +53,45 @@ public class GitXWebhookUtilsTest extends GitSyncTestBase {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
+  public void testSingleFolderMatch2() {
+    String modifiedFilePath = ".harness/org/project/testPipeline.yaml";
+    List<String> matchingFolderPaths =
+        GitXWebhookUtils.compareFolderPaths(webhookFolderPaths1, Arrays.asList(modifiedFilePath));
+    assertNotNull(matchingFolderPaths);
+    assertEquals(matchingFolderPaths.get(0), modifiedFilePath);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testSingleFolderMatch3() {
+    String modifiedFilePath = "rootFolder/org/project/testPipeline.yaml";
+    String webhookFolderPath = "rootFolder";
+    List<String> matchingFolderPaths =
+        GitXWebhookUtils.compareFolderPaths(Arrays.asList(webhookFolderPath), Arrays.asList(modifiedFilePath));
+    assertNotNull(matchingFolderPaths);
+    assertEquals(matchingFolderPaths.get(0), modifiedFilePath);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
   public void testSingleFolderMatchWhenNoMatches() {
     String modifiedFilePath = "/testFolder/testPipeline.yaml";
     List<String> matchingFolderPaths =
         GitXWebhookUtils.compareFolderPaths(webhookFolderPaths1, Arrays.asList(modifiedFilePath));
+    assertNotNull(matchingFolderPaths);
+    assertTrue(matchingFolderPaths.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testSingleFolderMatchWhenNoMatches2() {
+    String modifiedFilePath = "rootFolder/testPipeline.yaml";
+    String webhookFolderPath = "rootFolder/org/project";
+    List<String> matchingFolderPaths =
+        GitXWebhookUtils.compareFolderPaths(Arrays.asList(webhookFolderPath), Arrays.asList(modifiedFilePath));
     assertNotNull(matchingFolderPaths);
     assertTrue(matchingFolderPaths.isEmpty());
   }

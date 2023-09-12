@@ -30,13 +30,18 @@ public class GitXWebhookUtils {
     if (modifiedFilePaths == null || modifiedFilePaths.isEmpty()) {
       return matchingFolderPaths;
     }
-    modifiedFilePaths.forEach(modifiedFolderPath -> {
-      if (modifiedFolderPath.endsWith(".yaml")) {
-        String parsedModifiedFilePath = parseModifiedFolderPath(modifiedFolderPath);
-        if (webhookFolderPaths.contains(parsedModifiedFilePath)) {
-          matchingFolderPaths.add(modifiedFolderPath);
+    webhookFolderPaths.forEach(webhookFolderPath -> {
+      int webhookFolderPathLength = webhookFolderPath.length();
+      modifiedFilePaths.forEach(modifiedFilePath -> {
+        int modifiedFilePathLength = modifiedFilePath.length();
+        if (webhookFolderPathLength > modifiedFilePathLength) {
+          return;
         }
-      }
+        String modifiedFilePathSubstring = modifiedFilePath.substring(0, webhookFolderPathLength);
+        if (webhookFolderPath.equals(modifiedFilePathSubstring)) {
+          matchingFolderPaths.add(modifiedFilePath);
+        }
+      });
     });
     return matchingFolderPaths;
   }
