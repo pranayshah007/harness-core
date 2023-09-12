@@ -471,6 +471,53 @@ public class CDStepHelper {
         manifestOutcome.getIdentifier(), optimizedFilesFetch);
   }
 
+  public GitStoreDelegateConfig getGitStoreDelegateConfigWithApiAccess(@Nonnull GitStoreConfig gitstoreConfig,
+      @Nonnull ConnectorInfoDTO connectorDTO, List<String> paths, Ambiance ambiance, ManifestOutcome manifestOutcome) {
+    NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
+    ScmConnector scmConnector;
+    List<EncryptedDataDetail> apiAuthEncryptedDataDetails;
+    GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO((ScmConnector) connectorDTO.getConnectorConfig());
+    SSHKeySpecDTO sshKeySpecDTO = getSshKeySpecDTO(gitConfigDTO, ambiance);
+    List<EncryptedDataDetail> encryptedDataDetails = gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(
+        (ScmConnector) connectorDTO.getConnectorConfig(), sshKeySpecDTO, basicNGAccessObject);
+
+    boolean githubAppAuthentication =
+        GitAuthenticationDecryptionHelper.isGitHubAppAuthentication((ScmConnector) connectorDTO.getConnectorConfig())
+        && cdFeatureFlagHelper.isEnabled(basicNGAccessObject.getAccountIdentifier(), CDS_GITHUB_APP_AUTHENTICATION);
+
+    scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
+    addApiAuthIfRequired(scmConnector);
+    final DecryptableEntity apiAccessDecryptableEntity =
+        GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(scmConnector);
+    apiAuthEncryptedDataDetails =
+        secretManagerClientService.getEncryptionDetails(basicNGAccessObject, apiAccessDecryptableEntity);
+    if (githubAppAuthentication) {
+      scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
+      encryptedDataDetails =
+          gitConfigAuthenticationInfoHelper.getGithubAppEncryptedDataDetail(scmConnector, basicNGAccessObject);
+    }
+
+    convertToRepoGitConfig(gitstoreConfig, scmConnector);
+
+    boolean optimizedFilesFetch = isOptimizedFilesFetch(connectorDTO, AmbianceUtils.getAccountId(ambiance))
+        && !ManifestType.Kustomize.equals(manifestOutcome.getType());
+    return GitStoreDelegateConfig.builder()
+        .gitConfigDTO(scmConnector)
+        .sshKeySpecDTO(sshKeySpecDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .apiAuthEncryptedDataDetails(apiAuthEncryptedDataDetails)
+        .fetchType(gitstoreConfig.getGitFetchType())
+        .branch(trim(getParameterFieldValue(gitstoreConfig.getBranch())))
+        .commitId(trim(getParameterFieldValue(gitstoreConfig.getCommitId())))
+        .paths(trimStrings(paths))
+        .connectorId(connectorDTO.getIdentifier())
+        .connectorName(connectorDTO.getName())
+        .manifestType(manifestOutcome.getType())
+        .manifestId(manifestOutcome.getIdentifier())
+        .optimizedFilesFetch(optimizedFilesFetch)
+        .build();
+  }
+
   public GitStoreDelegateConfig getGitStoreDelegateConfig(@Nonnull GitStoreConfig gitstoreConfig,
       @Nonnull ConnectorInfoDTO connectorDTO, List<String> paths, Ambiance ambiance, String manifestType,
       String manifestIdentifier, boolean optimizedFilesFetch) {
