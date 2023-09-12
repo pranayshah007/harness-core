@@ -315,8 +315,8 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
     List<String> gitFilePaths = new ArrayList<>();
     gitFilePaths.addAll(resolvedFilePaths);
 
-    GitStoreDelegateConfig gitStoreDelegateConfig =
-        cdStepHelper.getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfigWithApiAccess(
+        gitStoreConfig, connectorDTO, gitFilePaths, ambiance, manifestOutcome);
 
     ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
 
