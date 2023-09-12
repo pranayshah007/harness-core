@@ -36,6 +36,7 @@ func NewLogProxyHandler(log *zap.SugaredLogger) pb.LogProxyServer {
 // Write writes to a log stream.
 // Connects to the log service to invoke the write to stream API.
 func (h *logProxyHandler) Write(ctx context.Context, in *pb.WriteRequest) (*pb.WriteResponse, error) {
+	h.log.Infow("LogProxy - starting write", "key", in.GetKey())
 	lc, err := remoteLogClient()
 	if err != nil {
 		h.log.Errorw("could not create a client to the log service", zap.Error(err))
@@ -51,11 +52,13 @@ func (h *logProxyHandler) Write(ctx context.Context, in *pb.WriteRequest) (*pb.W
 		}
 		lines = append(lines, l)
 	}
+	h.log.Infow("LogProxy - starting write API call", "key", in.GetKey())
 	err = lc.Write(ctx, in.GetKey(), lines)
 	if err != nil {
 		h.log.Errorw("Could not write to the log stream", zap.Error(err))
 		return &pb.WriteResponse{}, err
 	}
+	h.log.Infow("LogProxy - completed write API call", "key", in.GetKey())
 	return &pb.WriteResponse{}, nil
 }
 
@@ -168,11 +171,13 @@ func (h *logProxyHandler) Open(ctx context.Context, in *pb.OpenRequest) (*pb.Ope
 		h.log.Errorw("Could not create a client to the log service", zap.Error(err))
 		return &pb.OpenResponse{}, err
 	}
+	h.log.Infow("LogProxy - starting open stream API call", "key", in.GetKey())
 	err = lc.Open(ctx, in.GetKey())
 	if err != nil {
 		h.log.Errorw("Could not open log stream", zap.Error(err))
 		return &pb.OpenResponse{}, err
 	}
+	h.log.Infow("LogProxy - completed open stream API call", "key", in.GetKey())
 	return &pb.OpenResponse{}, nil
 }
 
@@ -185,10 +190,12 @@ func (h *logProxyHandler) Close(ctx context.Context, in *pb.CloseRequest) (*pb.C
 		h.log.Errorw("Could not create a client to the log service", zap.Error(err))
 		return &pb.CloseResponse{}, err
 	}
+	h.log.Infow("LogProxy - starting close stream API call", "key", in.GetKey())
 	err = lc.Close(ctx, in.GetKey())
 	if err != nil {
 		h.log.Errorw("Could not close log stream", "key", in.GetKey(), zap.Error(err))
 		return &pb.CloseResponse{}, err
 	}
+	h.log.Infow("LogProxy - completed close stream API call", "key", in.GetKey())
 	return &pb.CloseResponse{}, nil
 }

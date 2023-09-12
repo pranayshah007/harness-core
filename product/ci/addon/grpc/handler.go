@@ -73,7 +73,9 @@ func (h *handler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*
 			rl.Writer, false, h.log).Run(ctx)
 		// close log stream only if detach == false
 		if !detach {
+			h.log.Infow("closing the stream after Run step execution", "step_id", in.GetStep().GetId())
 			err = close(rl.Writer, err)
+			h.log.Infow("closed the stream after Run step execution", "step_id", in.GetStep().GetId())
 		}
 		response := &pb.ExecuteStepResponse{
 			Output:     stepOutput,
@@ -86,7 +88,9 @@ func (h *handler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*
 			Output:     stepOutput,
 			NumRetries: numRetries,
 		}
+		h.log.Infow("closing the stream after RunTests step execution", "step_id", in.GetStep().GetId())
 		err = close(rl.Writer, err)
+		h.log.Infow("closed the stream after RunTests step execution", "step_id", in.GetStep().GetId())
 		return response, err
 	case *enginepb.UnitStep_Plugin:
 		stepOutput, artifact, numRetries, err := newPluginTask(in.GetStep(), in.GetPrevStepOutputs(), in.GetTmpFilePath(), rl.BaseLogger, rl.Writer, false, h.log).Run(ctx)
@@ -95,7 +99,9 @@ func (h *handler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*
 			Output:     stepOutput,
 			NumRetries: numRetries,
 		}
+		h.log.Infow("closing the stream after Plugin step execution", "step_id", in.GetStep().GetId())
 		err = close(rl.Writer, err)
+		h.log.Infow("closed the stream after Plugin step execution", "step_id", in.GetStep().GetId())
 		return response, err
 	case *enginepb.UnitStep_ExecuteTask:
  	    _, err := newExecuteStep(in.GetStep(), rl.BaseLogger, rl.Writer, false, h.log).Run(ctx)
