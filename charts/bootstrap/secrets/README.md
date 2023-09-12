@@ -15,6 +15,7 @@ A Helm chart to create Harness secrets
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| clickhouse.adminPassword | string | `""` |  |
 | global.ngcustomdashboard.enabled | bool | `true` |  |
 | global.smtpCreateSecret.SMTP_HOST | string | `""` |  |
 | global.smtpCreateSecret.SMTP_PASSWORD | string | `""` |  |

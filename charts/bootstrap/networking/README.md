@@ -29,8 +29,6 @@ A Helm chart for Kubernetes
 | global.ingress.className | string | `"harness"` |  |
 | global.ingress.enabled | bool | `false` |  |
 | global.ingress.hosts[0] | string | `"myhost.example.com"` |  |
-| global.ingress.loadBalancerEnabled | bool | `false` |  |
-| global.ingress.loadBalancerIP | string | `"0.0.0.0"` |  |
 | global.ingress.tls.enabled | bool | `true` |  |
 | global.ingress.tls.secretName | string | `"harness-cert"` |  |
 | global.istio | object | `{"enabled":false,"gateway":{"create":true,"name":"","namespace":"","port":443,"protocol":"HTTPS","selector":{"istio":"ingressgateway"}},"hosts":["*"],"istioGatewayServiceUrl":"","strict":false,"tls":{"credentialName":null,"minProtocolVersion":"TLSV1_2","mode":"SIMPLE"},"virtualService":{"gateways":[""],"hosts":null}}` | Istio Ingress Settings |
@@ -53,6 +51,8 @@ A Helm chart for Kubernetes
 | nginx.image.registry | string | `"us.gcr.io"` |  |
 | nginx.image.repository | string | `"k8s-artifacts-prod/ingress-nginx/controller"` |  |
 | nginx.image.tag | string | `"v1.0.0-alpha.2"` |  |
+| nginx.loadBalancerEnabled | bool | `false` |  |
+| nginx.loadBalancerIP | string | `"0.0.0.0"` |  |
 | nginx.nodeSelector | object | `{}` |  |
 | nginx.objects.annotations | object | `{}` | annotations to be added to ingress Objects |
 | nginx.resources.limits.memory | string | `"512Mi"` |  |

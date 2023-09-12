@@ -42,7 +42,7 @@ dependencies:
     repository: "file://./redis"
   - name: postgresql
     version: 12.4.2
-    condition: global.database.postgresql.installed
+    condition: global.database.postgres.installed
     repository: https://charts.bitnami.com/bitnami
   - name: clickhouse
     condition: global.database.clickhouse.enabled

@@ -1,6 +1,6 @@
 # bootstrap
 
-![Version: 0.8.1](https://img.shields.io/badge/Version-0.8.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
+![Version: 0.8.5](https://img.shields.io/badge/Version-0.8.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -19,7 +19,7 @@ A Helm chart for Kubernetes
 |-----|------|---------|-------------|
 | global.database.minio.installed | bool | `true` |  |
 | global.database.mongo.installed | bool | `true` |  |
-| global.database.postgresql.installed | bool | `true` |  |
+| global.database.postgres.installed | bool | `true` |  |
 | global.database.redis.installed | bool | `true` |  |
 | global.database.timescaledb.installed | bool | `true` |  |
 | global.ingress.className | string | `"harness"` |  |
