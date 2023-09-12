@@ -48,9 +48,19 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.costandusagereport.AWSCostAndUsageReport;
+import com.amazonaws.services.costandusagereport.AWSCostAndUsageReportClientBuilder;
+import com.amazonaws.services.costandusagereport.model.DescribeReportDefinitionsRequest;
+import com.amazonaws.services.costandusagereport.model.DescribeReportDefinitionsResult;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
@@ -90,7 +100,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Path("budgets")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@NextGenManagerAuth
+@PublicApi
 @Slf4j
 @Service
 @OwnedBy(CE)
@@ -395,5 +405,39 @@ public class BudgetResource {
         accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
     return ResponseDTO.newResponse(budgetService.getBudgetTimeSeriesStats(
         budgetService.get(budgetId, accountId), breakdown == null ? BudgetBreakdown.YEARLY : breakdown));
+  }
+
+  @GET
+  @Path("getSts")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  public ResponseDTO<String> getSts() {
+    // Replace with your AWS access key and secret key
+    String accessKey = "accessKey";
+    String secretKey = "secretKey";
+    String sessionToken = "sessionToken";
+
+    // Create AWS session credentials
+    BasicSessionCredentials awsCredentials = new BasicSessionCredentials(accessKey, secretKey, sessionToken);
+
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setProtocol(Protocol.HTTP);
+    clientConfiguration.setProxyPort(80);
+    clientConfiguration.setProxyHost("nginxProxyIp");
+
+    // Create an STS client
+    AWSCostAndUsageReport awsCostAndUsageReport = AWSCostAndUsageReportClientBuilder.standard()
+                                                      .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+                                                      .withRegion(Regions.US_EAST_1)
+                                                      .withClientConfiguration(clientConfiguration)
+                                                      .build();
+
+    // Get the caller identity
+    DescribeReportDefinitionsResult response =
+        awsCostAndUsageReport.describeReportDefinitions(new DescribeReportDefinitionsRequest());
+
+    // Print the caller identity information
+    return ResponseDTO.newResponse(response.getReportDefinitions().get(0).getReportName());
   }
 }
