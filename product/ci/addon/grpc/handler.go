@@ -41,15 +41,20 @@ func NewAddonHandler(stopCh chan bool, logMetrics bool, log *zap.SugaredLogger) 
 
 // SignalStop sends a signal to stop the GRPC service.
 func (h *handler) SignalStop(ctx context.Context, in *pb.SignalStopRequest) (*pb.SignalStopResponse, error) {
+
 	go func() {
+		h.log.Infow("sending stop signal to the channel")
 		// Ensure that all the addon service tasks are complete before sending the signal.
 		// Sleep will ensure that this RPC completes successfully
 		time.Sleep(1 * time.Second)
 		h.stopCh <- true
+		h.log.Infow("successfully sent stop signal to the channel")
 	}()
 	// Explicitly close pending logs before returning back, as they depend on the lite engine
 	// server being up.
+	h.log.Infow("attempting to close pending logs")
 	addonlogs.LogState().ClosePendingLogs()
+	h.log.Infow("successfully closed pending logs")
 	return &pb.SignalStopResponse{}, nil
 }
 
