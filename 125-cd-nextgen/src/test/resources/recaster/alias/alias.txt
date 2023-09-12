@@ -614,6 +614,9 @@ io.harness.yaml.core.parallelStepElementConfig
 io.harness.cdng.aws.asg.AsgBlueGreenPrepareRollbackDataOutcome
 io.harness.cdng.aws.asg.UserDataConfiguration
 io.harness.cdng.aws.asg.AwsAsgLoadBalancerConfigYaml
+io.harness.cdng.aws.asg.AsgCurrentRunningInstances
+io.harness.cdng.aws.asg.AsgInstances
+io.harness.cdng.aws.asg.AsgFixedInstances
 io.harness.cdng.aws.asg.UserDataOutcome
 io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome
 io.harness.cdng.environment.steps.EnvironmentStepParameters
