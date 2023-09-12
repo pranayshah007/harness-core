@@ -361,14 +361,16 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
                        .resourceType("PIPELINE")
                        .build())
             .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
 
+    log.info(accessCheckResponse.toString());
     for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
       if (accessControlDTO.isPermitted()) {
         permittedPipelineIdentifier.add(accessControlDTO.getResourceIdentifier());
       }
     }
 
+    log.info("permitted pipeline " + permittedPipelineIdentifier.toString());
     return permittedPipelineIdentifier;
   }
 
