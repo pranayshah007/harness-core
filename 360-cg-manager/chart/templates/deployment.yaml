@@ -78,11 +78,9 @@ spec:
             - secretRef:
                 name: smtp-secret
             {{- end }}
-            {{- if .Values.global.secrets.app.external.enabled }}
-            {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
+            {{- if eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" .Values.secrets)) "true" }}    
             - secretRef:
-                name: harness-manager-external-secret
-            {{- end }}
+                name: {{ printf "%s-external-secrets" (include "harness-manager.name" .) }}
             {{- end }}
           env:
             {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "REDIS_USERNAME" "passwordVariableName" "REDIS_PASSWORD") | indent 12 }}
