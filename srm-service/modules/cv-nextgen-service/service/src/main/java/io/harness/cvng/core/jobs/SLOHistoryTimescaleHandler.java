@@ -12,9 +12,12 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
+import java.time.Clock;
 
 public class SLOHistoryTimescaleHandler implements MongoPersistenceIterator.Handler<AbstractServiceLevelObjective> {
   @Inject SLOTimeScaleService sloTimeScaleService;
+
+  @Inject Clock clock;
   @Override
   public void handle(AbstractServiceLevelObjective serviceLevelObjective) {
     sloTimeScaleService.insertSLOHistory(serviceLevelObjective);

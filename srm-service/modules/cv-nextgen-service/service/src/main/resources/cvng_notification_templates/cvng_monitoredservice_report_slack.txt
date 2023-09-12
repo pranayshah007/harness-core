@@ -113,7 +113,7 @@
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",
-				"text": "${SLO_PERFORMANCE}"
+				"text": "${SLO_PERFORMANCE_SLACK}"
 			}
 		},
 		{
