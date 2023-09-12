@@ -175,8 +175,6 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
     public static final String stepCategory = NodeExecutionKeys.stepType + "."
         + "stepCategory";
 
-    public static final String stageFqn1 = "planNode.stageFqn";
-
     public static final String accountId = NodeExecutionKeys.ambiance + "."
         + "setupAbstractions"
         + "." + SetupAbstractionKeys.accountId;
@@ -234,7 +232,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_stageFqn_idx")
                  .field(NodeExecutionKeys.planExecutionId)
-                 .field(NodeExecutionKeys.stageFqn1)
+                 .field(NodeExecutionKeys.stageFqn)
                  .build())
         // updateRelationShipsForRetryNode
         .add(CompoundMongoIndex.builder().name("previous_id_idx").field(NodeExecutionKeys.previousId).build())
@@ -246,11 +244,6 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .descRangeField(NodeExecutionKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder().name("status_idx").field(NodeExecutionKeys.status).build())
-        .add(CompoundMongoIndex.builder()
-                 .name("planExecutionId_stageFqn_v2_idx")
-                 .field(NodeExecutionKeys.planExecutionId)
-                 .field(NodeExecutionKeys.stageFqn)
-                 .build())
         .build();
   }
 
