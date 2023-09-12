@@ -23,8 +23,6 @@ import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
-import io.harness.cdng.elastigroup.LoadBalancer;
-import io.harness.cdng.elastigroup.LoadBalancerType;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
