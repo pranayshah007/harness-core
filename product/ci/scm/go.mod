@@ -2,13 +2,10 @@ module github.com/harness/harness-core/product/ci/scm
 
 go 1.14
 
-replace github.com/harness/harness-core/commons/go/lib => ../../../commons/go/lib
-
-replace github.com/harness/harness-core/product/log-service => ../../../product/log-service
-
 require (
 	github.com/alexflint/go-arg v1.3.0
 	github.com/drone/go-scm v1.31.2
+	github.com/drone/go-scm v1.32.0
 	github.com/drone/go-scm-codecommit v0.0.0-20210315104920-2d8b9dc5ed8a
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/golang/mock v1.6.0
