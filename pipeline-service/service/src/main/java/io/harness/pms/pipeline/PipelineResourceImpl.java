@@ -337,6 +337,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());
 
     // access pipeline with view permission
+    log.info("Pipeline Identifier before permission " + pipelineIdentifiers);
     pipelineIdentifiers = getPermitted(accountId, orgId, projectId, pipelineIdentifiers);
 
     Map<String, PipelineMetadataV2> pipelineMetadataMap =
