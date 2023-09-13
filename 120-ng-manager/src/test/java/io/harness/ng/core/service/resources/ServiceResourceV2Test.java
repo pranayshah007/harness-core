@@ -243,7 +243,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testListTemplate() {
-    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), eq(false), eq(false)))
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false), eq(false), eq(false), false))
         .thenReturn(Optional.of(entity));
     ResponseDTO<ServiceResponse> serviceResponseResponseDTO = serviceResourceV2.get(
         IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false, false, null, "false", false);

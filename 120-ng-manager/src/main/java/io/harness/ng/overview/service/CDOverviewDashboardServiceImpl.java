@@ -3957,8 +3957,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public io.harness.ng.overview.dto.ServiceHeaderInfo getServiceHeaderInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, boolean loadFromCache,
       boolean loadFromFallbackBranch) {
-    Optional<ServiceEntity> service = serviceEntityServiceImpl.get(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false, loadFromCache, loadFromFallbackBranch);
+    Optional<ServiceEntity> service = serviceEntityServiceImpl.get(accountIdentifier, orgIdentifier, projectIdentifier,
+        serviceId, false, loadFromCache, loadFromFallbackBranch, false);
     if (service.isEmpty()) {
       throw new NotFoundException(
           ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceId));

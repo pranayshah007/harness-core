@@ -243,8 +243,9 @@ public class ServiceResourceV2 {
           "Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
           "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
-    Optional<ServiceEntity> serviceEntity = serviceEntityService.get(accountId, orgIdentifier, projectIdentifier,
-        serviceIdentifier, deleted, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
+    Optional<ServiceEntity> serviceEntity =
+        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted,
+            GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch, false);
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());

@@ -241,32 +241,35 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   public Optional<ServiceEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
     // default behavior to not load from cache and fallback branch
-    return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false);
+    return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false, false);
   }
 
   @Override
   public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch,
+      boolean includeMetadataOnly) {
     checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
 
-    return getServiceByRef(
-        accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache, loadFromFallbackBranch);
+    return getServiceByRef(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache,
+        loadFromFallbackBranch, includeMetadataOnly);
   }
 
   private Optional<ServiceEntity> getServiceByRef(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch,
+      boolean includeMetadataOnly) {
     String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     // converted to service identifier
     if (serviceRefSplit == null || serviceRefSplit.length == 1) {
-      return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted, loadFromCache, loadFromFallbackBranch);
+      return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(accountId,
+          orgIdentifier, projectIdentifier, serviceRef, !deleted, loadFromCache, loadFromFallbackBranch,
+          includeMetadataOnly);
     } else {
       IdentifierRef serviceIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
           serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted, loadFromCache,
-          loadFromFallbackBranch);
+          loadFromFallbackBranch, false);
     }
   }
 
@@ -418,7 +421,10 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       checkThatServiceIsNotReferredByOthers(serviceEntity);
     }
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
-    Optional<ServiceEntity> serviceEntityOptional = get(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
+
+    // get just metadata
+    Optional<ServiceEntity> serviceEntityOptional =
+        get(accountId, orgIdentifier, projectIdentifier, serviceRef, false, false, false, true);
 
     if (serviceEntityOptional.isPresent()) {
       boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
