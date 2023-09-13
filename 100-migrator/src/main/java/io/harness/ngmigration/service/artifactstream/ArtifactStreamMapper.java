@@ -40,7 +40,7 @@ import java.util.Set;
 public interface ArtifactStreamMapper {
   PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities);
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version);
 
   ArtifactType getArtifactType(Map<CgEntityId, NGYamlFile> migratedEntities, ArtifactStream artifactStream);
 

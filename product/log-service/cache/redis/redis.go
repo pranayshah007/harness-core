@@ -7,6 +7,7 @@ package redis
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -34,36 +35,41 @@ func New(endpoint, password string, useTLS, disableExpiryWatcher bool, certPathF
 }
 
 func (r *Redis) Get(ctx context.Context, key string) ([]byte, error) {
-	stringCmd, err := r.Client.Get(ctx, key).Result()
-	if err != nil {
-		return nil, err
+	var result []byte
+	operation := func(ctx context.Context) error {
+		stringCmd, err := r.Client.Get(ctx, key).Result()
+		if err != nil {
+			return err
+		}
+		result = []byte(stringCmd)
+		return nil
 	}
-	return []byte(stringCmd), nil
+	return result, r.retryOperation(ctx, operation)
 }
 
 func (r *Redis) Create(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
-	r.Client.Del(ctx, key)
-	cmd := r.Client.Set(ctx, key, value, ttl)
-	if cmd.Err() != nil {
+	operation := func(ctx context.Context) error {
+		r.Client.Del(ctx, key)
+		cmd := r.Client.Set(ctx, key, value, ttl)
 		return cmd.Err()
 	}
-	return nil
+	return r.retryOperation(ctx, operation)
 }
 
 func (r *Redis) Delete(ctx context.Context, key string) error {
-	_, err := r.Client.Del(ctx, key).Result()
-	if err != nil {
+	operation := func(ctx context.Context) error {
+		_, err := r.Client.Del(ctx, key).Result()
 		return err
 	}
-	return nil
+	return r.retryOperation(ctx, operation)
 }
 
 func (r *Redis) Ping(ctx context.Context) error {
-	_, err := r.Client.Ping(ctx).Result()
-	if err != nil {
+	operation := func(ctx context.Context) error {
+		_, err := r.Client.Ping(ctx).Result()
 		return err
 	}
-	return nil
+	return r.retryOperation(ctx, operation)
 }
 func (r *Redis) Exists(ctx context.Context, key string) bool {
 	v, err := r.Client.Exists(ctx, key).Result()
@@ -74,4 +80,19 @@ func (r *Redis) Exists(ctx context.Context, key string) bool {
 		return true
 	}
 	return false
+}
+
+func (r *Redis) retryOperation(ctx context.Context, operation func(context.Context) error) error {
+	var err error
+	const maxRetries = 3
+	for retries := 0; retries <= maxRetries; retries++ {
+		err = operation(ctx)
+		if err == nil {
+			return nil
+		}
+
+		time.Sleep(time.Millisecond * time.Duration(retries) * 100)
+	}
+
+	return fmt.Errorf("Could not perform cache operation maximum retries exceeded %w", err)
 }

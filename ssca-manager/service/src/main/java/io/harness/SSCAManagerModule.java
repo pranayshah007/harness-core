@@ -21,26 +21,40 @@ import io.harness.persistence.UserProvider;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.SSCAManagerModuleRegistrars;
+import io.harness.spec.server.ssca.v1.EnforcementApi;
+import io.harness.spec.server.ssca.v1.OrchestrationApi;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
 import io.harness.spec.server.ssca.v1.TokenApi;
+import io.harness.ssca.S3Config;
+import io.harness.ssca.api.EnforcementApiImpl;
+import io.harness.ssca.api.OrchestrationApiImpl;
 import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.ssca.api.TokenApiImpl;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
-import io.harness.ssca.services.EnforceSBOMWorkflowService;
-import io.harness.ssca.services.EnforceSBOMWorkflowServiceImpl;
 import io.harness.ssca.services.EnforcementResultService;
 import io.harness.ssca.services.EnforcementResultServiceImpl;
+import io.harness.ssca.services.EnforcementStepService;
+import io.harness.ssca.services.EnforcementStepServiceImpl;
 import io.harness.ssca.services.EnforcementSummaryService;
 import io.harness.ssca.services.EnforcementSummaryServiceImpl;
 import io.harness.ssca.services.NextGenService;
 import io.harness.ssca.services.NextGenServiceImpl;
-import io.harness.ssca.services.ProcessSbomWorkflowService;
-import io.harness.ssca.services.ProcessSbomWorkflowServiceImpl;
+import io.harness.ssca.services.NormalisedSbomComponentService;
+import io.harness.ssca.services.NormalisedSbomComponentServiceImpl;
+import io.harness.ssca.services.OrchestrationStepService;
+import io.harness.ssca.services.OrchestrationStepServiceImpl;
 import io.harness.ssca.services.RuleEngineService;
 import io.harness.ssca.services.RuleEngineServiceImpl;
+import io.harness.ssca.services.S3StoreService;
+import io.harness.ssca.services.S3StoreServiceImpl;
 import io.harness.token.TokenClientModule;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -77,13 +91,17 @@ public class SSCAManagerModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(SbomProcessorApi.class).to(SbomProcessorApiImpl.class);
     bind(TokenApi.class).to(TokenApiImpl.class);
+    bind(EnforcementApi.class).to(EnforcementApiImpl.class);
+    bind(OrchestrationApi.class).to(OrchestrationApiImpl.class);
     bind(ArtifactService.class).to(ArtifactServiceImpl.class);
-    bind(ProcessSbomWorkflowService.class).to(ProcessSbomWorkflowServiceImpl.class);
-    bind(EnforceSBOMWorkflowService.class).to(EnforceSBOMWorkflowServiceImpl.class);
+    bind(OrchestrationStepService.class).to(OrchestrationStepServiceImpl.class);
+    bind(EnforcementStepService.class).to(EnforcementStepServiceImpl.class);
     bind(RuleEngineService.class).to(RuleEngineServiceImpl.class);
     bind(EnforcementResultService.class).to(EnforcementResultServiceImpl.class);
     bind(EnforcementSummaryService.class).to(EnforcementSummaryServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
+    bind(S3StoreService.class).to(S3StoreServiceImpl.class);
+    bind(NormalisedSbomComponentService.class).to(NormalisedSbomComponentServiceImpl.class);
     install(new TokenClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
   }
@@ -106,6 +124,32 @@ public class SSCAManagerModule extends AbstractModule {
   @Named("sscaManagerServiceSecret")
   public String sscaManagerServiceSecret() {
     return this.configuration.getSscaManagerServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("jwtAuthSecret")
+  public String jwtAuthSecret() {
+    return this.configuration.getJwtAuthSecret();
+  }
+
+  @Provides
+  @Singleton
+  public S3Config s3Config() {
+    return this.configuration.getS3Config();
+  }
+
+  @Provides
+  @Singleton
+  public AmazonS3 s3Client() {
+    BasicAWSCredentials googleCreds = new BasicAWSCredentials(
+        configuration.getS3Config().getAccessKeyId(), configuration.getS3Config().getAccessSecretKey());
+
+    return AmazonS3ClientBuilder.standard()
+        .withEndpointConfiguration(
+            new AwsClientBuilder.EndpointConfiguration(configuration.getS3Config().getEndpoint(), "auto"))
+        .withCredentials(new AWSStaticCredentialsProvider(googleCreds))
+        .build();
   }
 
   @Provides

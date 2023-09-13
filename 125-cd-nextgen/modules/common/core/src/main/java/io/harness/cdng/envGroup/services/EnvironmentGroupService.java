@@ -7,6 +7,9 @@
 
 package io.harness.cdng.envGroup.services;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterPropertiesDTO;
 
@@ -14,7 +17,8 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 public interface EnvironmentGroupService {
   Optional<EnvironmentGroupEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String envGroupIdentifier, boolean deleted);

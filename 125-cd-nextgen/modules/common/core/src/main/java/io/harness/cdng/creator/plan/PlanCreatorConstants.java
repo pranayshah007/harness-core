@@ -39,6 +39,7 @@ public class PlanCreatorConstants {
   public final String APPLICATION_SETTINGS = "applicationSettings";
   public final String CONNECTION_STRINGS = "connectionStrings";
   public final String ELASTIGROUP_SERVICE_SETTINGS_NODE = "elastigroupService";
+  public final String ASG_SERVICE_SETTINGS_NODE = "asgService";
   public final String SERVICE_HOOKS_NODE_NAME = "ServiceHooks";
 
   // DependencyMetadata constants

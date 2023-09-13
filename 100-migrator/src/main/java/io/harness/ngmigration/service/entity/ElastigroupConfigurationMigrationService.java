@@ -47,6 +47,7 @@ import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowPhase;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
@@ -57,6 +58,7 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.InfrastructureDefinitionService;
+import software.wings.service.intfc.WorkflowService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -78,6 +80,8 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
   @Inject private SecretRefUtils secretRefUtils;
 
   @Inject private StepMapperFactory stepMapperFactory;
+
+  @Inject private WorkflowService workflowService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -190,7 +194,7 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 
@@ -235,36 +239,69 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
   private Map<String, Object> updateContextVariables(MigrationContext migrationContext,
       Map<CgEntityId, CgEntityNode> entities, InfrastructureDefinition infrastructureDefinition) {
     Map<String, Object> custom = new HashMap<>();
-    entities.entrySet().stream().filter(entry -> WORKFLOW.equals(entry.getValue().getType())).forEach(entry -> {
-      Workflow workflow = (Workflow) entry.getValue().getEntity();
+    updateFromLastExecution(custom, migrationContext, infrastructureDefinition);
+    if (isEmpty(custom)) {
+      entities.entrySet().stream().filter(entry -> WORKFLOW.equals(entry.getValue().getType())).forEach(entry -> {
+        Workflow workflow = (Workflow) entry.getValue().getEntity();
+        updateFromWorkflow(custom, migrationContext, workflow, infrastructureDefinition);
+      });
+    }
+    return custom;
+  }
+
+  private void updateFromWorkflow(Map<String, Object> custom, MigrationContext migrationContext, Workflow workflow,
+      InfrastructureDefinition infrastructureDefinition) {
+    WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+    if (workflow != null && wfContext != null) {
+      CanaryOrchestrationWorkflow orchestrationWorkflow =
+          (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+      if (orchestrationWorkflow != null) {
+        List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
+        for (WorkflowPhase phase : phases) {
+          if (infrastructureDefinition.getUuid().equals(phase.getInfraDefinitionId())) {
+            processPhase(custom, migrationContext, wfContext, phase);
+          }
+        }
+      }
+    }
+  }
+
+  private void updateFromLastExecution(Map<String, Object> custom, MigrationContext migrationContext,
+      InfrastructureDefinition infrastructureDefinition) {
+    WorkflowExecution workflowExecution = workflowService.getLastWorkflowExecutionByInfrastructure(
+        migrationContext.getAccountId(), infrastructureDefinition.getAppId(), infrastructureDefinition.getUuid());
+    if (workflowExecution != null) {
+      Workflow workflow =
+          workflowService.readWorkflow(infrastructureDefinition.getAppId(), workflowExecution.getWorkflowId());
       WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
       if (workflow != null && wfContext != null) {
         CanaryOrchestrationWorkflow orchestrationWorkflow =
             (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
         if (orchestrationWorkflow != null) {
           List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
-          phases.stream()
-              .filter(phase -> infrastructureDefinition.getUuid().equals(phase.getInfraDefinitionId()))
-              .forEach(phase -> {
-                List<PhaseStep> phaseSteps = phase.getPhaseSteps();
-                phaseSteps.stream().filter(phaseStep -> isNotEmpty(phaseStep.getSteps())).forEach(phaseStep -> {
-                  List<GraphNode> steps = phaseStep.getSteps();
-                  steps.forEach(stepYaml -> {
-                    StepMapper stepMapper = stepMapperFactory.getStepMapper(stepYaml.getType());
-                    List<StepExpressionFunctor> expressionFunctors =
-                        stepMapper.getExpressionFunctor(wfContext, phase, phaseStep, stepYaml);
-                    if (isNotEmpty(expressionFunctors)) {
-                      wfContext.getStepExpressionFunctors().addAll(expressionFunctors);
-                    }
-                  });
-                });
-
-                custom.putAll(MigratorUtility.getExpressions(phase, wfContext.getStepExpressionFunctors(),
-                    migrationContext.getInputDTO().getIdentifierCaseFormat()));
-              });
+          for (WorkflowPhase phase : phases) {
+            processPhase(custom, migrationContext, wfContext, phase);
+          }
         }
       }
+    }
+  }
+
+  private void processPhase(Map<String, Object> custom, MigrationContext migrationContext,
+      WorkflowMigrationContext wfContext, WorkflowPhase phase) {
+    List<PhaseStep> phaseSteps = phase.getPhaseSteps();
+    phaseSteps.stream().filter(phaseStep -> isNotEmpty(phaseStep.getSteps())).forEach(phaseStep -> {
+      List<GraphNode> steps = phaseStep.getSteps();
+      steps.forEach(stepYaml -> {
+        StepMapper stepMapper = stepMapperFactory.getStepMapper(stepYaml.getType());
+        List<StepExpressionFunctor> expressionFunctors =
+            stepMapper.getExpressionFunctor(wfContext, phase, phaseStep, stepYaml);
+        if (isNotEmpty(expressionFunctors)) {
+          wfContext.getStepExpressionFunctors().addAll(expressionFunctors);
+        }
+      });
     });
-    return custom;
+    custom.putAll(MigratorUtility.getExpressions(
+        phase, wfContext.getStepExpressionFunctors(), migrationContext.getInputDTO().getIdentifierCaseFormat()));
   }
 }

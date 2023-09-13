@@ -19,6 +19,13 @@ if [[ "" != "$LOGGING_LEVEL" ]]; then
     export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
+if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
+  yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE
+else
+  yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
+fi
+
 if [[ "" != "$STATIC_SCHEMA_FILE_URL" ]]; then
   export STATIC_SCHEMA_FILE_URL; yq -i '.staticSchemaFileURL=env(STATIC_SCHEMA_FILE_URL)' $CONFIG_FILE
 fi
@@ -78,6 +85,42 @@ if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
   export NG_MANAGER_SERVICE_SECRET; yq -i '.ngManagerServiceSecret=env(NG_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_MANAGER_SERVICE_SECRET" ]]; then
+  export SSCA_MANAGER_SERVICE_SECRET; yq -i '.sscaManagerServiceSecret=env(SSCA_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$JWT_AUTH_SECRET" ]]; then
+  export JWT_AUTH_SECRET; yq -i '.jwtAuthSecret=env(JWT_AUTH_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
+  export JWT_IDENTITY_SERVICE_SECRET; yq -i '.jwtIdentityServiceSecret=env(JWT_IDENTITY_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
   export NG_MANAGER_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_REGION" ]]; then
+  export S3_REGION; yq -i '.s3Config.region=env(S3_REGION)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_BUCKET" ]]; then
+  export S3_BUCKET; yq -i '.s3Config.bucket=env(S3_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_ENDPOINT" ]]; then
+  export S3_ENDPOINT; yq -i '.s3Config.endpoint=env(S3_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_POLICY_BUCKET" ]]; then
+  export S3_POLICY_BUCKET; yq -i '.s3Config.policyBucket=env(S3_POLICY_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_ACCESS_KEY_ID" ]]; then
+  export S3_ACCESS_KEY_ID; yq -i '.s3Config.accessKeyId=env(S3_ACCESS_KEY_ID)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_ACCESS_SECRET_KEY" ]]; then
+  export S3_ACCESS_SECRET_KEY; yq -i '.s3Config.accessSecretKey=env(S3_ACCESS_SECRET_KEY)' $CONFIG_FILE
 fi

@@ -52,7 +52,8 @@ CURRENCY_LIST = ["AED", "ARS", "AUD", "BRL", "CAD", "CNY", "EUR", "GBP",
 LABELS_FLATTENING_ENABLED_ACCOUNTS = ["EfOfrUbHTtupeZjUqxlHBg", "JQ3KKI5yRTGe37OrCiZaTA",
                                       "k9C6xngtS06yOSMV7hPGlQ", "l4zWxf3BTs6mEyIMmQjQIg",
                                       "wFHXHD0RRQWoO8tIZT5YVw", "Z60xsRGoTeqOoAFRCsmlBQ",
-                                      "aYXZz76ETU-_3LLQSzBt1Q", "W3jccPA5Q-qtHNTl1uYBhw"]
+                                      "aYXZz76ETU-_3LLQSzBt1Q", "W3jccPA5Q-qtHNTl1uYBhw",
+                                      "pC_7h33wQTeZ_j-libvF4A"]
 ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE = ["pC_7h33wQTeZ_j-libvF4A",
                                                                 "zbT61-E8QviU5SHLH9rKzA"]
 BACKUP_CURRENCY_FX_RATES = {

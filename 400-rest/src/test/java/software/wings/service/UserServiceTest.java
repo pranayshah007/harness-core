@@ -122,8 +122,11 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
+import io.harness.notification.channeldetails.EmailChannel;
+import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 import io.harness.remote.client.NGRestUtils;
@@ -277,6 +280,7 @@ public class UserServiceTest extends WingsBaseTest {
    * The User invite query end.
    */
   @Mock private EmailNotificationService emailDataNotificationService;
+  @Mock private NotificationClient notificationClient;
   @Mock private RoleService roleService;
   @Mock private WingsPersistence wingsPersistence;
   @Mock private AccountService accountService;
@@ -311,6 +315,7 @@ public class UserServiceTest extends WingsBaseTest {
   @Captor private ArgumentCaptor<EmailData> emailDataArgumentCaptor;
   @Captor private ArgumentCaptor<User> userArgumentCaptor;
   @Captor private ArgumentCaptor<PageRequest<User>> pageRequestArgumentCaptor;
+
   @Inject @InjectMocks SecretManager secretManager;
   @Inject @InjectMocks private AwsMarketPlaceApiHandlerImpl marketPlaceService;
   @Inject WingsPersistence realWingsPersistence;
@@ -321,7 +326,7 @@ public class UserServiceTest extends WingsBaseTest {
   @InjectMocks private HarnessUserGroupService harnessUserGroupService = mock(HarnessUserGroupServiceImpl.class);
   @InjectMocks private AccessRequestService accessRequestService = mock(AccessRequestServiceImpl.class);
   private Query<User> userQuery;
-
+  private ArgumentCaptor<EmailChannel> emailChannelCaptor;
   /**
    * Sets mocks.
    */
@@ -1499,6 +1504,46 @@ public class UserServiceTest extends WingsBaseTest {
         .startsWith(PORTAL_URL + "/#/reset-password/");
     assertThat(((Map<String, String>) emailDataArgumentCaptor.getValue().getTemplateModel()).get("url").length())
         .isGreaterThan((PORTAL_URL + "/#/reset-password/").length());
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void sendResetPasswordEmailDefaultExperienceNG() throws EmailException, TemplateException, IOException {
+    ArrayList<Account> accounts = new ArrayList<>();
+    accounts.add(new Account());
+    when(query.get())
+        .thenReturn(userBuilder.uuid(USER_ID).defaultAccountId("defaultAccount").accounts(accounts).build());
+    when(configuration.getPortal().getJwtPasswordSecret()).thenReturn("SECRET");
+    when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
+    when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL + "/");
+    when(accountService.get(any()))
+        .thenReturn(
+            Account.Builder.anAccount().withUuid("defaultAccount").withDefaultExperience(DefaultExperience.NG).build());
+    UserResource.ResetPasswordRequest resetPasswordRequest = new UserResource.ResetPasswordRequest();
+    resetPasswordRequest.setEmail(USER_EMAIL);
+    userService.resetPassword(resetPasswordRequest);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void sendResetPasswordEmailDefaultExperienceCG() throws EmailException, TemplateException, IOException {
+    ArrayList<Account> accounts = new ArrayList<>();
+    accounts.add(new Account());
+    when(query.get())
+        .thenReturn(userBuilder.uuid(USER_ID).defaultAccountId("defaultAccount").accounts(accounts).build());
+    when(configuration.getPortal().getJwtPasswordSecret()).thenReturn("SECRET");
+    when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
+    when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL + "/");
+    when(accountService.get(any()))
+        .thenReturn(
+            Account.Builder.anAccount().withUuid("defaultAccount").withDefaultExperience(DefaultExperience.CG).build());
+    UserResource.ResetPasswordRequest resetPasswordRequest = new UserResource.ResetPasswordRequest();
+    resetPasswordRequest.setEmail(USER_EMAIL);
+    userService.resetPassword(resetPasswordRequest);
+    verify(emailDataNotificationService, times(1)).send(any());
   }
 
   @Test

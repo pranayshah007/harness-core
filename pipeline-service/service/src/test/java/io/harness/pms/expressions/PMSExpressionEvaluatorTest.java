@@ -44,6 +44,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.field.dummy.DummyOrchestrationField;
+import io.harness.plan.NodeType;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -55,6 +56,7 @@ import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.expressions.functors.RemoteExpressionFunctor;
 import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.sdk.PmsSdkInstanceService;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
@@ -78,6 +80,7 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
   @Mock private PlanExecutionService planExecutionService;
+
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PmsOutcomeService pmsOutcomeService;
   @Mock PmsSdkInstanceService pmsSdkInstanceService;
@@ -115,8 +118,10 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     nodeExecution1 =
         NodeExecution.builder()
             .uuid(nodeExecution1Id)
+            .identifier("pipeline")
+            .group(StepOutcomeGroup.PIPELINE.name())
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1)).build())
-            .planNode(planNode1)
+            .nodeType(NodeType.PLAN_NODE.name())
             .resolvedStepParameters(prepareStepParameters("pipelineResolvedValue"))
             .build();
 
@@ -124,24 +129,28 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     nodeExecution2 =
         NodeExecution.builder()
             .uuid(nodeExecution2Id)
+            .identifier("stages")
+            .group(StepOutcomeGroup.STAGES.name())
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .build())
-            .planNode(planNode2)
             .resolvedStepParameters(prepareStepParameters("stagesResolvedValue"))
+            .nodeType(NodeType.PLAN_NODE.name())
             .parentId(nodeExecution1Id)
             .build();
 
     planNode3 = preparePlanNode(false, "stage", "stageValue", "STAGE");
     nodeExecution3 =
         NodeExecution.builder()
+            .identifier("stage")
+            .group(StepOutcomeGroup.STAGE.name())
             .uuid(nodeExecution3Id)
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, planNode3))
                           .build())
-            .planNode(planNode3)
             .resolvedStepParameters(prepareStepParameters("stageResolvedValue"))
+            .nodeType(NodeType.PLAN_NODE.name())
             .parentId(nodeExecution2Id)
             .build();
 
@@ -149,27 +158,28 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     nodeExecution4 =
         NodeExecution.builder()
             .uuid(nodeExecution4Id)
+            .identifier("d")
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, planNode3))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution4Id, planNode4))
                           .build())
-            .planNode(planNode4)
             .resolvedStepParameters(prepareStepParameters("dResolvedValue"))
             .parentId(nodeExecution3Id)
             .nextId(nodeExecution5Id)
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     planNode5 = preparePlanNode(false, "e", "ei1", null);
     nodeExecution5 =
         NodeExecution.builder()
             .uuid(nodeExecution5Id)
+            .identifier("e")
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, planNode3))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution5Id, planNode5))
                           .build())
-            .planNode(planNode5)
             .resolvedStepParameters(prepareStepParameters("eResolvedValue"))
             .previousId(nodeExecution4Id)
             .parentId(nodeExecution3Id)
@@ -317,6 +327,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     PlanNode planNode = preparePlanNode(false, "step", "stepValue", "STEP");
     NodeExecution nodeExecution =
         NodeExecution.builder()
+            .identifier("step")
             .ambiance(Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(uuid, planNode)).build())
             .uuid(uuid)
             .build();
@@ -350,6 +361,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     PlanNode planNode = preparePlanNode(false, "step", "stepValue", "STEP");
     NodeExecution nodeExecution =
         NodeExecution.builder()
+            .identifier("step")
             .ambiance(Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(uuid, planNode)).build())
             .uuid(uuid)
             .retryIds(List.of("id1", "id2", "id3"))

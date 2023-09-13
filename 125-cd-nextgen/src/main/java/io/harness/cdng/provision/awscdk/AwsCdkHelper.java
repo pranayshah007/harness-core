@@ -10,6 +10,7 @@ package io.harness.cdng.provision.awscdk;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_APP_PATH;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_COMMAND_OPTIONS;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_PARAMETERS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
@@ -78,8 +79,9 @@ public class AwsCdkHelper {
   public HashMap<String, String> getCommonEnvVariables(
       String appPath, List<String> commandOptions, ParameterField<Map<String, String>> envVariables) {
     HashMap<String, String> environmentVariablesMap = new HashMap<>();
-    environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, appPath);
-
+    if (isNotEmpty(appPath)) {
+      environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, appPath);
+    }
     if (isNotEmpty(commandOptions)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_COMMAND_OPTIONS, String.join(" ", commandOptions));
     }
@@ -94,11 +96,29 @@ public class AwsCdkHelper {
     Map<String, String> processedOutput = new HashMap<>();
     stepOutput.getMap().forEach((key, value) -> {
       if (OUTPUT_KEYS.contains(key)) {
-        processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+        try {
+          processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+        } catch (Exception e) {
+          log.error("Failed to decode: {} :", key, e);
+        }
       } else {
         processedOutput.put(key, value);
       }
     });
     return processedOutput;
+  }
+
+  public void addParametersToEnvValues(
+      Map<String, String> parameters, HashMap<String, String> environmentVariablesMap) {
+    List<String> parametersList = new ArrayList<>();
+    if (isNotEmpty(parameters)) {
+      parameters.forEach((key, value) -> {
+        if (!key.equals("__uuid")) {
+          parametersList.add(String.format("%s=%s", key, value));
+        }
+      });
+      environmentVariablesMap.put(
+          PLUGIN_AWS_CDK_PARAMETERS, "--parameters " + String.join(" --parameters ", parametersList));
+    }
   }
 }

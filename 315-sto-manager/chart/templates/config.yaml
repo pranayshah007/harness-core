@@ -3,6 +3,13 @@ kind: ConfigMap
 metadata:
   name: sto-manager
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   DEPLOY_MODE: KUBERNETES_ONPREM
   ADDON_IMAGE: {{ include "common.images.image" (dict "imageRoot" .Values.addOnImage.image "global" .Values.global) | quote }}
@@ -14,7 +21,7 @@ data:
   VERIFICATION_SERVICE_SECRET: 67d9b94d9856665afc21acd3aa745401
   SCM_SERVICE_URI: "scm-service:8091"
   LOG_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/gateway/log-service/'
-  LOG_SERVICE_INTERNAL_ENDPOINT: 'http://log-service.{{ .Release.Namespace }}.svc.cluster.local:8079/'
+  LOG_SERVICE_INTERNAL_URL: 'http://log-service.{{ .Release.Namespace }}.svc.cluster.local:8079/'
   TI_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/ti-service/'
   TI_SERVICE_INTERNAL_ENDPOINT: 'http://ti-service.{{ .Release.Namespace }}.svc.cluster.local:8078/'
   STO_SERVICE_ENDPOINT:  '{{ .Values.global.loadbalancerURL }}/sto/'
@@ -37,6 +44,10 @@ data:
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_USE_SENTINEL: { { .Values.global.database.redis.installed | quote } }
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
+  LOCK_CONFIG_REDIS_SENTINELS: { { include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) } }
+  LOCK_CONFIG_REDIS_URL: { { include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) } }
   USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
   ENABLE_DASHBOARD_TIMESCALE: "true"
   TIMESCALE_URI: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
@@ -62,3 +73,4 @@ data:
   OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
   OPA_SERVER_SECRET: "dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq"
   {{- end }}
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}

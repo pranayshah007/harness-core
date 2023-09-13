@@ -20,4 +20,7 @@ public interface DataPointService {
 
   Map<String, List<DataPointEntity>> getDslDataPointsInfo(
       String accountIdentifier, List<String> identifiers, String dataSourceIdentifier);
+
+  List<DataPointEntity> getAllDataPointsForAccount(String accountIdentifier);
+  Map<String, DataPoint> getDataPointsMap(String accountIdentifier);
 }

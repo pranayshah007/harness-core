@@ -21,6 +21,7 @@ import static io.harness.provision.TerraformConstants.WORKSPACE_STATE_FILE_PATH_
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_INTERNAL_CACHE_FOLDER;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_LOCK_FILE_NAME;
 import static io.harness.provision.TerragruntConstants.TG_BASE_DIR;
+import static io.harness.provision.TerragruntConstants.TG_BASE_DIR_UNIQUE_DIRECTORY;
 import static io.harness.provision.TerragruntConstants.TG_SCRIPT_DIR;
 
 import static software.wings.beans.LogHelper.color;
@@ -94,6 +95,7 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -376,6 +378,7 @@ public class TerragruntTaskService {
                   .targets(taskParameters.getTargets())
                   .backendConfigFile(filesContext.getBackendFile())
                   .varFiles(filesContext.getVarFiles())
+                  .additionalCliArgs(taskParameters.getTerragruntCommandFlags())
                   .build())
         .runType(getCliRunType(taskParameters))
         .envVars(taskParameters.getEnvVars())
@@ -386,6 +389,13 @@ public class TerragruntTaskService {
 
   public static String getBaseDir(String accountId, String entityId) {
     return TG_BASE_DIR.replace("${ACCOUNT_ID}", accountId).replace("${ENTITY_ID}", entityId);
+  }
+
+  public static String getBaseDirWithUniqueDirectory(String accountId, String entityId) {
+    String randomId = RandomStringUtils.randomAlphanumeric(8);
+    return TG_BASE_DIR_UNIQUE_DIRECTORY.replace("${ACCOUNT_ID}", accountId)
+        .replace("${ENTITY_ID}", entityId)
+        .replace("${UNIQUE_DIRECTORY}", randomId);
   }
 
   public static TerragruntRunType getCliRunType(AbstractTerragruntTaskParameters params) {

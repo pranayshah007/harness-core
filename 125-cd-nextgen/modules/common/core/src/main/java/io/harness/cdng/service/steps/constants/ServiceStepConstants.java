@@ -22,8 +22,8 @@ import io.harness.pms.contracts.steps.StepType;
 
 import java.util.List;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_DASHBOARD})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 public class ServiceStepConstants {
   public static final String SERVICE = "service";
   public static final String SERVICE_OVERRIDES = "service overrides";

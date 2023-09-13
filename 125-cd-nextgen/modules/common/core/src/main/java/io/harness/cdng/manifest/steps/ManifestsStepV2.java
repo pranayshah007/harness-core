@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.manifest.steps;
+
 import static io.harness.cdng.manifest.ManifestType.MULTIPLE_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniqueness;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniquenessV2;
@@ -129,7 +130,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_DASHBOARD})
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, AsyncExecutable<EmptyStepParameters> {
@@ -620,10 +621,6 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
   public void saveManifestExecutionDataToStageInfo(Ambiance ambiance, ManifestsOutcome manifestsOutcome) {
     if (isNull(manifestsOutcome)) {
-      return;
-    }
-    if (!featureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC)) {
       return;
     }
     try {

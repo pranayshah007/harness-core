@@ -182,6 +182,20 @@ func HandleDelete(store store.Store) http.HandlerFunc {
 	}
 }
 
+func HandleInternalDelete(store store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("Access-Control-Allow-Origin", "*")
+		ctx := r.Context()
+
+		accountID := r.FormValue(accountIDParam)
+		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
+
+		go store.DeleteWithPrefix(ctx, key)
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
@@ -215,6 +229,7 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 		}
 
 		// creates a cache in status queued
+		logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Adding request to queued state for further processing")
 		info := entity.ResponsePrefixDownload{}
 		info.Status = entity.QUEUED
 		info.Value = link
@@ -225,6 +240,7 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 			logger.FromRequest(r).
 				WithError(err).
 				WithField("url", r.URL.String()).
+				WithField("Prefix", prefix).
 				WithField("time", time.Now().Format(time.RFC3339)).
 				WithField("info", info).
 				Errorln("api: cannot create cache info")
@@ -248,6 +264,35 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 			WithField(usePrefixParam, prefix).
 			WithField("latency", time.Since(st)).
 			WithField("time", time.Now().Format(time.RFC3339)).
-			Infoln("api: successfully list prefix finished")
+			Infoln("api: successfully list prefix finished and produced to queue")
+	}
+}
+
+func HandleExists(store store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		st := time.Now()
+		h.Set("Access-Control-Allow-Origin", "*")
+		ctx := r.Context()
+
+		accountID := r.FormValue(accountIDParam)
+		key := CreateAccountSeparatedKey(accountID, r.FormValue(keyParam))
+
+		exists, err := store.Exists(ctx, key)
+		if err != nil {
+			logger.FromRequest(r).
+				WithError(err).
+				WithField("key", key).
+				Errorln("api: couldn't check existence of objects")
+			return
+		}
+
+		logger.FromRequest(r).
+			WithField("key", key).
+			WithField("latency", time.Since(st)).
+			WithField("time", time.Now().Format(time.RFC3339)).
+			Infoln("api: successfully checked existence of objects")
+
+		io.WriteString(w, fmt.Sprintf("%t", exists))
 	}
 }

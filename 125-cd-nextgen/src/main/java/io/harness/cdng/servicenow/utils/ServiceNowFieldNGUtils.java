@@ -13,7 +13,10 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.ServiceNowException;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.servicenow.ServiceNowFieldAllowedValueNG;
@@ -36,6 +39,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
  *
  * This implementation is subject to change depending on what schema fields are required.
  * */
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @UtilityClass
 @Slf4j
@@ -46,6 +50,7 @@ public class ServiceNowFieldNGUtils {
       String name = JsonNodeUtils.getString(node, "label", key);
       boolean required = JsonNodeUtils.getBoolean(node, "mandatory", false);
       boolean isCustom = key.startsWith("u_");
+      boolean readOnly = JsonNodeUtils.getBoolean(node, "read_only", false);
       ServiceNowFieldSchemaNG schema = parseServiceNowFieldSchemaNG(node);
       List<ServiceNowFieldAllowedValueNG> allowedValues = addAllowedValues(node.get("choices"));
 
@@ -56,6 +61,7 @@ public class ServiceNowFieldNGUtils {
           .isCustom(isCustom)
           .schema(schema)
           .allowedValues(allowedValues)
+          .readOnly(readOnly)
           .build();
 
     } catch (Exception ex) {

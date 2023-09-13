@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.node;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -93,15 +94,23 @@ public interface NodeExecutionService {
 
   /**
    * Fetches all statuses for nodeExecutions for give planExecutionId and oldRetry false
-   * Uses - planExecutionId_status_idx index
+   * Uses - planExecutionId_mode_status_oldRetry_idx index
    * @param planExecutionId
    * @return
    */
   List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId);
 
   /**
+   * Fetches all non-final-statuses for nodeExecutions for given planExecutionId and oldRetry false
+   * Uses - planExecutionId_mode_status_oldRetry_idx index, uses PROJECTION_COVERED
+   * @param planExecutionId
+   * @return
+   */
+  List<Status> fetchNonFlowingAndNonFinalStatuses(String planExecutionId);
+
+  /**
    * Returns iterator for nodeExecution without old retries without projection
-   * Uses - planExecutionId_status_idx
+   * Uses - planExecutionId_oldRetry_idx
    * Check before using this, as it gets all nodes without projections for a planExecutionId (Get approval)
    * Example -> Complete Graph generation
    * @param planExecutionId
@@ -321,9 +330,9 @@ public interface NodeExecutionService {
 
   /**
    * Deletes the nodeExecutions and its related metadata
-   * @param planExecutionId Id of to be deleted planExecution
+   * @param planExecutionIds Id of to be deleted planExecution
    */
-  void deleteAllNodeExecutionAndMetadata(String planExecutionId);
+  void deleteAllNodeExecutionAndMetadata(Set<String> planExecutionIds);
 
   /**
    * Updates TTL the nodeExecutions and its related metadata
@@ -353,6 +362,8 @@ public interface NodeExecutionService {
 
   List<NodeExecution> fetchStageExecutions(String planExecutionId);
 
+  List<NodeExecution> fetchStageExecutionsWithProjection(String planExecutionId, Set<String> fieldsToBeIncluded);
+
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<NodeExecution> fetchStrategyNodeExecutions(String planExecutionId, List<String> stageFQNs);
 
@@ -371,5 +382,5 @@ public interface NodeExecutionService {
   NodeExecution fetchNodeExecutionForPlanNodeAndRetriedId(
       String planExecutionId, String planNode, boolean oldRetry, List<String> retriedId);
 
-  List<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded);
+  CloseableIterator<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded);
 }

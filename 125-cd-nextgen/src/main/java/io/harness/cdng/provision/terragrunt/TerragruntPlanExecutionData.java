@@ -20,8 +20,11 @@ import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanExecutionDataParameters.TerragruntPlanExecutionDataParametersBuilder;
 import io.harness.data.structure.EmptyPredicate;
@@ -44,6 +47,8 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -80,6 +85,7 @@ public class TerragruntPlanExecutionData {
             .command(command)
             .secretManagerRef(secretManagerRef)
             .terragruntModuleConfig(terragruntModuleConfig)
+            .moduleConfig(terragruntModuleConfig)
             .exportTerragruntPlanJson(exportTerragruntPlanJson);
     LinkedHashMap<String, TerragruntVarFile> varFiles = new LinkedHashMap<>();
     if (EmptyPredicate.isNotEmpty(terragruntVarFiles)) {

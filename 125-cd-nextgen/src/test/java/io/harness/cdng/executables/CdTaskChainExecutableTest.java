@@ -28,6 +28,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.rule.Owner;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -132,29 +133,29 @@ public class CdTaskChainExecutableTest extends CategoryTest {
   class TestExecutable extends CdTaskChainExecutable {
     @Override
     public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
-        StepElementParameters stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+        StepBaseParameters stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
         ThrowingSupplier<ResponseData> responseSupplier) {
       return null;
     }
 
     @Override
     public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
-        StepElementParameters stepParameters, PassThroughData passThroughData,
+        StepBaseParameters stepParameters, PassThroughData passThroughData,
         ThrowingSupplier<ResponseData> responseDataSupplier) {
       return null;
     }
 
     @Override
-    public Class<StepElementParameters> getStepParametersClass() {
+    public Class<StepBaseParameters> getStepParametersClass() {
       return null;
     }
 
     @Override
-    public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+    public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
     @Override
     public TaskChainResponse startChainLinkAfterRbac(
-        Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+        Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
       return null;
     }
   }

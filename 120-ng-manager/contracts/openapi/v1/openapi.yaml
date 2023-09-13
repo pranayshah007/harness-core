@@ -1469,7 +1469,7 @@ paths:
       tags:
         - Account Services
       x-internal: true
-  '/v1/eula/sign':
+  /v1/eula/sign:
     post:
       summary: Sign an End User License Agreement
       operationId: sign-eula
@@ -1486,17 +1486,13 @@ paths:
       tags:
         - EULA
       x-internal: false
-  'v1/eula/validate-sign':
+  v1/eula/validate-sign:
     get:
       summary: Validate specified agreement is signed or not
       operationId: validate-eula-sign
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-        - schema:
-            $ref: '#/components/schemas/AgreementType'
-          name: agreement-type
-          in: query
-          required: true
+        - $ref: '#/components/parameters/AgreementType'
       description: Check whether End User License Agreement has been signed for specified agreement type.
       security:
         - x-api-key: []
@@ -1506,6 +1502,121 @@ paths:
       tags:
         - EULA
       x-internal: false
+  /v1/gitx-webhooks:
+    post:
+      summary: Create a GitX webhook
+      operationId: create-gitx-webhook
+      responses:
+        '201':
+          $ref: '#/components/responses/CreateGitXWebhookResponse'
+      description: Create GitXWebhook at account level
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateGitXWebhookRequest'
+      x-internal: true
+    get:
+      summary: Lists all the GitX Webhooks
+      operationId: list-gitx-webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/ListGitXWebhookResponse'
+      description: List GitX webhooks
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - schema:
+            type: string
+          in: query
+          name: webhook_identifier
+      x-internal: true
+  '/v1/gitx-webhooks/{gitx-webhook}':
+    parameters:
+      - $ref: '#/components/parameters/GitXWebhookIdentifier'
+    get:
+      summary: Fetch GitX Webhook
+      responses:
+        '200':
+          $ref: '#/components/responses/GetGitXWebhookResponse'
+      operationId: get-gitx-webhook
+      description: Fetch a gitx webhook
+      x-internal: true
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    put:
+      summary: Updates a GitX Webhook
+      operationId: update-gitx-webhook
+      responses:
+        '200':
+          $ref: '#/components/responses/UpdateGitXWebhookResponse'
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      description: Update a Gitx webhook
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateGitXWebhookRequest'
+      x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    delete:
+      summary: Deletes a GitX Webhook
+      operationId: delete-gitx-webhook
+      responses:
+        '204':
+          description: OK
+      description: Deletes a gitx webhooks
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+  /v1/gitx-webhook-events:
+    get:
+      summary: Lists all the GitX Webhooks events
+      tags:
+        - GitX Webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/ListGitXWebhookEventResponse'
+      operationId: list-gitx-webhook-events
+      description: List GitX webhook Events
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - schema:
+            type: string
+          in: query
+          name: webhook_identifier
+        - schema:
+            type: integer
+            format: int64
+          in: query
+          name: event_start_time
+        - schema:
+            type: integer
+            format: int64
+          in: query
+          name: event_end_time
+      x-internal: true
 components:
   schemas:
     Service:
@@ -1782,9 +1893,58 @@ components:
       type: object
       properties:
         project:
-          $ref: '#/components/schemas/Project'
+          $ref: '#/components/schemas/ProjectRequest'
       required:
         - project
+    ProjectRequest:
+      description: Project model
+      type: object
+      x-examples:
+        example-1:
+          identifier: example_project_identifier
+          name: example-project-name
+          color: '#0063F7'
+          modules:
+            - CD
+          description: This is a example project
+          tags:
+            property1: value1
+            property2: value2
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          description: Project identifier
+          maxLength: 128
+        name:
+          type: string
+          minLength: 1
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+          description: Project name
+          maxLength: 128
+        color:
+          type: string
+          description: Project color
+        modules:
+          type: array
+          maxItems: 1024
+          description: List of modules for project
+          items:
+            $ref: '#/components/schemas/ModuleType'
+        description:
+          type: string
+          maxLength: 1024
+          description: Project description
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Project tags
+      required:
+        - identifier
+        - name
     Project:
       description: Project model
       type: object
@@ -1792,6 +1952,7 @@ components:
         example-1:
           identifier: example_project_identifier
           name: example-project-name
+          org: example_org_identifier
           color: '#0063F7'
           modules:
             - CD
@@ -1897,7 +2058,7 @@ components:
       type: object
       properties:
         project:
-          $ref: '#/components/schemas/Project'
+          $ref: '#/components/schemas/ProjectRequest'
       required:
         - project
     SecretSpec:
@@ -2525,6 +2686,104 @@ components:
           identifiers:
             - id1
             - id2
+    CreateGitXWebhookRequest:
+      title: CreateGitXWebhookRequest
+      x-stoplight:
+        id: v13e7op46ke5k
+      type: object
+      description: Contains information about the GitX webhook creation request
+      properties:
+        webhook_identifier:
+          type: string
+        repo_name:
+          type: string
+        connector_ref:
+          type: string
+        folder_paths:
+          type: array
+          items:
+            type: string
+        webhook_name:
+          type: string
+    CreateGitXWebhookResponse:
+      title: CreateGitXWebhookResponse
+      x-stoplight:
+        id: c0ggkoxt4yqr1
+      type: object
+      description: 'Contains information about the GitX webhook creation '
+      properties:
+        webhook_identifier:
+          type: string
+    UpdateGitXWebhookRequest:
+      title: UpdateGitXWebhookRequest
+      x-stoplight:
+        id: jpe7hhufol4wp
+      type: object
+      description: 'Contains information about the GitX webhook updation '
+      properties:
+        repo_name:
+          type: string
+        webhook_name:
+          type: string
+        folder_paths:
+          type: array
+          items:
+            type: string
+        is_enabled:
+          type: boolean
+        connector_ref:
+          type: string
+    UpdateGitXWebhookResponse:
+      title: UpdateGitXWebhookResponse
+      x-stoplight:
+        id: jq7cb085csk3a
+      type: object
+      description: 'Contains information about the GitX webhook updation '
+      properties:
+        webhook_identifier:
+          type: string
+    GitXWebhookResponse:
+      title: GitXWebhookResponse
+      x-stoplight:
+        id: 6c85c8b3744b5
+      type: object
+      description: 'Contains information about the GitX webhooks '
+      properties:
+        webhook_identifier:
+          type: string
+        webhook_name:
+          type: string
+        connector_ref:
+          type: string
+        repo_name:
+          type: string
+        folder_paths:
+          type: array
+          items:
+            type: string
+        is_enabled:
+          type: boolean
+        event_trigger_time:
+          type: integer
+          format: int64
+    GitXWebhookEventResponse:
+      title: GitXWebhookEventResponse
+      x-stoplight:
+        id: 3axdiau0eh30h
+      type: object
+      description: Contains information about the GitX webhook Events
+      properties:
+        author_name:
+          type: string
+        event_identifier:
+          type: string
+        webhook_identifier:
+          type: string
+        payload:
+          type: string
+        event_trigger_time:
+          type: integer
+          format: int64
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3119,6 +3378,74 @@ components:
           schema:
             type: object
             properties: {}
+    CreateGitXWebhookResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateGitXWebhookResponse'
+    UpdateGitXWebhookResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateGitXWebhookResponse'
+    GetGitXWebhookResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GitXWebhookResponse'
+    ListGitXWebhookResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/GitXWebhookResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    GitXWebhookEventResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: string
+    ListGitXWebhookEventResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/GitXWebhookEventResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   requestBodies:
     ServiceRequest:
       content:
@@ -3675,6 +4002,18 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/EulaSignRequest'
+    CreateGitXWebhookRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateGitXWebhookRequest'
+      description: Create GitX webhook request
+    UpdateGitXWebhookRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateGitXWebhookRequest'
+      description: Update GitX webhook request
   parameters:
     Page:
       name: page
@@ -3826,6 +4165,15 @@ components:
           - SECRET
           - PROJECT
       description: Determines the type of favorite entity requested.
+    AgreementType:
+      name: agreement_type
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+          - AIDA
+      description: Type of Agreements.
     ConnectorPathParam:
       name: connector
       in: path
@@ -3847,3 +4195,10 @@ components:
       schema:
         type: string
       description: Identifier field of the scoped infrastructure definition entity to be used in the selected operation.
+    GitXWebhookIdentifier:
+      name: gitx-webhook
+      in: path
+      required: true
+      schema:
+        type: string
+      description: GitX webhook identifier

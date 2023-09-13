@@ -704,6 +704,7 @@ public class MigratorUtility {
     Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
     Map<String, Object> expressions = new HashMap<>();
     List<MigrationInputSettings> settings = new ArrayList<>();
+    NGMigrationEntityType root = importDTO.getEntityType();
     if (importDTO.getInputs() != null) {
       overrides = importDTO.getInputs().getOverrides();
       defaults = importDTO.getInputs().getDefaults();
@@ -739,6 +740,7 @@ public class MigratorUtility {
         .settings(settings)
         .identifierCaseFormat(
             importDTO.getIdentifierCaseFormat() == null ? CAMEL_CASE : importDTO.getIdentifierCaseFormat())
+        .root(root)
         .build();
   }
 
@@ -849,5 +851,11 @@ public class MigratorUtility {
       }
     }
     return defaultValue;
+  }
+  public static boolean isExpression(String str) {
+    if (StringUtils.isBlank(str)) {
+      return false;
+    }
+    return str.startsWith("${") && str.endsWith("}");
   }
 }

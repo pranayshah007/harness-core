@@ -19,4 +19,5 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.CI)
 public interface CIExecutionConfigRepository extends CrudRepository<CIExecutionConfig, String> {
   Optional<CIExecutionConfig> findFirstByAccountIdentifier(String accountIdentifier);
+  void deleteAllByAccountIdentifier(String accountIdentifier);
 }

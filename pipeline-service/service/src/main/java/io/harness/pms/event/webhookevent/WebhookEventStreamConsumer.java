@@ -11,11 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM;
+import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
-import io.harness.ng.core.event.MessageListener;
 import io.harness.pms.events.base.PmsAbstractRedisConsumer;
+import io.harness.pms.events.base.PmsMessageListener;
 import io.harness.queue.QueueController;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
@@ -25,6 +26,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.cache.Cache;
@@ -34,15 +36,15 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(PIPELINE)
 public class WebhookEventStreamConsumer extends PmsAbstractRedisConsumer<WebhookEventStreamListener> {
-  private final List<MessageListener> messageListenersList;
+  private final List<PmsMessageListener> messageListenersList;
   private final QueueController queueController;
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
 
   @Inject
   public WebhookEventStreamConsumer(@Named(WEBHOOK_EVENTS_STREAM) Consumer redisConsumer,
       WebhookEventStreamListener webhookEventListener, @Named("pmsEventsCache") Cache<String, Integer> eventsCache,
-      QueueController queueController) {
-    super(redisConsumer, webhookEventListener, eventsCache, queueController);
+      QueueController queueController, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(redisConsumer, webhookEventListener, eventsCache, queueController, executorService);
     messageListenersList = new ArrayList<>();
     messageListenersList.add(webhookEventListener);
     this.queueController = queueController;

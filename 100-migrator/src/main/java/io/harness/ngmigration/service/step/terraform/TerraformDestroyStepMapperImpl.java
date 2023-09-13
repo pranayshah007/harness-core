@@ -50,6 +50,9 @@ public class TerraformDestroyStepMapperImpl extends BaseTerraformProvisionerMapp
   public AbstractStepNode getSpec(
       MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     DestroyTerraformProvisionState state = (DestroyTerraformProvisionState) getState(graphNode);
+    if (state.isRunPlanOnly()) {
+      return getStepNode(migrationContext, graphNode);
+    }
     TerraformDestroyStepNode terraformDestroyStepNode = new TerraformDestroyStepNode();
     baseSetup(graphNode, terraformDestroyStepNode, context.getIdentifierCaseFormat());
 

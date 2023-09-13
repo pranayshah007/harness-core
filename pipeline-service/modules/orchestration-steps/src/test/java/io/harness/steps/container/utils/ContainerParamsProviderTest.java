@@ -218,11 +218,12 @@ public class ContainerParamsProviderTest extends CategoryTest {
     setupAbstractions.put("accountId", ACCOUNT_ID);
     setupAbstractions.put("projectIdentifier", "projectId");
     setupAbstractions.put("orgIdentifier", "orgId");
-    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
-                                              .setExecutionUuid(generateUuid())
-                                              .setRunSequence(1)
-                                              .setPipelineIdentifier("pipeline")
-                                              .build();
-    return Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).setMetadata(executionMetadata).build();
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setRunSequence(1).setPipelineIdentifier("pipeline").build();
+    return Ambiance.newBuilder()
+        .setPlanExecutionId(generateUuid())
+        .putAllSetupAbstractions(setupAbstractions)
+        .setMetadata(executionMetadata)
+        .build();
   }
 }

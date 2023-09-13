@@ -13,6 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.execution.failure.FailureType.APPLICATION_FAILURE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
@@ -38,6 +39,7 @@ import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.execution.WaitForExecutionInputHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.facilitation.facilitator.publisher.FacilitateEventPublisher;
 import io.harness.engine.interrupts.InterruptService;
@@ -45,6 +47,7 @@ import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.advise.handlers.NextStepHandler;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
 import io.harness.engine.pms.execution.strategy.EndNodeExecutionHelper;
 import io.harness.engine.pms.resume.NodeResumeHelper;
@@ -54,7 +57,10 @@ import io.harness.event.handlers.AdviserResponseRequestProcessor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
+import io.harness.execution.NodeExecutionMetadata;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.plan.NodeType;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -65,6 +71,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.AdviserResponseRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SdkResponseEventType;
@@ -75,6 +82,7 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.resume.ResponseDataProto;
+import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -93,7 +101,10 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -119,6 +130,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private NodeAdviseHelper adviseHelper;
   @Mock private InterruptService interruptService;
   @Mock private PlanService planService;
+  @Mock private PlanExecutionService planExecutionService;
   @Mock private SdkResponseProcessorFactory processorFactory;
   @Mock private AdviserResponseRequestProcessor adviserResponseProcessor;
   @Mock private WaitForExecutionInputHelper waitForExecutionInputHelper;
@@ -128,6 +140,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private OrchestrationEngine orchestrationEngine;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
+
+  @Mock private PmsGraphStepDetailsService pmsGraphStepDetailsService;
   private static final StepType TEST_STEP_TYPE =
       StepType.newBuilder().setType("TEST_STEP_PLAN").setStepCategory(StepCategory.STEP).build();
 
@@ -235,8 +249,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                                              .build())
                             .build();
 
-    NodeExecution nodeExecution =
-        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
+    NodeExecution nodeExecution = NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).build();
 
     when(planService.fetchNode(eq(planId), eq(planNodeId))).thenReturn(planNode);
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
@@ -279,8 +292,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                                                  false, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
                                              .build())
                             .build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
+    NodeExecution nodeExecution = NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).build();
     when(planService.fetchNode(planId, planNodeId)).thenReturn(planNode);
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
     when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(nodeExecution);
@@ -328,8 +340,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .putAllSetupAbstractions(prepareInputArgs())
                             .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
                             .build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
+    NodeExecution nodeExecution = NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).build();
 
     when(planService.fetchNode(planId, planNodeId)).thenReturn(planNode);
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
@@ -370,8 +381,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .putAllSetupAbstractions(prepareInputArgs())
                             .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
                             .build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).planNode(planNode).build();
+    NodeExecution nodeExecution = NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).build();
     doThrow(new InvalidRequestException("Exception eval failure"))
         .when(pmsEngineExpressionService)
         .resolve(ambiance, stepParameters, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED, List.of());
@@ -409,6 +419,31 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
+  public void shouldTestResumeNodeExecutionWithStatusApprovalWaiting() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .putAllSetupAbstractions(prepareInputArgs())
+                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+                            .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).status(Status.APPROVAL_WAITING).build();
+    Map<String, ResponseDataProto> responseMap = ImmutableMap.of(
+        generateUuid(), ResponseDataProto.newBuilder().setResponse(ByteString.copyFromUtf8(generateUuid())).build());
+    when(nodeExecutionService.getWithFieldsIncluded(eq(nodeExecutionId), eq(NodeProjectionUtils.fieldsForResume)))
+        .thenReturn(nodeExecution);
+    when(nodeExecutionService.updateStatusWithOps(
+             eq(nodeExecutionId), eq(Status.RUNNING), eq(null), eq(EnumSet.noneOf(Status.class))))
+        .thenReturn(nodeExecution);
+    executionStrategy.resumeNodeExecution(ambiance, responseMap, false);
+    verify(planExecutionService, times(1)).calculateAndUpdateRunningStatusUnderLock(planExecutionId, null);
+    verify(resumeHelper).resume(eq(nodeExecution), eq(responseMap), eq(false));
+  }
+
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
   public void shouldTestResumeNodeExecutionWithStatusAborted() {
     String planExecutionId = generateUuid();
     String nodeExecutionId = generateUuid();
@@ -432,11 +467,17 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   public void shouldTestProcessFacilitatorResponse() {
     String planExecutionId = generateUuid();
     String nodeExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .putAllSetupAbstractions(prepareInputArgs())
-                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
-                            .build();
+    String stageNodeExecutionId = generateUuid();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(planExecutionId)
+            .putAllSetupAbstractions(prepareInputArgs())
+            .addLevels(Level.newBuilder()
+                           .setRuntimeId(stageNodeExecutionId)
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                           .build())
+            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+            .build();
 
     when(nodeExecutionService.update(eq(nodeExecutionId), any()))
         .thenReturn(NodeExecution.builder()
@@ -445,7 +486,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                         .status(Status.QUEUED)
                         .mode(ExecutionMode.ASYNC)
                         .build());
-    when(interruptService.checkInterruptsPreInvocation(eq(planExecutionId), eq(nodeExecutionId)))
+    when(interruptService.checkInterruptsPreInvocation(
+             eq(planExecutionId), eq(nodeExecutionId), eq(List.of(nodeExecutionId, stageNodeExecutionId))))
         .thenReturn(ExecutionCheck.builder().proceed(true).build());
 
     FacilitatorResponseProto facilitatorResponse =
@@ -460,11 +502,17 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   public void shouldTestProcessFacilitatorResponseWithInterrupt() {
     String planExecutionId = generateUuid();
     String nodeExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .putAllSetupAbstractions(prepareInputArgs())
-                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
-                            .build();
+    String stageNodeExecutionId = generateUuid();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(planExecutionId)
+            .putAllSetupAbstractions(prepareInputArgs())
+            .addLevels(Level.newBuilder()
+                           .setRuntimeId(stageNodeExecutionId)
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                           .build())
+            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+            .build();
 
     when(nodeExecutionService.update(eq(nodeExecutionId), any()))
         .thenReturn(NodeExecution.builder()
@@ -473,7 +521,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                         .status(Status.QUEUED)
                         .mode(ExecutionMode.ASYNC)
                         .build());
-    when(interruptService.checkInterruptsPreInvocation(eq(planExecutionId), eq(nodeExecutionId)))
+    when(interruptService.checkInterruptsPreInvocation(
+             eq(planExecutionId), eq(nodeExecutionId), eq(List.of(nodeExecutionId, stageNodeExecutionId))))
         .thenReturn(ExecutionCheck.builder().proceed(false).build());
 
     FacilitatorResponseProto facilitatorResponse =
@@ -507,7 +556,6 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     NodeExecutionBuilder nodeExecutionBuilder = NodeExecution.builder()
                                                     .uuid(nodeExecutionId)
                                                     .ambiance(ambiance)
-                                                    .planNode(planNode)
                                                     .status(Status.INTERVENTION_WAITING)
                                                     .mode(ExecutionMode.ASYNC);
 
@@ -548,7 +596,6 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
 
     NodeExecutionBuilder nodeExecutionBuilder = NodeExecution.builder()
                                                     .uuid(nodeExecutionId)
-                                                    .planNode(planNode)
                                                     .ambiance(ambiance)
                                                     .status(Status.INTERVENTION_WAITING)
                                                     .mode(ExecutionMode.ASYNC);
@@ -665,14 +712,22 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   public void testCreateNodeExecution() {
     long startTs = System.currentTimeMillis();
     String uuid = generateUuid();
+    String nodeId = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder()
                             .setPlanExecutionId(generateUuid())
                             .addLevels(Level.newBuilder().setStartTs(startTs).setRuntimeId(uuid).build())
                             .build();
-    PlanNode node = PlanNode.builder().name("PLAN_NODE").identifier("plan_node").build();
+    StepType stepType = StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build();
+    PlanNode node = PlanNode.builder()
+                        .uuid(nodeId)
+                        .name("PLAN_NODE")
+                        .identifier("plan_node")
+                        .serviceName("CD")
+                        .stepType(stepType)
+                        .group("grp")
+                        .build();
     NodeExecution nodeExecution = NodeExecution.builder()
                                       .uuid(uuid)
-                                      .planNode(node)
                                       .ambiance(ambiance)
                                       .levelCount(1)
                                       .status(Status.QUEUED)
@@ -682,12 +737,75 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .notifyId("NID")
                                       .parentId("PaID")
                                       .previousId("PrID")
+                                      .skipGraphType(SkipType.NOOP)
+                                      .module("CD")
+                                      .stepType(stepType)
+                                      .nodeId(nodeId)
+                                      .group("grp")
+                                      .nodeType(node.getNodeType().name())
+                                      .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+                                      .skipExpressionChain(false)
                                       .build();
     when(nodeExecutionService.save(any(NodeExecution.class))).thenReturn(nodeExecution);
     NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node, null, "NID", "PaID", "PrID");
     assertEquals(nodeExecution1, nodeExecution);
     ArgumentCaptor<NodeExecution> mCaptor = ArgumentCaptor.forClass(NodeExecution.class);
     verify(nodeExecutionService).save(mCaptor.capture());
+    verify(pmsGraphStepDetailsService)
+        .saveNodeExecutionInfo(nodeExecution1.getUuid(), ambiance.getPlanExecutionId(), null);
+    assertThat(mCaptor.getValue().toString()).isEqualTo(nodeExecution.toString());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testCreateNodeExecutionWithMetadata() {
+    long startTs = System.currentTimeMillis();
+    String uuid = generateUuid();
+    String nodeId = generateUuid();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(generateUuid())
+                            .addLevels(Level.newBuilder().setStartTs(startTs).setRuntimeId(uuid).build())
+                            .build();
+    StepType stepType = StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build();
+    PlanNode node = PlanNode.builder()
+                        .uuid(nodeId)
+                        .name("PLAN_NODE")
+                        .identifier("plan_node")
+                        .serviceName("CD")
+                        .stepType(stepType)
+                        .group("grp")
+                        .build();
+    NodeExecution nodeExecution = NodeExecution.builder()
+                                      .uuid(uuid)
+                                      .ambiance(ambiance)
+                                      .levelCount(1)
+                                      .status(Status.QUEUED)
+                                      .unitProgresses(new ArrayList<>())
+                                      .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
+                                      .identifier(AmbianceUtils.modifyIdentifier(ambiance, node.getIdentifier()))
+                                      .notifyId("NID")
+                                      .parentId("PaID")
+                                      .previousId("PrID")
+                                      .skipGraphType(SkipType.NOOP)
+                                      .module("CD")
+                                      .stepType(stepType)
+                                      .nodeId(nodeId)
+                                      .group("grp")
+                                      .skipExpressionChain(false)
+                                      .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+                                      .nodeType(NodeType.PLAN_NODE.name())
+                                      .build();
+    when(nodeExecutionService.save(any(NodeExecution.class))).thenReturn(nodeExecution);
+    NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node,
+        NodeExecutionMetadata.builder().strategyMetadata(StrategyMetadata.newBuilder().build()).build(), "NID", "PaID",
+        "PrID");
+    assertEquals(nodeExecution1, nodeExecution);
+    ArgumentCaptor<NodeExecution> mCaptor = ArgumentCaptor.forClass(NodeExecution.class);
+    verify(nodeExecutionService).save(mCaptor.capture());
+    verify(pmsGraphStepDetailsService)
+        .saveNodeExecutionInfo(
+            nodeExecution1.getUuid(), ambiance.getPlanExecutionId(), StrategyMetadata.newBuilder().build());
     assertThat(mCaptor.getValue().toString()).isEqualTo(nodeExecution.toString());
   }
 
@@ -842,6 +960,32 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     executionStrategy.resolveParameters(ambiance, planNode);
     verify(pmsEngineExpressionService, times(1))
         .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode(), List.of());
+    verify(executionStrategy, times(1)).getResolvedStepInputs(any(), any());
+    verify(pmsGraphStepDetailsService, times(1)).addStepInputs(any(), any());
     verify(nodeExecutionService, times(1)).updateV2(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testGetResolveStepInputs() {
+    Map<String, Object> stepInputs = new LinkedHashMap<>();
+    stepInputs.put("__recast", "a.b.c");
+    stepInputs.put("a", "b");
+    Map<String, Object> nestedMap = new LinkedHashMap<>();
+    nestedMap.put("d", "e");
+    nestedMap.put("g", "h");
+    stepInputs.put("c", nestedMap);
+
+    PmsStepParameters originalStepParams = PmsStepParameters.parse(stepInputs);
+
+    PmsStepParameters resolvedStepInputs =
+        executionStrategy.getResolvedStepInputs(new LinkedList<>(Arrays.asList("a", "c.d")), originalStepParams);
+    assertThat(resolvedStepInputs).isNotNull();
+    assertThat(resolvedStepInputs.size()).isEqualTo(2);
+    // Check originalStepParams are not changed
+    assertThat(originalStepParams).isNotNull();
+    assertThat(originalStepParams.size()).isEqualTo(3);
+    assertThat(((Map) originalStepParams.get("c")).containsKey("d")).isTrue();
   }
 }

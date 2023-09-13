@@ -107,7 +107,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       references.addAll(state.getEnvironmentVariables()
                             .stream()
                             .filter(item -> ENCRYPTED_TEXT.name().equals(item.getValueType()))
-                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue()).build())
+                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue().trim()).build())
                             .collect(Collectors.toList()));
     }
 
@@ -115,7 +115,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       references.addAll(state.getVariables()
                             .stream()
                             .filter(item -> ENCRYPTED_TEXT.name().equals(item.getValueType()))
-                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue()).build())
+                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue().trim()).build())
                             .collect(Collectors.toList()));
     }
 
@@ -123,7 +123,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       references.addAll(state.getBackendConfigs()
                             .stream()
                             .filter(item -> ENCRYPTED_TEXT.name().equals(item.getValueType()))
-                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue()).build())
+                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue().trim()).build())
                             .collect(Collectors.toList()));
     }
 
@@ -131,7 +131,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       references.addAll(state.getBackendConfigs()
                             .stream()
                             .filter(item -> ENCRYPTED_TEXT.name().equals(item.getValueType()))
-                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue()).build())
+                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue().trim()).build())
                             .collect(Collectors.toList()));
     }
 
@@ -148,7 +148,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
                            .filter(variable -> "ENCRYPTED_TEXT".equals(variable.getValueType()))
                            .map(variable
                                -> StringNGVariable.builder()
-                                      .name(variable.getName())
+                                      .name(variable.getName().trim())
                                       .value(ParameterField.createValueField(String.format(SECRET_FORMAT,
                                           MigratorUtility.getSecretRef(migratedEntities, variable.getValue())
                                               .toSecretRefStringValue())))
@@ -160,7 +160,7 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
                            .filter(variable -> !"ENCRYPTED_TEXT".equals(variable.getValueType()))
                            .map(variable
                                -> StringNGVariable.builder()
-                                      .name(variable.getName())
+                                      .name(variable.getName().trim())
                                       .value(ParameterField.createValueField(
                                           StringUtils.isNotBlank(variable.getValue()) ? variable.getValue() : ""))
                                       .type(NGVariableType.STRING)

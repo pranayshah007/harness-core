@@ -13,11 +13,15 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ngtriggers.beans.dto.NGTriggersFilterPropertiesDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
@@ -98,9 +102,43 @@ public class TriggerFilterHelperTest extends CategoryTest {
     expected.and(NGTriggerEntityKeys.deleted).is(false);
     expected.and(NGTriggerEntityKeys.type).is(NGTriggerType.WEBHOOK);
     assertThat(TriggerFilterHelper
-                   .createCriteriaForGetList("acc", "org", "proj", "pipeline", NGTriggerType.WEBHOOK, null, false)
+                   .createCriteriaForGetList(
+                       "acc", "org", "proj", "pipeline", NGTriggerType.WEBHOOK, null, false, "", null, null)
                    .toString())
         .isEqualTo(expected.toString());
+
+    // when we add filter properties
+    String name = "name";
+    NGTriggersFilterPropertiesDTO ngTriggersFilterPropertiesDTO =
+        NGTriggersFilterPropertiesDTO.builder().triggerNames(Collections.singletonList(name)).build();
+    Criteria criteria = TriggerFilterHelper.createCriteriaForGetList(
+        "acc", "org", "proj", "pipeline", null, null, false, "", ngTriggersFilterPropertiesDTO, null);
+    assertEquals(criteria.getCriteriaObject().toString(),
+        "Document{{accountId=acc, orgIdentifier=org, projectIdentifier=proj, targetIdentifier=pipeline, deleted=false, $and=[Document{{$or=[Document{{name=name}}]}}]}}");
+
+    NGTriggersFilterPropertiesDTO finalNgTriggersFilterPropertiesDTO = ngTriggersFilterPropertiesDTO;
+    assertThatThrownBy(()
+                           -> TriggerFilterHelper.createCriteriaForGetList("acc", "org", "proj", "pipeline", null, null,
+                               false, "abc", finalNgTriggersFilterPropertiesDTO, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Can not apply both filter properties and saved filter together");
+
+    String identifier = "identifier";
+    ngTriggersFilterPropertiesDTO =
+        NGTriggersFilterPropertiesDTO.builder().triggerIdentifiers(Collections.singletonList(identifier)).build();
+    Criteria criteria2 = TriggerFilterHelper.createCriteriaForGetList(
+        "acc", "org", "proj", "pipeline", null, null, false, "", ngTriggersFilterPropertiesDTO, null);
+    assertThat(criteria2.getCriteriaObject().toString())
+        .isEqualTo(
+            "Document{{accountId=acc, orgIdentifier=org, projectIdentifier=proj, targetIdentifier=pipeline, deleted=false, identifier=Document{{$in=[identifier]}}}}");
+
+    NGTriggerType ngTriggerType = NGTriggerType.WEBHOOK;
+    ngTriggersFilterPropertiesDTO =
+        NGTriggersFilterPropertiesDTO.builder().triggerTypes(Collections.singletonList(NGTriggerType.WEBHOOK)).build();
+    Criteria criteria3 = TriggerFilterHelper.createCriteriaForGetList(
+        "acc", "org", "proj", "pipeline", null, null, false, null, ngTriggersFilterPropertiesDTO, null);
+    assertEquals(criteria3.getCriteriaObject().toString(),
+        "Document{{accountId=acc, orgIdentifier=org, projectIdentifier=proj, targetIdentifier=pipeline, deleted=false, type=Document{{$in=[WEBHOOK]}}}}");
   }
 
   @Test

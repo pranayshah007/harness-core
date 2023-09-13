@@ -102,4 +102,6 @@ public interface AuditService extends EntityCrudOperationObserver {
   PageResponse<AuditHeader> listUsingFilter(String accountId, String filter, String limit, String offset);
 
   String getAuditHeaderIdFromGlobalContext() throws INVALID_ACTIVITY;
+
+  void deleteStaleAuditRecords(long retentionMillis);
 }

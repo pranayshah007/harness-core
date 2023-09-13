@@ -64,6 +64,7 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   @Builder.Default Boolean useVaultAgent = Boolean.FALSE;
   @Setter @NonFinal Long renewedAt;
   @Setter @NonFinal Long lastTokenLookupAt;
+  @Setter @NonFinal @Builder.Default Boolean renewalPaused = Boolean.FALSE;
 
   @Builder.Default Boolean useAwsIam = Boolean.FALSE;
   String awsRegion;

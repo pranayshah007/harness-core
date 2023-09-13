@@ -54,6 +54,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
@@ -216,7 +217,7 @@ public class TerraformCloudRunStepTest extends CategoryTest {
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(terraformCloudRunStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(terraformCloudRunStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

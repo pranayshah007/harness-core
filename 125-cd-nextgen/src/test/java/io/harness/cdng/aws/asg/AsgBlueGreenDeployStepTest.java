@@ -8,8 +8,10 @@
 package io.harness.cdng.aws.asg;
 
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,6 +39,7 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResult;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -336,5 +339,107 @@ public class AsgBlueGreenDeployStepTest extends CategoryTest {
     assertThat(outcomeMap.get(OutcomeExpressionConstants.OUTPUT)).isInstanceOf(AsgBlueGreenDeployOutcome.class);
     assertThat(outcomeMap.get(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME))
         .isInstanceOf(DeploymentInfoOutcome.class);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getLoadBalancersTest() {
+    // all fields missing
+    AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters =
+        AsgBlueGreenDeployStepParameters.infoBuilder().build();
+    List<AsgLoadBalancerConfig> ret = asgBlueGreenDeployStep.getLoadBalancers(asgBlueGreenDeployStepParameters);
+    assertThat(ret).isNull();
+
+    // not all fields present (stageListenerRuleArn missing)
+    AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters2 =
+        AsgBlueGreenDeployStepParameters.infoBuilder()
+            .loadBalancer(ParameterField.createValueField("loadBalancer"))
+            .prodListener(ParameterField.createValueField("prodListener"))
+            .prodListenerRuleArn(ParameterField.createValueField("prodListenerRuleArn"))
+            .stageListener(ParameterField.createValueField("stageListener"))
+            .build();
+
+    assertThatThrownBy(() -> asgBlueGreenDeployStep.getLoadBalancers(asgBlueGreenDeployStepParameters2))
+        .isInstanceOf(InvalidRequestException.class);
+
+    asgBlueGreenDeployStepParameters =
+        AsgBlueGreenDeployStepParameters.infoBuilder()
+            .loadBalancer(ParameterField.createValueField("loadBalancer"))
+            .prodListener(ParameterField.createValueField("prodListener"))
+            .prodListenerRuleArn(ParameterField.createValueField("prodListenerRuleArn"))
+            .stageListener(ParameterField.createValueField("stageListener"))
+            .stageListenerRuleArn(ParameterField.createValueField("stageListenerRuleArn"))
+            .build();
+
+    ret = asgBlueGreenDeployStep.getLoadBalancers(asgBlueGreenDeployStepParameters);
+    assertThat(ret.size()).isEqualTo(1);
+    assertThat(ret.get(0).getLoadBalancer()).isEqualTo("loadBalancer");
+    assertThat(ret.get(0).getProdListenerArn()).isEqualTo("prodListener");
+    assertThat(ret.get(0).getProdListenerRuleArn()).isEqualTo("prodListenerRuleArn");
+    assertThat(ret.get(0).getStageListenerArn()).isEqualTo("stageListener");
+    assertThat(ret.get(0).getStageListenerRuleArn()).isEqualTo("stageListenerRuleArn");
+
+    // loadBalancers of type AwsAsgLoadBalancerConfigYaml provided
+    asgBlueGreenDeployStepParameters =
+        AsgBlueGreenDeployStepParameters.infoBuilder()
+            .loadBalancers(List.of(AwsAsgLoadBalancerConfigYaml.builder()
+                                       .loadBalancer(ParameterField.createValueField("loadBalancer"))
+                                       .prodListener(ParameterField.createValueField("prodListener"))
+                                       .prodListenerRuleArn(ParameterField.createValueField("prodListenerRuleArn"))
+                                       .stageListener(ParameterField.createValueField("stageListener"))
+                                       .stageListenerRuleArn(ParameterField.createValueField("stageListenerRuleArn"))
+                                       .build()))
+            .build();
+
+    ret = asgBlueGreenDeployStep.getLoadBalancers(asgBlueGreenDeployStepParameters);
+    assertThat(ret.size()).isEqualTo(1);
+    assertThat(ret.get(0).getLoadBalancer()).isEqualTo("loadBalancer");
+    assertThat(ret.get(0).getProdListenerArn()).isEqualTo("prodListener");
+    assertThat(ret.get(0).getProdListenerRuleArn()).isEqualTo("prodListenerRuleArn");
+    assertThat(ret.get(0).getStageListenerArn()).isEqualTo("stageListener");
+    assertThat(ret.get(0).getStageListenerRuleArn()).isEqualTo("stageListenerRuleArn");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getLoadBalancerConfigsForOutputTest() {
+    List<AwsAsgLoadBalancerConfigYaml> ret =
+        asgBlueGreenDeployStep.getLoadBalancerConfigsForOutput(Collections.EMPTY_LIST);
+    assertThat(ret).isNull();
+
+    String loadBalancer = "loadBalancer";
+    String prodListenerArn = "prodListenerArn";
+    String prodListenerRuleArn = "prodListenerRuleArn";
+    String stageListenerArn = "stageListenerArn";
+    String stageListenerRuleArn = "stageListenerRuleArn";
+    List<String> prodTargetGroupArnsList = List.of("p_gr1", "p_gr2");
+    List<String> stageTargetGroupArnsList = List.of("s_gr1", "s_gr2");
+
+    AsgLoadBalancerConfig asgLoadBalancerConfig = AsgLoadBalancerConfig.builder()
+                                                      .loadBalancer(loadBalancer)
+                                                      .prodListenerArn(prodListenerArn)
+                                                      .prodListenerRuleArn(prodListenerRuleArn)
+                                                      .prodTargetGroupArnsList(prodTargetGroupArnsList)
+                                                      .stageListenerArn(stageListenerArn)
+                                                      .stageListenerRuleArn(stageListenerRuleArn)
+                                                      .stageTargetGroupArnsList(stageTargetGroupArnsList)
+                                                      .build();
+    List<AsgLoadBalancerConfig> loadBalancers = Arrays.asList(asgLoadBalancerConfig);
+
+    ret = asgBlueGreenDeployStep.getLoadBalancerConfigsForOutput(loadBalancers);
+    assertThat(ret.size()).isEqualTo(loadBalancers.size());
+    AwsAsgLoadBalancerConfigYaml awsAsgLoadBalancerConfigYaml = ret.get(0);
+    assertThat(awsAsgLoadBalancerConfigYaml.getLoadBalancer().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getLoadBalancer());
+    assertThat(awsAsgLoadBalancerConfigYaml.getProdListener().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getProdListenerArn());
+    assertThat(awsAsgLoadBalancerConfigYaml.getProdListenerRuleArn().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getProdListenerRuleArn());
+    assertThat(awsAsgLoadBalancerConfigYaml.getStageListener().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getStageListenerArn());
+    assertThat(awsAsgLoadBalancerConfigYaml.getStageListenerRuleArn().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getStageListenerRuleArn());
   }
 }

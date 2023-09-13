@@ -6,6 +6,7 @@
  */
 
 package io.harness.eventsframework;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.CodePulse;
@@ -32,12 +33,14 @@ public final class EventsFrameworkConstants {
   public static final String POLLING_EVENTS_STREAM = "polling_events_stream";
   public static final String TRIGGER_EXECUTION_EVENTS_STREAM = "trigger_execution_events_stream";
   public static final String GIT_PUSH_EVENT_STREAM = "git_push_event_stream";
+  public static final String GITX_WEBHOOK_PUSH_EVENT_STREAM = "gitx_webhook_push_event_stream";
   public static final String GIT_PR_EVENT_STREAM = "git_pr_event_stream";
   public static final String WEBHOOK_PUSH_EVENT = "WebhookPushEvent";
   public static final String WEBHOOK_BRANCH_HOOK_EVENT = "WebhookBranchHookEvent";
   public static final String WEBHOOK_EVENT = "WebhookEvent";
   public static final String GIT_BRANCH_HOOK_EVENT_STREAM = "git_branch_hook_event_stream";
   public static final String USERMEMBERSHIP = "usermembership";
+  public static final String MODULE_LICENSE = "modulelicense";
   public static final String ORCHESTRATION_LOG = "orchestration_log";
   public static final String NG_ACCOUNT_SETUP = "ng_account_setup";
   public static final String INSTANCE_SYNC_PERPETUAL_TASK_RESPONSE_STREAM = "instance_sync_perpetual_task_stream";
@@ -144,6 +147,9 @@ public final class EventsFrameworkConstants {
   public static final String SRM_STATEMACHINE_LOCK = "srm_statemachine_lock";
   public static final int SRM_STATEMACHINE_LOCK_TIMEOUT = 10;
   public static final int SRM_STATEMACHINE_LOCK_WAIT_TIMEOUT = 5;
+  public static final String SRM_SLO_CRUD_LOCK = "srm_slo_crud_lock_";
+  public static final int SRM_SLO_CRUD_LOCK_TIMEOUT = 5;
+  public static final int SRM_SLO_CRUD_LOCK_WAIT_TIMEOUT = 5;
 
   public static final String CUSTOM_CHANGE_EVENT = "srm_custom_change";
 
@@ -151,6 +157,7 @@ public final class EventsFrameworkConstants {
   public static final int CUSTOM_CHANGE_EVENT_MAX_TOPIC_SIZE = 5000;
   public static final int DEFAULT_TOPIC_SIZE = 10000;
   public static final int USER_MEMBERSHIP_TOPIC_SIZE = 100000;
+  public static final int MODULE_LICENSE_TOPIC_SIZE = 100000;
   public static final int ENTITY_CRUD_MAX_TOPIC_SIZE = 100000;
   public static final int SETUP_USAGE_MAX_TOPIC_SIZE = 10000;
   public static final int ENTITY_ACTIVITY_MAX_TOPIC_SIZE = 10000;

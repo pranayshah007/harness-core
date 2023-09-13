@@ -5,17 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.CIExecutionRepository;
 
 import com.google.inject.Inject;
+import java.util.List;
 
 public class QueueExecutionUtils {
   @Inject private CIExecutionRepository ciExecutionRepository;
@@ -36,8 +37,8 @@ public class QueueExecutionUtils {
     }
   }
 
-  public long getActiveExecutionsCount(String accountID) {
-    return ciExecutionRepository.countByAccountIdAndStatus(accountID, Status.RUNNING.toString());
+  public long getActiveExecutionsCount(String accountID, List<String> status) {
+    return ciExecutionRepository.countByAccountIdAndStatusIn(accountID, status);
   }
 
   public long getActiveMacExecutionsCount(String accountID) {

@@ -6,6 +6,7 @@
  */
 
 package io.harness.perpetualtask;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE;
@@ -47,13 +48,13 @@ import io.harness.perpetualtask.instancesync.k8s.KubernetesCloudClusterConfig;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
@@ -111,6 +112,7 @@ public class K8sInstanceSyncV2Helper {
               .namespace(namespace)
               .cluster(kubernetesCloudClusterConfig.getClusterName())
               .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
+              .addRegionalParam(kubernetesCloudClusterConfig.isAddRegionalParam())
               .build();
 
         case RANCHER:
@@ -148,8 +150,8 @@ public class K8sInstanceSyncV2Helper {
     long timeoutMillis =
         K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT);
 
-    List<ContainerInfo> containerInfoList = k8sTaskHelperBase.getContainerInfos(
-        requestData.getKubernetesConfig(), requestData.getReleaseName(), requestData.getNamespace(), timeoutMillis);
+    List<ContainerInfo> containerInfoList = k8sTaskHelperBase.getContainerInfos(requestData.getKubernetesConfig(),
+        requestData.getReleaseName(), requestData.getNamespace(), Collections.emptyMap(), timeoutMillis);
     return K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
         containerInfoList, requestData.getHelmChartInfo(), HelmVersion.valueOf(requestData.getHelmVersion()));
   }

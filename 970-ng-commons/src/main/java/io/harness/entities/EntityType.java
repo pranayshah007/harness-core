@@ -461,7 +461,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TERRAFORM_PLUGIN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLUGIN, IdentifierRef.class,
       EntityYamlRootNames.IACM_TERRAFORM_PLUGIN),
-
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_APPROVAL(
       ModuleType.IACM, EntityTypeConstants.IACM_APPROVAL, IdentifierRef.class, EntityYamlRootNames.IACM_APPROVAL),
@@ -649,7 +648,12 @@ public enum EntityType {
   IDP_CHECK(ModuleType.IDP, EntityTypeConstants.IDP_CHECK, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.AWS_CDK_ROLLBACK)
   AWS_CDK_ROLLBACK(
-      ModuleType.CD, EntityTypeConstants.AWS_CDK_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_ROLLBACK);
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.SLSA_VERIFICATION)
+  SLSA_VERIFICATION(ModuleType.CI, EntityTypeConstants.SLSA_VERIFICATION, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.UPDATE_GITOPS_APP)
+  UPDATE_GITOPS_APP(
+      ModuleType.CD, EntityTypeConstants.UPDATE_GITOPS_APP, IdentifierRef.class, EntityYamlRootNames.UPDATE_GITOPS_APP);
 
   private final ModuleType moduleType;
   String yamlName;

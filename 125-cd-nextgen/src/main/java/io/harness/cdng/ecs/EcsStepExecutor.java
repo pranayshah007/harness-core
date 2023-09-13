@@ -14,15 +14,15 @@ import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 
 @OwnedBy(CDP)
 public interface EcsStepExecutor {
-  TaskChainResponse executeEcsTask(Ambiance ambiance, StepElementParameters stepParameters,
+  TaskChainResponse executeEcsTask(Ambiance ambiance, StepBaseParameters stepParameters,
       EcsExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
       EcsStepExecutorParams ecsStepExecutorParams);
-  TaskChainResponse executeEcsPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+  TaskChainResponse executeEcsPrepareRollbackTask(Ambiance ambiance, StepBaseParameters stepParameters,
       EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData, UnitProgressData unitProgressData);
 }

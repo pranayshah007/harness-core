@@ -20,7 +20,6 @@ import io.harness.cdng.pipeline.executions.CdngOrchestrationEventMessageListener
 import io.harness.eventsframework.consumer.Message;
 import io.harness.rule.Owner;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,8 +38,8 @@ public class CdngOrchestrationEventMessageListenerTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void shouldReturnTrueForCDEvent() {
-    CdngOrchestrationEventMessageListener messageListener = Mockito.spy(
-        new CdngOrchestrationEventMessageListener("cd", eventHandler, MoreExecutors.newDirectExecutorService()));
+    CdngOrchestrationEventMessageListener messageListener =
+        Mockito.spy(new CdngOrchestrationEventMessageListener("cd", eventHandler));
 
     Boolean listenerProcessable = messageListener.isProcessable(
         Message.newBuilder()
@@ -54,8 +53,8 @@ public class CdngOrchestrationEventMessageListenerTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void shouldReturnTrueForPMSEvent() {
-    CdngOrchestrationEventMessageListener messageListener = Mockito.spy(
-        new CdngOrchestrationEventMessageListener("cd", eventHandler, MoreExecutors.newDirectExecutorService()));
+    CdngOrchestrationEventMessageListener messageListener =
+        Mockito.spy(new CdngOrchestrationEventMessageListener("cd", eventHandler));
 
     Boolean listenerProcessable = messageListener.isProcessable(
         Message.newBuilder()
@@ -69,8 +68,8 @@ public class CdngOrchestrationEventMessageListenerTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void shouldReturnFalseIfServiceIsNotCdOrPms() {
-    CdngOrchestrationEventMessageListener messageListener = Mockito.spy(
-        new CdngOrchestrationEventMessageListener("cd", eventHandler, MoreExecutors.newDirectExecutorService()));
+    CdngOrchestrationEventMessageListener messageListener =
+        Mockito.spy(new CdngOrchestrationEventMessageListener("cd", eventHandler));
 
     Boolean listenerProcessable = messageListener.isProcessable(
         Message.newBuilder()

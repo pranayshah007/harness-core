@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.CommitDetails;
 import io.harness.beans.execution.ExecutionSource;
@@ -34,9 +35,9 @@ import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput.CodeBaseCommit;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.StageDetails;
-import io.harness.ci.buildstate.CodebaseUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.utils.WebhookTriggerProcessorUtils;
+import io.harness.ci.execution.buildstate.CodebaseUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.utils.WebhookTriggerProcessorUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -61,11 +62,13 @@ import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.FindPRResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
+import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -94,6 +97,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
 
   @Inject private ScmGitRefManager scmGitRefManager;
 
+  @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
+
   @Override
   public Class<CodeBaseTaskStepParameters> getStepParametersClass() {
     return CodeBaseTaskStepParameters.class;
@@ -106,6 +111,17 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     if (executionSource.getType() != MANUAL) {
       throw new CIStageExecutionException("{} type is not supported in codebase delegate task for scm api operation");
     }
+
+    String runTime = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String stageRuntimeId = AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
+
+    stepExecutionParametersRepository.save(StepExecutionParameters.builder()
+                                               .accountId(accountId)
+                                               .runTimeId(runTime)
+                                               .stageRunTimeId(stageRuntimeId)
+                                               .stepParameters(RecastOrchestrationUtils.toJson(stepParameters))
+                                               .build());
 
     ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(AmbianceUtils.getNgAccess(ambiance),
@@ -156,6 +172,18 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   public StepResponse executeSync(Ambiance ambiance, CodeBaseTaskStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     ExecutionSource executionSource = getExecutionSource(ambiance, stepParameters.getExecutionSource());
+
+    String runTime = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String stageRuntimeId = AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
+
+    stepExecutionParametersRepository.save(StepExecutionParameters.builder()
+                                               .accountId(accountId)
+                                               .runTimeId(runTime)
+                                               .stageRunTimeId(stageRuntimeId)
+                                               .stepParameters(RecastOrchestrationUtils.toJson(stepParameters))
+                                               .build());
+
     CodebaseSweepingOutput codebaseSweepingOutput = null;
     String connectorRef = RunTimeInputHandler.resolveStringParameterV2(
         "connectorRef", STEP_TYPE.getType(), ambiance.getStageExecutionId(), stepParameters.getConnectorRef(), false);

@@ -21,6 +21,7 @@ import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,25 +54,29 @@ public class DeploymentReconRecordRepository {
         return null;
       }
       deploymentReconRecord = iterator.next();
-      deploymentReconRecordCache.put(
-          String.join("$$", deploymentReconRecord.getAccountId(), deploymentReconRecord.getEntityClass()),
-          deploymentReconRecord);
+      updateDeploymentReconCache(deploymentReconRecord);
       return deploymentReconRecord;
     }
   }
 
   public String saveDeploymentReconRecord(@NotNull DeploymentReconRecord deploymentReconRecord) {
-    deploymentReconRecordCache.put(
-        String.join("$$", deploymentReconRecord.getAccountId(), deploymentReconRecord.getEntityClass()),
-        deploymentReconRecord);
+    updateDeploymentReconCache(deploymentReconRecord);
     return persistence.save(deploymentReconRecord);
   }
 
   public void updateDeploymentReconRecord(
       @NotNull DeploymentReconRecord deploymentReconRecord, UpdateOperations updateOperations) {
-    deploymentReconRecordCache.put(
-        String.join("$$", deploymentReconRecord.getAccountId(), deploymentReconRecord.getEntityClass()),
-        deploymentReconRecord);
+    updateDeploymentReconCache(deploymentReconRecord);
     persistence.update(deploymentReconRecord, updateOperations);
+  }
+
+  private void updateDeploymentReconCache(DeploymentReconRecord deploymentReconRecord) {
+    try {
+      deploymentReconRecordCache.put(
+          String.join("$$", deploymentReconRecord.getAccountId(), deploymentReconRecord.getEntityClass()),
+          deploymentReconRecord);
+    } catch (CacheException e) {
+      log.error("Unable to set deployment recon record data into cache", e);
+    }
   }
 }

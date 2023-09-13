@@ -7,6 +7,9 @@
 package io.harness.idp.configmanager.service;
 
 import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
+import static io.harness.idp.common.Constants.COMPLIANCE_ENV;
+import static io.harness.idp.common.Constants.PRE_QA_ENV;
+import static io.harness.idp.common.Constants.QA_ENV;
 
 import static java.lang.String.format;
 
@@ -405,11 +408,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private String getBaseAppConfigPath() {
     switch (env) {
-      case "qa":
+      case QA_ENV:
         return BASE_APP_CONFIG_PATH_QA;
-      case "stress":
+      case PRE_QA_ENV:
         return BASE_APP_CONFIG_PATH_PRE_QA;
-      case "compliance":
+      case COMPLIANCE_ENV:
         return BASE_APP_CONFIG_PATH_COMPLIANCE;
       default:
         return BASE_APP_CONFIG_PATH;

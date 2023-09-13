@@ -693,33 +693,6 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
     assertNotNull(response.getResolvedEnvVariables());
   }
 
-  @Test(expected = RuntimeException.class)
-  @Owner(developers = VIKYATH_HAREKAL)
-  @Category(UnitTests.class)
-  public void testResolveSecretsFailAfterRetry() {
-    mockAccountNamespaceMapping();
-
-    BackstageEnvSecretVariable secret = new BackstageEnvSecretVariable();
-    secret.envName(TEST_ENV_NAME2);
-    secret.setHarnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
-    secret.type(BackstageEnvVariable.TypeEnum.SECRET);
-    BackstageEnvVariableEntity secretEntity =
-        mapBinder.get(BackstageEnvVariableType.SECRET).fromDto(secret, TEST_ACCOUNT_IDENTIFIER);
-
-    DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder().build();
-    decryptedSecretValue.setDecryptedValue(TEST_DECRYPTED_VALUE);
-    InvalidRequestException exception = new InvalidRequestException(String.format(
-        "Invalid request: Secret with identifier %s does not exist in this scope", TEST_SECRET_IDENTIFIER));
-    when(ngSecretService.getDecryptedSecretValue(TEST_ACCOUNT_IDENTIFIER, null, null, TEST_SECRET_IDENTIFIER))
-        .thenThrow(exception)
-        .thenThrow(exception)
-        .thenThrow(exception);
-    when(backstageEnvVariableRepository.findByAccountIdentifier(TEST_ACCOUNT_IDENTIFIER))
-        .thenReturn(Collections.singletonList(secretEntity));
-
-    backstageEnvVariableService.resolveSecrets(TEST_ACCOUNT_IDENTIFIER, TEST_NAMESPACE);
-  }
-
   @Test(expected = InvalidRequestException.class)
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)

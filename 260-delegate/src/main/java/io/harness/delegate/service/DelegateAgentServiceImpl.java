@@ -838,7 +838,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       requestBuilder.header("accountId", this.delegateConfiguration.getAccountId());
       final String agent = "delegate/" + this.versionInfoManager.getVersionInfo().getVersion();
       requestBuilder.header("User-Agent", agent);
-      requestBuilder.header("delegateId", DelegateAgentCommonVariables.getDelegateId());
+      requestBuilder.header("delegateId", delegateId);
 
       return requestBuilder;
     } catch (URISyntaxException e) {

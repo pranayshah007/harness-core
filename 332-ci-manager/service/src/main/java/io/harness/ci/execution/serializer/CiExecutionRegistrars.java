@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer;
+package io.harness.ci.execution.serializer;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ci.serializer.kryo.CIExecutionKryoRegistrar;
-import io.harness.ci.serializer.morphia.CIExecutionMorphiaRegistrar;
+import io.harness.ci.execution.serializer.kryo.CIExecutionKryoRegistrar;
+import io.harness.ci.execution.serializer.morphia.CIExecutionMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.ApiServicesRegistrars;
 import io.harness.serializer.CiBeansRegistrars;

@@ -8,6 +8,7 @@
 package io.harness.delegate.task.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,6 +24,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig")
 public class RancherK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   String namespace;
   String cluster;

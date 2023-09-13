@@ -34,9 +34,9 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.MoreExecutors;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.SneakyThrows;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
@@ -85,18 +85,14 @@ public class PmsAbstractMessageListenerTest extends PmsCommonsTestBase {
     assertThat(processable).isFalse();
   }
 
+  @SneakyThrows
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestExtractEntity() {
     NoopPmsMessageListener noopListener = new NoopPmsMessageListener("CD", new NoopPmsEventHandler());
-    InterruptEvent event = noopListener.extractEntity(
-        Message.newBuilder()
-            .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
-                            .putMetadata(PmsEventFrameworkConstants.SERVICE_NAME, "CD")
-                            .setData(InterruptEvent.newBuilder().setType(InterruptType.ABORT).build().toByteString())
-                            .build())
-            .build());
+    InterruptEvent event =
+        noopListener.extractEntity(InterruptEvent.newBuilder().setType(InterruptType.ABORT).build().toByteString());
     assertThat(event).isNotNull();
     assertThat(event.getType()).isEqualTo(InterruptType.ABORT);
   }
@@ -105,15 +101,18 @@ public class PmsAbstractMessageListenerTest extends PmsCommonsTestBase {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void shouldTestHandleMessageWithoutAmbiance() {
-    NoopPmsMessageListener noopListener = new NoopPmsMessageListener(
-        "RANDOM_SERVICE", new NoopPmsEventHandler(), MoreExecutors.newDirectExecutorService());
+    NoopPmsEventHandler eventHandler = new NoopPmsEventHandler();
+    on(eventHandler).set("pmsGitSyncHelper", pmsGitSyncHelper);
+    on(eventHandler).set("eventMonitoringService", eventMonitoringService);
+    NoopPmsMessageListener noopListener = new NoopPmsMessageListener("RANDOM_SERVICE", eventHandler);
     boolean handled = noopListener.handleMessage(
         Message.newBuilder()
             .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
                             .putMetadata(PmsEventFrameworkConstants.SERVICE_NAME, "RANDOM_SERVICE")
                             .setData(InterruptEvent.newBuilder().setType(InterruptType.ABORT).build().toByteString())
                             .build())
-            .build());
+            .build(),
+        System.currentTimeMillis());
     assertThat(handled).isTrue();
   }
 
@@ -126,8 +125,7 @@ public class PmsAbstractMessageListenerTest extends PmsCommonsTestBase {
     on(eventHandler).set("eventMonitoringService", eventMonitoringService);
     when(pmsGitSyncHelper.createGitSyncBranchContextGuard(any(), anyBoolean()))
         .thenReturn(new PmsGitSyncBranchContextGuard(null, false));
-    NoopPmsMessageListener noopListener =
-        new NoopPmsMessageListener("RANDOM_SERVICE", eventHandler, MoreExecutors.newDirectExecutorService());
+    NoopPmsMessageListener noopListener = new NoopPmsMessageListener("RANDOM_SERVICE", eventHandler);
     boolean handled = noopListener.handleMessage(
         Message.newBuilder()
             .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
@@ -138,7 +136,8 @@ public class PmsAbstractMessageListenerTest extends PmsCommonsTestBase {
                                          .build()
                                          .toByteString())
                             .build())
-            .build());
+            .build(),
+        System.currentTimeMillis());
     assertThat(handled).isTrue();
   }
 

@@ -21,7 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.category.element.UnitTests;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;

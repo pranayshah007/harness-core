@@ -18,7 +18,7 @@ import io.harness.app.beans.entities.DashboardBuildRepositoryInfo;
 import io.harness.app.beans.entities.DashboardBuildsActiveAndFailedInfo;
 import io.harness.app.beans.entities.DashboardBuildsHealthInfo;
 import io.harness.cimanager.dashboard.api.CIDashboardOverviewResource;
-import io.harness.core.ci.services.CIOverviewDashboardService;
+import io.harness.core.ci.dashboard.CIOverviewDashboardService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.dashboards.GroupBy;
 import io.harness.security.annotations.NextGenManagerAuth;

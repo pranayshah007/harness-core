@@ -6,9 +6,11 @@
  */
 
 package io.harness.execution;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.pms.execution.utils.AmbianceUtils.obtainCurrentLevel;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.CodePulse;
@@ -27,10 +29,10 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
-import io.harness.plan.Node;
 import io.harness.plan.NodeType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
@@ -55,10 +57,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
-import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.Singular;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -86,7 +85,6 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   // Immutable
   @Wither @Id @dev.morphia.annotations.Id String uuid;
   @NotNull Ambiance ambiance;
-  @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) Node planNode;
   @NotNull ExecutionMode mode;
   // Required for debugging, can be removed later
   @Wither @FdIndex @CreatedDate Long createdAt;
@@ -150,6 +148,9 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   String identifier;
   String stageFqn;
   String group;
+  Boolean skipExpressionChain;
+  List<String> levelRuntimeIdx;
+  String nodeType;
 
   public ExecutableResponse obtainLatestExecutableResponse() {
     if (isEmpty(executableResponses)) {
@@ -160,7 +161,20 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
 
   @Override
   public NodeType getNodeType() {
-    return NodeType.valueOf(AmbianceUtils.obtainNodeType(ambiance));
+    if (EmptyPredicate.isEmpty(nodeType)) {
+      return NodeType.valueOf(AmbianceUtils.obtainNodeType(ambiance));
+    }
+    return NodeType.valueOf(nodeType);
+  }
+
+  public boolean getSkipExpressionChain() {
+    if (skipExpressionChain == null) {
+      Level level = obtainCurrentLevel(ambiance);
+      if (level != null) {
+        return level.getSkipExpressionChain();
+      }
+    }
+    return Boolean.TRUE.equals(skipExpressionChain);
   }
 
   public String getPlanExecutionId() {
@@ -180,12 +194,12 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
     public static final String stepCategory = NodeExecutionKeys.stepType + "."
         + "stepCategory";
 
-    public static final String stageFqn = NodeExecutionKeys.planNode + "."
-        + "stageFqn";
-
     public static final String accountId = NodeExecutionKeys.ambiance + "."
         + "setupAbstractions"
         + "." + SetupAbstractionKeys.accountId;
+
+    public static final String planId = NodeExecutionKeys.ambiance + "."
+        + "planId";
   }
 
   public static List<MongoIndex> mongoIndexes() {
@@ -207,7 +221,6 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.oldRetry)
                  .build())
-        // Used by fetchNodeExecutionsStatusesWithoutOldRetries
         .add(CompoundMongoIndex.builder()
                  .name("planExecutionId_status_idx")
                  .field(NodeExecutionKeys.planExecutionId)
@@ -271,71 +284,6 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   }
 
   public PmsStepParameters getResolvedStepParameters() {
-    if (resolvedStepParameters != null) {
-      return PmsStepParameters.parse(
-          OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
-    }
     return resolvedParams;
-  }
-
-  @Deprecated
-  public <T extends Node> T getNode() {
-    return (T) planNode;
-  }
-
-  public String getModule() {
-    if (EmptyPredicate.isNotEmpty(module)) {
-      return module;
-    }
-    return planNode == null ? null : planNode.getServiceName();
-  }
-
-  public String getName() {
-    if (EmptyPredicate.isNotEmpty(name)) {
-      return name;
-    }
-    return planNode == null ? null : planNode.getName();
-  }
-
-  public StepType getStepType() {
-    if (stepType != null) {
-      return stepType;
-    }
-    return planNode == null ? null : planNode.getStepType();
-  }
-
-  public String getNodeId() {
-    if (EmptyPredicate.isNotEmpty(nodeId)) {
-      return nodeId;
-    }
-    return planNode == null ? null : planNode.getUuid();
-  }
-
-  public String getIdentifier() {
-    if (EmptyPredicate.isNotEmpty(identifier)) {
-      return identifier;
-    }
-    return planNode == null ? null : planNode.getIdentifier();
-  }
-
-  public String getStageFqn() {
-    if (EmptyPredicate.isNotEmpty(stageFqn)) {
-      return stageFqn;
-    }
-    return planNode == null ? null : planNode.getStageFqn();
-  }
-
-  public String getGroup() {
-    if (EmptyPredicate.isNotEmpty(group)) {
-      return group;
-    }
-    return planNode == null ? null : planNode.getGroup();
-  }
-
-  public SkipType getSkipGraphType() {
-    if (skipGraphType != null) {
-      return skipGraphType;
-    }
-    return planNode == null ? null : planNode.getSkipGraphType();
   }
 }

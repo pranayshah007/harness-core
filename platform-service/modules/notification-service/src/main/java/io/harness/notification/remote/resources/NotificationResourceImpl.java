@@ -63,7 +63,7 @@ public class NotificationResourceImpl implements NotificationResource {
   private String executeRequest(BotQuestion question) {
     try {
       Request request =
-          Request.Post("http://34.123.82.236:80/chat")
+          Request.Post(System.getenv().getOrDefault("CHATBOT_SERVICE_URL", "http://34.123.82.236:80/chat"))
               .connectTimeout(5000)
               .socketTimeout(30000)
               .addHeader("Content-Type", "application/json")

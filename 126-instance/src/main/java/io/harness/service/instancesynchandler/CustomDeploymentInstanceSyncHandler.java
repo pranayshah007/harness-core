@@ -9,11 +9,15 @@ package io.harness.service.instancesynchandler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata;
+import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
 import io.harness.dtos.InstanceDTO;
@@ -93,8 +97,6 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
           Pair.of("serverInstanceInfo", "Must be instance of CustomDeploymentServerInstanceInfo"));
     }
     return CustomDeploymentNGDeploymentInfoDTO.builder()
-        .instanceFetchScript(
-            ((CustomDeploymentServerInstanceInfo) serverInstanceInfoList.get(0)).getInstanceFetchScript())
         .infratructureKey(infrastructureOutcome.getInfrastructureKey())
         .build();
   }
@@ -104,5 +106,31 @@ public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHan
     instanceDTO.setInstanceInfoDTO(instanceInfoFromServer);
     instanceDTO.setLastDeployedAt(System.currentTimeMillis());
     return instanceDTO;
+  }
+
+  @Override
+  public DeploymentInfoDTO updateDeploymentInfoDTO(
+      DeploymentInfoDTO deploymentInfoDTO, DeploymentOutcomeMetadata deploymentOutcomeMetadata) {
+    if (isNull(deploymentOutcomeMetadata)) {
+      return deploymentInfoDTO;
+    }
+    if (!(deploymentInfoDTO instanceof CustomDeploymentNGDeploymentInfoDTO)) {
+      throw new InvalidArgumentsException(
+          Pair.of("deploymentInfoDTO", "Must be instance of CustomDeploymentNGDeploymentInfoDTO"));
+    }
+
+    if (!(deploymentOutcomeMetadata instanceof CustomDeploymentOutcomeMetadata)) {
+      throw new InvalidArgumentsException(
+          Pair.of("deploymentOutcomeMetadata", "Must be instance of CustomDeploymentOutcomeMetadata"));
+    }
+    CustomDeploymentNGDeploymentInfoDTO customDeploymentNGDeploymentInfoDTO =
+        (CustomDeploymentNGDeploymentInfoDTO) deploymentInfoDTO;
+    CustomDeploymentOutcomeMetadata customDeploymentOutcomeMetadata =
+        (CustomDeploymentOutcomeMetadata) deploymentOutcomeMetadata;
+
+    customDeploymentNGDeploymentInfoDTO.setInstanceFetchScript(
+        customDeploymentOutcomeMetadata.getInstanceFetchScript());
+    customDeploymentNGDeploymentInfoDTO.setTags(customDeploymentOutcomeMetadata.getDelegateSelectors());
+    return customDeploymentNGDeploymentInfoDTO;
   }
 }

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
@@ -46,17 +46,17 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
-import io.harness.ci.buildstate.CodebaseUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.buildstate.CodebaseUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.InfraInfoUtils;
+import io.harness.ci.execution.utils.CIVmSecretEvaluator;
+import io.harness.ci.execution.utils.HostedVmSecretResolver;
+import io.harness.ci.execution.utils.InfrastructureUtils;
+import io.harness.ci.execution.utils.ValidationUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
-import io.harness.ci.utils.CIVmSecretEvaluator;
-import io.harness.ci.utils.HostedVmSecretResolver;
-import io.harness.ci.utils.InfrastructureUtils;
-import io.harness.ci.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -150,7 +150,10 @@ public class VmInitializeTaskParamsBuilder {
         fallbackPoolIds.add(fallbackPoolId);
       }
     }
-    CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId, fallbackPoolIds);
+    boolean distributed =
+        featureFlagService.isEnabled(FeatureName.CI_DLITE_DISTRIBUTED, AmbianceUtils.getAccountId(ambiance));
+    CIVmInitializeTaskParams params =
+        getVmInitializeParams(initializeStepInfo, ambiance, poolId, fallbackPoolIds, distributed);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params, ambiance);
     List<ExecuteStepRequest> services = new ArrayList<>();
     if (isNotEmpty(params.getServiceDependencies())) {
@@ -159,8 +162,11 @@ public class VmInitializeTaskParamsBuilder {
       }
     }
 
-    DliteVmInitializeTaskParams taskParams =
-        DliteVmInitializeTaskParams.builder().setupVmRequest(setupVmRequest).services(services).build();
+    DliteVmInitializeTaskParams taskParams = DliteVmInitializeTaskParams.builder()
+                                                 .setupVmRequest(setupVmRequest)
+                                                 .services(services)
+                                                 .distributed(distributed)
+                                                 .build();
 
     hostedVmSecretResolver.resolve(ambiance, taskParams);
     return taskParams;
@@ -173,11 +179,11 @@ public class VmInitializeTaskParamsBuilder {
     vmInitializeUtils.validateDebug(infrastructure, ambiance);
     VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
     String poolId = getPoolName(vmPoolYaml);
-    return getVmInitializeParams(initializeStepInfo, ambiance, poolId, Collections.emptyList());
+    return getVmInitializeParams(initializeStepInfo, ambiance, poolId, Collections.emptyList(), false);
   }
 
-  public CIVmInitializeTaskParams getVmInitializeParams(
-      InitializeStepInfo initializeStepInfo, Ambiance ambiance, String poolId, List<String> fallbackPoolIds) {
+  public CIVmInitializeTaskParams getVmInitializeParams(InitializeStepInfo initializeStepInfo, Ambiance ambiance,
+      String poolId, List<String> fallbackPoolIds, boolean distributed) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
@@ -202,7 +208,7 @@ public class VmInitializeTaskParamsBuilder {
       harnessImageConnectorRef = optionalHarnessImageConnectorRef.get().getValue();
     }
 
-    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo);
+    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo, distributed);
     StageDetails stageDetails = getStageDetails(ambiance);
 
     CIExecutionArgs ciExecutionArgs =
@@ -369,7 +375,7 @@ public class VmInitializeTaskParamsBuilder {
   //  }
 
   private void saveStageInfraDetails(Ambiance ambiance, String poolId, String workDir, String harnessImageConnectorRef,
-      Map<String, String> volToMountPath, CIInitializeTaskParams.Type infraInfo) {
+      Map<String, String> volToMountPath, CIInitializeTaskParams.Type infraInfo, boolean distributedDlite) {
     if (infraInfo == CIVmInitializeTaskParams.Type.VM || infraInfo == CIVmInitializeTaskParams.Type.DOCKER) {
       consumeSweepingOutput(ambiance,
           VmStageInfraDetails.builder()
@@ -388,6 +394,7 @@ public class VmInitializeTaskParamsBuilder {
               .volToMountPathMap(volToMountPath)
               .harnessImageConnectorRef(harnessImageConnectorRef)
               .infraInfo(infraInfo)
+              .distributed(distributedDlite)
               .build(),
           STAGE_INFRA_DETAILS);
     }

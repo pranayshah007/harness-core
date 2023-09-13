@@ -22,13 +22,14 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.eventsframework.impl.redis.RedisAbstractConsumer;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
+import io.harness.logging.AutoLogContext;
 import io.harness.queue.QueueController;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.cache.Cache;
@@ -45,20 +46,24 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
       EmptyPredicate.isNotEmpty(System.getenv("THREAD_SLEEP_MILLIS_WHEN_CONSUMER_IS_BUSY"))
       ? Integer.parseInt(System.getenv("THREAD_SLEEP_MILLIS_WHEN_CONSUMER_IS_BUSY"))
       : 0;
+
+  private static final Duration THRESHOLD_PROCESS_DURATION = Duration.ofMillis(100);
   private static final int SLEEP_SECONDS = 10;
   private static final String CACHE_KEY = "%s_%s";
   private final Consumer redisConsumer;
   private final T messageListener;
+  private final ExecutorService executorService;
   private final QueueController queueController;
-  private AtomicBoolean shouldStop = new AtomicBoolean(false);
-  private Cache<String, Integer> eventsCache;
+  private final AtomicBoolean shouldStop = new AtomicBoolean(false);
+  private final Cache<String, Integer> eventsCache;
 
-  public PmsAbstractRedisConsumer(
-      Consumer redisConsumer, T messageListener, Cache<String, Integer> eventsCache, QueueController queueController) {
+  public PmsAbstractRedisConsumer(Consumer redisConsumer, T messageListener, Cache<String, Integer> eventsCache,
+      QueueController queueController, ExecutorService executorService) {
     this.redisConsumer = redisConsumer;
     this.messageListener = messageListener;
     this.eventsCache = eventsCache;
     this.queueController = queueController;
+    this.executorService = executorService;
   }
 
   @Override
@@ -116,7 +121,7 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
         redisConsumer.acknowledge(messageId);
       }
     }
-    if (messages.size() < ((RedisAbstractConsumer) this.redisConsumer).getBatchSize()) {
+    if (messages.size() < this.redisConsumer.getBatchSize()) {
       // Adding thread sleep when the events read are less than the batch-size. This way when the load is high, consumer
       // will query the events quickly. And in case of low load, thread will sleep for some time.
       TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS);
@@ -135,9 +140,17 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     if (messageListener.isProcessable(message) && !isAlreadyProcessed(message)) {
       log.info("Read message with message id {} from redis", message.getId());
       insertMessageInCache(message);
-      if (!messageListener.handleMessage(message)) {
-        success.set(false);
-      }
+      long readTs = System.currentTimeMillis();
+      executorService.submit(() -> {
+        try (AutoLogContext ignore = new MessageLogContext(message)) {
+          // Check and log for time taken to schedule the thread
+          checkAndLogSchedulingDelays(message.getId(), readTs);
+          messageListener.handleMessage(message, readTs);
+        } catch (Exception ex) {
+          log.error("[PMS_MESSAGE_LISTENER] Exception occurred while processing {} event with messageId: {}",
+              messageListener.getClass().getSimpleName(), message.getId(), ex);
+        }
+      });
     }
     return success.get();
   }
@@ -162,6 +175,14 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     } catch (Exception ex) {
       log.error("Exception occurred while checking for duplicate notification", ex);
       return false;
+    }
+  }
+
+  private void checkAndLogSchedulingDelays(String messageId, long startTs) {
+    Duration scheduleDuration = Duration.ofMillis(System.currentTimeMillis() - startTs);
+    if (THRESHOLD_PROCESS_DURATION.compareTo(scheduleDuration) < 0) {
+      log.warn("[PMS_MESSAGE_LISTENER] Handler for {} event with messageId {} called after {} delay",
+          messageListener.getClass().getSimpleName(), messageId, scheduleDuration);
     }
   }
 

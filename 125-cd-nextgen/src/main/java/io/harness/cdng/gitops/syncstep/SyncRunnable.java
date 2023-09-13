@@ -6,7 +6,7 @@
  */
 
 package io.harness.cdng.gitops.syncstep;
-import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.UPDATE_GITOPS_APP_OUTCOME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -15,15 +15,11 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.ScopeLevel;
+import io.harness.cdng.gitops.GitOpsStepUtils;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
-import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
-import io.harness.cdng.gitops.steps.GitopsClustersOutcome.ClusterData;
-import io.harness.cdng.gitops.syncstep.EnvironmentClusterListing.EnvironmentClusterListingBuilder;
-import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppOutcome;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
-import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationResource;
@@ -31,7 +27,6 @@ import io.harness.gitops.models.ApplicationSyncRequest;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
-import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -40,31 +35,24 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.utils.RetryUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.collections4.CollectionUtils;
 import retrofit2.Response;
 
@@ -81,8 +69,6 @@ public class SyncRunnable implements Runnable {
   private static final String FAILED_TO_SYNC_APPLICATION = "Failed to sync application";
   private static final String FAILED_TO_GET_APPLICATION = "Failed to get application";
   public static final String GITOPS_LINKED_APPS_OUTCOME = "GITOPS_LINKED_APPS_OUTCOME";
-  public static final String SERVICE = "service";
-  private static final String LOG_SUFFIX = "Execute";
 
   private final String taskId;
   private final Ambiance ambiance;
@@ -100,7 +86,8 @@ public class SyncRunnable implements Runnable {
 
   @Override
   public void run() {
-    final NGLogCallback logger = new NGLogCallback(logStreamingStepClientFactory, ambiance, LOG_SUFFIX, true);
+    final NGLogCallback logger =
+        new NGLogCallback(logStreamingStepClientFactory, ambiance, GitOpsStepUtils.LOG_SUFFIX, true);
     try {
       String accountId = AmbianceUtils.getAccountId(ambiance);
       String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
@@ -114,14 +101,16 @@ public class SyncRunnable implements Runnable {
       Set<Application> syncStillRunningForApplications = new HashSet<>();
 
       if (isEmpty(applicationsToBeSynced)) {
-        logExecutionInfo("No application found to be synced", logger);
+        GitOpsStepUtils.logExecutionInfo("No application found to be synced", logger);
 
         notifyResponse(
             applicationsFailedOnArgoSync, applicationsSucceededOnArgoSync, syncStillRunningForApplications, logger);
       }
 
-      Set<String> serviceIdsInPipelineExecution = getServiceIdsInPipelineExecution(ambiance);
-      EnvironmentClusterListing envClusterIds = getEnvAndClusterIdsInPipelineExecution(ambiance);
+      Set<String> serviceIdsInPipelineExecution =
+          GitOpsStepUtils.getServiceIdsInPipelineExecution(ambiance, executionSweepingOutputResolver);
+      EnvironmentClusterListing envClusterIds =
+          GitOpsStepUtils.getEnvAndClusterIdsInPipelineExecution(ambiance, executionSweepingOutputResolver);
       Set<String> envIdsInPipelineExecution =
           (Set<String>) CollectionUtils.emptyIfNull(envClusterIds.getEnvironmentIds());
       Map<String, Set<String>> clusterIdsInPipelineExecution =
@@ -129,25 +118,25 @@ public class SyncRunnable implements Runnable {
 
       Set<Application> applicationsFailedToSync = new HashSet<>();
 
-      logExecutionInfo(format("Application(s) to be synced %s", applicationsToBeSynced), logger);
+      GitOpsStepUtils.logExecutionInfo(format("Application(s) to be synced %s", applicationsToBeSynced), logger);
 
       Instant syncStartTime = Instant.now();
       log.info("Sync start time is {}", syncStartTime);
 
       // refresh applications
-      logExecutionInfo("Refreshing application(s)...", logger);
+      GitOpsStepUtils.logExecutionInfo("Refreshing application(s)...", logger);
       refreshApplicationsAndSetSyncPolicy(
           applicationsToBeSynced, applicationsFailedToSync, accountId, orgId, projectId, logger);
 
       // check sync eligibility for applications
-      logExecutionInfo("Checking application(s) eligibility for sync...", logger);
+      GitOpsStepUtils.logExecutionInfo("Checking application(s) eligibility for sync...", logger);
       prepareApplicationForSync(applicationsToBeSynced, applicationsFailedToSync, accountId, orgId, projectId,
           serviceIdsInPipelineExecution, envIdsInPipelineExecution, clusterIdsInPipelineExecution, logger);
       List<Application> applicationsEligibleForSync =
           getApplicationsToBeSyncedAndPolled(applicationsToBeSynced, applicationsFailedToSync);
 
       // sync applications
-      logExecutionInfo("Syncing application(s)...", logger);
+      GitOpsStepUtils.logExecutionInfo("Syncing application(s)...", logger);
       syncApplications(applicationsEligibleForSync, applicationsFailedToSync, accountId, orgId, projectId,
           syncStepParameters, logger);
 
@@ -158,7 +147,8 @@ public class SyncRunnable implements Runnable {
       // poll applications
       if (isNotEmpty(applicationsEligibleForSync)) {
         long pollForMillis = getPollerTimeout(stepParameters);
-        logExecutionInfo(format("Polling application statuses %s", applicationsEligibleForSync), logger);
+        GitOpsStepUtils.logExecutionInfo(
+            format("Polling application statuses %s", applicationsEligibleForSync), logger);
         pollApplications(pollForMillis, applicationsEligibleForSync, applicationsFailedToSync, syncStartTime, accountId,
             orgId, projectId, logger);
       }
@@ -181,70 +171,13 @@ public class SyncRunnable implements Runnable {
           ErrorNotifyResponseData.builder().errorMessage(format("Failed to execute Sync step. Error:%s", ex)).build());
       throw new RuntimeException("Failed to execute Sync step ", ex);
     } finally {
-      closeLogStream(ambiance);
+      GitOpsStepUtils.closeLogStream(ambiance, logStreamingStepClientFactory);
     }
-  }
-
-  private EnvironmentClusterListing getEnvAndClusterIdsInPipelineExecution(Ambiance ambiance) {
-    OptionalSweepingOutput optionalSweepingOutputForEnv = executionSweepingOutputResolver.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(GITOPS_SWEEPING_OUTPUT));
-
-    EnvironmentClusterListingBuilder environmentClusterListing = EnvironmentClusterListing.builder();
-    if (optionalSweepingOutputForEnv != null && optionalSweepingOutputForEnv.isFound()) {
-      GitopsClustersOutcome gitopsClustersOutcome = (GitopsClustersOutcome) optionalSweepingOutputForEnv.getOutput();
-      // ideally, the gitops clusters step should fail when no cluster is present, this is an extra check
-      if (gitopsClustersOutcome == null || isEmpty(gitopsClustersOutcome.getClustersData())) {
-        log.debug("No GitOps Clusters found");
-      } else {
-        environmentClusterListing.clusterIds(getScopedClusterIdsInPipelineExecution(gitopsClustersOutcome))
-            .environmentIds(getEnvIdsInPipelineExecution(gitopsClustersOutcome));
-      }
-    }
-    return environmentClusterListing.build();
-  }
-
-  private Set<String> getEnvIdsInPipelineExecution(GitopsClustersOutcome outcome) {
-    return outcome.getClustersData().stream().map(ClusterData::getEnvId).collect(Collectors.toSet());
-  }
-
-  @VisibleForTesting
-  Map<String, Set<String>> getScopedClusterIdsInPipelineExecution(GitopsClustersOutcome gitopsClustersOutcome) {
-    return gitopsClustersOutcome.getClustersData().stream().collect(
-        Collectors.groupingBy(ClusterData::getAgentId, Collectors.mapping(cluster -> {
-          String scope = cluster.getScope().toLowerCase();
-          String clusterId = cluster.getClusterId();
-          if (ScopeLevel.PROJECT.toString().equalsIgnoreCase(scope)) {
-            return clusterId;
-          } else if (ScopeLevel.ORGANIZATION.toString().equalsIgnoreCase(scope)) {
-            return Scope.ORG.getYamlRepresentation() + "." + clusterId;
-          } else {
-            return scope + "." + clusterId;
-          }
-        }, Collectors.toSet())));
-  }
-
-  private Set<String> getServiceIdsInPipelineExecution(Ambiance ambiance) {
-    OptionalSweepingOutput optionalSweepingOutputForService =
-        executionSweepingOutputResolver.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(SERVICE));
-    return optionalSweepingOutputForService != null && optionalSweepingOutputForService.isFound()
-        ? Stream.of(((ServiceStepOutcome) optionalSweepingOutputForService.getOutput()).getIdentifier())
-              .collect(Collectors.toSet())
-        : new HashSet<>();
-  }
-
-  private void logExecutionInfo(String logMessage, LogCallback logger) {
-    log.info(logMessage);
-    saveExecutionLog(logMessage, logger, LogLevel.INFO);
-  }
-
-  private void logExecutionError(String logMessage, LogCallback logger) {
-    log.error(logMessage);
-    saveExecutionLog(logMessage, logger, LogLevel.ERROR);
   }
 
   private void logExecutionWarning(String logMessage, LogCallback logger) {
     log.warn(logMessage);
-    saveExecutionLog(logMessage, logger, LogLevel.WARN);
+    GitOpsStepUtils.saveExecutionLog(logMessage, logger, LogLevel.WARN);
   }
 
   private List<Application> getApplicationsToBeSynced(Ambiance ambiance, SyncStepParameters syncStepParameters) {
@@ -254,6 +187,13 @@ public class SyncRunnable implements Runnable {
     Set<Application> applications = optionalSweepingOutput != null && optionalSweepingOutput.isFound()
         ? new HashSet<>(((GitOpsLinkedAppsOutcome) optionalSweepingOutput.getOutput()).getApps())
         : new HashSet<>();
+
+    OptionalSweepingOutput optionalSweepingOutputUpdateGitOpsApp = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(UPDATE_GITOPS_APP_OUTCOME));
+    if (optionalSweepingOutputUpdateGitOpsApp != null && optionalSweepingOutputUpdateGitOpsApp.isFound()) {
+      applications.add(((UpdateGitOpsAppOutcome) optionalSweepingOutput.getOutput()).getApplication());
+    }
+
     if (syncStepParameters.getApplicationsList().getValue() != null) {
       applications.addAll(
           SyncStepHelper.getApplicationsToBeSynced(syncStepParameters.getApplicationsList().getValue()));
@@ -262,9 +202,9 @@ public class SyncRunnable implements Runnable {
   }
 
   private void printErroredApplications(Set<Application> applicationsErrored, String logMessage, LogCallback logger) {
-    logExecutionError(format(logMessage, " with error messages %s", applicationsErrored), logger);
+    GitOpsStepUtils.logExecutionError(format(logMessage, " with error messages %s", applicationsErrored), logger);
     for (Application application : applicationsErrored) {
-      logExecutionError(application.getSyncError(), logger);
+      GitOpsStepUtils.logExecutionError(application.getSyncError(), logger);
     }
   }
 
@@ -288,16 +228,14 @@ public class SyncRunnable implements Runnable {
     }
   }
 
-  private void saveExecutionLog(String log, LogCallback logger, LogLevel logLevel) {
-    logger.saveExecutionLog(log, logLevel);
-  }
-
   private void notifyResponse(Set<Application> applicationsFailedToSync,
       Set<Application> applicationsSucceededOnArgoSync, Set<Application> syncStillRunningForApplications,
       LogCallback logger) {
-    logExecutionInfo(format("Sync is successful for application(s) %s", applicationsSucceededOnArgoSync), logger);
-    logExecutionInfo(format("Sync failed for application(s) %s", applicationsFailedToSync), logger);
-    logExecutionInfo(format("Sync is still running for application(s) %s", syncStillRunningForApplications), logger);
+    GitOpsStepUtils.logExecutionInfo(
+        format("Sync is successful for application(s) %s", applicationsSucceededOnArgoSync), logger);
+    GitOpsStepUtils.logExecutionInfo(format("Sync failed for application(s) %s", applicationsFailedToSync), logger);
+    GitOpsStepUtils.logExecutionInfo(
+        format("Sync is still running for application(s) %s", syncStillRunningForApplications), logger);
 
     waitNotifyEngine.doneWith(taskId,
         SyncResponse.builder()
@@ -368,14 +306,14 @@ public class SyncRunnable implements Runnable {
       }
       if (applicationsPolled.size() == applicationsToBePolled.size()) {
         if (isNotEmpty(applicationsFailedToSync)) {
-          logExecutionInfo("Sync is attempted for eligible application(s).", logger);
+          GitOpsStepUtils.logExecutionInfo("Sync is attempted for eligible application(s).", logger);
         } else {
-          logExecutionInfo("Sync is attempted for all application(s).", logger);
+          GitOpsStepUtils.logExecutionInfo("Sync is attempted for all application(s).", logger);
         }
         return;
       }
       waitingForApplications = getApplicationsToBeSyncedAndPolled(applicationsToBePolled, applicationsPolled);
-      logExecutionInfo(format("Waiting for application(s) %s", waitingForApplications), logger);
+      GitOpsStepUtils.logExecutionInfo(format("Waiting for application(s) %s", waitingForApplications), logger);
       try {
         TimeUnit.SECONDS.sleep(SyncStepHelper.POLLER_SLEEP_SECS);
       } catch (InterruptedException e) {
@@ -397,7 +335,7 @@ public class SyncRunnable implements Runnable {
   }
 
   private void logApplicationSyncStatus(String message, String syncStatus, LogCallback logger) {
-    logExecutionInfo(
+    GitOpsStepUtils.logExecutionInfo(
         LogHelper.color(message,
             SyncOperationPhase.SUCCEEDED.getValue().equals(syncStatus) ? LogColor.Green : LogColor.Red, LogWeight.Bold),
         logger);
@@ -440,7 +378,7 @@ public class SyncRunnable implements Runnable {
       String applicationName = application.getName();
       try {
         final Response<ApplicationResource> response =
-            Failsafe.with(getRetryPolicy("Retrying to sync application...", FAILED_TO_SYNC_APPLICATION))
+            Failsafe.with(GitOpsStepUtils.getRetryPolicy("Retrying to sync application...", FAILED_TO_SYNC_APPLICATION))
                 .get(()
                          -> gitopsResourceClient
                                 .syncApplication(agentId, applicationName, accountId, orgId, projectId, syncRequest)
@@ -472,7 +410,8 @@ public class SyncRunnable implements Runnable {
       return false;
     }
 
-    if (!isApplicationCorrespondsToClusterInExecution(latestApplicationState, clusterIdsInPipelineExecution)) {
+    if (!GitOpsStepUtils.isApplicationCorrespondsToClusterInExecution(
+            latestApplicationState, clusterIdsInPipelineExecution)) {
       application.setSyncMessage(
           "Application does not correspond to the cluster(s) selected in the pipeline execution.");
       return false;
@@ -497,13 +436,6 @@ public class SyncRunnable implements Runnable {
     return envIdsInPipelineExecution.contains(latestApplicationState.getEnvironmentRef());
   }
 
-  private boolean isApplicationCorrespondsToClusterInExecution(
-      ApplicationResource latestApplicationState, Map<String, Set<String>> clusterIdsInPipelineExecution) {
-    String agentIdentifier = latestApplicationState.getAgentIdentifier();
-    Set<String> clustersForAgent = clusterIdsInPipelineExecution.get(agentIdentifier);
-    return clustersForAgent != null && clustersForAgent.contains(latestApplicationState.getClusterIdentifier());
-  }
-
   private boolean isApplicationCorrespondsToServiceInExecution(
       ApplicationResource latestApplicationState, Set<String> serviceIdsInPipelineExecution) {
     return serviceIdsInPipelineExecution.contains(latestApplicationState.getServiceRef());
@@ -515,7 +447,7 @@ public class SyncRunnable implements Runnable {
     String applicationName = application.getName();
     try {
       final Response<ApplicationResource> response =
-          Failsafe.with(getRetryPolicy("Retrying to get application...", FAILED_TO_GET_APPLICATION))
+          Failsafe.with(GitOpsStepUtils.getRetryPolicy("Retrying to get application...", FAILED_TO_GET_APPLICATION))
               .get(()
                        -> gitopsResourceClient.getApplication(agentId, applicationName, accountId, orgId, projectId)
                               .execute());
@@ -534,7 +466,7 @@ public class SyncRunnable implements Runnable {
   private void handleErrorWithApplicationResource(Application application, String agentId, String applicationName,
       Response<ApplicationResource> response, String applicationErr, LogCallback logger) throws IOException {
     String errorMessage = response.errorBody() != null ? response.errorBody().string() : "";
-    logExecutionError(format(applicationErr, applicationName, agentId, errorMessage), logger);
+    GitOpsStepUtils.logExecutionError(format(applicationErr, applicationName, agentId, errorMessage), logger);
     application.setSyncMessage(errorMessage);
   }
 
@@ -547,7 +479,9 @@ public class SyncRunnable implements Runnable {
       try {
         // TODO(meena) Optimize this to return the trimmed application resource object from GitOps service
         final Response<ApplicationResource> response =
-            Failsafe.with(getRetryPolicy("Retrying to refresh application...", FAILED_TO_REFRESH_APPLICATION))
+            Failsafe
+                .with(
+                    GitOpsStepUtils.getRetryPolicy("Retrying to refresh application...", FAILED_TO_REFRESH_APPLICATION))
                 .get(()
                          -> gitopsResourceClient
                                 .refreshApplication(agentId, applicationName, accountId, orgId, projectId,
@@ -575,16 +509,5 @@ public class SyncRunnable implements Runnable {
 
   private boolean isAutoSyncEnabled(ApplicationResource.SyncPolicy syncPolicy) {
     return syncPolicy != null && syncPolicy.getAutomated() != null;
-  }
-
-  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
-    return RetryUtils.getRetryPolicy(failedAttemptMessage, failureMessage, Collections.singletonList(IOException.class),
-        Duration.ofMillis(SyncStepHelper.NETWORK_CALL_RETRY_SLEEP_DURATION_MILLIS),
-        SyncStepHelper.NETWORK_CALL_MAX_RETRY_ATTEMPTS, log);
-  }
-
-  private void closeLogStream(Ambiance ambiance) {
-    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-    logStreamingStepClient.closeStream(LOG_SUFFIX);
   }
 }

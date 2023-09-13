@@ -5,21 +5,28 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.FeatureName;
+import io.harness.beans.cache.api.CacheMetadataDetail;
+import io.harness.ci.cache.DlcCacheManager;
+import io.harness.ci.cache.GcsDlcCacheManager;
+import io.harness.ci.cache.S3DlcCacheManager;
 import io.harness.ci.config.CIDockerLayerCachingConfig;
-import io.harness.ci.config.CIDockerLayerCachingGCSConfig;
-import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CIDockerLayerCachingConfigService {
-  @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject CIFeatureFlagService featureFlagService;
+  @Inject GcsDlcCacheManager gcsDlcCacheManager;
+  @Inject S3DlcCacheManager s3DlcCacheManager;
 
   public CIDockerLayerCachingConfig getDockerLayerCachingConfig(String accountId, boolean isBareMetalUsed) {
     if (!featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)) {
@@ -28,9 +35,25 @@ public class CIDockerLayerCachingConfigService {
     // Placeholder for vendor APIs for bucket creation. Instead of the global keys, return the
     // keys specific to the bucket of the user when APIs are implemented
     if (isBareMetalUsed) {
-      return ciExecutionServiceConfig.getDockerLayerCachingConfig();
+      return s3DlcCacheManager.getCacheConfig(accountId);
     }
-    return convertFromGCS(ciExecutionServiceConfig.getDockerLayerCachingGCSConfig());
+    return gcsDlcCacheManager.getCacheConfig(accountId);
+  }
+
+  public List<CacheMetadataDetail> purgeDockerLayerCache(String accountId) {
+    if (!featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)) {
+      return new ArrayList<>();
+    }
+    DlcCacheManager cacheManager = getCacheManager(accountId);
+    return cacheManager.deleteCache(accountId);
+  }
+
+  public List<CacheMetadataDetail> getDockerLayerCacheMetadata(String accountId) {
+    if (!featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)) {
+      return new ArrayList<>();
+    }
+    DlcCacheManager cacheManager = getCacheManager(accountId);
+    return cacheManager.getCacheMetadata(accountId);
   }
 
   public String getCacheFromArg(CIDockerLayerCachingConfig config, String prefix) {
@@ -53,16 +76,10 @@ public class CIDockerLayerCachingConfigService {
     return cacheTo;
   }
 
-  private CIDockerLayerCachingConfig convertFromGCS(CIDockerLayerCachingGCSConfig gcsConfig) {
-    if (gcsConfig == null) {
-      return null;
+  private DlcCacheManager getCacheManager(String accountId) {
+    if (featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL, accountId)) {
+      return s3DlcCacheManager;
     }
-    return CIDockerLayerCachingConfig.builder()
-        .endpoint(gcsConfig.getEndpoint())
-        .bucket(gcsConfig.getBucket())
-        .accessKey(gcsConfig.getAccessKey())
-        .secretKey(gcsConfig.getSecretKey())
-        .region(gcsConfig.getRegion())
-        .build();
+    return gcsDlcCacheManager;
   }
 }

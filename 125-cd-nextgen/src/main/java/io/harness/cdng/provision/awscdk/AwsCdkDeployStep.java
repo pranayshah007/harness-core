@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.awscdk;
 
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.DEPLOY;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_ACTION;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
 import static io.harness.cdng.provision.awscdk.AwsCdkHelper.GIT_COMMIT_ID;
 import static io.harness.cdng.provision.awscdk.AwsCdkHelper.LATEST_SUCCESSFUL_PROVISIONING_COMMIT_ID;
@@ -122,6 +124,7 @@ public class AwsCdkDeployStep extends AbstractContainerStepV2<StepElementParamet
         .image(getParameterFieldValue(awsCdkDeployStepParameters.getImage()))
         .imagePullPolicy(getParameterFieldValue(awsCdkDeployStepParameters.getImagePullPolicy()))
         .envVariables(getEnvironmentVariables(awsCdkDeployStepParameters))
+        .parameters(getParameterFieldValue(awsCdkDeployStepParameters.getParameters()))
         .privileged(getParameterFieldValue(awsCdkDeployStepParameters.getPrivileged()))
         .commitId(commitId)
         .build();
@@ -171,6 +174,10 @@ public class AwsCdkDeployStep extends AbstractContainerStepV2<StepElementParamet
     if (isNotEmpty(stackNames)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_STACK_NAMES, String.join(" ", stackNames));
     }
+
+    awsCdkStepHelper.addParametersToEnvValues(
+        getParameterFieldValue(awsCdkDeployStepParameters.getParameters()), environmentVariablesMap);
+    environmentVariablesMap.put(PLUGIN_AWS_CDK_ACTION, DEPLOY);
 
     return environmentVariablesMap;
   }

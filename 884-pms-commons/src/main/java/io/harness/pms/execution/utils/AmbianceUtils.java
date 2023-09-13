@@ -22,6 +22,7 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -321,31 +322,39 @@ public class AmbianceUtils {
     if (level == null || !level.hasStrategyMetadata()) {
       return StringUtils.EMPTY;
     }
-    if (!level.getStrategyMetadata().hasMatrixMetadata()) {
-      if (level.getStrategyMetadata().getTotalIterations() <= 0) {
+    return getStrategyPostFixUsingMetadata(level.getStrategyMetadata(), useMatrixFieldName);
+  }
+
+  public static String getStrategyPostFixUsingMetadata(StrategyMetadata metadata, boolean useMatrixFieldName) {
+    if (!metadata.hasMatrixMetadata()) {
+      if (metadata.getTotalIterations() <= 0) {
         return StringUtils.EMPTY;
       }
-      return "_" + level.getStrategyMetadata().getCurrentIteration();
+      return "_" + metadata.getCurrentIteration();
     }
-    if (level.getStrategyMetadata().getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
-      if (level.getStrategyMetadata().getTotalIterations() <= 0) {
+    if (metadata.getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
+      if (metadata.getTotalIterations() <= 0) {
         return StringUtils.EMPTY;
       }
-      return "_" + level.getStrategyMetadata().getCurrentIteration();
+      return "_" + metadata.getCurrentIteration();
     }
 
-    String levelIdentifier = level.getStrategyMetadata()
-                                 .getMatrixMetadata()
-                                 .getMatrixCombinationList()
-                                 .stream()
-                                 .map(String::valueOf)
-                                 .collect(Collectors.joining("_"));
+    // User given nodeName while defining the Matrix
+    String nodeName = metadata.getMatrixMetadata().getNodeName();
 
-    if (useMatrixFieldName) {
-      List<String> matrixKeysToSkipInName =
-          level.getStrategyMetadata().getMatrixMetadata().getMatrixKeysToSkipInNameList();
-      levelIdentifier = level.getStrategyMetadata()
-                            .getMatrixMetadata()
+    return getLevelIdentifierUsingMetadata(metadata, nodeName, useMatrixFieldName);
+  }
+
+  private String getLevelIdentifierUsingMetadata(
+      StrategyMetadata strategyMetadata, String nodeName, boolean useMatrixFieldName) {
+    String levelIdentifier;
+
+    if (EmptyPredicate.isNotEmpty(nodeName)) {
+      levelIdentifier = nodeName;
+    } else if (useMatrixFieldName) {
+      List<String> matrixKeysToSkipInName = strategyMetadata.getMatrixMetadata().getMatrixKeysToSkipInNameList();
+
+      levelIdentifier = strategyMetadata.getMatrixMetadata()
                             .getMatrixValuesMap()
                             .entrySet()
                             .stream()
@@ -355,15 +364,21 @@ public class AmbianceUtils {
                             .sorted(Map.Entry.comparingByKey())
                             .map(t -> t.getValue().replace(".", ""))
                             .collect(Collectors.joining("_"));
-
-      // Making sure that identifier postfix is added at the last while forming the identifier for the matrix stage
-      if (level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap().containsKey(
-              MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES)) {
-        levelIdentifier = levelIdentifier + "_"
-            + level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap().get(
-                MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES);
-      }
+    } else {
+      levelIdentifier = strategyMetadata.getMatrixMetadata()
+                            .getMatrixCombinationList()
+                            .stream()
+                            .map(String::valueOf)
+                            .collect(Collectors.joining("_"));
     }
+
+    // Making sure that identifier postfix is added at the last while forming the identifier for the matrix stage
+    if (strategyMetadata.getMatrixMetadata().getMatrixValuesMap().containsKey(
+            MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES)) {
+      levelIdentifier = levelIdentifier + "_"
+          + strategyMetadata.getMatrixMetadata().getMatrixValuesMap().get(MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES);
+    }
+
     String modifiedString =
         "_" + (levelIdentifier.length() <= 126 ? levelIdentifier : levelIdentifier.substring(0, 126));
 
@@ -432,7 +447,9 @@ public class AmbianceUtils {
   }
 
   public String getPipelineExecutionIdentifier(Ambiance ambiance) {
-    if (ambiance.getMetadata() != null) {
+    if (ambiance.getPlanExecutionId() != null) {
+      return ambiance.getPlanExecutionId();
+    } else if (ambiance.getMetadata() != null) {
       return ambiance.getMetadata().getExecutionUuid();
     }
     return null;

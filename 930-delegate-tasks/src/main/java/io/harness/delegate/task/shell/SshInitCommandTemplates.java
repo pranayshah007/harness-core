@@ -22,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 
 public class SshInitCommandTemplates {
   public static final String EXECLAUNCHERV2_SH_FTL = "execlauncherv2.sh.ftl";
+  public static final String EXECLAUNCHERV3_SH_FTL = "execlauncherv3.sh.ftl";
   public static final String TAILWRAPPERV2_SH_FTL = "tailwrapperv2.sh.ftl";
 
   private static final Configuration cfgV2 = new Configuration(VERSION_2_3_23);
@@ -61,6 +62,7 @@ public class SshInitCommandTemplates {
     StringTemplateLoader templateLoader = new StringTemplateLoader();
     putTemplateToConfig(EXECLAUNCHERV2_SH_FTL, templateLoader);
     putTemplateToConfig(TAILWRAPPERV2_SH_FTL, templateLoader);
+    putTemplateToConfig(EXECLAUNCHERV3_SH_FTL, templateLoader);
     cfgV2.setTemplateLoader(templateLoader);
     initV2 = true;
   }

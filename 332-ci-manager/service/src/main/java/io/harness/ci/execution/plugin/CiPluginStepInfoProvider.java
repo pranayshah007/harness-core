@@ -17,8 +17,8 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.ci.buildstate.PluginSettingUtils;
-import io.harness.ci.integrationstage.K8InitializeStepUtils;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.integrationstage.K8InitializeStepUtils;
 import io.harness.ci.utils.PortFinder;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -41,8 +41,10 @@ import io.harness.pms.yaml.YamlUtils;
 import com.google.inject.Inject;
 import com.google.protobuf.BoolValue;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -102,10 +104,15 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     if ((ciAbstractStepNode.getStepSpecType() instanceof PluginCompatibleStep)
         && (ciAbstractStepNode.getStepSpecType() instanceof WithConnectorRef)) {
       PluginCompatibleStep step = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
-
+      Map<String, String> connectorSecretEnvMap = new HashMap<>();
+      PluginSettingUtils.getConnectorSecretEnvMap(step.getNonYamlInfo().getStepInfoType())
+          .forEach((key, value) -> connectorSecretEnvMap.put(key.name(), value));
       String connectorRef = PluginSettingUtils.getConnectorRef(step);
       if (isNotEmpty(connectorRef)) {
-        pluginDetailsBuilder.addConnectorsForStep(ConnectorDetails.newBuilder().setConnectorRef(connectorRef).build());
+        pluginDetailsBuilder.addConnectorsForStep(ConnectorDetails.newBuilder()
+                                                      .setConnectorRef(connectorRef)
+                                                      .putAllConnectorSecretEnvMap(connectorSecretEnvMap)
+                                                      .build());
       }
     }
 

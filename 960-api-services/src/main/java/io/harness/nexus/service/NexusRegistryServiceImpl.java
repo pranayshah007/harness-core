@@ -201,16 +201,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
         groupId, artifactId, extension, classifier, packageName, group, maxBuilds);
     builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
 
-    if (builds.size() == 1) {
-      return builds.get(0);
-    }
-
-    throw NestedExceptionUtils.hintWithExplanationException(
-        "Please check your Nexus repository for artifacts with same tag.",
-        String.format(
-            "Found multiple artifacts for tag [%s] in Nexus repository [%s] for %s artifact [%s] in registry [%s].",
-            tag, repository, repositoryFormat, artifactName, nexusConfig.getNexusUrl()),
-        new NexusRegistryException(String.format("Found multiple artifact tags ('%s'), but expected only one.", tag)));
+    return getBuildDetailsInternal(nexusConfig, repository, artifactName, repositoryFormat, tag, builds);
   }
 
   private BuildDetailsInternal getBuildNumber(NexusRequest nexusConfig, String repository, String port,
@@ -218,8 +209,19 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
     List<BuildDetailsInternal> builds =
         getBuildDetails(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
     builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
+    return getBuildDetailsInternal(nexusConfig, repository, artifactName, repositoryFormat, tag, builds);
+  }
 
-    if (builds.size() == 1) {
+  private BuildDetailsInternal getBuildDetailsInternal(NexusRequest nexusConfig, String repository, String artifactName,
+      String repositoryFormat, String tag, List<BuildDetailsInternal> builds) {
+    if (builds.size() == 0) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check your Nexus repository for artifacts with same tag.",
+          String.format(
+              "Did not find any artifacts for tag [%s] in Nexus repository [%s] for %s artifact [%s] in registry [%s].",
+              tag, repository, repositoryFormat, artifactName, nexusConfig.getNexusUrl()),
+          new NexusRegistryException(String.format("Artifact tag '%s' not found.", tag)));
+    } else if (builds.size() == 1) {
       return builds.get(0);
     }
 

@@ -129,6 +129,7 @@ import io.harness.cdng.manifest.yaml.ManifestOverrideSetWrapper;
 import io.harness.cdng.manifest.yaml.ManifestOverrideSets;
 import io.harness.cdng.manifest.yaml.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreEcrConfig;
 import io.harness.cdng.manifest.yaml.OciHelmChartStoreGenericConfig;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
@@ -415,5 +416,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(GoogleCloudFunctionGenOneDefinitionManifest.class, 1800001);
     kryo.register(GoogleCloudFunctionGenOneDefinitionManifestOutcome.class, 1800002);
     kryo.register(ManifestConfigurations.class, 160005);
+    kryo.register(OciHelmChartStoreEcrConfig.class, 160006);
   }
 }

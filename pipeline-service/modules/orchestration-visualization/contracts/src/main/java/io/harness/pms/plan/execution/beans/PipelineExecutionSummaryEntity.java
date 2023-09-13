@@ -40,6 +40,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.yaml.core.NGLabel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -291,6 +292,10 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "triggerType";
     public String triggeredBy = PlanExecutionSummaryKeys.executionTriggerInfo + "."
         + "triggeredBy";
+    public String triggerIdentifier = PlanExecutionSummaryKeys.executionTriggerInfo + "."
+        + "triggeredBy"
+        + "."
+        + "triggerIdentifier";
     public String rootExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."
         + "rootExecutionId";
     public String parentExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."
@@ -321,5 +326,12 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   public String getRollbackModeExecutionId() {
     return rollbackExecutionInfo != null ? rollbackExecutionInfo.getRollbackModeExecutionId() : null;
+  }
+
+  public String getPipelineVersion() {
+    if (null == pipelineVersion || pipelineVersion.equals("0")) {
+      return PipelineVersion.V0;
+    }
+    return pipelineVersion;
   }
 }

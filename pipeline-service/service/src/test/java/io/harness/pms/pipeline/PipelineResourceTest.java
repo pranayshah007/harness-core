@@ -22,6 +22,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -815,9 +816,9 @@ public class PipelineResourceTest extends CategoryTest {
                  .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                  .build())
         .when(pmsPipelineService)
-        .validateAndCreatePipeline(simplifiedEntity, false);
-    ResponseDTO<PipelineSaveResponse> response = pipelineResource.createPipelineV2(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, null, null, null, simplifiedYaml);
+        .validateAndCreatePipeline(any(), eq(false));
+    ResponseDTO<PipelineSaveResponse> response = pipelineResource.createPipelineV2(ACCOUNT_ID, ORG_IDENTIFIER,
+        PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, PIPELINE_NAME, null, null, null, simplifiedYaml);
     assertThat(response.getData().getIdentifier()).isNotEmpty();
     assertThat(response.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
   }
@@ -835,8 +836,8 @@ public class PipelineResourceTest extends CategoryTest {
                  .build())
         .when(pmsPipelineService)
         .validateAndCreatePipeline(simplifiedEntity, false);
-    ResponseDTO<PipelineSaveResponse> response = pipelineResource.createPipelineV2(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, PIPELINE_NAME, null, null, null, simplifiedYamlWithoutName);
+    ResponseDTO<PipelineSaveResponse> response = pipelineResource.createPipelineV2(ACCOUNT_ID, ORG_IDENTIFIER,
+        PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, PIPELINE_NAME, null, null, null, simplifiedYamlWithoutName);
     assertThat(response.getData().getIdentifier()).isNotEmpty();
     assertThat(response.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
   }
@@ -854,8 +855,8 @@ public class PipelineResourceTest extends CategoryTest {
     doReturn(pipelineCRUDResult)
         .when(pmsPipelineService)
         .validateAndUpdatePipeline(simplifiedEntity, ChangeType.MODIFY, false);
-    ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(
-        null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, simplifiedYaml);
+    ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(null, ACCOUNT_ID, ORG_IDENTIFIER,
+        PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, PIPELINE_NAME, null, null, null, simplifiedYaml);
     assertThat(responseDTO.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
   }
 

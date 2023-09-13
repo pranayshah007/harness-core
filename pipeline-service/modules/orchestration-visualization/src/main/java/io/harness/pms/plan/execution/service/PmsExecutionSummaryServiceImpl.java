@@ -195,7 +195,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     ConcurrentChildInstance concurrentChildInstance =
         pmsGraphStepDetailsService.fetchConcurrentChildInstance(strategyNodeExecution.getUuid());
     if (concurrentChildInstance != null && !strategyNodeExecution.getExecutableResponses().isEmpty()) {
-      Node node = planService.fetchNode(strategyNodeExecution.getNodeId());
+      Node node = planService.fetchNode(strategyNodeExecution.getPlanId(), strategyNodeExecution.getNodeId());
       // TODO: Revisit this logic seems to violating a few principles
       PmsStepParameters parameters = node.getStepParameters();
       if (parameters.containsKey("strategyType")

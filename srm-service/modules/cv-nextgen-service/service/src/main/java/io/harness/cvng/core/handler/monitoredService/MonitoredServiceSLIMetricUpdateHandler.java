@@ -83,10 +83,10 @@ public class MonitoredServiceSLIMetricUpdateHandler extends BaseMonitoredService
   private Map<String, HealthSource> getHealthSourceMap(MonitoredServiceDTO monitoredServiceDTO) {
     if (monitoredServiceDTO.getSources() == null
         || CollectionUtils.isEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
-      Collections.emptyMap();
+      return Collections.emptyMap();
     }
     return monitoredServiceDTO.getSources().getHealthSources().stream().collect(
-        Collectors.toMap(healthSource -> healthSource.getIdentifier(), healthSource -> healthSource));
+        Collectors.toMap(HealthSource::getIdentifier, healthSource -> healthSource));
   }
 
   private List<String> getMetricIdentifiers(HealthSource healthSource) {

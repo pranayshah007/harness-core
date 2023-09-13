@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 
@@ -20,6 +23,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -36,10 +40,14 @@ public class ConditionDTO {
     if (ParameterField.isNull(condition.getValue())) {
       throw new InvalidRequestException("Value can't be null");
     }
-
     String valueString = (String) condition.getValue().fetchFinalValue();
     if (isBlank(condition.getKey())) {
-      throw new InvalidRequestException("Key Can't be empty");
+      throw new InvalidRequestException("Key can't be empty");
+    }
+    if (condition.getValue().isExpression()) {
+      // unresolved expression mode set in Jira/SNow/Custom approvals
+      throw new InvalidRequestException(
+          String.format("Key [%s] has invalid value: [%s]", condition.getKey(), valueString));
     }
     return ConditionDTO.builder().key(condition.getKey()).value(valueString).operator(condition.getOperator()).build();
   }

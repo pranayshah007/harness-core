@@ -15,6 +15,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -32,4 +33,7 @@ public interface PMSYamlSchemaService {
 
   JsonNode getStaticSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String identifier,
       EntityType entityType, Scope scope, String version);
+
+  ObjectNode getStaticSchemaForAllEntities(
+      String nodeGroup, String nodeType, String nodeGroupDifferentiator, String version);
 }

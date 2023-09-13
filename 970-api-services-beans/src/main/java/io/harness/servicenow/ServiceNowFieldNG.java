@@ -9,7 +9,10 @@ package io.harness.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
@@ -26,6 +29,8 @@ import lombok.experimental.FieldDefaults;
  *
  * Ref: 125-cd-nextgen/src/main/java/io/harness/cdng/servicenow/utils/ServiceNowFieldNGUtils.java
  * */
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -41,6 +46,7 @@ public class ServiceNowFieldNG {
   // This is internal type returned by serviceNow API
   String internalType;
   @Builder.Default @NotNull List<ServiceNowFieldAllowedValueNG> allowedValues = new ArrayList<>();
+  boolean readOnly;
 
   public ServiceNowFieldNG() {
     this.allowedValues = new ArrayList<>();

@@ -58,6 +58,8 @@ public interface ResourceConstraintService extends OwnedByAccount {
 
   void updateBlockedConstraints(Set<String> constraintIds);
 
+  void updateBlockedConstraintsV2(Set<String> constraintIds, boolean hitSecondaryNode);
+
   List<ResourceConstraintUsage> usage(String accountId, List<String> resourceConstraintIds);
 
   List<ResourceConstraintInstance> fetchResourceConstraintInstancesForUnitAndEntityType(

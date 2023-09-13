@@ -12,6 +12,7 @@ import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipelineForGivenStages;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -410,6 +411,17 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineLabels())) {
       addPipelineLabelsCriteria(combinedAndCriteriaList, pipelineFilter.getPipelineLabels());
+    }
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getTriggerIdentifiers())) {
+      Criteria triggerIdentifierCriteria = new Criteria();
+      populateInFilter(triggerIdentifierCriteria, PlanExecutionSummaryKeys.triggerIdentifier,
+          pipelineFilter.getTriggerIdentifiers());
+      combinedAndCriteriaList.add(triggerIdentifierCriteria);
+    }
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getTriggerTypes())) {
+      Criteria triggerTypeCriteria = new Criteria();
+      populateInFilter(triggerTypeCriteria, PlanExecutionSummaryKeys.triggerType, pipelineFilter.getTriggerTypes());
+      combinedAndCriteriaList.add(triggerTypeCriteria);
     }
     if (combinedAndCriteriaList.size() > 0) {
       criteria.andOperator(combinedAndCriteriaList.toArray(new Criteria[combinedAndCriteriaList.size()]));

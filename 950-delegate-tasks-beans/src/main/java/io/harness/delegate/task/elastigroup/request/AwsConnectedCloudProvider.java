@@ -9,6 +9,7 @@ package io.harness.delegate.task.elastigroup.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -20,6 +21,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider")
 public class AwsConnectedCloudProvider implements ConnectedCloudProvider {
   private String connectorRef;
   private ConnectorInfoDTO connectorInfoDTO;

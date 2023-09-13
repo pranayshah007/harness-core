@@ -27,6 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("policyStepSpecParameters")
 @RecasterAlias("io.harness.steps.policy.PolicyStepSpecParameters")
 public class PolicyStepSpecParameters extends PolicyStepBase implements SpecParameters {
+  public String COMMAND_UNIT = "Execute";
   @Builder
   public PolicyStepSpecParameters(
       @NonNull ParameterField<List<String>> policySets, @NonNull String type, PolicySpec policySpec) {

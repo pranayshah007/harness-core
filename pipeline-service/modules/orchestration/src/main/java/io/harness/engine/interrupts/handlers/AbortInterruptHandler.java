@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.interrupts.handlers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.CollectionUtils.isPresent;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -58,8 +59,8 @@ public class AbortInterruptHandler implements InterruptHandler {
     throw new UnsupportedOperationException("ABORT handling Not required for PLAN");
   }
 
-  @Override
-  public Interrupt handleInterruptForNodeExecution(@NotNull Interrupt interrupt, @NotNull String nodeExecutionId) {
+  public Interrupt handleAndMarkInterruptForNodeExecution(
+      @NotNull Interrupt interrupt, @NotNull String nodeExecutionId, boolean markInterruptAsProcessed) {
     try (AutoLogContext ignore = interrupt.autoLogContext()) {
       NodeExecution nodeExecution = nodeExecutionService.updateStatusWithOps(
           nodeExecutionId, Status.DISCONTINUING, null, EnumSet.noneOf(Status.class));
@@ -72,10 +73,20 @@ public class AbortInterruptHandler implements InterruptHandler {
       abortHelper.discontinueMarkedInstance(nodeExecution, interrupt);
 
     } catch (Exception ex) {
-      interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+      if (markInterruptAsProcessed) {
+        interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+      }
       throw ex;
     }
-    return interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    if (markInterruptAsProcessed) {
+      return interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    }
+    return interrupt;
+  }
+
+  @Override
+  public Interrupt handleInterruptForNodeExecution(@NotNull Interrupt interrupt, @NotNull String nodeExecutionId) {
+    return handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, true);
   }
 
   @VisibleForTesting

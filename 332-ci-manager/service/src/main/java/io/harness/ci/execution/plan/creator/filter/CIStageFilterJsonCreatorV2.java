@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.plan.creator.filter;
+package io.harness.ci.execution.plan.creator.filter;
 
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
@@ -15,6 +15,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
+import static io.harness.yaml.extended.ci.codebase.BuildType.COMMIT_SHA;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,13 +27,14 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.runtime.Runtime;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.integrationstage.K8InitializeTaskUtils;
-import io.harness.ci.plan.creator.filter.CIFilter.CIFilterBuilder;
-import io.harness.ci.utils.InfrastructureUtils;
-import io.harness.ci.utils.ValidationUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.K8InitializeTaskUtils;
+import io.harness.ci.execution.plan.creator.filter.CIFilter.CIFilterBuilder;
+import io.harness.ci.execution.utils.InfrastructureUtils;
+import io.harness.ci.execution.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
@@ -49,6 +51,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
+import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.common.collect.ImmutableSet;
@@ -115,6 +118,10 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
     }
 
     if (ciCodeBase != null) {
+      Build build = ParameterFieldHelper.getParameterFieldValue(ciCodeBase.getBuild());
+      if (build != null && COMMIT_SHA.equals(build.getType())) {
+        throw new CIStageExecutionException("commitSha build type is not allowed for CI codebase");
+      }
       if (ciCodeBase.getRepoName().getValue() != null) {
         ciFilterBuilder.repoName(ciCodeBase.getRepoName().getValue());
       } else if (ciCodeBase.getConnectorRef().getValue() != null) {

@@ -283,6 +283,7 @@ public class DiscoveryService {
                                             .entities(discoveryResult.getEntities())
                                             .graph(discoveryResult.getLinks())
                                             .inputDTO(inputDTO)
+                                            .root(inputDTO.getRoot())
                                             .build();
 
     return getAllYamlFiles(migrationContext, discoveryResult.getRoot(), leafTracker);

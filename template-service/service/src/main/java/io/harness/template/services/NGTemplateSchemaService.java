@@ -26,10 +26,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 public interface NGTemplateSchemaService {
   JsonNode getTemplateSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope,
       String templateChildType, TemplateEntityType templateEntityType);
-
-  JsonNode getStaticYamlSchema(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String templateChildType, TemplateEntityType entityType, Scope scope, String version);
-
   void validateYamlSchemaInternal(TemplateEntity templateEntity);
   void validateYamlSchemaInternal(GlobalTemplateEntity templateEntity);
 }

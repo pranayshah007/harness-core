@@ -23,6 +23,7 @@ import static io.harness.k8s.model.HelmVersion.V3;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -68,6 +69,7 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.chartmuseum.NgChartmuseumClientFactory;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
+import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig.HelmChartManifestDelegateConfigBuilder;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HelmClientException;
 import io.harness.exception.InvalidArgumentsException;
@@ -515,6 +517,66 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testdownloadChartFilesFromOciRepoWithEmptyBasePath() throws Exception {
+    String repoUrl = "test.azurecr.io";
+    String username = "username";
+    char[] password = "password".toCharArray();
+    String chartOutput = "/directory";
+    long timeout = 90000L;
+
+    HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .chartName(CHART_NAME)
+            .useCache(true)
+            .chartVersion(CHART_VERSION)
+            .helmVersion(V3)
+            .helmCommandFlag(emptyHelmCommandFlag)
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder()
+                    .repoName(REPO_NAME)
+                    .repoDisplayName(REPO_DISPLAY_NAME)
+                    .ociHelmConnector(
+                        OciHelmConnectorDTO.builder()
+                            .helmRepoUrl(repoUrl)
+                            .auth(OciHelmAuthenticationDTO.builder()
+                                      .authType(OciHelmAuthType.USER_PASSWORD)
+                                      .credentials(
+                                          OciHelmUsernamePasswordDTO.builder()
+                                              .username(username)
+                                              .passwordRef(SecretRefData.builder().decryptedValue(password).build())
+                                              .build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+
+    String updatedRepoName = "oci://test.azurecr.io";
+
+    doReturn("reg-config.json").when(helmTaskHelperBase).getRegFileConfigPath();
+    doNothing()
+        .when(helmTaskHelperBase)
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),
+            eq("reg-config.json"));
+    doNothing()
+        .when(helmTaskHelperBase)
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), anyString(),
+            eq("reg-config.json"));
+
+    helmTaskHelperBase.downloadChartFilesFromOciRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
+
+    verify(helmTaskHelperBase, times(1))
+        .loginOciRegistry(eq(repoUrl), eq(username), eq(password), eq(HelmVersion.V380), eq(timeout), eq(chartOutput),
+            eq("reg-config.json"));
+    verify(helmTaskHelperBase, times(1))
+        .fetchChartFromRepo(eq(updatedRepoName), eq(REPO_DISPLAY_NAME), eq(CHART_NAME), eq(CHART_VERSION),
+            eq(chartOutput), eq(HelmVersion.V380), eq(emptyHelmCommandFlag), eq(timeout), anyString(),
+            eq("reg-config.json"));
+  }
+
+  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testDownloadChartFilesFromHttpRepoAnonymousAuth() {
@@ -954,9 +1016,20 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = INDER)
+  @Owner(developers = {INDER, MLUKIC})
   @Category(UnitTests.class)
-  public void testFetchVersionsFromHttpV2() throws Exception {
+  public void testFetchVersionsFromHttpV2NotUsingCache() throws Exception {
+    testFetchVersionsFromHttpV2(false);
+  }
+
+  @Test
+  @Owner(developers = {INDER, MLUKIC})
+  @Category(UnitTests.class)
+  public void testFetchVersionsFromHttpV2UsingCache() throws Exception {
+    testFetchVersionsFromHttpV2(true);
+  }
+
+  private void testFetchVersionsFromHttpV2(boolean useCache) throws Exception {
     final String V_2_HELM_SEARCH_REPO_COMMAND =
         "v2/helm search repoName/chartName -l ${HELM_HOME_PATH_FLAG} --col-width 300";
     String repoUrl = "https://repo-chart/";
@@ -966,7 +1039,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     long timeout = 90000L;
 
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
-        getHelmChartManifestDelegateConfig(repoUrl, username, password, V2, HTTP_HELM);
+        getHelmChartManifestDelegateConfigBuilder(repoUrl, username, password, V2, HTTP_HELM, useCache).build();
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
 
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
@@ -987,7 +1060,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     assertThat(chartVersions.get(0)).isEqualTo("1.0.2");
     assertThat(chartVersions.get(1)).isEqualTo("1.0.1");
     // For helm version 2, we execute another command for helm init apart from add and update repo
-    verify(processExecutor, times(4)).execute();
+    verify(processExecutor, times(useCache ? 3 : 4)).execute();
     verify(helmTaskHelperBase, times(1)).initHelm(directory, V2, timeout);
 
     // anonymous user
@@ -997,7 +1070,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     assertThat(chartVersions2.get(0)).isEqualTo("1.0.2");
     assertThat(chartVersions2.get(1)).isEqualTo("1.0.1");
     // For helm version 2, we execute another command for helm init apart from add and update repo
-    verify(processExecutor, times(8)).execute();
+    verify(processExecutor, times(useCache ? 7 : 8)).execute();
     verify(helmTaskHelperBase, times(2)).initHelm(directory, V2, timeout);
   }
 
@@ -1271,13 +1344,20 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         + "repoName/chartName\t1.0.1\t0\tDeploys harness delegate";
   }
 
-  private HelmChartManifestDelegateConfig getHelmChartManifestDelegateConfig(String repoUrl, String username,
-      char[] password, HelmVersion helmVersion, StoreDelegateConfigType storeDelegateConfigType) {
+  private HelmChartManifestDelegateConfigBuilder getHelmChartManifestDelegateConfigBuilder(String repoUrl,
+      String username, char[] password, HelmVersion helmVersion, StoreDelegateConfigType storeDelegateConfigType,
+      boolean useCache) {
     return HelmChartManifestDelegateConfig.builder()
         .chartName("chartName")
         .helmVersion(helmVersion)
         .helmCommandFlag(emptyHelmCommandFlag)
         .storeDelegateConfig(getStoreDelegateConfig(repoUrl, username, password, storeDelegateConfigType))
+        .useCache(useCache);
+  }
+  private HelmChartManifestDelegateConfig getHelmChartManifestDelegateConfig(String repoUrl, String username,
+      char[] password, HelmVersion helmVersion, StoreDelegateConfigType storeDelegateConfigType) {
+    return getHelmChartManifestDelegateConfigBuilder(
+        repoUrl, username, password, helmVersion, storeDelegateConfigType, false)
         .build();
   }
 

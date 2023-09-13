@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.states;
+package io.harness.ci.execution.states;
 
 import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.beans.FeatureName.CODE_ENABLED;
@@ -18,6 +18,7 @@ import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildRespo
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.WebhookExecutionSource;
@@ -32,10 +33,10 @@ import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
 import io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.utils.CompletableFutures;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.utils.CompletableFutures;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -64,7 +65,9 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
@@ -95,6 +98,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
   @Inject @Named("ciBackgroundTaskExecutor") private ExecutorService executorService;
   @Inject ConnectorUtils connectorUtils;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
 
   @Override
   public Class<StageElementParameters> getStepParametersClass() {
@@ -107,6 +111,15 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     log.info("Executing integration stage with params accountId {} projectId {} [{}]", ngAccess.getAccountIdentifier(),
         ngAccess.getProjectIdentifier(), stepParameters);
+
+    String stageRuntimeId = AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
+
+    stepExecutionParametersRepository.save(StepExecutionParameters.builder()
+                                               .accountId(AmbianceUtils.getAccountId(ambiance))
+                                               .stageRunTimeId(stageRuntimeId)
+                                               .runTimeId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
+                                               .stepParameters(RecastOrchestrationUtils.toJson(stepParameters))
+                                               .build());
 
     IntegrationStageStepParametersPMS integrationStageStepParametersPMS =
         (IntegrationStageStepParametersPMS) stepParameters.getSpecConfig();

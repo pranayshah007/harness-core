@@ -21,7 +21,7 @@ public interface Runner {
   /**
    * Execute a task
    * @param infraId  The execution infra to execute the task on
-   * @param infra  Input data for the task
+   * @param tasks  Input data for the task
    * @param context  Context of this task, including delegate information, task id, or decrypted secrets
    */
   void execute(String infraId, InputData tasks, Context context);

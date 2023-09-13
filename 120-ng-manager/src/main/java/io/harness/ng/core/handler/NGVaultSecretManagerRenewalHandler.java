@@ -95,6 +95,10 @@ public class NGVaultSecretManagerRenewalHandler implements Handler<VaultConnecto
           log.info("Vault {} not configured for renewal.", vaultConnector.getUuid());
           return;
         }
+        if (vaultConnector.getRenewalPaused()) {
+          log.info("Skipping renewal for vault {} as renewal is paused.", vaultConnector.getUuid());
+          return;
+        }
         // for existing soft deleted vault entries, do not renew token. Remove this code after existing soft deleted
         // entries are removed from dB
         if (vaultConnector.getDeleted()) {

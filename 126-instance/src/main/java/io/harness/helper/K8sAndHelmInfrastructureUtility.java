@@ -41,7 +41,8 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class K8sAndHelmInfrastructureUtility {
-  public K8sDeploymentReleaseDetails getK8sDeploymentReleaseDetails(DeploymentInfoDTO deploymentInfoDTO) {
+  public K8sDeploymentReleaseDetails getK8sDeploymentReleaseDetails(
+      DeploymentInfoDTO deploymentInfoDTO, boolean isAddRegionalParam) {
     K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
     String subscriptionId = null;
     String resourceGroup = null;
@@ -65,6 +66,7 @@ public class K8sAndHelmInfrastructureUtility {
                                    .subscriptionId(subscriptionId)
                                    .resourceGroup(resourceGroup)
                                    .useClusterAdminCredentials(useClusterAdminCredentials)
+                                   .addRegionalParam(isAddRegionalParam)
                                    .build())
         .helmChartInfo(k8sDeploymentInfoDTO.getHelmChartInfo())
         .build();

@@ -496,6 +496,17 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(456, "TERRAGRUNT_PLAN_TASK_NG_V2");
     taskTypeOrdinalMapping.put(457, "TERRAGRUNT_APPLY_TASK_NG_V2");
     taskTypeOrdinalMapping.put(458, "TERRAGRUNT_DESTROY_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(459, "ECR_HELM_API_LIST_TAGS_TASK");
+    taskTypeOrdinalMapping.put(460, "AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(461, "AWS_ASG_ROLLING_DEPLOY_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(462, "AWS_ASG_ROLLING_ROLLBACK_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(463, "AWS_ASG_CANARY_DEPLOY_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(464, "AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(465, "AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(466, "AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(467, "AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(468, "DLITE_CI_VM_EXECUTE_TASK_V2");
+    taskTypeOrdinalMapping.put(469, "DLITE_CI_VM_CLEANUP_TASK_V2");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

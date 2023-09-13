@@ -20,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -155,7 +156,8 @@ public class ParallelPlanCreatorV1Test extends CategoryTest {
     planNode = planCreator.createPlanForParentNode(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata("nextId", ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .putMetadata(PlanCreatorConstants.NEXT_ID,
+                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
                             .build())
             .build(),
         new YamlField(stagesNode.get(1)), childrenIds);
@@ -212,7 +214,8 @@ public class ParallelPlanCreatorV1Test extends CategoryTest {
     response = planCreator.getLayoutNodeInfo(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata("nextId", ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .putMetadata(PlanCreatorConstants.NEXT_ID,
+                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
                             .build())
             .build(),
         new YamlField(stagesNode.get(1)));

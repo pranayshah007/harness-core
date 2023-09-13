@@ -11,20 +11,20 @@ import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY;
+import static io.harness.idp.backstagebeans.Constants.ENTITY_UNKNOWN_OWNER;
+import static io.harness.idp.backstagebeans.Constants.SERVICE;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_CD_SERVICE_ID;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_SERVICES;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_LIFECYCLE;
-import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_OWNER;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_REF;
 import static io.harness.idp.onboarding.utils.Constants.PROJECT_URL;
-import static io.harness.idp.onboarding.utils.Constants.SERVICE;
 import static io.harness.idp.onboarding.utils.Constants.SERVICE_URL;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 
@@ -64,8 +64,9 @@ public class HarnessServiceToBackstageComponent
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
     metadata.setMetadata(serviceResponseDTO.getIdentifier(),
         orgIdentifier + "-" + projectIdentifier + "-" + serviceResponseDTO.getIdentifier(),
-        truncateName(serviceResponseDTO.getIdentifier()), serviceResponseDTO.getDescription(),
-        getTags(serviceResponseDTO.getTags()), getHarnessCiCdAnnotations(serviceResponseDTO));
+        truncateName(serviceResponseDTO.getIdentifier()), serviceResponseDTO.getName(),
+        serviceResponseDTO.getDescription(), getTags(serviceResponseDTO.getTags()),
+        getHarnessCiCdAnnotations(serviceResponseDTO));
     backstageCatalogComponentEntity.setMetadata(metadata);
 
     BackstageCatalogComponentEntity.Spec spec = new BackstageCatalogComponentEntity.Spec();

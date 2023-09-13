@@ -155,6 +155,7 @@ public class HelmTaskHelperBase {
   private static final String OCI_PREFIX = "oci://";
   private static final String REGISTRY_CONFIG_DIR = "registry-config-files";
   private static final String REGISTRY_CONFIG_JSON = "reg-config.json";
+  private static final String DEFAULT_BASE_PATH = "/";
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -787,6 +788,7 @@ public class HelmTaskHelperBase {
       String repoUrl = getParsedUrlForUserNamePwd(ociHelmConnectorDTO.getHelmRepoUrl());
       loginOciRegistry(repoUrl, getOciHelmUsername(ociHelmConnectorDTO), getOciHelmPassword(ociHelmConnectorDTO),
           HelmVersion.V380, timeoutInMillis, destinationDirectory, registryConfigFilePath);
+      basePath = isEmpty(basePath) ? DEFAULT_BASE_PATH : basePath;
       repoName = format(REGISTRY_URL_PREFIX, Paths.get(repoUrl, basePath).normalize());
     } else if (OciHelmAuthType.ANONYMOUS.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
       String ociUrl = getParsedURI(ociHelmConnectorDTO.getHelmRepoUrl()).toString();
@@ -853,7 +855,7 @@ public class HelmTaskHelperBase {
         chartmuseumClient.stop(chartMuseumServer);
       }
 
-      if (repoName != null) {
+      if (repoName != null && !manifest.isUseCache()) {
         removeRepo(repoName, destinationDirectory, manifest.getHelmVersion(), timeoutInMillis);
       }
 
@@ -1330,8 +1332,11 @@ public class HelmTaskHelperBase {
     String username = getHttpHelmUsername(httpHelmConnector);
     char[] password = getHttpHelmPassword(httpHelmConnector);
     try {
-      removeRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
-          cacheDir);
+      if (!manifest.isUseCache()) {
+        removeRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
+            cacheDir);
+      }
+
       addRepo(storeDelegateConfig.getRepoName(), storeDelegateConfig.getRepoDisplayName(),
           httpHelmConnector.getHelmRepoUrl(), username, password, destinationDirectory, manifest.getHelmVersion(),
           timeoutInMillis, cacheDir, manifest.getHelmCommandFlag());
@@ -1525,7 +1530,9 @@ public class HelmTaskHelperBase {
       default:
         throw new ManifestCollectionException("Manifest collection not supported for other helm repos");
     }
-    removeRepo(repoName, workingDirectory, config.getHelmVersion(), timeoutInMillis);
+    if (!config.isUseCache()) {
+      removeRepo(repoName, workingDirectory, config.getHelmVersion(), timeoutInMillis);
+    }
     cleanup(workingDirectory);
   }
 
@@ -1636,7 +1643,8 @@ public class HelmTaskHelperBase {
     }
     URI uri = new URI(ociUrl);
     if (uri.getPort() < 0) {
-      uri = URI.create(uri + ":" + DEFAULT_PORT);
+      uri = new URI(uri.getScheme(), uri.getRawUserInfo(), uri.getHost(), DEFAULT_PORT, uri.getRawPath(),
+          uri.getRawQuery(), uri.getRawFragment());
     }
     return uri;
   }

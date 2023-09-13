@@ -189,7 +189,8 @@ public class ApplicationManifestResource {
   @GET
   @Timed
   @ExceptionMetered
-  @ApiKeyAuthorized(permissionType = PermissionType.LOGGED_IN)
+  @AuthRule(permissionType = PermissionType.SERVICE, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = PermissionType.SERVICE, action = Action.READ)
   public RestResponse<PageResponse<ApplicationManifest>> list(
       @QueryParam("appId") String appId, @BeanParam PageRequest<ApplicationManifest> pageRequest) {
     if (isNotBlank(appId)) {

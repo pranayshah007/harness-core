@@ -10,10 +10,13 @@ package io.harness.models;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
+import io.harness.entities.RollbackStatus;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 
 @OwnedBy(HarnessTeam.DX)
 @Value
@@ -31,4 +34,5 @@ public class InstanceDetailsDTO {
   InstanceInfoDTO instanceInfoDTO;
   String infrastructureMappingId;
   String instanceKey;
+  @NonFinal @Setter @Builder.Default RollbackStatus rollbackStatus;
 }

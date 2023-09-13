@@ -8,6 +8,7 @@
 package io.harness.steps.matrix;
 
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,7 +17,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -26,7 +30,10 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -54,7 +61,16 @@ public class MatrixConfigServiceTest extends CategoryTest {
     YamlField strategyField = approvalStageYamlField.getNode().getField("strategy");
     StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
 
-    List<ChildrenExecutableResponse.Child> children = matrixConfigService.fetchChildren(strategyConfig, "childNodeId");
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
+
+    List<ChildrenExecutableResponse.Child> children =
+        matrixConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance);
     assertThat(children.size()).isEqualTo(8);
   }
 
@@ -78,7 +94,16 @@ public class MatrixConfigServiceTest extends CategoryTest {
     YamlField strategyField = approvalStageYamlField.getNode().getField("strategy");
     StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
 
-    List<ChildrenExecutableResponse.Child> children = matrixConfigService.fetchChildren(strategyConfig, "childNodeId");
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
+
+    List<ChildrenExecutableResponse.Child> children =
+        matrixConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance);
     assertThat(children.size()).isEqualTo(24);
   }
 
@@ -102,7 +127,107 @@ public class MatrixConfigServiceTest extends CategoryTest {
     YamlField strategyField = approvalStageYamlField.getNode().getField("strategy");
     StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
 
-    List<ChildrenExecutableResponse.Child> children = matrixConfigService.fetchChildren(strategyConfig, "childNodeId");
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
+
+    List<ChildrenExecutableResponse.Child> children =
+        matrixConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance);
     assertThat(children.size()).isEqualTo(4);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testFetchChildrenWithNodeNames() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("matrix-nodename.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
+
+    YamlField strategyField = approvalStageYamlField.getNode().getField("strategy");
+    StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
+    List<ChildrenExecutableResponse.Child> children =
+        matrixConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance);
+    assertThat(children.size()).isEqualTo(6);
+    assertThat(children.get(0).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("a");
+    assertThat(children.get(1).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("a");
+    assertThat(children.get(2).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("b");
+    assertThat(children.get(3).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("b");
+    assertThat(children.get(4).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("c");
+    assertThat(children.get(5).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("c");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testFetchChildrenWithoutNodeNames() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("matrix-without-nodename.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
+
+    YamlField strategyField = approvalStageYamlField.getNode().getField("strategy");
+    StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putSettingToValueMap(
+                                 NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "false")
+                             .build())
+            .build();
+    List<ChildrenExecutableResponse.Child> children =
+        matrixConfigService.fetchChildren(strategyConfig, "childNodeId", ambiance);
+    assertThat(children.size()).isEqualTo(6);
+    assertThat(children.get(0).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("");
+    assertThat(children.get(1).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("");
+    assertThat(children.get(2).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("");
+    assertThat(children.get(3).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("");
+    assertThat(children.get(4).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("");
+    assertThat(children.get(5).getStrategyMetadata().getMatrixMetadata().getNodeName()).isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testResolveNodeName() throws IOException {
+    Map<String, String> combination = new HashMap<>();
+    combination.put("java", "a");
+    combination.put("go", "world");
+    Set<Map.Entry<String, String>> entries = combination.entrySet();
+
+    String resolvedNodeName =
+        matrixConfigService.matrixConfigServiceHelper.resolveNodeName(null, entries, combination, 0, 6);
+
+    assertThat(resolvedNodeName).isEqualTo("a_world");
   }
 }

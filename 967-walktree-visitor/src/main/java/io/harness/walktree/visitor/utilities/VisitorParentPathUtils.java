@@ -6,9 +6,7 @@
  */
 
 package io.harness.walktree.visitor.utilities;
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
-import io.harness.annotations.dev.ProductModule;
+
 import io.harness.exception.InvalidArgumentsException;
 
 import java.util.LinkedList;
@@ -18,8 +16,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @UtilityClass
 public class VisitorParentPathUtils {
   public final String PARENT_PATH_KEY = "PARENT_PATH_KEY";

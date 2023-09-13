@@ -106,7 +106,6 @@ import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -251,7 +250,7 @@ public class AzureWebAppStepHelper {
                                      : NgAppSettingsSweepingOutput.builder().build();
   }
 
-  public TaskRequest prepareGitFetchTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
+  public TaskRequest prepareGitFetchTaskRequest(StepBaseParameters stepElementParameters, Ambiance ambiance,
       Map<String, GitStoreConfig> gitStoreConfigs, List<String> units) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs = new ArrayList<>();
     for (Map.Entry<String, GitStoreConfig> configEntry : gitStoreConfigs.entrySet()) {

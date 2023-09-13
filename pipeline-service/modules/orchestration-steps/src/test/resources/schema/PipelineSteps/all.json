@@ -452,6 +452,23 @@
             }
           ]
         },
+        "imagePullPolicy": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -2011,7 +2028,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "RemoveSegmentToVariationTargetMap"
+                "RemoveSegmentsToVariationTargetMap"
               ]
             }
           }
@@ -2754,6 +2771,16 @@
             },
             "executionTarget": {
               "$ref": "#/definitions/ExecutionTarget"
+            },
+            "includeInfraSelectors": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "metadata": {
               "type": "string"

@@ -39,4 +39,5 @@ public class ActiveServiceInstanceInfoWithEnvType {
   private Status stageStatus;
   private String stageSetupId;
   private RollbackStatus rollbackStatus;
+  private String version; // chartVersion
 }

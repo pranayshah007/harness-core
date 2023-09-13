@@ -10,4 +10,4 @@ spec:
     {{- include "delegate-proxy.selectorLabels" . | nindent 4 }}
   ports:
     - port: 80
-      targetPort: {{.Values.service.port}}
+      targetPort: {{.Values.service.targetPort}}

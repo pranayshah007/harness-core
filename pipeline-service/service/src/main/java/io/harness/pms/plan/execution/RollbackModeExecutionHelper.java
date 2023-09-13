@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -34,7 +35,6 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.helpers.PrincipalInfoHelper;
-import io.harness.pms.pipeline.service.PipelineMetadataService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -51,8 +51,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.CloseableIterator;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @NoArgsConstructor
@@ -61,19 +60,16 @@ import org.springframework.data.util.CloseableIterator;
 public class RollbackModeExecutionHelper {
   private NodeExecutionService nodeExecutionService;
   private PlanService planService;
-  private PipelineMetadataService pipelineMetadataService;
   private PrincipalInfoHelper principalInfoHelper;
   private RollbackModeYamlTransformer rollbackModeYamlTransformer;
 
   public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
-      ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier,
-      ExecutionMode executionMode, PipelineStageInfo parentStageInfo, List<String> stageNodeExecutionIds) {
+      ExecutionTriggerInfo triggerInfo, ExecutionMode executionMode, PipelineStageInfo parentStageInfo,
+      List<String> stageNodeExecutionIds) {
     String originalPlanExecutionId = executionMetadata.getExecutionUuid();
     Builder newMetadata = executionMetadata.toBuilder()
                               .setExecutionUuid(planExecutionID)
                               .setTriggerInfo(triggerInfo)
-                              .setRunSequence(pipelineMetadataService.incrementExecutionCounter(accountId,
-                                  orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
                               .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
                               .setExecutionMode(executionMode)
                               .setOriginalPlanExecutionIdForRollbackMode(originalPlanExecutionId);
@@ -126,7 +122,7 @@ public class RollbackModeExecutionHelper {
     }
     List<String> rollbackStageFQNs =
         nodeExecutionService
-            .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.planNode))
+            .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.stageFqn))
             .stream()
             .map(NodeExecution::getStageFqn)
             .collect(Collectors.toList());
@@ -193,7 +189,7 @@ public class RollbackModeExecutionHelper {
         previouslyAddedNode.convertToListOfOGNodeExecIds(nodeExecution.getUuid());
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, previouslyAddedNode);
       } else {
-        Node node = planService.fetchNode(nodeExecution.getNodeId());
+        Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
         IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
             node, nodeExecution.getStepType(), nodeExecution.getUuid(), true);
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, identityPlanNode);

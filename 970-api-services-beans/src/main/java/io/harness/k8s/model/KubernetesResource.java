@@ -49,6 +49,8 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -67,11 +69,13 @@ import io.kubernetes.client.openapi.models.V1VolumeProjection;
 import io.kubernetes.client.openapi.models.V2HorizontalPodAutoscaler;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -98,6 +102,8 @@ public class KubernetesResource {
   private static final String MISSING_JOB_SPEC_MSG = "Job does not have spec";
   private static final String MISSING_POD_SPEC_MSG = "Pod does not have spec";
   private static final String MISSING_PODDISRUPTIONBUDGET_SPEC_MSG = "PodDisruptionBudget does not have spec";
+  private static final String MATCH_LABELS_FORMAT = "%s=%s";
+  private static final String MATCH_EXPRESSION_FORMAT = "%s %s (%s)";
 
   private KubernetesResourceId resourceId;
   private Object value;
@@ -496,21 +502,24 @@ public class KubernetesResource {
   }
 
   public static String redactSecretValues(String spec) {
+    final String redacted = "***";
+    return redactSecretValues(spec, redacted, redacted);
+  }
+
+  public static String redactSecretValues(String spec, String maskValue, String stringMaskValue) {
     String result = "Error in redactSecretValues. skipped.\n";
 
     try {
       V1Secret v1Secret = Yaml.loadAs(spec, V1Secret.class);
-
-      final String redacted = "***";
       if (isNotEmpty(v1Secret.getData())) {
         for (Entry e : v1Secret.getData().entrySet()) {
-          e.setValue(redacted);
+          e.setValue(maskValue);
         }
       }
 
       if (isNotEmpty(v1Secret.getStringData())) {
         for (Entry e : v1Secret.getStringData().entrySet()) {
-          e.setValue(redacted);
+          e.setValue(stringMaskValue);
         }
       }
       org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
@@ -921,5 +930,99 @@ public class KubernetesResource {
       // Return original spec
       return spec;
     }
+  }
+
+  public Map<String, List<String>> getLabelSelectors() {
+    Object k8sResource = getK8sResource();
+    Kind kind = Kind.fromString(this.resourceId.getKind());
+    switch (kind) {
+      case DeploymentConfig: {
+        DeploymentConfig deploymentConfig = (DeploymentConfig) k8sResource;
+        notNullCheck(MISSING_DEPLOYMENT_CONFIG_SPEC_MSG, deploymentConfig.getSpec());
+        if (deploymentConfig.getMetadata() == null || deploymentConfig.getMetadata().getName() == null) {
+          throw new KubernetesYamlException("DeploymentConfig does not have metadata or a name");
+        }
+        return Map.of(
+            deploymentConfig.getMetadata().getName(), getMatchLabelSelectors(deploymentConfig.getSpec().getSelector()));
+      }
+      case Deployment: {
+        V1Deployment v1Deployment = (V1Deployment) k8sResource;
+        notNullCheck(MISSING_DEPLOYMENT_SPEC_MSG, v1Deployment.getSpec());
+        if (v1Deployment.getSpec().getSelector() == null) {
+          throw new KubernetesYamlException("Deployment spec does not have selector");
+        }
+        if (v1Deployment.getMetadata() == null || v1Deployment.getMetadata().getName() == null) {
+          throw new KubernetesYamlException("Deployment does not have metadata or a name");
+        }
+        return Map.of(
+            v1Deployment.getMetadata().getName(), getLabelsFromSelector(v1Deployment.getSpec().getSelector()));
+      }
+      case StatefulSet: {
+        V1StatefulSet v1StatefulSet = (V1StatefulSet) k8sResource;
+        notNullCheck(MISSING_STATEFULSET_SPEC_MSG, v1StatefulSet.getSpec());
+        if (v1StatefulSet.getSpec().getSelector() == null) {
+          throw new KubernetesYamlException("StatefulSet spec does not have selector");
+        }
+        if (v1StatefulSet.getMetadata() == null || v1StatefulSet.getMetadata().getName() == null) {
+          throw new KubernetesYamlException("StatefulSet does not have metadata or a name");
+        }
+        return Map.of(
+            v1StatefulSet.getMetadata().getName(), getLabelsFromSelector(v1StatefulSet.getSpec().getSelector()));
+      }
+      case DaemonSet: {
+        V1DaemonSet v1DaemonSet = (V1DaemonSet) k8sResource;
+        notNullCheck(MISSING_DEAMONSET_SPEC_MSG, v1DaemonSet.getSpec());
+        if (v1DaemonSet.getSpec().getSelector() == null) {
+          throw new KubernetesYamlException("DaemonSet spec does not have selector");
+        }
+        if (v1DaemonSet.getMetadata() == null || v1DaemonSet.getMetadata().getName() == null) {
+          throw new KubernetesYamlException("DaemonSet does not have metadata or a name");
+        }
+        return Map.of(v1DaemonSet.getMetadata().getName(), getLabelsFromSelector(v1DaemonSet.getSpec().getSelector()));
+      }
+      case Job: {
+        V1Job v1Job = (V1Job) k8sResource;
+        notNullCheck(MISSING_JOB_SPEC_MSG, v1Job.getSpec());
+        if (v1Job.getSpec().getSelector() == null) {
+          throw new KubernetesYamlException("Job spec does not have selector");
+        }
+        if (v1Job.getMetadata() == null || v1Job.getMetadata().getName() == null) {
+          throw new KubernetesYamlException("Job does not have metadata or a name");
+        }
+        return Map.of(v1Job.getMetadata().getName(), getLabelsFromSelector(v1Job.getSpec().getSelector()));
+      }
+      default: {
+        throw new InvalidRequestException(
+            format("Unhandled Kubernetes resource %s while getting labels to selector", this.resourceId.getKind()));
+      }
+    }
+  }
+
+  private static List<String> getLabelsFromSelector(V1LabelSelector selector) {
+    List<String> labels = new ArrayList<>();
+    if (selector.getMatchLabels() != null) {
+      labels.addAll(getMatchLabelSelectors(selector.getMatchLabels()));
+    }
+    if (selector.getMatchExpressions() != null) {
+      labels.addAll(selector.getMatchExpressions()
+                        .stream()
+                        .map(KubernetesResource::formatExpressionSelector)
+                        .collect(Collectors.toList()));
+    }
+
+    return labels;
+  }
+
+  private static List<String> getMatchLabelSelectors(Map<String, String> map) {
+    return map.entrySet().stream().map(KubernetesResource::formatMatchLabelSelector).collect(Collectors.toList());
+  }
+
+  private static String formatMatchLabelSelector(Entry<String, String> entry) {
+    return format(MATCH_LABELS_FORMAT, entry.getKey(), entry.getValue());
+  }
+
+  private static String formatExpressionSelector(V1LabelSelectorRequirement expression) {
+    return format(MATCH_EXPRESSION_FORMAT, expression.getKey(), expression.getOperator().toLowerCase(),
+        expression.getValues() != null ? String.join(", ", expression.getValues()) : "");
   }
 }

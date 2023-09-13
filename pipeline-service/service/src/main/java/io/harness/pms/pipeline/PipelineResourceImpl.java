@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static java.lang.Long.parseLong;
@@ -114,7 +115,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineIdentifier, pipelineName, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
@@ -130,7 +131,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @NotNull String yaml) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        accountId, orgId, projectId, pipelineName, yaml, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineIdentifier, pipelineName, yaml, isDraft, pipelineVersion);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity, false);
@@ -392,6 +393,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<NotificationRules> getNotificationSchema() {
     return ResponseDTO.newResponse(NotificationRules.builder().build());
   }
+
   @Hidden
   public ResponseDTO<ExecutionNode> getExecutionNode(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,

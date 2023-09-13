@@ -46,6 +46,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
@@ -73,6 +74,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -93,6 +95,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
   @Inject ConfigService configService;
   @Inject ConfigFileMigrationService configFileMigrationService;
   @Inject EnvironmentResourceClient environmentResourceClient;
+  @Inject private HPersistence hPersistence;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -152,6 +155,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                      .build())
                           .collect(Collectors.toList()));
     }
+
     List<ApplicationManifest> applicationManifests =
         applicationManifestService.getAllByEnvId(environment.getAppId(), environment.getUuid());
     if (isNotEmpty(applicationManifests)) {
@@ -289,6 +293,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
               .filter(serviceVariable -> StringUtils.isBlank(serviceVariable.getServiceId()))
               .collect(Collectors.toList())));
     }
+    variables.sort(Comparator.comparing(NGVariable::getName));
     return variables;
   }
 
@@ -310,7 +315,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 }

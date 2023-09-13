@@ -27,7 +27,8 @@ public class PmsNotifyEventConsumerRedisTest {
   @Owner(developers = SOUMYAJIT)
   @Category(UnitTests.class)
   public void shouldValidateEventConsumerRedis() {
-    PmsNotifyEventConsumerRedis pmsNotifyEventConsumerRedis = new PmsNotifyEventConsumerRedis(null, null, null, null);
+    PmsNotifyEventConsumerRedis pmsNotifyEventConsumerRedis =
+        new PmsNotifyEventConsumerRedis(null, null, null, null, null);
     assertThat(pmsNotifyEventConsumerRedis).isNotEqualTo(null);
   }
 }

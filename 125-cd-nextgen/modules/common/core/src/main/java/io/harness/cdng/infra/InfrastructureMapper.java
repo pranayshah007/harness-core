@@ -13,8 +13,11 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.cdng.infra.beans.AwsLambdaInfrastructureOutcome;
@@ -69,10 +72,9 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
-import io.harness.evaluators.ProvisionerExpressionEvaluator;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.expression.common.ExpressionMode;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.environment.EnvironmentOutcome;
 
@@ -87,17 +89,25 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDP)
 public class InfrastructureMapper {
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private PdcProvisionedInfrastructureMapper pdcProvisionedInfrastructureMapper;
 
-  @NotNull
-  public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure,
-      ProvisionerExpressionEvaluator expressionEvaluator, EnvironmentOutcome environmentOutcome,
+  public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
       ServiceStepOutcome service, String accountIdentifier, String orgIdentifier, String projectIdentifier,
       Map<String, String> tags) {
+    return toOutcome(
+        infrastructure, null, environmentOutcome, service, accountIdentifier, orgIdentifier, projectIdentifier, tags);
+  }
+
+  @NotNull
+  public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, Ambiance ambiance,
+      EnvironmentOutcome environmentOutcome, ServiceStepOutcome service, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Map<String, String> tags) {
     Map<String, String> mergedTags = new HashMap<>();
     Map<String, String> hostTags;
 
@@ -113,12 +123,8 @@ public class InfrastructureMapper {
         K8sDirectInfrastructureOutcome k8SDirectInfrastructureOutcome =
             K8sDirectInfrastructureOutcome.builder()
                 .connectorRef(k8SDirectInfrastructure.getConnectorRef().getValue())
-                .namespace(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        k8SDirectInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .releaseName(getParameterFieldValueOrExpressionOrResolveProvisionerExpression(expressionEvaluator,
-                    isDynamicallyProvisioned, k8SDirectInfrastructure.getReleaseName(),
-                    ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+                .namespace(k8SDirectInfrastructure.getNamespace().getValue())
+                .releaseName(getValueOrExpression(k8SDirectInfrastructure.getReleaseName()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, k8SDirectInfrastructure.getInfrastructureKeyValues()))
@@ -133,15 +139,9 @@ public class InfrastructureMapper {
         K8sGcpInfrastructureOutcome k8sGcpInfrastructureOutcome =
             K8sGcpInfrastructureOutcome.builder()
                 .connectorRef(k8sGcpInfrastructure.getConnectorRef().getValue())
-                .namespace(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        k8sGcpInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .cluster(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        k8sGcpInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .releaseName(getParameterFieldValueOrExpressionOrResolveProvisionerExpression(expressionEvaluator,
-                    isDynamicallyProvisioned, k8sGcpInfrastructure.getReleaseName(),
-                    ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+                .namespace(k8sGcpInfrastructure.getNamespace().getValue())
+                .cluster(k8sGcpInfrastructure.getCluster().getValue())
+                .releaseName(getValueOrExpression(k8sGcpInfrastructure.getReleaseName()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, k8sGcpInfrastructure.getInfrastructureKeyValues()))
@@ -157,12 +157,8 @@ public class InfrastructureMapper {
         ServerlessAwsLambdaInfrastructureOutcome serverlessAwsLambdaInfrastructureOutcome =
             ServerlessAwsLambdaInfrastructureOutcome.builder()
                 .connectorRef(serverlessAwsLambdaInfrastructure.getConnectorRef().getValue())
-                .region(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        serverlessAwsLambdaInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .stage(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        serverlessAwsLambdaInfrastructure.getStage(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .region(serverlessAwsLambdaInfrastructure.getRegion().getValue())
+                .stage(serverlessAwsLambdaInfrastructure.getStage().getValue())
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, serverlessAwsLambdaInfrastructure.getInfrastructureKeyValues()))
@@ -177,24 +173,14 @@ public class InfrastructureMapper {
         K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome =
             K8sAzureInfrastructureOutcome.builder()
                 .connectorRef(getParameterFieldValue(k8sAzureInfrastructure.getConnectorRef()))
-                .namespace(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        k8sAzureInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .cluster(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        k8sAzureInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .releaseName(getParameterFieldValueOrExpressionOrResolveProvisionerExpression(expressionEvaluator,
-                    isDynamicallyProvisioned, k8sAzureInfrastructure.getReleaseName(),
-                    ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+                .namespace(getParameterFieldValue(k8sAzureInfrastructure.getNamespace()))
+                .cluster(getParameterFieldValue(k8sAzureInfrastructure.getCluster()))
+                .releaseName(getValueOrExpression(k8sAzureInfrastructure.getReleaseName()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, k8sAzureInfrastructure.getInfrastructureKeyValues()))
-                .subscription(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        k8sAzureInfrastructure.getSubscriptionId(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .resourceGroup(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        k8sAzureInfrastructure.getResourceGroup(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .subscription(getParameterFieldValue(k8sAzureInfrastructure.getSubscriptionId()))
+                .resourceGroup(getParameterFieldValue(k8sAzureInfrastructure.getResourceGroup()))
                 .useClusterAdminCredentials(ParameterFieldHelper.getBooleanParameterFieldValue(
                     k8sAzureInfrastructure.getUseClusterAdminCredentials()))
                 .build();
@@ -206,8 +192,8 @@ public class InfrastructureMapper {
       case InfrastructureKind.PDC:
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
         if (isDynamicallyProvisioned) {
-          infrastructureOutcome = pdcProvisionedInfrastructureMapper.toOutcome(
-              pdcInfrastructure, expressionEvaluator, environmentOutcome, service);
+          infrastructureOutcome =
+              pdcProvisionedInfrastructureMapper.toOutcome(pdcInfrastructure, ambiance, environmentOutcome, service);
           break;
         }
         setPdcInfrastructureHostValueSplittingStringToListIfNeeded(pdcInfrastructure);
@@ -228,15 +214,12 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
-        hostTags = getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-            sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+        hostTags = getParameterFieldValue(sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags());
         SshWinRmAwsInfrastructureOutcome sshWinRmAwsInfrastructureOutcome =
             SshWinRmAwsInfrastructureOutcome.builder()
                 .connectorRef(getParameterFieldValue(sshWinRmAwsInfrastructure.getConnectorRef()))
                 .credentialsRef(getParameterFieldValue(sshWinRmAwsInfrastructure.getCredentialsRef()))
-                .region(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        sshWinRmAwsInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .region(getParameterFieldValue(sshWinRmAwsInfrastructure.getRegion()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, infrastructure.getInfrastructureKeyValues()))
@@ -254,17 +237,12 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.SSH_WINRM_AZURE:
         SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
-        hostTags = getParameterFieldValueOrEvaluateProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-            sshWinRmAzureInfrastructure.getTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+        hostTags = getParameterFieldValue(sshWinRmAzureInfrastructure.getTags());
         SshWinRmAzureInfrastructureOutcome sshWinRmAzureInfrastructureOutcome =
             SshWinRmAzureInfrastructureOutcome.builder()
                 .connectorRef(getParameterFieldValue(sshWinRmAzureInfrastructure.getConnectorRef()))
-                .subscriptionId(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        sshWinRmAzureInfrastructure.getSubscriptionId(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .resourceGroup(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        sshWinRmAzureInfrastructure.getResourceGroup(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .subscriptionId(getParameterFieldValue(sshWinRmAzureInfrastructure.getSubscriptionId()))
+                .resourceGroup(getParameterFieldValue(sshWinRmAzureInfrastructure.getResourceGroup()))
                 .credentialsRef(getParameterFieldValue(sshWinRmAzureInfrastructure.getCredentialsRef()))
                 .hostTags(hostTags)
                 .hostConnectionType(getParameterFieldValue(sshWinRmAzureInfrastructure.getHostConnectionType()))
@@ -288,12 +266,8 @@ public class InfrastructureMapper {
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, azureWebAppInfrastructure.getInfrastructureKeyValues()))
-                .subscription(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        azureWebAppInfrastructure.getSubscriptionId(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .resourceGroup(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        azureWebAppInfrastructure.getResourceGroup(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .subscription(azureWebAppInfrastructure.getSubscriptionId().getValue())
+                .resourceGroup(azureWebAppInfrastructure.getResourceGroup().getValue())
                 .build();
         setInfraIdentifierAndName(azureWebAppInfrastructureOutcome, azureWebAppInfrastructure.getInfraIdentifier(),
             azureWebAppInfrastructure.getInfraName());
@@ -306,12 +280,8 @@ public class InfrastructureMapper {
             EcsInfrastructureOutcome.builder()
                 .connectorRef(ecsInfrastructure.getConnectorRef().getValue())
                 .environment(environmentOutcome)
-                .region(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        ecsInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .cluster(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        ecsInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .region(ecsInfrastructure.getRegion().getValue())
+                .cluster(ecsInfrastructure.getCluster().getValue())
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, ecsInfrastructure.getInfrastructureKeyValues()))
                 .build();
@@ -326,12 +296,8 @@ public class InfrastructureMapper {
             GoogleFunctionsInfrastructureOutcome.builder()
                 .connectorRef(googleFunctionsInfrastructure.getConnectorRef().getValue())
                 .environment(environmentOutcome)
-                .region(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        googleFunctionsInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .project(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        googleFunctionsInfrastructure.getProject(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .region(googleFunctionsInfrastructure.getRegion().getValue())
+                .project(googleFunctionsInfrastructure.getProject().getValue())
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, googleFunctionsInfrastructure.getInfrastructureKeyValues()))
                 .build();
@@ -360,11 +326,12 @@ public class InfrastructureMapper {
             AsgInfrastructureOutcome.builder()
                 .connectorRef(asgInfrastructure.getConnectorRef().getValue())
                 .environment(environmentOutcome)
-                .region(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        asgInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .region(asgInfrastructure.getRegion().getValue())
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, asgInfrastructure.getInfrastructureKeyValues()))
+                .baseAsgName(
+                    asgInfrastructure.getBaseAsgName() != null ? asgInfrastructure.getBaseAsgName().getValue() : null)
+                .asgName(asgInfrastructure.getAsgName() != null ? asgInfrastructure.getAsgName().getValue() : null)
                 .build();
         setInfraIdentifierAndName(
             asgInfrastructureOutcome, asgInfrastructure.getInfraIdentifier(), asgInfrastructure.getInfraName());
@@ -405,12 +372,8 @@ public class InfrastructureMapper {
         TanzuApplicationServiceInfrastructureOutcome tanzuInfrastructureOutcome =
             TanzuApplicationServiceInfrastructureOutcome.builder()
                 .connectorRef(tanzuInfrastructure.getConnectorRef().getValue())
-                .organization(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        tanzuInfrastructure.getOrganization(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .space(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        tanzuInfrastructure.getSpace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .organization(tanzuInfrastructure.getOrganization().getValue())
+                .space(tanzuInfrastructure.getSpace().getValue())
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, tanzuInfrastructure.getInfrastructureKeyValues()))
@@ -426,9 +389,7 @@ public class InfrastructureMapper {
             AwsSamInfrastructureOutcome.builder()
                 .connectorRef(awsSamInfrastructure.getConnectorRef().getValue())
                 .environment(environmentOutcome)
-                .region(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        awsSamInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .region(awsSamInfrastructure.getRegion().getValue())
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, awsSamInfrastructure.getInfrastructureKeyValues()))
                 .build();
@@ -442,9 +403,7 @@ public class InfrastructureMapper {
         AwsLambdaInfrastructureOutcome awsLambdaInfrastructureOutcome =
             AwsLambdaInfrastructureOutcome.builder()
                 .connectorRef(awsLambdaInfrastructure.getConnectorRef().getValue())
-                .region(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        awsLambdaInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+                .region(awsLambdaInfrastructure.getRegion().getValue())
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, awsLambdaInfrastructure.getInfrastructureKeyValues()))
@@ -459,15 +418,9 @@ public class InfrastructureMapper {
         K8sAwsInfrastructureOutcome k8sAwsInfrastructureOutcome =
             K8sAwsInfrastructureOutcome.builder()
                 .connectorRef(k8sAwsInfrastructure.getConnectorRef().getValue())
-                .namespace(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        k8sAwsInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .cluster(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        k8sAwsInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .releaseName(getParameterFieldValueOrExpressionOrResolveProvisionerExpression(expressionEvaluator,
-                    isDynamicallyProvisioned, k8sAwsInfrastructure.getReleaseName(),
-                    ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+                .namespace(k8sAwsInfrastructure.getNamespace().getValue())
+                .cluster(k8sAwsInfrastructure.getCluster().getValue())
+                .releaseName(getValueOrExpression(k8sAwsInfrastructure.getReleaseName()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, k8sAwsInfrastructure.getInfrastructureKeyValues()))
@@ -482,15 +435,9 @@ public class InfrastructureMapper {
         K8sRancherInfrastructureOutcome rancherInfrastructureOutcome =
             K8sRancherInfrastructureOutcome.builder()
                 .connectorRef(rancherInfrastructure.getConnectorRef().getValue())
-                .namespace(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        rancherInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .clusterName(
-                    getParameterFieldValueOrResolveProvisionerExpression(expressionEvaluator, isDynamicallyProvisioned,
-                        rancherInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
-                .releaseName(getParameterFieldValueOrExpressionOrResolveProvisionerExpression(expressionEvaluator,
-                    isDynamicallyProvisioned, rancherInfrastructure.getReleaseName(),
-                    ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+                .namespace(rancherInfrastructure.getNamespace().getValue())
+                .clusterName(rancherInfrastructure.getCluster().getValue())
+                .releaseName(getValueOrExpression(rancherInfrastructure.getReleaseName()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, rancherInfrastructure.getInfrastructureKeyValues()))
@@ -572,33 +519,5 @@ public class InfrastructureMapper {
     } else {
       return parameterField.getValue();
     }
-  }
-
-  public <T> T getParameterFieldValueOrResolveProvisionerExpression(ProvisionerExpressionEvaluator expressionEvaluator,
-      boolean isDynamicallyProvisioned, ParameterField<T> parameterField, ExpressionMode expressionMode) {
-    if (!isDynamicallyProvisioned) {
-      return getParameterFieldValue(parameterField);
-    }
-
-    return expressionEvaluator.resolveExpression(parameterField, expressionMode).getValue();
-  }
-
-  public <T> T getParameterFieldValueOrEvaluateProvisionerExpression(ProvisionerExpressionEvaluator expressionEvaluator,
-      boolean isDynamicallyProvisioned, ParameterField<T> parameterField, ExpressionMode expressionMode) {
-    if (!isDynamicallyProvisioned) {
-      return getParameterFieldValue(parameterField);
-    }
-
-    return expressionEvaluator.evaluateExpression(parameterField, expressionMode);
-  }
-
-  public String getParameterFieldValueOrExpressionOrResolveProvisionerExpression(
-      ProvisionerExpressionEvaluator expressionEvaluator, boolean isDynamicallyProvisioned,
-      ParameterField<String> parameterField, ExpressionMode expressionMode) {
-    if (!isDynamicallyProvisioned) {
-      return getValueOrExpression(parameterField);
-    }
-
-    return expressionEvaluator.resolveExpression(parameterField, expressionMode).getValue();
   }
 }

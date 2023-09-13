@@ -15,4 +15,8 @@ public class CICommonEndpointConstants {
   public static final String LOG_SERVICE_TOKEN_ENDPOINT = "token";
   public static final String LOG_SERVICE_STREAM_ENDPOINT = "stream";
   public static final String TI_SERVICE_TOKEN_ENDPOINT = "token";
+  public static final String TI_SERVICE_REPORT_SUMMARY_ENDPOINT = "reports/summary";
+  public static final String TI_SERVICE_INTERNAL_CLEANUP_ENDPOINT = "internal/account/cleanup";
+  public static final String LOG_SERVICE_INTERNAL_BLOB_ENDPOINT = "internal/blob";
+  public static final String LOG_SERVICE_BLOB_EXISTS = "blob/exists";
 }

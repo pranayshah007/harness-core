@@ -161,39 +161,45 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     ArtifactoryConfigRequest artifactoryConfigRequest = artifactoryRequestMapper.toArtifactoryRequest(
         artifactoryGenericArtifactDelegateRequest.getArtifactoryConnectorDTO());
     String artifactDirectory = artifactoryGenericArtifactDelegateRequest.getArtifactDirectory();
+    String artifactFilter = artifactoryGenericArtifactDelegateRequest.getArtifactFilter();
     if (EmptyPredicate.isEmpty(artifactDirectory)) {
       saveLogs(executionLogCallback,
           "Artifact Directory is Empty, assuming Artifacts are present in root of the repository");
       artifactDirectory = DEFAULT_ARTIFACT_DIRECTORY;
     }
-    String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
+    String filePath = EmptyPredicate.isEmpty(artifactFilter)
+        ? Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString()
+        : artifactFilter;
 
     List<BuildDetails> buildDetails = artifactoryNgService.getArtifactList(artifactoryConfigRequest,
         artifactoryGenericArtifactDelegateRequest.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT,
         artifactoryGenericArtifactDelegateRequest.getArtifactPathFilter(), artifactDirectory);
 
-    int index = 0;
-    for (; index < artifactDirectory.length(); index++) {
-      if (artifactDirectory.charAt(index) != '/') {
-        break;
+    if (EmptyPredicate.isEmpty(artifactFilter)) {
+      int index = 0;
+      for (; index < artifactDirectory.length(); index++) {
+        if (artifactDirectory.charAt(index) != '/') {
+          break;
+        }
       }
+
+      String finalArtifactDirectory = artifactDirectory.substring(index);
+
+      buildDetails = buildDetails.stream()
+                         .map(buildDetail -> {
+                           String artifactoryPath = buildDetail.getArtifactPath();
+                           if (!finalArtifactDirectory.equals(".")) {
+                             artifactoryPath = buildDetail.getArtifactPath().replaceFirst(finalArtifactDirectory, "");
+                           }
+                           if (!artifactoryPath.isEmpty() && artifactoryPath.charAt(0) == '/') {
+                             artifactoryPath = artifactoryPath.substring(1);
+                           }
+                           buildDetail.setArtifactPath(artifactoryPath);
+                           return buildDetail;
+                         })
+                         .collect(Collectors.toList());
     }
 
-    String finalArtifactDirectory = artifactDirectory.substring(index);
-
-    buildDetails = buildDetails.stream()
-                       .map(buildDetail -> {
-                         String artifactoryPath = buildDetail.getArtifactPath();
-                         if (!finalArtifactDirectory.equals(".")) {
-                           artifactoryPath = buildDetail.getArtifactPath().replaceFirst(finalArtifactDirectory, "");
-                         }
-                         if (!artifactoryPath.isEmpty() && artifactoryPath.charAt(0) == '/') {
-                           artifactoryPath = artifactoryPath.substring(1);
-                         }
-                         buildDetail.setArtifactPath(artifactoryPath);
-                         return buildDetail;
-                       })
-                       .collect(Collectors.toList());
     List<ArtifactoryGenericArtifactDelegateResponse> artifactDelegateResponses =
         buildDetails.stream()
             .map(build

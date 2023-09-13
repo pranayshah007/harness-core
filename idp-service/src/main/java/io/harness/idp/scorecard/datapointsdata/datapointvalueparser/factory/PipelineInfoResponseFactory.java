@@ -6,9 +6,10 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory;
 
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.STO_ADDED_IN_PIPELINE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineInfo;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl.StoStageSetupParser;
 
@@ -22,7 +23,7 @@ public class PipelineInfoResponseFactory {
 
   public PipelineInfo getResponseParser(String identifier) {
     switch (identifier) {
-      case ValueParserConstants.STO_SCAN_SETUP_DATAPOINT_IDENTIFIER:
+      case STO_ADDED_IN_PIPELINE:
         return stoStageSetup;
       default:
         throw new UnsupportedOperationException(String.format("Could not find response parser for %s", identifier));

@@ -14,9 +14,11 @@ import static software.wings.beans.ResourceConstraintInstance.NOT_FINISHED_STATE
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.beans.FeatureName;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.IteratorExecutionHandler;
 import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
@@ -48,6 +50,7 @@ public class ResourceConstraintBackupHandler
   @Inject private ResourceConstraintService resourceConstraintService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<ResourceConstraintInstance> persistenceProvider;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
@@ -100,10 +103,12 @@ public class ResourceConstraintBackupHandler
   public void handle(ResourceConstraintInstance instance) {
     String constraintId = instance.getResourceConstraintId();
     boolean toUnblock = false;
+    boolean hitSecondaryNode = false;
     try {
       if (State.BLOCKED.name().equals(instance.getState())) {
         log.debug("This is a completely blocked constraint: {}", constraintId);
         toUnblock = true;
+        hitSecondaryNode = true;
       } else if (State.ACTIVE.name().equals(instance.getState())) {
         if (resourceConstraintService.updateActiveConstraintForInstance(instance)) {
           log.info("The following resource constrained need to be unblocked: {}", constraintId);
@@ -112,7 +117,12 @@ public class ResourceConstraintBackupHandler
       }
       if (toUnblock) {
         // Unblock the constraints that can be unblocked
-        resourceConstraintService.updateBlockedConstraints(Sets.newHashSet(constraintId));
+        if (featureFlagService.isEnabled(
+                FeatureName.CDS_RESOURCE_CONSTRAINT_INSTANCE_OPTIMIZATION, instance.getAccountId())) {
+          resourceConstraintService.updateBlockedConstraintsV2(Sets.newHashSet(constraintId), hitSecondaryNode);
+        } else {
+          resourceConstraintService.updateBlockedConstraints(Sets.newHashSet(constraintId));
+        }
       }
     } catch (WingsException exception) {
       ExceptionLogger.logProcessedMessages(exception, MANAGER, log);

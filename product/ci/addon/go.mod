@@ -27,10 +27,10 @@ require (
 	github.com/goreleaser/nfpm v1.3.0 // indirect
 	github.com/gostaticanalysis/analysisutil v0.0.3 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.1
-	github.com/harness/harness-core v0.0.0-20220210161509-69d6cb167b7a
-	github.com/harness/harness-core/commons/go/lib v0.0.0-20220222141117-7659b7eca599
+	github.com/harness/harness-core v0.0.0-20230630234258-c5cacffec07e
+	github.com/harness/harness-core/commons/go/lib v0.0.0-20230704115211-8b21b2758330
 	github.com/harness/harness-core/product/ci/engine v0.0.0-20220526003445-374c61227e45
-	github.com/harness/ti-client v0.0.0-20230625210213-de916cd21d22
+	github.com/harness/ti-client v0.0.0-20230827043740-d394b7ccaa1a
 	github.com/hashicorp/go-retryablehttp v0.6.6 // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20200119135958-7558a9eaa5af // indirect
 	github.com/joho/godotenv v1.4.0
@@ -54,7 +54,7 @@ require (
 	github.com/vdemeester/k8s-pkg-credentialprovider v1.18.1-0.20201019120933-f1d16962a4db
 	github.com/xanzy/go-gitlab v0.32.0 // indirect
 	go.uber.org/zap v1.16.0
-	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
+	golang.org/x/net v0.5.0
 	google.golang.org/grpc v1.43.0
 	gopkg.in/ini.v1 v1.56.0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.5 // indirect

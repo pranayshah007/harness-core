@@ -30,12 +30,12 @@ import io.harness.cache.CacheModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.CIExecutionTestModule;
-import io.harness.ci.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.config.VmImageConfig;
-import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.buildstate.SecretDecryptorViaNg;
+import io.harness.ci.execution.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.ff.CIFeatureFlagNoopServiceImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.license.CILicenseNoopServiceImpl;
@@ -49,6 +49,7 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.code.CodeResourceClient;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
@@ -155,6 +156,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       protected void configure() {
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
         bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
+        bind(CodeResourceClient.class).toInstance(mock(CodeResourceClient.class));
       }
     });
 
@@ -239,6 +241,8 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .gcsUploadConfig(StepImageConfig.builder().image("gcsUpload:1.2.3").build())
             .sscaOrchestrationConfig(StepImageConfig.builder().image("sscaorchestrate:0.0.1").build())
             .sscaEnforcementConfig(StepImageConfig.builder().image("sscaEnforcement:0.0.1").build())
+            .slsaVerificationConfig(StepImageConfig.builder().image("slsaVerification:0.0.1").build())
+            .provenanceConfig(StepImageConfig.builder().image("provenance:0.0.1").build())
             .vmImageConfig(vmImageConfig)
             .build();
 

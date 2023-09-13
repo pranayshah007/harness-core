@@ -10,6 +10,8 @@ import static io.harness.beans.FeatureName.PIE_STATIC_YAML_SCHEMA;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.APPROVAL_NAMESPACE;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.PARALLEL_STEP_ELEMENT_CONFIG;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.PIPELINE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.TRIGGER;
 import static io.harness.yaml.schema.beans.SchemaConstants.ALL_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
@@ -48,6 +50,9 @@ import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.individualschema.PipelineSchemaMetadata;
+import io.harness.pms.yaml.individualschema.PipelineSchemaParserV0;
+import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
@@ -110,9 +115,14 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private ExecutorService yamlSchemaExecutor;
 
   @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
+  @Inject PipelineSchemaParserV0 pipelineSchemaParserV0;
   Integer allowedParallelStages;
 
   private final String PIPELINE_JSON = "pipeline.json";
+  private final String TRIGGER_JSON = "trigger.json";
+  private final String PIPELINE_VERSION_V0 = "v0";
+  private final String PIPELINE_JSON_PATH_V0 = "static-schema/v0/pipeline.json";
+  private final String TRIGGER_JSON_PATH_V0 = "static-schema/v0/trigger.json";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
@@ -180,7 +190,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
       // If static schema ff is on, fetch schema from fetcher
       if (pmsFeatureFlagService.isEnabled(accountIdentifier, PIE_STATIC_YAML_SCHEMA)) {
-        schema = schemaFetcher.fetchStaticYamlSchema();
+        schema = schemaFetcher.fetchPipelineStaticYamlSchema(PIPELINE_VERSION_V0);
       } else {
         schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT);
       }
@@ -505,6 +515,33 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       log.error(format("Not able to read file from %s path", fileUrl));
     }
     return null;
+  }
+
+  @Override
+  public ObjectNode getStaticSchemaForAllEntities(
+      String nodeGroup, String nodeType, String nodeGroupDifferentiator, String version) {
+    JsonNode jsonNode;
+    switch (nodeGroup) {
+      case PIPELINE:
+        jsonNode = schemaFetcher.fetchPipelineStaticYamlSchema(version);
+        return (ObjectNode) jsonNode;
+      case TRIGGER:
+        jsonNode = schemaFetcher.fetchTriggerStaticYamlSchema();
+        return (ObjectNode) jsonNode;
+      default:
+        return getIndividualSchema(nodeGroup, nodeType, nodeGroupDifferentiator);
+    }
+  }
+
+  private ObjectNode getIndividualSchema(String nodeGroup, String nodeType, String nodeGroupDifferentiator) {
+    return pipelineSchemaParserV0.getIndividualSchema(
+        PipelineSchemaRequest.builder()
+            .individualSchemaMetadata(PipelineSchemaMetadata.builder()
+                                          .nodeGroup(nodeGroup)
+                                          .nodeGroupDifferentiator(nodeGroupDifferentiator)
+                                          .nodeType(nodeType)
+                                          .build())
+            .build());
   }
 
   /*

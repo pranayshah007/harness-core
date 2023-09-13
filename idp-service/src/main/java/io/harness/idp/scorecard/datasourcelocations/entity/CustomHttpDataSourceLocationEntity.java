@@ -25,11 +25,10 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "CustomHttpDataSourceLocationKeys")
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.IDP)
-public class CustomHttpDataSourceLocationEntity extends DataSourceLocationEntity {
+public class CustomHttpDataSourceLocationEntity extends HttpDataSourceLocationEntity {
   public CustomHttpDataSourceLocationEntity() {
-    super.setType(DataSourceLocationType.CUSTOM_HTTP);
+    super(DataSourceLocationType.CUSTOM_HTTP);
   }
 
-  ApiRequestDetails apiRequestDetails;
   Map<Integer, ApiRequestDetails> apisChain;
 }

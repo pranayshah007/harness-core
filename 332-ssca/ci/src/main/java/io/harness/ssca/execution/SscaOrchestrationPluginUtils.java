@@ -24,6 +24,7 @@ import io.harness.ssca.beans.attestation.CosignAttestation;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.beans.tools.SbomOrchestrationToolType;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
 import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
@@ -34,6 +35,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -44,7 +46,10 @@ public class SscaOrchestrationPluginUtils {
 
   public Map<String, String> getSscaOrchestrationStepEnvVariables(
       SscaOrchestrationStepInfo stepInfo, String identifier, Ambiance ambiance, Type type) {
-    String tool = stepInfo.getTool().getType().toString();
+    String tool = null;
+    if (stepInfo.getTool() != null && stepInfo.getTool().getType() != null) {
+      tool = stepInfo.getTool().getType().toString();
+    }
     String format = getFormat(stepInfo);
 
     // set to generation by default for backwards compatibility
@@ -117,12 +122,12 @@ public class SscaOrchestrationPluginUtils {
   }
 
   private static String getFormat(SscaOrchestrationStepInfo stepInfo) {
-    switch (stepInfo.getTool().getType()) {
-      case SYFT:
-        return ((SyftSbomOrchestration) stepInfo.getTool().getSbomOrchestrationSpec()).getFormat().toString();
-      default:
-        throw new CIStageExecutionUserException(
-            String.format("Unsupported tool type: %s", stepInfo.getTool().getType()));
+    if (stepInfo.getTool() == null) {
+      return null;
     }
+    if (Objects.requireNonNull(stepInfo.getTool().getType()) == SbomOrchestrationToolType.SYFT) {
+      return ((SyftSbomOrchestration) stepInfo.getTool().getSbomOrchestrationSpec()).getFormat().toString();
+    }
+    throw new CIStageExecutionUserException(String.format("Unsupported tool type: %s", stepInfo.getTool().getType()));
   }
 }

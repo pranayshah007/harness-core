@@ -38,7 +38,7 @@ public class EncryptDelegateTokenAndStoreAsNewFieldAndDeleteExistingRecordsMigra
 
   @Override
   public void migrate() {
-    log.info(MIGRATE_DELEGATE_TOKENS + "Start migration to upsert encrypted delegateToken");
+    log.info(MIGRATE_DELEGATE_TOKENS + "Start migration to upsert encrypted delegateToken.");
     List<String> updateList = new ArrayList<>();
     Query<DelegateToken> query =
         persistence.createQuery(DelegateToken.class, excludeAuthority).field(DelegateTokenKeys.value).exists();

@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.HintException.HINT_AWS_CONNECTOR_NG_DOCUMENTATION;
 import static io.harness.exception.HintException.IAM_DETAILS_COMMAND;
 
+import static software.wings.service.impl.AwsApiHelperService.handleExceptionWhileFetchingRepositories;
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
 import static java.util.Collections.emptyMap;
@@ -25,11 +26,13 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 
 import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
@@ -65,7 +68,11 @@ import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ecr.AmazonECRClient;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
+import com.amazonaws.services.ecr.model.AmazonECRException;
+import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
+import com.amazonaws.services.ecr.model.DescribeRepositoriesResult;
 import com.amazonaws.services.ecr.model.GetAuthorizationTokenRequest;
+import com.amazonaws.services.ecr.model.Repository;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
@@ -90,6 +97,7 @@ import com.amazonaws.services.sns.message.DefaultSnsMessageHandler;
 import com.amazonaws.services.sns.message.SnsMessageManager;
 import com.amazonaws.services.sns.message.SnsNotification;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.Charset;
@@ -104,6 +112,7 @@ import javax.validation.constraints.NotNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDP)
@@ -503,6 +512,42 @@ public class AwsClientImpl implements AwsClient {
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
     }
     return emptyMap();
+  }
+
+  @Override
+  public String getEcrImageUrl(AwsInternalConfig awsConfig, String registryId, String region, String imageName) {
+    Optional<Repository> optionalRepository = getRepository(awsConfig, registryId, region, imageName);
+    if (optionalRepository.isPresent() && isNotEmpty(String.valueOf(optionalRepository.get().getRepositoryUri()))) {
+      return optionalRepository.get().getRepositoryUri();
+    }
+    throw new InvalidRequestException(String.format(
+        "Unable to fetch the ECR repository. Please verify the input configurations\n Image Name: %s, Region: %s, RegistryId: %s",
+        imageName, region, registryId));
+  }
+
+  private Optional<Repository> getRepository(
+      AwsInternalConfig awsConfig, String registryId, String region, String repositoryName) {
+    try {
+      DescribeRepositoriesRequest describeRepositoriesRequest = new DescribeRepositoriesRequest();
+      if (StringUtils.isNotBlank(registryId)) {
+        describeRepositoriesRequest.setRegistryId(registryId);
+      }
+      describeRepositoriesRequest.setRepositoryNames(Lists.newArrayList(repositoryName));
+      DescribeRepositoriesResult describeRepositoriesResult =
+          awsApiHelperService.listRepositories(awsConfig, describeRepositoriesRequest, region);
+      List<Repository> repositories = describeRepositoriesResult.getRepositories();
+      if (isNotEmpty(repositories)) {
+        return Optional.of(repositories.get(0));
+      }
+      return Optional.empty();
+    } catch (AmazonECRException e) {
+      handleExceptionWhileFetchingRepositories(e.getStatusCode(), e.getErrorMessage());
+    } catch (Exception e) {
+      throw new InvalidRequestException(
+          "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+    }
+    return Optional.empty();
   }
 
   @VisibleForTesting

@@ -15,6 +15,9 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -35,5 +38,10 @@ public class ServiceConfigStepParameters implements StepParameters {
   public String toViewJson() {
     return RecastOrchestrationUtils.toJson(
         ServiceConfigStepParameters.builder().useFromStage(useFromStage).serviceRef(serviceRef).build());
+  }
+
+  @Override
+  public List<String> excludeKeysFromStepInputs() {
+    return new LinkedList<>(Arrays.asList("childNodeId"));
   }
 }

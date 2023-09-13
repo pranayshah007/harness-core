@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   loadbalancerURL: "https://test"
   database:
     postgres:
@@ -71,7 +73,7 @@ image:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80003-000"
+  tag: "80801-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -81,7 +83,7 @@ imageClickhouseEnabled:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80003-000"
+  tag: "80801-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -137,6 +139,7 @@ podSecurityContext: {}
 securityContext: {}
 
 service:
+  annotations: {}
   type: ClusterIP
   port: 6340
 
@@ -180,6 +183,7 @@ resources:
     memory: "10Gi"
 
 additionalConfigs: {}
+java17flags: ""
 
 # extraVolumes:
 #   - name: volume-test
@@ -192,6 +196,8 @@ extraVolumes: []
 #   - name: volume-test
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
+
+CF_CLIENT_API_KEY: "BATCH_PROCESSING_ON_PREM"
 
 lifecycleHooks: {}
 # lifecycleHooks:

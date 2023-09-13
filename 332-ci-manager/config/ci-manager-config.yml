@@ -66,7 +66,7 @@ redisLockConfig:
   userName: ""
   password: ""
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 
 harness-mongo:
@@ -135,6 +135,7 @@ managerClientConfig:
   baseUrl: http://localhost:3457/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
 ciExecutionServiceConfig:
   miningPatternConfig:
     gcsCreds: null
@@ -197,6 +198,7 @@ ciExecutionServiceConfig:
     accessKey: "access_key"
     secretKey: "secret_key"
     region: "region"
+    projectId: "project_id"
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
@@ -313,7 +315,7 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\drone-gcs.exe"
     s3UploadConfig:
-      image: plugins/s3:1.2.4
+      image: plugins/s3:1.2.6
       entrypoint:
         - /bin/drone-s3
       windowsEntrypoint:
@@ -350,6 +352,14 @@ ciExecutionServiceConfig:
       image: harness/ssca-plugin:0.3.0
       entrypoint:
         - /bin/ssca-plugin
+    provenanceConfig:
+      image: harness/slsa-plugin:latest
+      entrypoint:
+        - /bin/slsa-plugin
+    slsaVerificationConfig:
+      image: harness/slsa-plugin:latest
+      entrypoint:
+        - /bin/slsa-plugin
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.3.3
@@ -358,7 +368,7 @@ ciExecutionServiceConfig:
       buildAndPushECR: plugins/ecr:20.14.3
       buildAndPushGCR: plugins/gcr:20.14.3
       gcsUpload: plugins/gcs:1.4.1
-      s3Upload: plugins/s3:1.2.4
+      s3Upload: plugins/s3:1.2.6
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.4.5
       cacheGCS: plugins/cache:1.5.12
@@ -367,7 +377,7 @@ ciExecutionServiceConfig:
       sscaEnforcement: harness/ssca-plugin:0.3.0
     vmContainerlessStepConfig:
       s3UploadConfig:
-        name: github.com/drone-plugins/drone-s3@refs/tags/v1.2.2
+        name: github.com/drone-plugins/drone-s3@refs/tags/v1.2.6
       gcsUploadConfig:
         name: github.com/drone-plugins/drone-gcs@refs/tags/v1.3.1
       cacheS3Config:
@@ -383,21 +393,22 @@ ciExecutionServiceConfig:
       dockerBuildxGcrConfig:
         name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.2
       dockerBuildxAcrConfig:
-        name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.0
+        name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.1
   gitnessConfig:
     jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
-
+    httpClientConfig:
+      baseUrl: ${GITNESS_INTERNAL_URL:- http://localhost:3000}
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
   maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-300}
-  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkOrchestrationEventPoolConfig:
   corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-50}
   maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-300}
-  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 asyncDelegateResponseConsumption:

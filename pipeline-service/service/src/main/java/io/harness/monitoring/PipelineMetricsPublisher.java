@@ -21,7 +21,7 @@ public class PipelineMetricsPublisher implements MetricsPublisher {
   @Inject NodeExecutionMonitorService nodeExecutionMonitorService;
   @Override
   public void recordMetrics() {
-    planExecutionMonitorService.registerActiveExecutionMetrics();
-    nodeExecutionMonitorService.registerActiveExecutionMetrics();
+    //    planExecutionMonitorService.registerActiveExecutionMetrics();
+    //    nodeExecutionMonitorService.registerActiveExecutionMetrics();
   }
 }

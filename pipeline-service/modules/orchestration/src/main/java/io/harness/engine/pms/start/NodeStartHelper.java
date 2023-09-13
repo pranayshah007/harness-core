@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.start;
+
 import static io.harness.springdata.SpringDataMongoUtils.setUnset;
 
 import static java.lang.String.format;
@@ -28,7 +29,6 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.observer.Subject;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -37,11 +37,9 @@ import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
-import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.TransactionHelper;
 import io.harness.timeout.TimeoutCallback;
@@ -57,7 +55,6 @@ import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.LinkedList;
 import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +72,6 @@ public class NodeStartHelper {
   @Inject private PlanService planService;
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
   @Inject private TransactionHelper transactionHelper;
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
 
   public void startNode(Ambiance ambiance, FacilitatorResponseProto facilitatorResponse) {
@@ -117,7 +113,6 @@ public class NodeStartHelper {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     return transactionHelper.performTransaction(() -> {
       List<String> timeoutInstanceIds = registerTimeouts(ambiance, planNode.getTimeoutObtainments());
-      resolveInputs(ambiance, planNode);
       return nodeExecutionService.updateStatusWithOps(nodeExecutionId, targetStatus, ops -> {
         setUnset(ops, NodeExecutionKeys.timeoutInstanceIds, timeoutInstanceIds);
         updateStartTsInNodeExecution(ops, ambiance);
@@ -157,26 +152,6 @@ public class NodeStartHelper {
     }
     log.info(format("Registered node execution timeouts: %s", timeoutInstanceIds.toString()));
     return timeoutInstanceIds;
-  }
-
-  // TODO(archit): Enable all FF for engine here as well, or globally enable them
-  private void resolveInputs(Ambiance ambiance, PlanNode planNode) {
-    String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    if (planNode.getStepInputs() != null) {
-      log.info("Starting to Resolve step Inputs");
-      List<String> enabledFeatureFlags = new LinkedList<>();
-      if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
-        enabledFeatureFlags.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
-      }
-      Object resolvedInputs = pmsEngineExpressionService.resolve(
-          ambiance, planNode.getStepInputs(), planNode.getExpressionMode(), enabledFeatureFlags);
-      PmsStepParameters parameterInputs =
-          PmsStepParameters.parse(OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedInputs));
-      pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);
-      log.info("Resolved step Inputs");
-    } else {
-      pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, ambiance.getPlanExecutionId(), null);
-    }
   }
 
   @VisibleForTesting

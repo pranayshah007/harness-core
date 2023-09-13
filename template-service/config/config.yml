@@ -168,6 +168,8 @@ enableOpentelemetry: false
 
 policyManagerSecret: secret
 
+enableOpaEvaluation: ${ENABLE_OPA_EVALUATION:-false}
+
 opaClientConfig:
   baseUrl: http://localhost:3000
   connectTimeOutSeconds: 15
@@ -190,7 +192,7 @@ featureFlagConfig:
   
 staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 segmentConfiguration:
   enabled: ${SEGMENT_ENABLED:-false}

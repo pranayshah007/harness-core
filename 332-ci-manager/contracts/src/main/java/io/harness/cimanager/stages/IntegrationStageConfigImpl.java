@@ -23,6 +23,7 @@ import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.slsa.beans.SlsaConfig;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.schema.beans.SupportedPossibleFieldTypes;
 
@@ -78,4 +79,6 @@ public class IntegrationStageConfigImpl implements IntegrationStageConfig {
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = Caching.class)
   private Caching caching;
+
+  SlsaConfig slsa_provenance;
 }

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.UNRESOLVED_PARAMETER;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchiveFormat;
@@ -65,8 +65,8 @@ import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ArchiveFormat;
-import io.harness.ci.integrationstage.BuildEnvironmentUtils;
-import io.harness.ci.serializer.SerializerUtils;
+import io.harness.ci.execution.integrationstage.BuildEnvironmentUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -77,8 +77,12 @@ import io.harness.plugin.service.PluginServiceImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.beans.stepinfo.ProvenanceStepInfo;
+import io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.execution.ProvenancePluginHelper;
+import io.harness.ssca.execution.SlsaVerificationPluginHelper;
 import io.harness.ssca.execution.SscaEnforcementPluginHelper;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
@@ -149,6 +153,10 @@ public class PluginSettingUtils extends PluginServiceImpl {
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
+  @Inject private ProvenancePluginHelper provenancePluginHelper;
+  @Inject private SscaEnforcementPluginHelper sscaEnforcementPluginHelper;
+
+  @Inject private SlsaVerificationPluginHelper slsaVerificationPluginHelper;
 
   @Override
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
@@ -189,12 +197,18 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
             (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance, infraType);
       case SSCA_ENFORCEMENT:
-        return SscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
+        return sscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
             (SscaEnforcementStepInfo) stepInfo, identifier, ambiance, infraType);
+      case SLSA_VERIFICATION:
+        return slsaVerificationPluginHelper.getSlsaVerificationStepEnvVariables(
+            (SlsaVerificationStepInfo) stepInfo, identifier, ambiance);
       case IACM_TERRAFORM_PLUGIN:
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMTerraformPluginInfo) stepInfo);
       case IACM_APPROVAL:
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMApprovalInfo) stepInfo);
+      case PROVENANCE:
+        return provenancePluginHelper.getProvenanceStepEnvVariables(
+            (ProvenanceStepInfo) stepInfo, identifier, ambiance);
       default:
         throw new IllegalStateException(
             "Unexpected value in getPluginCompatibleEnvVariables: " + stepInfo.getNonYamlInfo().getStepInfoType());
@@ -207,10 +221,15 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case SSCA_ORCHESTRATION:
         return SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars((SscaOrchestrationStepInfo) step);
       case SSCA_ENFORCEMENT:
-        return SscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
+        return sscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
             (SscaEnforcementStepInfo) step, identifier);
       case IACM_TERRAFORM_PLUGIN:
         return iacmStepsUtils.getSecretVariablesForKubernetes((IACMTerraformPluginInfo) step);
+      case PROVENANCE:
+        return provenancePluginHelper.getProvenanceStepSecretVariables((ProvenanceStepInfo) step);
+      case SLSA_VERIFICATION:
+        return slsaVerificationPluginHelper.getSlsaVerificationStepSecretVariables(
+            (SlsaVerificationStepInfo) step, identifier);
       default:
         return new HashMap<>();
     }
@@ -264,6 +283,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return map;
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case PROVENANCE:
+      case SLSA_VERIFICATION:
         return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);
@@ -439,6 +460,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
           setOptionalEnvironmentVariable(
               map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
         }
+        setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
       }
     }
     return map;

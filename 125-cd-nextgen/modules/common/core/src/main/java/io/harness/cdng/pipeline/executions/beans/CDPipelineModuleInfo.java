@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.pipeline.executions.beans;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -30,7 +31,8 @@ public class CDPipelineModuleInfo implements PipelineModuleInfo {
   @Singular private List<String> envIdentifiers;
   @Singular private List<String> envGroupIdentifiers;
   @Singular private List<String> serviceDefinitionTypes;
-  @Singular private List<String> artifactDisplayNames;
+  private List<String> artifactDisplayNames;
+  private List<String> helmChartVersions;
   @Singular private List<EnvironmentType> environmentTypes;
   @Singular private List<String> infrastructureTypes;
   @Singular private List<String> infrastructureIdentifiers;

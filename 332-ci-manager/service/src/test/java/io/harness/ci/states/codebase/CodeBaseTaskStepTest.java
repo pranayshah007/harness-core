@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.CommitDetails;
 import io.harness.beans.execution.ManualExecutionSource;
@@ -29,7 +30,9 @@ import io.harness.beans.execution.WebhookBaseAttributes;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.category.element.UnitTests;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.states.InitializeTaskStep;
+import io.harness.ci.execution.states.IntegrationStageStepPMS;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -39,6 +42,7 @@ import io.harness.delegate.task.scm.ScmGitRefTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -51,11 +55,13 @@ import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.Reference;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.User;
+import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.rule.Owner;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Timestamp;
 import java.util.Arrays;
+import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,10 +78,15 @@ public class CodeBaseTaskStepTest extends CategoryTest {
   private Ambiance ambiance;
   private StepInputPackage stepInputPackage;
 
+  @Mock private StepExecutionParametersRepository stepExecutionParametersRepository;
+
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     ambiance = Ambiance.newBuilder()
+                   .setStageExecutionId("stageExecutionId")
+                   .addLevels(Level.newBuilder().setStepType(InitializeTaskStep.STEP_TYPE).build())
+                   .addLevels(Level.newBuilder().setStepType(IntegrationStageStepPMS.STEP_TYPE).build())
                    .putSetupAbstractions(SetupAbstractionKeys.accountId, "accountId")
                    .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgIdentifier")
                    .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projectIdentifier")
@@ -476,6 +487,10 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                                             .build();
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
     when(connectorUtils.hasApiAccess(connectorDetails)).thenReturn(false);
+    when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))
+        .thenReturn(Optional.of(
+            StepExecutionParameters.builder().accountId("accountId").stepParameters("stepParameters").build()));
+
     CodeBaseTaskStepParameters codeBaseTaskStepParameters =
         CodeBaseTaskStepParameters.builder()
             .connectorRef(ParameterField.createValueField("connectorRef"))

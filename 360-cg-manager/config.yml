@@ -762,6 +762,8 @@ disableDelegateMgmtInManager: false
 
 enableRedisForDelegateService: ${ENABLE_REDIS_DELEGATE_SERVICE:-false}
 
+saasDelegateHelmChartRepo: "https://app.harness.io/storage/harness-download/delegate-helm-chart/"
+
 runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-true}
 
 secretsConfiguration:

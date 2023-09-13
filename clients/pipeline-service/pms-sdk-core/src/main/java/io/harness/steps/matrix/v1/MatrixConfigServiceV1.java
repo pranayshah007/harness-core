@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.strategy.v1.MatrixConfigV1;
 import io.harness.plancreator.strategy.v1.StrategyConfigV1;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.steps.matrix.MatrixConfigServiceHelper;
 import io.harness.steps.matrix.StrategyInfo;
@@ -31,11 +32,12 @@ import lombok.NoArgsConstructor;
 public class MatrixConfigServiceV1 implements StrategyConfigServiceV1 {
   @Inject MatrixConfigServiceHelper matrixConfigServiceHelper;
   // Fetching all the combinations for the matrix.
-  public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfigV1 strategyConfig, String childNodeId) {
+  public List<ChildrenExecutableResponse.Child> fetchChildren(
+      StrategyConfigV1 strategyConfig, String childNodeId, Ambiance ambiance) {
     MatrixConfigV1 matrixConfig = (MatrixConfigV1) strategyConfig.getStrategyInfoConfig().getValue();
     List<String> keys = getKeys(matrixConfig);
     return matrixConfigServiceHelper.fetchChildren(keys, matrixConfig.getAxis().getAxes(),
-        matrixConfig.getAxis().getExpressionAxes(), matrixConfig.getExclude(), childNodeId);
+        matrixConfig.getAxis().getExpressionAxes(), matrixConfig.getExclude(), childNodeId, null, ambiance);
   }
 
   // Expanding the YAML for matrix so that the expanded YAML can directly be executed. This is used by CI.

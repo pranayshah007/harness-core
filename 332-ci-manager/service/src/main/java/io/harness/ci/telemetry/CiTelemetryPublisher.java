@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.telemetry;
+package io.harness.ci.telemetry;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
@@ -13,10 +13,12 @@ import static io.harness.telemetry.Destination.ALL;
 
 import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.core.ci.services.CIOverviewDashboardService;
+import io.harness.core.ci.dashboard.CIOverviewDashboardService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
+import io.harness.telemetry.TelemetryOption;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.google.inject.Inject;
 import java.util.Collections;

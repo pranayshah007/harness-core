@@ -18,11 +18,13 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//127-cd-nextgen-entities:module",
         "//953-yaml-commons:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/environment/beans:module",
         "//970-ng-commons:module",
         "//979-recaster:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//clients/pipeline-service/pms-sdk-core:module",
         "@maven//:org_springframework_data_spring_data_commons",
     ],
 )

@@ -14,10 +14,16 @@ import static io.harness.logging.LogLevel.WARN;
 import static io.harness.provision.TerraformConstants.SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN;
 import static io.harness.provision.TerragruntConstants.TARGET_FORMAT;
 import static io.harness.provision.TerragruntConstants.VAR_FILE_FORMAT;
+import static io.harness.terragrunt.v2.TerragruntV2Contants.APPLY;
+import static io.harness.terragrunt.v2.TerragruntV2Contants.DESTROY;
+import static io.harness.terragrunt.v2.TerragruntV2Contants.INIT;
+import static io.harness.terragrunt.v2.TerragruntV2Contants.PLAN;
+import static io.harness.terragrunt.v2.TerragruntV2Contants.WORKSPACE;
 
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
@@ -47,6 +53,7 @@ import software.wings.beans.LogWeight;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
@@ -77,7 +84,9 @@ public class TerragruntClientImpl implements TerragruntClient {
   @Override
   public CliResponse init(@Nonnull TerragruntCliRequest request, @Nonnull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
-    String command = TerragruntCommandUtils.init(request.getArgs().getBackendConfigFile(), request.getRunType());
+    String additionalCliOptions = getAdditionalCliOption(request.getArgs().getAdditionalCliArgs(), INIT);
+    String command = TerragruntCommandUtils.init(
+        request.getArgs().getBackendConfigFile(), request.getRunType(), additionalCliOptions);
     log.info("Execute terragrunt init: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
   }
@@ -100,7 +109,9 @@ public class TerragruntClientImpl implements TerragruntClient {
     } else {
       log.info("No workspace {} found in workspaces set {}", request.getWorkspace(), existingWorkspaces);
       logCallback.saveExecutionLog(format("Workspace %s doesn't exist, create a new one", request.getWorkspace()));
-      String command = TerragruntCommandUtils.workspaceNew(request.getWorkspace(), request.getRunType());
+      String additionalCliOptions = getAdditionalCliOption(request.getArgs().getAdditionalCliArgs(), WORKSPACE);
+      String command =
+          TerragruntCommandUtils.workspaceNew(request.getWorkspace(), request.getRunType(), additionalCliOptions);
       return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
     }
   }
@@ -124,9 +135,11 @@ public class TerragruntClientImpl implements TerragruntClient {
       throws InterruptedException, TimeoutException, IOException {
     String targetArgs = getTargetArgs(request.getArgs().getTargets());
     String varArgs = getVarArgs(request.getArgs().getVarFiles());
+    String additionalCliOptions = getAdditionalCliOption(request.getArgs().getAdditionalCliArgs(), PLAN);
+
     String command = TerragruntRunType.RUN_ALL == request.getRunType()
-        ? TerragruntCommandUtils.runAllPlan(targetArgs, varArgs, request.isDestroy())
-        : TerragruntCommandUtils.plan(targetArgs, varArgs, request.isDestroy());
+        ? TerragruntCommandUtils.runAllPlan(targetArgs, varArgs, request.isDestroy(), additionalCliOptions)
+        : TerragruntCommandUtils.plan(targetArgs, varArgs, request.isDestroy(), additionalCliOptions);
     log.info("Execute terragrunt plan: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
   }
@@ -137,10 +150,10 @@ public class TerragruntClientImpl implements TerragruntClient {
       throws InterruptedException, TimeoutException, IOException {
     String targetArgs = getTargetArgs(request.getArgs().getTargets());
     String varArgs = getVarArgs(request.getArgs().getVarFiles());
-
+    String additionalCliOptions = getAdditionalCliOption(request.getArgs().getAdditionalCliArgs(), APPLY);
     String command = TerragruntRunType.RUN_ALL == request.getRunType()
-        ? TerragruntCommandUtils.runAllApply(targetArgs, varArgs)
-        : TerragruntCommandUtils.apply(request.getTerraformPlanName());
+        ? TerragruntCommandUtils.runAllApply(targetArgs, varArgs, additionalCliOptions)
+        : TerragruntCommandUtils.apply(request.getTerraformPlanName(), additionalCliOptions);
 
     log.info("Execute terragrunt apply: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
@@ -163,10 +176,13 @@ public class TerragruntClientImpl implements TerragruntClient {
       throws InterruptedException, TimeoutException, IOException {
     String targetArgs = getTargetArgs(request.getArgs().getTargets());
     String varArgs = getVarArgs(request.getArgs().getVarFiles());
+    String additionalCliOptions = getAdditionalCliOption(request.getArgs().getAdditionalCliArgs(), DESTROY);
 
     String command = TerragruntRunType.RUN_ALL == request.getRunType()
-        ? TerragruntCommandUtils.runAllDestroy(getAutoApproveArgument(terraformVersion), targetArgs, varArgs)
-        : TerragruntCommandUtils.destroy(getAutoApproveArgument(terraformVersion), targetArgs, varArgs);
+        ? TerragruntCommandUtils.runAllDestroy(
+            getAutoApproveArgument(terraformVersion), targetArgs, varArgs, additionalCliOptions)
+        : TerragruntCommandUtils.destroy(
+            getAutoApproveArgument(terraformVersion), targetArgs, varArgs, additionalCliOptions);
 
     log.info("Execute terragrunt destroy: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
@@ -252,5 +268,13 @@ public class TerragruntClientImpl implements TerragruntClient {
 
   private String getAutoApproveArgument(Version version) {
     return version.compareTo(MIN_TF_AUTO_APPROVE_VERSION) < 0 ? "-force" : "-auto-approve";
+  }
+
+  private String getAdditionalCliOption(Map<String, String> additionalCliArgs, String tgCommand) {
+    String additionalCliOption = EMPTY;
+    if (additionalCliArgs != null) {
+      additionalCliOption = additionalCliArgs.getOrDefault(tgCommand, EMPTY);
+    }
+    return additionalCliOption;
   }
 }

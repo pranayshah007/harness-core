@@ -5,23 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_CACHE_ACCOUNT_ID;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_DETECT_CACHE;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND_OPERATION_TIMEOUT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_CACHE_KEY;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_DEBUG;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_EXIT_CODE;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_MOUNT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_OVERRIDE;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_REBUILD;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_RESTORE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
@@ -32,6 +21,17 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_S
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_NAME;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_AUTO_CACHE_ACCOUNT_ID;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_AUTO_DETECT_CACHE;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_BACKEND_OPERATION_TIMEOUT;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_CACHE_KEY;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_DEBUG;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_EXIT_CODE;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_MOUNT;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_OVERRIDE;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_REBUILD;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_RESTORE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -57,10 +57,11 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
@@ -68,6 +69,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.execution.provenance.ProvenanceStepGenerator;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
 import io.harness.yaml.core.failurestrategy.OnFailureConfig;
@@ -98,6 +100,7 @@ public class CIStepGroupUtils {
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private ProvenanceStepGenerator provenanceStepGenerator;
 
   private static final String STRING_TRUE = "true";
   private static final String STRING_FALSE = "false";
@@ -131,6 +134,11 @@ public class CIStepGroupUtils {
     boolean enableCacheIntel = saveCache && isHosted;
     if (enableCacheIntel) {
       initializeExecutionSections.add(getRestoreCacheStep(caching, accountId));
+    }
+    if (featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, accountId)
+        && (integrationStageConfig instanceof IntegrationStageConfigImpl)) {
+      provenanceStepGenerator.encapsulateBuildAndPushStepsWithStepGroup(executionSections,
+          ((IntegrationStageConfigImpl) integrationStageConfig).getSlsa_provenance(), infrastructure.getType());
     }
     initializeExecutionSections.addAll(executionSections);
 

@@ -88,7 +88,7 @@ public interface RoleResource {
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Paginated list of roles in the given scope")
       })
-  ResponseDTO<PageResponse<RoleResponseDTO>>
+  ResponseDTO<PageResponse<RoleWithPrincipalCountResponseDTO>>
   get(@BeanParam PageRequest pageRequest, @BeanParam HarnessScopeParams harnessScopeParams,
       @Parameter(description = "Search roles by name/identifier") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm);

@@ -30,7 +30,6 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.InterruptKeys;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -77,7 +76,8 @@ public class InterruptServiceImpl implements InterruptService {
   }
 
   @Override
-  public ExecutionCheck checkInterruptsPreInvocation(String planExecutionId, String nodeExecutionId) {
+  public ExecutionCheck checkInterruptsPreInvocation(
+      String planExecutionId, String currentNodeExecutionId, List<String> interruptNodeExecutionIds) {
     List<Interrupt> interrupts = fetchActivePlanLevelInterrupts(planExecutionId);
     if (isEmpty(interrupts)) {
       return ExecutionCheck.builder().proceed(true).reason("[InterruptCheck] No Interrupts Found").build();
@@ -88,11 +88,16 @@ public class InterruptServiceImpl implements InterruptService {
     }
 
     Optional<Interrupt> optionalInterrupt =
-        InterruptUtils.obtainOptionalInterruptFromActiveInterrupts(interrupts, planExecutionId, nodeExecutionId);
+        InterruptUtils.obtainOptionalInterruptFromActiveInterrupts(interrupts, interruptNodeExecutionIds);
 
-    Interrupt interrupt = optionalInterrupt.orElseThrow(() -> new InvalidRequestException("Interrupt was not found"));
+    Interrupt interrupt;
+    if (optionalInterrupt.isPresent()) {
+      interrupt = optionalInterrupt.get();
+    } else {
+      return ExecutionCheck.builder().proceed(true).reason("[InterruptCheck] No applicable Interrupt Found").build();
+    }
     log.info("Interrupt found pre node invocation calculating execution check");
-    return calculateExecutionCheck(nodeExecutionId, interrupt);
+    return calculateExecutionCheck(currentNodeExecutionId, interrupt);
   }
 
   private ExecutionCheck calculateExecutionCheck(String nodeExecutionId, Interrupt interrupt) {
@@ -113,9 +118,9 @@ public class InterruptServiceImpl implements InterruptService {
         if (!ExecutionModeUtils.isParentMode(nodeExecution.getMode())
             && StatusUtils.resumableStatuses().contains(nodeExecution.getStatus())) {
           if (interrupt.getType() == InterruptType.ABORT_ALL) {
-            abortInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
+            abortInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, false);
           } else {
-            markExpiredInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
+            markExpiredInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, false);
           }
           return ExecutionCheck.builder()
               .proceed(false)
@@ -154,7 +159,7 @@ public class InterruptServiceImpl implements InterruptService {
     NodeExecution interruptNodeExecution = nodeExecutionService.getWithFieldsIncluded(
         interrupt.getNodeExecutionId(), NodeProjectionUtils.withAmbianceAndStatus);
     if (StatusUtils.isFinalStatus(interruptNodeExecution.getStatus())) {
-      updatePlanStatus(interruptNodeExecution.getAmbiance().getPlanExecutionId(), nodeExecutionId);
+      updatePlanStatus(interruptNodeExecution.getAmbiance().getPlanExecutionId());
       updateInterruptState(interrupt.getUuid(), PROCESSED_SUCCESSFULLY, false);
       return false;
     }
@@ -251,11 +256,8 @@ public class InterruptServiceImpl implements InterruptService {
     Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, Interrupt.class));
   }
 
-  private void updatePlanStatus(String planExecutionId, String excludingNodeExecutionId) {
-    Status planStatus = planExecutionService.calculateStatusExcluding(planExecutionId, excludingNodeExecutionId);
-    if (!StatusUtils.isFinalStatus(planStatus)) {
-      planExecutionService.updateStatus(planExecutionId, planStatus);
-    }
+  private void updatePlanStatus(String planExecutionId) {
+    planExecutionService.calculateAndUpdateRunningStatusUnderLock(planExecutionId, null);
   }
 
   public List<Interrupt> fetchAbortAllPlanLevelInterrupt(String planExecutionId) {

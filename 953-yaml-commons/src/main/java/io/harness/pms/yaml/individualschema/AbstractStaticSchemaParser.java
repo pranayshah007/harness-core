@@ -14,7 +14,6 @@ import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
 
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
 import io.harness.yaml.schema.beans.SchemaConstants;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -47,24 +46,18 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
   // processing happens on top of this schema.
   JsonNode rootSchemaJsonNode;
 
-  abstract void init(JsonNode rootSchemaNode);
+  abstract void init();
 
   abstract IndividualSchemaGenContext getIndividualSchemaGenContext();
-
-  abstract String generateSchemaKey(IndividualSchemaMetadata schemaMetadata);
-
-  abstract String getApplicableNodePath(String parentNode, String nodeType);
 
   abstract void checkIfRootNodeAndAddIntoFqnToNodeMap(
       String currentFqn, String childNodeRefValue, ObjectNode objectNode);
 
-  public AbstractStaticSchemaParser getInstance(JsonNode rootSchemaNode) {
+  public void initParser() {
     if (!isInitialised) {
-      rootSchemaJsonNode = rootSchemaNode;
-      init(rootSchemaNode);
+      init();
       isInitialised = true;
     }
-    return this;
   }
 
   void traverseNodeAndExtractAllRefsRecursively(JsonNode jsonNode, String currentFqn) {
@@ -175,7 +168,7 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
    * @return schema for the requested node.
    */
   void initIndividualSchema(ObjectNode objectNode, IndividualSchemaMetadata individualSchemaMetadata) {
-    String schemaKey = generateSchemaKey(individualSchemaMetadata);
+    String schemaKey = individualSchemaMetadata.generateSchemaKey();
     if (nodeToResolvedSchemaMap.containsKey(schemaKey)) {
       return;
     }
@@ -282,16 +275,16 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
   @Override
   public ObjectNode getIndividualSchema(IndividualSchemaRequest individualSchemaRequest) {
     if (!isInitialised) {
-      throw new InvalidRequestException("Parser not yet initialised.");
+      initParser();
     }
-    String schemaKey = generateSchemaKey(individualSchemaRequest.getIndividualSchemaMetadata());
+    String schemaKey = individualSchemaRequest.getIndividualSchemaMetadata().generateSchemaKey();
     return nodeToResolvedSchemaMap.get(schemaKey);
   }
 
   public JsonNode getFieldNode(InputFieldMetadata inputFieldMetadata, IndividualSchemaRequest schemaRequest) {
     String[] fqnParts = inputFieldMetadata.getFqnFromParentNode().split("\\.");
     // Here fqnParts[0] would be the parent node type. Like in fqn step.spec.url, the fqnParts[0] would be step.
-    String fieldPath = generateSchemaKey(schemaRequest.getIndividualSchemaMetadata());
+    String fieldPath = schemaRequest.getIndividualSchemaMetadata().generateSchemaKey();
     JsonNode targetFieldNode = fqnToNodeMap.get(fieldPath).getObjectNode();
     for (int i = 1; i < fqnParts.length; i++) {
       targetFieldNode = getFieldNode(targetFieldNode, fqnParts[i]);
@@ -301,5 +294,17 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
       }
     }
     return targetFieldNode;
+  }
+
+  String getTypeFromObjectNode(ObjectNode objectNode) {
+    if (JsonPipelineUtils.isPresent(objectNode, SchemaConstants.PROPERTIES_NODE)
+        && objectNode.get(SchemaConstants.PROPERTIES_NODE).get(SchemaConstants.TYPE_NODE) != null) {
+      JsonNode typeEnumArray =
+          objectNode.get(SchemaConstants.PROPERTIES_NODE).get(SchemaConstants.TYPE_NODE).get(SchemaConstants.ENUM_NODE);
+      if (typeEnumArray != null && typeEnumArray.size() > 0) {
+        return typeEnumArray.get(0).asText();
+      }
+    }
+    return null;
   }
 }

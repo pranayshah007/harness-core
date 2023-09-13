@@ -75,6 +75,14 @@ public class YamlPipelineUtilsTest extends CategoryTest {
     assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "+123"))).isEqualTo("k: \"+123\"\n");
     assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "+123.44"))).isEqualTo("k: \"+123.44\"\n");
     assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "23e45"))).isEqualTo("k: \"23e45\"\n");
+    assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "23e-45"))).isEqualTo("k: \"23e-45\"\n");
+    assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "12.3e45"))).isEqualTo("k: \"12.3e45\"\n");
+    assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "12.3e-45"))).isEqualTo("k: \"12.3e-45\"\n");
+    assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "12.3e+45"))).isEqualTo("k: \"12.3e+45\"\n");
+    assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "-12.3e45"))).isEqualTo("k: \"-12.3e45\"\n");
+    assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "+12.3e45"))).isEqualTo("k: \"+12.3e45\"\n");
+    assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "+12.3e-45"))).isEqualTo("k: \"+12.3e-45\"\n");
+    assertThat(YamlPipelineUtils.writeYamlString(Map.of("k", "+12.3e+45"))).isEqualTo("k: \"+12.3e+45\"\n");
     map = new LinkedHashMap<String, Object>();
     map.put("k1", "abc");
     map.put("k2", new TextNode("42e4"));

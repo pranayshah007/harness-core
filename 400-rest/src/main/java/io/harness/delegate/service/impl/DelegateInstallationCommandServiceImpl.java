@@ -36,6 +36,8 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
   private final MainConfiguration mainConfiguration;
   private static final String TERRAFORM_TEMPLATE_FLE = "/delegatetemplates/delegate-terraform-example-module.ftl";
 
+  private static final String ONPREM_HELM_REPO_SUFFIX = "storage/harness-download/delegate-helm-chart/";
+
   private static final String DOCKER_COMMAND = "docker run --cpus=1 --memory=2g \\\n"
       + "  -e DELEGATE_NAME=docker-delegate \\\n"
       + "${docker_deploy_mode_string}"
@@ -107,6 +109,14 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
     String content = IOUtils.toString(this.getClass().getResourceAsStream(TERRAFORM_TEMPLATE_FLE), "UTF-8");
     final StringSubstitutor substitute = new StringSubstitutor(values);
     return substitute.replace(content);
+  }
+
+  @Override
+  public String getHelmRepoUrl(String commandType, String managerUrl) {
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      return managerUrl.concat(ONPREM_HELM_REPO_SUFFIX);
+    }
+    return mainConfiguration.getSaasDelegateHelmChartRepo();
   }
 
   private Map<String, String> getScriptParams(

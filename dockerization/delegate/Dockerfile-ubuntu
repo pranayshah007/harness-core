@@ -54,10 +54,8 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/chartmuseum/v0.15.0/chartmuseum https://app.harness.io/public/shared/tools/chartmuseum/release/v0.15.0/bin/linux/$TARGETARCH/chartmuseum \
   && mkdir -m 777 -p client-tools/tf-config-inspect/v1.2 \
   && curl -s -L -o client-tools/tf-config-inspect/v1.2/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.2/linux/$TARGETARCH/terraform-config-inspect \
-  && mkdir -m 777 -p client-tools/oc/v4.2.16 \
-  && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
-  && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \
-  && curl -s -L -o client-tools/kustomize/v4.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.5.4/bin/linux/$TARGETARCH/kustomize \
+  && mkdir -m 777 -p client-tools/oc/v4.13.4 \
+  && curl -s -L -o client-tools/oc/v4.13.4/oc https://app.harness.io/public/shared/tools/oc/release/v4.13.4/bin/linux/$TARGETARCH/oc \
   && mkdir -m 777 -p client-tools/scm/93b3c9f1 \
   && curl -s -L -o client-tools/scm/93b3c9f1/scm https://app.harness.io/public/shared/tools/scm/release/93b3c9f1/bin/linux/$TARGETARCH/scm \
   && chmod -R 775 /opt/harness-delegate \
@@ -68,8 +66,8 @@ ENV PATH=/opt/harness-delegate/client-tools/kubectl/v1.24.3/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.4/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.2/:$PATH
-ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/helm/v3.12.0/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/oc/v4.13.4/:$PATH
 
 RUN curl -s -L -o delegate.jar $BASEURL/$DELEGATEVERSION/delegate.jar
 

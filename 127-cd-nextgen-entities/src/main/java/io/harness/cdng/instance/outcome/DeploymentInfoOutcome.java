@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
@@ -29,4 +30,5 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.instance.outcome.DeploymentInfoOutcome")
 public class DeploymentInfoOutcome implements Outcome, ExecutionSweepingOutput {
   List<ServerInstanceInfo> serverInstanceInfoList;
+  DeploymentOutcomeMetadata deploymentOutcomeMetadata;
 }

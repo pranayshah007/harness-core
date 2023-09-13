@@ -13,11 +13,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.PipelineServiceIteratorsConfig;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator.MongoPersistenceIteratorBuilder;
@@ -30,8 +28,6 @@ import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalSpecParameters;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalHelperService;
-import io.harness.utils.PmsFeatureFlagHelper;
-import io.harness.yaml.core.timeout.Timeout;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -55,7 +51,6 @@ public class ApprovalinstanceHandlerTest extends CategoryTest {
   @Mock private ServiceNowApprovalHelperService serviceNowApprovalHelperService;
   public static final String TICKET_NUMBER = "TICKET_NUMBER";
   public static final String CONNECTOR = "CONNECTOR";
-  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -66,9 +61,8 @@ public class ApprovalinstanceHandlerTest extends CategoryTest {
   public void testregisterIterators() {
     ArgumentCaptor<MongoPersistenceIteratorBuilder> captor =
         ArgumentCaptor.forClass(MongoPersistenceIteratorBuilder.class);
-    ApprovalInstanceHandler approvalInstanceHandler =
-        new ApprovalInstanceHandler(jiraApprovalHelperService, mongoTemplate, persistenceIteratorFactory,
-            iteratorsConfig, serviceNowApprovalHelperService, pmsFeatureFlagHelper);
+    ApprovalInstanceHandler approvalInstanceHandler = new ApprovalInstanceHandler(jiraApprovalHelperService,
+        mongoTemplate, persistenceIteratorFactory, iteratorsConfig, serviceNowApprovalHelperService);
     approvalInstanceHandler.registerIterators();
     verify(persistenceIteratorFactory, times(1))
         .createPumpIteratorWithDedicatedThreadPool(any(), eq(ApprovalInstanceHandler.class), captor.capture());
@@ -78,12 +72,10 @@ public class ApprovalinstanceHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testApprovalInstanceHandlerServiceWithFFON() {
-    ApprovalInstanceHandler approvalInstanceHandler =
-        new ApprovalInstanceHandler(jiraApprovalHelperService, mongoTemplate, persistenceIteratorFactory,
-            iteratorsConfig, serviceNowApprovalHelperService, pmsFeatureFlagHelper);
-    when(pmsFeatureFlagHelper.isEnabled(null, FeatureName.CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL)).thenReturn(true);
-    StepElementParameters stepElementParameters = getStepElementParametersWithRetryInterval();
+  public void testApprovalInstanceHandlerService() {
+    ApprovalInstanceHandler approvalInstanceHandler = new ApprovalInstanceHandler(jiraApprovalHelperService,
+        mongoTemplate, persistenceIteratorFactory, iteratorsConfig, serviceNowApprovalHelperService);
+    StepElementParameters stepElementParameters = getStepElementParametersWithoutRetryInterval();
     JiraApprovalInstance jiraApprovalInstance =
         JiraApprovalInstance.fromStepParameters(ambiance, stepElementParameters);
     ApprovalInstance entity = (ApprovalInstance) jiraApprovalInstance;
@@ -91,32 +83,6 @@ public class ApprovalinstanceHandlerTest extends CategoryTest {
     verify(jiraApprovalHelperService, times(1)).handlePollingEvent(null, jiraApprovalInstance);
   }
 
-  @Test
-  @Owner(developers = vivekveman)
-  @Category(UnitTests.class)
-  public void testApprovalInstanceHandlerServiceWithFFOff() {
-    ApprovalInstanceHandler approvalInstanceHandler =
-        new ApprovalInstanceHandler(jiraApprovalHelperService, mongoTemplate, persistenceIteratorFactory,
-            iteratorsConfig, serviceNowApprovalHelperService, pmsFeatureFlagHelper);
-    when(pmsFeatureFlagHelper.isEnabled(null, FeatureName.CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL))
-        .thenReturn(false);
-    StepElementParameters stepElementParameters = getStepElementParametersWithoutRetryInterval();
-    JiraApprovalInstance jiraApprovalInstance =
-        JiraApprovalInstance.fromStepParameters(ambiance, stepElementParameters);
-    ApprovalInstance entity = (ApprovalInstance) jiraApprovalInstance;
-    approvalInstanceHandler.handle(entity);
-    verify(jiraApprovalHelperService, times(0)).handlePollingEvent(null, jiraApprovalInstance);
-  }
-  private StepElementParameters getStepElementParametersWithRetryInterval() {
-    return StepElementParameters.builder()
-        .type("JiraApproval")
-        .spec(JiraApprovalSpecParameters.builder()
-                  .issueKey(ParameterField.<String>builder().value(TICKET_NUMBER).build())
-                  .connectorRef(ParameterField.<String>builder().value(CONNECTOR).build())
-                  .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
-                  .build())
-        .build();
-  }
   private StepElementParameters getStepElementParametersWithoutRetryInterval() {
     return StepElementParameters.builder()
         .type("JiraApproval")

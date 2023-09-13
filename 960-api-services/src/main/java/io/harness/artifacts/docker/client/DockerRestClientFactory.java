@@ -6,6 +6,7 @@
  */
 
 package io.harness.artifacts.docker.client;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -15,7 +16,8 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface DockerRestClientFactory {
   DockerRegistryRestClient getDockerRegistryRestClient(DockerInternalConfig dockerConfig);

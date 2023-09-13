@@ -3,6 +3,13 @@ kind: ConfigMap
 metadata:
   name: ci-manager
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   CACHE_BACKEND: "REDIS"
   CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
@@ -54,6 +61,8 @@ data:
   TI_SERVICE_INTERNAL_URL: 'http://ti-service:8078/'
   API_URL: '{{ .Values.global.loadbalancerURL }}/ng/#/'
   STO_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/sto/'
+  GITNESS_INTERNAL_URL: 'http://code-api:80/'
+  
   LOG_SERVICE_GLOBAL_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
   TI_SERVICE_GLOBAL_TOKEN: 78d16b66-4b4c-11eb-8377-acde48001122
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
@@ -79,7 +88,7 @@ data:
   VERACODE_IMAGE: harness/veracode-agent-job-runner:latest
   ZAP_IMAGE: harness/zap-job-runner:latest
   WHITE_SOURCE_IMAGE: harness/whitesource-agent-job-runner:latest
-
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
 {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
 {{- end }}

@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.execution.strategy.plannode;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
@@ -31,6 +32,7 @@ import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
+import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.pms.execution.strategy.AbstractNodeExecutionStrategy;
 import io.harness.engine.pms.execution.strategy.EndNodeExecutionHelper;
 import io.harness.engine.pms.resume.NodeResumeHelper;
@@ -40,9 +42,11 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
+import io.harness.execution.PmsNodeExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -51,6 +55,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -63,7 +68,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.TransactionHelper;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -71,14 +75,12 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -106,12 +108,10 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private PlanExpansionService planExpansionService;
-
-  @Inject @Named("EngineExecutorService") ExecutorService executorService;
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Inject PlanExecutionService planExecutionService;
   @Inject TransactionHelper transactionHelper;
-  @Inject PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -120,7 +120,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .uuid(uuid)
-            .planNode(node)
             .executionInputConfigured(!EmptyPredicate.isEmpty(node.getExecutionInputTemplate()))
             .ambiance(ambiance)
             .levelCount(ambiance.getLevelsCount())
@@ -137,7 +136,12 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             .nodeId(node.getUuid())
             .stageFqn(node.getStageFqn())
             .group(node.getGroup())
+            .skipExpressionChain(node.isSkipExpressionChain())
+            .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+            .nodeType(node.getNodeType().name())
             .build();
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(
+        uuid, ambiance.getPlanExecutionId(), metadata == null ? null : metadata.getStrategyMetadata());
     return nodeExecutionService.save(nodeExecution);
   }
 
@@ -159,15 +163,65 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     PmsStepParameters resolvedParameters = PmsStepParameters.parse(
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
 
+    // Graph step inputs calculate
+    PmsStepParameters resolvedStepInputs =
+        getResolvedStepInputs(planNode.getExcludedKeysFromStepInputs(), resolvedParameters);
+
     transactionHelper.performTransaction(() -> {
       // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
       // for maps Find a better way to do this
       nodeExecutionService.updateV2(nodeExecutionId,
           ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
+      // Graph step Inputs update
+      addResolvedStepInputs(ambiance.getPlanExecutionId(), nodeExecutionId, resolvedStepInputs);
       planExpansionService.addStepInputs(ambiance, resolvedParameters);
       return resolvedParameters;
     });
     log.info("Resolved to step parameters");
+  }
+
+  @VisibleForTesting
+  PmsStepParameters getResolvedStepInputs(List<String> stepInputsKeyExclude, PmsStepParameters resolvedParameters) {
+    if (EmptyPredicate.isEmpty(stepInputsKeyExclude) || EmptyPredicate.isEmpty(resolvedParameters)) {
+      return resolvedParameters;
+    }
+
+    PmsStepParameters clonedParameters = PmsStepParameters.parse(resolvedParameters);
+    // Iterate through the list of keys to remove
+    for (String key : stepInputsKeyExclude) {
+      // Split the key into individual parts
+      String[] keyParts = key.split("\\.");
+
+      // Traverse the cloned map to reach the innermost map
+      Map<String, Object> currentMap = clonedParameters;
+      boolean removeKey = true;
+      for (int i = 0; i < keyParts.length - 1; i++) {
+        String part = keyParts[i];
+        if (currentMap == null || !currentMap.containsKey(part)) {
+          removeKey = false;
+          break;
+        }
+        Object nextMap = currentMap.get(part);
+        if (nextMap instanceof Map) {
+          // Shallow copy the inner map only when necessary
+          currentMap.put(part, PmsStepParameters.parse((Map<String, Object>) nextMap));
+          currentMap = (Map<String, Object>) currentMap.get(part);
+        }
+      }
+
+      // Remove the final key from the required map
+      if (currentMap != null && removeKey) {
+        currentMap.remove(keyParts[keyParts.length - 1]);
+      }
+    }
+
+    return clonedParameters;
+  }
+
+  @VisibleForTesting
+  void addResolvedStepInputs(String planExecutionId, String nodeExecutionId, PmsStepParameters resolvedStepInputs) {
+    pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, resolvedStepInputs);
+    log.info("Added Resolved step Inputs");
   }
 
   @Override
@@ -207,8 +261,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
           facilitationHelper.calculateFacilitatorResponse(ambiance, planNode);
       processFacilitationResponse(ambiance, facilitatorResponseProto);
     } catch (Exception exception) {
-      log.error("Exception Occurred in facilitateAndStartStep NodeExecutionId : {}, PlanExecutionId: {}",
-          nodeExecutionId, ambiance.getPlanExecutionId(), exception);
+      log.error(String.format("Exception Occurred in facilitateAndStartStep NodeExecutionId : %s, PlanExecutionId: %s",
+                    nodeExecutionId, ambiance.getPlanExecutionId()),
+          exception);
       handleError(ambiance, exception);
     }
   }
@@ -219,16 +274,26 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
       nodeExecutionService.updateV2(
           nodeExecutionId, ops -> ops.set(NodeExecutionKeys.mode, facilitatorResponse.getExecutionMode()));
+
+      List<String> interruptNodeExecutionIds = new ArrayList<>(List.of(nodeExecutionId));
+      // Currently AbortAll/ExpireAll expires can be at stage level only except on plan. So sending stage
+      // NodeExecutionId.
+      AmbianceUtils.getStageLevelFromAmbiance(ambiance).ifPresent(
+          stageLevel -> interruptNodeExecutionIds.add(stageLevel.getRuntimeId()));
+
       ExecutionCheck check = interruptService.checkInterruptsPreInvocation(
-          ambiance.getPlanExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+          ambiance.getPlanExecutionId(), nodeExecutionId, interruptNodeExecutionIds);
       if (!check.isProceed()) {
         log.info("Not Proceeding with Execution : {}", check.getReason());
         return;
       }
       startHelper.startNode(ambiance, facilitatorResponse);
     } catch (Exception exception) {
-      log.error("Exception Occurred while processing facilitation response NodeExecutionId : {}, PlanExecutionId: {}",
-          AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId(), exception);
+      log.error(
+          String.format(
+              "Exception Occurred while processing facilitation response NodeExecutionId : %s, PlanExecutionId: %s",
+              AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId()),
+          exception);
       handleError(ambiance, exception);
     }
   }
@@ -248,23 +313,29 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         return;
       }
       if (nodeExecution.getStatus() != RUNNING) {
-        log.info("Marking the nodeExecution with id {} as RUNNING", nodeExecutionId);
+        Status previousNodeExecutionStatus = nodeExecution.getStatus();
+        log.info("Marking the nodeExecution with id {} as RUNNING as previous status {}", nodeExecutionId,
+            previousNodeExecutionStatus);
         nodeExecution = Preconditions.checkNotNull(
             nodeExecutionService.updateStatusWithOps(nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class)));
         // After resuming, pipeline status need to be set. Ex: Pipeline waiting on approval step, pipeline status is
         // waiting, after approval, node execution is marked as running and,  similarly we are marking for pipeline.
         // Earlier pipeline status was marked from step itself.
 
-        // Please refer the explanation added above the method - calculateAndUpdateRunningStatus(
-        planExecutionService.calculateAndUpdateRunningStatus(ambiance.getPlanExecutionId(), nodeExecutionId);
+        // PlanExecution status update check is not even required if previousStatus of nodeExecution was in
+        // FLOWING_STATUS
+        if (!StatusUtils.flowingStatuses().contains(previousNodeExecutionStatus)) {
+          planExecutionService.calculateAndUpdateRunningStatusUnderLock(ambiance.getPlanExecutionId(), null);
+        }
       } else {
         // This will happen if the node is not in any paused or waiting statuses.
         log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);
       }
       resumeHelper.resume(nodeExecution, response, asyncError);
     } catch (Exception exception) {
-      log.error("Exception Occurred in handling resume with nodeExecutionId {} planExecutionId {}", nodeExecutionId,
-          ambiance.getPlanExecutionId(), exception);
+      log.error(String.format("Exception Occurred in handling resume with nodeExecutionId %s planExecutionId %s",
+                    nodeExecutionId, ambiance.getPlanExecutionId()),
+          exception);
       handleError(ambiance, exception);
     }
   }
@@ -298,8 +369,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       handleStepResponseInternal(ambiance, stepResponse);
     } catch (Exception ex) {
-      log.error("Exception Occurred in handleStepResponse NodeExecutionId : {}, PlanExecutionId: {}",
-          AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId(), ex);
+      log.error(String.format("Exception Occurred in handleStepResponse NodeExecutionId : %s, PlanExecutionId: %s",
+                    AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId()),
+          ex);
       handleError(ambiance, ex);
     }
   }
@@ -390,5 +462,10 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       // Smile if you see irony in this
       log.error("This is very BAD!!!. Exception Occurred while handling Exception. Erroring out Execution", ex);
     }
+  }
+
+  @Override
+  public PmsNodeExecutionMetadata createMetadata(StrategyMetadata strategyMetadata) {
+    return NodeExecutionMetadata.builder().strategyMetadata(strategyMetadata).build();
   }
 }

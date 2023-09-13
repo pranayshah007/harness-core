@@ -6,6 +6,8 @@
  */
 
 package io.harness.pms.sdk.core.plan.creation.creators;
+
+import static io.harness.pms.plan.creation.PlanCreatorConstants.YAML_VERSION;
 import static io.harness.pms.sdk.PmsSdkModuleUtils.PLAN_CREATOR_SERVICE_EXECUTOR;
 
 import static java.lang.String.format;
@@ -277,8 +279,9 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
              ctx.getProjectIdentifier(), ctx.getPipelineIdentifier(), ctx.getExecutionUuid())) {
       try {
         String fullyQualifiedName = YamlUtils.getFullyQualifiedName(field.getNode());
+        String yamlVersion = getYamlVersion(ctx, dependency);
         Optional<PartialPlanCreator<?>> planCreatorOptional =
-            PlanCreatorServiceHelper.findPlanCreator(planCreators, field, ctx.getYamlVersion());
+            PlanCreatorServiceHelper.findPlanCreator(planCreators, field, yamlVersion);
         if (!planCreatorOptional.isPresent()) {
           return null;
         }
@@ -303,6 +306,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
           PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
               planForField, serviceName, field, currentNodeServiceAffinity);
+          PlanCreatorServiceHelper.decorateResponseWithParentInfo(dependency, planForField);
           return planForField;
         } catch (Exception ex) {
           log.error(format("Error creating plan for node: %s", fullyQualifiedName), ex);
@@ -320,5 +324,16 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         return PlanCreationResponse.builder().errorMessage(message).build();
       }
     }
+  }
+
+  private String getYamlVersion(PlanCreationContext ctx, Dependency dependency) {
+    String yamlVersion = ctx.getYamlVersion();
+    // If the yamlVersion is V0 then do v0 only.
+    if (!PipelineVersion.V0.equals(yamlVersion)) {
+      if (dependency != null && dependency.getParentInfo().getDataMap().containsKey(YAML_VERSION)) {
+        yamlVersion = dependency.getParentInfo().getDataMap().get(YAML_VERSION).getStringValue();
+      }
+    }
+    return yamlVersion;
   }
 }

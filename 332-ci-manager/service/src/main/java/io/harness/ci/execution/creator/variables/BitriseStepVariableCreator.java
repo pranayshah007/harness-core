@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.creator.variables;
+package io.harness.ci.execution.creator.variables;
 
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.nodes.BitriseStepNode;

@@ -6,6 +6,7 @@
  */
 
 package io.harness.gitsync.common.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.gitsync.common.beans.BranchSyncStatus.UNSYNCED;

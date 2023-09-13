@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.aws.sam;
+
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
@@ -28,6 +29,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSamServerInstanceInfo;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
@@ -64,6 +66,9 @@ public class AwsSamStepHelper {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
+
+  private static String SAM_BUILD_DEFAULT_IMAGE = "harnessdev/sam-build:1.82.0-latest";
+  private static String SAM_DEPLOY_DEFAULT_IMAGE = "harnessdev/sam-deploy:1.82.0-latest";
 
   ObjectMapper objectMapper = NG_DEFAULT_OBJECT_MAPPER;
 
@@ -216,5 +221,26 @@ public class AwsSamStepHelper {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) awsSamDirectoryManifestOutcome.getStore();
 
     return awsSamDirectoryManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
+  }
+
+  public ParameterField<String> getImage(AwsSamBaseStepInfo awsSamBaseStepInfo) {
+    if (awsSamBaseStepInfo instanceof AwsSamBuildStepInfo || awsSamBaseStepInfo instanceof AwsSamBuildStepParameters) {
+      if (awsSamBaseStepInfo.getImage() != null
+          && EmptyPredicate.isNotEmpty(awsSamBaseStepInfo.getImage().getValue())) {
+        return awsSamBaseStepInfo.getImage();
+      } else {
+        return ParameterField.createValueField(SAM_BUILD_DEFAULT_IMAGE);
+      }
+    } else if (awsSamBaseStepInfo instanceof AwsSamDeployStepInfo
+        || awsSamBaseStepInfo instanceof AwsSamDeployStepParameters) {
+      if (awsSamBaseStepInfo.getImage() != null
+          && EmptyPredicate.isNotEmpty(awsSamBaseStepInfo.getImage().getValue())) {
+        return awsSamBaseStepInfo.getImage();
+      } else {
+        return ParameterField.createValueField(SAM_DEPLOY_DEFAULT_IMAGE);
+      }
+    } else {
+      throw new InvalidRequestException("Default Images for SAM Build and SAM Deploy Step only supported");
+    }
   }
 }

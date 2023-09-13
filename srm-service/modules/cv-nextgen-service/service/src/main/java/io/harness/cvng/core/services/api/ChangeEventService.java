@@ -7,7 +7,9 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
@@ -57,4 +59,9 @@ public interface ChangeEventService {
       List<String> monitoredServiceIdentifiers, boolean isMonitoredServiceIdentifierScoped,
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, Instant startTime,
       Instant endTime);
+
+  void mapSRMAnalysisExecutionsToDeploymentActivities(SRMAnalysisStepExecutionDetail stepExecutionDetail);
+
+  List<DeploymentActivity> getAnalysisStepAssociatedDeploymentActivities(
+      String accountId, String orgIdentifier, String projectIdentifier, String planExecutionId, String stageId);
 }

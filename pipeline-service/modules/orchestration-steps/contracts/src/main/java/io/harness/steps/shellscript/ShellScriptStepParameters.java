@@ -16,6 +16,8 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,8 +45,8 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implement
   public ShellScriptStepParameters(ShellType shellType, ShellScriptSourceWrapper source,
       ExecutionTarget executionTarget, ParameterField<Boolean> onDelegate, Map<String, Object> outputVariables,
       Map<String, Object> environmentVariables, ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid,
-      Set<String> secretOutputVariables) {
-    super(uuid, shellType, source, executionTarget, onDelegate, delegateSelectors);
+      Set<String> secretOutputVariables, ParameterField<Boolean> includeInfraSelectors) {
+    super(uuid, shellType, source, executionTarget, onDelegate, delegateSelectors, includeInfraSelectors);
     this.outputVariables = outputVariables;
     this.environmentVariables = environmentVariables;
     this.secretOutputVariables = secretOutputVariables;
@@ -61,7 +63,13 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implement
         .shellType(this.shell)
         .source(this.source.toBuilder().uuid(null).build())
         .delegateSelectors(this.delegateSelectors)
+        .includeInfraSelectors(this.includeInfraSelectors)
         .build();
+  }
+
+  @Override
+  public List<String> stepInputsKeyExclude() {
+    return new LinkedList<>(Arrays.asList("spec.secretOutputVariables"));
   }
 
   @NotNull

@@ -14,12 +14,13 @@ import io.harness.beans.execution.license.CILicenseService;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.config.ExecutionLimits.ExecutionLimitSpec;
-import io.harness.ci.execution.QueueExecutionUtils;
+import io.harness.ci.execution.execution.QueueExecutionUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.repositories.ExecutionQueueLimitRepository;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -34,8 +35,8 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
   @Inject private ExecutionQueueLimitRepository executionQueueLimitRepository;
 
   @Override
-  public boolean checkBuildEnforcement(String accountId) {
-    long activeExecutionsCount = queueExecutionUtils.getActiveExecutionsCount(accountId);
+  public boolean checkBuildEnforcement(String accountId, List<String> status) {
+    long activeExecutionsCount = queueExecutionUtils.getActiveExecutionsCount(accountId, status);
     long macExecutionsCount = queueExecutionUtils.getActiveMacExecutionsCount(accountId);
 
     long currExecutionCountNonMac = activeExecutionsCount - macExecutionsCount;

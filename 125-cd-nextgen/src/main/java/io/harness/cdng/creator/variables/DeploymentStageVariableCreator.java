@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator.variables;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
@@ -41,7 +42,6 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
-import io.harness.evaluators.ProvisionerExpressionEvaluator;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
@@ -93,8 +93,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE,
-        HarnessModuleComponent.CDS_K8S})
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class DeploymentStageVariableCreator extends AbstractStageVariableCreator<DeploymentStageNode> {
   private static final String SIDECARS_PREFIX = "artifacts.sidecars";
@@ -409,12 +408,11 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     List<YamlProperties> outputProperties = new LinkedList<>();
     InfrastructureConfig infrastructureConfig =
         InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
-    InfrastructureOutcome infrastructureOutcome =
-        infrastructureMapper.toOutcome(infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(),
-            new ProvisionerExpressionEvaluator(Collections.emptyMap()), EnvironmentOutcome.builder().build(),
-            ServiceStepOutcome.builder().build(), infrastructureEntity.getAccountId(),
-            infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(),
-            infrastructureConfig.getInfrastructureDefinitionConfig().getTags());
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        infrastructureConfig.getInfrastructureDefinitionConfig().getSpec(), EnvironmentOutcome.builder().build(),
+        ServiceStepOutcome.builder().build(), infrastructureEntity.getAccountId(),
+        infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(),
+        infrastructureConfig.getInfrastructureDefinitionConfig().getTags());
 
     List<String> infraStepOutputExpressions =
         VariableCreatorHelper.getExpressionsInObject(infrastructureOutcome, OutputExpressionConstants.INFRA);

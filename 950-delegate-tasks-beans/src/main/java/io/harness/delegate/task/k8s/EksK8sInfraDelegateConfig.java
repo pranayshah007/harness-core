@@ -9,6 +9,7 @@ package io.harness.delegate.task.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -20,9 +21,11 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig")
 public class EksK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   String namespace;
   String cluster;
   AwsConnectorDTO awsConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
+  boolean addRegionalParam;
 }

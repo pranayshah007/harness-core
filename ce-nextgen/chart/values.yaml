@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   loadbalancerURL: "https://test"
   database:
     postgres:
@@ -61,6 +63,8 @@ global:
     tls:
       enabled: true
       secretName: ''
+    objects:
+      annotations: {}
   istio:
     enabled: false
     gateway:
@@ -90,7 +94,7 @@ image:
   repository: harness/ce-nextgen-signed
   pullPolicy: IfNotPresent
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80103-000"
+  tag: "80801-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -100,7 +104,7 @@ imageClickhouseEnabled:
   repository: harness/ce-nextgen-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80103-000"
+  tag: "80801-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -138,7 +142,7 @@ awsSecret:
 
 ceng-gcp-credentials: ""
 
-nameOverride: ""
+nameOverride: "nextgen-ce"
 fullnameOverride: ""
 
 serviceAccount:
@@ -153,6 +157,7 @@ podSecurityContext: {}
 securityContext: {}
 
 service:
+  annotations: {}
   type: ClusterIP
   port: 6340
 
@@ -196,6 +201,7 @@ resources:
     memory: "4Gi"
 
 additionalConfigs: {}
+java17flags: ""
 
 # extraVolumes:
 #   - name: volume-test
@@ -217,3 +223,7 @@ lifecycleHooks: {}
 #   preStop:
 #     exec:
 #       command:
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

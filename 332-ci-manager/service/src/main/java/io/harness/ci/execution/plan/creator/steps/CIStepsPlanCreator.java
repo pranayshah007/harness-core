@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ci.plan.creator.steps;
+package io.harness.ci.execution.plan.creator.steps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
+import io.harness.ci.execution.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plancreator.V1.GitClonePlanCreator;
 import io.harness.ci.plancreator.V1.InitializeStepPlanCreatorV1;
 import io.harness.data.structure.EmptyPredicate;
@@ -21,8 +21,11 @@ import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -89,26 +92,42 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     // TODO : Figure out corresponding failure stages and put that here as well
     IntStream.range(0, steps.size() - 1).forEach(i -> {
       YamlField curr = steps.get(i);
+      String nextId = steps.get(i + 1).getUuid();
+      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+      // bytes for complex objects. We will deprecate the first one in v1
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(Dependencies.newBuilder()
-                                .putDependencies(curr.getUuid(), curr.getYamlPath())
-                                .putDependencyMetadata(curr.getUuid(),
-                                    Dependency.newBuilder()
-                                        .putAllMetadata(ctx.getDependency().getMetadataMap())
-                                        .putMetadata("nextId",
-                                            ByteString.copyFrom(kryoSerializer.asBytes(steps.get(i + 1).getUuid())))
-                                        .build())
-                                .build())
+              .dependencies(
+                  Dependencies.newBuilder()
+                      .putDependencies(curr.getUuid(), curr.getYamlPath())
+                      .putDependencyMetadata(curr.getUuid(),
+                          Dependency.newBuilder()
+                              .putAllMetadata(ctx.getDependency().getMetadataMap())
+                              .putMetadata(
+                                  PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
+                              .setNodeMetadata(HarnessStruct.newBuilder()
+                                                   .putData(PlanCreatorConstants.NEXT_ID,
+                                                       HarnessValue.newBuilder().setStringValue(nextId).build())
+                                                   .putAllData(ctx.getDependency().getNodeMetadata().getDataMap())
+                                                   .build())
+                              .build())
+                      .build())
               .build());
     });
 
     YamlField curr = steps.get(steps.size() - 1);
+    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+    // bytes for complex objects. We will deprecate the first one in v1
     responseMap.put(curr.getUuid(),
         PlanCreationResponse.builder()
             .dependencies(Dependencies.newBuilder()
                               .putDependencyMetadata(curr.getUuid(),
-                                  Dependency.newBuilder().putAllMetadata(ctx.getDependency().getMetadataMap()).build())
+                                  Dependency.newBuilder()
+                                      .putAllMetadata(ctx.getDependency().getMetadataMap())
+                                      .setNodeMetadata(ctx.getDependency().getNodeMetadata())
+                                      .build())
                               .putDependencies(curr.getUuid(), curr.getYamlPath())
                               .build())
             .build());

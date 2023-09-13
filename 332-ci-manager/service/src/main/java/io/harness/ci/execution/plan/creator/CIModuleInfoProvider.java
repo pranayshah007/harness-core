@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.plan.creator;
+package io.harness.ci.execution.plan.creator;
 
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
@@ -19,6 +19,7 @@ import static io.harness.git.GitClientHelper.getGitRepo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
@@ -32,9 +33,13 @@ import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.commonconstants.CIExecutionConstants;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.plan.creator.execution.CIStageModuleInfo;
+import io.harness.ci.execution.states.InitializeTaskStep;
+import io.harness.ci.execution.states.IntegrationStageStepPMS;
+import io.harness.ci.execution.utils.WebhookTriggerProcessorUtils;
 import io.harness.ci.pipeline.executions.beans.CIBuildAuthor;
 import io.harness.ci.pipeline.executions.beans.CIBuildBranchHook;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
@@ -46,10 +51,6 @@ import io.harness.ci.pipeline.executions.beans.CIWebhookInfoDTO;
 import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
 import io.harness.ci.plan.creator.execution.CIPipelineStageModuleInfo;
-import io.harness.ci.plan.creator.execution.CIStageModuleInfo;
-import io.harness.ci.states.InitializeTaskStep;
-import io.harness.ci.states.IntegrationStageStepPMS;
-import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
@@ -70,9 +71,12 @@ import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.execution.ExecutionSummaryModuleInfoProvider;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.execution.beans.PipelineModuleInfo;
 import io.harness.pms.sdk.execution.beans.StageModuleInfo;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
@@ -96,6 +100,8 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CILicenseService ciLicenseService;
+
+  @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
 
   String NULL_STR = "null";
   @Override
@@ -129,9 +135,35 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       ExecutionTriggerInfo executionTriggerInfo = event.getAmbiance().getMetadata().getTriggerInfo();
       Ambiance ambiance = event.getAmbiance();
       BaseNGAccess baseNGAccess = retrieveBaseNGAccess(ambiance);
-      try {
+
+      String runTimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+      String accountId = AmbianceUtils.getAccountId(ambiance);
+      Optional<StepExecutionParameters> stepExecutionParameters =
+          stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(accountId, runTimeId);
+      StepParameters stepParameters = null;
+      if (stepExecutionParameters.isPresent()) {
+        try {
+          StepExecutionParameters executionParameters = stepExecutionParameters.get();
+          stepParameters =
+              RecastOrchestrationUtils.fromJson(executionParameters.getStepParameters(), StepParameters.class);
+        } catch (Exception ex) {
+          log.error("Error in deserialization", ex);
+          StepElementParameters stepElementParameters = (StepElementParameters) event.getResolvedStepParameters();
+          if (stepElementParameters != null) {
+            stepParameters = stepElementParameters;
+          }
+        }
+      } else {
         StepElementParameters stepElementParameters = (StepElementParameters) event.getResolvedStepParameters();
         if (stepElementParameters != null) {
+          stepParameters = stepElementParameters;
+        }
+      }
+
+      try {
+        if (stepParameters != null) {
+          StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
+
           InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
           if (initializeStepInfo == null) {
@@ -436,8 +468,27 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     long totalStageBuildTime = 0;
     double buildMultiplier = 1;
 
-    if (event.getResolvedStepParameters() != null) {
-      StageElementParameters stageElementParameters = (StageElementParameters) event.getResolvedStepParameters();
+    String runTimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    Optional<StepExecutionParameters> stepExecutionParameters =
+        stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(accountId, runTimeId);
+    StepParameters stepParameters = null;
+    if (stepExecutionParameters.isPresent()) {
+      try {
+        StepExecutionParameters executionParameters = stepExecutionParameters.get();
+        stepParameters =
+            RecastOrchestrationUtils.fromJson(executionParameters.getStepParameters(), StepParameters.class);
+      } catch (Exception ex) {
+        log.error("Error in deserialization", ex);
+        stepParameters = event.getResolvedStepParameters();
+      }
+    } else {
+      if (event.getResolvedStepParameters() != null) {
+        stepParameters = event.getResolvedStepParameters();
+      }
+    }
+    if (stepParameters != null) {
+      StageElementParameters stageElementParameters = (StageElementParameters) stepParameters;
       if (stageElementParameters != null) {
         stageId = stageElementParameters.getIdentifier();
         stageName = stageElementParameters.getName();

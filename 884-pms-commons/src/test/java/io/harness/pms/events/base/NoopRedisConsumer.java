@@ -57,7 +57,7 @@ public class NoopRedisConsumer extends RedisAbstractConsumer {
   }
 
   @Override
-  public void acknowledge(String messageId) {}
+  public void acknowledge(String... messageId) {}
 
   @Override
   public void shutdown() {}

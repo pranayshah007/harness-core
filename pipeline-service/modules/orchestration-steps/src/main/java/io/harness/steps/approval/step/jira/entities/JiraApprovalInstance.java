@@ -18,8 +18,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.iterator.PersistentIrregularIterable;
 import io.harness.ng.DbAliases;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -68,7 +68,7 @@ public class JiraApprovalInstance extends ApprovalInstance implements Persistent
   // the id of the latest delegate task created while polling
   String latestDelegateTaskId;
 
-  public static JiraApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
+  public static JiraApprovalInstance fromStepParameters(Ambiance ambiance, StepBaseParameters stepParameters) {
     if (stepParameters == null) {
       return null;
     }

@@ -11,7 +11,18 @@ import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
 import io.harness.ssca.beans.SbomDTO;
 import io.harness.ssca.entities.ArtifactEntity;
 
+import java.util.Optional;
+import org.springframework.data.domain.Sort;
+
 public interface ArtifactService {
   ArtifactEntity getArtifactFromSbomPayload(
       String accountId, String orgIdentifier, String projectIdentifier, SbomProcessRequestBody body, SbomDTO sbomDTO);
+
+  Optional<ArtifactEntity> getArtifact(
+      String accountId, String orgIdentifier, String projectIdentifier, String orchestrationId);
+
+  Optional<ArtifactEntity> getArtifact(
+      String accountId, String orgIdentifier, String projectIdentifier, String artifactId, Sort sort);
+
+  String generateArtifactId(String registryUrl, String name);
 }

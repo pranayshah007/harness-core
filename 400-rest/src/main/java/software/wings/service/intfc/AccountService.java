@@ -287,8 +287,6 @@ public interface AccountService {
 
   boolean doMultipleAccountsExist();
 
-  List<AccountDTO> getAllAccounts();
-
   PageResponse<AccountDTO> listAccounts(int offset, int pageSize);
 
   Integer getTrustLevel(String accountId);

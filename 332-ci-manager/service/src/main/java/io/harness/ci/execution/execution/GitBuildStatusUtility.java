@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
@@ -15,6 +15,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.ConnectorType.HARNESS;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.pms.execution.utils.StatusUtils.isFinalStatus;
 import static io.harness.steps.StepUtils.buildAbstractions;
@@ -30,11 +31,13 @@ import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.StageDetails;
-import io.harness.ci.buildstate.CodebaseUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.buildstate.CodebaseUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStepParameters;
+import io.harness.code.HarnessCodePayload;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -99,7 +102,8 @@ public class GitBuildStatusUtility {
   private static final int IDENTIFIER_LENGTH_BB_SAAS = 19;
 
   private static final int HASH_LENGTH_BB_SAAS = 5;
-  private static final List<ConnectorType> validConnectors = Arrays.asList(GITHUB, GITLAB, BITBUCKET, AZURE_REPO);
+  private static final List<ConnectorType> validConnectors =
+      Arrays.asList(GITHUB, GITLAB, BITBUCKET, AZURE_REPO, HARNESS);
 
   @Inject private ConnectorUtils connectorUtils;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -110,6 +114,7 @@ public class GitBuildStatusUtility {
   @Inject ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private CIExecutionServiceConfig cIExecutionServiceConfig;
 
   public boolean shouldSendStatus(StepCategory stepCategory) {
     return stepCategory == StepCategory.STAGE;
@@ -167,6 +172,7 @@ public class GitBuildStatusUtility {
 
       if (ciBuildStatusPushParameters.getState() != UNSUPPORTED) {
         ConnectorDetails connectorDetails = ciBuildStatusPushParameters.getConnectorDetails();
+
         boolean executeOnDelegate =
             connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
         if (executeOnDelegate) {
@@ -282,7 +288,7 @@ public class GitBuildStatusUtility {
 
     return CIBuildStatusPushParameters.builder()
         .detailsUrl(detailsUrl)
-        .desc(generateDesc(ambiance.getMetadata().getPipelineIdentifier(), ambiance.getMetadata().getExecutionUuid(),
+        .desc(generateDesc(ambiance.getMetadata().getPipelineIdentifier(), ambiance.getPlanExecutionId(),
             buildStatusUpdateParameter.getName(), status.name()))
         .sha(commitSha)
         .prNumber(prNumber)
@@ -331,6 +337,8 @@ public class GitBuildStatusUtility {
       return GitSCMType.GITLAB;
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       return GitSCMType.AZURE_REPO;
+    } else if (gitConnector.getConnectorType() == HARNESS) {
+      return GitSCMType.HARNESS;
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported");
     }
@@ -352,8 +360,30 @@ public class GitBuildStatusUtility {
         return getBitBucketStatus(status);
       case AZURE_REPO:
         return getAzureRepoStatus(status);
+      case HARNESS:
+        return getHarnessRepoStatus(status);
       default:
         unhandled(gitSCMType);
+        return UNSUPPORTED;
+    }
+  }
+
+  private String getHarnessRepoStatus(Status status) {
+    switch (status) {
+      case ERRORED:
+        return HarnessCodePayload.CheckStatus.error.name();
+      case ABORTED:
+      case FAILED:
+      case EXPIRED:
+        return HarnessCodePayload.CheckStatus.failure.name();
+      case SUCCEEDED:
+      case IGNORE_FAILED:
+        return HarnessCodePayload.CheckStatus.success.name();
+      case RUNNING:
+        return HarnessCodePayload.CheckStatus.running.name();
+      case QUEUED:
+        return HarnessCodePayload.CheckStatus.pending.name();
+      default:
         return UNSUPPORTED;
     }
   }
@@ -472,7 +502,7 @@ public class GitBuildStatusUtility {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String baseUrl = getNgBaseUrl(getVanityUrl(ngAccess.getAccountIdentifier()), ngBaseUrl);
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
-    String executionId = ambiance.getMetadata().getExecutionUuid();
+    String executionId = ambiance.getPlanExecutionId();
     return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl, stageSetupId, stageExecutionId);
   }
 

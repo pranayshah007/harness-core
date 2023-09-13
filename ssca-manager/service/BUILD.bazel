@@ -44,6 +44,7 @@ shared_dependencies = [
     "@maven//:io_swagger_core_v3_swagger_annotations",
     "@maven//:io_swagger_core_v3_swagger_models",
     "@maven//:io_swagger_core_v3_swagger_integration",
+    "@maven//:com_amazonaws_aws_java_sdk_s3",
 ]
 
 java_binary(

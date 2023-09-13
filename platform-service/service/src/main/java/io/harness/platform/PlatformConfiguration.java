@@ -26,6 +26,7 @@ import io.harness.resourcegroup.ResourceGroupServiceConfig;
 import io.harness.resourcegroup.v1.remote.dto.ZendeskConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
+import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
@@ -122,7 +123,7 @@ public class PlatformConfiguration extends Configuration {
   @ConfigSecret
   private EventsFrameworkConfiguration eventsFrameworkConfiguration =
       EventsFrameworkConfiguration.builder().redisConfig(redisConfig).build();
-
+  @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
   public static final Collection<Class<?>> ALL_HARNESS_RESOURCES = getAllResources();
   public static final Collection<Class<?>> NOTIFICATION_SERVICE_RESOURCES = getNotificationServiceResourceClasses();
   public static final Collection<Class<?>> AUDIT_SERVICE_RESOURCES = getAuditServiceResourceClasses();

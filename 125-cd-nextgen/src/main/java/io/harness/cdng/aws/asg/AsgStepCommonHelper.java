@@ -25,6 +25,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -38,6 +39,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
@@ -78,7 +80,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -133,24 +134,32 @@ public class AsgStepCommonHelper extends CDStepHelper {
   static final String VERSION_DELIMITER = "__";
 
   public TaskChainResponse startChainLink(
-      AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
+      AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     // Get ManifestsOutcome
+    LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
+
+    // Get UserDataOutcome and update expressions
+    UserDataOutcome userDataOutcome = resolveAsgUserDataOutcome(ambiance);
+    cdExpressionResolver.updateExpressions(ambiance, userDataOutcome);
+
+    // Get ManifestsOutcome and update expressions
     ManifestsOutcome manifestsOutcome = resolveAsgManifestsOutcome(ambiance);
-
-    // Get InfrastructureOutcome
-    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-
-    // Update expressions in ManifestsOutcome
     cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
 
     // Validate ManifestsOutcome
     validateManifestsOutcome(ambiance, manifestsOutcome);
     checkRequiredManifests(manifestsOutcome);
 
-    LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
+    // Get InfrastructureOutcome
+    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
     Collection<ManifestOutcome> manifestOutcomeList = manifestsOutcome.values();
+    if (userDataOutcome != null) {
+      manifestOutcomeList = new ArrayList<>(manifestOutcomeList);
+      manifestOutcomeList.add(convertUserDataOutcomeToManifestOutcome(userDataOutcome));
+    }
+
     List<ManifestOutcome> manifestOutcomesFromHarnessStore =
         asgStepHelper.getManifestOutcomesFromHarnessStore(manifestOutcomeList);
     List<ManifestOutcome> manifestOutcomesFromGitStore =
@@ -229,6 +238,15 @@ public class AsgStepCommonHelper extends CDStepHelper {
     return (ManifestsOutcome) manifestsOutcome.getOutcome();
   }
 
+  public UserDataOutcome resolveAsgUserDataOutcome(Ambiance ambiance) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.USER_DATA));
+    if (!optionalOutcome.isFound()) {
+      return null;
+    }
+    return (UserDataOutcome) optionalOutcome.getOutcome();
+  }
+
   private Map<String, List<String>> getManifestFileContentsFromHarnessStore(
       Ambiance ambiance, List<ManifestOutcome> manifestOutcomes, LogCallback logCallback) {
     Map<String, List<String>> resultMap = new HashMap<>();
@@ -240,6 +258,25 @@ public class AsgStepCommonHelper extends CDStepHelper {
           o -> { resultMap.get(manifestType).add(renderExpressionsForManifestContent(o, ambiance)); });
     });
     return resultMap;
+  }
+
+  ManifestOutcome convertUserDataOutcomeToManifestOutcome(UserDataOutcome userDataOutcome) {
+    return new ManifestOutcome() {
+      @Override
+      public String getIdentifier() {
+        return OutcomeExpressionConstants.USER_DATA;
+      }
+
+      @Override
+      public String getType() {
+        return OutcomeExpressionConstants.USER_DATA;
+      }
+
+      @Override
+      public StoreConfig getStore() {
+        return userDataOutcome.getStore();
+      }
+    };
   }
 
   private List<GitFetchFilesConfig> getGitFetchFilesConfigFromManifestOutcome(
@@ -262,7 +299,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   private TaskChainResponse prepareAsgTask(AsgStepExecutor asgStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, Map<String, List<String>> harnessFetchedManifestContentMap,
+      StepBaseParameters stepElementParameters, Map<String, List<String>> harnessFetchedManifestContentMap,
       InfrastructureOutcome infrastructureOutcome, LogCallback logCallback) {
     logCallback.saveExecutionLog(
         color("Fetched all manifest files", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
@@ -374,7 +411,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   public TaskChainResponse executeNextLinkRolling(AsgStepExecutor asgStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       DelegateResponseData delegateResponseData) throws Exception {
     UnitProgressData unitProgressData = null;
     TaskChainResponse taskChainResponse = null;
@@ -404,7 +441,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   private TaskChainResponse handleAsgPrepareRollbackDataResponseRolling(
       AsgPrepareRollbackDataResponse asgPrepareRollbackDataResponse, AsgStepExecutor asgStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, AsgPrepareRollbackDataPassThroughData asgStepPassThroughData) {
+      StepBaseParameters stepElementParameters, AsgPrepareRollbackDataPassThroughData asgStepPassThroughData) {
     if (asgPrepareRollbackDataResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       AsgStepExceptionPassThroughData asgStepExceptionPassThroughData =
           AsgStepExceptionPassThroughData.builder()
@@ -466,7 +503,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   public TaskChainResponse queueFetchGitTask(AsgExecutionPassThroughData asgExecutionPassThroughData, Ambiance ambiance,
-      StepElementParameters stepElementParameters) {
+      StepBaseParameters stepElementParameters) {
     GitFetchFilesConfig gitFetchFilesConfig =
         asgExecutionPassThroughData.getAsgManifestFetchData().getNextGitFetchFilesConfig();
 
@@ -502,14 +539,14 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public TaskChainResponse chainFetchGitTaskUntilAllGitManifestsFetched(
       AsgExecutionPassThroughData asgExecutionPassThroughData, Ambiance ambiance,
-      StepElementParameters stepElementParameters) {
+      StepBaseParameters stepElementParameters) {
     return chainFetchGitTaskUntilAllGitManifestsFetched(
         asgExecutionPassThroughData, null, ambiance, stepElementParameters, null);
   }
 
   public TaskChainResponse chainFetchGitTaskUntilAllGitManifestsFetched(
       AsgExecutionPassThroughData asgExecutionPassThroughData, DelegateResponseData delegateResponseData,
-      Ambiance ambiance, StepElementParameters stepElementParameters, Supplier<TaskChainResponse> taskSupplier) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, Supplier<TaskChainResponse> taskSupplier) {
     LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, false);
 
     AsgManifestFetchData asgManifestFetchData = asgExecutionPassThroughData.getAsgManifestFetchData();
@@ -709,5 +746,46 @@ public class AsgStepCommonHelper extends CDStepHelper {
     }
 
     throw new GeneralException("Invalid asg command response instance");
+  }
+
+  public AsgCapacityConfig getAsgCapacityConfig(AsgInstances instances) {
+    if (instances == null) {
+      return null;
+    }
+
+    switch (instances.getType()) {
+      case CURRENT_RUNNING:
+        return null;
+      case FIXED:
+        AsgFixedInstances fixed = (AsgFixedInstances) instances.getSpec();
+        Integer minSize = ParameterFieldHelper.getIntegerParameterFieldValue(fixed.getMin());
+        Integer maxSize = ParameterFieldHelper.getIntegerParameterFieldValue(fixed.getMax());
+        Integer desiredSize = ParameterFieldHelper.getIntegerParameterFieldValue(fixed.getDesired());
+        return AsgCapacityConfig.builder().min(minSize).max(maxSize).desired(desiredSize).build();
+      default:
+        throw new InvalidRequestException(format("Invalid instances type provided: %s", instances.getType()));
+    }
+  }
+
+  public boolean isUseAlreadyRunningInstances(AsgInstances instances, boolean useAlreadyRunningInstances) {
+    if (instances == null) {
+      return useAlreadyRunningInstances;
+    }
+
+    return AsgInstancesType.CURRENT_RUNNING == instances.getType();
+  }
+
+  public boolean isV2Feature(Map<String, List<String>> asgStoreManifestsContent, AsgInstances instances,
+      List<AwsAsgLoadBalancerConfigYaml> loadBalancers) {
+    if (isNotEmpty(asgStoreManifestsContent)
+        && isNotEmpty(asgStoreManifestsContent.get(OutcomeExpressionConstants.USER_DATA))) {
+      return true;
+    }
+
+    if (instances != null || isNotEmpty(loadBalancers)) {
+      return true;
+    }
+
+    return false;
   }
 }

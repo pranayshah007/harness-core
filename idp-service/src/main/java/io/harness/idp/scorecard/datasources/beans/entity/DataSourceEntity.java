@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
@@ -28,6 +29,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import lombok.extern.jackson.Jacksonized;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -37,6 +39,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@Jacksonized
 @FieldNameConstants(innerTypeName = "DataSourceKeys")
 @StoreIn(DbAliases.IDP)
 @Entity(value = "dataSources", noClassnameStored = true)
@@ -57,12 +60,12 @@ public class DataSourceEntity
   }
 
   @Id private String id;
-  private String accountIdentifier;
+  @FdIndex private String accountIdentifier;
   private String identifier;
   private String name;
   private String description;
   @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;
   @SchemaIgnore @LastModifiedBy private EmbeddedUser lastUpdatedBy;
-  @CreatedDate private long createdAt;
+  @Builder.Default @CreatedDate private long createdAt = System.currentTimeMillis();
   @LastModifiedDate private long lastUpdatedAt;
 }

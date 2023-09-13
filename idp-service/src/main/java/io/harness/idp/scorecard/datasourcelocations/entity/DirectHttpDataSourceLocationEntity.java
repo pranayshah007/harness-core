@@ -9,7 +9,6 @@ package io.harness.idp.scorecard.datasourcelocations.entity;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.beans.DataSourceLocationType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -24,10 +23,8 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "DirectHttpDataSourceLocationKeys")
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.IDP)
-public class DirectHttpDataSourceLocationEntity extends DataSourceLocationEntity {
+public class DirectHttpDataSourceLocationEntity extends HttpDataSourceLocationEntity {
   public DirectHttpDataSourceLocationEntity() {
-    super.setType(DataSourceLocationType.DIRECT_HTTP);
+    super(DataSourceLocationType.DIRECT_HTTP);
   }
-
-  ApiRequestDetails apiRequestDetails;
 }
