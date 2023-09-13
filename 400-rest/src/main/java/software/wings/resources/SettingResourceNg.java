@@ -189,8 +189,17 @@ public class SettingResourceNg {
       secretText.setScopedToAccount(true);
       secretText.setKmsId(secretManagerConfig.getUuid());
       String secretId = existingSmtpConfig.getEncryptedPassword();
-      Boolean isSuccessful = secretManager.updateSecretText(variable.getAccountId(), secretId, secretText, true);
+      if (isNotEmpty(secretId)) {
+        secretManager.updateSecretText(variable.getAccountId(), secretId, secretText, true);
+      } else {
+        secretId = secretManager.saveSecretText(variable.getAccountId(), secretText, true);
+      }
       smtpConfig.setPassword(secretId.toCharArray());
+    } else {
+      if (isNotEmpty(existingSmtpConfig.getEncryptedPassword())) {
+        secretManager.deleteSecret(
+            existingAttribute.getAccountId(), existingSmtpConfig.getEncryptedPassword(), null, true);
+      }
     }
     variable.setValue(smtpConfig);
     settingAuthHandler.authorize(variable, appId);
