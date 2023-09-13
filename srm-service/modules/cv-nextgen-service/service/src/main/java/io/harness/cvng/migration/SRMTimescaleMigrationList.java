@@ -49,6 +49,7 @@ public class SRMTimescaleMigrationList implements MigrationDetails {
         .add(Pair.of(9, MigrateAllSLOToTimescaleDB.class))
         .add(Pair.of(10, UpdateConstraintToIncludeNullOrgAndProject.class))
         .add(Pair.of(11, MigrateSLOtoTimeScaleDb.class))
+        .add(Pair.of(12, MigrateSLOtoTimeScaleDb.class))
         .build();
   }
 }
