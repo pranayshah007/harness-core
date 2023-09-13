@@ -133,8 +133,6 @@ public class AsgStepCommonHelper extends CDStepHelper {
   private static final String EXEC_STRATEGY_ROLLING = "rolling";
   static final String VERSION_DELIMITER = "__";
 
-  private static final boolean IS_V2_FEATURE_ENABLED = false;
-
   public TaskChainResponse startChainLink(
       AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     // Get ManifestsOutcome
@@ -779,15 +777,6 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public boolean isV2Feature(Map<String, List<String>> asgStoreManifestsContent, AsgInstances instances,
       List<AwsAsgLoadBalancerConfigYaml> loadBalancers) {
-    // TODO enable this in last PR
-    if (!IS_V2_FEATURE_ENABLED) {
-      return false;
-    }
-
-    if (true) {
-      return false;
-    }
-
     if (isNotEmpty(asgStoreManifestsContent)
         && isNotEmpty(asgStoreManifestsContent.get(OutcomeExpressionConstants.USER_DATA))) {
       return true;
