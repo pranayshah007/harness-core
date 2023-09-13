@@ -77,6 +77,8 @@ public enum FeatureName {
   CCM_WORKLOAD_LABELS_OPTIMISATION("Use workload labels from instance data instead of k8sworkload", HarnessTeam.CE),
   CCM_COST_CATEGORIES_DASHBOARD(
       "Cost Categories will reflect in bigQuery and eventually in Looker Dashboards", HarnessTeam.CE),
+  CDB_AIDA_WIDGET("FF for enabling the AIDA integration within Custom Dashboards for generating Dashboard widgets",
+      HarnessTeam.CDB),
   CDB_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CDB UI", HarnessTeam.CDB),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
@@ -585,6 +587,8 @@ public enum FeatureName {
   PL_USER_DELETION_V2("Modularising user deletion flows separately for CG and NG ", HarnessTeam.PL),
   PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
       "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
+  PL_AI_SUPPORT_CHATBOT("Enable Harness Support Bot for an account", HarnessTeam.PL),
+  PL_EULA_ENABLED("Enable End User License Agreement Setting in Default Settings", HarnessTeam.PL),
   POST_PROD_ROLLBACK("Flag to enable/disable PostProd Rollback", HarnessTeam.PIPELINE),
   PRUNE_KUBERNETES_RESOURCES,
   PURGE_DANGLING_APP_ENV_REFS("Explicitly purge dangling references of app/env", HarnessTeam.SPG),
@@ -888,7 +892,12 @@ public enum FeatureName {
   CDS_IMPROVED_HELM_DEPLOYMENT_TRACKING(
       "Feature Flag enables improved tracking for Helm deployments that use workloads label selectors to track deployed pods",
       HarnessTeam.CDP),
-  SEI_ENABLED("FF to enable SEI for harness platform users", HarnessTeam.SEI);
+  SEI_ENABLED("FF to enable SEI for harness platform users", HarnessTeam.SEI),
+  CDS_EKS_ADD_REGIONAL_PARAM(
+      "This flag adds the AWS_STS_REGIONAL_ENDPOINTS=regional environment variable for EKS infrastructure while creating the kubernetes config",
+      HarnessTeam.CDP),
+  CDS_RESOLVE_CUSTOM_TRIGGER_EXPRESSION(
+      "This flag resolves expression for pipeline branch for Custom Trigger.", PIPELINE);
   // keep-sorted end
 
   @Deprecated

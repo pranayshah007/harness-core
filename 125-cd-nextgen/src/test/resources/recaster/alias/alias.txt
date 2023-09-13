@@ -1084,6 +1084,9 @@ io.harness.cdng.gitops.revertpr.RevertPRStepInfo
 io.harness.cdng.gitops.revertpr.RevertPRStepNode
 io.harness.cdng.gitops.revertpr.RevertPRStepParameters
 io.harness.cdng.gitops.revertpr.RevertPROutcome
+io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepInfo
+io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepNode
+io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppOutcome
 io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepParameters
 io.harness.cdng.gitops.updategitopsapp.HelmValues
 io.harness.cdng.gitops.updategitopsapp.KustomizeReplicas

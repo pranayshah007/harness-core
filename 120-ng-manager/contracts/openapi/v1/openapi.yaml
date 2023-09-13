@@ -1608,12 +1608,13 @@ paths:
           name: webhook_identifier
         - schema:
             type: integer
+            format: int64
           in: query
           name: event_start_time
         - schema:
             type: integer
+            format: int64
           in: query
-
           name: event_end_time
       x-internal: true
 components:

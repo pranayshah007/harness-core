@@ -24,6 +24,7 @@ public class OutcomeExpressionConstants {
   public final String MERGE_PR_OUTCOME = "mergePROutcome";
   public final String MERGE_REVERT_PR_OUTCOME = "mergeRevertPROutcome";
   public final String REVERT_PR_OUTCOME = "revertPROutcome";
+  public final String UPDATE_GITOPS_APP_OUTCOME = "updateGitOpsAppOutcome";
   public final String SERVICE = "service";
   public final String ARTIFACTS = "artifacts";
   public final String ARTIFACT = "artifact";

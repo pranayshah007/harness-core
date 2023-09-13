@@ -535,7 +535,5 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOut
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureClientSecretKeyOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO
 io.harness.slsa.beans.SlsaConfig
-io.harness.beans.steps.nodes.iacm.IACMCostEstimationStepNode
-io.harness.beans.steps.stepinfo.IACMCostEstimationInfo
 io.harness.app.beans.entities.StepExecutionParameters
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata

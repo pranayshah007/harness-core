@@ -70,6 +70,7 @@ import io.harness.cdng.gitops.revertpr.RevertPRStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.gitops.syncstep.SyncStep;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStep;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
 import io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStep;
@@ -185,6 +186,7 @@ public class NgStepRegistrar {
     // Add CDNG steps here
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
     engineSteps.put(RevertPRStep.STEP_TYPE, RevertPRStep.class);
+    engineSteps.put(UpdateGitOpsAppStep.STEP_TYPE, UpdateGitOpsAppStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
     engineSteps.put(SyncStep.STEP_TYPE, SyncStep.class);

@@ -17,4 +17,7 @@ public interface PublicAccessService {
   boolean enable(String resourceIdentifier, ResourceType resourceType, Scope resourceScope);
 
   boolean isResourcePublic(String resourceIdentifier, ResourceType resourceType, Scope resourceScope);
+
+  boolean disablePublicAccess(
+      String account, String org, String project, ResourceType resourceType, String resourceIdentifier);
 }

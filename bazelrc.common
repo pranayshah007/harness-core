@@ -69,3 +69,5 @@ coverage --experimental_strict_java_deps=off
 coverage --cache_test_results=yes
 coverage --test_output=summary
 coverage --build_runfile_links
+
+build --@rules_jvm_external//settings:stamp_manifest=false

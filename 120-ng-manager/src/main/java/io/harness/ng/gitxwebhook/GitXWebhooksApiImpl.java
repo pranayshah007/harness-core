@@ -12,16 +12,20 @@ import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GetGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GetGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.ListGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.ListGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookCriteriaDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.mapper.GitXWebhookMapper;
+import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookService;
 import io.harness.spec.server.ng.v1.GitXWebhooksApi;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookResponse;
+import io.harness.spec.server.ng.v1.model.GitXWebhookEventResponse;
 import io.harness.spec.server.ng.v1.model.GitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookResponse;
@@ -43,6 +47,7 @@ import org.springframework.data.domain.Page;
 @Slf4j
 public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   GitXWebhookService gitXWebhookService;
+  GitXWebhookEventService gitXWebhookEventService;
   private final int HTTP_201 = 201;
   private final int HTTP_404 = 404;
   private final int HTTP_204 = 204;
@@ -118,7 +123,21 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
 
   @Override
   public Response listGitxWebhookEvents(String harnessAccount, Integer page, @Max(1000L) Integer limit,
-      String webhookIdentifier, Integer eventStartTime, Integer eventEndTime) {
-    return Response.ok().build();
+      String webhookIdentifier, Long eventStartTime, Long eventEndTime) {
+    GitXEventsListRequestDTO gitXEventsListRequestDTO = GitXWebhookMapper.buildEventsListGitXWebhookRequestDTO(
+        harnessAccount, webhookIdentifier, eventStartTime, eventEndTime);
+    GitXEventsListResponseDTO gitXEventsListResponseDTO = gitXWebhookEventService.listEvents(gitXEventsListRequestDTO);
+
+    Page<GitXWebhookEventResponse> gitXWebhookEvents =
+        GitXWebhookMapper.buildListGitXWebhookEventResponse(gitXEventsListResponseDTO, page, limit);
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, gitXWebhookEvents.getTotalElements(), page, limit);
+    return responseBuilderWithLinks
+        .entity(gitXWebhookEvents.getContent()
+                    .stream()
+                    .map(GitXWebhookMapper::buildGitXWebhookEventResponse)
+                    .collect(Collectors.toList()))
+        .build();
   }
 }

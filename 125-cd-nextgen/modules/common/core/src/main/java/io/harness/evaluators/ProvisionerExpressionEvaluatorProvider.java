@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -22,15 +23,16 @@ import java.util.Map;
 
 @OwnedBy(CDP)
 @Singleton
-public class ProviderExpressionEvaluatorProvider {
+public class ProvisionerExpressionEvaluatorProvider {
   @Inject private ProvisionerOutputHelper provisionerOutputHelper;
+  @Inject private InputSetValidatorFactory inputSetValidatorFactory;
 
-  public ProvisionerExpressionEvaluator getProviderExpressionEvaluator(
+  public ProvisionerExpressionEvaluator getProvisionerExpressionEvaluator(
       Ambiance ambiance, String provisionerIdentifier) {
     Preconditions.checkArgument(ambiance != null, "Ambiance cannot be null");
     Map<String, Object> provisionerOutput = isEmpty(provisionerIdentifier)
         ? Collections.emptyMap()
         : provisionerOutputHelper.getProvisionerOutputAsMap(ambiance, provisionerIdentifier);
-    return new ProvisionerExpressionEvaluator(provisionerOutput);
+    return new ProvisionerExpressionEvaluator(provisionerOutput, inputSetValidatorFactory);
   }
 }

@@ -38,13 +38,21 @@ import io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo;
 public class SlsaVerificationStep extends AbstractStepExecutable {
   public static final StepType STEP_TYPE = SLSA_VERIFICATION_STEP_TYPE;
 
+  protected boolean shouldPublishArtifact(StepStatus stepStatus) {
+    return true;
+  }
+
+  protected boolean shouldPublishOutcome(StepStatus stepStatus) {
+    return true;
+  }
+
   @Override
   protected void modifyStepStatus(Ambiance ambiance, StepStatus stepStatus, String stepIdentifier) {
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String outputKey = "SLSA_PROVENANCE_" + stepExecutionId;
     StepMapOutput stepOutput = (StepMapOutput) stepStatus.getOutput();
 
-    if (stepOutput != null && stepOutput.getMap() != null) {
+    if (stepOutput != null && stepOutput.getMap() != null && stepOutput.getMap().containsKey(outputKey)) {
       stepStatus.setArtifactMetadata(
           ArtifactMetadata.builder()
               .type(ArtifactMetadataType.PROVENANCE_ARTIFACT_METADATA)
@@ -58,17 +66,7 @@ public class SlsaVerificationStep extends AbstractStepExecutable {
   @Override
   protected StepArtifacts handleArtifact(
       ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
-    ProvenancePredicate predicate = null;
-    if (ArtifactMetadataType.PROVENANCE_ARTIFACT_METADATA.equals(artifactMetadata.getType())) {
-      ProvenanceMetaData provenanceMetaData = (ProvenanceMetaData) artifactMetadata.getSpec();
-      predicate = JsonUtils.asObject(provenanceMetaData.getProvenance(), ProvenancePredicate.class);
-    }
-
     StepArtifactsBuilder stepArtifactsBuilder = StepArtifacts.builder();
-
-    stepArtifactsBuilder.provenanceArtifact(
-        ProvenanceArtifact.builder().predicateType(PREDICATE_TYPE).predicate(predicate).build());
-
     SlsaVerificationStepInfo slsaVerificationStepInfo = (SlsaVerificationStepInfo) stepParameters.getSpec();
     if (slsaVerificationStepInfo != null && slsaVerificationStepInfo.getSource() != null
         && SlsaVerificationSourceType.DOCKER.equals(slsaVerificationStepInfo.getSource().getType())) {
@@ -80,6 +78,13 @@ public class SlsaVerificationStep extends AbstractStepExecutable {
 
       stepArtifactsBuilder.publishedImageArtifact(
           PublishedImageArtifact.builder().imageName(imageName).tag(tag).build());
+    }
+
+    if (ArtifactMetadataType.PROVENANCE_ARTIFACT_METADATA.equals(artifactMetadata.getType())) {
+      ProvenanceMetaData provenanceMetaData = (ProvenanceMetaData) artifactMetadata.getSpec();
+      ProvenancePredicate predicate = JsonUtils.asObject(provenanceMetaData.getProvenance(), ProvenancePredicate.class);
+      stepArtifactsBuilder.provenanceArtifact(
+          ProvenanceArtifact.builder().predicateType(PREDICATE_TYPE).predicate(predicate).build());
     }
     return stepArtifactsBuilder.build();
   }

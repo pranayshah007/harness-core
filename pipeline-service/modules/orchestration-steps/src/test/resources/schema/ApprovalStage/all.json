@@ -1577,6 +1577,23 @@
             }
           ]
         },
+        "imagePullPolicy": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        },
         "initTimeout": {
           "type": "string"
         },

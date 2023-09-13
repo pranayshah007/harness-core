@@ -35,6 +35,7 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.IdentityNodeExecutionMetadata;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.execution.PmsNodeExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -42,6 +43,7 @@ import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -254,5 +256,9 @@ public class IdentityNodeExecutionStrategy
           ambiance.getPlanExecutionId(), ex);
       handleError(ambiance, ex);
     }
+  }
+
+  public PmsNodeExecutionMetadata createMetadata(StrategyMetadata strategyMetadata) {
+    return IdentityNodeExecutionMetadata.builder().strategyMetadata(strategyMetadata).build();
   }
 }

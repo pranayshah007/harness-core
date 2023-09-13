@@ -135,6 +135,7 @@ import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.UpdateGitOpsAppStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgBlueGreenDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgBlueGreenRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgBlueGreenSwapServiceStepPlanCreator;
@@ -246,6 +247,7 @@ import io.harness.cdng.creator.variables.TasRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRouteMappingStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
+import io.harness.cdng.creator.variables.UpdateGitOpsAppStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamBuildStepVariableCreator;
@@ -400,6 +402,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GitOpsMergePRStepPlanCreatorV2());
     planCreators.add(new GitOpsUpdateReleaseRepoStepPlanCreator());
     planCreators.add(new GitOpsRevertPRStepPlanCreator());
+    planCreators.add(new UpdateGitOpsAppStepPlanCreator());
     planCreators.add(new GitOpsFetchLinkedAppsStepPlanCreatorV2());
     planCreators.add(new GitOpsSyncStepPlanCreator());
     planCreators.add(new DeploymentStagePMSPlanCreatorV2());
@@ -579,6 +582,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EmptyVariableCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
     variableCreators.add(new GitOpsMergePRStepVariableCreator());
     variableCreators.add(new GitOpsRevertPRStepVariableCreator());
+    variableCreators.add(new UpdateGitOpsAppStepVariableCreator());
     variableCreators.add(new GitOpsUpdateReleaseRepoStepVariableCreator());
     variableCreators.add(new GitOpsFetchLinkedAppsStepVariableCreator());
     variableCreators.add(new GitOpsSyncStepVariableCreator());
@@ -740,6 +744,13 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("GitOps Fetch Linked Apps")
             .setType(StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
+            .build();
+
+    StepInfo updateGitOpsApp =
+        StepInfo.newBuilder()
+            .setName("Update GitOps App")
+            .setType(StepSpecTypeConstants.UPDATE_GITOPS_APP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -1552,6 +1563,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     stepInfos.add(gitOpsMergePR);
     stepInfos.add(gitOpsRevertPR);
+    stepInfos.add(updateGitOpsApp);
     stepInfos.add(gitOpsSync);
     stepInfos.add(updateReleaseRepo);
     stepInfos.add(fetchLinkedApps);

@@ -211,6 +211,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     }
     return mongoTemplate.find(query, NodeExecution.class);
   }
+
   @Override
   public CloseableIterator<NodeExecution> fetchAllStepNodeExecutions(
       String planExecutionId, Set<String> fieldsToInclude) {
@@ -313,7 +314,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 
-  private CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIteratorWithoutProjection(
+  @VisibleForTesting
+  CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIteratorWithoutProjection(
       String planExecutionId, List<String> parentIds) {
     // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
@@ -728,6 +730,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   /**
    * Deletes all nodeExecutions for given ids
    * This method assumes the nodeExecutions will be in batch thus caller needs to handle it
+   *
    * @param batchNodeExecutionIds
    */
   private void deleteNodeExecutionsInternal(Set<String> batchNodeExecutionIds) {

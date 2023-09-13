@@ -264,8 +264,8 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
     ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
 
-    return cdStepHelper.getGitStoreDelegateConfig(
-        gitStoreConfig, connectorDTO, manifestOutcome, new ArrayList<>(), ambiance);
+    return cdStepHelper.getGitStoreDelegateConfigWithApiAccess(
+        gitStoreConfig, connectorDTO, new ArrayList<>(), ambiance, manifestOutcome);
   }
 
   @Override

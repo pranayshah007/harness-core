@@ -68,8 +68,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
                                         .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
                                         .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                                         .build();
-      SLOHealthIndicator sloHealthIndicator =
-          sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
+      LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
       upsertStatement.setTimestamp(1, new Timestamp(serviceLevelObjective.getCreatedAt()), Calendar.getInstance());
       upsertStatement.setTimestamp(2, new Timestamp(serviceLevelObjective.getLastUpdatedAt()), Calendar.getInstance());
       upsertStatement.setString(3, serviceLevelObjective.getAccountId());
@@ -81,8 +80,8 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
       upsertStatement.setInt(9, getPeriodDays(serviceLevelObjective.getTarget()));
       upsertStatement.setString(10, null);
       upsertStatement.setString(11, serviceLevelObjective.getTarget().getType().toString());
-      upsertStatement.setDouble(12, sloHealthIndicator.getErrorBudgetRemainingPercentage());
-      upsertStatement.setDouble(13, serviceLevelObjective.getSloTargetPercentage());
+      upsertStatement.setDouble(13, serviceLevelObjective.getTotalErrorBudgetMinutes(currentLocalDate));
+      upsertStatement.setDouble(12, serviceLevelObjective.getSloTargetPercentage());
       if (serviceLevelObjective instanceof SimpleServiceLevelObjective) {
         SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
         MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
