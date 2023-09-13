@@ -8,6 +8,10 @@
 package io.harness.ci.execution.states.ssca;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
+import static io.harness.beans.steps.outcome.StepArtifacts.StepArtifactsBuilder;
+import static io.harness.ssca.beans.SscaConstants.PREDICATE_TYPE;
+import static io.harness.ssca.beans.SscaConstants.SLSA_VERIFICATION;
+import static io.harness.ssca.beans.SscaConstants.SLSA_VERIFICATION_STEP_TYPE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,12 +32,22 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.slsa.beans.verification.source.SlsaDockerSourceSpec;
 import io.harness.slsa.beans.verification.source.SlsaVerificationSourceType;
-import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.SSCA)
 public class SlsaVerificationStep extends AbstractStepExecutable {
-  public static final StepType STEP_TYPE = SscaConstants.SLSA_VERIFICATION_STEP_TYPE;
+  public static final StepType STEP_TYPE = SLSA_VERIFICATION_STEP_TYPE;
+
+  protected boolean shouldPublishArtifact(StepStatus stepStatus) {
+    return true;
+  }
+
+  protected boolean shouldPublishOutcome(StepStatus stepStatus) {
+    return true;
+  }
 
   @Override
   protected void modifyStepStatus(Ambiance ambiance, StepStatus stepStatus, String stepIdentifier) {
@@ -41,39 +55,44 @@ public class SlsaVerificationStep extends AbstractStepExecutable {
     String outputKey = "SLSA_PROVENANCE_" + stepExecutionId;
     StepMapOutput stepOutput = (StepMapOutput) stepStatus.getOutput();
 
-    stepStatus.setArtifactMetadata(
-        ArtifactMetadata.builder()
-            .type(ArtifactMetadataType.PROVENANCE_ARTIFACT_METADATA)
-            .spec(ProvenanceMetaData.builder().provenance(stepOutput.getMap().get(outputKey)).build())
-            .build());
+    if (stepOutput != null && stepOutput.getMap() != null && stepOutput.getMap().containsKey(outputKey)) {
+      stepStatus.setArtifactMetadata(
+          ArtifactMetadata.builder()
+              .type(ArtifactMetadataType.PROVENANCE_ARTIFACT_METADATA)
+              .spec(ProvenanceMetaData.builder().provenance(stepOutput.getMap().get(outputKey)).build())
+              .build());
+
+      stepOutput.setMap(stepOutput.getMap()
+                            .entrySet()
+                            .stream()
+                            .filter(entry -> !entry.getKey().equals(outputKey))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+    }
   }
 
   @Override
   protected StepArtifacts handleArtifact(
       ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
-    ProvenancePredicate predicate = null;
-    if (ArtifactMetadataType.PROVENANCE_ARTIFACT_METADATA.equals(artifactMetadata.getType())) {
-      ProvenanceMetaData provenanceMetaData = (ProvenanceMetaData) artifactMetadata.getSpec();
-      predicate = JsonUtils.asObject(provenanceMetaData.getProvenance(), ProvenancePredicate.class);
-    }
-
-    StepArtifacts.StepArtifactsBuilder stepArtifactsBuilder = StepArtifacts.builder();
-
-    stepArtifactsBuilder.provenanceArtifact(
-        ProvenanceArtifact.builder().predicateType(SscaConstants.PREDICATE_TYPE).predicate(predicate).build());
-
+    StepArtifactsBuilder stepArtifactsBuilder = StepArtifacts.builder();
     SlsaVerificationStepInfo slsaVerificationStepInfo = (SlsaVerificationStepInfo) stepParameters.getSpec();
     if (slsaVerificationStepInfo != null && slsaVerificationStepInfo.getSource() != null
         && SlsaVerificationSourceType.DOCKER.equals(slsaVerificationStepInfo.getSource().getType())) {
       String identifier = stepParameters.getIdentifier();
       SlsaDockerSourceSpec slsaDockerSourceSpec = (SlsaDockerSourceSpec) slsaVerificationStepInfo.getSource().getSpec();
       String imageName = resolveStringParameter(
-          "image_path", SscaConstants.SLSA_VERIFICATION, identifier, slsaDockerSourceSpec.getImage_path(), true);
-      String tag = resolveStringParameter(
-          "tag", SscaConstants.SLSA_VERIFICATION, identifier, slsaDockerSourceSpec.getTag(), true);
+          "image_path", SLSA_VERIFICATION, identifier, slsaDockerSourceSpec.getImage_path(), true);
+      String tag = resolveStringParameter("tag", SLSA_VERIFICATION, identifier, slsaDockerSourceSpec.getTag(), true);
 
       stepArtifactsBuilder.publishedImageArtifact(
           PublishedImageArtifact.builder().imageName(imageName).tag(tag).build());
+    }
+
+    if (artifactMetadata != null
+        && ArtifactMetadataType.PROVENANCE_ARTIFACT_METADATA.equals(artifactMetadata.getType())) {
+      ProvenanceMetaData provenanceMetaData = (ProvenanceMetaData) artifactMetadata.getSpec();
+      ProvenancePredicate predicate = JsonUtils.asObject(provenanceMetaData.getProvenance(), ProvenancePredicate.class);
+      stepArtifactsBuilder.provenanceArtifact(
+          ProvenanceArtifact.builder().predicateType(PREDICATE_TYPE).predicate(predicate).build());
     }
     return stepArtifactsBuilder.build();
   }
