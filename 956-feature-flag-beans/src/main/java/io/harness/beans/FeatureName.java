@@ -888,7 +888,8 @@ public enum FeatureName {
   CDS_IMPROVED_HELM_DEPLOYMENT_TRACKING(
       "Feature Flag enables improved tracking for Helm deployments that use workloads label selectors to track deployed pods",
       HarnessTeam.CDP),
-  SEI_ENABLED("FF to enable SEI for harness platform users", HarnessTeam.SEI);
+  SEI_ENABLED("FF to enable SEI for harness platform users", HarnessTeam.SEI),
+  PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE);
   // keep-sorted end
 
   @Deprecated

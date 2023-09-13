@@ -54,10 +54,18 @@ public class LogStreamingStepClientFactory {
   private ILogStreamingStepClient getLogStreamingStepClientInternal(Ambiance ambiance, Set<String> secrets) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     try {
+      String logBaseKey = "";
+      if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+          && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+        logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
+            StepUtils.generateSimplifiedLogAbstractions(ambiance, null));
+      } else {
+        logBaseKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance));
+      }
       return LogStreamingStepClientImpl.builder()
           .logStreamingClient(logStreamingClient)
           .logStreamingSanitizer(LogStreamingSanitizer.builder().secrets(secrets).build())
-          .baseLogKey(LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance)))
+          .baseLogKey(logBaseKey)
           .accountId(accountId)
           .token(accountIdToTokenCache.get(accountId))
           .logStreamingClientExecutor(logStreamingClientThreadPool)

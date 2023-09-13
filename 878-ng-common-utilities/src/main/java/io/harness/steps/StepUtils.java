@@ -124,7 +124,34 @@ public class StepUtils {
     for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
       Level currentLevel = ambiance.getLevelsList().get(i);
       String retrySuffix = currentLevel.getRetryIndex() > 0 ? String.format("_%s", currentLevel.getRetryIndex()) : "";
-      logAbstractions.put("level" + i, currentLevel.getIdentifier() + retrySuffix);
+      String levelValue = currentLevel.getIdentifier() + retrySuffix;
+      if (levelValue.equals("spec") || levelValue.equals("execution")) {
+        continue;
+      }
+      logAbstractions.put("level" + i, levelValue);
+      if (lastGroup != null && lastGroup.equals(currentLevel.getGroup())) {
+        break;
+      }
+    }
+    return logAbstractions;
+  }
+
+  @Nonnull
+  public static LinkedHashMap<String, String> generateSimplifiedLogAbstractions(Ambiance ambiance, String lastGroup) {
+    LinkedHashMap<String, String> logAbstractions = new LinkedHashMap<>();
+    logAbstractions.put("accountId", ambiance.getSetupAbstractionsMap().getOrDefault("accountId", ""));
+    logAbstractions.put("orgId", ambiance.getSetupAbstractionsMap().getOrDefault("orgIdentifier", ""));
+    logAbstractions.put("projectId", ambiance.getSetupAbstractionsMap().getOrDefault("projectIdentifier", ""));
+    logAbstractions.put("pipelineId", ambiance.getMetadata().getPipelineIdentifier());
+    logAbstractions.put("runSequence", String.valueOf(ambiance.getMetadata().getRunSequence()));
+    for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
+      Level currentLevel = ambiance.getLevelsList().get(i);
+      String retrySuffix = currentLevel.getRetryIndex() > 0 ? String.format("_%s", currentLevel.getRetryIndex()) : "";
+      String levelValue = currentLevel.getIdentifier() + retrySuffix;
+      if (levelValue.equals("spec") || levelValue.equals("execution")) {
+        continue;
+      }
+      logAbstractions.put("level" + i, levelValue);
       if (lastGroup != null && lastGroup.equals(currentLevel.getGroup())) {
         break;
       }

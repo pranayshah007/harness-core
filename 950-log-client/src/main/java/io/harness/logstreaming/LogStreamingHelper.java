@@ -52,6 +52,19 @@ public class LogStreamingHelper {
     return logBaseKey.toString();
   }
 
+  @Nonnull
+  public String generateSimplifiedLogBaseKey(LinkedHashMap<String, String> logStreamingAbstractions) {
+    // Generate base log key that will be used for writing logs to log streaming service
+    StringBuilder logBaseKey = new StringBuilder();
+    for (Map.Entry<String, String> entry : logStreamingAbstractions.entrySet()) {
+      if (logBaseKey.length() != 0) {
+        logBaseKey.append('/');
+      }
+      logBaseKey.append(entry.getValue());
+    }
+    return logBaseKey.toString();
+  }
+
   public String generateLogKeyGivenCommandUnit(String baseLogKey, String commandUnit) {
     return baseLogKey + String.format(LogHelper.COMMAND_UNIT_PLACEHOLDER, commandUnit);
   }
