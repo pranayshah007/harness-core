@@ -45,7 +45,7 @@ func convertAction(a scm.Action) pb.Action {
 	case scm.ActionRelease:
 		return pb.Action_RELEASE
 	case scm.ActionUnknown:
-       	return pb.Action_UNKNOWN
+       	        return pb.Action_UNKNOWN
 	case scm.ActionReviewReady:
 		return pb.Action_REVIEWREADY
 	default:
