@@ -97,8 +97,15 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String logBaseKey = "";
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
+          StepUtils.generateSimplifiedLogAbstractions(ambiance, "STEP"));
+    } else {
+      logBaseKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance, "STEP"));
+    }
+    return logBaseKey;
   }
 
   @Override

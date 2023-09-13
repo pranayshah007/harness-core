@@ -171,8 +171,15 @@ public class StageCleanupUtility {
       throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
     }
 
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    String baseLogKey = LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String baseLogKey = "";
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      baseLogKey =
+          LogStreamingHelper.generateSimplifiedLogBaseKey(StepUtils.generateSimplifiedLogAbstractions(ambiance, null));
+    } else {
+      baseLogKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance));
+    }
+
     String liteEngineLogKey = baseLogKey + "/" + CICommonConstants.LITE_ENGINE_LOG_KEY_SUFFIX;
 
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();

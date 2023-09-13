@@ -541,13 +541,27 @@ public class VmInitializeTaskParamsBuilder {
   }
 
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String logBaseKey = "";
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      logBaseKey =
+          LogStreamingHelper.generateSimplifiedLogBaseKey(StepUtils.generateSimplifiedLogAbstractions(ambiance, null));
+    } else {
+      logBaseKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance));
+    }
+    return logBaseKey;
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String logBaseKey = "";
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
+          StepUtils.generateSimplifiedLogAbstractions(ambiance, "STAGE"));
+    } else {
+      logBaseKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance, "STAGE"));
+    }
+    return logBaseKey;
   }
 
   // getHostedPoolId returns a pool ID that can be used for GCP hosted builds. If fallback is set to true,

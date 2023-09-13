@@ -196,8 +196,15 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       long timeoutInMillis, String stringTimeout, StageInfraDetails stageInfraDetails, StageDetails stageDetails);
 
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String logBaseKey = "";
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      logBaseKey =
+          LogStreamingHelper.generateSimplifiedLogBaseKey(StepUtils.generateSimplifiedLogAbstractions(ambiance, null));
+    } else {
+      logBaseKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance));
+    }
+    return logBaseKey;
   }
 
   public abstract void resolveGitAppFunctor(Ambiance ambiance, CIStepInfo ciStepInfo);

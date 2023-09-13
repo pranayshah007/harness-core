@@ -510,9 +510,17 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     }
   }
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String logBaseKey = "";
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      logBaseKey =
+          LogStreamingHelper.generateSimplifiedLogBaseKey(StepUtils.generateSimplifiedLogAbstractions(ambiance, null));
+    } else {
+      logBaseKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance));
+    }
+    return logBaseKey;
   }
+
   public TaskData getTaskData(
       StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams) {
     long timeout =
@@ -749,8 +757,15 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String logBaseKey = "";
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
+          StepUtils.generateSimplifiedLogAbstractions(ambiance, "STAGE"));
+    } else {
+      logBaseKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance, "STAGE"));
+    }
+    return logBaseKey;
   }
 
   private LiteEnginePodDetailsOutcome getPodDetailsOutcome(CiK8sTaskResponse ciK8sTaskResponse) {

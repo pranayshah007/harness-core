@@ -99,8 +99,15 @@ public class InitialiseTaskUtils {
   }
 
   public String getLogPrefix(Ambiance ambiance, String lastGroup) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, lastGroup);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String logBaseKey = "";
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
+          StepUtils.generateSimplifiedLogAbstractions(ambiance, lastGroup));
+    } else {
+      logBaseKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance, lastGroup));
+    }
+    return logBaseKey;
   }
 
   public void checkIfEverythingIsHealthy(K8sTaskExecutionResponse k8sTaskExecutionResponse) {

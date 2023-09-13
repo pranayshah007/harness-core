@@ -529,8 +529,15 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String logBaseKey = "";
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
+          StepUtils.generateSimplifiedLogAbstractions(ambiance, "STAGE"));
+    } else {
+      logBaseKey = LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance, "STAGE"));
+    }
+    return logBaseKey;
   }
 
   private List<EntityDetail> getConnectorIdentifiers(

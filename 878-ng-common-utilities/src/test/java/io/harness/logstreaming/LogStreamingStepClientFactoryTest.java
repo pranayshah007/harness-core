@@ -7,7 +7,6 @@
 
 package io.harness.logstreaming;
 
-import static io.harness.beans.FeatureName.*;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.VED;
 
@@ -17,14 +16,12 @@ import static org.mockito.Mockito.spy;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.rule.Owner;
 import io.harness.steps.StepUtils;
 
-import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
