@@ -72,6 +72,7 @@ public class StatsModel {
                                    .azureSubscription(data.getAzureSubscription())
                                    .azureResourceGroup(data.getAzureResourceGroup())
                                    .azureMeterCategory(data.getAzureMeterCategory())
+                                   .newEntity(data.isNewEntity())
                                    .anomalyTime(current)
                                    .relativeThreshold(relativityThreshold(currentValue, mean))
                                    .absoluteThreshold(absThreshold)

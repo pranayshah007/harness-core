@@ -42,7 +42,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @OwnedBy(CE)
 public class AnomalyDataQueryTest extends CategoryTest {
   static String gcpSkuQuery =
-      "SELECT t0.*,actualcost - expectedcost AS difference FROM anomalies t0 WHERE ((t0.accountid = 'ACCOUNT_ID') AND (t0.anomalytime >= '1970-01-01T00:00:00Z') AND (t0.anomalytime <= '1970-01-11T00:00:00Z') AND (t0.gcpskudescription IN ('SKU_DES1','SKU_DES2','SKU_DES3') )) ORDER BY t0.anomalytime ASC,difference DESC";
+      "SELECT t0.*,actualcost - expectedcost AS difference FROM anomalies t0 WHERE ((t0.accountid = 'ACCOUNT_ID') AND (t0.newentity = 'false') AND (t0.anomalytime >= '1970-01-01T00:00:00Z') AND (t0.anomalytime <= '1970-01-11T00:00:00Z') AND (t0.gcpskudescription IN ('SKU_DES1','SKU_DES2','SKU_DES3') )) ORDER BY t0.anomalytime ASC,difference DESC";
   String accountId;
   Instant startTime;
   Instant endTime;
