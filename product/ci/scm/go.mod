@@ -2,6 +2,10 @@ module github.com/harness/harness-core/product/ci/scm
 
 go 1.14
 
+replace github.com/harness/harness-core/commons/go/lib => ../../../commons/go/lib
+
+replace github.com/harness/harness-core/product/log-service => ../../../product/log-service
+
 require (
 	github.com/alexflint/go-arg v1.3.0
 	github.com/drone/go-scm v1.31.2
