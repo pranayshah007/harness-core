@@ -416,8 +416,10 @@ public class IndexManagerSession {
               throw exception;
             }
 
-          } catch (TimeoutException | InterruptedException | ExecutionException e) {
-            log.warn("Index creation failed for {} {}", indexCreator.getOptions().toString(),
+          } catch (TimeoutException e) {
+            log.warn("Rebuilding index timed out " + e.getMessage());
+          } catch (InterruptedException | ExecutionException e) {
+            log.error("Index creation failed for {} {} " + e.getMessage(), indexCreator.getOptions().toString(),
                 indexCreator.getKeys().toString());
             throw new RuntimeException(e);
           }
@@ -513,7 +515,10 @@ public class IndexManagerSession {
       if (completeCreateFuture) {
         future.get(4, TimeUnit.HOURS);
       }
-    } catch (TimeoutException | InterruptedException | ExecutionException e) {
+    } catch (TimeoutException e) {
+      log.warn("Rebuilding index timed out" + e.getMessage());
+    } catch (InterruptedException | ExecutionException e) {
+      log.error("Rebuilding index errored out - " + e.getMessage());
       throw new RuntimeException(e);
     }
     return rebuildIndex;
