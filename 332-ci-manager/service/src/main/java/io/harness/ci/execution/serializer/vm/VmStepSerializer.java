@@ -15,7 +15,6 @@ import io.harness.beans.steps.stepinfo.ActionStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.BitriseStepInfo;
 import io.harness.beans.steps.stepinfo.IACMApprovalInfo;
-import io.harness.beans.steps.stepinfo.IACMCostEstimationInfo;
 import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -44,7 +43,6 @@ public class VmStepSerializer {
   @Inject VmActionStepSerializer vmActionStepSerializer;
   @Inject VmBitriseStepSerializer vmBitriseStepSerializer;
   @Inject VmIACMStepSerializer vmIACMPluginCompatibleStepSerializer;
-  @Inject VmIACMCostEstimationStepSerializer vmIACMCostEstimationStepSerializer;
   @Inject VmIACMApprovalStepSerializer vmIACMApprovalStepSerializer;
 
   public Set<String> getStepSecrets(VmStepInfo vmStepInfo, Ambiance ambiance) {
@@ -85,15 +83,11 @@ public class VmStepSerializer {
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
-
         return vmPluginCompatibleStepSerializer.serialize(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName);
       case IACM_TERRAFORM_PLUGIN:
         return vmIACMPluginCompatibleStepSerializer.serialize(
             ambiance, (IACMTerraformPluginInfo) stepInfo, stageInfraDetails, parameterFieldTimeout);
-      case IACM_COST_ESTIMATION:
-        return vmIACMCostEstimationStepSerializer.serialize(
-            ambiance, (IACMCostEstimationInfo) stepInfo, stageInfraDetails, parameterFieldTimeout);
       case IACM_APPROVAL:
         return vmIACMApprovalStepSerializer.serialize(
             ambiance, (IACMApprovalInfo) stepInfo, stageInfraDetails, parameterFieldTimeout);

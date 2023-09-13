@@ -188,6 +188,7 @@ public interface YamlTypes {
 
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
   String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
+  String ASG_SERVICE_SETTINGS_STEP = "Asg_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";

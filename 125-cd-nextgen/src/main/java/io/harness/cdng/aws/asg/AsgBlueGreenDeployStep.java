@@ -7,11 +7,19 @@
 
 package io.harness.cdng.aws.asg;
 
-import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
-import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -30,6 +38,7 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResult;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
@@ -46,15 +55,22 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRbac implements AsgStepExecutor {
@@ -125,6 +141,12 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
         (AsgBlueGreenDeployStepParameters) stepElementParameters.getSpec();
 
     String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
+    boolean useAlreadyRunningInstances =
+        asgStepCommonHelper.isUseAlreadyRunningInstances(asgBlueGreenDeployStepParameters.getInstances(),
+            ParameterFieldHelper.getBooleanParameterFieldValue(
+                asgBlueGreenDeployStepParameters.getUseAlreadyRunningInstances()));
+    AsgCapacityConfig asgCapacityConfig =
+        asgStepCommonHelper.getAsgCapacityConfig(asgBlueGreenDeployStepParameters.getInstances());
 
     AsgBlueGreenDeployRequest asgBlueGreenDeployRequest =
         AsgBlueGreenDeployRequest.builder()
@@ -137,13 +159,20 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .asgName(asgBlueGreenExecutionPassThroughData.getAsgName())
             .firstDeployment(asgBlueGreenExecutionPassThroughData.isFirstDeployment())
             .asgLoadBalancerConfig(asgBlueGreenExecutionPassThroughData.getLoadBalancerConfig())
-            .useAlreadyRunningInstances(ParameterFieldHelper.getBooleanParameterFieldValue(
-                asgBlueGreenDeployStepParameters.getUseAlreadyRunningInstances()))
+            .loadBalancers(asgBlueGreenExecutionPassThroughData.getLoadBalancers())
+            .useAlreadyRunningInstances(useAlreadyRunningInstances)
+            .asgCapacityConfig(asgCapacityConfig)
             .amiImageId(amiImageId)
             .build();
 
-    return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgBlueGreenDeployRequest, ambiance,
-        executionPassThroughData, true, AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG);
+    TaskType taskType =
+        asgStepCommonHelper.isV2Feature(asgStepExecutorParams.getAsgStoreManifestsContent(),
+            asgBlueGreenDeployStepParameters.getInstances(), asgBlueGreenDeployStepParameters.getLoadBalancers())
+        ? AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2
+        : AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG;
+
+    return asgStepCommonHelper.queueAsgTask(
+        stepElementParameters, asgBlueGreenDeployRequest, ambiance, executionPassThroughData, true, taskType);
   }
 
   @Override
@@ -153,17 +182,16 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     InfrastructureOutcome infrastructureOutcome = asgPrepareRollbackDataPassThroughData.getInfrastructureOutcome();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
-    AsgBlueGreenDeployStepParameters ecsBlueGreenCreateServiceStepParameters =
+    AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters =
         (AsgBlueGreenDeployStepParameters) stepElementParameters.getSpec();
 
-    AsgLoadBalancerConfig asgLoadBalancerConfig =
-        AsgLoadBalancerConfig.builder()
-            .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
-            .stageListenerArn(ecsBlueGreenCreateServiceStepParameters.getStageListener().getValue())
-            .stageListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getStageListenerRuleArn().getValue())
-            .prodListenerArn(ecsBlueGreenCreateServiceStepParameters.getProdListener().getValue())
-            .prodListenerRuleArn(ecsBlueGreenCreateServiceStepParameters.getProdListenerRuleArn().getValue())
-            .build();
+    AsgLoadBalancerConfig asgLoadBalancerConfig = getLoadBalancer(asgBlueGreenDeployStepParameters);
+
+    List<AsgLoadBalancerConfig> loadBalancers = null;
+    if (asgStepCommonHelper.isV2Feature(asgPrepareRollbackDataPassThroughData.getAsgStoreManifestsContent(),
+            asgBlueGreenDeployStepParameters.getInstances(), asgBlueGreenDeployStepParameters.getLoadBalancers())) {
+      loadBalancers = getLoadBalancers(asgBlueGreenDeployStepParameters);
+    }
 
     AsgBlueGreenPrepareRollbackDataRequest asgBlueGreenPrepareRollbackDataRequest =
         AsgBlueGreenPrepareRollbackDataRequest.builder()
@@ -174,10 +202,15 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
+            .loadBalancers(loadBalancers)
             .build();
 
+    TaskType taskType = asgStepCommonHelper.isV2Feature(null, null, asgBlueGreenDeployStepParameters.getLoadBalancers())
+        ? AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2
+        : AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG;
+
     return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgBlueGreenPrepareRollbackDataRequest, ambiance,
-        asgPrepareRollbackDataPassThroughData, false, AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG);
+        asgPrepareRollbackDataPassThroughData, false, taskType);
   }
 
   @Override
@@ -256,6 +289,9 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
       AsgBlueGreenPrepareRollbackDataResult asgPrepareRollbackDataResult =
           asgPrepareRollbackDataResponse.getAsgBlueGreenPrepareRollbackDataResult();
       AsgLoadBalancerConfig loadBalancerConfig = asgPrepareRollbackDataResult.getAsgLoadBalancerConfig();
+      List<AsgLoadBalancerConfig> loadBalancers = asgPrepareRollbackDataResult.getLoadBalancers();
+
+      List<AwsAsgLoadBalancerConfigYaml> loadBalancerConfigs = getLoadBalancerConfigsForOutput(loadBalancers);
 
       AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
           AsgBlueGreenPrepareRollbackDataOutcome.builder()
@@ -270,6 +306,9 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
               .prodListenerArn(loadBalancerConfig.getProdListenerArn())
               .prodListenerRuleArn(loadBalancerConfig.getProdListenerRuleArn())
               .prodTargetGroupArnsList(loadBalancerConfig.getProdTargetGroupArnsList())
+              .loadBalancerConfigs(loadBalancerConfigs)
+              .prodTargetGroupArnListForLoadBalancer(getProdTargetGroupArnListForLoadBalancer(loadBalancers))
+              .stageTargetGroupArnListForLoadBalancer(getStageTargetGroupArnListForLoadBalancer(loadBalancers))
               .build();
 
       executionSweepingOutputService.consume(ambiance,
@@ -282,6 +321,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
               .lastActiveUnitProgressData(asgPrepareRollbackDataResponse.getUnitProgressData())
               .asgName(asgPrepareRollbackDataResult.getAsgName())
               .loadBalancerConfig(loadBalancerConfig)
+              .loadBalancers(loadBalancers)
               .firstDeployment(asgPrepareRollbackDataResult.getProdAsgName() == null)
               .build();
 
@@ -305,5 +345,101 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
                                .build())
           .build();
     }
+  }
+
+  List<AsgLoadBalancerConfig> getLoadBalancers(AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters) {
+    if (isEmpty(asgBlueGreenDeployStepParameters.getLoadBalancers())) {
+      AsgLoadBalancerConfig asgLoadBalancerConfig = getLoadBalancer(asgBlueGreenDeployStepParameters);
+      if (asgLoadBalancerConfig == null) {
+        return null;
+      }
+      return Arrays.asList(asgLoadBalancerConfig);
+    }
+
+    return asgBlueGreenDeployStepParameters.getLoadBalancers()
+        .stream()
+        .map(lb
+            -> AsgLoadBalancerConfig.builder()
+                   .loadBalancer(lb.getLoadBalancer().getValue())
+                   .stageListenerArn(lb.getStageListener().getValue())
+                   .stageListenerRuleArn(lb.getStageListenerRuleArn().getValue())
+                   .prodListenerArn(lb.getProdListener().getValue())
+                   .prodListenerRuleArn(lb.getProdListenerRuleArn().getValue())
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  AsgLoadBalancerConfig getLoadBalancer(AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters) {
+    String loadBalancer = asgBlueGreenDeployStepParameters.getLoadBalancer() != null
+        ? asgBlueGreenDeployStepParameters.getLoadBalancer().getValue()
+        : null;
+    String stageListenerArn = asgBlueGreenDeployStepParameters.getStageListener() != null
+        ? asgBlueGreenDeployStepParameters.getStageListener().getValue()
+        : null;
+    String stageListenerRuleArn = asgBlueGreenDeployStepParameters.getStageListenerRuleArn() != null
+        ? asgBlueGreenDeployStepParameters.getStageListenerRuleArn().getValue()
+        : null;
+    String prodListenerArn = asgBlueGreenDeployStepParameters.getProdListener() != null
+        ? asgBlueGreenDeployStepParameters.getProdListener().getValue()
+        : null;
+    String prodListenerRuleArn = asgBlueGreenDeployStepParameters.getProdListenerRuleArn() != null
+        ? asgBlueGreenDeployStepParameters.getProdListenerRuleArn().getValue()
+        : null;
+
+    if (isEmpty(loadBalancer) && isEmpty(stageListenerArn) && isEmpty(stageListenerRuleArn) && isEmpty(prodListenerArn)
+        && isEmpty(prodListenerRuleArn)) {
+      return null;
+    }
+
+    // removed @NotNull for all fields from yaml schema so need validation as all fields are empty or all not empty
+    if (isEmpty(loadBalancer) || isEmpty(stageListenerArn) || isEmpty(stageListenerRuleArn) || isEmpty(prodListenerArn)
+        || isEmpty(prodListenerRuleArn)) {
+      throw new InvalidRequestException("LoadBalancer defined has missing fields");
+    }
+
+    return AsgLoadBalancerConfig.builder()
+        .loadBalancer(loadBalancer)
+        .stageListenerArn(stageListenerArn)
+        .stageListenerRuleArn(stageListenerRuleArn)
+        .prodListenerArn(prodListenerArn)
+        .prodListenerRuleArn(prodListenerRuleArn)
+        .build();
+  }
+
+  List<AwsAsgLoadBalancerConfigYaml> getLoadBalancerConfigsForOutput(List<AsgLoadBalancerConfig> loadBalancers) {
+    if (isEmpty(loadBalancers)) {
+      return null;
+    }
+
+    return loadBalancers.stream()
+        .map(lb
+            -> AwsAsgLoadBalancerConfigYaml.builder()
+                   .loadBalancer(ParameterField.createValueField(lb.getLoadBalancer()))
+                   .prodListener(ParameterField.createValueField(lb.getProdListenerArn()))
+                   .prodListenerRuleArn(ParameterField.createValueField(lb.getProdListenerRuleArn()))
+                   .stageListener(ParameterField.createValueField(lb.getStageListenerArn()))
+                   .stageListenerRuleArn(ParameterField.createValueField(lb.getStageListenerRuleArn()))
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  Map<String, List<String>> getProdTargetGroupArnListForLoadBalancer(List<AsgLoadBalancerConfig> loadBalancers) {
+    if (isEmpty(loadBalancers)) {
+      return null;
+    }
+
+    Map<String, List<String>> ret = new HashMap<>();
+    loadBalancers.stream().forEach(lb -> ret.put(lb.getLoadBalancer(), lb.getProdTargetGroupArnsList()));
+    return ret;
+  }
+
+  Map<String, List<String>> getStageTargetGroupArnListForLoadBalancer(List<AsgLoadBalancerConfig> loadBalancers) {
+    if (isEmpty(loadBalancers)) {
+      return null;
+    }
+
+    Map<String, List<String>> ret = new HashMap<>();
+    loadBalancers.stream().forEach(lb -> ret.put(lb.getLoadBalancer(), lb.getStageTargetGroupArnsList()));
+    return ret;
   }
 }

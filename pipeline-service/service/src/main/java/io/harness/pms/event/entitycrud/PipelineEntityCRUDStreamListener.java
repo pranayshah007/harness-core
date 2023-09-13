@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.event.entitycrud;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
@@ -28,21 +29,29 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.preflight.service.PreflightService;
+import io.harness.pms.utils.CompletableFutures;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.service.GraphGenerationService;
 import io.harness.steps.barriers.service.BarrierService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.CloseableIterator;
 
@@ -52,7 +61,7 @@ import org.springframework.data.util.CloseableIterator;
 @Singleton
 public class PipelineEntityCRUDStreamListener implements MessageListener {
   // Max batch size of planExecutionIds to delete related metadata, so that delete records are in limited range
-  private static final int MAX_DELETION_BATCH_PROCESSING = 50;
+  private static final int MAX_DELETION_BATCH_PROCESSING = 500;
 
   private final NGTriggerService ngTriggerService;
   private final PipelineMetadataService pipelineMetadataService;
@@ -66,8 +75,9 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
   private final NodeExecutionService nodeExecutionService;
   private final NGTriggerEventsService ngTriggerEventsService;
   private final PlanExecutionService planExecutionService;
-
   private final PlanExpansionService planExpansionService;
+  private final NGSettingsClient ngSettingsClient;
+  private final ExecutorService pipelineExecutorService;
 
   @Inject
   public PipelineEntityCRUDStreamListener(NGTriggerService ngTriggerService,
@@ -76,7 +86,8 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
       PmsSweepingOutputService pmsSweepingOutputService, PmsOutcomeService pmsOutcomeService,
       InterruptService interruptService, GraphGenerationService graphGenerationService,
       NodeExecutionService nodeExecutionService, NGTriggerEventsService ngTriggerEventsService,
-      PlanExecutionService planExecutionService, PlanExpansionService planExpansionService) {
+      PlanExecutionService planExecutionService, PlanExpansionService planExpansionService,
+      NGSettingsClient ngSettingsClient, @Named("PipelineExecutorService") ExecutorService pipelineExecutorService) {
     this.ngTriggerService = ngTriggerService;
     this.pipelineMetadataService = pipelineMetadataService;
     this.pmsExecutionSummaryService = pmsExecutionSummaryService;
@@ -90,6 +101,8 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     this.planExecutionService = planExecutionService;
     this.ngTriggerEventsService = ngTriggerEventsService;
     this.planExpansionService = planExpansionService;
+    this.ngSettingsClient = ngSettingsClient;
+    this.pipelineExecutorService = pipelineExecutorService;
   }
 
   @Override
@@ -141,12 +154,27 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     String orgIdentifier = entityChangeDTO.getOrgIdentifier().getValue();
     String projectIdentifier = entityChangeDTO.getProjectIdentifier().getValue();
     String pipelineIdentifier = entityChangeDTO.getIdentifier().getValue();
-
+    boolean retainPipelineExecutionDetailsAfterDelete = false;
+    try {
+      retainPipelineExecutionDetailsAfterDelete = Boolean.parseBoolean(
+          NGRestUtils
+              .getResponse(ngSettingsClient.getSetting(
+                  NGPipelineSettingsConstant.DO_NOT_DELETE_PIPELINE_EXECUTION_DETAILS.getName(), accountId, null, null))
+              .getValue());
+    } catch (Exception ex) {
+      log.warn(String.format("Could not fetch setting: %s",
+                   NGPipelineSettingsConstant.DO_NOT_DELETE_PIPELINE_EXECUTION_DETAILS.getName()),
+          ex);
+    }
     deletePipelineMetadataDetails(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-    deletePipelineExecutionsDetails(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-
-    log.info("Processed deleting metadata and execution details for given pipeline");
-
+    log.info(String.format("Processed deleting metadata for "
+            + "given pipeline %s in accountId [%s] and orgIdentifier [%s] and projectIdentifier [%s]",
+        pipelineIdentifier, accountId, orgIdentifier, projectIdentifier));
+    deletePipelineExecutionsDetails(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, retainPipelineExecutionDetailsAfterDelete);
+    log.info(String.format("Processed deleting execution details for "
+            + "given pipeline %s in accountId [%s] and orgIdentifier [%s] and projectIdentifier [%s]",
+        pipelineIdentifier, accountId, orgIdentifier, projectIdentifier));
     return true;
   }
 
@@ -159,15 +187,14 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     ngTriggerEventsService.deleteAllForPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     // Delete the pipeline metadata to delete run-sequence, etc.
     pipelineMetadataService.deletePipelineMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-
     // Deletes all related preflight data
     preflightService.deleteAllPreflightEntityForGivenPipeline(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
   }
 
   // Delete all execution related details using all planExecution for given pipelineIdentifier.
-  private void deletePipelineExecutionsDetails(
-      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+  private void deletePipelineExecutionsDetails(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, boolean retainPipelineExecutionDetailsAfterDelete) {
     Set<String> toBeDeletedPlanExecutions = new HashSet<>();
 
     try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
@@ -179,38 +206,78 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
         // If max deletion batch is reached, delete all its related entities
         // We don't want to delete all executions for a pipeline together as total delete could be very high
         if (toBeDeletedPlanExecutions.size() >= MAX_DELETION_BATCH_PROCESSING) {
-          deletePipelineExecutionsDetailsInternal(toBeDeletedPlanExecutions);
+          deletePipelineExecutionsDetailsInternal(toBeDeletedPlanExecutions, retainPipelineExecutionDetailsAfterDelete);
           toBeDeletedPlanExecutions.clear();
         }
       }
     }
 
     if (EmptyPredicate.isNotEmpty(toBeDeletedPlanExecutions)) {
-      deletePipelineExecutionsDetailsInternal(toBeDeletedPlanExecutions);
+      deletePipelineExecutionsDetailsInternal(toBeDeletedPlanExecutions, retainPipelineExecutionDetailsAfterDelete);
     }
   }
 
+  @VisibleForTesting
   // Internal method which deletes all execution metadata for given planExecutions
-  private void deletePipelineExecutionsDetailsInternal(Set<String> planExecutionsToDelete) {
-    // Deletes the barrierInstances
-    barrierService.deleteAllForGivenPlanExecutionId(planExecutionsToDelete);
-    // Delete sweepingOutput
-    pmsSweepingOutputService.deleteAllSweepingOutputInstances(planExecutionsToDelete);
-    // Delete outcome instances
-    pmsOutcomeService.deleteAllOutcomesInstances(planExecutionsToDelete);
-    // Delete all interrupts
-    interruptService.deleteAllInterrupts(planExecutionsToDelete);
-    // Delete all graph metadata
-    graphGenerationService.deleteAllGraphMetadataForGivenExecutionIds(planExecutionsToDelete);
-    // Delete nodeExecutions and its metadata
-    for (String planExecutionToDelete : planExecutionsToDelete) {
-      nodeExecutionService.deleteAllNodeExecutionAndMetadata(planExecutionToDelete);
-    }
-    // Delete all planExecutions and its metadata
-    planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionsToDelete);
-    planExpansionService.deleteAllExpansions(planExecutionsToDelete);
-  }
+  void deletePipelineExecutionsDetailsInternal(
+      Set<String> planExecutionsToDelete, boolean retainPipelineExecutionDetailsAfterDelete) {
+    CompletableFutures<Void> completableFutures = new CompletableFutures<>(pipelineExecutorService);
 
+    completableFutures.supplyAsync(() -> { // Deletes the barrierInstances
+      barrierService.deleteAllForGivenPlanExecutionId(planExecutionsToDelete);
+      return null;
+    });
+
+    completableFutures.supplyAsync(() -> {
+      // Delete sweepingOutput
+      pmsSweepingOutputService.deleteAllSweepingOutputInstances(planExecutionsToDelete);
+      return null;
+    });
+
+    completableFutures.supplyAsync(() -> {
+      // Delete outcome instances
+      pmsOutcomeService.deleteAllOutcomesInstances(planExecutionsToDelete);
+      return null;
+    });
+
+    completableFutures.supplyAsync(() -> {
+      // Delete all interrupts
+      interruptService.deleteAllInterrupts(planExecutionsToDelete);
+      return null;
+    });
+
+    completableFutures.supplyAsync(() -> {
+      // Delete all graph metadata
+      graphGenerationService.deleteAllGraphMetadataForGivenExecutionIds(
+          planExecutionsToDelete, retainPipelineExecutionDetailsAfterDelete);
+      return null;
+    });
+
+    completableFutures.supplyAsync(() -> {
+      // Delete nodeExecutions and its metadata
+      nodeExecutionService.deleteAllNodeExecutionAndMetadata(planExecutionsToDelete);
+      return null;
+    });
+
+    completableFutures.supplyAsync(() -> {
+      // Delete all planExecutions and its metadata
+      planExecutionService.deleteAllPlanExecutionAndMetadata(
+          planExecutionsToDelete, retainPipelineExecutionDetailsAfterDelete);
+      return null;
+    });
+
+    completableFutures.supplyAsync(() -> {
+      planExpansionService.deleteAllExpansions(planExecutionsToDelete);
+      return null;
+    });
+
+    try {
+      // waiting for all futures to get complete
+      completableFutures.allOf().get(1, TimeUnit.HOURS);
+    } catch (Exception e) {
+      log.error("Error in processing delete event for pipeline");
+    }
+  }
   private boolean checkIfAnyRequiredFieldIsNotEmpty(EntityChangeDTO entityChangeDTO) {
     String accountId = entityChangeDTO.getAccountIdentifier().getValue();
     String orgIdentifier = entityChangeDTO.getOrgIdentifier().getValue();

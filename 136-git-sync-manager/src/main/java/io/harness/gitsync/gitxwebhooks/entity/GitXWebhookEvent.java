@@ -60,7 +60,7 @@ public class GitXWebhookEvent implements PersistentEntity, UuidAccess {
   String eventIdentifier;
   String webhookIdentifier;
   String payload;
-  Boolean eventProcessed;
+  String eventStatus;
   Long eventTriggeredTime;
   Author author;
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate @Builder.Default Long createdAt = 0L;

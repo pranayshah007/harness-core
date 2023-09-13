@@ -18,10 +18,12 @@ import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.notification.NotificationHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.concurrent.ExecutorService;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class StageStartNotificationHandler implements AsyncInformObserver, NodeExecutionStartObserver {
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
   @Inject NotificationHelper notificationHelper;

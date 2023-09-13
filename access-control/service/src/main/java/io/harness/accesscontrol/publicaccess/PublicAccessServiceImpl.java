@@ -9,9 +9,14 @@ package io.harness.accesscontrol.publicaccess;
 
 import static io.harness.accesscontrol.publicaccess.PublicAccessUtils.PUBLIC_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.publicaccess.PublicAccessUtils.PUBLIC_RESOURCE_GROUP_NAME;
+import static io.harness.accesscontrol.scopes.core.Scope.PATH_DELIMITER;
+import static io.harness.accesscontrol.scopes.core.Scope.SCOPE_DELIMITER;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupFactory;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcetypes.ResourceType;
@@ -43,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -63,6 +69,9 @@ public class PublicAccessServiceImpl implements PublicAccessService {
 
   private final PublicAccessUtils publicAccessUtil;
   List<PublicAccessRoleAssignmentMapping> publicAccessRoleAssignmentMappings;
+
+  private static String ADD = "ADD";
+  private static String REMOVE = "REMOVE";
 
   @Inject
   public PublicAccessServiceImpl(RoleAssignmentService roleAssignmentService,
@@ -85,7 +94,8 @@ public class PublicAccessServiceImpl implements PublicAccessService {
             resourceScope.getAccount(), resourceScope.getOrg(), resourceScope.getProject())));
     if (existingResourceGroupOptional.isPresent()) {
       log.info("Public resource group already present in given scope");
-      updatePublicResourceGroup(existingResourceGroupOptional.get(), resourceIdentifier, resourceType, resourceScope);
+      updatePublicResourceGroup(
+          existingResourceGroupOptional.get(), resourceIdentifier, resourceType, resourceScope, ADD);
     } else {
       createPublicResourceGroup(resourceIdentifier, resourceType, resourceScope);
       createRoleAssignment(resourceType, resourceScope);
@@ -93,14 +103,59 @@ public class PublicAccessServiceImpl implements PublicAccessService {
     return true;
   }
 
+  @Override
+  public boolean isResourcePublic(String resourceIdentifier, ResourceType resourceType, Scope resourceScope) {
+    io.harness.accesscontrol.scopes.core.Scope scope = getScopeFromResourceScope(resourceScope);
+    String matchSelector = scope.toString()
+                               .concat(SCOPE_DELIMITER)
+                               .concat(PATH_DELIMITER)
+                               .concat(resourceType.getIdentifier())
+                               .concat(PATH_DELIMITER)
+                               .concat(resourceIdentifier);
+    Optional<ResourceGroup> existingResourceGroupOptional =
+        resourceGroupService.get(PUBLIC_RESOURCE_GROUP_IDENTIFIER, scope.toString(), ManagedFilter.NO_FILTER);
+    if (existingResourceGroupOptional.isPresent()) {
+      ResourceGroup existingResourceGroup = existingResourceGroupOptional.get();
+      Set<io.harness.accesscontrol.resources.resourcegroups.ResourceSelector> resourceSelectors =
+          existingResourceGroup.getResourceSelectorsV2();
+      if (resourceSelectors != null) {
+        return resourceSelectors.stream().anyMatch(x -> x.getSelector().equals(matchSelector));
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public boolean disablePublicAccess(
+      String account, String org, String project, ResourceType resourceType, String resourceIdentifier) {
+    if (isNotEmpty(resourceIdentifier)) {
+      disablePublicAccessOnResource(account, org, project, resourceType, resourceIdentifier);
+      return true;
+    } else {
+      throw new InvalidRequestException("Resource identifier should not be empty.");
+    }
+  }
+
+  private void disablePublicAccessOnResource(
+      String account, String org, String project, ResourceType resourceType, String resourceIdentifier) {
+    Optional<ResourceGroupResponse> existingResourceGroupOptional = Optional.ofNullable(NGRestUtils.getResponse(
+        resourceGroupClient.getResourceGroup(PUBLIC_RESOURCE_GROUP_IDENTIFIER, account, org, project)));
+    Scope scope = new Scope();
+    scope.setAccount(account);
+    scope.setProject(project);
+    scope.setOrg(org);
+    if (existingResourceGroupOptional.isPresent()) {
+      updatePublicResourceGroup(existingResourceGroupOptional.get(), resourceIdentifier, resourceType, scope, REMOVE);
+    } else {
+      throw new InvalidRequestException(
+          String.format("Resource with identifier [%s] and type [%s] is not marked as public", resourceIdentifier,
+              resourceType.getIdentifier()),
+          USER);
+    }
+  }
+
   private void createRoleAssignment(ResourceType resourceType, Scope resourceScope) {
-    HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder()
-                                                .accountIdentifier(resourceScope.getAccount())
-                                                .orgIdentifier(resourceScope.getOrg())
-                                                .projectIdentifier(resourceScope.getProject())
-                                                .build();
-    io.harness.accesscontrol.scopes.core.Scope scope =
-        scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams));
+    io.harness.accesscontrol.scopes.core.Scope scope = getScopeFromResourceScope(resourceScope);
     List<String> publicRoles = getPublicRoles();
     final List<PublicAccessRoleAssignmentMapping> filteredMappings =
         publicAccessRoleAssignmentMappings.stream()
@@ -118,6 +173,16 @@ public class PublicAccessServiceImpl implements PublicAccessService {
           publicAccessRoleAssignmentMapping.getPrincipalIdentifier());
       roleAssignmentService.create(roleAssignment);
     }
+  }
+
+  private io.harness.accesscontrol.scopes.core.Scope getScopeFromResourceScope(Scope resourceScope) {
+    HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder()
+                                                .accountIdentifier(resourceScope.getAccount())
+                                                .orgIdentifier(resourceScope.getOrg())
+                                                .projectIdentifier(resourceScope.getProject())
+                                                .build();
+
+    return scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams));
   }
 
   private List<String> getPublicRoles() {
@@ -142,7 +207,7 @@ public class PublicAccessServiceImpl implements PublicAccessService {
   }
 
   private ResourceGroupResponse updatePublicResourceGroup(ResourceGroupResponse existingResourceGroup,
-      String resourceIdentifier, ResourceType resourceType, Scope resourceScope) {
+      String resourceIdentifier, ResourceType resourceType, Scope resourceScope, String action) {
     final ResourceGroupDTO resourceGroup = existingResourceGroup.getResourceGroup();
     ResourceFilter resourceFilter = resourceGroup.getResourceFilter();
     List<ResourceSelector> resourceSelectors = new ArrayList<>();
@@ -155,12 +220,19 @@ public class PublicAccessServiceImpl implements PublicAccessService {
                                          .collect(Collectors.toList())
                                          .get(0);
 
-    if (existingResources.contains(resourceIdentifier)) {
+    if (ADD.equals(action) && existingResources.contains(resourceIdentifier)) {
       throw new InvalidRequestException(
           String.format("Resource with identifier [%s] and type [%s] is already marked as public", resourceIdentifier,
               resourceType.getIdentifier()),
           USER);
     }
+    if (REMOVE.equals(action) && !existingResources.contains(resourceIdentifier)) {
+      throw new InvalidRequestException(
+          String.format("Resource with identifier [%s] and type [%s] is not marked as public", resourceIdentifier,
+              resourceType.getIdentifier()),
+          USER);
+    }
+
     ResourceGroupDTO updatedResourceGroup =
         ResourceGroupDTO.builder()
             .identifier(PUBLIC_RESOURCE_GROUP_IDENTIFIER)
@@ -172,7 +244,7 @@ public class PublicAccessServiceImpl implements PublicAccessService {
             .allowedScopeLevels(resourceGroup.getAllowedScopeLevels())
             .resourceFilter(
                 ResourceFilter.builder()
-                    .resources(buildResourceGroupSelector(resourceSelectors, resourceIdentifier, resourceType))
+                    .resources(buildResourceGroupSelector(resourceSelectors, resourceIdentifier, resourceType, action))
                     .build())
             .build();
     Optional<ResourceGroupResponse> resourceGroupResponse =
@@ -201,7 +273,7 @@ public class PublicAccessServiceImpl implements PublicAccessService {
                     .toLowerCase()))
             .resourceFilter(
                 ResourceFilter.builder()
-                    .resources(buildResourceGroupSelector(resourceSelectors, resourceIdentifier, resourceType))
+                    .resources(buildResourceGroupSelector(resourceSelectors, resourceIdentifier, resourceType, ADD))
                     .build())
             .build();
 
@@ -221,18 +293,25 @@ public class PublicAccessServiceImpl implements PublicAccessService {
   }
 
   private List<ResourceSelector> buildResourceGroupSelector(
-      List<ResourceSelector> resourceSelectors, String resourceIdentifier, ResourceType resourceType) {
+      List<ResourceSelector> resourceSelectors, String resourceIdentifier, ResourceType resourceType, String action) {
     for (Iterator<ResourceSelector> iterator = resourceSelectors.iterator(); iterator.hasNext();) {
       ResourceSelector resourceSelector = iterator.next();
       if (resourceSelector != null && resourceSelector.getResourceType().equals(resourceType.getIdentifier())) {
-        resourceSelector.getIdentifiers().add(resourceIdentifier);
+        if (ADD.equals(action)) {
+          resourceSelector.getIdentifiers().add(resourceIdentifier);
+        } else if (REMOVE.equals(action)) {
+          resourceSelector.getIdentifiers().remove(resourceIdentifier);
+        }
+
         return resourceSelectors;
       }
     }
-    resourceSelectors.add(ResourceSelector.builder()
-                              .resourceType(resourceType.getIdentifier())
-                              .identifiers(List.of(resourceIdentifier))
-                              .build());
+    if (ADD.equals(action)) {
+      resourceSelectors.add(ResourceSelector.builder()
+                                .resourceType(resourceType.getIdentifier())
+                                .identifiers(List.of(resourceIdentifier))
+                                .build());
+    }
     return resourceSelectors;
   }
 }

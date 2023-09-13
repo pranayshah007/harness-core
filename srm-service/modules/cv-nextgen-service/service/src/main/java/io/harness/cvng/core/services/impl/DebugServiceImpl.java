@@ -11,10 +11,12 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.ProjectDeletionResponse;
@@ -22,6 +24,7 @@ import io.harness.cvng.core.beans.ProjectDeletionResponse.EntityDetailsDTO;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -67,6 +70,11 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -79,6 +87,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class DebugServiceImpl implements DebugService {
@@ -116,6 +125,8 @@ public class DebugServiceImpl implements DebugService {
   @Inject private SideKickService sideKickService;
 
   @Inject private Clock clock;
+
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
 
   public static final Integer RECORDS_BATCH_SIZE = 100;
 
@@ -464,6 +475,44 @@ public class DebugServiceImpl implements DebugService {
       throw new RuntimeException("Debug Mode is turned off");
     }
     return changeEventService.register(changeEventDTO);
+  }
+
+  @Override
+  public boolean registerSRMAnalysisStep(SRMAnalysisStepExecutionDetail srmAnalysisStepBody) {
+    if (!debugConfigService.isDebugEnabled()) {
+      throw new RuntimeException("Debug Mode is turned off ");
+    }
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(srmAnalysisStepBody.getPlanExecutionId())
+            .setMetadata(
+                ExecutionMetadata.newBuilder().setPipelineIdentifier(srmAnalysisStepBody.getPipelineId()).build())
+            .addLevels(Level.newBuilder()
+                           .setSetupId(srmAnalysisStepBody.getStageStepId())
+                           .setIdentifier(srmAnalysisStepBody.getStageId())
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                           .build())
+            .addLevels(Level.newBuilder()
+                           .setSetupId(srmAnalysisStepBody.getStageStepId())
+                           .setIdentifier(srmAnalysisStepBody.getStageId())
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                           .setRuntimeId(srmAnalysisStepBody.getStepRuntimeId())
+                           .build())
+            .setStageExecutionId(srmAnalysisStepBody.getStageExecutionId())
+            .build();
+    ServiceEnvironmentParams serviceEnvironmentParams =
+        ServiceEnvironmentParams.builder()
+            .accountIdentifier(srmAnalysisStepBody.getAccountId())
+            .orgIdentifier(srmAnalysisStepBody.getOrgIdentifier())
+            .projectIdentifier(srmAnalysisStepBody.getProjectIdentifier())
+            .serviceIdentifier(srmAnalysisStepBody.getServiceIdentifier())
+            .environmentIdentifier(srmAnalysisStepBody.getEnvIdentifier())
+            .build();
+    String executionDetailId = srmAnalysisStepService.createSRMAnalysisStepExecution(ambiance,
+        srmAnalysisStepBody.getMonitoredServiceIdentifier(), null, serviceEnvironmentParams,
+        srmAnalysisStepBody.getAnalysisDuration(), Optional.empty());
+
+    return true;
   }
 
   @Override

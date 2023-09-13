@@ -32,6 +32,9 @@ public interface ServiceOverridesServiceV2 {
   Optional<NGServiceOverridesEntity> get(@NonNull String accountId, String orgIdentifier, String projectIdentifier,
       @NonNull String serviceOverridesIdentifier);
 
+  Optional<NGServiceOverridesEntity> getOverridesContainingYaml(@NonNull String accountId, String orgIdentifier,
+      String projectIdentifier, @NonNull String serviceOverridesIdentifier);
+
   NGServiceOverridesEntity create(@NonNull @Valid NGServiceOverridesEntity requestedEntity);
 
   NGServiceOverridesEntity update(@NonNull @Valid NGServiceOverridesEntity requestedEntity) throws IOException;

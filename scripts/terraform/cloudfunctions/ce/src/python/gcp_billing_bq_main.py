@@ -103,7 +103,6 @@ def main(event, context):
         util.ACCOUNTID_LOG = jsonData["destinationDatasetId"].split("BillingReport_")[-1]
         get_preferred_currency(jsonData)
         fetch_acc_from_gcp_conn_info(jsonData)
-
         # obtain/set partition column from the gcp_billing_export table to be used for all subsequent queries
         gcp_billing_export_bq_table_name = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
         try:
@@ -116,6 +115,7 @@ def main(event, context):
             jsonData["gcpBillingExportTablePartitionColumnName"] = "usage_start_time"
         print_(f"Partition column for gcp_billing_export table: {jsonData['gcpBillingExportTablePartitionColumnName']}")
 
+        get_unique_billingaccount_id(jsonData)
         jsonData["isFreshSync"] = isFreshSync(jsonData)
         if jsonData.get("isFreshSync"):
             jsonData["interval"] = '180'
@@ -123,7 +123,6 @@ def main(event, context):
             jsonData["interval"] = str(datetime.datetime.utcnow().date().day - 1)
         else:
             jsonData["interval"] = '3'
-        get_unique_billingaccount_id(jsonData)
 
         # currency specific methods
         insert_currencies_with_unit_conversion_factors_in_bq(jsonData)
@@ -801,8 +800,8 @@ def isFreshSync(jsonData):
     if jsonData.get("dataSourceId"):
         # Check in preaggregated table for non US regions
         query = """  SELECT count(*) as count from %s.%s.preAggregated
-                   WHERE starttime >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 3 DAY) AND cloudProvider = "GCP" ;
-                   """ % (PROJECTID, jsonData["datasetName"])
+                   WHERE starttime >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 3 DAY) AND cloudProvider = "GCP" AND gcpBillingAccountId IN (%s) ;
+                   """ % (PROJECTID, jsonData["datasetName"], jsonData["billingAccountIds"])
     else:
         # Only applicable for US regions
         query = """  SELECT count(*) as count from %s.%s.%s
@@ -1227,7 +1226,7 @@ def get_unique_billingaccount_id(jsonData):
     query = """  SELECT DISTINCT(billing_account_id) as billing_account_id FROM `%s.%s.%s` 
             WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY);
             """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
-                   jsonData["gcpBillingExportTablePartitionColumnName"], str(int(jsonData["interval"]) + 7))
+                   jsonData["gcpBillingExportTablePartitionColumnName"], str(int(jsonData.get("interval", 180)) + 7))
     # Configure the query job.
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -1319,6 +1318,8 @@ def fetch_acc_from_gcp_conn_info(jsonData):
             jsonData["connectorId"] = row.connectorId
             jsonData["sourceGcpTableName"] = row.sourceGcpTableName
             jsonData["tableName"] = row.sourceGcpTableName
+            jsonData["sourceDataSetId"] = jsonData["destinationDatasetId"]
+            jsonData["sourceGcpProjectId"] = PROJECTID
             break
     except Exception as e:
         raise e

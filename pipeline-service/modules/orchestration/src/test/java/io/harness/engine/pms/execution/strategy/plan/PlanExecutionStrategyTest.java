@@ -103,7 +103,7 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
     Builder ambiance = Ambiance.newBuilder()
                            .setPlanExecutionId(planExecutionId)
                            .putAllSetupAbstractions(prepareInputArgs())
-                           .setMetadata(ExecutionMetadata.newBuilder().setExecutionUuid(planExecutionId).build())
+                           .setMetadata(ExecutionMetadata.newBuilder().build())
                            .addLevels(Level.newBuilder().setRuntimeId(generateUuid()).build());
     PlanNode startingNode = PlanNode.builder()
                                 .uuid(DUMMY_NODE_1_ID)

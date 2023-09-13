@@ -91,7 +91,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{- if .Values.global.database.clickhouse.installed }}
+            {{- if .Values.global.database.clickhouse.enabled }}
             - name : CLICKHOUSE_USERNAME
               value: {{ .Values.clickhouse.username | quote}}
             - name: CLICKHOUSE_PASSWORD

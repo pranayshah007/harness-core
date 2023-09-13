@@ -152,6 +152,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject private InfrastructureOutcomeProvider infrastructureOutcomeProvider;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private InfrastructureProvisionerHelper infrastructureProvisionerHelper;
 
   @Override
   public Class<Infrastructure> getStepParametersClass() {
@@ -173,7 +174,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     validateConnector(infrastructure, ambiance);
 
     saveExecutionLogSafely(logCallback, "Fetching environment information...");
-
+    if (infrastructure.isDynamicallyProvisioned()) {
+      infrastructureProvisionerHelper.resolveProvisionerExpressions(ambiance, infrastructure);
+    }
     validateInfrastructure(infrastructure, ambiance);
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));

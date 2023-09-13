@@ -9,6 +9,7 @@ package io.harness.ngmigration.monitoredservice.utils;
 
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.monitoredservice.healthsource.HealthSourceGeneratorFactory;
 import io.harness.serializer.JsonUtils;
 
@@ -25,7 +26,7 @@ public class MonitoredServiceEntityToMonitoredServiceMapper {
     return healthSourceGeneratorFactory.getHealthSourceGenerator(graphNode.getType()).isPresent();
   }
 
-  public JsonNode getMonitoredServiceJsonNode(GraphNode graphNode) {
+  public JsonNode getMonitoredServiceJsonNode(GraphNode graphNode, MigrationContext migrationContext) {
     MonitoredServiceDTO monitoredServiceDTO =
         MonitoredServiceDTO.builder()
             .name("NG Migrated MonitoredService for CV")
@@ -36,7 +37,7 @@ public class MonitoredServiceEntityToMonitoredServiceMapper {
                          .healthSources(Collections.singleton(
                              healthSourceGeneratorFactory.getHealthSourceGenerator(graphNode.getType())
                                  .get()
-                                 .generateHealthSource(graphNode)))
+                                 .generateHealthSource(graphNode, migrationContext)))
                          .build())
             .build();
 

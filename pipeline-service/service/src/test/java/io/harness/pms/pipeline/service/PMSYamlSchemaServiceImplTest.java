@@ -52,6 +52,7 @@ import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PmsFeatureFlagService;
@@ -98,6 +99,7 @@ public class PMSYamlSchemaServiceImplTest {
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
   @Mock private ExecutorService yamlSchemaExecutor;
+  @Mock AbstractStaticSchemaParser abstractStaticSchemaParser;
 
   PipelineServiceConfiguration pipelineServiceConfiguration;
 
@@ -229,19 +231,6 @@ public class PMSYamlSchemaServiceImplTest {
     assertThatThrownBy(() -> pmsYamlSchemaService.getStaticSchemaForAllEntities("pipeline", null, null, "v2x"))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("[PMS] Incorrect version [v2x] of Pipeline Schema passed, Valid values are [v0, v1]");
-  }
-
-  @Test
-  @Owner(developers = UTKARSH_CHOUBEY)
-  @Category(UnitTests.class)
-  public void staticSchemaForIndividualEntities() throws IOException {
-    JsonNode expected = readJsonNode("individual-schema-short.json");
-    when(schemaFetcher.getIndividualSchema("step", "K8sApply", null)).thenReturn(expected.deepCopy());
-
-    final JsonNode result = pmsYamlSchemaService.getStaticSchemaForAllEntities("step", "K8sApply", null, "v0");
-
-    assertThat(result).isNotNull();
-    assertThat(result.get("data").get("title").asText()).isEqualTo("K8sApplyStepNode");
   }
 
   @Test

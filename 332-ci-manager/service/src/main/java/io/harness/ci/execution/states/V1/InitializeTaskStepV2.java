@@ -148,6 +148,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -223,7 +224,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                                .stepParameters(RecastOrchestrationUtils.toJson(stepParameters))
                                                .build());
 
-    boolean availableCapacity = buildEnforcer.checkBuildEnforcement(AmbianceUtils.getAccountId(ambiance));
+    boolean availableCapacity = buildEnforcer.checkBuildEnforcement(
+        AmbianceUtils.getAccountId(ambiance), Arrays.asList(Status.RUNNING.toString(), Status.QUEUED.toString()));
 
     boolean queueConcurrencyEnabled =
         ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));

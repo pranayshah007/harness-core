@@ -1,6 +1,6 @@
 # batch-processing
 
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80002](https://img.shields.io/badge/AppVersion-0.0.80002-informational?style=flat-square)
+![Version: 0.10.1](https://img.shields.io/badge/Version-0.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80801](https://img.shields.io/badge/AppVersion-0.0.80801-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -14,6 +14,7 @@ A Helm chart for Kubernetes
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| CF_CLIENT_API_KEY | string | `"BATCH_PROCESSING_ON_PREM"` |  |
 | additionalConfigs | object | `{}` |  |
 | affinity | object | `{}` |  |
 | autoscaling.enabled | bool | `false` |  |
@@ -38,6 +39,8 @@ A Helm chart for Kubernetes
 | extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
 | global.ccm.gcpProjectId | string | `"placeHolder"` |  |
+| global.commonAnnotations | object | `{}` |  |
+| global.commonLabels | object | `{}` |  |
 | global.database.clickhouse.enabled | bool | `false` |  |
 | global.database.mongo.extraArgs | string | `""` |  |
 | global.database.mongo.hosts | list | `[]` | provide default values if mongo.installed is set to false |
@@ -76,15 +79,16 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"Always"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/batch-processing-signed"` |  |
-| image.tag | string | `"80003-000"` |  |
+| image.tag | string | `"80801-000"` |  |
 | imageClickhouseEnabled.digest | string | `""` |  |
 | imageClickhouseEnabled.imagePullSecrets | list | `[]` |  |
 | imageClickhouseEnabled.pullPolicy | string | `"Always"` |  |
 | imageClickhouseEnabled.registry | string | `"docker.io"` |  |
 | imageClickhouseEnabled.repository | string | `"harness/batch-processing-signed"` |  |
-| imageClickhouseEnabled.tag | string | `"80003-000"` |  |
+| imageClickhouseEnabled.tag | string | `"80801-000"` |  |
 | isolatedReplica | int | `0` |  |
 | java.memory | string | `"7168"` |  |
+| java17flags | string | `""` |  |
 | lifecycleHooks | object | `{}` |  |
 | mongoSecrets.password.key | string | `"mongodb-root-password"` |  |
 | mongoSecrets.password.name | string | `"mongodb-replicaset-chart"` |  |
@@ -99,6 +103,7 @@ A Helm chart for Kubernetes
 | resources.requests.cpu | string | `"1024m"` |  |
 | resources.requests.memory | string | `"10Gi"` |  |
 | securityContext | object | `{}` |  |
+| service.annotations | object | `{}` |  |
 | service.port | int | `6340` |  |
 | service.type | string | `"ClusterIP"` |  |
 | serviceAccount.annotations | object | `{}` |  |

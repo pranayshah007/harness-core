@@ -772,8 +772,8 @@ secretsConfiguration:
 
 ldapSyncJobConfig:
   poolSize: 8
-  syncInterval: 15
-  defaultCronExpression: "0 0/15 * 1/1 * ? *"
+  syncInterval: 60
+  defaultCronExpression: "0 0 */1 ? * * *"
 
 useGlobalKMSAsBaseAlgo: false
 

@@ -330,9 +330,9 @@ public interface NodeExecutionService {
 
   /**
    * Deletes the nodeExecutions and its related metadata
-   * @param planExecutionId Id of to be deleted planExecution
+   * @param planExecutionIds Id of to be deleted planExecution
    */
-  void deleteAllNodeExecutionAndMetadata(String planExecutionId);
+  void deleteAllNodeExecutionAndMetadata(Set<String> planExecutionIds);
 
   /**
    * Updates TTL the nodeExecutions and its related metadata

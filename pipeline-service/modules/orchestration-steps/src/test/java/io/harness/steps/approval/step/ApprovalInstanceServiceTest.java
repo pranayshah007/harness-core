@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -145,6 +146,16 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
 
     assertThat(approvalInstanceServiceImpl.get("hello")).isEqualTo(entity);
   }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetException() {
+    String instance = "Invalid";
+    when(approvalInstanceRepository.findById(instance)).thenReturn(Optional.empty());
+    assertThatThrownBy(() -> { approvalInstanceServiceImpl.get(""); })
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageStartingWith("Invalid approval instance id");
+  }
 
   @Test
   @Owner(developers = vivekveman)
@@ -157,6 +168,17 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     entity.setType(ApprovalType.HARNESS_APPROVAL);
 
     assertThat(approvalInstanceServiceImpl.getHarnessApprovalInstance("hello")).isEqualTo(entity);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetHarnessApprovalInstanceException() {
+    String approvalInstanceId = "Invalid";
+    when(approvalInstanceRepository.findById(approvalInstanceId)).thenReturn(Optional.empty());
+    assertThatThrownBy(() -> { approvalInstanceServiceImpl.get("Invalid"); })
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageStartingWith("Invalid approval instance id");
   }
 
   @Test

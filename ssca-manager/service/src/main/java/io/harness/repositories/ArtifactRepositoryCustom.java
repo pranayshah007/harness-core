@@ -21,4 +21,7 @@ public interface ArtifactRepositoryCustom {
 
   Optional<ArtifactEntity> findByAccountIdAndOrgIdAndProjectIdAndOrchestrationId(
       String accountId, String orgId, String projectId, String orchestrationId);
+
+  Optional<ArtifactEntity> findFirstByAccountIdAndOrgIdAndProjectIdAndArtifactIdLike(
+      String accountId, String orgId, String projectId, String artifactId, Sort sort);
 }

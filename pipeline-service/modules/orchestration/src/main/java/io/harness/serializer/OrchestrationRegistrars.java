@@ -36,6 +36,7 @@ import io.harness.serializer.morphia.converters.PolicyMetadataMorphiaConverter;
 import io.harness.serializer.morphia.converters.PolicySetMetadataMorphiaConverter;
 import io.harness.serializer.morphia.converters.RefObjectMorphiaConverter;
 import io.harness.serializer.morphia.converters.RefTypeMorphiaConverter;
+import io.harness.serializer.morphia.converters.RetryExecutionInfoMorphiaConverter;
 import io.harness.serializer.morphia.converters.SdkModuleInfoMorphiaConverter;
 import io.harness.serializer.morphia.converters.StepTypeMorphiaConverter;
 import io.harness.serializer.morphia.converters.TriggerPayloadMorphiaConverter;
@@ -106,6 +107,8 @@ import io.harness.serializer.spring.converters.refobject.RefObjectReadConverter;
 import io.harness.serializer.spring.converters.refobject.RefObjectWriteConverter;
 import io.harness.serializer.spring.converters.reftype.RefTypeReadConverter;
 import io.harness.serializer.spring.converters.reftype.RefTypeWriteConverter;
+import io.harness.serializer.spring.converters.retryInfo.RetryInfoReadConverter;
+import io.harness.serializer.spring.converters.retryInfo.RetryInfoWriteConverter;
 import io.harness.serializer.spring.converters.run.NodeRunInfoReadConverter;
 import io.harness.serializer.spring.converters.run.NodeRunInfoWriteConverter;
 import io.harness.serializer.spring.converters.sdk.SdkModuleInfoReadConverter;
@@ -198,6 +201,7 @@ public class OrchestrationRegistrars {
           .add(PolicyMetadataMorphiaConverter.class)
           .add(PolicySetMetadataMorphiaConverter.class)
           .add(GovernanceMetadataMorphiaConverter.class)
+          .add(RetryExecutionInfoMorphiaConverter.class)
           .build();
 
   public static final List<Class<? extends Converter<?, ?>>> orchestrationConverters = ImmutableList.of(
@@ -232,7 +236,8 @@ public class OrchestrationRegistrars {
       GovernanceMetadataReadConverter.class, GovernanceMetadataWriteConverter.class,
       JsonExpansionInfoReadConverter.class, JsonExpansionInfoWriteConverter.class, StrategyMetadataReadConverter.class,
       MatrixMetadataReadConverter.class, StrategyMetadataWriteConverter.class, MatrixMetadataWriteConverter.class,
-      PipelineStageInfoReadConverter.class, PipelineStageInfoWriteConverter.class);
+      PipelineStageInfoReadConverter.class, PipelineStageInfoWriteConverter.class, RetryInfoReadConverter.class,
+      RetryInfoWriteConverter.class);
 
   public static final List<Class<? extends Converter<?, ?>>> springConverters =
       ImmutableList.<Class<? extends Converter<?, ?>>>builder()

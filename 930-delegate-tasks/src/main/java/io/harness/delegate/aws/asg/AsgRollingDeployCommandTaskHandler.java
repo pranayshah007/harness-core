@@ -35,6 +35,7 @@ import io.harness.aws.asg.manifest.request.AsgInstanceRefreshManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -60,7 +61,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.google.inject.Inject;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.NoArgsConstructor;
@@ -102,7 +103,8 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
 
       AutoScalingGroupContainer autoScalingGroupContainer = executeRollingDeployWithInstanceRefresh(asgSdkManager,
           asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
-          asgRollingDeployRequest.getAmiImageId(), awsInternalConfig, region);
+          asgRollingDeployRequest.getAmiImageId(), awsInternalConfig, region,
+          asgRollingDeployRequest.getAsgCapacityConfig());
 
       AsgRollingDeployResult asgRollingDeployResult = AsgRollingDeployResult.builder()
                                                           .autoScalingGroupContainer(autoScalingGroupContainer)
@@ -127,7 +129,7 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
   private AutoScalingGroupContainer executeRollingDeployWithInstanceRefresh(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, Boolean skipMatching, Boolean useAlreadyRunningInstances,
       Integer instanceWarmup, Integer minimumHealthyPercentage, String amiImageId, AwsInternalConfig awsInternalConfig,
-      String region) {
+      String region, AsgCapacityConfig asgCapacityConfig) {
     // Get the content of all required manifest files
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
@@ -142,8 +144,15 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
 
-    Map<String, Object> asgLaunchTemplateOverrideProperties =
-        Collections.singletonMap(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+    Map<String, Object> asgLaunchTemplateOverrideProperties = new HashMap<>();
+    asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+    asgTaskHelper.overrideLaunchTemplateWithUserData(asgLaunchTemplateOverrideProperties, asgStoreManifestsContent);
+
+    Map<String, Object> asgConfigurationOverrideProperties = null;
+    if (asgCapacityConfig != null) {
+      asgConfigurationOverrideProperties = new HashMap<>();
+      asgTaskHelper.overrideCapacity(asgConfigurationOverrideProperties, asgCapacityConfig);
+    }
 
     // Chain factory code to handle each manifest one by one in a chain
     AsgManifestHandlerChainState chainState =
@@ -159,6 +168,7 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
             .addHandler(AsgConfiguration,
                 AsgConfigurationManifestRequest.builder()
                     .manifests(Arrays.asList(asgConfigurationContent))
+                    .overrideProperties(asgConfigurationOverrideProperties)
                     .useAlreadyRunningInstances(useAlreadyRunningInstances)
                     .awsInternalConfig(awsInternalConfig)
                     .region(region)

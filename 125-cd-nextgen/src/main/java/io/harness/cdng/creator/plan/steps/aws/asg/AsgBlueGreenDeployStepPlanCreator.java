@@ -54,6 +54,8 @@ public class AsgBlueGreenDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<As
         stepElement.getAsgBlueGreenDeployStepInfo().getDelegateSelectors());
     asgBlueGreenDeployStepParameters.setUseAlreadyRunningInstances(
         stepElement.getAsgBlueGreenDeployStepInfo().getUseAlreadyRunningInstances());
+    asgBlueGreenDeployStepParameters.setInstances(stepElement.getAsgBlueGreenDeployStepInfo().getInstances());
+    asgBlueGreenDeployStepParameters.setLoadBalancers(stepElement.getAsgBlueGreenDeployStepInfo().getLoadBalancers());
 
     return stepParameters;
   }

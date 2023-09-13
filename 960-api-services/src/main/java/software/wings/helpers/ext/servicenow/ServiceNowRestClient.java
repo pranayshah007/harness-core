@@ -9,7 +9,10 @@ package software.wings.helpers.ext.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import retrofit2.Call;
@@ -24,6 +27,8 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(CDC)
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public interface ServiceNowRestClient {
   @GET("api/now/table/task?sysparm_limit=1")
   Call<JsonNode> validateConnection(@Header("Authorization") String authorization);
@@ -101,6 +106,11 @@ public interface ServiceNowRestClient {
 
   @GET("api/now/ui/meta/{ticketType}")
   Call<JsonNode> getMetadata(@Header("Authorization") String authorization, @Path("ticketType") String ticketType);
+
+  @GET(
+      "api/now/table/std_change_properties?sysparm_query=category.display_value=Standard%20Changes&sysparm_fields=readonly_fields&sysparm_limit=1")
+  Call<JsonNode>
+  getReadOnlyFieldsForStandardTemplate(@Header("Authorization") String authorization);
 
   @GET("/api/now/table/sys_template?{ticketType}")
   Call<JsonNode> getTemplate(@Header("Authorization") String authorization, @Path("ticketType") String ticketType,

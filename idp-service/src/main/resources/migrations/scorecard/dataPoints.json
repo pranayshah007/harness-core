@@ -7,7 +7,8 @@
     "type": "NUMBER",
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_mean_time_to_merge_pr",
-    "isConditional": true
+    "isConditional": true,
+    "conditionalInputValueDescription": "Branch name"
   },
   {
     "id": "64d5c505c94f589f936c04d7",
@@ -27,7 +28,8 @@
     "type": "BOOLEAN",
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_is_branch_protection_set",
-    "isConditional": true
+    "isConditional": true,
+    "conditionalInputValueDescription" : "Branch name"
   },
   {
     "id": "64d5f56280f63a315c9e08b5",
@@ -42,11 +44,11 @@
   {
     "id": "64e44efc95107f65e31c51f7",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "specOwnerExist",
+    "identifier": "specOwnerExists",
     "name": "Owner is defined and is not unknown",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "catalog",
-    "outcomeExpression":  "catalog.spec.owner!=null && catalog.spec.owner!=Unknown",
+    "outcomeExpression":  "catalog.spec.owner!=null && catalog.spec.owner!=\"Unknown\"",
     "dataSourceLocationIdentifier": "catalog"
   },
   {
@@ -57,7 +59,8 @@
     "type": "BOOLEAN",
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_is_file_exists",
-    "isConditional": true
+    "isConditional": true,
+    "conditionalInputValueDescription": "File path (e.g. src/index.js)"
   },
   {
     "id": "64ef7973f616c89330020df5",
@@ -76,8 +79,7 @@
     "name": "Policy evaluation successful",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_policy_evaluation_dsl",
-    "isConditional": true
+    "dataSourceLocationIdentifier": "harness_policy_evaluation_dsl"
   },
   {
     "id": "64ef7a5ff616c89330020df7",
@@ -95,7 +97,42 @@
     "name": "Tests passing on CI (boolean)",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_test_passing_on_ci_is_zero",
-    "isConditional": true
+    "dataSourceLocationIdentifier": "harness_test_passing_on_ci_is_zero"
+  },
+  {
+    "id": "65006db0c28a1a3f5607e851",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isOnCallSet",
+    "name": "Is on-call set (boolean)",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "pagerduty",
+    "dataSourceLocationIdentifier": "pagerduty_service_directory"
+  },
+  {
+    "id": "65009b5dc28a1a3f5607f808",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isEscalationPolicySet",
+    "name": "Is Escalation Policy call set (boolean)",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "pagerduty",
+    "dataSourceLocationIdentifier": "pagerduty_service_directory"
+  },
+  {
+    "id": "6500ab758ea5a4798502f511",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "noOfIncidentsInLastThirtyDays",
+    "name": "Number of incidents in the last 30 days",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "pagerduty",
+    "dataSourceLocationIdentifier": "pagerduty_incidents"
+  },
+  {
+    "id": "6500c08d8ea5a4798502f513",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "avgAcknowledgementTimeForLastTenIncidentsInMinutes",
+    "name": "Average acknowledgement time of the last 10 incidents (in minutes)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "pagerduty",
+    "dataSourceLocationIdentifier": "pagerduty_incidents"
   }
 ]

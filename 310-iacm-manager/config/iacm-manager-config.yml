@@ -266,6 +266,10 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
       dockerBuildxGcrConfig:
         name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
+  gitnessConfig:
+    jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
+    httpClientConfig:
+      baseUrl: ${GITNESS_INTERNAL_URL:- http://localhost:3000}
 
 scmConnectionConfig:
   url: localhost:8091

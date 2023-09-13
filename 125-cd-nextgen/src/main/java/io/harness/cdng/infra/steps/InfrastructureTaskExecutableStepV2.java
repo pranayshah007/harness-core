@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.infra.steps;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.ELASTIGROUP_CONFIGURATION_OUTPUT;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
@@ -148,6 +149,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
+  @Inject private InfrastructureProvisionerHelper infrastructureProvisionerHelper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -323,6 +325,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final Infrastructure spec = infrastructure.getInfrastructureDefinitionConfig().getSpec();
     validateConnector(spec, ambiance, logCallback);
     saveExecutionLog(logCallback, "Fetching environment information...");
+    if (spec.isDynamicallyProvisioned()) {
+      infrastructureProvisionerHelper.resolveProvisionerExpressions(ambiance, spec);
+    }
     validateInfrastructure(spec, ambiance, logCallback);
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);

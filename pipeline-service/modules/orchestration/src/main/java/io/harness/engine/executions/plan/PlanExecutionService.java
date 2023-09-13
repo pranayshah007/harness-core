@@ -90,7 +90,8 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
    * Deletes the planExecution and its related metadata
    * @param planExecutionIds Ids of to be deleted planExecutions
    */
-  void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds);
+  void deleteAllPlanExecutionAndMetadata(
+      Set<String> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete);
 
   /**
    * Updates TTL all planExecution and its related metadata

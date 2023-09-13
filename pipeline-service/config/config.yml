@@ -345,7 +345,7 @@ orchestrationStepConfig:
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
       cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "AwsCdkDiff", "ServerlessAwsLambdaRollbackV2", "AwsCdkDeploy", "AwsCdkDestroy", "AwsCdkRollback"]
-      ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
+      ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action", "SlsaVerification"]
 
 
 shouldDeployWithGitSync: true

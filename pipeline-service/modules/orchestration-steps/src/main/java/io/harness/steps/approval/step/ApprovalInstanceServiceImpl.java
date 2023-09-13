@@ -132,7 +132,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   public List<ApprovalInstance> getApprovalInstancesByExecutionId(@NotEmpty String planExecutionId,
       @Valid ApprovalStatus approvalStatus, @Valid ApprovalType approvalType, String nodeExecutionId) {
     if (isEmpty(planExecutionId)) {
-      throw new InvalidRequestException("PlanExecutionId can be empty");
+      throw new InvalidRequestException("PlanExecutionId cannot be empty");
     }
 
     Criteria criteria = Criteria.where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId);

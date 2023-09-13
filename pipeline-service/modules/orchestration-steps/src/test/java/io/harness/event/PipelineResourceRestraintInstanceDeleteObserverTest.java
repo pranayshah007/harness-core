@@ -42,7 +42,7 @@ public class PipelineResourceRestraintInstanceDeleteObserverTest extends Categor
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testOnPlanExecutionsDelete() {
-    pipelineResourceRestraintInstanceDeleteObserver.onPlanExecutionsDelete(Collections.emptyList());
+    pipelineResourceRestraintInstanceDeleteObserver.onPlanExecutionsDelete(Collections.emptyList(), false);
 
     verify(resourceRestraintInstanceService, times(1)).deleteInstancesForGivenReleaseType(any(), any());
   }

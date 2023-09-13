@@ -39,6 +39,7 @@ public class PythonInput {
   String azureSubscription;
   String azureResourceGroup;
   String azureMeterCategory;
+  Boolean newEntity;
 
   APITimeSeries data;
 

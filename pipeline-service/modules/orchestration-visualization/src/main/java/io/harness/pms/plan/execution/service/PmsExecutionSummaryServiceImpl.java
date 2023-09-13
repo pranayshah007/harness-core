@@ -22,7 +22,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.strategy.StrategyType;
@@ -60,7 +60,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   @Inject NodeExecutionService nodeExecutionService;
   @Inject PlanService planService;
   @Inject private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
 
   /**
    * Performs the following:

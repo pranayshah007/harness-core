@@ -11,6 +11,8 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.gitops.GitOpsStepUtils;
 import io.harness.cdng.gitops.syncstep.EnvironmentClusterListing;
@@ -51,6 +53,7 @@ import retrofit2.Response;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Slf4j
+@OwnedBy(HarnessTeam.GITOPS)
 public class UpdateGitOpsAppRunnable implements Runnable {
   @Inject private GitopsResourceClient gitopsResourceClient;
   @Inject private WaitNotifyEngine waitNotifyEngine;
@@ -218,6 +221,9 @@ public class UpdateGitOpsAppRunnable implements Runnable {
   public static ApplicationUpdateRequest getUpdateRequest(
       ApplicationResource application, UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters) {
     ApplicationSpec applicationSpec = application.getApp().getSpec();
+    if (applicationSpec == null) {
+      applicationSpec = ApplicationSpec.builder().build();
+    }
 
     populateUpdateValues(applicationSpec, updateGitOpsAppsStepParameters);
 
@@ -230,17 +236,23 @@ public class UpdateGitOpsAppRunnable implements Runnable {
   private static void populateUpdateValues(
       ApplicationSpec applicationSpec, UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters) {
     Source source = applicationSpec.getSource();
+    if (source == null) {
+      source = Source.builder().build();
+    }
 
-    if (updateGitOpsAppsStepParameters.getTargetRevision().getValue() != null) {
+    if (updateGitOpsAppsStepParameters.getTargetRevision() != null
+        && updateGitOpsAppsStepParameters.getTargetRevision().getValue() != null) {
       source.setTargetRevision(updateGitOpsAppsStepParameters.getTargetRevision().getValue());
     }
 
-    if (updateGitOpsAppsStepParameters.getHelm().getValue() != null) {
+    if (updateGitOpsAppsStepParameters.getHelm() != null
+        && updateGitOpsAppsStepParameters.getHelm().getValue() != null) {
       HelmValues pmsHelmValues = updateGitOpsAppsStepParameters.getHelm().getValue();
       populateHelmValues(source, pmsHelmValues);
     }
 
-    if (updateGitOpsAppsStepParameters.getKustomize().getValue() != null) {
+    if (updateGitOpsAppsStepParameters.getKustomize() != null
+        && updateGitOpsAppsStepParameters.getKustomize().getValue() != null) {
       KustomizeValues pmsKustomizeValues = updateGitOpsAppsStepParameters.getKustomize().getValue();
       populateKustomizeValues(source, pmsKustomizeValues);
     }
@@ -250,6 +262,10 @@ public class UpdateGitOpsAppRunnable implements Runnable {
 
   private static void populateHelmValues(Source source, HelmValues pmsHelmValues) {
     HelmSource helmSource = source.getHelm();
+    if (helmSource == null) {
+      helmSource = HelmSource.builder().build();
+    }
+
     /*
     Merging logic example -
     existing helm parameters ->
@@ -271,70 +287,101 @@ public class UpdateGitOpsAppRunnable implements Runnable {
         }
      */
 
-    if (pmsHelmValues.getParameters().getValue() != null) {
-      // merge
-      Map<String, String> mapOfHelmParams = new HashMap<>();
-      for (HelmSourceParameters helmSourceParameter : helmSource.getParameters()) {
-        mapOfHelmParams.put(helmSourceParameter.getName(), helmSourceParameter.getValue());
-      }
-      for (HelmParameters helmParameter : pmsHelmValues.getParameters().getValue()) {
-        mapOfHelmParams.put(helmParameter.getName().getValue(), helmParameter.getValue().getValue());
-      }
-
-      List<HelmSourceParameters> finalHelmSourceParameters = new ArrayList<>();
-      for (Map.Entry<String, String> helmParam : mapOfHelmParams.entrySet()) {
-        finalHelmSourceParameters.add(HelmSourceParameters.builder()
-                                          .name(helmParam.getKey())
-                                          .value(helmParam.getValue())
-                                          .forceString(true)
-                                          .build());
-      }
-
+    if (pmsHelmValues.getParameters() != null && pmsHelmValues.getParameters().getValue() != null) {
+      List<HelmSourceParameters> finalHelmSourceParameters =
+          populateHelmParameters(helmSource, pmsHelmValues.getParameters().getValue());
       helmSource.setParameters(finalHelmSourceParameters);
     }
 
-    if (pmsHelmValues.getFileParameters().getValue() != null) {
-      // merge
-      Map<String, String> mapOfHelmFileParams = new HashMap<>();
-      for (HelmSourceFileParameters helmSourceFileParameter : helmSource.getFileParameters()) {
-        mapOfHelmFileParams.put(helmSourceFileParameter.getName(), helmSourceFileParameter.getPath());
-      }
-      for (HelmFileParameters helmFileParameter : pmsHelmValues.getFileParameters().getValue()) {
-        mapOfHelmFileParams.put(helmFileParameter.getName().getValue(), helmFileParameter.getPath().getValue());
-      }
-
-      List<HelmSourceFileParameters> finalHelmSourceFileParameters = new ArrayList<>();
-      for (Map.Entry<String, String> helmFileParam : mapOfHelmFileParams.entrySet()) {
-        finalHelmSourceFileParameters.add(
-            HelmSourceFileParameters.builder().name(helmFileParam.getKey()).path(helmFileParam.getValue()).build());
-      }
-
+    if (pmsHelmValues.getFileParameters() != null && pmsHelmValues.getFileParameters().getValue() != null) {
+      List<HelmSourceFileParameters> finalHelmSourceFileParameters =
+          populateHelmFileParameters(helmSource, pmsHelmValues.getFileParameters().getValue());
       helmSource.setFileParameters(finalHelmSourceFileParameters);
     }
 
-    if (pmsHelmValues.getValueFiles().getValue() != null) {
+    if (pmsHelmValues.getValueFiles() != null && pmsHelmValues.getValueFiles().getValue() != null) {
       helmSource.setValueFiles(pmsHelmValues.getValueFiles().getValue());
     }
 
     source.setHelm(helmSource);
   }
 
+  private static List<HelmSourceParameters> populateHelmParameters(
+      HelmSource helmSource, List<HelmParameters> pmsHelmParameters) {
+    Map<String, String> mapOfHelmParams = new HashMap<>();
+    if (helmSource.getParameters() != null) {
+      for (HelmSourceParameters helmSourceParameter : helmSource.getParameters()) {
+        if (helmSourceParameter.getName() != null && helmSourceParameter.getValue() != null) {
+          mapOfHelmParams.put(helmSourceParameter.getName(), helmSourceParameter.getValue());
+        }
+      }
+    }
+    for (HelmParameters helmParameter : pmsHelmParameters) {
+      if (helmParameter.getName() != null && helmParameter.getName().getValue() != null
+          && helmParameter.getValue() != null && helmParameter.getValue().getValue() != null) {
+        mapOfHelmParams.put(helmParameter.getName().getValue(), helmParameter.getValue().getValue());
+      }
+    }
+
+    List<HelmSourceParameters> finalHelmSourceParameters = new ArrayList<>();
+    for (Map.Entry<String, String> helmParam : mapOfHelmParams.entrySet()) {
+      finalHelmSourceParameters.add(HelmSourceParameters.builder()
+                                        .name(helmParam.getKey())
+                                        .value(helmParam.getValue())
+                                        .forceString(true)
+                                        .build());
+    }
+    return finalHelmSourceParameters;
+  }
+
+  private static List<HelmSourceFileParameters> populateHelmFileParameters(
+      HelmSource helmSource, List<HelmFileParameters> pmsHelmFileParameters) {
+    Map<String, String> mapOfHelmFileParams = new HashMap<>();
+    if (helmSource.getFileParameters() != null) {
+      for (HelmSourceFileParameters helmSourceFileParameter : helmSource.getFileParameters()) {
+        if (helmSourceFileParameter.getName() != null && helmSourceFileParameter.getPath() != null) {
+          mapOfHelmFileParams.put(helmSourceFileParameter.getName(), helmSourceFileParameter.getPath());
+        }
+      }
+    }
+    for (HelmFileParameters helmFileParameter : pmsHelmFileParameters) {
+      if (helmFileParameter.getName() != null && helmFileParameter.getName().getValue() != null
+          && helmFileParameter.getPath() != null && helmFileParameter.getPath().getValue() != null) {
+        mapOfHelmFileParams.put(helmFileParameter.getName().getValue(), helmFileParameter.getPath().getValue());
+      }
+    }
+
+    List<HelmSourceFileParameters> finalHelmSourceFileParameters = new ArrayList<>();
+    for (Map.Entry<String, String> helmFileParam : mapOfHelmFileParams.entrySet()) {
+      finalHelmSourceFileParameters.add(
+          HelmSourceFileParameters.builder().name(helmFileParam.getKey()).path(helmFileParam.getValue()).build());
+    }
+    return finalHelmSourceFileParameters;
+  }
+
   private static void populateKustomizeValues(Source source, KustomizeValues pmsKustomizeValues) {
     KustomizeSource kustomizeSource = source.getKustomize();
-    if (pmsKustomizeValues.getImages().getValue() != null) {
+    if (kustomizeSource == null) {
+      kustomizeSource = KustomizeSource.builder().build();
+    }
+
+    if (pmsKustomizeValues.getImages() != null && pmsKustomizeValues.getImages().getValue() != null) {
       kustomizeSource.setImages(pmsKustomizeValues.getImages().getValue());
     }
-    if (pmsKustomizeValues.getNamespace().getValue() != null) {
+    if (pmsKustomizeValues.getNamespace() != null && pmsKustomizeValues.getNamespace().getValue() != null) {
       kustomizeSource.setNamespace(pmsKustomizeValues.getNamespace().getValue());
     }
-    if (pmsKustomizeValues.getReplicas().getValue() != null) {
+    if (pmsKustomizeValues.getReplicas() != null && pmsKustomizeValues.getReplicas().getValue() != null) {
       List<Replicas> replicasList = new ArrayList<>();
       for (KustomizeReplicas kustomizeReplicas : pmsKustomizeValues.getReplicas().getValue()) {
-        Replicas replica = Replicas.builder()
-                               .name(kustomizeReplicas.getName().getValue())
-                               .count(kustomizeReplicas.getCount().getValue())
-                               .build();
-        replicasList.add(replica);
+        if (kustomizeReplicas.getName() != null && kustomizeReplicas.getName().getValue() != null
+            && kustomizeReplicas.getCount() != null && kustomizeReplicas.getCount().getValue() != null) {
+          Replicas replica = Replicas.builder()
+                                 .name(kustomizeReplicas.getName().getValue())
+                                 .count(kustomizeReplicas.getCount().getValue())
+                                 .build();
+          replicasList.add(replica);
+        }
       }
       kustomizeSource.setReplicas(replicasList);
     }

@@ -21,7 +21,7 @@ import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
@@ -57,7 +57,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private InitiateNodeHelper initiateNodeHelper;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
-  @Inject private PmsGraphStepDetailsService nodeExecutionInfoService;
+  @Inject private NodeExecutionInfoService nodeExecutionInfoService;
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PipelineSettingsService pipelineSettingsService;
   @Inject private PlanService planService;

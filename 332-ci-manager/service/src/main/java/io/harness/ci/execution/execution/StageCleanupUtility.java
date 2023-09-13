@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @Singleton
@@ -63,7 +64,7 @@ public class StageCleanupUtility {
     return connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
   }
 
-  public CICleanupTaskParams buildAndfetchCleanUpParameters(Ambiance ambiance) {
+  public Pair<CICleanupTaskParams, StageInfraDetails> buildAndfetchCleanUpParameters(Ambiance ambiance) {
     StageInfraDetails stageInfraDetails;
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
@@ -86,19 +87,21 @@ public class StageCleanupUtility {
       stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
     }
 
+    CICleanupTaskParams ciCleanupTaskParams;
     StageInfraDetails.Type type = stageInfraDetails.getType();
     if (type == StageInfraDetails.Type.K8) {
       K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
-      return buildK8CleanupParameters(k8StageInfraDetails, ambiance);
+      ciCleanupTaskParams = buildK8CleanupParameters(k8StageInfraDetails, ambiance);
     } else if (type == StageInfraDetails.Type.VM) {
       VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
-      return buildVmCleanupParameters(ambiance, vmStageInfraDetails);
+      ciCleanupTaskParams = buildVmCleanupParameters(ambiance, vmStageInfraDetails);
     } else if (stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
       DliteVmStageInfraDetails dliteVmStageInfraDetails = (DliteVmStageInfraDetails) stageInfraDetails;
-      return buildHostedVmCleanupParameters(ambiance, dliteVmStageInfraDetails);
+      ciCleanupTaskParams = buildHostedVmCleanupParameters(ambiance, dliteVmStageInfraDetails);
     } else {
       throw new CIStageExecutionException("Unknown infra type");
     }
+    return Pair.of(ciCleanupTaskParams, stageInfraDetails);
   }
 
   public CIK8CleanupTaskParams buildK8CleanupParameters(K8StageInfraDetails k8StageInfraDetails, Ambiance ambiance) {

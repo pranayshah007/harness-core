@@ -65,13 +65,14 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
                                               .build();
 
     K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails =
-        K8sAndHelmInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO);
+        K8sAndHelmInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO, true);
     assertThat(k8sDeploymentReleaseDetails).isNotNull();
     assertThat(k8sDeploymentReleaseDetails.getReleaseName()).isEqualTo(RELEASE_NAME);
     assertThat(k8sDeploymentReleaseDetails.getNamespaces()).contains(NAMESPACE);
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig()).isNotNull();
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().getResourceGroup()).isEqualTo("resourceGroup");
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().getSubscriptionId()).isEqualTo("subscriptionId");
+    assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().isAddRegionalParam()).isTrue();
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().isUseClusterAdminCredentials()).isTrue();
     assertThat(k8sDeploymentReleaseDetails.getHelmChartInfo()).isEqualTo(helmChartInfo);
   }

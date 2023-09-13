@@ -5,7 +5,7 @@ global:
       installed: true
     mongo:
       installed: true
-    postgresql:
+    postgres:
       installed: true
     timescaledb:
       installed: true

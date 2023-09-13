@@ -21,6 +21,7 @@ public class DataSourceDataPointParserFactory {
   HarnessDataPointParserFactory harnessDataPointParserFactory;
   CatalogDataPointParserFactory catalogDataPointParserFactory;
   CustomDataPointParserFactory customDataPointParserFactory;
+  PagerDutyDataPointParserFactory pagerDutyDataPointParserFactory;
 
   public DataPointParserFactory getDataPointParserFactory(String identifier) {
     switch (identifier) {
@@ -32,6 +33,8 @@ public class DataSourceDataPointParserFactory {
         return catalogDataPointParserFactory;
       case CUSTOM_IDENTIFIER:
         return customDataPointParserFactory;
+      case PAGERDUTY_IDENTIFIER:
+        return pagerDutyDataPointParserFactory;
       default:
         throw new UnsupportedOperationException(String.format("Could not find Datasource for %s", identifier));
     }
