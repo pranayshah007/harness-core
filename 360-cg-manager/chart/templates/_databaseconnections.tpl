@@ -7,7 +7,7 @@
 {{- $passwordSecret := (pluck $type .Values.global.database | first ).secretName }}
 {{- $passwordKey := (pluck $type .Values.global.database | first).passwordKey }}
 {{- $userKey := (pluck $type .Values.global.database | first).userKey }}
-{{- $mongoUserExtSecretName := (include "harnesscommon.secrets.getExtSecretName" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "secret" "MONGO_USER")) }}
+{{- $mongoUserExtSecretName := (include "harnesscommon.secrets.getExternalKubernetesSecretName" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "secret" "MONGO_USER")) }}
 {{- $mongoUserExtSecretKey := (include "harnesscommon.secrets.getExtSecretKey" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "secret" "MONGO_USER")) }}
 {{- if not (empty $mongoUserExtSecretName) }}
 {{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $mongoUserExtSecretName "userKey" $mongoUserExtSecretKey) }}
@@ -16,7 +16,7 @@
 {{- else }}
 {{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $passwordSecret "userKey" $userKey) }}
 {{- end }}
-{{- $mongoPasswordExtSecretName := (include "harnesscommon.secrets.getExtSecretName" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "secret" "MONGO_PASSWORD")) }}
+{{- $mongoPasswordExtSecretName := (include "harnesscommon.secrets.getExternalKubernetesSecretName" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "secret" "MONGO_PASSWORD")) }}
 {{- $mongoPasswordExtSecretKey := (include "harnesscommon.secrets.getExtSecretKey" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "secret" "MONGO_PASSWORD")) }}
 {{- if not (empty $mongoPasswordExtSecretName) }}
 {{- include "harnesscommon.dbconnection.dbenvpassword" (dict "type" $type "secret" $mongoPasswordExtSecretName "passwordKey" $mongoPasswordExtSecretKey) }}

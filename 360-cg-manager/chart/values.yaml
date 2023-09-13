@@ -345,33 +345,33 @@ ingress:
 
 secrets:
   kubernetesSecrets:
-    - secretName: ""
-      keys:
-        MONGO_USER: ""
-        MONGO_PASSWORD: ""
-    - secretName: ""
-      keys:
-        MONGO_USER: ""
-        MONGO_PASSWORD: ""
-  secretManagement: 
-    externalSecretsOperator:
-      - secretStore:
-          name: "my-ext-secret-store-1"
-          kind: "SecretStore"
-        remoteKeys:
-          MONGO_USER:
-            name: "myMongoUser"
-            key: ""
-          MONGO_PASSWORD:
-            name: ""
-            key: ""
-      - secretStore:
-          name: "my-ext-secret-store-2"
-          kind: "ClusterSecretStore"
-        remoteKeys:
-          MONGO_USER:
-            name: ""
-            key: ""
-          MONGO_PASSWORD:
-            name: "myMongoPassword"
-            key: ""
+  - secretName: "test"
+    keys:
+      MONGO_USER: "a"
+      MONGO_PASSWORD: "b"
+  - secretName: ""
+    keys:
+      MONGO_USER: ""
+      MONGO_PASSWORD: ""
+  # secretManagement: 
+  #   externalSecretsOperator:
+  #   - secretStore:
+  #       name: "my-ext-secret-store-1"
+  #       kind: "ClusterSecretStore"
+  #     remoteKeys:
+  #       MONGO_USER:
+  #         name: "myMongoUser"
+  #         key: ""
+  #       MONGO_PASSWORD:
+  #         name: ""
+  #         key: ""
+  #   - secretStore:
+  #       name: "my-ext-secret-store-2"
+  #       kind: "ClusterSecretStore"
+  #     remoteKeys:
+  #       MONGO_USER:
+  #         name: ""
+  #         key: ""
+  #       MONGO_PASSWORD:
+  #         name: "myMongoPassword"
+  #         key: ""

@@ -79,7 +79,7 @@ spec:
                 name: smtp-secret
             {{- end }}
             {{- if eq (include "harnesscommon.secrets.hasESOSecrets" (dict "secretsCtx" .Values.secrets)) "true" }}    
-            {{- include "harnesscommon.secrets.ExternalSecretRefs" (dict "secretsCtx" .Values.secrets "secretNamePrefix"  (include "harness-manager.name" .)) | indent 12 }}
+            {{- include "harnesscommon.secrets.externalSecretRefs" (dict "secretsCtx" .Values.secrets "secretNamePrefix"  (include "harness-manager.name" .)) | indent 12 }}
             {{- end }}
           env:
             {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "REDIS_USERNAME" "passwordVariableName" "REDIS_PASSWORD") | indent 12 }}
