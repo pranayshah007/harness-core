@@ -7,7 +7,9 @@
 
 package io.harness.logstreaming;
 
+import static io.harness.beans.FeatureName.*;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.spy;
@@ -15,11 +17,14 @@ import static org.mockito.Mockito.spy;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.rule.Owner;
 import io.harness.steps.StepUtils;
 
+import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,7 +43,12 @@ public class LogStreamingStepClientFactoryTest extends CategoryTest {
   @Category(UnitTests.class)
   public void getLogStreamingStepClient() throws Exception {
     logStreamingStepClientFactory.logStreamingClientThreadPool = Mockito.mock(ThreadPoolExecutor.class);
-    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", ACCOUNT_ID).build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .putSetupAbstractions("accountId", ACCOUNT_ID)
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
 
     logStreamingStepClientFactory.accountIdToTokenCache.put(ACCOUNT_ID, TOKEN);
 
@@ -48,6 +58,30 @@ public class LogStreamingStepClientFactoryTest extends CategoryTest {
     assertThat(logStreamingStepClient.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(logStreamingStepClient.getBaseLogKey())
         .isEqualTo(LogStreamingHelper.generateLogBaseKey(StepUtils.generateLogAbstractions(ambiance)));
+    assertThat(logStreamingStepClient.getToken()).isEqualTo(TOKEN);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void getLogStreamingStepClientWithSimplifiedLogKey() throws Exception {
+    logStreamingStepClientFactory.logStreamingClientThreadPool = Mockito.mock(ThreadPoolExecutor.class);
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .putSetupAbstractions("accountId", ACCOUNT_ID)
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", true).build())
+            .build();
+
+    logStreamingStepClientFactory.accountIdToTokenCache.put(ACCOUNT_ID, TOKEN);
+
+    assertThat(logStreamingStepClientFactory.getLogStreamingStepClient(ambiance)).isNotNull();
+    LogStreamingStepClientImpl logStreamingStepClient =
+        (LogStreamingStepClientImpl) logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    assertThat(logStreamingStepClient.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(logStreamingStepClient.getBaseLogKey())
+        .isEqualTo(LogStreamingHelper.generateSimplifiedLogBaseKey(
+            StepUtils.generateSimplifiedLogAbstractions(ambiance, null)));
     assertThat(logStreamingStepClient.getToken()).isEqualTo(TOKEN);
   }
 }
