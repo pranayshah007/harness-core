@@ -338,10 +338,11 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
     // access pipeline with view permission
     log.info("Pipeline Identifier before permission " + pipelineIdentifiers);
-    pipelineIdentifiers = getPermitted(accountId, orgId, projectId, pipelineIdentifiers);
+    List<String> permittedPipelineIdentifiers = getPermitted(accountId, orgId, projectId, pipelineIdentifiers);
 
-    Map<String, PipelineMetadataV2> pipelineMetadataMap =
-        pipelineMetadataService.getMetadataForGivenPipelineIds(accountId, orgId, projectId, pipelineIdentifiers);
+    log.info("Pipeline Identifier after permission " + permittedPipelineIdentifiers);
+    Map<String, PipelineMetadataV2> pipelineMetadataMap = pipelineMetadataService.getMetadataForGivenPipelineIds(
+        accountId, orgId, projectId, permittedPipelineIdentifiers);
 
     Page<PMSPipelineSummaryResponseDTO> pipelines =
         pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
