@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateLaunchTemplateRequest> {
   public interface OverrideProperties {
     String amiImageId = "amiImageId";
+    String userData = "userData";
   }
 
   public AsgLaunchTemplateManifestHandler(AsgSdkManager asgSdkManager, ManifestRequest manifestRequest) {
@@ -49,8 +50,11 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
   public void applyOverrideProperties(CreateLaunchTemplateRequest request, Map<String, Object> overrideProperties) {
     overrideProperties.entrySet().stream().forEach(entry -> {
       switch (entry.getKey()) {
-        case AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId:
+        case OverrideProperties.amiImageId:
           request.getLaunchTemplateData().setImageId(entry.getValue().toString());
+          break;
+        case OverrideProperties.userData:
+          request.getLaunchTemplateData().setUserData(entry.getValue().toString());
           break;
         default:
           // do nothing

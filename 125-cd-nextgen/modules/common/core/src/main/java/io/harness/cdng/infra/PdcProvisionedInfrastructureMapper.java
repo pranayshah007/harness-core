@@ -26,12 +26,17 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.evaluators.ProvisionerExpressionEvaluator;
+import io.harness.evaluators.ProvisionerExpressionEvaluatorProvider;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.steps.environment.EnvironmentOutcome;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,9 +45,16 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class PdcProvisionedInfrastructureMapper {
-  public PdcInfrastructureOutcome toOutcome(PdcInfrastructure pdcInfrastructure,
-      ProvisionerExpressionEvaluator expressionEvaluator, EnvironmentOutcome environmentOutcome,
-      ServiceStepOutcome service) {
+  @Inject private ProvisionerExpressionEvaluatorProvider provisionerExpressionEvaluatorProvider;
+  @Inject private InputSetValidatorFactory inputSetValidatorFactory;
+
+  public PdcInfrastructureOutcome toOutcome(PdcInfrastructure pdcInfrastructure, Ambiance ambiance,
+      EnvironmentOutcome environmentOutcome, ServiceStepOutcome service) {
+    ProvisionerExpressionEvaluator expressionEvaluator = ambiance != null
+        ? provisionerExpressionEvaluatorProvider.getProvisionerExpressionEvaluator(
+            ambiance, pdcInfrastructure.getProvisionerStepIdentifier())
+        : new ProvisionerExpressionEvaluator(Collections.emptyMap(), inputSetValidatorFactory);
+
     List<Map<String, Object>> evaluatedHostObjectsAttrs =
         evaluateHostInstancesAttrs(expressionEvaluator, getParameterFieldValue(pdcInfrastructure.getHostArrayPath()),
             getParameterFieldValue(pdcInfrastructure.getHostAttributes()));

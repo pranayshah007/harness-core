@@ -145,7 +145,8 @@ public class CIStageVariableCreatorTest {
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.os",
             "pipeline.stages.gcpBuildPush.spec.serviceDependencies", "pipeline.stages.gcpBuildPush.name",
             "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.containerSecurityContext",
-            "pipeline.stages.gcpBuildPush.when", "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.initTimeout");
+            "pipeline.stages.gcpBuildPush.when", "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.initTimeout",
+            "pipeline.stages.gcpBuildPush.spec.infrastructure.spec.imagePullPolicy");
 
     List<String> fqnExtraPropertiesList = variableCreationResponse.getYamlExtraProperties()
                                               .get(integrationStageNode.getUuid()) // step uuid

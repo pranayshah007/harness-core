@@ -8,8 +8,11 @@
 package io.harness.cdng.aws.asg;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
@@ -20,6 +23,7 @@ import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
@@ -38,4 +42,7 @@ public class AsgBlueGreenPrepareRollbackDataOutcome implements Outcome, Executio
   String stageListenerArn;
   String stageListenerRuleArn;
   List<String> stageTargetGroupArnsList;
+  List<AwsAsgLoadBalancerConfigYaml> loadBalancerConfigs;
+  Map<String, List<String>> prodTargetGroupArnListForLoadBalancer;
+  Map<String, List<String>> stageTargetGroupArnListForLoadBalancer;
 }

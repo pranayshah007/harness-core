@@ -29,4 +29,6 @@ public class AsgInfraMapping implements InfraMapping {
   private String accountId;
   private String awsConnector;
   private String region;
+  private String baseAsgName;
+  private String asgName;
 }

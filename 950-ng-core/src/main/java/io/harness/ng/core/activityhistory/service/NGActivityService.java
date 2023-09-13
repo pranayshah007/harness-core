@@ -20,7 +20,7 @@ import org.springframework.data.domain.Page;
 public interface NGActivityService {
   Page<NGActivityDTO> list(int page, int size, String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String referredEntityIdentifier, long start, long end, NGActivityStatus status, EntityType referredEntityType,
-      EntityType referredByEntityType, Set<NGActivityType> ngActivityTypes);
+      EntityType referredByEntityType, Set<NGActivityType> ngActivityTypes, String searchTerm);
 
   NGActivityDTO save(NGActivityDTO activityHistory);
 

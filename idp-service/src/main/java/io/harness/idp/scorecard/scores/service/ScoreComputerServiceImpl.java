@@ -78,13 +78,9 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
       String accountIdentifier, List<String> scorecardIdentifiers, List<String> entityIdentifiers) {
     List<ScorecardAndChecks> scorecardsAndChecks =
         scorecardService.getAllScorecardAndChecks(accountIdentifier, scorecardIdentifiers);
-    if (scorecardsAndChecks.isEmpty()) {
-      log.info("No scorecards configured for account: {}", accountIdentifier);
-      return;
-    }
 
-    List<ScorecardFilter> filters = getAllFilters(scorecardsAndChecks);
-    Set<? extends BackstageCatalogEntity> entities = this.getAllEntities(accountIdentifier, entityIdentifiers, filters);
+    Set<? extends BackstageCatalogEntity> entities = getBackstageEntitiesForScorecardsAndEntityIdentifiers(
+        accountIdentifier, scorecardsAndChecks, entityIdentifiers);
     if (entities.isEmpty()) {
       log.warn("Account {} has no backstage entities matching the scorecard filters", accountIdentifier);
       return;
@@ -120,13 +116,24 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
   }
 
   @Override
+  public Set<? extends BackstageCatalogEntity> getBackstageEntitiesForScorecardsAndEntityIdentifiers(
+      String accountIdentifier, List<ScorecardAndChecks> scorecardsAndChecks, List<String> entityIdentifiers) {
+    if (scorecardsAndChecks.isEmpty()) {
+      log.info("No scorecards configured for account: {}", accountIdentifier);
+      return new HashSet<>();
+    }
+    List<ScorecardFilter> filters = getAllFilters(scorecardsAndChecks);
+    return getAllEntities(accountIdentifier, entityIdentifiers, filters);
+  }
+
+  @Override
   public Set<BackstageCatalogEntity> getAllEntities(
       String accountIdentifier, List<String> entityIdentifiers, List<ScorecardFilter> filters) {
     Set<BackstageCatalogEntity> allEntities = new HashSet<>();
 
     for (ScorecardFilter filter : filters) {
       StringBuilder filterStringBuilder = new StringBuilder("filter=kind=").append(filter.getKind().toLowerCase());
-      if (!filter.getType().equalsIgnoreCase("all")) {
+      if (StringUtils.isNotBlank(filter.getType()) && !filter.getType().equalsIgnoreCase("all")) {
         filterStringBuilder.append(",spec.type=").append(filter.getType().toLowerCase());
       }
 
@@ -223,7 +230,7 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
                                         .scorecardIdentifier(scorecard.getIdentifier())
                                         .threadName(Thread.currentThread().getName())
                                         .build(AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
-        if (!shouldComputeScore(scorecard.getFilter(), entity)) {
+        if (!isFilterMatchingWithAnEntity(scorecard.getFilter(), entity)) {
           log.info("Not computing score as the entity {} does not match the scorecard filters",
               entity.getMetadata().getUid());
           continue;
@@ -272,7 +279,8 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
     }
   }
 
-  private boolean shouldComputeScore(ScorecardFilter filter, BackstageCatalogEntity entity) {
+  @Override
+  public boolean isFilterMatchingWithAnEntity(ScorecardFilter filter, BackstageCatalogEntity entity) {
     String entityType = BackstageCatalogEntityTypes.getEntityType(entity);
     String entityOwner = BackstageCatalogEntityTypes.getEntityOwner(entity);
     String entityLifecycle = BackstageCatalogEntityTypes.getEntityLifecycle(entity);

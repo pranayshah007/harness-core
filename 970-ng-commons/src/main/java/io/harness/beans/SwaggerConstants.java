@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -16,6 +16,7 @@ public interface SwaggerConstants {
   String STRING_CLASSPATH = "java.lang.String";
   String LONG_CLASSPATH = "java.lang.Long";
   String INTEGER_CLASSPATH = "java.lang.Integer";
+  String IMAGE_PULL_POLICY_ENUM_CLASSPATH = "io.harness.beans.yaml.extended.ImagePullPolicy";
   String DOUBLE_CLASSPATH = "java.lang.Double";
   String BOOLEAN_CLASSPATH = "java.lang.Boolean";
   String STRING_LIST_CLASSPATH = "[Ljava.lang.String;";
@@ -49,6 +50,9 @@ public interface SwaggerConstants {
   String TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH = "io.harness.cdng.tas.TasCommandScript";
   String BAMBOO_PARAMETER_FIELD_TYPE_ENUM_CLASSPATH = "io.harness.cdng.bamboo.BambooParameterFieldType";
   String BAMBOO_PARAMETER_FIELD_CLASSPATH = "[Lio.harness.cdng.bamboo.BambooParameterField;";
+
+  String ASG_LOAD_BALANCER_CONFIGURATION_CLASSPATH = "[Lio.harness.cdng.aws.asg.AwsAsgLoadBalancerConfigYaml;";
+  String ASG_INSTANCES_CLASSPATH = "io.harness.cdng.aws.asg.AsgInstances";
 
   String FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH = "[Lio.harness.yaml.core.failurestrategy.FailureStrategyConfig;";
   String STAGE_WHEN_CLASSPATH = "io.harness.when.beans.StageWhenCondition";

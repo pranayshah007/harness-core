@@ -77,6 +77,8 @@ public enum FeatureName {
   CCM_WORKLOAD_LABELS_OPTIMISATION("Use workload labels from instance data instead of k8sworkload", HarnessTeam.CE),
   CCM_COST_CATEGORIES_DASHBOARD(
       "Cost Categories will reflect in bigQuery and eventually in Looker Dashboards", HarnessTeam.CE),
+  CDB_AIDA_WIDGET("FF for enabling the AIDA integration within Custom Dashboards for generating Dashboard widgets",
+      HarnessTeam.CDB),
   CDB_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CDB UI", HarnessTeam.CDB),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
@@ -286,6 +288,7 @@ public enum FeatureName {
   CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI),
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
   CI_NEW_CODEBASE_INPUTSET("Feature flag for new codebase input set", HarnessTeam.CI),
+  CI_DLITE_DISTRIBUTED("Feature flag to use dlite in distributed mode", HarnessTeam.CI),
   CLEAN_UP_OLD_MANAGER_VERSIONS(Scope.PER_ACCOUNT),
   CLOUDFORMATION_CHANGE_SET,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
@@ -585,6 +588,8 @@ public enum FeatureName {
   PL_USER_DELETION_V2("Modularising user deletion flows separately for CG and NG ", HarnessTeam.PL),
   PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
       "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
+  PL_AI_SUPPORT_CHATBOT("Enable Harness Support Bot for an account", HarnessTeam.PL),
+  PL_EULA_ENABLED("Enable End User License Agreement Setting in Default Settings", HarnessTeam.PL),
   POST_PROD_ROLLBACK("Flag to enable/disable PostProd Rollback", HarnessTeam.PIPELINE),
   PRUNE_KUBERNETES_RESOURCES,
   PURGE_DANGLING_APP_ENV_REFS("Explicitly purge dangling references of app/env", HarnessTeam.SPG),
@@ -856,6 +861,8 @@ public enum FeatureName {
   CDS_HELM_SEND_TASK_PROGRESS_NG("For Helm tasks we will be "
           + "sending task progress event via log streaming client which will be received and handled by handleProgress handler in the ng-manager step class",
       HarnessTeam.CDP),
+  CDS_BASIC_ASG("FF for using CG Basic Asg configs in NG Asg deployments", HarnessTeam.CDP),
+  CDS_ASG_V2("FF for enabling ASG V2 features like userData, instances, loadBalancers, baseAsg", HarnessTeam.CDP),
   CDS_ENABLE_SHELL_SCRITPT_FILE_REFERENCE(
       "Used for ShellScript step in order to support scripts from Harness File Store", PIPELINE),
   CDS_QUEUE_SERVICE_FOR_TRIGGERS(
@@ -889,6 +896,11 @@ public enum FeatureName {
       "Feature Flag enables improved tracking for Helm deployments that use workloads label selectors to track deployed pods",
       HarnessTeam.CDP),
   SEI_ENABLED("FF to enable SEI for harness platform users", HarnessTeam.SEI),
+  CDS_EKS_ADD_REGIONAL_PARAM(
+      "This flag adds the AWS_STS_REGIONAL_ENDPOINTS=regional environment variable for EKS infrastructure while creating the kubernetes config",
+      HarnessTeam.CDP),
+  CDS_RESOLVE_CUSTOM_TRIGGER_EXPRESSION(
+      "This flag resolves expression for pipeline branch for Custom Trigger.", PIPELINE),
   PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE);
   // keep-sorted end
 

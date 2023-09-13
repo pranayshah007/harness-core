@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -264,11 +265,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     String destYaml;
     String pipelineName = null;
+    String pipelineId = null;
     String sourcePipelineVersion = sourcePipelineEntity.getHarnessVersion();
     switch (sourcePipelineVersion) {
       case PipelineVersion.V1:
         destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, sourcePipelineEntityYaml);
         pipelineName = clonePipelineDTO.getDestinationConfig().getPipelineName();
+        pipelineId = clonePipelineDTO.getDestinationConfig().getPipelineIdentifier();
         break;
       default:
         destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYaml(
@@ -276,7 +279,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PipelineEntity destPipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
-            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), pipelineName, destYaml, false,
+            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), pipelineId, pipelineName, destYaml, false,
             sourcePipelineVersion);
 
     PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity, false);
@@ -767,7 +770,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(orgIdentifier, projectIdentifier,
         pipelineIdentifier, pipelineImportRequest, importedPipelineYAML, pipelineVersion);
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier,
-        pipelineImportRequest.getPipelineName(), importedPipelineYAML, false, pipelineVersion);
+        pipelineIdentifier, pipelineImportRequest.getPipelineName(), importedPipelineYAML, false, pipelineVersion);
     pipelineEntity.setRepoURL(repoUrl);
     pipelineEntity.setStoreType(StoreType.REMOTE);
     try {

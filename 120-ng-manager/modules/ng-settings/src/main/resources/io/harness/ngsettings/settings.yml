@@ -484,3 +484,12 @@ settings :
     valueType: BOOLEAN
     allowedScopes:
       - ACCOUNT
+  - identifier: do_not_delete_pipeline_execution_details
+    name: Do Not Delete Pipeline Execution Details
+    category: PMS
+    groupIdentifier: pms_execution_settings
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT

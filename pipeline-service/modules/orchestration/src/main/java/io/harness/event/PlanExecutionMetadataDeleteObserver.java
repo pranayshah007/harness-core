@@ -27,7 +27,8 @@ public class PlanExecutionMetadataDeleteObserver implements PlanExecutionDeleteO
   @Inject PlanService planService;
 
   @Override
-  public void onPlanExecutionsDelete(List<PlanExecution> planExecutionList) {
+  public void onPlanExecutionsDelete(
+      List<PlanExecution> planExecutionList, boolean retainPipelineExecutionDetailsAfterDelete) {
     Set<String> planIds = new HashSet<>();
     Set<String> planExecutionIds = new HashSet<>();
 
@@ -38,7 +39,10 @@ public class PlanExecutionMetadataDeleteObserver implements PlanExecutionDeleteO
 
     // Delete all plans
     planService.deletePlansForGivenIds(planIds);
-    // Delete all planExecutionMetadata for given planExecutionIds
-    planExecutionMetadataService.deleteMetadataForGivenPlanExecutionIds(planExecutionIds);
+
+    if (!retainPipelineExecutionDetailsAfterDelete) {
+      // Delete all planExecutionMetadata for given planExecutionIds
+      planExecutionMetadataService.deleteMetadataForGivenPlanExecutionIds(planExecutionIds);
+    }
   }
 }

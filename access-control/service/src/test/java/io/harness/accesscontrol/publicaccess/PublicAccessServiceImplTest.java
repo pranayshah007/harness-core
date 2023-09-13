@@ -34,11 +34,13 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.resourcegroup.v2.model.ResourceFilter;
 import io.harness.resourcegroup.v2.model.ResourceSelector;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
+import io.harness.resourcegroup.v2.remote.dto.ResourceGroupRequest;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 import io.harness.resourcegroupclient.remote.ResourceGroupClient;
 import io.harness.rule.Owner;
@@ -49,8 +51,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
@@ -79,6 +84,8 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
                                               .orgIdentifier(ORG_IDENTIFIER)
                                               .projectIdentifier(PROJECT_IDENTIFIER)
                                               .build();
+
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @Before
   public void setup() {
@@ -200,6 +207,52 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
         .thenReturn(Optional.of(resourceGroup));
     boolean result = publicAccessService.isResourcePublic(RESOURCE_ID, resourceType, scope);
     assertThat(result).isNotNull();
+    assertThat(result).isTrue();
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDisablePublicAccess_resourceIDEmpty() {
+    ResourceType resourceType =
+        ResourceType.builder().identifier(RESOURCE_TYPE).isPublic(true).permissionKey(RESOURCE_TYPE).build();
+
+    exceptionRule.expect(InvalidRequestException.class);
+    exceptionRule.expectMessage("Resource identifier should not be empty");
+    boolean result = publicAccessService.disablePublicAccess(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, resourceType, "");
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDisablePublicAccess() {
+    Scope scope = new Scope();
+    scope.account(ACCOUNT_IDENTIFIER);
+    scope.org(ORG_IDENTIFIER);
+    scope.project(PROJECT_IDENTIFIER);
+    ResourceGroupResponse resourceGroupResponse = buildResourceGroupResponse();
+    ResourceType resourceType =
+        ResourceType.builder().identifier(RESOURCE_TYPE).isPublic(true).permissionKey(RESOURCE_TYPE).build();
+    mockStatic(NGRestUtils.class);
+    Call<ResponseDTO<ResourceGroupResponse>> request = mock(Call.class);
+    when(resourceGroupClient.getResourceGroup(
+             PUBLIC_RESOURCE_GROUP_IDENTIFIER, scope.getAccount(), scope.getOrg(), scope.getProject()))
+        .thenReturn(request);
+    ArgumentCaptor<ResourceGroupRequest> requestArgumentCaptor = ArgumentCaptor.forClass(ResourceGroupRequest.class);
+
+    when(resourceGroupClient.updateResourceGroup(eq(PUBLIC_RESOURCE_GROUP_IDENTIFIER), eq(scope.getAccount()),
+             eq(scope.getOrg()), eq(scope.getProject()), any()))
+        .thenReturn(request);
+    when(NGRestUtils.getResponse(request)).thenReturn(resourceGroupResponse);
+
+    boolean result = publicAccessService.disablePublicAccess(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, resourceType, RESOURCE_ID);
+    verify(resourceGroupClient, times(1))
+        .updateResourceGroup(eq(PUBLIC_RESOURCE_GROUP_IDENTIFIER), eq(ACCOUNT_IDENTIFIER), eq(ORG_IDENTIFIER),
+            eq(PROJECT_IDENTIFIER), requestArgumentCaptor.capture());
+    final ResourceGroupRequest value = requestArgumentCaptor.getValue();
+    assertThat(value.getResourceGroup().getResourceFilter().getResources().get(0).getIdentifiers().size()).isEqualTo(1);
     assertThat(result).isTrue();
   }
 

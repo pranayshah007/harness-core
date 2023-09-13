@@ -8,8 +8,11 @@
 package io.harness.cdng.aws.asg;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AsgBlueGreenDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -33,6 +36,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
@@ -54,9 +58,10 @@ public class AsgBlueGreenDeployStepInfo
   public AsgBlueGreenDeployStepInfo(ParameterField<String> loadBalancer, ParameterField<String> prodListener,
       ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
       ParameterField<String> stageListenerRuleArn, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Boolean> useAlreadyRunningInstances) {
+      ParameterField<Boolean> useAlreadyRunningInstances, AsgInstances instances,
+      List<AwsAsgLoadBalancerConfigYaml> loadBalancers) {
     super(loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn, delegateSelectors,
-        useAlreadyRunningInstances);
+        useAlreadyRunningInstances, instances, loadBalancers);
   }
 
   @Override
@@ -79,6 +84,8 @@ public class AsgBlueGreenDeployStepInfo
         .stageListener(stageListener)
         .stageListenerRuleArn(stageListenerRuleArn)
         .useAlreadyRunningInstances(useAlreadyRunningInstances)
+        .instances(instances)
+        .loadBalancers(loadBalancers)
         .build();
   }
 

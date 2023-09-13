@@ -339,7 +339,7 @@ public class AnomalyEntity {
       slackWeeklyNotification = table.addColumn("slackWeeklyNotification");
 
       newEntity = table.addColumn("newentity");
-      notificationSent = table.addColumn("notificatoinsent");
+      notificationSent = table.addColumn("notificationsent");
     }
   }
 }

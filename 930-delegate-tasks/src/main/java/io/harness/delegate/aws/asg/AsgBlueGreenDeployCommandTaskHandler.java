@@ -39,6 +39,7 @@ import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
@@ -64,10 +65,10 @@ import software.wings.service.impl.AwsUtils;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.google.inject.Inject;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -92,14 +93,22 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
 
     AsgBlueGreenDeployRequest asgBlueGreenDeployRequest = (AsgBlueGreenDeployRequest) asgCommandRequest;
     Map<String, List<String>> asgStoreManifestsContent = asgBlueGreenDeployRequest.getAsgStoreManifestsContent();
-    AsgLoadBalancerConfig lbConfig = asgBlueGreenDeployRequest.getAsgLoadBalancerConfig();
     String asgName = asgBlueGreenDeployRequest.getAsgName();
     String amiImageId = asgBlueGreenDeployRequest.getAmiImageId();
     boolean isFirstDeployment = asgBlueGreenDeployRequest.isFirstDeployment();
     boolean useAlreadyRunningInstances = asgBlueGreenDeployRequest.isUseAlreadyRunningInstances();
 
+    List<AsgLoadBalancerConfig> lbConfigs = isNotEmpty(asgBlueGreenDeployRequest.getLoadBalancers())
+        ? asgBlueGreenDeployRequest.getLoadBalancers()
+        : Arrays.asList(asgBlueGreenDeployRequest.getAsgLoadBalancerConfig());
+
     List<String> targetGroupArnsList =
-        isFirstDeployment ? lbConfig.getProdTargetGroupArnsList() : lbConfig.getStageTargetGroupArnsList();
+        lbConfigs.stream()
+            .map(lbConfig
+                -> isFirstDeployment ? lbConfig.getProdTargetGroupArnsList() : lbConfig.getStageTargetGroupArnsList())
+            .flatMap(List::stream)
+            .distinct()
+            .collect(Collectors.toList());
 
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
@@ -124,9 +133,9 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
 
       asgSdkManager.info("Starting Blue Green Deployment");
 
-      AutoScalingGroupContainer stageAutoScalingGroupContainer =
-          executeBGDeploy(asgSdkManager, asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList,
-              isFirstDeployment, awsInternalConfig, region, useAlreadyRunningInstances, prodAsgName);
+      AutoScalingGroupContainer stageAutoScalingGroupContainer = executeBGDeploy(asgSdkManager,
+          asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList, isFirstDeployment, awsInternalConfig,
+          region, useAlreadyRunningInstances, prodAsgName, asgBlueGreenDeployRequest.getAsgCapacityConfig());
 
       AutoScalingGroupContainer prodAutoScalingGroupContainer = null;
       if (!isFirstDeployment) {
@@ -157,7 +166,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
   private AutoScalingGroupContainer executeBGDeploy(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, String asgName, String amiImageId,
       List<String> targetGroupArnList, boolean isFirstDeployment, AwsInternalConfig awsInternalConfig, String region,
-      boolean useAlreadyRunningInstances, String prodAsgName) {
+      boolean useAlreadyRunningInstances, String prodAsgName, AsgCapacityConfig asgCapacityConfig) {
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
@@ -172,12 +181,14 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
     List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgStoreManifestsContent);
 
-    Map<String, Object> asgLaunchTemplateOverrideProperties =
-        Collections.singletonMap(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+    Map<String, Object> asgLaunchTemplateOverrideProperties = new HashMap<>();
+    asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+    asgTaskHelper.overrideLaunchTemplateWithUserData(asgLaunchTemplateOverrideProperties, asgStoreManifestsContent);
 
     Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>();
     asgConfigurationOverrideProperties.put(
         AsgConfigurationManifestHandler.OverrideProperties.targetGroupARNs, targetGroupArnList);
+    asgTaskHelper.overrideCapacity(asgConfigurationOverrideProperties, asgCapacityConfig);
 
     // Chain factory code to handle each manifest one by one in a chain
     AsgManifestHandlerChainState chainState =

@@ -8,9 +8,13 @@
 package io.harness.cdng.aws.asg;
 
 import static software.wings.beans.TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG_V2;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -40,12 +44,15 @@ import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac implements AsgStepExecutor {
@@ -115,8 +122,12 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
             .amiImageId(amiImageId)
             .build();
 
-    return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgCanaryDeployRequest, ambiance,
-        executionPassThroughData, true, AWS_ASG_CANARY_DEPLOY_TASK_NG);
+    TaskType taskType = asgStepCommonHelper.isV2Feature(asgStoreManifestsContent, null, null)
+        ? AWS_ASG_CANARY_DEPLOY_TASK_NG_V2
+        : AWS_ASG_CANARY_DEPLOY_TASK_NG;
+
+    return asgStepCommonHelper.queueAsgTask(
+        stepElementParameters, asgCanaryDeployRequest, ambiance, executionPassThroughData, true, taskType);
   }
 
   @Override

@@ -91,6 +91,7 @@ public class CustomStagePlanCreatorTest extends CategoryTest {
     customStageNode.setUuid("tempid");
     doReturn("temp".getBytes()).when(kryoSerializer).asDeflatedBytes(any());
 
+    customStageNode.setCustomStageConfig(CustomStageConfig.builder().build());
     MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
     when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(fullYamlFieldWithUuiD.getNode());
     assertThat(customStagePlanCreator.createPlanForChildrenNodes(ctx, customStageNode)).isNotNull();

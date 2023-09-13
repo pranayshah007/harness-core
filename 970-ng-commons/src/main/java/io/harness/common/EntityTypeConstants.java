@@ -24,6 +24,7 @@ public interface EntityTypeConstants {
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   String GITOPS_SYNC = "GitOpsSync";
+  String UPDATE_GITOPS_APP = "UpdateGitOpsApp";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.creator.plan.stage.CustomStageConfig;
 import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
@@ -43,9 +44,10 @@ public class CustomStageFilterCreatorTest {
   @Category(UnitTests.class)
   public void shouldValidateCustomStageGetFilter() {
     CustomStageNode customStageNode = new CustomStageNode();
+    customStageNode.setCustomStageConfig(CustomStageConfig.builder().build());
     PipelineFilter filter =
         customStageFilterCreator.getFilter(FilterCreationContext.builder().build(), customStageNode);
-    assertThat(filter).isNull();
+    assertThat(filter).isNotNull();
   }
 
   @Test

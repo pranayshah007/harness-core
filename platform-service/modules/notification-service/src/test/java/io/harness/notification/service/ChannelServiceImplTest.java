@@ -126,7 +126,6 @@ public class ChannelServiceImplTest extends CategoryTest {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     when(slackService.sendTestNotification(notificationSettingDTO)).thenReturn(true);
-
     assertThat(channelService.sendTestNotification(notificationSettingDTO)).isEqualTo(true);
     verify(slackService, times(1)).sendTestNotification(any());
   }

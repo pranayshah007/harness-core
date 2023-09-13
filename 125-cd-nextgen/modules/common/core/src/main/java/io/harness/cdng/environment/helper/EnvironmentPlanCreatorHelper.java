@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.environment.steps.CustomStageEnvironmentStep;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.InfrastructurePlanCreatorHelper;
@@ -39,6 +40,7 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.merger.helpers.MergeHelper;
@@ -88,6 +90,28 @@ public class EnvironmentPlanCreatorHelper {
                 .setParameters(advisorParameters)
                 .build())
         .skipExpressionChain(false)
+        .build();
+  }
+
+  public PlanNode getPlanNodeForCustomStage(
+      String envNodeUuid, StepParameters stepParameters, ByteString advisorParameters) {
+    return PlanNode.builder()
+        .uuid(envNodeUuid)
+        .stepType(CustomStageEnvironmentStep.STEP_TYPE)
+        .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
+        .name(PlanCreatorConstants.ENVIRONMENT_NODE_NAME)
+        .identifier(YamlTypes.ENVIRONMENT_YAML)
+        .stepParameters(stepParameters)
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
+                .build())
+        .adviserObtainment(
+            AdviserObtainment.newBuilder()
+                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+                .setParameters(advisorParameters)
+                .build())
+        .skipExpressionChain(true)
         .build();
   }
 

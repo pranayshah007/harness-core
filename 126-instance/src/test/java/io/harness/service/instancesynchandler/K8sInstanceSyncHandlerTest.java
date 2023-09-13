@@ -7,15 +7,20 @@
 
 package io.harness.service.instancesynchandler;
 
+import static io.harness.beans.FeatureName.CDS_EKS_ADD_REGIONAL_PARAM;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.InstancesTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
@@ -42,6 +47,7 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CDP)
 public class K8sInstanceSyncHandlerTest extends InstancesTestBase {
@@ -53,6 +59,7 @@ public class K8sInstanceSyncHandlerTest extends InstancesTestBase {
   private static final HelmChartInfo HELM_CHART_INFO =
       HelmChartInfo.builder().name("haha").repoUrl("sample.com").version("0.2.0").build();
 
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @InjectMocks private K8sInstanceSyncHandler k8sInstanceSyncHandler;
 
   @Test
@@ -135,6 +142,7 @@ public class K8sInstanceSyncHandlerTest extends InstancesTestBase {
   public void testGetDeploymentReleaseDetails() {
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add("namespace1");
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(CDS_EKS_ADD_REGIONAL_PARAM));
     List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList = Arrays.asList(
         DeploymentInfoDetailsDTO.builder()
             .deploymentInfoDTO(K8sDeploymentInfoDTO.builder().releaseName("releaseName").namespaces(namespaces).build())

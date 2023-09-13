@@ -7,6 +7,7 @@
 
 package io.harness.accesscontrol.publicaccess;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.remote.client.CGRestUtils.getResponse;
 
@@ -38,6 +39,19 @@ public class PublicAccessApiImpl implements PublicAccessApi {
     this.publicAccessService = publicAccessService;
     this.accountClient = accountClient;
   }
+
+  @Override
+  public Response disablePublicAccess(String harnessAccount, String account, String org, String project,
+      String resourceType, String resourceIdentifier) {
+    validateAccount(account, harnessAccount);
+    ResourceType resourceTypeDBO = null;
+    if (isNotEmpty(resourceType)) {
+      resourceTypeDBO = validateAndGetResourceType(resourceType);
+    }
+    publicAccessService.disablePublicAccess(account, org, project, resourceTypeDBO, resourceIdentifier);
+    return Response.status(Response.Status.OK).entity(true).build();
+  }
+
   @Override
   public Response enablePublicAccess(@Valid PublicAccessRequest body, String harnessAccount) {
     Scope resourceScope = body.getResourceScope();

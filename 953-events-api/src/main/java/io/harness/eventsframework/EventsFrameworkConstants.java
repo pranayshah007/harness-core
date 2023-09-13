@@ -33,6 +33,7 @@ public final class EventsFrameworkConstants {
   public static final String POLLING_EVENTS_STREAM = "polling_events_stream";
   public static final String TRIGGER_EXECUTION_EVENTS_STREAM = "trigger_execution_events_stream";
   public static final String GIT_PUSH_EVENT_STREAM = "git_push_event_stream";
+  public static final String GITX_WEBHOOK_PUSH_EVENT_STREAM = "gitx_webhook_push_event_stream";
   public static final String GIT_PR_EVENT_STREAM = "git_pr_event_stream";
   public static final String WEBHOOK_PUSH_EVENT = "WebhookPushEvent";
   public static final String WEBHOOK_BRANCH_HOOK_EVENT = "WebhookBranchHookEvent";

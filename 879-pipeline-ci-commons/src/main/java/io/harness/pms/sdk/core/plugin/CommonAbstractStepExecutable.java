@@ -438,18 +438,20 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     if (shouldPublishArtifact(stepStatus)) {
       publishArtifact(ambiance, stepParameters, stepIdentifier, stepStatus, stepResponseBuilder);
     }
+
+    if (shouldPublishOutcome(stepStatus) && stepStatus.getOutput() != null) {
+      populateCIStageOutputs(((StepMapOutput) stepStatus.getOutput()).getMap(), AmbianceUtils.getAccountId(ambiance),
+          ambiance.getStageExecutionId());
+      StepResponse.StepOutcome stepOutcome =
+          StepResponse.StepOutcome.builder()
+              .outcome(
+                  CIStepOutcome.builder().outputVariables(((StepMapOutput) stepStatus.getOutput()).getMap()).build())
+              .name("output")
+              .build();
+      stepResponseBuilder.stepOutcome(stepOutcome);
+    }
+
     if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
-      if (stepStatus.getOutput() != null) {
-        populateCIStageOutputs(((StepMapOutput) stepStatus.getOutput()).getMap(), AmbianceUtils.getAccountId(ambiance),
-            ambiance.getStageExecutionId());
-        StepResponse.StepOutcome stepOutcome =
-            StepResponse.StepOutcome.builder()
-                .outcome(
-                    CIStepOutcome.builder().outputVariables(((StepMapOutput) stepStatus.getOutput()).getMap()).build())
-                .name("output")
-                .build();
-        stepResponseBuilder.stepOutcome(stepOutcome);
-      }
       return stepResponseBuilder.status(Status.SUCCEEDED).build();
     } else if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SKIPPED) {
       return stepResponseBuilder.status(Status.SKIPPED).build();
@@ -571,6 +573,10 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
   }
 
   protected boolean shouldPublishArtifact(StepStatus stepStatus) {
+    return stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS;
+  }
+
+  protected boolean shouldPublishOutcome(StepStatus stepStatus) {
     return stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS;
   }
 

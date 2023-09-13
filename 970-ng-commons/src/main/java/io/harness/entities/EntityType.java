@@ -650,7 +650,10 @@ public enum EntityType {
   AWS_CDK_ROLLBACK(
       ModuleType.CD, EntityTypeConstants.AWS_CDK_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_ROLLBACK),
   @JsonProperty(EntityTypeConstants.SLSA_VERIFICATION)
-  SLSA_VERIFICATION(ModuleType.CI, EntityTypeConstants.SLSA_VERIFICATION, IdentifierRef.class);
+  SLSA_VERIFICATION(ModuleType.CI, EntityTypeConstants.SLSA_VERIFICATION, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.UPDATE_GITOPS_APP)
+  UPDATE_GITOPS_APP(
+      ModuleType.CD, EntityTypeConstants.UPDATE_GITOPS_APP, IdentifierRef.class, EntityYamlRootNames.UPDATE_GITOPS_APP);
 
   private final ModuleType moduleType;
   String yamlName;
