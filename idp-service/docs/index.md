@@ -11,3 +11,6 @@ The details about building, testing and releasing IDP service is mentioned here 
 ## Incident and Operations Playbook
 
 The details about different dashboards and alerts are mentioned here - link to be added
+
+### Tech Specs
+1. [Scorecard checks input values](scorecards/INPUTVALUES.md)
