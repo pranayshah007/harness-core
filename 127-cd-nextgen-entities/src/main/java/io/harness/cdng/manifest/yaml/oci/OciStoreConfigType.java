@@ -7,10 +7,15 @@
 
 package io.harness.cdng.manifest.yaml.oci;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 @OwnedBy(HarnessTeam.CDP)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 public interface OciStoreConfigType {
   String GENERIC = "Generic";
+  String ECR = "ECR";
 }

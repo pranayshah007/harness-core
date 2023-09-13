@@ -13,8 +13,8 @@ import static java.lang.String.format;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.PageRequestDTO;
-import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.SecretUtils;
+import io.harness.ci.execution.buildstate.CodebaseUtils;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.ScmConnector;

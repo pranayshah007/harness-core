@@ -118,14 +118,19 @@ import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGen
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
 import io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.SecondaryEventDetailsService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
-import io.harness.cvng.usage.impl.resources.ActiveMonitoredServiceDTO;
+import io.harness.cvng.usage.impl.resources.ActiveDTO;
+import io.harness.cvng.usage.impl.resources.ActiveServiceDTO;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -237,17 +242,20 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private EnforcementClientService enforcementClientService;
   @Inject private FeatureFlagService featureFlagService;
-
   @Inject private SRMAnalysisStepService srmAnalysisStepService;
 
   @Inject NgLicenseHttpClient ngLicenseHttpClient;
   @Inject
   private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
       notificationRuleConditionTypeTemplateDataGeneratorMap;
+  @Inject private Map<SecondaryEventsType, SecondaryEventDetailsService> secondaryEventsTypeToDetailsMapBinder;
 
   @Inject private EntityDisabledTimeService entityDisabledTimeService;
 
   @Inject private MonitoredServiceExpressionResolver monitoredServiceExpressionResolver;
+
+  private static final String SERVICE_ACCOUNT_CHECK = "account";
+  private static final String SERVICE_ORG_CHECK = "org";
 
   @Override
   public MonitoredServiceResponse create(String accountId, MonitoredServiceDTO monitoredServiceDTO) {
@@ -527,7 +535,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     notificationRuleService.delete(environmentParams,
         monitoredService.getNotificationRuleRefs()
             .stream()
-            .map(ref -> ref.getNotificationRuleRef())
+            .map(NotificationRuleRef::getNotificationRuleRef)
             .collect(Collectors.toList()));
     boolean deleted = hPersistence.delete(monitoredService);
     if (deleted) {
@@ -1621,6 +1629,17 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .build();
   }
 
+  @Override
+  public List<SecondaryEventsResponse> getMSSecondaryEvents(
+      ProjectParams projectParams, String monitoredServiceIdentifier, long startTime, long endTime) {
+    return srmAnalysisStepService.getSRMAnalysisStepExecutions(
+        projectParams, monitoredServiceIdentifier, startTime, endTime);
+  }
+
+  public SecondaryEventDetailsResponse getMSSecondaryEventDetails(SecondaryEventsType eventType, List<String> uuids) {
+    return secondaryEventsTypeToDetailsMapBinder.get(eventType).getInstanceByUuids(uuids, eventType);
+  }
+
   @SneakyThrows
   public String getYamlTemplate(ProjectParams projectParams, MonitoredServiceType type) {
     // returning default yaml template, account/org/project specific templates can be generated later.
@@ -2141,47 +2160,83 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .collect(Collectors.toList());
   }
 
-  public List<ActiveMonitoredServiceDTO> listActiveMonitoredServices(
-      ProjectParams projectParams, String serviceIdentifier) {
+  public List<ActiveServiceDTO> listActiveMonitoredServices(ProjectParams projectParams, String serviceIdentifier) {
     long currentTimeInMS = clock.millis();
-    List<MonitoredService> activeEnabledMonitoredServices =
+
+    List<MonitoredService> activeMonitoredServiceList =
         getActiveMonitoredServicesWithScopedQuery(projectParams, serviceIdentifier);
 
-    return activeEnabledMonitoredServices.stream()
-        .map(monitoredService -> {
-          ActiveMonitoredServiceDTO activeMonitoredServiceDTO =
-              ActiveMonitoredServiceDTO.builder()
-                  .serviceIdentifier(monitoredService.getServiceIdentifier())
-                  .orgIdentifier(monitoredService.getOrgIdentifier())
-                  .projectIdentifier(monitoredService.getProjectIdentifier())
-                  .accountIdentifier(monitoredService.getAccountId())
-                  .identifier(monitoredService.getIdentifier())
-                  .name(monitoredService.getName())
-                  .lastUpdatedSeconds(monitoredService.getLastUpdatedAt())
-                  .timestamp(currentTimeInMS)
-                  .module(ModuleType.SRM.getDisplayName())
-                  .build();
+    Map<ServiceParams, ActiveDTO> serviceParamsCountMap = new HashMap<>();
 
-          ServiceResponseDTO serviceResponseDTO =
-              nextGenService.getService(monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
-                  monitoredService.getProjectIdentifier(), monitoredService.getServiceIdentifier());
-          OrganizationDTO organizationDTO =
-              nextGenService.getOrganization(monitoredService.getAccountId(), monitoredService.getOrgIdentifier());
-          ProjectDTO projectDTO = nextGenService.getProject(monitoredService.getAccountId(),
-              monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier());
-          EnvironmentResponseDTO environmentResponseDTO =
-              nextGenService.getEnvironment(monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
-                  monitoredService.getProjectIdentifier(), monitoredService.getEnvironmentIdentifier());
+    activeMonitoredServiceList.stream().forEach(monitoredService -> {
+      ServiceParams serviceParams = getServiceParams(monitoredService);
+      ActiveDTO activeDTO = serviceParamsCountMap.getOrDefault(
+          serviceParams, ActiveDTO.builder().count(0).envNames(new ArrayList<>()).build());
+      int count = activeDTO.getCount();
+      List<String> envNames = activeDTO.getEnvNames();
+      List<String> envIdentifierList = monitoredService.getEnvironmentIdentifierList();
+      for (String envIdentifier : envIdentifierList) {
+        EnvironmentResponseDTO environmentResponseDTO = nextGenService.getEnvironment(monitoredService.getAccountId(),
+            monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier(), envIdentifier);
+        if (environmentResponseDTO != null) {
+          envNames.add(environmentResponseDTO.getName());
+        }
+      }
+      activeDTO.setCount(count + 1);
+      activeDTO.setEnvNames(envNames);
+      serviceParamsCountMap.put(serviceParams, activeDTO);
+    });
 
-          activeMonitoredServiceDTO.setServiceName(serviceResponseDTO != null ? serviceResponseDTO.getName() : null);
-          activeMonitoredServiceDTO.setEnvName(
-              environmentResponseDTO != null ? environmentResponseDTO.getName() : null);
-          activeMonitoredServiceDTO.setOrgName(organizationDTO != null ? organizationDTO.getName() : null);
-          activeMonitoredServiceDTO.setProjectName(projectDTO != null ? projectDTO.getName() : null);
-          return activeMonitoredServiceDTO;
-        })
+    List<ActiveServiceDTO> activeServiceDTOList = new ArrayList<>();
 
-        .collect(Collectors.toList());
+    for (ServiceParams serviceParams : serviceParamsCountMap.keySet()) {
+      ActiveDTO activeDTO = serviceParamsCountMap.get(serviceParams);
+      ActiveServiceDTO activeServiceDTO = ActiveServiceDTO.builder()
+                                              .accountIdentifier(serviceParams.getAccountIdentifier())
+                                              .identifier(serviceParams.getServiceIdentifier())
+                                              .envNames(activeDTO.getEnvNames())
+                                              .monitoredServiceCount(activeDTO.getCount())
+                                              .timestamp(currentTimeInMS)
+                                              .build();
+
+      ProjectDTO projectDTO = null;
+      OrganizationDTO organizationDTO = null;
+      ServiceResponseDTO serviceDTO = nextGenService.getService(serviceParams.getAccountIdentifier(),
+          serviceParams.getOrgIdentifier(), serviceParams.getProjectIdentifier(), serviceParams.getServiceIdentifier());
+      if (serviceParams.getProjectIdentifier() != null) {
+        projectDTO = nextGenService.getProject(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier(),
+            serviceParams.getProjectIdentifier());
+      }
+      if (serviceParams.getOrgIdentifier() != null) {
+        organizationDTO =
+            nextGenService.getOrganization(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier());
+      }
+
+      activeServiceDTO.setOrgName(organizationDTO != null ? organizationDTO.getName() : null);
+      activeServiceDTO.setProjectName(projectDTO != null ? projectDTO.getName() : null);
+      activeServiceDTO.setName(serviceDTO != null ? serviceDTO.getName() : null);
+      activeServiceDTOList.add(activeServiceDTO);
+    }
+
+    return activeServiceDTOList;
+  }
+
+  private ServiceParams getServiceParams(MonitoredService ms) {
+    ServiceParams serviceParams = ServiceParams.builder().serviceIdentifier(ms.getServiceIdentifier()).build();
+    String serviceIdentifier = ms.getServiceIdentifier();
+    if (serviceIdentifier.startsWith(SERVICE_ACCOUNT_CHECK)) {
+      serviceParams.setAccountIdentifier(ms.getAccountId());
+    }
+    if (serviceIdentifier.startsWith(SERVICE_ORG_CHECK)) {
+      serviceParams.setAccountIdentifier(ms.getAccountId());
+      serviceParams.setOrgIdentifier(ms.getOrgIdentifier());
+    }
+    if (!serviceIdentifier.startsWith(SERVICE_ORG_CHECK) && !serviceIdentifier.startsWith(SERVICE_ACCOUNT_CHECK)) {
+      serviceParams.setAccountIdentifier(ms.getAccountId());
+      serviceParams.setOrgIdentifier(ms.getOrgIdentifier());
+      serviceParams.setProjectIdentifier(ms.getProjectIdentifier());
+    }
+    return serviceParams;
   }
 
   private Set<ServiceParams> getServiceParamsSet(List<MonitoredService> monitoredServices) {
@@ -2222,7 +2277,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     if (projectParams.getProjectIdentifier() != null) {
       query = query.filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
     }
-    if (!serviceIdentifer.isEmpty()) {
+    if (StringUtils.isNotEmpty(serviceIdentifer)) {
       query = query.filter(MonitoredServiceKeys.serviceIdentifier, serviceIdentifer);
     }
     return query.asList();
@@ -2480,8 +2535,12 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       int result = 1;
       List<String> serviceParams = new ArrayList<>();
       serviceParams.add(this.serviceIdentifier);
-      serviceParams.add(this.getProjectIdentifier());
-      serviceParams.add(this.getOrgIdentifier());
+      if (this.getProjectIdentifier() != null) {
+        serviceParams.add(this.getProjectIdentifier());
+      }
+      if (this.getOrgIdentifier() != null) {
+        serviceParams.add(this.getOrgIdentifier());
+      }
       serviceParams.add(this.getAccountIdentifier());
       for (String s : serviceParams) {
         result = result * prime + s.hashCode();

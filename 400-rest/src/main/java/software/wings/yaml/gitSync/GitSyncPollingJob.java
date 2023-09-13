@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -81,7 +82,11 @@ public class GitSyncPollingJob implements Runnable {
             }
           }
         }
-        gitPollingCache.put(accountId, System.currentTimeMillis());
+        try {
+          gitPollingCache.put(accountId, System.currentTimeMillis());
+        } catch (CacheException e) {
+          log.error("Unable to set git polling data into cache", e);
+        }
       }
     });
   }

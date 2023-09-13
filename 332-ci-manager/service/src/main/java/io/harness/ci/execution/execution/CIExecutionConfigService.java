@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -16,7 +16,6 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.beans.entities.CIExecutionConfig;
 import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.ci.beans.entities.CIExecutionImages.CIExecutionImagesBuilder;
-import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.Operation;
@@ -24,6 +23,8 @@ import io.harness.ci.config.PluginField;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.config.VmContainerlessStepConfig;
 import io.harness.ci.config.VmImageConfig;
+import io.harness.ci.execution.DeprecatedImageInfo;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
 import io.harness.repositories.CIExecutionConfigRepository;
 
 import com.google.inject.Inject;

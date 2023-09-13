@@ -22,6 +22,7 @@ public interface BudgetService {
   Budget get(String budgetId, String accountId);
 
   void update(String budgetId, Budget budget);
+  void update(Budget budget);
   void updatePerspectiveName(String accountId, String perspectiveId, String perspectiveName);
 
   List<Budget> list(String accountId, BudgetSortType budgetSortType, CCMSortOrder ccmSortOrder);
@@ -31,6 +32,6 @@ public interface BudgetService {
   boolean deleteBudgetsForPerspective(String accountId, String perspectiveId);
 
   BudgetData getBudgetTimeSeriesStats(Budget budget, BudgetBreakdown breakdown);
-  void updateBudgetCosts(Budget budget);
+  void updateBudgetCosts(Budget budget, boolean updateActualAndForecastedCost, boolean updateLastPeriodCost);
   void updateBudgetHistory(Budget budget);
 }

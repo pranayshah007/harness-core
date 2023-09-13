@@ -6,6 +6,7 @@
  */
 
 package io.harness.gitsync.common.helper;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -74,9 +75,9 @@ public class GitRepoAllowlistHelper {
 
   private String getCurrentScopeForErrorMessage(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    if (orgIdentifier == null) {
+    if (EmptyPredicate.isEmpty(orgIdentifier)) {
       return String.format("ACCOUNT with account Identifier [%s].", accountIdentifier);
-    } else if (projectIdentifier == null) {
+    } else if (EmptyPredicate.isEmpty(projectIdentifier)) {
       return String.format(
           "ORG with account Identifier [%s] and org identifier [%s].", accountIdentifier, orgIdentifier);
     } else {

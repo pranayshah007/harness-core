@@ -19,6 +19,7 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
 import io.harness.artifacts.gar.GarDockerRestClient;
 import io.harness.artifacts.gar.GarRestClient;
@@ -163,7 +164,7 @@ public class GARApiServiceImpl implements GarApiService {
     Map<String, String> metadata = new HashMap();
     String registryHostname = String.format("%s-docker.pkg.dev", region);
     String image;
-    if (GARUtils.isSHA(version)) {
+    if (ArtifactUtils.isSHA(version)) {
       image = String.format("%s-docker.pkg.dev/%s/%s/%s@%s", region, project, repositories, pkg, version);
     } else {
       image = String.format("%s-docker.pkg.dev/%s/%s/%s:%s", region, project, repositories, pkg, version);
@@ -315,9 +316,9 @@ public class GARApiServiceImpl implements GarApiService {
   }
 
   private ArtifactMetaInfo getArtifactMetaInfoHelper(Response<DockerImageManifestResponse> response, String image) {
-    if (!GARUtils.checkIfResponseNull(response) && response.isSuccessful()) {
+    if (!ArtifactUtils.checkIfResponseNull(response) && response.isSuccessful()) {
       return dockerRegistryUtils.parseArtifactMetaInfoResponse(response, image);
-    } else if (!GARUtils.checkIfResponseNull(response)
+    } else if (!ArtifactUtils.checkIfResponseNull(response)
         && !isSuccessful(response.code(), response.errorBody().toString())) {
       throw new InvalidRequestException(COULD_NOT_FETCH_IMAGE_MANIFEST);
     }

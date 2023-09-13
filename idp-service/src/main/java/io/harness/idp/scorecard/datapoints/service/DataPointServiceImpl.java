@@ -54,4 +54,9 @@ public class DataPointServiceImpl implements DataPointService {
     }
     return dslDataPointsInfo;
   }
+
+  @Override
+  public List<DataPointEntity> getAllDataPointsForAccount(String accountIdentifier) {
+    return dataPointsRepository.findAllByAccountIdentifierIn(addGlobalAccountIdentifierAlong(accountIdentifier));
+  }
 }

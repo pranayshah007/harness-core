@@ -2215,8 +2215,11 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ELASTIGROUP_DEPLOY).toInstance(ElastigroupDeployTask.class);
     mapBinder.addBinding(TaskType.TERRAFORM_SECRET_CLEANUP_TASK_NG).toInstance(TerraformSecretCleanupTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAGRUNT_PLAN_TASK_NG).toInstance(TerragruntPlanTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAGRUNT_PLAN_TASK_NG_V2).toInstance(TerragruntPlanTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAGRUNT_APPLY_TASK_NG).toInstance(TerragruntApplyTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAGRUNT_APPLY_TASK_NG_V2).toInstance(TerragruntApplyTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAGRUNT_DESTROY_TASK_NG).toInstance(TerragruntDestroyTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAGRUNT_DESTROY_TASK_NG_V2).toInstance(TerragruntDestroyTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAGRUNT_ROLLBACK_TASK_NG).toInstance(TerragruntRollbackTaskNG.class);
     mapBinder.addBinding(TaskType.GITOPS_FETCH_APP_TASK).toInstance(GitOpsFetchAppTask.class);
     mapBinder.addBinding(TaskType.CONTAINER_INITIALIZATION).toInstance(CIInitializeTask.class);

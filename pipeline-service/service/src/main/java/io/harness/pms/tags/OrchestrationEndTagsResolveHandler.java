@@ -16,6 +16,7 @@ import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
@@ -40,7 +41,7 @@ public class OrchestrationEndTagsResolveHandler implements OrchestrationEndObser
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(ambiance.getPlanExecutionId(),
             Sets.newHashSet(PlanExecutionSummaryKeys.tags, PlanExecutionSummaryKeys.pipelineVersion));

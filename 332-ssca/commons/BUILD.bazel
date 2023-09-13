@@ -15,5 +15,6 @@ java_library(
         "//:lombok",
         "//878-ng-common-utilities:module",
         "//999-annotations:module",
+        "//ssca-manager/contracts/openapi/v1:ssca-manager-server-spec-module",
     ],
 )

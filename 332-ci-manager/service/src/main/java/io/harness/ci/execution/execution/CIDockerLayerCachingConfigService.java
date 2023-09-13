@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -44,9 +44,9 @@ public class CIDockerLayerCachingConfigService {
   }
 
   public String getCacheToArg(CIDockerLayerCachingConfig config, String prefix) {
-    String cacheTo =
-        String.format("type=s3,endpoint_url=%s,bucket=%s,mode=max,region=%s,access_key_id=%s,secret_access_key=%s",
-            config.getEndpoint(), config.getBucket(), config.getRegion(), config.getAccessKey(), config.getSecretKey());
+    String cacheTo = String.format(
+        "type=s3,endpoint_url=%s,bucket=%s,mode=max,region=%s,access_key_id=%s,secret_access_key=%s,ignore-error=true",
+        config.getEndpoint(), config.getBucket(), config.getRegion(), config.getAccessKey(), config.getSecretKey());
     if (!isEmpty(prefix)) {
       cacheTo = String.format("%s,prefix=%s", cacheTo, prefix);
     }

@@ -133,7 +133,6 @@ public class MarkAsFailureAdviseHandlerTest extends CategoryTest {
                                       .startTs(System.currentTimeMillis())
                                       .parentId(generateUuid())
                                       .notifyId(generateUuid())
-                                      .planNode(PlanNode.builder().build())
                                       .build();
 
     when(planService.fetchNode(planId, nextNodeId)).thenReturn(planNode);

@@ -20,6 +20,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.ssca.beans.Attestation;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.beans.ingestion.SbomFile;
+import io.harness.ssca.beans.mode.SbomModeType;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
@@ -33,6 +35,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -60,10 +63,12 @@ public class SscaOrchestrationStepInfo implements PluginCompatibleStep, WithConn
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String identifier;
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String name;
 
-  @NotNull SbomOrchestrationTool tool;
+  SbomOrchestrationTool tool;
 
   @NotNull SbomSource source;
 
+  SbomModeType mode;
+  SbomFile ingestion;
   Attestation attestation;
   ContainerResource resources;
 
@@ -86,12 +91,10 @@ public class SscaOrchestrationStepInfo implements PluginCompatibleStep, WithConn
   @ApiModelProperty(hidden = true)
   public ParameterField<String> getConnectorRef() {
     if (source != null) {
-      switch (source.getType()) {
-        case IMAGE:
-          return ((ImageSbomSource) source.getSbomSourceSpec()).getConnector();
-        default:
-          return null;
+      if (Objects.requireNonNull(source.getType()) == SbomSourceType.IMAGE) {
+        return ((ImageSbomSource) source.getSbomSourceSpec()).getConnector();
       }
+      return null;
     }
     return null;
   }

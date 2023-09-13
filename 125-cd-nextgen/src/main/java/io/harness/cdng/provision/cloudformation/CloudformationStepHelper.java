@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.provision.cloudformation;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType.S3URL;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -68,7 +69,6 @@ import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -81,6 +81,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -141,7 +142,7 @@ public class CloudformationStepHelper {
   public static final String DEFAULT_TIMEOUT = "10m";
 
   public TaskChainResponse startChainLink(CloudformationStepExecutor cloudformationStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters) {
+      StepBaseParameters stepElementParameters) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
     CloudformationCreateStackStepConfigurationParameters stepConfiguration =
@@ -204,7 +205,7 @@ public class CloudformationStepHelper {
   }
 
   public TaskChainResponse executeNextLink(CloudformationStepExecutor cloudformationStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
@@ -292,8 +293,8 @@ public class CloudformationStepHelper {
     return (CloudFormationInheritOutput) output.getOutput();
   }
 
-  public CloudformationConfig getCloudformationConfig(Ambiance ambiance, StepElementParameters stepParameters,
-      CloudFormationCreateStackPassThroughData passThroughData) {
+  public CloudformationConfig getCloudformationConfig(
+      Ambiance ambiance, StepBaseParameters stepParameters, CloudFormationCreateStackPassThroughData passThroughData) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepParameters.getSpec();
     CloudformationCreateStackStepConfigurationParameters stepConfiguration =
@@ -450,7 +451,7 @@ public class CloudformationStepHelper {
   }
 
   private CloudformationTaskNGParameters getCloudformationTaskNGParameters(Ambiance ambiance,
-      StepElementParameters stepElementParameters, AwsConnectorDTO awsConnectorDTO, Map<String, String> parameters,
+      StepBaseParameters stepElementParameters, AwsConnectorDTO awsConnectorDTO, Map<String, String> parameters,
       String templateBody, String templateUrl, String tags, CommandUnitsProgress commandUnitsProgress) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
@@ -487,7 +488,7 @@ public class CloudformationStepHelper {
   }
 
   private TaskChainResponse handleAwsS3FetchFileResponse(CloudformationStepExecutor cloudformationStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters,
+      Ambiance ambiance, StepBaseParameters stepElementParameters,
       CloudformationCreateStackStepConfigurationParameters stepConfiguration,
       CloudFormationCreateStackPassThroughData cloudFormationCreateStackPassThroughData,
       AwsS3FetchFilesResponse responseData) {
@@ -537,7 +538,7 @@ public class CloudformationStepHelper {
   }
 
   private TaskChainResponse handleGitFetchResponse(CloudformationStepExecutor cloudformationStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters,
+      Ambiance ambiance, StepBaseParameters stepElementParameters,
       CloudformationCreateStackStepConfigurationParameters stepConfiguration,
       CloudFormationCreateStackPassThroughData cloudFormationCreateStackPassThroughData,
       GitFetchResponse responseData) {
@@ -689,7 +690,7 @@ public class CloudformationStepHelper {
   }
 
   private TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
-      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
+      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepBaseParameters stepElementParameters,
       CloudFormationCreateStackPassThroughData passThroughData) {
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
                                           .gitFetchFilesConfigs(gitFetchFilesConfigs)
@@ -719,7 +720,7 @@ public class CloudformationStepHelper {
   }
 
   private TaskChainResponse getS3FetchFileTaskChainResponse(Ambiance ambiance,
-      List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs, StepElementParameters stepElementParameters,
+      List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs, StepBaseParameters stepElementParameters,
       CloudFormationCreateStackPassThroughData passThroughData, CommandUnitsProgress commandUnitsProgress) {
     AwsS3FetchFilesTaskParams awsS3FetchFilesTaskParams = AwsS3FetchFilesTaskParams.builder()
                                                               .fetchFileDelegateConfigs(awsS3FetchFileDelegateConfigs)

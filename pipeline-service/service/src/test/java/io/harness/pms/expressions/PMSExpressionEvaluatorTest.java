@@ -116,7 +116,6 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
         NodeExecution.builder()
             .uuid(nodeExecution1Id)
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1)).build())
-            .planNode(planNode1)
             .resolvedStepParameters(prepareStepParameters("pipelineResolvedValue"))
             .build();
 
@@ -127,7 +126,6 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .build())
-            .planNode(planNode2)
             .resolvedStepParameters(prepareStepParameters("stagesResolvedValue"))
             .parentId(nodeExecution1Id)
             .build();
@@ -140,7 +138,6 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, planNode3))
                           .build())
-            .planNode(planNode3)
             .resolvedStepParameters(prepareStepParameters("stageResolvedValue"))
             .parentId(nodeExecution2Id)
             .build();
@@ -154,7 +151,6 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, planNode3))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution4Id, planNode4))
                           .build())
-            .planNode(planNode4)
             .resolvedStepParameters(prepareStepParameters("dResolvedValue"))
             .parentId(nodeExecution3Id)
             .nextId(nodeExecution5Id)
@@ -169,7 +165,6 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, planNode3))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution5Id, planNode5))
                           .build())
-            .planNode(planNode5)
             .resolvedStepParameters(prepareStepParameters("eResolvedValue"))
             .previousId(nodeExecution4Id)
             .parentId(nodeExecution3Id)

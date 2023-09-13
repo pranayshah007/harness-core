@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.serviceoverride.beans;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
@@ -39,7 +40,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Data
 @Builder

@@ -30,7 +30,6 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -46,6 +45,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.executable.SyncExecutableWithCapabilities;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -85,10 +85,10 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
 
   @Inject Clock clock;
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
-  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepBaseParameters stepElementParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     log.info("ExecuteSync called for CVNGAnalyzeDeploymentStep, Step Parameters: {} Ambiance: {}",
         stepElementParameters, ambiance);
@@ -169,8 +169,8 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Value

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.manifest.yaml;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -19,6 +20,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO")
 public class ArtifactoryStorageConfigDTO implements FileStorageConfigDTO {
   String connectorRef;
   String repositoryName;

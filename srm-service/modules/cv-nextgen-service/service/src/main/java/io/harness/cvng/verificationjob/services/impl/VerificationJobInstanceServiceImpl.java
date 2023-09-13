@@ -77,7 +77,6 @@ import io.harness.persistence.HPersistence;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import dev.morphia.UpdateOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
@@ -229,12 +228,9 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, executionStatus)
             .set(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.ERROR);
       }
-      UpdateOptions options = new UpdateOptions();
-      options.upsert(true);
-      hPersistence.getDatastore(VerificationJobInstance.class)
-          .update(hPersistence.createQuery(VerificationJobInstance.class)
-                      .filter(VerificationJobInstanceKeys.uuid, verificationJobInstanceId),
-              verificationJobInstanceUpdateOperations, options);
+      hPersistence.upsert(hPersistence.createQuery(VerificationJobInstance.class)
+                              .filter(VerificationJobInstanceKeys.uuid, verificationJobInstanceId),
+          verificationJobInstanceUpdateOperations);
       VerificationJobInstance verificationJobInstance = getVerificationJobInstance(verificationJobInstanceId);
       updateStatusIfDone(verificationJobInstance);
       if (progressLog.isLastProgressLog(verificationJobInstance)) {
@@ -271,11 +267,9 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
           hPersistence.createUpdateOperations(VerificationJobInstance.class);
       verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, SUCCESS)
           .set(VerificationJobInstanceKeys.verificationStatus, activityVerificationStatus);
-      hPersistence.getDatastore(VerificationJobInstance.class)
-          .update(hPersistence.createQuery(VerificationJobInstance.class)
-                      .filter(VerificationJobInstanceKeys.uuid, verificationJobInstance.getUuid()),
-              verificationJobInstanceUpdateOperations, new UpdateOptions());
-
+      hPersistence.update(hPersistence.createQuery(VerificationJobInstance.class)
+                              .filter(VerificationJobInstanceKeys.uuid, verificationJobInstance.getUuid()),
+          verificationJobInstanceUpdateOperations);
       Set<String> verificationTaskIds = verificationTaskService.getVerificationTaskIds(
           verificationJobInstance.getAccountId(), verificationJobInstance.getUuid());
       if (hasAnyVerificationTaskTerminated) {

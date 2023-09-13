@@ -20,7 +20,6 @@ import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
-import io.harness.exception.UnexpectedException;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
@@ -352,7 +351,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
         try {
           log.info("Registering {} with NotificationService", template);
           notificationClient.saveNotificationTemplate(Team.IDP, template, true);
-        } catch (UnexpectedException ex) {
+        } catch (Exception ex) {
           log.error(
               "Unable to save {} to NotificationService - skipping register notification templates.", template, ex);
         }

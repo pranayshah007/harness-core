@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +19,9 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -129,6 +133,51 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
 
     ngTriggerEventHistoryResource.getTriggerEventHistory(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, "", 0, 10, new ArrayList<>());
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testListTriggerEventHistory() {
+    int page = 0;
+    int size = 10;
+    String artifactType = "artifactType";
+    List<String> sort = Collections.emptyList();
+
+    Criteria criteria = new Criteria();
+    // Set up your criteria mock or expectations here if needed
+
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TriggerEventHistoryKeys.createdAt));
+
+    TriggerEventHistory triggerEventHistory = TriggerEventHistory.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .orgIdentifier(ORG_IDENTIFIER)
+                                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                                  .targetIdentifier(PIPELINE_IDENTIFIER)
+                                                  .buildSourceType(artifactType)
+                                                  .build();
+
+    Page<TriggerEventHistory> eventHistoryPage =
+        new PageImpl<>(Collections.singletonList(triggerEventHistory), pageable, 1);
+
+    when(ngTriggerEventsService.formTriggerEventCriteria(
+             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, artifactType))
+        .thenReturn(criteria);
+    when(ngTriggerEventsService.getEventHistory(criteria, pageable)).thenReturn(eventHistoryPage);
+
+    // Run the method to be tested
+    ResponseDTO<Page<NGTriggerEventHistoryDTO>> response = ngTriggerEventHistoryResource.listTriggerEventHistory(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, artifactType, null, page, size, sort);
+
+    assertNotNull(response);
+    assertNotNull(response.getData());
+    assertEquals(1, response.getData().getContent().size()); // Adjust expected size as needed
+
+    // Add more assertions as needed
+
+    verify(ngTriggerEventsService, times(1))
+        .formTriggerEventCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, artifactType);
+    verify(ngTriggerEventsService, times(1)).getEventHistory(criteria, pageable);
   }
 
   @Test

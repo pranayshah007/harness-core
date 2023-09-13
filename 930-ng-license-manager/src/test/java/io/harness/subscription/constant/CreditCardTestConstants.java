@@ -7,6 +7,10 @@
 
 package io.harness.subscription.constant;
 
+import static io.harness.subscription.constant.SubscriptionTestConstant.BILLING_EMAIL;
+
+import io.harness.security.SourcePrincipalContextData;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.dto.CreditCardDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
@@ -23,6 +27,7 @@ public class CreditCardTestConstants {
   public static final String DEFAULT_CREDIT_CARD_IDENTIFIER = "TEST_CREDIT_CARD_IDENTIFIER";
   public static final String DEFAULT_CUSTOMER_ID = "TEST_CUSTOMER_ID";
   public static final String ALTERNATE_CUSTOMER_ID = "ALTERNATE_CUSTOMER_ID";
+  public static final String DEFAULT_USER_NAME = "USER_NAME";
 
   public static final CreditCard DEFAULT_CREDIT_CARD = CreditCard.builder()
                                                            .fingerprint(DEFAULT_FINGERPRINT)
@@ -65,4 +70,9 @@ public class CreditCardTestConstants {
       PaymentMethodCollectionDTO.builder().paymentMethods(Arrays.asList(DEFAULT_CARD_DTO, EXPIRED_CARD_DTO)).build();
   public static final PaymentMethodCollectionDTO EXPIRED_PAYMENT_METHODS =
       PaymentMethodCollectionDTO.builder().paymentMethods(Arrays.asList(EXPIRED_CARD_DTO)).build();
+
+  public static final SourcePrincipalContextData DEFAULT_SOURCE_PRINCIPLE_DATA =
+      SourcePrincipalContextData.builder()
+          .principal(new UserPrincipal(DEFAULT_USER_NAME, BILLING_EMAIL, DEFAULT_USER_NAME, DEFAULT_ACCOUNT_ID))
+          .build();
 }

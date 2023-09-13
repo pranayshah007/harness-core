@@ -18,6 +18,7 @@ import io.harness.beans.PageResponse;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 
+import software.wings.audit.AuditSkip;
 import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.ApiKeyEntry.ApiKeyEntryKeys;
 import software.wings.security.PermissionAttribute.ResourceType;
@@ -117,6 +118,7 @@ public class ApiKeyResource {
   @Timed
   @ExceptionMetered
   @InternalApi
+  @AuditSkip
   public RestResponse<Boolean> validate(@QueryParam("accountId") String accountId, String apiKey) {
     return new RestResponse<>(apiKeyService.isApiKeyValid(apiKey, accountId));
   }

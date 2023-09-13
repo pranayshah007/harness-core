@@ -20,10 +20,9 @@ import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.category.element.UnitTests;
-import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.rule.Owner;
 

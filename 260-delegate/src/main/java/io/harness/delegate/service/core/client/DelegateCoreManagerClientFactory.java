@@ -16,7 +16,6 @@ import io.harness.managerclient.DelegateAuthInterceptor;
 import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
-import io.harness.security.TokenGenerator;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
@@ -49,22 +48,22 @@ public class DelegateCoreManagerClientFactory implements Provider<DelegateCoreMa
                                                  .registerModule(new Jdk8Module())
                                                  .registerModule(new GuavaModule())
                                                  .registerModule(new JavaTimeModule());
-  private static final ConnectionPool connectionPool = new ConnectionPool(16, 5, TimeUnit.MINUTES);
+  private static final ConnectionPool CONNECTION_POOL = new ConnectionPool(16, 5, TimeUnit.MINUTES);
 
   private final VersionInfoManager versionInfoManager;
   private final String baseUrl;
-  private final TokenGenerator tokenGenerator;
   private final String clientCertificateFilePath;
   private final String clientCertificateKeyFilePath;
   private final OkHttpClient httpClient;
+  private final DelegateAuthInterceptor authInterceptor;
 
   @Inject
   public DelegateCoreManagerClientFactory(final DelegateConfiguration configuration,
-      final VersionInfoManager versionInfoManager, final TokenGenerator tokenGenerator) {
+      final VersionInfoManager versionInfoManager, final DelegateAuthInterceptor authInterceptor) {
     this.baseUrl = configuration.getManagerUrl();
-    this.tokenGenerator = tokenGenerator;
     this.clientCertificateFilePath = configuration.getClientCertificateFilePath();
     this.clientCertificateKeyFilePath = configuration.getClientCertificateKeyFilePath();
+    this.authInterceptor = authInterceptor;
     boolean trustAllCertificates = configuration.isTrustAllCertificates();
     this.versionInfoManager = versionInfoManager;
     this.httpClient = trustAllCertificates ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
@@ -121,9 +120,9 @@ public class DelegateCoreManagerClientFactory implements Provider<DelegateCoreMa
     return Http.getOkHttpClientWithProxyAuthSetup()
         .hostnameVerifier(new NoopHostnameVerifier())
         .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
-        .connectionPool(connectionPool)
+        .connectionPool(CONNECTION_POOL)
         .retryOnConnectionFailure(true)
-        .addInterceptor(new DelegateAuthInterceptor(this.tokenGenerator))
+        .addInterceptor(authInterceptor)
         .addInterceptor(chain -> {
           Builder request = chain.request().newBuilder().addHeader(
               "User-Agent", "delegate/" + this.versionInfoManager.getVersionInfo().getVersion());

@@ -49,4 +49,7 @@ public class ShellScriptBaseStepInfo {
   @YamlSchemaTypes(value = {expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  @YamlSchemaTypes({string})
+  ParameterField<Boolean> includeInfraSelectors;
 }

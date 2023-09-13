@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.CloseableIterator;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
@@ -50,7 +52,8 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
   @Override
   public ExpressionEvaluationDetailDTO evaluateExpression(String planExecutionId, String yaml) {
     YamlExpressionEvaluator yamlExpressionEvaluator = new YamlExpressionEvaluator(yaml);
-    List<NodeExecution> nodeExecutions =
+    // TODO Optimise this further to avoid getting ambiance for all the node executions for a planExecution
+    CloseableIterator<NodeExecution> nodeExecutions =
         nodeExecutionService.fetchAllWithPlanExecutionId(planExecutionId, NodeProjectionUtils.withAmbiance);
 
     // This map matches the fqn with each Ambiance. Here the fqn is calculated using level's identifier (till where last
@@ -99,15 +102,16 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
     return resultedFqn;
   }
 
-  public Map<String, Ambiance> getFQNToAmbianceMap(List<NodeExecution> nodeExecutions) {
+  public Map<String, Ambiance> getFQNToAmbianceMap(CloseableIterator<NodeExecution> nodeExecutions) {
     Map<String, Ambiance> fqnToAmbianceMap = new HashMap<>();
 
-    nodeExecutions.forEach(nodeExecution -> {
+    while (nodeExecutions.hasNext()) {
+      NodeExecution nodeExecution = nodeExecutions.next();
       Ambiance ambiance = nodeExecution.getAmbiance();
 
       String fqn = getFqnTillLastGroupInAmbiance(ambiance);
       fqnToAmbianceMap.put(fqn, ambiance);
-    });
+    }
     return fqnToAmbianceMap;
   }
 

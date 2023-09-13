@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.service.steps.helpers.beans;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -23,7 +24,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_GITOPS})
 @Data
 @Builder

@@ -29,6 +29,7 @@ public class SscaOrchestrationStepPluginUtils {
   public static final String PLUGIN_FORMAT = "PLUGIN_FORMAT";
   public static final String PLUGIN_SBOMSOURCE = "PLUGIN_SBOMSOURCE";
   public static final String PLUGIN_TYPE = "PLUGIN_TYPE";
+  public static final String PLUGIN_MODE = "PLUGIN_MODE";
   public static final String PLUGIN_SBOMDESTINATION = "PLUGIN_SBOMDESTINATION";
   public static final String SKIP_NORMALISATION = "SKIP_NORMALISATION";
   public static final String COSIGN_PASSWORD = "COSIGN_PASSWORD";
@@ -47,7 +48,11 @@ public class SscaOrchestrationStepPluginUtils {
     envMap.put(PLUGIN_FORMAT, envVariables.getSbomGenerationFormat());
     envMap.put(PLUGIN_SBOMSOURCE, envVariables.getSbomSource());
     envMap.put(PLUGIN_TYPE, "Orchestrate");
-    envMap.put(PLUGIN_SBOMDESTINATION, "harness/sbom");
+    String SbomMode = envVariables.getSbomMode();
+    envMap.put(PLUGIN_MODE, SbomMode == null ? "generation" : SbomMode);
+    String defaultSbomDestination = "harness/sbom";
+    String SbomDestination = envVariables.getSbomDestination();
+    envMap.put(PLUGIN_SBOMDESTINATION, SbomDestination == null ? defaultSbomDestination : SbomDestination);
     envMap.put(SKIP_NORMALISATION, "true");
     envMap.put(SSCA_CORE_URL, envVariables.getSscaCoreUrl());
     envMap.put(SSCA_MANAGER_ENABLED, String.valueOf(envVariables.isSscaManagerEnabled()));

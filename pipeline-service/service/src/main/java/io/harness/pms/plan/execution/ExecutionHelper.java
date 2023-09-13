@@ -264,20 +264,21 @@ public class ExecutionHelper {
 
       validateYamlSchema(pipelineEntity, mergedRuntimeInputJsonNode);
       PlanExecutionMetadata planExecutionMetadata;
+      // RetryExecutionInfo
+      RetryExecutionInfo retryExecutionInfo = buildRetryInfo(retryExecutionParameters.isRetry(), originalExecutionId);
+
       if (!EmptyPredicate.isEmpty(mergedRuntimeInputJsonNode)) {
         planExecutionMetadata = buildPlanExecutionMetadata(pipelineEntity,
             YamlUtils.writeYamlString(mergedRuntimeInputJsonNode), originalExecutionId, retryExecutionParameters,
-            notifyOnlyUser, notes, executionId, stagesExecutionInfo, pipelineYamlWithTemplateRef);
+            notifyOnlyUser, notes, executionId, stagesExecutionInfo, pipelineYamlWithTemplateRef, retryExecutionInfo);
       } else {
-        planExecutionMetadata =
-            buildPlanExecutionMetadata(pipelineEntity, null, originalExecutionId, retryExecutionParameters,
-                notifyOnlyUser, notes, executionId, stagesExecutionInfo, pipelineYamlWithTemplateRef);
+        planExecutionMetadata = buildPlanExecutionMetadata(pipelineEntity, null, originalExecutionId,
+            retryExecutionParameters, notifyOnlyUser, notes, executionId, stagesExecutionInfo,
+            pipelineYamlWithTemplateRef, retryExecutionInfo);
       }
 
-      // RetryExecutionInfo
-      RetryExecutionInfo retryExecutionInfo = buildRetryInfo(retryExecutionParameters.isRetry(), originalExecutionId);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
-          triggerInfo, pipelineEntity, executionId, retryExecutionInfo, notificationRules, isDebug);
+          triggerInfo, pipelineEntity, executionId, notificationRules, isDebug);
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
     } catch (WingsException e) {
       throw e;
@@ -325,8 +326,8 @@ public class ExecutionHelper {
 
   private PlanExecutionMetadata buildPlanExecutionMetadata(PipelineEntity pipelineEntity, String mergedRuntimeInputYaml,
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
-      String notes, String executionId, StagesExecutionInfo stagesExecutionInfo, String pipelineYamlWithTemplateRef)
-      throws Exception {
+      String notes, String executionId, StagesExecutionInfo stagesExecutionInfo, String pipelineYamlWithTemplateRef,
+      RetryExecutionInfo retryExecutionInfo) throws Exception {
     Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
         stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, notes, pipelineEntity);
     if (stagesExecutionInfo.isStagesExecution()) {
@@ -346,6 +347,9 @@ public class ExecutionHelper {
               .retryStagesIdentifier(retryExecutionParameters.getRetryStagesIdentifier())
               .skipStagesIdentifier(retryExecutionParameters.getIdentifierOfSkipStages())
               .build());
+    }
+    if (retryExecutionInfo != null) {
+      planExecutionMetadataBuilder.retryExecutionInfo(retryExecutionInfo);
     }
     return planExecutionMetadataBuilder.build();
   }
@@ -368,13 +372,12 @@ public class ExecutionHelper {
 
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,
       ExecutionTriggerInfo triggerInfo, PipelineEntity pipelineEntity, String executionId,
-      RetryExecutionInfo retryExecutionInfo, List<NotificationRules> notificationRules, boolean isDebug) {
+      List<NotificationRules> notificationRules, boolean isDebug) {
     ExecutionMetadata.Builder builder = ExecutionMetadata.newBuilder()
                                             .setExecutionUuid(executionId)
                                             .setTriggerInfo(triggerInfo)
                                             .setModuleType(EmptyPredicate.isEmpty(moduleType) ? "" : moduleType)
                                             .setPipelineIdentifier(pipelineIdentifier)
-                                            .setRetryInfo(retryExecutionInfo)
                                             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
                                             .setIsNotificationConfigured(isNotEmpty(notificationRules))
                                             .setHarnessVersion(pipelineEntity.getHarnessVersion())

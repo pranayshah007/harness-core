@@ -49,6 +49,7 @@ import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.rule.Owner;
 
 import com.google.protobuf.ByteString;
@@ -79,6 +80,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   @Mock AccessControlClient accessControlClient;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @Mock PlanExecutionMetadataService planExecutionMetadataService;
+  @Mock PmsExecutionSummaryService pmsExecutionSummaryService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";

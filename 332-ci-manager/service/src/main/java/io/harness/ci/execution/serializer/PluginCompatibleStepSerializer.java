@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer;
+package io.harness.ci.execution.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
@@ -14,8 +14,8 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.callback.DelegateCallbackToken;
-import io.harness.ci.execution.CIExecutionConfigService;
-import io.harness.ci.utils.CIStepInfoUtils;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
 import io.harness.plugin.service.BasePluginCompatibleSerializer;
 
 import com.google.inject.Inject;

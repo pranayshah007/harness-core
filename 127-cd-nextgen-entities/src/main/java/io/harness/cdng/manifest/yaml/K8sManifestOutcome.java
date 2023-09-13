@@ -14,11 +14,14 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo.ManifestStoreInfoBuilder;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -44,5 +47,11 @@ public class K8sManifestOutcome implements ManifestOutcome {
       return ParameterField.createValueField(Collections.emptyList());
     }
     return this.valuesPaths;
+  }
+  @Override
+  public Optional<ManifestStoreInfo> toManifestStoreInfo() {
+    ManifestStoreInfoBuilder manifestInfoBuilder = ManifestStoreInfo.builder();
+    store.populateManifestStoreInfo(manifestInfoBuilder);
+    return Optional.of(manifestInfoBuilder.build());
   }
 }

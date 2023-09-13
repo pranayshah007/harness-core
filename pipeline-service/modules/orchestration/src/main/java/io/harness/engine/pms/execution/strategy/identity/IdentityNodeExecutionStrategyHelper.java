@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.execution.strategy.identity;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -62,7 +63,6 @@ public class IdentityNodeExecutionStrategyHelper {
     }
     NodeExecution execution = NodeExecution.builder()
                                   .uuid(uuid)
-                                  .planNode(node)
                                   .ambiance(ambiance)
                                   .levelCount(ambiance.getLevelsCount())
                                   .status(Status.QUEUED)
@@ -125,7 +125,7 @@ public class IdentityNodeExecutionStrategyHelper {
   // method.
   NodeExecutionBuilder cloneNodeExecutionForRetries(NodeExecution originalNodeExecution, Ambiance ambiance) {
     String uuid = UUIDGenerator.generateUuid();
-    Node node = planService.fetchNode(originalNodeExecution.getNodeId());
+    Node node = planService.fetchNode(originalNodeExecution.getPlanId(), originalNodeExecution.getNodeId());
     Ambiance finalAmbiance = AmbianceUtils.cloneForFinish(ambiance)
                                  .toBuilder()
                                  .addLevels(PmsLevelUtils.buildLevelFromNode(uuid, node))
@@ -136,7 +136,6 @@ public class IdentityNodeExecutionStrategyHelper {
 
     return NodeExecution.builder()
         .uuid(uuid)
-        .planNode(node)
         .ambiance(finalAmbiance)
         .oldRetry(true)
         .retryIds(originalNodeExecution.getRetryIds())

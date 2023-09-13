@@ -243,7 +243,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     String script = "echo hey";
     ShellScriptTaskParametersNGBuilder taskParamsBuilder = ShellScriptTaskParametersNG.builder();
 
-    assertThat(shellScriptHelperServiceImpl.getK8sInfraDelegateConfig(ambiance, script)).isNull();
+    assertThat(shellScriptHelperServiceImpl.getK8sInfraDelegateConfig(ambiance, script, false)).isNull();
 
     script = "export KUBE_CONFIG=${HARNESS_KUBE_CONFIG_PATH}";
     OptionalSweepingOutput optionalSweepingOutput = OptionalSweepingOutput.builder().found(false).build();
@@ -251,7 +251,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
-    assertThat(shellScriptHelperServiceImpl.getK8sInfraDelegateConfig(ambiance, script)).isNull();
+    assertThat(shellScriptHelperServiceImpl.getK8sInfraDelegateConfig(ambiance, script, false)).isNull();
 
     K8sInfraDelegateConfigOutput k8sInfraDelegateConfigOutput = K8sInfraDelegateConfigOutput.builder().build();
     optionalSweepingOutput = OptionalSweepingOutput.builder().found(true).output(k8sInfraDelegateConfigOutput).build();
@@ -259,7 +259,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
-    assertThat(shellScriptHelperServiceImpl.getK8sInfraDelegateConfig(ambiance, script)).isNull();
+    assertThat(shellScriptHelperServiceImpl.getK8sInfraDelegateConfig(ambiance, script, false)).isNull();
 
     DirectK8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     k8sInfraDelegateConfigOutput =
@@ -269,7 +269,11 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
-    assertThat(shellScriptHelperServiceImpl.getK8sInfraDelegateConfig(ambiance, script))
+    assertThat(shellScriptHelperServiceImpl.getK8sInfraDelegateConfig(ambiance, script, false))
+        .isEqualTo(k8sInfraDelegateConfig);
+
+    script = "echo hey";
+    assertThat(shellScriptHelperServiceImpl.getK8sInfraDelegateConfig(ambiance, script, true))
         .isEqualTo(k8sInfraDelegateConfig);
   }
 
@@ -481,7 +485,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     doNothing()
         .when(shellScriptHelperService)
         .prepareTaskParametersForExecutionTarget(eq(ambiance), eq(stepParameters), any());
-    doReturn(k8sInfraDelegateConfig).when(shellScriptHelperService).getK8sInfraDelegateConfig(ambiance, script);
+    doReturn(k8sInfraDelegateConfig).when(shellScriptHelperService).getK8sInfraDelegateConfig(ambiance, script, false);
     doReturn(taskEnvVariables)
         .when(shellScriptHelperService)
         .getEnvironmentVariables(inputVars, Ambiance.newBuilder().build());

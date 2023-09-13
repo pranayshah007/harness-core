@@ -48,7 +48,8 @@ public class TriggerExecutionEventStreamListenerTest extends CategoryTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testHandleMessage() {
-    assertTrue(triggerExecutionEventStreamListener.handleMessage(Message.newBuilder().build()));
+    assertTrue(
+        triggerExecutionEventStreamListener.handleMessage(Message.newBuilder().build(), System.currentTimeMillis()));
     Message message =
         Message.newBuilder()
             .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
@@ -57,7 +58,7 @@ public class TriggerExecutionEventStreamListenerTest extends CategoryTest {
                             .setData(InterruptEvent.newBuilder().setType(InterruptType.ABORT).build().toByteString())
                             .build())
             .build();
-    triggerExecutionEventStreamListener.handleMessage(message);
+    triggerExecutionEventStreamListener.handleMessage(message, System.currentTimeMillis());
     verify(triggerWebhookEventExecutionService, times(1)).processEvent(any());
   }
 }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.interrupts.handlers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.CollectionUtils.isPresent;
 import static io.harness.eraro.ErrorCode.ABORT_ALL_ALREADY;
@@ -107,7 +108,10 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
 
   @Override
   public Interrupt handleInterrupt(Interrupt interrupt) {
-    return handleAllNodes(interrupt);
+    try (AutoLogContext ignore = interrupt.autoLogContext()) {
+      log.info("Stating to handle interrupt for Plan Execution");
+      return handleAllNodes(interrupt);
+    }
   }
 
   @Override
@@ -117,7 +121,10 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
 
   @Override
   public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
-    return handleChildNodes(interrupt, nodeExecutionId);
+    try (AutoLogContext ignore = interrupt.autoLogContext()) {
+      log.info("Stating to handle interrupt for Node Execution");
+      return handleChildNodes(interrupt, nodeExecutionId);
+    }
   }
 
   protected Interrupt processDiscontinuedInstances(

@@ -24,10 +24,8 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.engine.ExecutionCheck;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
-import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
@@ -60,7 +58,6 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeStartHelperTest extends OrchestrationTestBase {
-  @Mock private InterruptService interruptService;
   @Mock private PlanService planService;
   @Mock private NodeExecutionService nodeExecutionService;
   @Mock private PmsEventSender pmsEventSender;
@@ -93,13 +90,10 @@ public class NodeStartHelperTest extends OrchestrationTestBase {
                                       .ambiance(ambiance)
                                       .status(Status.DISCONTINUING)
                                       .mode(ExecutionMode.TASK)
-                                      .planNode(planNode)
                                       .startTs(System.currentTimeMillis())
                                       .build();
 
     when(planService.fetchNode(planId, planNode.getUuid())).thenReturn(planNode);
-    when(interruptService.checkInterruptsPreInvocation(planExecutionId, nodeExecutionId))
-        .thenReturn(ExecutionCheck.builder().proceed(true).build());
 
     when(nodeExecutionService.updateStatusWithOps(
              eq(nodeExecutionId), eq(Status.RUNNING), eq(null), eq(EnumSet.noneOf(Status.class))))
@@ -147,12 +141,9 @@ public class NodeStartHelperTest extends OrchestrationTestBase {
                                        .uuid(nodeExecutionId)
                                        .ambiance(ambiance)
                                        .mode(ExecutionMode.TASK)
-                                       .planNode(planNode)
                                        .startTs(System.currentTimeMillis());
 
     when(planService.fetchNode(planId, planNode.getUuid())).thenReturn(planNode);
-    when(interruptService.checkInterruptsPreInvocation(planExecutionId, nodeExecutionId))
-        .thenReturn(ExecutionCheck.builder().proceed(true).build());
 
     when(nodeExecutionService.updateStatusWithOps(
              eq(nodeExecutionId), eq(Status.RUNNING), any(), eq(EnumSet.noneOf(Status.class))))

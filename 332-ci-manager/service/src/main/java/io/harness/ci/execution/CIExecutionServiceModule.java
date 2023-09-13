@@ -37,14 +37,14 @@ import io.harness.beans.steps.nodes.SecurityNode;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
-import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.ExecutionLimits;
-import io.harness.ci.serializer.PluginCompatibleStepSerializer;
-import io.harness.ci.serializer.PluginStepProtobufSerializer;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.serializer.PluginCompatibleStepSerializer;
+import io.harness.ci.execution.serializer.PluginStepProtobufSerializer;
+import io.harness.ci.execution.serializer.RunStepProtobufSerializer;
+import io.harness.ci.execution.serializer.RunTestsStepProtobufSerializer;
 import io.harness.ci.serializer.ProtobufStepSerializer;
-import io.harness.ci.serializer.RunStepProtobufSerializer;
-import io.harness.ci.serializer.RunTestsStepProtobufSerializer;
 import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.plugin.service.BasePluginCompatibleSerializer;
@@ -126,6 +126,10 @@ public class CIExecutionServiceModule extends AbstractModule {
         .annotatedWith(Names.named("ciBackgroundTaskExecutor"))
         .toInstance(ThreadPool.create(20, 50, 5, TimeUnit.SECONDS,
             new ThreadFactoryBuilder().setNameFormat("Background-Task-Handler-%d").build()));
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("ciDataDeletionExecutor"))
+        .toInstance(ThreadPool.create(
+            0, 10, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Data-Deletion-%d").build()));
     this.bind(CIExecutionServiceConfig.class).toInstance(this.ciExecutionServiceConfig);
     bind(new TypeLiteral<ProtobufStepSerializer<RunStepInfo>>() {}).toInstance(new RunStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<PluginStepInfo>>() {}).toInstance(new PluginStepProtobufSerializer());

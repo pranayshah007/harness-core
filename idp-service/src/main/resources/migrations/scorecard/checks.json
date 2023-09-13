@@ -9,13 +9,13 @@
     "rules": [
       {
         "data_source_identifier": "github",
-        "data_point_identifier": "meanTimeToMergePRHours",
+        "data_point_identifier": "meanTimeToMerge",
         "operator": "<",
         "value": "48"
       }
     ],
-    "expression": "github.meanTimeToMergePRHours < 48",
-    "labels": ["Software quality", "Development maturity"],
+    "expression": "github.meanTimeToMerge < 48",
+    "labels": ["Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Mean time to merge PR is more than 2 days"
   },
@@ -49,12 +49,12 @@
     "rules": [
       {
         "data_source_identifier": "github",
-        "data_point_identifier": "isBranchProtectionSet",
+        "data_point_identifier": "isBranchProtected",
         "operator": "==",
         "value": "true"
       }
     ],
-    "expression": "github.isBranchProtectionSet == true",
+    "expression": "github.isBranchProtected == true",
     "labels": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Branch protection is not set"
@@ -78,5 +78,25 @@
     "labels": ["Software quality", "Development maturity" ,"DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Tech docs doesn't exists"
+  },
+  {
+    "id": "64e45c34770dcc1b1d52cc12",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__ff13378c-eaeb-4568-a6de-1fda0ac20d6a",
+    "name": "Spec owner exists",
+    "description": "Spec owner exists",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "catalog",
+        "data_point_identifier": "specOwner",
+        "operator": "!=",
+        "value": "null"
+      }
+    ],
+    "expression": "catalog.specOwner != null",
+    "labels": ["Software quality", "Development maturity" ,"DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Spec owner doesn't exists"
   }
 ]

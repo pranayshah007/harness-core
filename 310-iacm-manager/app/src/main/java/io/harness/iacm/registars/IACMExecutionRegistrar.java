@@ -7,16 +7,16 @@
 
 package io.harness.iacm.registars;
 
-import io.harness.ci.states.ActionStep;
-import io.harness.ci.states.BackgroundStep;
-import io.harness.ci.states.CISpecStep;
-import io.harness.ci.states.CleanupStep;
-import io.harness.ci.states.GitCloneStep;
-import io.harness.ci.states.IACMStep;
-import io.harness.ci.states.InitializeTaskStep;
-import io.harness.ci.states.PluginStep;
-import io.harness.ci.states.RunStep;
-import io.harness.ci.states.RunTestsStep;
+import io.harness.ci.execution.states.ActionStep;
+import io.harness.ci.execution.states.BackgroundStep;
+import io.harness.ci.execution.states.CISpecStep;
+import io.harness.ci.execution.states.CleanupStep;
+import io.harness.ci.execution.states.GitCloneStep;
+import io.harness.ci.execution.states.IACMStep;
+import io.harness.ci.execution.states.InitializeTaskStep;
+import io.harness.ci.execution.states.PluginStep;
+import io.harness.ci.execution.states.RunStep;
+import io.harness.ci.execution.states.RunTestsStep;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;

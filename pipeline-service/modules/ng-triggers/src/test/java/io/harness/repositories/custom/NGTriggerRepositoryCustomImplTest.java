@@ -520,7 +520,6 @@ public class NGTriggerRepositoryCustomImplTest extends CategoryTest {
                                .build())
             .build();
     NGTriggerRepositoryCustomImpl.updateTriggerStatus(List.of(ngTriggerEntity));
-    // TODO: (Vinicius) Change this to PENDING when ng-manager changes are deployed.
-    assertThat(ngTriggerEntity.getTriggerStatus().getStatus()).isEqualTo(StatusResult.SUCCESS);
+    assertThat(ngTriggerEntity.getTriggerStatus().getStatus()).isEqualTo(StatusResult.PENDING);
   }
 }

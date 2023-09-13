@@ -9,6 +9,9 @@ package io.harness.subscription.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import javax.validation.Valid;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
 import org.jvnet.hk2.annotations.Optional;
@@ -18,8 +21,11 @@ import org.jvnet.hk2.annotations.Optional;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CustomerDTO {
-  private String billingEmail;
-  private String companyName;
-  private AddressDto address;
+  private static final String COMPANY_NAME_REGEX = "^[a-zA-Z0-9 \\-.,'&#/()@!]+$";
+  private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$";
+
+  @Pattern(regexp = EMAIL_REGEX, message = "Email must be valid.") @Size(max = 254) private String billingEmail;
+  @Pattern(regexp = COMPANY_NAME_REGEX) @Size(max = 46) private String companyName;
+  @Valid private AddressDto address;
   @Optional private String defaultPaymentMethod;
 }

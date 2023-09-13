@@ -14,7 +14,6 @@ import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
 import io.harness.EntityType;
-import io.harness.ScopeIdentifiers;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.eraro.ErrorCode;
@@ -334,14 +333,15 @@ public class SCMGitSyncHelper {
 
   public void validateRepo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repo) {
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(projectIdentifier)
+                      .build();
     final ValidateRepoResponse validateRepoResponse =
         GitSyncGrpcClientUtils.retryAndProcessExceptionV2(harnessToGitPushInfoServiceBlockingStub::validateRepo,
             ValidateRepoRequest.newBuilder()
-                .setScope(ScopeIdentifiers.newBuilder()
-                              .setAccountIdentifier(accountIdentifier)
-                              .setOrgIdentifier(orgIdentifier)
-                              .setProjectIdentifier(projectIdentifier)
-                              .build())
+                .setScope(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
                 .setConnectorRef(connectorRef)
                 .setRepo(repo)
                 .build());

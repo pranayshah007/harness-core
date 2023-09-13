@@ -20,6 +20,7 @@ import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
 import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CCM_BUDGET;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETTINGS;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
@@ -62,6 +63,7 @@ import io.harness.ccm.commons.service.impl.InstanceDataServiceImpl;
 import io.harness.ccm.commons.service.intf.ClusterRecordService;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.commons.service.intf.InstanceDataService;
+import io.harness.ccm.eventframework.BudgetCRUDStreamListener;
 import io.harness.ccm.eventframework.CCMSettingsCRUDStreamListener;
 import io.harness.ccm.eventframework.ConnectorEntityCRUDStreamListener;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
@@ -585,6 +587,7 @@ public class CENextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(SETTINGS + ENTITY_CRUD))
         .to(CCMSettingsCRUDStreamListener.class);
+    bind(MessageListener.class).annotatedWith(Names.named(CCM_BUDGET + ENTITY_CRUD)).to(BudgetCRUDStreamListener.class);
   }
 
   @Provides

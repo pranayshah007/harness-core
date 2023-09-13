@@ -22,6 +22,8 @@ import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -53,6 +55,7 @@ public class DeploymentActivity extends Activity {
   String artifactTag;
   String deploymentStatus;
   boolean isDemoActivity;
+  List<String> analysisImpactExecutionIds;
 
   @Override
   public ActivityType getType() {
@@ -109,6 +112,13 @@ public class DeploymentActivity extends Activity {
     return null;
   }
 
+  public List<String> getAnalysisImpactExecutionIds() {
+    if (analysisImpactExecutionIds != null) {
+      return analysisImpactExecutionIds;
+    }
+    return new ArrayList<>();
+  }
+
   public static class DeploymentActivityUpdatableEntity
       extends ActivityUpdatableEntity<DeploymentActivity, DeploymentActivity> {
     @Override
@@ -124,7 +134,9 @@ public class DeploymentActivity extends Activity {
     public Query<DeploymentActivity> populateKeyQuery(Query<DeploymentActivity> query, DeploymentActivity activity) {
       return super.populateKeyQuery(query, activity)
           .filter(DeploymentActivityKeys.planExecutionId, activity.getPlanExecutionId())
-          .filter(DeploymentActivityKeys.stageStepId, activity.getStageStepId());
+          .filter(DeploymentActivityKeys.stageStepId, activity.getStageStepId())
+          .filter(DeploymentActivityKeys.stageId, activity.getStageId())
+          .filter(ActivityKeys.type, activity.getType());
     }
 
     @Override

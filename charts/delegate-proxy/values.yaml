@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   kubeVersion: ""
   loadbalancerURL: ""
   imagePullSecrets: []
@@ -15,7 +17,7 @@ image:
   repository: harness/delegate-proxy-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "79712_3"
+  tag: "80104"
   digest: ""
   imagePullSecrets: []
 
@@ -44,6 +46,7 @@ securityContext:
 service:
   type: ClusterIP
   port: 8080
+  annotations: {}
 
 resources:
   limits:

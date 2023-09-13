@@ -53,6 +53,9 @@ public interface BackstageResourceClient {
   @POST(LAYOUT_API + "/ingest")
   Call<Object> ingestLayout(@Body LayoutIngestRequest body, @Path("accountIdentifier") String accountIdentifier);
 
-  @GET(HARNESS_REFRESH_API + "/refresh")
-  Call<Object> providerRefresh(@Path("accountIdentifier") String accountIdentifier);
+  @GET(HARNESS_REFRESH_API + "/refresh"
+      + "/{userGroupIdentifier}")
+  Call<Object>
+  providerRefresh(
+      @Path("accountIdentifier") String accountIdentifier, @Path("userGroupIdentifier") String userGroupIdentifier);
 }

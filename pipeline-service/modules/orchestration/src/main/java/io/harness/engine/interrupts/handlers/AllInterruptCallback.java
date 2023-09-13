@@ -6,8 +6,8 @@
  */
 
 package io.harness.engine.interrupts.handlers;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 
 import io.harness.annotations.dev.CodePulse;
@@ -38,7 +38,7 @@ public class AllInterruptCallback implements OldNotifyCallback {
 
   @Override
   public void notify(Map<String, ResponseData> response) {
-    interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    // Do nothing. Do not mark the interrupt PROCESSED here. It will be marked on pipeline end.
   }
 
   @Override

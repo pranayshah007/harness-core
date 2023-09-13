@@ -975,7 +975,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CheckDetailsRequest'
       x-internal: true
-  /v1/checks/{check-id}:
+  '/v1/checks/{check-id}':
     get:
       summary: Get check details for given checkId
       tags:
@@ -1072,7 +1072,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ScorecardDetailsRequest'
       x-internal: true
-  /v1/scorecards/{scorecard-id}:
+  '/v1/scorecards/{scorecard-id}':
     get:
       summary: Get scorecard details for given scorecardId
       tags:
@@ -1133,7 +1133,7 @@ paths:
     get:
       summary: Get all entity facets for given kind
       tags:
-       - Scorecards
+        - Scorecards
       responses:
         '200':
           $ref: '#/components/responses/FacetsResponse'
@@ -1146,7 +1146,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CatalogKind'
-  '/v1/data-source/{data-source}/data-point/values':
+  '/v1/data-sources/{data-source}/data-point/values':
     get:
       summary: Get data points data for data source
       responses:
@@ -1170,6 +1170,23 @@ paths:
         name: data-source
         in: path
         required: true
+  /v1/data-sources/data-points/map:
+    get:
+      summary: Get Data Sources and Data Points Map for Account
+      tags:
+        - DataSource
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointsMapResponse'
+      operationId: get-data-sources-data-points-map
+      x-stoplight:
+        id: 8ksgpo0pm5604
+      description: API for getting the map of data sources and data points for account
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
 components:
   schemas:
     BackstageEnvVariable:
@@ -2373,6 +2390,7 @@ components:
       x-stoplight:
         id: qg6l73nz6jl5o
       type: object
+      x-internal: true
       properties:
         data_source_identifier:
           type: string
@@ -2399,8 +2417,6 @@ components:
         - data_point_identifier
         - operator
         - value
-        - conditional_input_value
-      x-internal: true
     ScorecardChecks:
       title: ScorecardChecks
       x-stoplight:
@@ -2751,14 +2767,20 @@ components:
           x-stoplight:
             id: 7wrcffd5ubf5z
         status:
+          type: string
           x-stoplight:
             id: pblstkz463ptv
           enum:
             - PASS
             - FAIL
+        weight:
+          type: integer
+          x-stoplight:
+            id: xp87r8p7xwfgm
       required:
         - name
         - status
+        - weight
     ScorecardSummaryInfo:
       title: ScorecardSummaryInfo
       x-stoplight:
@@ -2776,10 +2798,6 @@ components:
           x-stoplight:
             id: 52k4qmnsh5ng9
           format: int64
-        entity_identifier:
-          type: string
-          x-stoplight:
-            id: z9yqnn9ti3i5r
         score:
           type: integer
           x-stoplight:
@@ -2790,12 +2808,16 @@ components:
             id: edl8hdvg9ingt
           items:
             $ref: '#/components/schemas/CheckStatus'
+        description:
+          type: string
+          x-stoplight:
+            id: mp6ecvb3rzwui
       required:
         - scorecard_name
         - timestamp
-        - entity_identifier
         - score
         - checks_statuses
+        - description
     ScorecardSummaryResponse:
       title: ScorecardSummaryResponse
       x-stoplight:
@@ -2914,25 +2936,15 @@ components:
       description: Request Content for fetching the data point data from data source
       x-internal: true
       properties:
-        ci_pipeline_url:
-          type: string
-          x-stoplight:
-            id: r53d288yjhv45
-        service_url:
-          type: string
-          x-stoplight:
-            id: tm3qx5d51qp2s
         data_source_location:
           $ref: '#/components/schemas/DataSourceLocationInfo'
-        github_url:
+        catalog_info_yaml:
           type: string
           x-stoplight:
-            id: nphiny6fsdwgd
+            id: vq58vp3kej201
       required:
-        - ci_pipeline_url
-        - service_url
         - data_source_location
-        - github_url
+        - catalog_info_yaml
     DataPointInputValues:
       title: DataPointInputValues
       x-stoplight:
@@ -3014,6 +3026,39 @@ components:
             id: qh5qxx57312re
       required:
         - status
+    DataSourceDataPointsMap:
+      title: DataSourceDataPointsMap
+      x-stoplight:
+        id: z77fv6vcnfg4b
+      type: object
+      properties:
+        data_source:
+          $ref: '#/components/schemas/DataSource'
+        data_points:
+          type: array
+          x-stoplight:
+            id: 4dmhbjlkx46p9
+          items:
+            $ref: '#/components/schemas/DataPoint'
+      required:
+        - data_source
+        - data_points
+      description: Mapping of data source with data points
+    DataSourceDataPointsMapResponse:
+      title: DataSourceDataPointsMapResponse
+      x-stoplight:
+        id: tsydrbfqm03z1
+      type: object
+      properties:
+        data_source_data_points_map:
+          x-stoplight:
+            id: 19okloss3p3sr
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSourceDataPointsMap'
+      required:
+        - data_source_data_points_map
+      description: Response for getting the data sources and data points map
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -3673,6 +3718,16 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/DefaultSaveResponse'
+    DataSourceDataPointsMapResponse:
+      description: Response for getting the data source and data point map
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointsMapResponse'
+        application/xml:
+          schema:
+            type: object
+            properties: {}
   securitySchemes:
     x-api-key:
       name: x-api-key

@@ -307,26 +307,20 @@ public class GovernanceRuleExecutionResource {
     return ResponseDTO.newResponse(ruleExecutionService.getOverviewExecutionDetails(accountId, ruleExecutionFilter));
   }
 
-  @POST
+  @GET
   @Path("overview/executionCostDetails")
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Return rule execution Cost Details", nickname = "executionCostDetails")
-  @Operation(operationId = "executionCostDetails", summary = "Return  rule execution Cost Details ",
+  @Operation(operationId = "executionCostDetails", summary = "Return rule execution Cost Details ",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            description = "Return  rule Details", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Return rule Details", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
 
   public ResponseDTO<OverviewExecutionCostDetails>
-  getExecutionCostDetails(
-      @Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Request body containing CreateRuleExecutionFilterDTO object")
-      @Valid CreateRuleExecutionFilterDTO createRuleExecutionFilterDTO) {
-    RuleExecutionFilter ruleExecutionFilter = createRuleExecutionFilterDTO.getRuleExecutionFilter();
-    ruleExecutionFilter.setAccountId(accountId);
-
+  getExecutionCostDetails(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE)
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
     // Getting recommendations data from timescale DB
     K8sRecommendationFilterDTO filter =
         RecommendationQueryHelper.buildK8sRecommendationFilterDTO(getDefaultGovernanceRecommendationOverviewFilter());
@@ -340,9 +334,7 @@ public class GovernanceRuleExecutionResource {
     List<String> recommendationsIds = recommendationsDTO.stream()
                                           .map(recommendationItemDTO -> recommendationItemDTO.getId())
                                           .collect(Collectors.toList());
-
-    return ResponseDTO.newResponse(
-        ruleExecutionService.getExecutionCostDetails(accountId, ruleExecutionFilter, recommendationsIds));
+    return ResponseDTO.newResponse(ruleExecutionService.getExecutionCostDetails(accountId, recommendationsIds));
   }
 
   @GET

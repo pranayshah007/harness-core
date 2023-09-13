@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer;
+package io.harness.ci.execution.serializer;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_MACHINE;
@@ -28,6 +28,7 @@ import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.ci.serializer.ProtobufStepSerializer;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;

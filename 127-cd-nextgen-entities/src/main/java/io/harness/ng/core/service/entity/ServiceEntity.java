@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
@@ -51,6 +54,8 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @Data
 @Builder
@@ -127,6 +132,7 @@ public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
+  @Wither @Setter @NonFinal String fallBackBranch;
 
   public String fetchNonEmptyYaml() {
     if (EmptyPredicate.isEmpty(yaml)) {

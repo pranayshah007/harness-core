@@ -123,8 +123,10 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
       return GraphLayoutResponse.builder().build();
     }
     String nextNodeId = null;
-    if (ctx.getDependency() != null && ctx.getDependency().getMetadataMap().get("nextId") != null) {
-      nextNodeId = (String) kryoSerializer.asObject(ctx.getDependency().getMetadataMap().get("nextId").toByteArray());
+    if (ctx.getDependency() != null
+        && ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID) != null) {
+      nextNodeId = (String) kryoSerializer.asObject(
+          ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
     }
     List<String> childrenUuids =
         children.stream().map(YamlField::getNode).map(YamlNode::getUuid).collect(Collectors.toList());
@@ -159,8 +161,10 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   private List<AdviserObtainment> getAdviserObtainmentFromMetaData(PlanCreationContext ctx, YamlField currentField) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     String nextNodeId = null;
-    if (ctx.getDependency() != null && ctx.getDependency().getMetadataMap().get("nextId") != null) {
-      nextNodeId = (String) kryoSerializer.asObject(ctx.getDependency().getMetadataMap().get("nextId").toByteArray());
+    if (ctx.getDependency() != null
+        && ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID) != null) {
+      nextNodeId = (String) kryoSerializer.asObject(
+          ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
     }
 
     if (currentField != null && currentField.getNode() != null) {

@@ -2,37 +2,49 @@
   {
     "id": "64d4f26ed87dc387cb5ee933",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "meanTimeToMergePRHours",
+    "identifier": "meanTimeToMerge",
     "name": "Github mean time to merge PR hours",
     "type": "NUMBER",
     "dataSourceIdentifier": "github",
-    "dataSourceLocationIdentifier": "__HARNESS__59416052-669b-45e0-813b-f686eb26e464"
+    "dataSourceLocationIdentifier": "github_mean_time_to_merge_pr"
   },
   {
     "id": "64d5c505c94f589f936c04d7",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "pagerdutyAnnotation",
     "name": "Catalog pagerduty annotation",
-    "type": "BOOLEAN",
+    "type": "STRING",
     "dataSourceIdentifier": "catalog",
-    "dataSourceLocationIdentifier": "__HARNESS__2cc456df-76cd-41c2-8013-60605f266b88"
+    "outcomeExpression":  "catalog.metadata.annotations.pagerduty_com_service_id",
+    "dataSourceLocationIdentifier": "catalog"
   },
   {
     "id": "64d5f2bc387ee61486eed6f6",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "isBranchProtectionSet",
+    "identifier": "isBranchProtected",
     "name": "Github default branch protection set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "github",
-    "dataSourceLocationIdentifier": "__HARNESS__767f2233-6c67-4dd9-8785-121261f340a9"
+    "dataSourceLocationIdentifier": "github_is_branch_protection_set"
   },
   {
     "id": "64d5f56280f63a315c9e08b5",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "techDocsAnnotation",
     "name": "Catalog TechDocs annotation",
-    "type": "BOOLEAN",
+    "type": "STRING",
     "dataSourceIdentifier": "catalog",
-    "dataSourceLocationIdentifier": "__HARNESS__2cc456df-76cd-41c2-8013-60605f266b88"
+    "outcomeExpression":  "catalog.metadata.annotations.backstage_io_techdocs_ref",
+    "dataSourceLocationIdentifier": "catalog"
+  },
+  {
+    "id": "64e44efc95107f65e31c51f7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "specOwner",
+    "name": "Spec Owner",
+    "type": "STRING",
+    "dataSourceIdentifier": "catalog",
+    "outcomeExpression":  "catalog.spec.owner",
+    "dataSourceLocationIdentifier": "catalog"
   }
 ]

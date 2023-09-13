@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.gcpsecretmanager.outcome;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
@@ -29,6 +30,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("io.harness.delegate.beans.connector.gcpsecretmanager.outcome.GcpSecretManagerConnectorOutcomeDTO")
 public class GcpSecretManagerConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
 

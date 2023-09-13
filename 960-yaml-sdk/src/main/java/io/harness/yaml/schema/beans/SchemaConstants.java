@@ -78,4 +78,5 @@ public class SchemaConstants {
   public static final String STAGE_ELEMENT_CONFIG_REF_VALUE = "#/definitions/StageElementConfig";
   public static final String STAGE_NODE = "stage";
   public static final String HASH_SYMBOL = "#";
+  public static final String TITLE = "title";
 }

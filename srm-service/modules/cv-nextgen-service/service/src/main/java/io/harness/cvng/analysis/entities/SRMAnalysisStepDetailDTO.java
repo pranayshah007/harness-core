@@ -7,6 +7,8 @@
 
 package io.harness.cvng.analysis.entities;
 
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL_FORMAT;
+
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 
 import java.time.Duration;
@@ -39,6 +41,9 @@ public class SRMAnalysisStepDetailDTO {
 
   @NotNull private String executionDetailIdentifier;
   @NotNull private String stepName;
+  @NotNull String stageStepId;
+  @NotNull String planExecutionId;
+  private String pipelinePath;
 
   public static SRMAnalysisStepDetailDTO getDTOFromEntity(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
     return SRMAnalysisStepDetailDTO.builder()
@@ -54,6 +59,12 @@ public class SRMAnalysisStepDetailDTO {
         .orgIdentifier(stepExecutionDetail.getOrgIdentifier())
         .projectIdentifier(stepExecutionDetail.getProjectIdentifier())
         .stepName(stepExecutionDetail.getStepName())
+        .stageStepId(stepExecutionDetail.getStageStepId())
+        .planExecutionId(stepExecutionDetail.getPlanExecutionId())
+        .pipelinePath(String.format(PIPELINE_URL_FORMAT, stepExecutionDetail.getAccountId(),
+            stepExecutionDetail.getOrgIdentifier(), stepExecutionDetail.getProjectIdentifier(),
+            stepExecutionDetail.getPipelineId(), stepExecutionDetail.getPlanExecutionId(),
+            stepExecutionDetail.getStageStepId()))
         .build();
   }
 }

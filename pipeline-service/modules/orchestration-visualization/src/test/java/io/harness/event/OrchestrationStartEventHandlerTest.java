@@ -24,6 +24,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.rule.Owner;
 import io.harness.service.GraphGenerationService;
@@ -45,7 +46,6 @@ public class OrchestrationStartEventHandlerTest extends OrchestrationVisualizati
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-
   public void shouldThrowInvalidRequestException() {
     String planExecutionId = generateUuid();
     PlanExecutionMetadata planExecutionMetadata =
@@ -59,6 +59,7 @@ public class OrchestrationStartEventHandlerTest extends OrchestrationVisualizati
                            -> orchestrationStartEventHandler.onStart(OrchestrationStartInfo.builder()
                                                                          .ambiance(event.getAmbiance())
                                                                          .planExecutionMetadata(planExecutionMetadata)
+                                                                         .startStatus(Status.RUNNING)
                                                                          .build()))
         .isInstanceOf(EntityNotFoundException.class);
   }
@@ -76,13 +77,17 @@ public class OrchestrationStartEventHandlerTest extends OrchestrationVisualizati
         PlanExecutionMetadata.builder().planExecutionId(planExecution.getUuid()).build();
 
     OrchestrationEvent event = OrchestrationEvent.builder()
-                                   .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecution.getUuid()).build())
+                                   .ambiance(Ambiance.newBuilder()
+                                                 .putSetupAbstractions(SetupAbstractionKeys.accountId, generateUuid())
+                                                 .setPlanExecutionId(planExecution.getUuid())
+                                                 .build())
                                    .eventType(ORCHESTRATION_START)
                                    .build();
 
     orchestrationStartEventHandler.onStart(OrchestrationStartInfo.builder()
                                                .ambiance(event.getAmbiance())
                                                .planExecutionMetadata(planExecutionMetadata)
+                                               .startStatus(Status.RUNNING)
                                                .build());
 
     Awaitility.await().atMost(2, TimeUnit.SECONDS).pollInterval(500, TimeUnit.MILLISECONDS).until(() -> {

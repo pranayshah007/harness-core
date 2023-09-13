@@ -81,6 +81,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -198,8 +199,9 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   }
 
   @Override
-  public K8sInfraDelegateConfig getK8sInfraDelegateConfig(@Nonnull Ambiance ambiance, @Nonnull String shellScript) {
-    if (shellScript.contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)) {
+  public K8sInfraDelegateConfig getK8sInfraDelegateConfig(
+      @Nonnull Ambiance ambiance, @Nonnull String shellScript, Boolean includeInfraSelectors) {
+    if (BooleanUtils.isTrue(includeInfraSelectors) || shellScript.contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)) {
       OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
           RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
       if (optionalSweepingOutput.isFound()) {
@@ -346,8 +348,11 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
       ParameterField<String> workingDirectory) {
     WinRmShellScriptTaskParametersNGBuilder taskParametersNGBuilder = WinRmShellScriptTaskParametersNG.builder();
 
+    Boolean includeInfraSelectors = shellScriptStepParameters.includeInfraSelectors != null
+        && BooleanUtils.isTrue(shellScriptStepParameters.includeInfraSelectors.getValue());
+
     taskParametersNGBuilder.k8sInfraDelegateConfig(
-        shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript));
+        shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript, includeInfraSelectors));
 
     if (!shellScriptStepParameters.onDelegate.getValue()) {
       ExecutionTarget executionTarget = shellScriptStepParameters.getExecutionTarget();
@@ -390,8 +395,11 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
       ParameterField<String> workingDirectory) {
     ShellScriptTaskParametersNGBuilder taskParametersNGBuilder = ShellScriptTaskParametersNG.builder();
 
+    Boolean includeInfraSelectors = shellScriptStepParameters.includeInfraSelectors != null
+        && BooleanUtils.isTrue(shellScriptStepParameters.includeInfraSelectors.getValue());
+
     taskParametersNGBuilder.k8sInfraDelegateConfig(
-        shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript));
+        shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript, includeInfraSelectors));
     shellScriptHelperService.prepareTaskParametersForExecutionTarget(
         ambiance, shellScriptStepParameters, taskParametersNGBuilder);
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))

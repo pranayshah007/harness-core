@@ -13,7 +13,6 @@ import static software.wings.beans.TaskType.INITIALIZATION_PHASE;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.ExecutionStatus;
@@ -21,7 +20,8 @@ import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.delegate.core.beans.InputData;
 import io.harness.delegate.core.beans.StatusCode;
 import io.harness.delegate.service.common.SimpleDelegateAgent;
-import io.harness.delegate.service.core.runner.TaskRunner;
+import io.harness.delegate.service.handlermapping.context.Context;
+import io.harness.delegate.service.runners.itfc.Runner;
 
 import software.wings.beans.TaskType;
 
@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksResponse, ExecutionStatusResponse> {
-  private final TaskRunner taskRunner;
+  private final Runner taskRunner;
 
   @Override
   protected void abortTask(final DelegateTaskAbortEvent taskEvent) {
@@ -44,12 +44,11 @@ public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksRespons
 
   @Override
   protected AcquireTasksResponse acquireTask(final String taskId) throws IOException {
-    final var response =
-        executeRestCall(getManagerClient().acquireProtoTask(DelegateAgentCommonVariables.getDelegateId(), taskId,
-            getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
+    final var response = executeRestCall(getManagerClient().acquireProtoTask(
+        delegateId, taskId, getDelegateConfiguration().getAccountId(), context.getInstanceId()));
 
-    log.info("Delegate {} received {} tasks for delegateInstance {}", DelegateAgentCommonVariables.getDelegateId(),
-        response.getTaskList().size(), DELEGATE_INSTANCE_ID);
+    log.info("Delegate {} received {} tasks for delegateInstance {}", delegateId, response.getTaskList().size(),
+        context.getInstanceId());
     return response;
   }
 
@@ -60,15 +59,15 @@ public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksRespons
     // FixMe: Hack so we don't need to make changes to CI & NG manager for now. Normally it would just invoke a single
     // runner stage
     if (hasTaskType(task.getTaskData(), INITIALIZATION_PHASE)) {
-      taskRunner.init(groupId, task.getInfraData());
+      taskRunner.init(groupId, task.getInfraData(), new Context());
     } else if (hasTaskType(task.getTaskData(), CI_EXECUTE_STEP)) {
-      taskRunner.execute(groupId, task.getTaskData());
+      taskRunner.execute(groupId, task.getTaskData(), new Context());
     } else if (hasTaskType(task.getTaskData(), CI_CLEANUP)) {
-      taskRunner.cleanup(groupId);
+      taskRunner.cleanup(groupId, new Context());
     } else { // Task which doesn't have separate infra step (e.g. CD)
-      taskRunner.init(groupId, task.getInfraData());
-      taskRunner.execute(groupId, task.getTaskData());
-      taskRunner.cleanup(groupId);
+      taskRunner.init(groupId, task.getInfraData(), new Context());
+      taskRunner.execute(groupId, task.getTaskData(), new Context());
+      taskRunner.cleanup(groupId, new Context());
     }
     return ExecutionStatusResponse.newBuilder()
         .setStatus(ExecutionStatus.newBuilder().setCode(StatusCode.CODE_SUCCESS).build())

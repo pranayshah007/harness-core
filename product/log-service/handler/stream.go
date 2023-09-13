@@ -128,7 +128,6 @@ func HandleClose(logStream stream.Stream, store store.Store, scanBatch int64) ht
 				g.Go(func() error {
 					return logStream.CopyTo(ctx, k, bwc)
 				})
-
 				g.Go(func() error {
 					return store.Upload(ctx, k, br)
 				})

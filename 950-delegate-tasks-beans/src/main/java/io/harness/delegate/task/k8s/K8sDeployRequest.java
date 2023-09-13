@@ -18,11 +18,8 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
-import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
-import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
-import io.harness.delegate.beans.connector.rancher.RancherTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
@@ -37,6 +34,7 @@ import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.delegate.task.utils.K8sCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -68,36 +66,10 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = getK8sInfraDelegateConfig();
     List<EncryptedDataDetail> cloudProviderEncryptionDetails = k8sInfraDelegateConfig.getEncryptionDataDetails();
-
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             cloudProviderEncryptionDetails, maskingEvaluator));
-
-    if (k8sInfraDelegateConfig instanceof DirectK8sInfraDelegateConfig) {
-      capabilities.addAll(K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator,
-          k8sInfraDelegateConfig.useSocketCapability()));
-    }
-
-    if (k8sInfraDelegateConfig instanceof GcpK8sInfraDelegateConfig) {
-      capabilities.addAll(GcpCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ((GcpK8sInfraDelegateConfig) k8sInfraDelegateConfig).getGcpConnectorDTO(), maskingEvaluator));
-    }
-
-    if (k8sInfraDelegateConfig instanceof AzureK8sInfraDelegateConfig) {
-      capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ((AzureK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAzureConnectorDTO(), maskingEvaluator));
-    }
-
-    if (k8sInfraDelegateConfig instanceof EksK8sInfraDelegateConfig) {
-      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ((EksK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAwsConnectorDTO(), maskingEvaluator));
-    }
-
-    if (k8sInfraDelegateConfig instanceof RancherK8sInfraDelegateConfig) {
-      capabilities.addAll(RancherTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ((RancherK8sInfraDelegateConfig) k8sInfraDelegateConfig).getRancherConnectorDTO(), maskingEvaluator));
-    }
+    capabilities.addAll(K8sCapabilityGenerator.generateExecutionCapabilities(maskingEvaluator, k8sInfraDelegateConfig));
 
     if (getManifestDelegateConfig() != null) {
       if (KUSTOMIZE == getManifestDelegateConfig().getManifestType()) {

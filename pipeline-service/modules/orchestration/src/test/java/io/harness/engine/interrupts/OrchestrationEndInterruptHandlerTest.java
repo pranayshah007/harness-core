@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -41,7 +42,8 @@ public class OrchestrationEndInterruptHandlerTest extends OrchestrationTestBase 
   public void shouldTestOnEnd() {
     String planExecutionId = generateUuid();
     when(interruptService.closeActiveInterrupts(eq(planExecutionId))).thenReturn(0L);
-    orchestrationEndInterruptHandler.onEnd(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build());
+    orchestrationEndInterruptHandler.onEnd(
+        Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build(), Status.SUCCEEDED);
     ArgumentCaptor<String> pidCaptor = ArgumentCaptor.forClass(String.class);
     verify(interruptService).closeActiveInterrupts(pidCaptor.capture());
     assertThat(pidCaptor.getValue()).isEqualTo(planExecutionId);

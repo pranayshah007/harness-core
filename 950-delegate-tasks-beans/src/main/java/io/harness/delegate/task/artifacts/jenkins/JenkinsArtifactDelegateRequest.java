@@ -35,7 +35,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @Data
 @Builder
@@ -72,6 +72,7 @@ public class JenkinsArtifactDelegateRequest implements ArtifactSourceDelegateReq
   private String buildFullDisplayName;
   private String description;
   private List<FilePathAssertionEntry> filePathAssertionMap;
+  private long consoleLogFrequency;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

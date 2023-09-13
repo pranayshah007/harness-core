@@ -77,7 +77,8 @@ public class InterruptServiceImpl implements InterruptService {
   }
 
   @Override
-  public ExecutionCheck checkInterruptsPreInvocation(String planExecutionId, String nodeExecutionId) {
+  public ExecutionCheck checkInterruptsPreInvocation(
+      String planExecutionId, String currentNodeExecutionId, List<String> interruptNodeExecutionIds) {
     List<Interrupt> interrupts = fetchActivePlanLevelInterrupts(planExecutionId);
     if (isEmpty(interrupts)) {
       return ExecutionCheck.builder().proceed(true).reason("[InterruptCheck] No Interrupts Found").build();
@@ -88,11 +89,16 @@ public class InterruptServiceImpl implements InterruptService {
     }
 
     Optional<Interrupt> optionalInterrupt =
-        InterruptUtils.obtainOptionalInterruptFromActiveInterrupts(interrupts, planExecutionId, nodeExecutionId);
+        InterruptUtils.obtainOptionalInterruptFromActiveInterrupts(interrupts, interruptNodeExecutionIds);
 
-    Interrupt interrupt = optionalInterrupt.orElseThrow(() -> new InvalidRequestException("Interrupt was not found"));
+    Interrupt interrupt;
+    if (optionalInterrupt.isPresent()) {
+      interrupt = optionalInterrupt.get();
+    } else {
+      return ExecutionCheck.builder().proceed(true).reason("[InterruptCheck] No applicable Interrupt Found").build();
+    }
     log.info("Interrupt found pre node invocation calculating execution check");
-    return calculateExecutionCheck(nodeExecutionId, interrupt);
+    return calculateExecutionCheck(currentNodeExecutionId, interrupt);
   }
 
   private ExecutionCheck calculateExecutionCheck(String nodeExecutionId, Interrupt interrupt) {
@@ -113,9 +119,9 @@ public class InterruptServiceImpl implements InterruptService {
         if (!ExecutionModeUtils.isParentMode(nodeExecution.getMode())
             && StatusUtils.resumableStatuses().contains(nodeExecution.getStatus())) {
           if (interrupt.getType() == InterruptType.ABORT_ALL) {
-            abortInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
+            abortInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, false);
           } else {
-            markExpiredInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
+            markExpiredInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, false);
           }
           return ExecutionCheck.builder()
               .proceed(false)

@@ -132,13 +132,16 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
     File artifactFile = null;
     File workingDirectory = null;
+    File trailingLogsDirectory = null;
     TasApplicationInfo currentProdInfo = null;
     CfRollingDeployResponseNGBuilder cfRollingDeployResponseNGBuilder = CfRollingDeployResponseNG.builder();
     try {
       List<ApplicationSummary> previousReleases = cfDeploymentManager.getPreviousReleasesForRolling(
           cfRequestConfig, ((CfRollingDeployRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
+      trailingLogsDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
       cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
+      cfRequestConfig.setTrailingLogsDirPath(trailingLogsDirectory.getAbsolutePath());
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
           workingDirectory, ((CfRollingDeployRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
       cfRollingDeployResponseNGBuilder.currentProdInfo(currentProdInfo);
@@ -166,9 +169,10 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
               .pcfManifestFileData(pcfManifestFileData)
               .varsYmlFilePresent(varsYmlPresent)
               .dockerBasedDeployment(isDockerArtifact(cfRollingDeployRequestNG.getTasArtifactConfig()))
-              .strategy("rolling")
               .build();
-
+      if (!isEmpty(previousReleases)) {
+        requestData.setStrategy("rolling");
+      }
       requestData.setFinalManifestYaml(generateManifestYamlForPush(cfRollingDeployRequestNG, requestData));
       // Create manifest.yaml file
       prepareManifestYamlFile(requestData);
@@ -478,6 +482,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
         .cfCliPath(cfRequestConfig.getCfCliPath())
         .cfCliVersion(cfRequestConfig.getCfCliVersion())
         .cfHomeDirPath(cfRequestConfig.getCfHomeDirPath())
+        .trailingLogsDirPath(cfRequestConfig.getTrailingLogsDirPath())
         .loggedin(cfRequestConfig.isLoggedin())
         .limitPcfThreads(cfRequestConfig.isLimitPcfThreads())
         .useNumbering(cfRequestConfig.isUseNumbering())

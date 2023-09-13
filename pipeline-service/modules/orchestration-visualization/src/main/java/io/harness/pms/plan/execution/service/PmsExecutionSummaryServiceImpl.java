@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution.service;
+
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.OrchestrationStepTypes;
@@ -194,7 +195,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     ConcurrentChildInstance concurrentChildInstance =
         pmsGraphStepDetailsService.fetchConcurrentChildInstance(strategyNodeExecution.getUuid());
     if (concurrentChildInstance != null && !strategyNodeExecution.getExecutableResponses().isEmpty()) {
-      Node node = planService.fetchNode(strategyNodeExecution.getNodeId());
+      Node node = planService.fetchNode(strategyNodeExecution.getPlanId(), strategyNodeExecution.getNodeId());
       // TODO: Revisit this logic seems to violating a few principles
       PmsStepParameters parameters = node.getStepParameters();
       if (parameters.containsKey("strategyType")
@@ -243,6 +244,13 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
     Query query = new Query(criteria);
     pmsExecutionSummaryRepository.update(query, update);
+  }
+
+  @Override
+  public void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId) {
+    Update update = new Update();
+    update.set(PlanExecutionSummaryKeys.notesExistForPlanExecutionId, notesExistForPlanExecutionId);
+    update(planExecutionId, update);
   }
 
   @Override

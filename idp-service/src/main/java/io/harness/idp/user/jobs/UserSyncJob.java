@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.IDP)
 public class UserSyncJob implements Managed {
-  private static final long DELAY_IN_MINUTES = TimeUnit.MINUTES.toMinutes(10);
+  private static final long DELAY_IN_MINUTES = TimeUnit.MINUTES.toMinutes(1);
   private ScheduledExecutorService executorService;
   private final UserEventRepository userEventRepository;
   private final BackstageResourceClient backstageResourceClient;
@@ -61,13 +61,14 @@ public class UserSyncJob implements Managed {
     List<UserEventEntity> userEventEntities = userEventRepository.findAllByHasEvent(true);
     userEventEntities.forEach(userEventEntity -> {
       String accountIdentifier = userEventEntity.getAccountIdentifier();
+      String userGroupIdentifier = userEventEntity.getUserGroupIdentifier();
       try {
         userEventEntity.setHasEvent(false);
         userEventRepository.saveOrUpdate(userEventEntity);
-        log.info("Processing event for account {}", accountIdentifier);
-        getGeneralResponse(backstageResourceClient.providerRefresh(accountIdentifier));
+        log.info("Processing event for account {} userGroup {}", accountIdentifier, userGroupIdentifier);
+        getGeneralResponse(backstageResourceClient.providerRefresh(accountIdentifier, userGroupIdentifier));
       } catch (Exception e) {
-        log.error("Could not sync users  for account {}", accountIdentifier, e);
+        log.error("Could not sync users  for account {} userGroup {}", accountIdentifier, userGroupIdentifier, e);
       }
     });
 

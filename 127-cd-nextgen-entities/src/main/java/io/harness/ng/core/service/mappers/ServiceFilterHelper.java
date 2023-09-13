@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.service.mappers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -40,7 +41,8 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ServiceFilterHelper {

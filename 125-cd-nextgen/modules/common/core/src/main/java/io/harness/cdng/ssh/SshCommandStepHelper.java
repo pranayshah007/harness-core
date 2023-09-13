@@ -120,9 +120,8 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_TRADITIONAL,
-        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Singleton
 @OwnedBy(CDP)
 @Slf4j
@@ -336,6 +335,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .commandUnits(
             mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate, Collections.emptyMap()))
         .host(onDelegate ? null : getHost(commandStepParameters))
+        .disableEvaluateExportVariable(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_DISABLE_EVALUATE_EXPORT_VARIABLES))
         .build();
   }
 
@@ -360,6 +361,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .commandUnits(
             mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate, Collections.emptyMap()))
         .host(onDelegate ? null : getHost(commandStepParameters))
+        .disableEvaluateExportVariable(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_DISABLE_EVALUATE_EXPORT_VARIABLES))
         .build();
   }
 

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
@@ -46,17 +46,17 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
-import io.harness.ci.buildstate.CodebaseUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.buildstate.CodebaseUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.InfraInfoUtils;
+import io.harness.ci.execution.utils.CIVmSecretEvaluator;
+import io.harness.ci.execution.utils.HostedVmSecretResolver;
+import io.harness.ci.execution.utils.InfrastructureUtils;
+import io.harness.ci.execution.utils.ValidationUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
-import io.harness.ci.utils.CIVmSecretEvaluator;
-import io.harness.ci.utils.HostedVmSecretResolver;
-import io.harness.ci.utils.InfrastructureUtils;
-import io.harness.ci.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -131,7 +131,7 @@ public class VmInitializeTaskParamsBuilder {
   @Inject private SSCAServiceUtils sscaServiceUtils;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
-  private final String GCPStandard32 = "Standard-32";
+  private final String GCPStandard32 = "Standard_32";
 
   public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {

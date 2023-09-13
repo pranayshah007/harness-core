@@ -9,7 +9,11 @@ package io.harness.steps.approval.step.harness.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 
@@ -25,6 +29,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "Approvers", description = "This contains details of the Approvers")
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ApproversDTO {
   List<String> userGroups;
   int minimumCount;
@@ -76,7 +82,8 @@ public class ApproversDTO {
     return ApproversDTO.builder()
         .userGroups(userGroups)
         .minimumCount(minimumCount)
-        .disallowPipelineExecutor((Boolean) approvers.getDisallowPipelineExecutor().fetchFinalValue())
+        .disallowPipelineExecutor(
+            (Boolean) ParameterFieldHelper.getBooleanParameterFieldValue(approvers.getDisallowPipelineExecutor()))
         .build();
   }
 }

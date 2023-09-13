@@ -7,8 +7,10 @@
 
 package io.harness.cdng.plugininfoproviders;
 
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_ACTION;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_EXPORT_SYNTH_TEMPLATE;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.SYNTH;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -77,6 +79,7 @@ public class AwsCdkSynthPluginInfoProvider extends AbstractPluginInfoProvider {
     if (isNotEmpty(stackNames)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_STACK_NAMES, String.join(" ", stackNames));
     }
+    environmentVariablesMap.put(PLUGIN_AWS_CDK_ACTION, SYNTH);
 
     return environmentVariablesMap;
   }

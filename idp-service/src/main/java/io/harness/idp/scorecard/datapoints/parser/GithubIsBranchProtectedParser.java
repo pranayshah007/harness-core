@@ -9,6 +9,7 @@ package io.harness.idp.scorecard.datapoints.parser;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,20 +18,12 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.IDP)
 public class GithubIsBranchProtectedParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, String dataPointIdentifier, Set<String> inputValues) {
-    Map<?, ?> result = (Map<?, ?>) data.get(dataPointIdentifier);
-    Map<String, Boolean> dataPointData = new HashMap<>();
-
-    for (String inputValue : inputValues) {
-      if (result.containsKey(inputValue)) {
-        dataPointData.put(inputValue, (boolean) result.get(inputValue));
-      }
-    }
-    return dataPointData;
+  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
+    return new HashMap<>();
   }
 
   @Override
   public String getReplaceKey() {
-    return "{branch}";
+    return "";
   }
 }

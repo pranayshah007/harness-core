@@ -119,6 +119,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -172,10 +173,17 @@ public class NGVaultServiceImpl implements NGVaultService {
     NGVaultRenewalTaskParameters parameters =
         NGVaultRenewalTaskParameters.builder().encryptionConfig(baseVaultConfig).build();
 
-    DelegateResponseData delegateResponseData =
-        getDelegateResponseData(vaultConnector.getAccountIdentifier(), parameters, NG_VAULT_RENEW_TOKEN);
+    DelegateResponseData delegateResponseData;
+    try {
+      delegateResponseData =
+          getDelegateResponseData(vaultConnector.getAccountIdentifier(), parameters, NG_VAULT_RENEW_TOKEN);
+    } catch (Exception ex) {
+      pauseRenewalIfStale(vaultConnector);
+      throw ex;
+    }
 
     if (!(delegateResponseData instanceof NGVaultRenewalTaskResponse)) {
+      pauseRenewalIfStale(vaultConnector);
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, UNKNOWN_RESPONSE, USER);
     }
 
@@ -186,6 +194,8 @@ public class NGVaultServiceImpl implements NGVaultService {
       vaultConnector.setRenewedAt(System.currentTimeMillis());
       connectorRepository.save(vaultConnector, ChangeType.NONE);
       updatePerpetualTaskWhenTokenIsRenewed(vaultConnector);
+    } else {
+      pauseRenewalIfStale(vaultConnector);
     }
   }
 
@@ -317,15 +327,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     if (vaultTokenLookupResult.getExpiryTime() == null || !vaultTokenLookupResult.isRenewable()) {
       // 1st condition means that this token is a root token
       // 2nd condition means that this token is not renewable ; both conditions imply that renewal is not required.
-
-      Criteria criteria = Criteria.where(ConnectorKeys.id).is(vaultConnector.getId());
-      Update update = new Update()
-                          .set(VaultConnectorKeys.lastTokenLookupAt, System.currentTimeMillis())
-                          .set(VaultConnectorKeys.renewalIntervalMinutes, 0L);
-      connectorRepository.update(criteria, update, NONE, vaultConnector.getProjectIdentifier(),
-          vaultConnector.getOrgIdentifier(), vaultConnector.getAccountIdentifier());
-
-      log.info("Renewal interval set to 0 for the Vault connector: {}", vaultConnector.getUuid());
+      stopRenewal(vaultConnector);
       return true;
     }
     return false;
@@ -1026,5 +1028,28 @@ public class NGVaultServiceImpl implements NGVaultService {
       return specDTO.getXVaultAwsIamServerId();
     }
     return null;
+  }
+
+  private void stopRenewal(VaultConnector vaultConnector) {
+    Criteria criteria = Criteria.where(ConnectorKeys.id).is(vaultConnector.getId());
+    Update update = new Update()
+                        .set(VaultConnectorKeys.lastTokenLookupAt, System.currentTimeMillis())
+                        .set(VaultConnectorKeys.renewalIntervalMinutes, 0L);
+    connectorRepository.update(criteria, update, NONE, vaultConnector.getProjectIdentifier(),
+        vaultConnector.getOrgIdentifier(), vaultConnector.getAccountIdentifier());
+
+    log.info("Renewal interval set to 0 for the Vault connector: {}", vaultConnector.getUuid());
+  }
+
+  private void pauseRenewalIfStale(VaultConnector vaultConnector) {
+    // a static buffer of 5 mins buffer has been added to tackle iterator delay
+    if (vaultConnector.getRenewedAt() < OffsetDateTime.now()
+                                            .minusMinutes(vaultConnector.getRenewalIntervalMinutes() + 5)
+                                            .toInstant()
+                                            .toEpochMilli()) {
+      log.warn("Stopping renewal iterator for vault- {} with id- {}", vaultConnector.getName(), vaultConnector.getId());
+      vaultConnector.setRenewalPaused(Boolean.TRUE);
+      connectorRepository.save(vaultConnector, ChangeType.NONE);
+    }
   }
 }

@@ -61,8 +61,8 @@ public class ProvisionServiceImpl implements ProvisionService {
   private static final String ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   private static SecureRandom rnd = new SecureRandom();
   private static final int SECRET_LENGTH = 32;
-  private static final String ERROR_MESSAGE =
-      "Invalid request: Secret with identifier IDP_BACKEND_SECRET already exists in this scope";
+  static final String ERROR_MESSAGE =
+      "HTTP Error Status (400 - Invalid Format) received. Invalid request: Secret with identifier IDP_BACKEND_SECRET already exists in this scope";
   @Inject @Named(PROVISION_MODULE_CONFIG) ProvisionModuleConfig provisionModuleConfig;
   private final Retry retry = buildRetryAndRegisterListeners();
   private final MediaType APPLICATION_JSON = MediaType.parse("application/json");

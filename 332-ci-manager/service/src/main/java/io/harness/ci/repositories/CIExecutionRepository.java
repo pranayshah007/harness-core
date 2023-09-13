@@ -11,7 +11,7 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.ci.execution.CIExecutionMetadata;
+import io.harness.ci.execution.execution.CIExecutionMetadata;
 
 import org.springframework.data.repository.CrudRepository;
 
@@ -26,4 +26,5 @@ public interface CIExecutionRepository
   CIExecutionMetadata findByStageExecutionId(String stageExecutionId);
 
   void deleteByStageExecutionId(String stageExecutionId);
+  void deleteAllByAccountId(String accountId);
 }

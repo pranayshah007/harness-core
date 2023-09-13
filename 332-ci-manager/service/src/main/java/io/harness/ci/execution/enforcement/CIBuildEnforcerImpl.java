@@ -14,7 +14,7 @@ import io.harness.beans.execution.license.CILicenseService;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.config.ExecutionLimits.ExecutionLimitSpec;
-import io.harness.ci.execution.QueueExecutionUtils;
+import io.harness.ci.execution.execution.QueueExecutionUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.repositories.ExecutionQueueLimitRepository;

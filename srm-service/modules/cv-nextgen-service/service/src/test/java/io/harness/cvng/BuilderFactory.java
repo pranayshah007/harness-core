@@ -32,6 +32,7 @@ import io.harness.cvng.activity.entities.SRMStepAnalysisActivity.SRMStepAnalysis
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.DeviationType;
@@ -1100,6 +1101,25 @@ public class BuilderFactory {
         .activityStartTime(clock.instant());
   }
 
+  public SRMAnalysisStepExecutionDetail getSRMAnalysisStepExecutionDetail() {
+    return SRMAnalysisStepExecutionDetail.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .stageStepId("stageStepId")
+        .stageId("stageId")
+        .pipelineId("pipelineId")
+        .planExecutionId("executionId")
+        .artifactType("artifactType")
+        .artifactTag("artifactTag")
+        .stepName(generateUuid())
+        .analysisEndTime(clock.instant().toEpochMilli())
+        .analysisStartTime(clock.instant().toEpochMilli())
+        .build();
+  }
+
   public Ambiance getAmbiance(ProjectParams projectParams) {
     HashMap<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put("accountId", projectParams.getAccountIdentifier());
@@ -1110,6 +1130,29 @@ public class BuilderFactory {
         .setStageExecutionId(generateUuid())
         .addLevels(Level.newBuilder()
                        .setRuntimeId(generateUuid())
+                       .setStartTs(clock.millis())
+                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                       .build())
+        .addLevels(Level.newBuilder()
+                       .setRuntimeId(generateUuid())
+                       .setIdentifier("identifier")
+                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                       .build())
+        .putAllSetupAbstractions(setupAbstractions)
+        .build();
+  }
+
+  public Ambiance getAmbiance(ProjectParams projectParams, String planExecutionId, String stageId) {
+    HashMap<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put("accountId", projectParams.getAccountIdentifier());
+    setupAbstractions.put("projectIdentifier", projectParams.getProjectIdentifier());
+    setupAbstractions.put("orgIdentifier", projectParams.getOrgIdentifier());
+    return Ambiance.newBuilder()
+        .setPlanExecutionId(planExecutionId)
+        .setStageExecutionId(generateUuid())
+        .addLevels(Level.newBuilder()
+                       .setRuntimeId(generateUuid())
+                       .setIdentifier(stageId)
                        .setStartTs(clock.millis())
                        .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
                        .build())

@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   kubeVersion: ""
   loadbalancerURL: ""
   imagePullSecrets: []
@@ -43,6 +45,7 @@ service:
   type: ClusterIP
   protocol: TCP
   port: 8091
+  annotations: {}
 
 resources:
   limits:

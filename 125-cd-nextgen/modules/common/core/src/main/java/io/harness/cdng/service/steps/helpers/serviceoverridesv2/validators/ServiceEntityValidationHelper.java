@@ -12,8 +12,11 @@ import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLI
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -25,7 +28,8 @@ import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceEntityValidationHelper {
   @Inject private ServiceEntityService serviceEntityService;

@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   kubeVersion: ""
   secrets:
     app:
@@ -145,7 +147,7 @@ image:
   repository: harness/migrator-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "100534-000"
+  tag: "100578-000"
   digest: ""
   imagePullSecrets:
   - gcr-io-secret
@@ -536,6 +538,7 @@ securityContext:
   runAsNonRoot: true
 
 service:
+  annotations: {}
   type: ClusterIP
   port: 9080
   grpcport: 9879
@@ -634,3 +637,8 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

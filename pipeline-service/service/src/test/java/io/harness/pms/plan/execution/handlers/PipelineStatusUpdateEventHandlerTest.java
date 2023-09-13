@@ -106,7 +106,7 @@ public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBas
         .thenReturn(Optional.of(pipelineExecutionSummaryEntity));
     when(pmsExecutionSummaryRepository.update(notNull(), notNull())).thenReturn(pipelineExecutionSummaryEntity);
 
-    pipelineStatusUpdateEventHandler.onEnd(createAmbiance());
+    pipelineStatusUpdateEventHandler.onEnd(createAmbiance(), Status.SUCCEEDED);
 
     // IN THIS SCENARIO WE ARE ONLY VERIFYING THAT EVENT WAS EMITTED TWICE AND WITHOUT NPE
     // A NEW TEST CASE SHOULD BE CREATED TO ASSERT EMITTED EVENT PROPERTIES.

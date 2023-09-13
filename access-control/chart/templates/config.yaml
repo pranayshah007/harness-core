@@ -3,6 +3,13 @@ kind: ConfigMap
 metadata:
   name: {{ include "access-control.name" . }}
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotation }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE }}
   LOGGING_LEVEL: {{ .Values.config.LOGGING_LEVEL}}
@@ -49,8 +56,9 @@ data:
   GOOGLE_APPLICATION_CREDENTIALS: {{ .Values.config.GOOGLE_APPLICATION_CREDENTIALS }}
   MEMORY: {{ .Values.java.memory | default "512m" }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
-
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   # Additional configs
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}
+  {{- include "harnesscommon.monitoring.config" . | nindent 2 }}

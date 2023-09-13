@@ -7,6 +7,8 @@
 
 package io.harness.cdng.plugininfoproviders;
 
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.DIFF;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_ACTION;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -67,6 +69,7 @@ public class AwsCdkDiffPluginInfoProvider extends AbstractPluginInfoProvider {
     if (isNotEmpty(stackNames)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_STACK_NAMES, String.join(" ", stackNames));
     }
+    environmentVariablesMap.put(PLUGIN_AWS_CDK_ACTION, DIFF);
 
     return environmentVariablesMap;
   }

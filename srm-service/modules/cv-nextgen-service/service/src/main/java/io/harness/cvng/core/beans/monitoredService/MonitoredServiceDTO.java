@@ -77,6 +77,13 @@ public class MonitoredServiceDTO {
     return notificationRuleRefs;
   }
 
+  public Sources getSources() {
+    if (sources == null) {
+      return Sources.builder().build();
+    }
+    return sources;
+  }
+
   @Data
   @Builder
   public static class ServiceDependencyDTO {

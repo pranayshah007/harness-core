@@ -10,6 +10,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.DataSource;
+import io.harness.spec.server.idp.v1.model.DataSourceDataPointsMap;
 
 import java.util.List;
 
@@ -18,4 +19,6 @@ public interface DataSourceService {
   List<DataSource> getAllDataSourcesDetailsForAnAccount(String accountIdentifier);
 
   List<DataPoint> getAllDataPointsDetailsForDataSource(String accountIdentifier, String dataSourceIdentifier);
+
+  List<DataSourceDataPointsMap> getDataPointsForDataSources(String accountIdentifier);
 }

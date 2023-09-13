@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.bean.yaml.nexusartifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
@@ -25,6 +26,7 @@ import lombok.experimental.Wither;
 @Builder
 @Schema(name = "NexusRegistryMavenConfig",
     description = "This entity contains the details of the Nexus config for maven repository")
+@RecasterAlias("io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig")
 public class NexusRegistryMavenConfig implements NexusRegistryConfigSpec {
   /**
    * Artifacts in repos need to be referenced via a path.

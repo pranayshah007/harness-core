@@ -15,8 +15,8 @@ import io.harness.spec.server.ssca.v1.model.EnforceSbomRequestBody;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomResponseBody;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
 import io.harness.spec.server.ssca.v1.model.SbomProcessResponseBody;
-import io.harness.ssca.services.EnforceSBOMWorkflowService;
-import io.harness.ssca.services.ProcessSbomWorkflowService;
+import io.harness.ssca.services.EnforcementStepService;
+import io.harness.ssca.services.OrchestrationStepService;
 
 import com.google.inject.Inject;
 import javax.validation.Valid;
@@ -31,15 +31,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @SSCAServiceAuth
 public class SbomProcessorApiImpl implements SbomProcessorApi {
-  @Inject ProcessSbomWorkflowService processSbomWorkflowService;
+  @Inject OrchestrationStepService orchestrationStepService;
 
-  @Inject EnforceSBOMWorkflowService enforceSBOMWorkflowService;
+  @Inject EnforcementStepService enforcementStepService;
 
   @Override
   public Response enforceSbom(
       String orgIdentifier, String projectIdentifier, @Valid EnforceSbomRequestBody body, String accountId) {
     EnforceSbomResponseBody response =
-        enforceSBOMWorkflowService.enforceSbom(accountId, orgIdentifier, projectIdentifier, body);
+        enforcementStepService.enforceSbom(accountId, orgIdentifier, projectIdentifier, body);
     return Response.ok().entity(response).build();
   }
 
@@ -49,7 +49,7 @@ public class SbomProcessorApiImpl implements SbomProcessorApi {
       String orgIdentifier, String projectIdentifier, SbomProcessRequestBody sbomProcessRequestBody, String accountId) {
     SbomProcessResponseBody response = new SbomProcessResponseBody();
     response.setArtifactId(
-        processSbomWorkflowService.processSBOM(accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody));
+        orchestrationStepService.processSBOM(accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody));
     return Response.ok().entity(response).build();
   }
 }

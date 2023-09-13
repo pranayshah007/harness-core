@@ -5,22 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_CACHE_ACCOUNT_ID;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_DETECT_CACHE;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND_OPERATION_TIMEOUT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_CACHE_KEY;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_DEBUG;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_EXIT_CODE;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_MOUNT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_OVERRIDE;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_REBUILD;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_RESTORE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
@@ -31,6 +21,17 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_S
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_NAME;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_AUTO_CACHE_ACCOUNT_ID;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_AUTO_DETECT_CACHE;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_BACKEND_OPERATION_TIMEOUT;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_CACHE_KEY;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_DEBUG;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_EXIT_CODE;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_MOUNT;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_OVERRIDE;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_REBUILD;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_RESTORE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -56,9 +57,9 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -175,7 +176,7 @@ public class CIStepGroupUtils {
                                                                 .name(INITIALIZE_TASK)
                                                                 .uuid(generateUuid())
                                                                 .type(InitializeStepNode.StepType.liteEngineTask)
-                                                                .timeout(getTimeout(infrastructure))
+                                                                .timeout(getTimeout(infrastructure, accountId))
                                                                 .initializeStepInfo(initializeStepInfo)
                                                                 .build());
       JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
@@ -189,11 +190,15 @@ public class CIStepGroupUtils {
     return !isCIManagerStep(executionWrapper);
   }
 
-  private ParameterField<Timeout> getTimeout(Infrastructure infrastructure) {
+  private ParameterField<Timeout> getTimeout(Infrastructure infrastructure, String accountId) {
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
+    boolean queueEnabled = featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
+    if (queueEnabled) {
+      return ParameterField.createValueField(Timeout.fromString("10h"));
+    }
     if (infrastructure.getType() == Infrastructure.Type.VM) {
       vmInitializeTaskParamsBuilder.validateInfrastructure(infrastructure);
       VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();

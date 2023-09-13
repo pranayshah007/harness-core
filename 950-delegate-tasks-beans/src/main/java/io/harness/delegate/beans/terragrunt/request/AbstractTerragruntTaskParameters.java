@@ -7,7 +7,12 @@
 
 package io.harness.delegate.beans.terragrunt.request;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
+
+import static software.wings.beans.TaskType.TERRAGRUNT_APPLY_TASK_NG_V2;
+import static software.wings.beans.TaskType.TERRAGRUNT_DESTROY_TASK_NG_V2;
+import static software.wings.beans.TaskType.TERRAGRUNT_PLAN_TASK_NG_V2;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -30,6 +35,8 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
+
+import software.wings.beans.TaskType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +69,7 @@ public abstract class AbstractTerragruntTaskParameters
   @Expression(ALLOW_SECRETS) String workspace;
   @Expression(ALLOW_SECRETS) Map<String, String> envVars;
   String stateFileId;
+  @Expression(ALLOW_SECRETS) Map<String, String> terragruntCommandFlags;
 
   long timeoutInMillis;
 
@@ -128,5 +136,18 @@ public abstract class AbstractTerragruntTaskParameters
     }
 
     return Optional.empty();
+  }
+
+  public TaskType getDelegateTaskTypeForPlanStep() {
+    return isNotEmpty(this.terragruntCommandFlags) ? TERRAGRUNT_PLAN_TASK_NG_V2 : TaskType.TERRAGRUNT_PLAN_TASK_NG;
+  }
+
+  public TaskType getDelegateTaskTypeForApplyStep() {
+    return isNotEmpty(this.terragruntCommandFlags) ? TERRAGRUNT_APPLY_TASK_NG_V2 : TaskType.TERRAGRUNT_APPLY_TASK_NG;
+  }
+
+  public TaskType getDelegateTaskTypeForDestroyStep() {
+    return isNotEmpty(this.terragruntCommandFlags) ? TERRAGRUNT_DESTROY_TASK_NG_V2
+                                                   : TaskType.TERRAGRUNT_DESTROY_TASK_NG;
   }
 }

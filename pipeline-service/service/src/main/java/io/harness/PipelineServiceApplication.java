@@ -83,6 +83,7 @@ import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.PipelineTelemetryRecordsJob;
+import io.harness.metrics.observers.PipelineExecutionMetricsObserver;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
@@ -586,6 +587,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(OrchestrationStartEventHandler.class)));
     planExecutionStrategy.getOrchestrationStartSubject().register(
         injector.getInstance(Key.get(ExecutionSummaryCreateEventHandler.class)));
+    planExecutionStrategy.getOrchestrationStartSubject().register(
+        injector.getInstance(Key.get(PipelineExecutionMetricsObserver.class)));
     // End Observers
     planExecutionStrategy.getOrchestrationEndSubject().register(
         injector.getInstance(Key.get(OrchestrationEndGraphHandler.class)));
@@ -603,6 +606,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(PipelineStatusUpdateEventHandler.class)));
     planExecutionStrategy.getOrchestrationEndSubject().register(
         injector.getInstance(Key.get(ResourceRestraintObserver.class)));
+    planExecutionStrategy.getOrchestrationEndSubject().register(
+        injector.getInstance(Key.get(PipelineExecutionMetricsObserver.class)));
 
     HMongoTemplate mongoTemplate = (HMongoTemplate) injector.getInstance(MongoTemplate.class);
     mongoTemplate.getTracerSubject().register(injector.getInstance(MongoRedisTracer.class));

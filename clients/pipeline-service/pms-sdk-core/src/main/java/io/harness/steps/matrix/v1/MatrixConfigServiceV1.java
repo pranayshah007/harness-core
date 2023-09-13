@@ -35,7 +35,7 @@ public class MatrixConfigServiceV1 implements StrategyConfigServiceV1 {
     MatrixConfigV1 matrixConfig = (MatrixConfigV1) strategyConfig.getStrategyInfoConfig().getValue();
     List<String> keys = getKeys(matrixConfig);
     return matrixConfigServiceHelper.fetchChildren(keys, matrixConfig.getAxis().getAxes(),
-        matrixConfig.getAxis().getExpressionAxes(), matrixConfig.getExclude(), childNodeId);
+        matrixConfig.getAxis().getExpressionAxes(), matrixConfig.getExclude(), childNodeId, null);
   }
 
   // Expanding the YAML for matrix so that the expanded YAML can directly be executed. This is used by CI.

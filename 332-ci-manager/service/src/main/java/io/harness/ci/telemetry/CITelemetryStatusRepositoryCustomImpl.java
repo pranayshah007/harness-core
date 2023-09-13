@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.repositories;
+package io.harness.ci.telemetry;
 
 import io.harness.ci.beans.entities.CITelemetrySentStatus;
 import io.harness.ci.beans.entities.CITelemetrySentStatus.CITelemetrySentStatusKeys;
@@ -45,5 +45,10 @@ public class CITelemetryStatusRepositoryCustomImpl implements CITelemetryStatusR
       return false;
     }
     return result != null;
+  }
+
+  public void deleteAllByAccountId(String accountId) {
+    Query query = new Query().addCriteria(new Criteria().and(CITelemetrySentStatusKeys.accountId).is(accountId));
+    mongoTemplate.findAllAndRemove(query, CITelemetrySentStatus.class);
   }
 }

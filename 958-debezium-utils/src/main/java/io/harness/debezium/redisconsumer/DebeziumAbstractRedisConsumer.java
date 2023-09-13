@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import lombok.extern.slf4j.Slf4j;
 
 // TODO: PLG-2014 update PmsRedisConsumer -> RedisMessageConsumerTask for generic usage
@@ -133,11 +134,11 @@ public class DebeziumAbstractRedisConsumer extends RedisTraceConsumer implements
       log.debug("Acquired lock for id: {}", eventKey);
       Long lastProcessedTimestamp = eventsCache.get(eventKey);
       if (lastProcessedTimestamp == null) {
-        eventsCache.put(eventKey, currentTimestamp);
+        updateEventCache(eventKey, currentTimestamp);
         return eventHandler.handleEvent(debeziumChangeEvent);
       } else {
         if (lastProcessedTimestamp <= currentTimestamp) {
-          eventsCache.put(eventKey, currentTimestamp);
+          updateEventCache(eventKey, currentTimestamp);
           return eventHandler.handleEvent(debeziumChangeEvent);
         } else {
           log.debug("Ignoring event {} with id {} as it was already updated", message.getId(), eventKey);
@@ -147,6 +148,14 @@ public class DebeziumAbstractRedisConsumer extends RedisTraceConsumer implements
     } catch (Exception exception) {
       log.error(String.format("Error occurred in processing message with id %s", message.getId()), exception);
       return false;
+    }
+  }
+
+  private void updateEventCache(String eventKey, Long currentTimestamp) {
+    try {
+      eventsCache.put(eventKey, currentTimestamp);
+    } catch (CacheException e) {
+      log.error("Unable to set event data into cache", e);
     }
   }
 

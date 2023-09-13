@@ -49,7 +49,7 @@ nodeExecutions {"name": "planExecutionId_mode_status_oldRetry_idx", "background"
 nodeExecutions {"name": "planExecutionId_nodeId_idx", "background": true} {"ambiance.planExecutionId": 1, "nodeId": 1}
 nodeExecutions {"name": "planExecutionId_oldRetry_idx", "background": true} {"ambiance.planExecutionId": 1, "oldRetry": 1}
 nodeExecutions {"name": "planExecutionId_parentId_createdAt_idx", "background": true} {"ambiance.planExecutionId": 1, "parentId": 1, "createdAt": -1}
-nodeExecutions {"name": "planExecutionId_stageFqn_idx", "background": true} {"ambiance.planExecutionId": 1, "planNode.stageFqn": 1}
+nodeExecutions {"name": "planExecutionId_stageFqn_idx", "background": true} {"ambiance.planExecutionId": 1, "stageFqn": 1}
 nodeExecutions {"name": "planExecutionId_status_idx", "background": true} {"ambiance.planExecutionId": 1, "status": 1}
 nodeExecutions {"name": "planExecutionId_stepCategory_identifier_idx", "background": true} {"ambiance.planExecutionId": 1, "stepType.stepCategory": 1, "identifier": 1}
 nodeExecutions {"name": "previous_id_idx", "background": true} {"previousId": 1}
@@ -58,7 +58,7 @@ nodeExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds"
 nodeExecutionsInfo {"name": "nodeExecutionId_unique_idx", "unique": true} {"nodeExecutionId": 1}
 nodeExecutionsInfo {"name": "planExecutionId_idx", "background": true} {"planExecutionId": 1}
 nodeExecutionsInfo {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-nodes {"name": "planId_idx", "background": true} {"planId": 1}
+nodes {"name": "planNodeId_nodeId", "background": true} {"planId": 1, "nodeId": 1}
 nodes {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 notifyQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 notifyQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
@@ -130,6 +130,7 @@ timeoutInstances {"name": "nextIteration_1", "background": true} {"nextIteration
 timeoutInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 triggerEventHistory {"name": "accountId_createdAt_desc", "background": true} {"accountId": 1, "createdAt": -1}
 triggerEventHistory {"name": "accountId_eventCorrelationId", "background": true} {"accountId": 1, "eventCorrelationId": 1}
+triggerEventHistory {"name": "build_source_type", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "targetIdentifier": 1, "buildSourceType": 1, "createdAt": -1}
 triggerEventHistory {"name": "las", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "triggerIdentifier": 1, "targetIdentifier": 1, "createdAt": -1}
 triggerEventHistory {"name": "las_execution_not_attempted", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "triggerIdentifier": 1, "targetIdentifier": 1, "executionNotAttempted": 1, "createdAt": -1}
 triggerEventHistory {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

@@ -29,14 +29,18 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
@@ -47,6 +51,11 @@ import lombok.experimental.FieldDefaults;
 @JsonTypeName(TERRAGRUNT_ROLLBACK)
 @RecasterAlias("io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo")
 public class TerragruntRollbackStepInfo implements CDAbstractStepInfo {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   private ParameterField<String> provisionerIdentifier;
@@ -54,6 +63,8 @@ public class TerragruntRollbackStepInfo implements CDAbstractStepInfo {
   @YamlSchemaTypes(value = {expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  @VariableExpression(skipVariableExpression = true) List<TerragruntCliOptionFlag> commandFlags;
 
   @Override
   public StepType getStepType() {
@@ -70,6 +81,7 @@ public class TerragruntRollbackStepInfo implements CDAbstractStepInfo {
     return TerragruntRollbackStepParameters.builder()
         .provisionerIdentifier(this.provisionerIdentifier)
         .delegateSelectors(delegateSelectors)
+        .commandFlags(commandFlags)
         .build();
   }
 

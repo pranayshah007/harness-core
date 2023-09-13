@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import static io.harness.pms.contracts.execution.events.OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE;
 import static io.harness.pms.contracts.execution.events.OrchestrationEventType.ORCHESTRATION_END;

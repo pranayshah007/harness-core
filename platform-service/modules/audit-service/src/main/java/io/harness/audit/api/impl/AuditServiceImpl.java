@@ -28,6 +28,9 @@ import static io.harness.audit.Action.RESTORE;
 import static io.harness.audit.Action.RESUME;
 import static io.harness.audit.Action.REVOKE_INVITE;
 import static io.harness.audit.Action.REVOKE_TOKEN;
+import static io.harness.audit.Action.ROLE_ASSIGNMENT_CREATED;
+import static io.harness.audit.Action.ROLE_ASSIGNMENT_DELETED;
+import static io.harness.audit.Action.ROLE_ASSIGNMENT_UPDATED;
 import static io.harness.audit.Action.SIGNED_EULA;
 import static io.harness.audit.Action.STAGE_END;
 import static io.harness.audit.Action.STAGE_START;
@@ -39,10 +42,12 @@ import static io.harness.audit.Action.UPSERT;
 import static io.harness.audit.mapper.AuditEventMapper.fromDTO;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.System.currentTimeMillis;
 
+import io.harness.TelemetryConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.StaticAuditFilter;
@@ -68,10 +73,14 @@ import io.harness.audit.repositories.AuditRepository;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.KeyValuePair;
 import io.harness.ng.core.common.beans.KeyValuePair.KeyValuePairKeys;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -95,22 +104,25 @@ public class AuditServiceImpl implements AuditService {
   private final AuditYamlService auditYamlService;
   private final AuditSettingsService auditSettingsService;
   private final AuditFilterPropertiesValidator auditFilterPropertiesValidator;
+  private final TelemetryReporter telemetryReporter;
 
-  public static List<Action> entityChangeEvents = List.of(CREATE, UPDATE, RESTORE, DELETE, FORCE_DELETE, UPSERT, INVITE,
-      RESEND_INVITE, REVOKE_INVITE, ADD_COLLABORATOR, REMOVE_COLLABORATOR, CREATE_TOKEN, REVOKE_TOKEN, ADD_MEMBERSHIP,
-      REMOVE_MEMBERSHIP, ERROR_BUDGET_RESET, SIGNED_EULA);
+  public static List<Action> entityChangeEvents =
+      List.of(CREATE, UPDATE, RESTORE, DELETE, FORCE_DELETE, UPSERT, INVITE, RESEND_INVITE, REVOKE_INVITE,
+          ADD_COLLABORATOR, REMOVE_COLLABORATOR, CREATE_TOKEN, REVOKE_TOKEN, ADD_MEMBERSHIP, REMOVE_MEMBERSHIP,
+          ERROR_BUDGET_RESET, SIGNED_EULA, ROLE_ASSIGNMENT_CREATED, ROLE_ASSIGNMENT_UPDATED, ROLE_ASSIGNMENT_DELETED);
   public static List<Action> loginEvents = List.of(LOGIN, LOGIN2FA, UNSUCCESSFUL_LOGIN);
   public static List<Action> runTimeEvents = List.of(START, STAGE_START, STAGE_END, END, PAUSE, RESUME, ABORT, TIMEOUT);
 
   @Inject
   public AuditServiceImpl(AuditRepository auditRepository, AuditYamlService auditYamlService,
       AuditFilterPropertiesValidator auditFilterPropertiesValidator, TransactionTemplate transactionTemplate,
-      AuditSettingsService auditSettingsService) {
+      AuditSettingsService auditSettingsService, TelemetryReporter telemetryReporter) {
     this.auditRepository = auditRepository;
     this.auditYamlService = auditYamlService;
     this.auditFilterPropertiesValidator = auditFilterPropertiesValidator;
     this.transactionTemplate = transactionTemplate;
     this.auditSettingsService = auditSettingsService;
+    this.telemetryReporter = telemetryReporter;
   }
 
   @Override
@@ -118,11 +130,28 @@ public class AuditServiceImpl implements AuditService {
     AuditEvent auditEvent = fromDTO(auditEventDTO);
     try {
       long startTime = System.currentTimeMillis();
-      Boolean result = Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        AuditEvent savedAuditEvent = auditRepository.save(auditEvent);
-        saveYamlDiff(auditEventDTO, savedAuditEvent.getId());
-        return true;
-      }));
+      Boolean result = Failsafe.with(transactionRetryPolicy).get(() -> {
+        return transactionTemplate.execute(status -> {
+          AuditEvent savedAuditEvent = auditRepository.save(auditEvent);
+          if (isNotEmpty(savedAuditEvent.getResourceScope().getProjectIdentifier())) {
+            HashMap<String, Object> identifyEventProperties = new HashMap<>();
+            identifyEventProperties.put("accountId", savedAuditEvent.getResourceScope().getAccountIdentifier());
+            identifyEventProperties.put("orgId", savedAuditEvent.getResourceScope().getOrgIdentifier());
+            identifyEventProperties.put("projectId", savedAuditEvent.getResourceScope().getProjectIdentifier());
+            telemetryReporter.sendIdentifyEvent(savedAuditEvent.getAuthenticationInfo().getPrincipal().getIdentifier(),
+                identifyEventProperties, Collections.singletonMap(AMPLITUDE, true));
+            HashMap<String, Object> properties = new HashMap<>();
+            properties.put("PROJECT_ID", savedAuditEvent.getResourceScope().getProjectIdentifier());
+            telemetryReporter.sendTrackEvent("Active Project",
+                TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX
+                    + savedAuditEvent.getResourceScope().getAccountIdentifier(),
+                savedAuditEvent.getResourceScope().getAccountIdentifier(), properties,
+                Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+          }
+          saveYamlDiff(auditEventDTO, savedAuditEvent.getId());
+          return true;
+        });
+      });
       log.info(String.format("Took %d milliseconds for create audit db operation for insertId %s.",
           System.currentTimeMillis() - startTime, auditEventDTO.getInsertId()));
       return result;

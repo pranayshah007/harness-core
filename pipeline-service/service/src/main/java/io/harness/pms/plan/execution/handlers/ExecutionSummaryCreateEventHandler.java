@@ -105,10 +105,10 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     String planExecutionId = ambiance.getPlanExecutionId();
     PlanExecution planExecution = planExecutionService.get(planExecutionId);
+    PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
 
     ExecutionMetadata metadata = planExecution.getMetadata();
     String pipelineId = metadata.getPipelineIdentifier();
-    PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
     boolean getMetadataOnly = true;
 
     // pipelineYaml in planExecutionMetadata is a transient field and not stored in db. It is passed by caller and can
@@ -128,14 +128,26 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     // RetryInfo
     String rootExecutionId = planExecutionId;
     String parentExecutionId = planExecutionId;
-    if (metadata.getRetryInfo().getIsRetry()) {
-      rootExecutionId = metadata.getRetryInfo().getRootExecutionId();
-      parentExecutionId = metadata.getRetryInfo().getParentRetryId();
+    if (planExecutionMetadata.getRetryExecutionInfo() != null
+        && planExecutionMetadata.getRetryExecutionInfo().getIsRetry()) {
+      rootExecutionId = planExecutionMetadata.getRetryExecutionInfo().getRootExecutionId();
+      parentExecutionId = planExecutionMetadata.getRetryExecutionInfo().getParentRetryId();
 
       // updating isLatest and canRetry
       Update update = new Update();
       update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
       pmsExecutionSummaryService.update(parentExecutionId, update);
+    } else {
+      // remove after next release
+      if (metadata.hasRetryInfo() && metadata.getRetryInfo().getIsRetry()) {
+        rootExecutionId = metadata.getRetryInfo().getRootExecutionId();
+        parentExecutionId = metadata.getRetryInfo().getParentRetryId();
+
+        // updating isLatest and canRetry
+        Update update = new Update();
+        update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
+        pmsExecutionSummaryService.update(parentExecutionId, update);
+      }
     }
 
     recentExecutionsInfoHelper.onExecutionStart(accountId, orgId, projectId, pipelineId, planExecution);

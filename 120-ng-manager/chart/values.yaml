@@ -3,23 +3,25 @@
 # Declare variables to be passed into your templates.
 global:
   kubeVersion: ""
+  commonAnnotations: {}
+  commonLabels: {}
   secrets:
     app:
       external:
         ## if FALSE, Generate all secrets within K8s Namespace
         ## If TRUE, use one of the followings kids to inject
-        enabled: false 
+        enabled: false
         kind:
           # use ExternalSecrets Operator
-          externalSecrets: false 
+          externalSecrets: false
           # Use CSI Driver volume mount
-          csiSecretDriver: false          
+          csiSecretDriver: false
     database:
       external:
         enabled: false
         kind:
           externalSecrets: false
-          csiSecretDriver: false 
+          csiSecretDriver: false
 
   useExternalSecrets: false
   loadbalancerURL: ""
@@ -119,7 +121,7 @@ image:
   repository: harness/ng-manager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "79819"
+  tag: "80209"
   digest: ""
   imagePullSecrets: []
 
@@ -129,7 +131,7 @@ initContainer:
     repository: busybox
     tag: "1.35.0"
     digest: ""
-    imagePullSecrets: []
+    imagePullSecrets: []  
 
 waitForInitContainer:
   image:
@@ -225,6 +227,7 @@ probes:
     failureThreshold: 25
 
 service:
+  annotations: {}
   type: ClusterIP
   protocol: TCP
   port: 7090
@@ -279,3 +282,8 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

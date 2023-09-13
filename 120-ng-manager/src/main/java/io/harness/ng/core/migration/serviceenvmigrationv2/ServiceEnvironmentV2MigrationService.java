@@ -116,7 +116,7 @@ import okhttp3.RequestBody;
 import org.jetbrains.annotations.Nullable;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j

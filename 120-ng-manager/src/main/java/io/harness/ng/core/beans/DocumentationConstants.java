@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.beans;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -15,7 +16,7 @@ import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @UtilityClass

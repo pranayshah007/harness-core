@@ -195,6 +195,7 @@ public class TagsInfoCDChangeDataHandlerHelper {
     String[] tagArray = tagsList.toArray(new String[tagsList.size()]);
     StringBuilder tagString = new StringBuilder("{");
     for (String tag : tagArray) {
+      tag = tag.replaceAll("(?<!\\\\)\\\"", "\\\\\"");
       tagString.append(tag);
       tagString.append(',');
     }
@@ -220,6 +221,8 @@ public class TagsInfoCDChangeDataHandlerHelper {
 
       String tagKey = tag.get(NGTagKeys.key).toString();
       String tagValue = tag.get(NGTagKeys.value) == null ? "" : tag.get(NGTagKeys.value).toString();
+      tagKey = tagKey.replaceAll("(?<!\\\\)\\\"", "\\\\\"");
+      tagValue = tagValue.replaceAll("(?<!\\\\)\\\"", "\\\\\"");
       tagString.append(tagKey);
       tagString.append(':');
       tagString.append(tagValue);

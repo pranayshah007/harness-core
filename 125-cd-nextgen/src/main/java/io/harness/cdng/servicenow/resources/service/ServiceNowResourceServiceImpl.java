@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.servicenow.resources.service;
+
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
@@ -65,9 +66,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT,
-        HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public class ServiceNowResourceServiceImpl implements ServiceNowResourceService {
   private static final Duration TIMEOUT = Duration.ofSeconds(30);

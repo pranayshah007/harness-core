@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.execution.strategy.plannode;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
@@ -120,7 +121,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .uuid(uuid)
-            .planNode(node)
             .executionInputConfigured(!EmptyPredicate.isEmpty(node.getExecutionInputTemplate()))
             .ambiance(ambiance)
             .levelCount(ambiance.getLevelsCount())
@@ -207,8 +207,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
           facilitationHelper.calculateFacilitatorResponse(ambiance, planNode);
       processFacilitationResponse(ambiance, facilitatorResponseProto);
     } catch (Exception exception) {
-      log.error("Exception Occurred in facilitateAndStartStep NodeExecutionId : {}, PlanExecutionId: {}",
-          nodeExecutionId, ambiance.getPlanExecutionId(), exception);
+      log.error(String.format("Exception Occurred in facilitateAndStartStep NodeExecutionId : %s, PlanExecutionId: %s",
+                    nodeExecutionId, ambiance.getPlanExecutionId()),
+          exception);
       handleError(ambiance, exception);
     }
   }
@@ -219,16 +220,26 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
       nodeExecutionService.updateV2(
           nodeExecutionId, ops -> ops.set(NodeExecutionKeys.mode, facilitatorResponse.getExecutionMode()));
+
+      List<String> interruptNodeExecutionIds = new ArrayList<>(List.of(nodeExecutionId));
+      // Currently AbortAll/ExpireAll expires can be at stage level only except on plan. So sending stage
+      // NodeExecutionId.
+      AmbianceUtils.getStageLevelFromAmbiance(ambiance).ifPresent(
+          stageLevel -> interruptNodeExecutionIds.add(stageLevel.getRuntimeId()));
+
       ExecutionCheck check = interruptService.checkInterruptsPreInvocation(
-          ambiance.getPlanExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+          ambiance.getPlanExecutionId(), nodeExecutionId, interruptNodeExecutionIds);
       if (!check.isProceed()) {
         log.info("Not Proceeding with Execution : {}", check.getReason());
         return;
       }
       startHelper.startNode(ambiance, facilitatorResponse);
     } catch (Exception exception) {
-      log.error("Exception Occurred while processing facilitation response NodeExecutionId : {}, PlanExecutionId: {}",
-          AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId(), exception);
+      log.error(
+          String.format(
+              "Exception Occurred while processing facilitation response NodeExecutionId : %s, PlanExecutionId: %s",
+              AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId()),
+          exception);
       handleError(ambiance, exception);
     }
   }
@@ -263,8 +274,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       }
       resumeHelper.resume(nodeExecution, response, asyncError);
     } catch (Exception exception) {
-      log.error("Exception Occurred in handling resume with nodeExecutionId {} planExecutionId {}", nodeExecutionId,
-          ambiance.getPlanExecutionId(), exception);
+      log.error(String.format("Exception Occurred in handling resume with nodeExecutionId %s planExecutionId %s",
+                    nodeExecutionId, ambiance.getPlanExecutionId()),
+          exception);
       handleError(ambiance, exception);
     }
   }
@@ -298,8 +310,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       handleStepResponseInternal(ambiance, stepResponse);
     } catch (Exception ex) {
-      log.error("Exception Occurred in handleStepResponse NodeExecutionId : {}, PlanExecutionId: {}",
-          AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId(), ex);
+      log.error(String.format("Exception Occurred in handleStepResponse NodeExecutionId : %s, PlanExecutionId: %s",
+                    AmbianceUtils.obtainCurrentRuntimeId(ambiance), ambiance.getPlanExecutionId()),
+          ex);
       handleError(ambiance, ex);
     }
   }

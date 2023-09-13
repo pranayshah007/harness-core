@@ -16,7 +16,7 @@ import io.harness.beans.steps.IACMStepInfo;
 import io.harness.beans.steps.nodes.ActionStepNode;
 import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.nodes.RunStepNode;
-import io.harness.ci.serializer.morphia.CIExecutionMorphiaRegistrar;
+import io.harness.ci.execution.serializer.morphia.CIExecutionMorphiaRegistrar;
 import io.harness.cimanager.serializer.CIContractsKryoRegistrar;
 import io.harness.cimanager.serializer.CIContractsMorphiaRegistrar;
 import io.harness.iacm.IACMStepType;

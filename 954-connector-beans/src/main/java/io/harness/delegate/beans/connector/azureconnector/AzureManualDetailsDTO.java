@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.azureconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialSpecOutcomeDTO;
@@ -26,6 +27,7 @@ import lombok.Value;
 @JsonTypeName(AzureConstants.MANUAL_CONFIG)
 @ApiModel("AzureManualDetails")
 @Schema(name = "AzureManualDetails", description = "This contains Azure manual credentials connector details")
+@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO")
 public class AzureManualDetailsDTO implements AzureCredentialSpecDTO {
   @Schema(description = "Application ID of the Azure App.") @JsonProperty("applicationId") @NotNull String clientId;
 

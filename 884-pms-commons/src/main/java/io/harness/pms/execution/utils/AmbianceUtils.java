@@ -334,16 +334,21 @@ public class AmbianceUtils {
       return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
 
-    String levelIdentifier = level.getStrategyMetadata()
-                                 .getMatrixMetadata()
-                                 .getMatrixCombinationList()
-                                 .stream()
-                                 .map(String::valueOf)
-                                 .collect(Collectors.joining("_"));
+    // User given nodeName while defining the Matrix
+    String nodeName = level.getStrategyMetadata().getMatrixMetadata().getNodeName();
 
-    if (useMatrixFieldName) {
+    return getLevelIdentifier(level, nodeName, useMatrixFieldName);
+  }
+
+  private String getLevelIdentifier(Level level, String nodeName, boolean useMatrixFieldName) {
+    String levelIdentifier;
+
+    if (EmptyPredicate.isNotEmpty(nodeName)) {
+      levelIdentifier = nodeName;
+    } else if (useMatrixFieldName) {
       List<String> matrixKeysToSkipInName =
           level.getStrategyMetadata().getMatrixMetadata().getMatrixKeysToSkipInNameList();
+
       levelIdentifier = level.getStrategyMetadata()
                             .getMatrixMetadata()
                             .getMatrixValuesMap()
@@ -355,15 +360,23 @@ public class AmbianceUtils {
                             .sorted(Map.Entry.comparingByKey())
                             .map(t -> t.getValue().replace(".", ""))
                             .collect(Collectors.joining("_"));
-
-      // Making sure that identifier postfix is added at the last while forming the identifier for the matrix stage
-      if (level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap().containsKey(
-              MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES)) {
-        levelIdentifier = levelIdentifier + "_"
-            + level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap().get(
-                MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES);
-      }
+    } else {
+      levelIdentifier = level.getStrategyMetadata()
+                            .getMatrixMetadata()
+                            .getMatrixCombinationList()
+                            .stream()
+                            .map(String::valueOf)
+                            .collect(Collectors.joining("_"));
     }
+
+    // Making sure that identifier postfix is added at the last while forming the identifier for the matrix stage
+    if (level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap().containsKey(
+            MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES)) {
+      levelIdentifier = levelIdentifier + "_"
+          + level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap().get(
+              MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES);
+    }
+
     String modifiedString =
         "_" + (levelIdentifier.length() <= 126 ? levelIdentifier : levelIdentifier.substring(0, 126));
 

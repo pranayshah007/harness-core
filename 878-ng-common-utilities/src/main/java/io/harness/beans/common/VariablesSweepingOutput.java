@@ -6,6 +6,7 @@
  */
 
 package io.harness.beans.common;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
@@ -19,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.HashMap;
 import org.springframework.data.annotation.TypeAlias;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
     components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @TypeAlias("variablesSweepingOutput")
 @JsonTypeName("variablesSweepingOutput")

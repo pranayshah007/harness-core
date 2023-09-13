@@ -17,9 +17,9 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
-import io.harness.artifacts.gar.service.GARUtils;
 import io.harness.artifacts.githubpackages.beans.GithubMavenMetaData;
 import io.harness.artifacts.githubpackages.beans.GithubPackageTypes;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
@@ -372,7 +372,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
   private String getArtifactPath(String org, String packageName, String tag, String username) {
     String artifactPath;
-    if (GARUtils.isSHA(tag)) {
+    if (ArtifactUtils.isSHA(tag)) {
       artifactPath = "ghcr.io/%s/%s@%s";
     } else {
       artifactPath = "ghcr.io/%s/%s:%s";

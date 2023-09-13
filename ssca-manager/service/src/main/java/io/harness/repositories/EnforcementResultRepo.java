@@ -13,9 +13,9 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.entities.EnforcementResultEntity;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 @OwnedBy(SSCA)
 public interface EnforcementResultRepo
-    extends CrudRepository<EnforcementResultEntity, String>, EnforcementResultRepoCustom {}
+    extends PagingAndSortingRepository<EnforcementResultEntity, String>, EnforcementResultRepoCustom {}

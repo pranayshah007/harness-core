@@ -4089,7 +4089,8 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python"
+            "Python",
+            "Ruby"
           ]
         },
         "executionInput": {
@@ -4120,7 +4121,8 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python"
+            "Python",
+            "Ruby"
           ]
         }
       },
@@ -5168,7 +5170,8 @@
                     "Nunitconsole",
                     "SBT",
                     "Pytest",
-                    "Unittest"
+                    "Unittest",
+                    "Rspec"
                   ]
                 },
                 {
@@ -5242,7 +5245,8 @@
                     "Kotlin",
                     "Scala",
                     "Csharp",
-                    "Python"
+                    "Python",
+                    "Ruby"
                   ]
                 },
                 {
@@ -6522,6 +6526,16 @@
             },
             "executionTarget": {
               "$ref": "#/definitions/ExecutionTarget"
+            },
+            "includeInfraSelectors": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "metadata": {
               "type": "string"
@@ -7926,7 +7940,8 @@
                     "nunit_console",
                     "sbt",
                     "pytest",
-                    "unittest"
+                    "unittest",
+                    "rspec"
                   ]
                 },
                 {

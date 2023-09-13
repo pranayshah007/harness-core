@@ -14,4 +14,5 @@ import io.harness.annotations.dev.OwnedBy;
 public interface CIAccountExecutionMetadataRepositoryCustom {
   void updateAccountExecutionMetadata(String accountId, Long endTs);
   void updateCIDailyBuilds(String accountId, Long endTs);
+  void deleteAllByAccountId(String accountId);
 }

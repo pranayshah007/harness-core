@@ -24,10 +24,12 @@ import org.springframework.data.mongodb.core.query.Update;
 public class UserEventRepositoryCustomImpl implements UserEventRepositoryCustom {
   private MongoTemplate mongoTemplate;
   public UserEventEntity saveOrUpdate(UserEventEntity userEventEntity) {
-    Criteria criteria =
-        Criteria.where(UserEventEntity.UserEventKeys.accountIdentifier).is(userEventEntity.getAccountIdentifier());
-    UserEventEntity entityForFindByAccountId = findOneBasedOnCriteria(criteria);
-    if (entityForFindByAccountId == null) {
+    Criteria criteria = Criteria.where(UserEventEntity.UserEventKeys.accountIdentifier)
+                            .is(userEventEntity.getAccountIdentifier())
+                            .and(UserEventEntity.UserEventKeys.userGroupIdentifier)
+                            .is(userEventEntity.getUserGroupIdentifier());
+    UserEventEntity entityForFindByAccountIdAndUserGroupId = findOneBasedOnCriteria(criteria);
+    if (entityForFindByAccountIdAndUserGroupId == null) {
       return mongoTemplate.save(userEventEntity);
     }
     Query query = new Query(criteria);

@@ -5,13 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.CIExecutionRepository;
 

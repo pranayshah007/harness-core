@@ -8,9 +8,6 @@
 package io.harness.subscription.helpers.impl;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
-import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
@@ -46,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public class StripeHandlerImpl {
   private final TelemetryReporter telemetryReporter;

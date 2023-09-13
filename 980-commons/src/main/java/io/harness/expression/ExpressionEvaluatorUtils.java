@@ -295,7 +295,7 @@ public class ExpressionEvaluatorUtils {
           updatedMap.put(updatedKey, updatedValue); // Add the new key-value pair to the intermediate map
         } catch (Exception ex) {
           // Fallback to the older mechanism if there is any exception
-          log.error(String.format("Exception while rendering map: [%s]", ex.getMessage()));
+          log.warn(String.format("Exception while rendering map: [%s]", ex.getMessage()));
           useFallback = true;
           break;
         }

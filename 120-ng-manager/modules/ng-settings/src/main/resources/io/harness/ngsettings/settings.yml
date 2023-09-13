@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 31
+version : 32
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -441,3 +441,10 @@ settings :
     allowedScopes:
       - ACCOUNT
       - PROJECT
+  - identifier: enable_bi_directional_sync
+    name: Enable Bi Directional Sync
+    category: GIT_EXPERIENCE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowedScopes:
+      - ACCOUNT

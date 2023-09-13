@@ -238,6 +238,7 @@ public class ExecutionResource {
   @Path("{workflowExecutionId}")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<WorkflowExecution> getExecutionDetails(@QueryParam("appId") String appId,
       @QueryParam("envId") String envId, @PathParam("workflowExecutionId") String workflowExecutionId) {

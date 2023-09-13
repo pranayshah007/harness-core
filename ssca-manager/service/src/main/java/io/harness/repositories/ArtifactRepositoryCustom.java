@@ -13,9 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.entities.ArtifactEntity;
 
 import java.util.Optional;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(SSCA)
 public interface ArtifactRepositoryCustom {
-  ArtifactEntity save(ArtifactEntity entity);
-  Optional<ArtifactEntity> findFirstByUrl(String url);
+  Optional<ArtifactEntity> findFirstByUrlLike(String url, Sort sort);
+
+  Optional<ArtifactEntity> findByAccountIdAndOrgIdAndProjectIdAndOrchestrationId(
+      String accountId, String orgId, String projectId, String orchestrationId);
 }

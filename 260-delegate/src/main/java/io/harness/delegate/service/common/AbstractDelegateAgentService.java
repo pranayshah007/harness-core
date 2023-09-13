@@ -8,8 +8,6 @@
 package io.harness.delegate.service.common;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateParams.DelegateParamsBuilder;
 import static io.harness.delegate.beans.DelegateParams.builder;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
@@ -20,7 +18,6 @@ import static io.harness.eraro.ErrorCode.REVOKED_TOKEN;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.logging.Misc.getDurationString;
 import static io.harness.network.Localhost.getLocalHostAddress;
-import static io.harness.network.Localhost.getLocalHostName;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -47,6 +44,7 @@ import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
+import io.harness.delegate.service.common.config.DelegateContext;
 import io.harness.delegate.service.core.client.DelegateCoreManagerClient;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.UnexpectedException;
@@ -110,26 +108,13 @@ import retrofit2.Response;
 
 @Slf4j
 public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionResponse> implements DelegateAgentService {
-  private static final String HOST_NAME = getLocalHostName();
-  protected static final String DELEGATE_INSTANCE_ID = generateUuid();
   private static final int POLL_INTERVAL_SECONDS = 3;
   // Marker string to indicate task events.
   private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
   private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
   private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
-  private static final String DELEGATE_TYPE = System.getenv("DELEGATE_TYPE");
-  private static final String DELEGATE_NAME =
-      isNotBlank(System.getenv("DELEGATE_NAME")) ? System.getenv("DELEGATE_NAME") : "";
-  private static final String DELEGATE_GROUP_NAME = System.getenv("DELEGATE_GROUP_NAME");
-  private static final boolean DELEGATE_NG =
-      isNotBlank(System.getenv("DELEGATE_SESSION_IDENTIFIER")) || Boolean.parseBoolean(System.getenv("NEXT_GEN"));
   private static final long HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
-  private static final String DELEGATE_ORG_IDENTIFIER = System.getenv("DELEGATE_ORG_IDENTIFIER");
-  private static final String DELEGATE_PROJECT_IDENTIFIER = System.getenv("DELEGATE_PROJECT_IDENTIFIER");
-  private static final String DELEGATE_CONNECTION_ID = generateTimeBasedUuid();
-  private static final String DELEGATE_GROUP_ID = System.getenv("DELEGATE_GROUP_ID");
-  private static final String DELEGATE_TAGS = System.getenv("DELEGATE_TAGS");
 
   private static final String DUPLICATE_DELEGATE_ERROR_MESSAGE =
       "Duplicate delegate with same delegateId:%s and connectionId:%s exists";
@@ -147,10 +132,11 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
   @Inject private VersionInfoManager versionInfoManager;
   @Inject private AsyncHttpClient asyncHttpClient;
   @Inject private TokenGenerator tokenGenerator;
-
+  @Inject protected DelegateContext context;
   private TimeLimiter delegateHealthTimeLimiter;
   private Client client;
   private Socket socket;
+  protected String delegateId;
 
   private final Set<String> currentlyAcquiringTasks = ConcurrentHashMap.newKeySet();
 
@@ -220,7 +206,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
 
   @Override
   public void freeze() {
-    log.warn("Delegate with id: {} was put in freeze mode.", DelegateAgentCommonVariables.getDelegateId());
+    log.warn("Delegate with id: {} was put in freeze mode.", delegateId);
     frozenAt.set(System.currentTimeMillis());
     frozen.set(true);
   }
@@ -332,13 +318,13 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
 
   private void unregisterDelegate() {
     final DelegateUnregisterRequest request =
-        new DelegateUnregisterRequest(DelegateAgentCommonVariables.getDelegateId(), getDelegateHostname(), DELEGATE_NG,
-            DELEGATE_TYPE, getLocalHostAddress(), DELEGATE_ORG_IDENTIFIER, DELEGATE_PROJECT_IDENTIFIER);
+        new DelegateUnregisterRequest(delegateId, getDelegateHostname(), context.isNg(), context.getType(),
+            getLocalHostAddress(), context.getOrgIdentifier(), context.getProjectIdentifier());
     try {
-      log.info("Unregistering delegate {}", DelegateAgentCommonVariables.getDelegateId());
+      log.info("Unregistering delegate {}", delegateId);
       executeRestCall(managerClient.unregisterDelegate(delegateConfiguration.getAccountId(), request));
     } catch (final IOException e) {
-      log.error("Failed unregistering delegate {}", DelegateAgentCommonVariables.getDelegateId(), e);
+      log.error("Failed unregistering delegate {}", delegateId, e);
     }
   }
 
@@ -359,8 +345,8 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
         if (errorResponse.contains(INVALID_TOKEN.name())) {
           log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
           initiateSelfDestruct();
-        } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE,
-                       DelegateAgentCommonVariables.getDelegateId(), DELEGATE_CONNECTION_ID))) {
+        } else if (errorResponse.contains(
+                       format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, context.getConnectionId()))) {
           initiateSelfDestruct();
         } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
           log.warn("Delegate used expired token. It will be frozen and drained.");
@@ -407,7 +393,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
 
       final DelegateParamsBuilder builder = createDelegateParamsBuilder();
 
-      final String delegateId = registerDelegate(builder);
+      this.delegateId = registerDelegate(builder);
 
       DelegateAgentCommonVariables.setDelegateId(delegateId);
       DelegateStackdriverLogAppender.setDelegateId(delegateId);
@@ -443,9 +429,9 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
 
     // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
 
-    if (isNotBlank(DELEGATE_TYPE)) {
+    if (isNotBlank(context.getType())) {
       log.info("Registering delegate with delegate Type: {}, DelegateGroupName: {} that supports tasks: {}",
-          DELEGATE_TYPE, getDelegateGroupName(), supportedTasks);
+          context.getType(), getDelegateGroupName(), supportedTasks);
     }
 
     final String delegateDescription = System.getenv().get("DELEGATE_DESCRIPTION");
@@ -462,21 +448,22 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
     return builder()
         .ip(getLocalHostAddress())
         .accountId(getDelegateConfiguration().getAccountId())
-        .orgIdentifier(DELEGATE_ORG_IDENTIFIER)
-        .projectIdentifier(DELEGATE_PROJECT_IDENTIFIER)
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
         .hostName(getDelegateHostname())
         .delegateName(getDelegateName())
         .delegateGroupName(getDelegateGroupName())
-        .delegateGroupId(DELEGATE_GROUP_ID)
+        .delegateGroupId(context.getGroupId())
         .delegateProfileId(isNotBlank(delegateProfile) ? delegateProfile : null)
         .description(description)
         .version(getVersion())
-        .delegateType(DELEGATE_TYPE)
+        .delegateType(context.getType())
         .supportedTaskTypes(supportedTasks.stream().map(Enum::name).collect(toList()))
         //.proxy(set to true if there is a system proxy)
         .pollingModeEnabled(getDelegateConfiguration().isPollForTasks())
-        .ng(DELEGATE_NG)
-        .tags(isNotBlank(DELEGATE_TAGS) ? Arrays.asList(DELEGATE_TAGS.trim().split("\\s*,+\\s*,*\\s*")) : emptyList())
+        .ng(context.isNg())
+        .tags(isNotBlank(context.getTags()) ? Arrays.asList(context.getTags().trim().split("\\s*,+\\s*,*\\s*"))
+                                            : emptyList())
         .location(Paths.get("").toAbsolutePath().toString())
         .heartbeatAsObject(true)
         .immutable(getDelegateConfiguration().isImmutable())
@@ -519,13 +506,13 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
 
         long now = getClock().millis();
         log.info("[Polling]: Delegate {} received heartbeat response {} after sending at {}. {} since last response.",
-            DelegateAgentCommonVariables.getDelegateId(), getDurationString(lastHeartbeatSentAt.get(), now), now,
+            delegateId, getDurationString(lastHeartbeatSentAt.get(), now), now,
             getDurationString(lastHeartbeatReceivedAt.get(), now));
         lastHeartbeatReceivedAt.set(now);
 
         DelegateHeartbeatResponse receivedDelegateResponse = delegateParamsResponse.getResource();
 
-        if (DelegateAgentCommonVariables.getDelegateId().equals(receivedDelegateResponse.getDelegateId())) {
+        if (delegateId.equals(receivedDelegateResponse.getDelegateId())) {
           if (DelegateInstanceStatus.DELETED == DelegateInstanceStatus.valueOf(receivedDelegateResponse.getStatus())) {
             initiateSelfDestruct();
           } else {
@@ -535,14 +522,14 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
           lastHeartbeatReceivedAt.set(getClock().millis());
         }
         final DelegateConnectionHeartbeat connectionHeartbeat = DelegateConnectionHeartbeat.builder()
-                                                                    .delegateConnectionId(DELEGATE_CONNECTION_ID)
+                                                                    .delegateConnectionId(context.getConnectionId())
                                                                     .version(getVersion())
                                                                     .location(Paths.get("").toAbsolutePath().toString())
                                                                     .build();
         HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
             ()
-                -> executeRestCall(managerClient.doConnectionHeartbeat(DelegateAgentCommonVariables.getDelegateId(),
-                    getDelegateConfiguration().getAccountId(), connectionHeartbeat)));
+                -> executeRestCall(managerClient.doConnectionHeartbeat(
+                    delegateId, getDelegateConfiguration().getAccountId(), connectionHeartbeat)));
         lastHeartbeatSentAt.set(getClock().millis());
       } else {
         if (socket.status() == Socket.STATUS.OPEN || socket.status() == Socket.STATUS.REOPENED) {
@@ -602,12 +589,12 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
   private void handleMessage(final String message) {
     if (StringUtils.equals(message, SELF_DESTRUCT)) {
       initiateSelfDestruct();
-    } else if (StringUtils.equals(message, SELF_DESTRUCT + DelegateAgentCommonVariables.getDelegateId())) {
+    } else if (StringUtils.equals(message, SELF_DESTRUCT + delegateId)) {
       initiateSelfDestruct();
     } else if (StringUtils.startsWith(message, SELF_DESTRUCT)) {
-      if (StringUtils.startsWith(message, SELF_DESTRUCT + DelegateAgentCommonVariables.getDelegateId() + "-")) {
-        int len = (SELF_DESTRUCT + DelegateAgentCommonVariables.getDelegateId() + "-").length();
-        if (message.substring(len).equals(DELEGATE_CONNECTION_ID)) {
+      if (StringUtils.startsWith(message, SELF_DESTRUCT + delegateId + "-")) {
+        int len = (SELF_DESTRUCT + delegateId + "-").length();
+        if (message.substring(len).equals(context.getConnectionId())) {
           initiateSelfDestruct();
         }
       }
@@ -650,7 +637,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
 
   private void processHeartbeat(DelegateHeartbeatResponseStreaming delegateHeartbeatResponse) {
     String receivedId = delegateHeartbeatResponse.getDelegateId();
-    if (DelegateAgentCommonVariables.getDelegateId().equals(receivedId)) {
+    if (delegateId.equals(receivedId)) {
       final long now = getClock().millis();
       final long diff = now - lastHeartbeatSentAt.longValue();
       if (diff > TimeUnit.MINUTES.toMillis(3)) {
@@ -727,9 +714,9 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
       URIBuilder uriBuilder =
           new URIBuilder(getDelegateConfiguration().getManagerUrl().replace("/api/", "/stream/") + "delegate/"
               + getDelegateConfiguration().getAccountId())
-              .addParameter("delegateId", DelegateAgentCommonVariables.getDelegateId())
+              .addParameter("delegateId", delegateId)
               .addParameter("delegateTokenName", DelegateAgentCommonVariables.getDelegateTokenName())
-              .addParameter("delegateConnectionId", DELEGATE_CONNECTION_ID)
+              .addParameter("delegateConnectionId", context.getConnectionId())
               .addParameter("token", tokenGenerator.getToken("https", "localhost", 9090, getDelegateHostname()))
               .addParameter("version", getVersion());
 
@@ -751,7 +738,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
       requestBuilder.header("accountId", this.getDelegateConfiguration().getAccountId());
       final String agent = "delegate/" + versionInfoManager.getVersionInfo().getVersion();
       requestBuilder.header("User-Agent", agent);
-      requestBuilder.header("delegateId", DelegateAgentCommonVariables.getDelegateId());
+      requestBuilder.header("delegateId", delegateId);
 
       return requestBuilder;
     } catch (URISyntaxException e) {
@@ -838,7 +825,7 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
         DelegateParams delegateParams = builder.build()
                                             .toBuilder()
                                             .lastHeartBeat(getClock().millis())
-                                            .delegateType(DELEGATE_TYPE)
+                                            .delegateType(context.getType())
                                             .description(getDelegateConfiguration().getDescription())
                                             //.proxy(set to true if there is a system proxy)
                                             .pollingModeEnabled(getDelegateConfiguration().isPollForTasks())
@@ -889,11 +876,9 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
   private void pollForTask() {
     if (shouldContactManager()) {
       try {
-        DelegateTaskEventsResponse taskEventsResponse =
-            HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter, Duration.ofSeconds(15),
-                ()
-                    -> executeRestCall(managerClient.pollTaskEvents(
-                        DelegateAgentCommonVariables.getDelegateId(), getDelegateConfiguration().getAccountId())));
+        DelegateTaskEventsResponse taskEventsResponse = HTimeLimiter.callInterruptible21(delegateHealthTimeLimiter,
+            Duration.ofSeconds(15),
+            () -> executeRestCall(managerClient.pollTaskEvents(delegateId, getDelegateConfiguration().getAccountId())));
         if (shouldProcessDelegateTaskEvents(taskEventsResponse)) {
           List<DelegateTaskEvent> taskEvents = taskEventsResponse.getDelegateTaskEvents();
           log.info("Processing DelegateTaskEvents {}", taskEvents);
@@ -958,14 +943,14 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
   }
 
   private String getDelegateName() {
-    return getDelegateConfiguration().isLocalNgDelegate() ? DELEGATE_INSTANCE_ID : DELEGATE_NAME;
+    return getDelegateConfiguration().isLocalNgDelegate() ? context.getInstanceId() : context.getName();
   }
 
   private String getDelegateGroupName() {
-    return getDelegateConfiguration().isLocalNgDelegate() ? DELEGATE_INSTANCE_ID : DELEGATE_GROUP_NAME;
+    return getDelegateConfiguration().isLocalNgDelegate() ? context.getInstanceId() : context.getGroupName();
   }
 
   private String getDelegateHostname() {
-    return getDelegateConfiguration().isLocalNgDelegate() ? DELEGATE_INSTANCE_ID : HOST_NAME;
+    return getDelegateConfiguration().isLocalNgDelegate() ? context.getInstanceId() : context.getHostName();
   }
 }
