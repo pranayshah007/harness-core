@@ -124,11 +124,7 @@ public class StepUtils {
     for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
       Level currentLevel = ambiance.getLevelsList().get(i);
       String retrySuffix = currentLevel.getRetryIndex() > 0 ? String.format("_%s", currentLevel.getRetryIndex()) : "";
-      String levelValue = currentLevel.getIdentifier() + retrySuffix;
-      if (levelValue.equals("spec") || levelValue.equals("execution")) {
-        continue;
-      }
-      logAbstractions.put("level" + i, levelValue);
+      logAbstractions.put("level" + i, currentLevel.getIdentifier() + retrySuffix);
       if (lastGroup != null && lastGroup.equals(currentLevel.getGroup())) {
         break;
       }
