@@ -7,16 +7,17 @@
 
 package io.harness.cdng.creator.plan.stage;
 
-import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
-
+import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
-import io.harness.cdng.environment.steps.CustomStageEnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.beans.CustomStageSpecParams;
 import io.harness.cdng.pipeline.steps.CustomStageStep;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
@@ -50,16 +51,21 @@ import io.harness.steps.SdkCoreStepUtils;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
+<<<<<<< HEAD
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+=======
+>>>>>>> 5234b436ce9 ([feat]: [CDS-78377] variables & variable overrides support for custom stage env)
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStageNode> {
@@ -166,6 +172,29 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     PlanCreationResponse specPlanCreationResponse = prepareDependencyForSpecNode(specField, specNextNodeUuid);
     planCreationResponseMap.put(specField.getNode().getUuid(), specPlanCreationResponse);
 
+<<<<<<< HEAD
+=======
+    // Adding Env node
+    if (envNodeExists) {
+      String envNextNodeUuid = executionFieldUuid;
+      final ServiceStepV3Parameters stepParameters =
+              ServiceStepV3Parameters.builder().build();
+
+      if (finalEnvironmentYamlV2.getInfrastructureDefinition() != null) {
+        PlanNode infraNode = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
+                finalEnvironmentYamlV2, null, ParameterField.createValueField(false));
+        planCreationResponseMap.put(infraNode.getUuid(), PlanCreationResponse.builder().planNode(infraNode).build());
+        stepParameters.setChildrenNodeIds(Collections.singletonList(infraNode.getUuid()));
+      }
+
+      ByteString advisorParameters = ByteString.copyFrom(
+          kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(envNextNodeUuid).build()));
+      final PlanNode envNode =
+          EnvironmentPlanCreatorHelper.getPlanNodeForCustomStage(envNodeUuid, stepParameters, advisorParameters);
+      planCreationResponseMap.put(envNode.getUuid(), PlanCreationResponse.builder().planNode(envNode).build());
+    }
+
+>>>>>>> 5234b436ce9 ([feat]: [CDS-78377] variables & variable overrides support for custom stage env)
     return planCreationResponseMap;
   }
 

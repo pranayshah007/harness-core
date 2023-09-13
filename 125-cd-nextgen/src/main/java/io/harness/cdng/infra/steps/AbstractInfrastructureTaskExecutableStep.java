@@ -179,10 +179,14 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   protected OutcomeSet fetchRequiredOutcomes(Ambiance ambiance) {
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
-
+    ServiceStepOutcome serviceOutcome;
     OptionalOutcome optionalServiceOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
-    ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) optionalServiceOutcome.getOutcome();
+    if (optionalServiceOutcome.isFound()) {
+      serviceOutcome = (ServiceStepOutcome) optionalServiceOutcome.getOutcome();
+    } else {
+      serviceOutcome = ServiceStepOutcome.builder().type(null).identifier(null).build();
+    }
     return new OutcomeSet(serviceOutcome, environmentOutcome);
   }
 

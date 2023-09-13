@@ -6,16 +6,12 @@
  */
 
 package io.harness.cdng.service.steps.helpers;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
 
-import static software.wings.beans.LogColor.Blue;
-import static software.wings.beans.LogColor.Green;
-import static software.wings.beans.LogHelper.color;
-
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -53,14 +49,12 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
-
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.mongodb.core.query.Criteria;
 import software.wings.beans.LogWeight;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -68,10 +62,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.mongodb.core.query.Criteria;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static software.wings.beans.LogColor.Blue;
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogHelper.color;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
@@ -171,6 +169,57 @@ public class ServiceOverrideUtilityFacade {
       } else {
         NGServiceOverrideConfigV2 mergedInputsEnvGlobalOverride =
             getOverrideConfigV2FromEnvYaml(envEntity, parameters.getEnvInputs().getValue());
+        overridesMap.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, mergedInputsEnvGlobalOverride);
+      }
+    }
+
+    return overridesMap;
+  }
+
+  public EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedServiceOverrideConfigsForCustomStage(
+          String accountId, String orgId, String projectId, @NonNull ServiceStepV3Parameters parameters,
+          @NonNull Environment envEntity, NGLogCallback overrideLogCallback) throws IOException {
+    if (ParameterField.isNull(parameters.getEnvRef()) || isEmpty(parameters.getEnvRef().getValue())) {
+      throw new InvalidRequestException("Environment Ref given for overrides has not been resolved");
+    }
+
+    // Todo : remove warning and add exception, warning was added for the case where user has inflight pipelines between
+    // two NG Manager deployments
+    if (ParameterField.isNull(parameters.getInfraId()) || isEmpty(parameters.getInfraId().getValue())) {
+      log.warn("Infra Identifier has not been resolved to get service overrides");
+    }
+
+    EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesMap = new EnumMap<>(ServiceOverridesType.class);
+    String isOverrideV2EnabledValue =
+            NGRestUtils
+                    .getResponse(ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
+                    .getValue();
+
+    if (isOverrideV2EnabledValue.equals("true")) {
+      Map<ServiceOverridesType, List<NGServiceOverridesEntity>> allTypesOverridesV2 =
+              getAllOverridesWithSpecExists(parameters, accountId, orgId, projectId, overrideLogCallback);
+      EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> acrossScopeMergedOverrides =
+              getMergedOverridesAcrossScope(allTypesOverridesV2);
+
+      if (acrossScopeMergedOverrides.containsKey(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+              && !ParameterField.isNull(parameters.getEnvInputs()) && isNotEmpty(parameters.getEnvInputs().getValue())) {
+        NGServiceOverrideConfigV2 envGlobalOverrideWithMergedInputs =
+                getOverrideConfigMergingEnvInputs(acrossScopeMergedOverrides.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE),
+                        parameters.getEnvInputs().getValue());
+        acrossScopeMergedOverrides.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, envGlobalOverrideWithMergedInputs);
+      }
+      overridesMap = acrossScopeMergedOverrides;
+    } else {
+      // For environment global override, environment yaml is being considered
+      if (isEmpty(envEntity.getYaml())) {
+        setYamlInEnvironment(envEntity);
+      }
+      if (ParameterField.isNull(parameters.getEnvInputs())) {
+        NGServiceOverrideConfigV2 envGlobalOverride = getOverrideConfigForNoInputsV1(envEntity);
+        overridesMap.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, envGlobalOverride);
+      } else {
+        NGServiceOverrideConfigV2 mergedInputsEnvGlobalOverride =
+                getOverrideConfigV2FromEnvYaml(envEntity, parameters.getEnvInputs().getValue());
         overridesMap.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, mergedInputsEnvGlobalOverride);
       }
     }

@@ -18,13 +18,13 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
+import lombok.Builder;
+import lombok.Data;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import lombok.Builder;
-import lombok.Data;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_GITOPS})
@@ -49,9 +49,10 @@ public class ServiceStepV3Parameters implements StepParameters {
   private ServiceDefinitionType deploymentType;
   @SkipAutoEvaluation private EnvironmentGroupYaml environmentGroupYaml;
   @SkipAutoEvaluation private EnvironmentsYaml environmentsYaml;
+
   @Override
   public String toViewJson() {
-    return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));
+    return RecastOrchestrationUtils.toJson(Map.of("service", "abc"));
   }
 
   @Override

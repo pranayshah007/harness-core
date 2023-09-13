@@ -619,7 +619,7 @@ io.harness.cdng.aws.asg.AsgInstances
 io.harness.cdng.aws.asg.AsgFixedInstances
 io.harness.cdng.aws.asg.UserDataOutcome
 io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome
-io.harness.cdng.environment.steps.EnvironmentStepParameters
+io.harness.cdng.environment.helper.EnvironmentStepParameters
 io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig
 io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput
 io.harness.cdng.provision.terragrunt.TerragruntExecutionData

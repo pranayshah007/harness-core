@@ -7,16 +7,13 @@
 
 package io.harness.cdng.environment.helper;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.protobuf.ByteString;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.environment.steps.CustomStageEnvironmentStep;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.InfrastructurePlanCreatorHelper;
@@ -26,6 +23,7 @@ import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -42,6 +40,8 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
@@ -57,16 +57,18 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
+import lombok.experimental.UtilityClass;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import lombok.experimental.UtilityClass;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @UtilityClass
@@ -97,7 +99,10 @@ public class EnvironmentPlanCreatorHelper {
       String envNodeUuid, StepParameters stepParameters, ByteString advisorParameters) {
     return PlanNode.builder()
         .uuid(envNodeUuid)
-        .stepType(CustomStageEnvironmentStep.STEP_TYPE)
+        .stepType(StepType.newBuilder()
+                .setType(ExecutionNodeType.CUSTOM_STAGE_ENVIRONMENT.getName())
+                .setStepCategory(StepCategory.STEP)
+                .build())
         .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
         .name(PlanCreatorConstants.ENVIRONMENT_NODE_NAME)
         .identifier(YamlTypes.ENVIRONMENT_YAML)

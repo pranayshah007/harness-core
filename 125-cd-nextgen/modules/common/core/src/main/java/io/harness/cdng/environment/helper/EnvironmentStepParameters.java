@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.environment.steps;
+package io.harness.cdng.environment.helper;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -13,17 +13,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
-
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
+
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
 @TypeAlias("environmentStepParameters")
-@RecasterAlias("io.harness.cdng.environment.steps.EnvironmentStepParameters")
+@RecasterAlias("io.harness.cdng.environment.helper.EnvironmentStepParameters")
 public class EnvironmentStepParameters implements StepParameters {
   String childNodeID;
   // Environment Basic Info

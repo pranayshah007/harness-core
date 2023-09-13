@@ -18,7 +18,11 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/helper:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/constants:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/helpers:module",
         "//127-cd-nextgen-entities:module",
+        "//878-ng-common-utilities/src/main/java/io/harness/beans/common:module",
         "//953-yaml-commons:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/environment/beans:module",
         "//970-ng-commons:module",
