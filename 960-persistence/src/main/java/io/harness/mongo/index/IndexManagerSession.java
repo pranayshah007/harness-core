@@ -84,6 +84,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -402,7 +403,7 @@ public class IndexManagerSession {
                   "Created index done {} {}", indexCreator.getOptions().toString(), indexCreator.getKeys().toString());
             });
             if (completeFuture) {
-              future.get();
+              future.get(4, TimeUnit.SECONDS);
             }
             break;
           } catch (MongoCommandException exception) {
@@ -410,10 +411,14 @@ public class IndexManagerSession {
             if (exception.getErrorCode() == 24) {
               Morpheus.sleep(Duration.ofSeconds(1));
             } else {
+              log.warn("Index creation failed for {} {}", indexCreator.getOptions().toString(),
+                  indexCreator.getKeys().toString());
               throw exception;
             }
 
-          } catch (InterruptedException | ExecutionException e) {
+          } catch (TimeoutException | InterruptedException | ExecutionException e) {
+            log.warn("Index creation failed for {} {}", indexCreator.getOptions().toString(),
+                indexCreator.getKeys().toString());
             throw new RuntimeException(e);
           }
         }
@@ -472,7 +477,8 @@ public class IndexManagerSession {
 
     // We also have to pick another name
     BasicDBObject tempOptions = (BasicDBObject) indexCreator.getOptions().copy();
-    tempOptions.put(NAME, "TRI_" + currentTimeMillis());
+    long tempTRITimeStamp = currentTimeMillis();
+    tempOptions.put(NAME, "TRI_" + tempTRITimeStamp);
 
     IndexCreator tempCreator = IndexCreator.builder()
                                    .originalName(indexCreator.name())
@@ -483,19 +489,54 @@ public class IndexManagerSession {
 
     // Lets see if we already have this one created from before
     DBObject triIndex = collectionSession.findIndexByFieldsAndDirection(tempCreator);
-    if (triIndex == null) {
-      create(tempCreator, completeCreateFuture);
-      collectionSession.reset(tempCreator.getCollection());
-      triIndex = collectionSession.findIndexByFieldsAndDirection(tempCreator);
-      if (triIndex == null) {
-        return true;
+
+    boolean rebuildIndex = false;
+
+    // Check if the temporary index (TRI) soaked enough
+    if (triIndex != null) {
+      // set rebuildIndex true if TRI index is soaked enough -> meaning colliding index will be dropped and new one will
+      // be created in handlingTRIAndCollidedIndexes
+      long indexTime = Long.parseLong(triIndex.get(NAME).toString().substring(4));
+      rebuildIndex = indexTime + waitFor.toMillis() <= currentTimeMillis();
+    } else {
+      // TRI index yet to be created
+      // Check after TRI create index plus its waitFor is lesser than currentTime -> meaning TRI index is soaked enough
+      // or not
+      if (tempTRITimeStamp + waitFor.toMillis() <= currentTimeMillis()) {
+        rebuildIndex = true;
       }
     }
 
-    // Check if the temporary index soaked enough
-    long indexTime = Long.parseLong(triIndex.get(NAME).toString().substring(4));
-    if (indexTime + waitFor.toMillis() > currentTimeMillis()) {
-      return false;
+    try {
+      Future<?> future = createIndexExecutorService.submit(
+          () -> handlingTRIAndCollidedIndexes(collectionSession, triIndex, tempCreator, indexCreator, waitFor));
+      if (completeCreateFuture) {
+        future.get(4, TimeUnit.HOURS);
+      }
+    } catch (TimeoutException | InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
+    return rebuildIndex;
+  }
+
+  private void handlingTRIAndCollidedIndexes(IndexManagerCollectionSession collectionSession, DBObject triIndex,
+      IndexCreator tempCreator, IndexCreator indexCreator, Duration waitFor) {
+    // Let's see if we already have TRI index one created from before
+    if (triIndex == null) {
+      create(tempCreator, true);
+      collectionSession.reset(tempCreator.getCollection());
+      triIndex = collectionSession.findIndexByFieldsAndDirection(tempCreator);
+      if (triIndex == null) {
+        return;
+      }
+    }
+
+    // Check if the temporary index (TRI) soaked enough
+    if (triIndex != null) {
+      long indexTime = Long.parseLong(triIndex.get(NAME).toString().substring(4));
+      if (indexTime + waitFor.toMillis() > currentTimeMillis()) {
+        return;
+      }
     }
 
     // now it is safe to drop the colliding indexes
@@ -511,9 +552,9 @@ public class IndexManagerSession {
       dropIndex(indexCreator.getCollection(), currentName);
     }
 
-    // Lets create the target index
-    create(indexCreator, completeCreateFuture);
-    return true;
+    // Let's create the target index, this doesn't need to be in sync -> as caller will not drop indexes if any index is
+    // created. As drop unused indexes only happen when -> boolean okToDropIndexes = created == 0;
+    create(indexCreator, true);
   }
 
   int createNewIndexes(IndexManagerCollectionSession collectionSession, Map<String, IndexCreator> creators) {
@@ -528,7 +569,7 @@ public class IndexManagerSession {
               created++;
             }
           } else if (collectionSession.isCreateNeeded(indexCreator)) {
-            create(indexCreator);
+            create(indexCreator, false);
             created++;
           }
         } catch (MongoCommandException mex) {
