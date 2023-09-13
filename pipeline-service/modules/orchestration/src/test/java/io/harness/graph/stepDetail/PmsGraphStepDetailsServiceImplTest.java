@@ -34,6 +34,7 @@ import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
@@ -98,8 +99,17 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
   public void addStepInputs() {
     String nodeExecutionId = generateUuid();
     String planExecutionId = generateUuid();
-    PmsStepParameters pmsStepDetails = new PmsStepParameters(new HashMap<>());
-    pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, planExecutionId, pmsStepDetails);
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, planExecutionId, null);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testSaveNodeExecutionInfo() {
+    String nodeExecutionId = generateUuid();
+    String planExecutionId = generateUuid();
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(
+        nodeExecutionId, planExecutionId, StrategyMetadata.newBuilder().build());
     verify(stepDetailsUpdateObserverSubject, times(1)).fireInform(any(), any());
     verify(nodeExecutionsInfoRepositoryMock, times(1)).save(any());
   }

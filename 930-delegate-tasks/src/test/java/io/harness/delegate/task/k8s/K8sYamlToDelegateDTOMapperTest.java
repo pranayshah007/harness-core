@@ -14,6 +14,7 @@ import static io.harness.delegate.beans.connector.k8Connector.KubernetesAuthType
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesAuthType.SERVICE_ACCOUNT;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.MANUAL_CREDENTIALS;
+import static io.harness.filesystem.FileIo.getHomeDir;
 import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,16 +34,25 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesServiceAccountD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.k8s.KubeConfigConstants;
+import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import junitparams.Parameters;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
@@ -367,6 +377,61 @@ public class K8sYamlToDelegateDTOMapperTest extends CategoryTest {
     KubernetesConfig config =
         k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(connectorDTOWithDelegateCreds, null);
     assertThat(config).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void createKubernetesConfigFromClusterConfigForInheritFromDelegateWithKubeConfig() throws IOException {
+    final String kubeconfig = "apiVersion: v1\n"
+        + "kind: Config\n"
+        + "clusters:\n"
+        + "  - name: my-cluster\n"
+        + "    cluster:\n"
+        + "      certificate-authority-data: <BASE64_ENCODED_CA_CERT>\n"
+        + "      server: https://api.example.com:6443  # Replace with your cluster's API server URL\n"
+        + "contexts:\n"
+        + "  - name: my-context\n"
+        + "    context:\n"
+        + "      cluster: my-cluster\n"
+        + "      user: my-user\n"
+        + "current-context: my-context\n"
+        + "users:\n"
+        + "  - name: my-user\n"
+        + "    user:\n"
+        + "      client-certificate-data: <BASE64_ENCODED_CLIENT_CERT>\n"
+        + "      client-key-data: <BASE64_ENCODED_CLIENT_KEY>";
+    Path path = Paths.get("config.yaml");
+    Files.deleteIfExists(path);
+    Files.createFile(path);
+    Files.writeString(path, kubeconfig);
+    String delegateName = "testDelegate";
+    KubernetesClusterConfigDTO connectorDTOWithDelegateCreds =
+        KubernetesClusterConfigDTO.builder()
+            .delegateSelectors(Collections.singleton(delegateName))
+            .credential(KubernetesCredentialDTO.builder()
+                            .kubernetesCredentialType(INHERIT_FROM_DELEGATE)
+                            .config(KubernetesDelegateDetailsDTO.builder().build())
+                            .build())
+            .build();
+    try (MockedStatic<KubernetesHelperService> kubernetesHelperServiceMockedStatic =
+             Mockito.mockStatic(KubernetesHelperService.class, Mockito.CALLS_REAL_METHODS)) {
+      kubernetesHelperServiceMockedStatic
+          .when(()
+                    -> KubernetesHelperService.getSystemPropertyOrEnvVar(KubeConfigConstants.KUBERNETES_KUBECONFIG_FILE,
+                        new File(getHomeDir(), ".kube" + File.separator + "config").toString()))
+          .thenReturn(path.toString());
+      KubernetesConfig config = k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(
+          connectorDTOWithDelegateCreds, defaultNamespace);
+      assertThat(config.getMasterUrl()).isEqualTo("https://api.example.com:6443");
+      assertThat(config.getCaCert()).isEqualTo("<BASE64_ENCODED_CA_CERT>".toCharArray());
+      assertThat(config.getClientKeyAlgo()).isEqualTo("RSA");
+      assertThat(config.getClientKey()).isEqualTo("<BASE64_ENCODED_CLIENT_KEY>".toCharArray());
+      assertThat(config.getClientCert()).isEqualTo("<BASE64_ENCODED_CLIENT_CERT>".toCharArray());
+      assertThat(config.getClientKeyPassphrase()).isEqualTo("changeit".toCharArray());
+      assertThat(config.getNamespace()).isEqualTo(defaultNamespace);
+    }
+    Files.deleteIfExists(path);
   }
 
   @Test

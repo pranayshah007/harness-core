@@ -44,6 +44,10 @@ data:
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_USE_SENTINEL: { { .Values.global.database.redis.installed | quote } }
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
+  LOCK_CONFIG_REDIS_SENTINELS: { { include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) } }
+  LOCK_CONFIG_REDIS_URL: { { include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) } }
   USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
   ENABLE_DASHBOARD_TIMESCALE: "true"
   TIMESCALE_URI: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'

@@ -102,6 +102,8 @@ import io.harness.idp.scorecard.scorecardchecks.service.CheckServiceImpl;
 import io.harness.idp.scorecard.scorecardchecks.service.ScorecardService;
 import io.harness.idp.scorecard.scorecardchecks.service.ScorecardServiceImpl;
 import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
+import io.harness.idp.scorecard.scores.service.ScoreComputerService;
+import io.harness.idp.scorecard.scores.service.ScoreComputerServiceImpl;
 import io.harness.idp.scorecard.scores.service.ScoreService;
 import io.harness.idp.scorecard.scores.service.ScoreServiceImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
@@ -376,6 +378,7 @@ public class IdpModule extends AbstractModule {
     bind(DataPointService.class).to(DataPointServiceImpl.class);
     bind(DataSourceLocationService.class).to(DataSourceLocationServiceImpl.class);
     bind(ScoreService.class).to(ScoreServiceImpl.class);
+    bind(ScoreComputerService.class).to(ScoreComputerServiceImpl.class);
     bind(DataPointService.class).to(DataPointServiceImpl.class);
     bind(DataPointsDataApi.class).to(DataPointDataApiImpl.class);
     bind(DataPointDataValueService.class).to(DataPointDataValueServiceImpl.class);

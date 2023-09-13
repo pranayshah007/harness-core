@@ -22,6 +22,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,6 +42,7 @@ import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.observers.PlanExecutionDeleteObserver;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
@@ -49,6 +51,7 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.PlanExecutionRepository;
 import io.harness.rule.Owner;
 
@@ -68,11 +71,14 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.joor.Reflect;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
@@ -87,6 +93,14 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   @Mock QueuedLicenseLimitReachedStatusUpdate queuedLicenseLimitReachedStatusUpdate;
   @Mock Subject<PlanExecutionDeleteObserver> planExecutionDeleteObserverSubject;
   @Spy @Inject @InjectMocks PlanExecutionService planExecutionService;
+
+  @Before
+  public void setUp() {
+    MockitoAnnotations.initMocks(this);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any()))
+        .thenReturn(SettingValueResponseDTO.builder().value("false").build());
+  }
 
   @Test
 
@@ -417,9 +431,9 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     }
     doReturn(iterator).when(planExecutionRepositoryMock).fetchPlanExecutionsFromAnalytics(query);
 
-    planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionIds);
+    planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionIds, false);
 
-    verify(planExecutionDeleteObserverSubject, times(2)).fireInform(any(), any());
+    verify(planExecutionDeleteObserverSubject, times(2)).fireInform(any(), any(), anyBoolean());
     verify(planExecutionRepositoryMock, times(1)).deleteAllByUuidIn(any());
   }
 

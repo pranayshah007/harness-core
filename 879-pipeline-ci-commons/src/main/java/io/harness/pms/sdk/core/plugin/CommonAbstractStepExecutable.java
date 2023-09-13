@@ -438,7 +438,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     if (shouldPublishArtifact(stepStatus)) {
       publishArtifact(ambiance, stepParameters, stepIdentifier, stepStatus, stepResponseBuilder);
     }
-    if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
+    if (shouldPublishOutcome(stepStatus)) {
       if (stepStatus.getOutput() != null) {
         populateCIStageOutputs(((StepMapOutput) stepStatus.getOutput()).getMap(), AmbianceUtils.getAccountId(ambiance),
             ambiance.getStageExecutionId());
@@ -571,6 +571,10 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
   }
 
   protected boolean shouldPublishArtifact(StepStatus stepStatus) {
+    return stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS;
+  }
+
+  protected boolean shouldPublishOutcome(StepStatus stepStatus) {
     return stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS;
   }
 

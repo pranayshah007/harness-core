@@ -15,6 +15,7 @@ import static io.harness.ci.execution.integrationstage.K8InitializeStepUtilsHelp
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.SHOBHIT_SINGH;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -168,6 +169,30 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     assertThat(map.get("step_grup1_run2").getResourceLimitMilliCpu()).isEqualTo(400);
     assertThat(map.get("step_grup1_run1").getResourceLimitMemoryMiB()).isEqualTo(500);
     assertThat(map.get("step_grup1_run1").getResourceLimitMilliCpu()).isEqualTo(400);
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testImagePullPolicyForGitClonePluginAndRunStepWithImagePullPolicyConfiguredAtInfraAndStepLevel()
+      throws Exception {
+    List<ExecutionWrapperConfig> steps =
+        K8InitializeStepUtilsHelper.getExecutionWrapperConfigListContainsGitCloneAndRunStep();
+    IntegrationStageNode stageNode = K8InitializeStepUtilsHelper.getIntegrationStageNodeForGitCloneAndRunStep();
+    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
+    CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+
+    assertThat(stepContainers.get(0).getImagePullPolicy().equals("Never")).isEqualTo(true);
+    assertThat(stepContainers.get(1).getImagePullPolicy().equals("Never")).isEqualTo(true);
+    assertThat(stepContainers.get(2).getImagePullPolicy().equals("Always")).isEqualTo(true);
   }
 
   @Test

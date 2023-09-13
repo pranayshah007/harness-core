@@ -32,6 +32,7 @@ import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
+import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.pms.execution.strategy.AbstractNodeExecutionStrategy;
 import io.harness.engine.pms.execution.strategy.EndNodeExecutionHelper;
 import io.harness.engine.pms.resume.NodeResumeHelper;
@@ -41,6 +42,7 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
+import io.harness.execution.PmsNodeExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
@@ -53,6 +55,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -133,7 +136,12 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             .nodeId(node.getUuid())
             .stageFqn(node.getStageFqn())
             .group(node.getGroup())
+            .skipExpressionChain(node.isSkipExpressionChain())
+            .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+            .nodeType(node.getNodeType().name())
             .build();
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(
+        uuid, ambiance.getPlanExecutionId(), metadata == null ? null : metadata.getStrategyMetadata());
     return nodeExecutionService.save(nodeExecution);
   }
 
@@ -212,7 +220,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
 
   @VisibleForTesting
   void addResolvedStepInputs(String planExecutionId, String nodeExecutionId, PmsStepParameters resolvedStepInputs) {
-    pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, planExecutionId, resolvedStepInputs);
+    pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, resolvedStepInputs);
     log.info("Added Resolved step Inputs");
   }
 
@@ -454,5 +462,10 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       // Smile if you see irony in this
       log.error("This is very BAD!!!. Exception Occurred while handling Exception. Erroring out Execution", ex);
     }
+  }
+
+  @Override
+  public PmsNodeExecutionMetadata createMetadata(StrategyMetadata strategyMetadata) {
+    return NodeExecutionMetadata.builder().strategyMetadata(strategyMetadata).build();
   }
 }

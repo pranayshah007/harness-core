@@ -56,7 +56,7 @@ public class ScorecardServiceImpl implements ScorecardService {
   private final CheckService checkService;
   private final SetupUsageProducer setupUsageProducer;
   private final BackstageResourceClient backstageResourceClient;
-  private static final ObjectMapper mapper =
+  private final ObjectMapper mapper =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private static final String TYPE_FILTER = "spec.type";
   private static final String OWNERS_FILTER = "relations.ownedBy";

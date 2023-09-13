@@ -12,8 +12,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.common.ExpressionMode;
-import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.expression.EngineExpressionEvaluatorResolver;
+import io.harness.pms.expression.ParameterFieldResolverFunctor;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,10 +26,12 @@ import lombok.Getter;
 @Getter
 public class ProvisionerExpressionEvaluator extends EngineExpressionEvaluator {
   private final Map<String, Object> output;
+  private InputSetValidatorFactory inputSetValidatorFactory;
 
-  public ProvisionerExpressionEvaluator(Map<String, Object> output) {
+  public ProvisionerExpressionEvaluator(Map<String, Object> output, InputSetValidatorFactory inputSetValidatorFactory) {
     super(null);
     this.output = output;
+    this.inputSetValidatorFactory = inputSetValidatorFactory;
   }
 
   @Override
@@ -60,23 +65,10 @@ public class ProvisionerExpressionEvaluator extends EngineExpressionEvaluator {
     }
     return propertyNameEvaluatedMap;
   }
-
-  public <T> T evaluateExpression(ParameterField<T> parameterField, ExpressionMode expressionMode) {
-    if (parameterField == null || parameterField.getValue() == null) {
-      return null;
-    }
-
-    Object finalValue = parameterField.fetchFinalValue();
-    if (finalValue instanceof String) {
-      return (T) evaluateExpression((String) finalValue, expressionMode);
-    }
-
-    return parameterField.getValue();
-  }
-
-  // ParameterFiled values are resolved in string presentation. If there is a need for getting the complex object use
-  // evaluateExpression method
-  public <T> ParameterField<T> resolveExpression(ParameterField<T> parameterField, ExpressionMode expressionMode) {
-    return (ParameterField<T>) resolve(parameterField, expressionMode);
+  @Override
+  public Object resolve(Object o, ExpressionMode expressionMode) {
+    return ExpressionEvaluatorUtils.updateExpressions(o,
+        new ParameterFieldResolverFunctor(
+            new EngineExpressionEvaluatorResolver(this), inputSetValidatorFactory, expressionMode));
   }
 }

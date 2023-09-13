@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.ProjectDeletionResponse;
@@ -39,6 +40,8 @@ public interface DebugService {
   DataCollectionTask retryDataCollectionTask(ProjectParams projectParams, String identifier);
 
   boolean registerInternalChangeEvent(ProjectParams projectParams, ChangeEventDTO changeEventDTO);
+
+  boolean registerSRMAnalysisStep(SRMAnalysisStepExecutionDetail srmAnalysisStepBody);
 
   void registerFFChangeEvent(FakeFeatureFlagSRMProducer.FFEventBody ffEventBody);
 

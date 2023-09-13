@@ -1204,6 +1204,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     Map<String, String> expected = new HashMap<>();
     expected.put("PLUGIN_TAG", "tag");
     expected.put("PLUGIN_REPO", "image");
+    expected.put("PLUGIN_TYPE", "verify");
+    expected.put("STEP_EXECUTION_ID", null);
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
         slsaVerificationStepInfo, "identifier", 100, ambiance, Type.K8, false, true);

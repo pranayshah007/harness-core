@@ -40,6 +40,8 @@ import io.harness.ssca.services.EnforcementSummaryService;
 import io.harness.ssca.services.EnforcementSummaryServiceImpl;
 import io.harness.ssca.services.NextGenService;
 import io.harness.ssca.services.NextGenServiceImpl;
+import io.harness.ssca.services.NormalisedSbomComponentService;
+import io.harness.ssca.services.NormalisedSbomComponentServiceImpl;
 import io.harness.ssca.services.OrchestrationStepService;
 import io.harness.ssca.services.OrchestrationStepServiceImpl;
 import io.harness.ssca.services.RuleEngineService;
@@ -99,6 +101,7 @@ public class SSCAManagerModule extends AbstractModule {
     bind(EnforcementSummaryService.class).to(EnforcementSummaryServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
     bind(S3StoreService.class).to(S3StoreServiceImpl.class);
+    bind(NormalisedSbomComponentService.class).to(NormalisedSbomComponentServiceImpl.class);
     install(new TokenClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
   }

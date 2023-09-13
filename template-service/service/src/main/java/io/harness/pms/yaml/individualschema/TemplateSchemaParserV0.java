@@ -12,12 +12,14 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.template.utils.TemplateSchemaFetcher;
 import io.harness.yaml.schema.beans.SchemaConstants;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,11 +30,16 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 @Singleton
 public class TemplateSchemaParserV0 extends AbstractStaticSchemaParser {
+  @Inject TemplateSchemaFetcher templateSchemaFetcher;
   static final String TEMPLATE_DEFINITION_PATH = "definitions/template";
   static final String ONE_OF_REF_IN_TEMPLATE = "template/properties/spec/oneOf";
 
+  static final String TEMPLATE_VO = "v0";
+
   @Override
-  void init(JsonNode rootSchemaNode) {
+  void init() {
+    JsonNode rootSchemaNode = templateSchemaFetcher.getStaticYamlSchema(TEMPLATE_VO);
+    rootSchemaJsonNode = rootSchemaNode;
     // Populating the template schema in the nodeToResolvedSchemaMap with rootSchemaNode because we already have the
     // complete template schema so no need to calculate.
     nodeToResolvedSchemaMap.put(YAMLFieldNameConstants.TEMPLATE, (ObjectNode) rootSchemaNode);

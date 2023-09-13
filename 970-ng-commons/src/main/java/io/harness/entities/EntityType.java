@@ -649,9 +649,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.AWS_CDK_ROLLBACK)
   AWS_CDK_ROLLBACK(
       ModuleType.CD, EntityTypeConstants.AWS_CDK_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_ROLLBACK),
-  @JsonProperty(EntityTypeConstants.IACM)
-  IACM_COST_ESTIMATION(ModuleType.IACM, EntityTypeConstants.IACM_COST_ESTIMATION, IdentifierRef.class,
-      EntityYamlRootNames.IACM_COST_ESTIMATION),
   @JsonProperty(EntityTypeConstants.SLSA_VERIFICATION)
   SLSA_VERIFICATION(ModuleType.CI, EntityTypeConstants.SLSA_VERIFICATION, IdentifierRef.class);
 

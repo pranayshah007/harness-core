@@ -328,7 +328,11 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 	case scm.DriverAzure, scm.DriverHarness:
 		// Azure doesn't support getting a commit by ref/branch name. So we get the latest commit from the branch using the root folder.
 		// Harness only supports a ref
-		contents, _, err := listContentsWithRetry(ctx, log, client, provider, slug, "", ref, scm.ListOptions{}, serverErrorRetryCount)
+		path := ""
+		if client.Driver == scm.DriverHarness {
+			path = "/"
+		}
+		contents, _, err := listContentsWithRetry(ctx, log, client, provider, slug, path, ref, scm.ListOptions{}, serverErrorRetryCount)
 		if err == nil {
 			ref = contents[0].Sha
 		}
@@ -442,7 +446,7 @@ func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap
 	out := &pb.ListBranchesResponse{
 		Branches: branches,
 		Pagination: &pb.PageResponse{
-			Next: int32(response.Page.Next),
+			Next:    int32(response.Page.Next),
 			NextUrl: response.Page.NextURL,
 		},
 	}
@@ -490,7 +494,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		out := &pb.ListBranchesWithDefaultResponse{
 			Branches: branches,
 			Pagination: &pb.PageResponse{
-				Next: int32(response.Page.Next),
+				Next:    int32(response.Page.Next),
 				NextUrl: response.Page.NextURL,
 			},
 		}
@@ -519,7 +523,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		Branches:      branches,
 		DefaultBranch: userRepoResponse.GetRepo().GetBranch(),
 		Pagination: &pb.PageResponse{
-			Next: int32(response.Page.Next),
+			Next:    int32(response.Page.Next),
 			NextUrl: response.Page.NextURL,
 		},
 	}
@@ -648,12 +652,12 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 			if request.GetVersion() == 2 {
 				repoList, response, err = client.Repositories.ListV2(ctx, scm.RepoListOptions{
 					RepoSearchTerm: getRepoFilterParams(request),
-					ListOptions: scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
-					})
+					ListOptions:    scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
+				})
 			} else {
 				repoList, response, err = client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 			}
-			
+
 		}
 		if err != nil {
 			log.Errorw("GetUserRepos failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -674,7 +678,7 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 			Status: int32(response.Status),
 			Repos:  convertRepoList(repoList),
 			Pagination: &pb.PageResponse{
-				Next: int32(response.Page.Next),
+				Next:    int32(response.Page.Next),
 				NextUrl: response.Page.NextURL,
 			},
 		}
@@ -904,6 +908,7 @@ func findCommitWithRetry(ctx context.Context, log *zap.SugaredLogger, client *sc
 		}
 		break
 	}
+
 	return commit, res, err
 }
 
@@ -951,7 +956,7 @@ func isGithubApp(p *pb.Provider) (out bool) {
 	}
 }
 
-func getRepoFilterParams(request *pb.GetUserReposRequest) (out scm.RepoSearchTerm){
+func getRepoFilterParams(request *pb.GetUserReposRequest) (out scm.RepoSearchTerm) {
 	if nil == request.GetRepoFilterParams() {
 		return scm.RepoSearchTerm{
 			RepoName: "",
@@ -965,7 +970,7 @@ func getRepoFilterParams(request *pb.GetUserReposRequest) (out scm.RepoSearchTer
 	}
 }
 
-func getBranchFilterParams(request *pb.ListBranchesWithDefaultRequest) (string){
+func getBranchFilterParams(request *pb.ListBranchesWithDefaultRequest) string {
 	if nil == request.GetBranchFilterParams() {
 		return ""
 	} else {

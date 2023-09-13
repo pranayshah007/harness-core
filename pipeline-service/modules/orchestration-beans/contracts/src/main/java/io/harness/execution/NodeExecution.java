@@ -10,12 +10,14 @@ package io.harness.execution;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.pms.execution.utils.AmbianceUtils.obtainCurrentLevel;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.logging.UnitProgress;
@@ -30,6 +32,7 @@ import io.harness.persistence.UuidAccess;
 import io.harness.plan.NodeType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
@@ -145,6 +148,9 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   String identifier;
   String stageFqn;
   String group;
+  Boolean skipExpressionChain;
+  List<String> levelRuntimeIdx;
+  String nodeType;
 
   public ExecutableResponse obtainLatestExecutableResponse() {
     if (isEmpty(executableResponses)) {
@@ -155,7 +161,20 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
 
   @Override
   public NodeType getNodeType() {
-    return NodeType.valueOf(AmbianceUtils.obtainNodeType(ambiance));
+    if (EmptyPredicate.isEmpty(nodeType)) {
+      return NodeType.valueOf(AmbianceUtils.obtainNodeType(ambiance));
+    }
+    return NodeType.valueOf(nodeType);
+  }
+
+  public boolean getSkipExpressionChain() {
+    if (skipExpressionChain == null) {
+      Level level = obtainCurrentLevel(ambiance);
+      if (level != null) {
+        return level.getSkipExpressionChain();
+      }
+    }
+    return Boolean.TRUE.equals(skipExpressionChain);
   }
 
   public String getPlanExecutionId() {

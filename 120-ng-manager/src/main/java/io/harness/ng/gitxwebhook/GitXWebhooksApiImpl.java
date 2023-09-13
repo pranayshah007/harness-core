@@ -115,4 +115,10 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
                     .collect(Collectors.toList()))
         .build();
   }
+
+  @Override
+  public Response listGitxWebhookEvents(String harnessAccount, Integer page, @Max(1000L) Integer limit,
+      String webhookIdentifier, Long eventStartTime, Long eventEndTime) {
+    return null;
+  }
 }

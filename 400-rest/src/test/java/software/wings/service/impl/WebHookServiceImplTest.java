@@ -15,6 +15,7 @@ import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.rule.OwnerRule.AADITI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.POOJA;
@@ -233,6 +234,22 @@ public class WebHookServiceImplTest extends WingsBaseTest {
     assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_SERVICE_UNAVAILABLE);
     WebHookResponse webHookResponse = (WebHookResponse) response.getEntity();
     assertThat(webHookResponse.getError().contains("Trigger rejected")).isTrue();
+    assertThat(webHookResponse.getStatus()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldNotExecuteTriggerAfterMigrationToNG() {
+    when(featureFlagService.isEnabled(FeatureName.CDS_DISABLE_ALL_CG_TRIGGERS, ACCOUNT_ID)).thenReturn(true);
+
+    Response response =
+        webHookService.execute(token, WebHookRequest.builder().application(APP_ID).build(), httpHeaders);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_MOVED_PERMANENTLY);
+    WebHookResponse webHookResponse = (WebHookResponse) response.getEntity();
+    assertThat(webHookResponse.getError().contains("Trigger cannot be fired after migration to NextGen")).isTrue();
     assertThat(webHookResponse.getStatus()).isNullOrEmpty();
   }
 

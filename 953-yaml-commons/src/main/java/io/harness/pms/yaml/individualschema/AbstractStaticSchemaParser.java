@@ -14,7 +14,6 @@ import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
 
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
 import io.harness.yaml.schema.beans.SchemaConstants;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -47,20 +46,18 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
   // processing happens on top of this schema.
   JsonNode rootSchemaJsonNode;
 
-  abstract void init(JsonNode rootSchemaNode);
+  abstract void init();
 
   abstract IndividualSchemaGenContext getIndividualSchemaGenContext();
 
   abstract void checkIfRootNodeAndAddIntoFqnToNodeMap(
       String currentFqn, String childNodeRefValue, ObjectNode objectNode);
 
-  public AbstractStaticSchemaParser getInstance(JsonNode rootSchemaNode) {
+  public void initParser() {
     if (!isInitialised) {
-      rootSchemaJsonNode = rootSchemaNode;
-      init(rootSchemaNode);
+      init();
       isInitialised = true;
     }
-    return this;
   }
 
   void traverseNodeAndExtractAllRefsRecursively(JsonNode jsonNode, String currentFqn) {
@@ -278,7 +275,7 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
   @Override
   public ObjectNode getIndividualSchema(IndividualSchemaRequest individualSchemaRequest) {
     if (!isInitialised) {
-      throw new InvalidRequestException("Parser not yet initialised.");
+      initParser();
     }
     String schemaKey = individualSchemaRequest.getIndividualSchemaMetadata().generateSchemaKey();
     return nodeToResolvedSchemaMap.get(schemaKey);

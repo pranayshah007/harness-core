@@ -11,6 +11,8 @@ import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -26,8 +28,10 @@ import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.evaluators.ProvisionerExpressionEvaluator;
+import io.harness.evaluators.ProvisionerExpressionEvaluatorProvider;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -41,6 +45,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -49,8 +54,11 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class PdcProvisionedInfrastructureMapperTest extends CategoryTest {
   private static final String PROVISIONER_HOST_INSTANCES_EXPRESSION = "<+provisioner.hostInstances>";
   @Spy private CDExpressionEvaluator evaluator;
+  @Mock private ProvisionerExpressionEvaluatorProvider provisionerExpressionEvaluatorProvider;
 
   @InjectMocks private PdcProvisionedInfrastructureMapper pdcProvisionedInfrastructureMapper;
+
+  private Ambiance ambiance = Ambiance.newBuilder().build();
 
   @Test
   @Owner(developers = IVAN)
@@ -69,9 +77,11 @@ public class PdcProvisionedInfrastructureMapperTest extends CategoryTest {
     pdcInfrastructure.setInfraName("infraName");
     pdcInfrastructure.setInfraIdentifier("infraIdentifier");
 
-    PdcInfrastructureOutcome pdcInfrastructureOutcome =
-        pdcProvisionedInfrastructureMapper.toOutcome(pdcInfrastructure, getProvisionerExpressionEvaluator(),
-            EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
+    doReturn(getProvisionerExpressionEvaluator())
+        .when(provisionerExpressionEvaluatorProvider)
+        .getProvisionerExpressionEvaluator(any(), any());
+    PdcInfrastructureOutcome pdcInfrastructureOutcome = pdcProvisionedInfrastructureMapper.toOutcome(
+        pdcInfrastructure, ambiance, EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
 
     assertThat(pdcInfrastructureOutcome.getCredentialsRef()).isEqualTo("sshKeyRef");
     assertThat(pdcInfrastructureOutcome.getHosts())
@@ -99,10 +109,11 @@ public class PdcProvisionedInfrastructureMapperTest extends CategoryTest {
 
     pdcInfrastructure.setInfraName("infraName");
     pdcInfrastructure.setInfraIdentifier("infraIdentifier");
-
-    PdcInfrastructureOutcome pdcInfrastructureOutcome =
-        pdcProvisionedInfrastructureMapper.toOutcome(pdcInfrastructure, getProvisionerExpressionEvaluator(),
-            EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
+    doReturn(getProvisionerExpressionEvaluator())
+        .when(provisionerExpressionEvaluatorProvider)
+        .getProvisionerExpressionEvaluator(any(), any());
+    PdcInfrastructureOutcome pdcInfrastructureOutcome = pdcProvisionedInfrastructureMapper.toOutcome(
+        pdcInfrastructure, ambiance, EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
 
     assertThat(pdcInfrastructureOutcome.getCredentialsRef()).isEqualTo("sshKeyRef");
     assertThat(pdcInfrastructureOutcome.getHosts())
@@ -126,9 +137,11 @@ public class PdcProvisionedInfrastructureMapperTest extends CategoryTest {
             .hostAttributes(ParameterField.createValueField(hostAttributes))
             .hostFilter(HostFilter.builder().type(HostFilterType.ALL).build())
             .build();
-    PdcInfrastructureOutcome infrastructureOutcome =
-        pdcProvisionedInfrastructureMapper.toOutcome(pdcInfrastructure, getProvisionerExpressionEvaluator(),
-            EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
+    doReturn(getProvisionerExpressionEvaluator())
+        .when(provisionerExpressionEvaluatorProvider)
+        .getProvisionerExpressionEvaluator(any(), any());
+    PdcInfrastructureOutcome infrastructureOutcome = pdcProvisionedInfrastructureMapper.toOutcome(
+        pdcInfrastructure, ambiance, EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
 
     assertThat(infrastructureOutcome.getHostFilter().getType()).isEqualTo(HostFilterType.ALL);
   }
@@ -148,9 +161,11 @@ public class PdcProvisionedInfrastructureMapperTest extends CategoryTest {
                             .spec(HostAttributesFilter.builder().build())
                             .build())
             .build();
-    PdcInfrastructureOutcome infrastructureOutcome =
-        pdcProvisionedInfrastructureMapper.toOutcome(pdcInfrastructure, getProvisionerExpressionEvaluator(),
-            EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
+    doReturn(getProvisionerExpressionEvaluator())
+        .when(provisionerExpressionEvaluatorProvider)
+        .getProvisionerExpressionEvaluator(any(), any());
+    PdcInfrastructureOutcome infrastructureOutcome = pdcProvisionedInfrastructureMapper.toOutcome(
+        pdcInfrastructure, ambiance, EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build());
 
     assertThat(infrastructureOutcome.getHostFilter().getType()).isEqualTo(HostFilterType.HOST_ATTRIBUTES);
   }
@@ -167,11 +182,12 @@ public class PdcProvisionedInfrastructureMapperTest extends CategoryTest {
             .hostAttributes(ParameterField.createValueField(hostAttributes))
             .hostFilter(HostFilter.builder().type(HostFilterType.HOST_NAMES).build())
             .build();
-
-    assertThatThrownBy(
-        ()
-            -> pdcProvisionedInfrastructureMapper.toOutcome(pdcInfrastructure, getProvisionerExpressionEvaluator(),
-                EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build()))
+    doReturn(getProvisionerExpressionEvaluator())
+        .when(provisionerExpressionEvaluatorProvider)
+        .getProvisionerExpressionEvaluator(any(), any());
+    assertThatThrownBy(()
+                           -> pdcProvisionedInfrastructureMapper.toOutcome(pdcInfrastructure, ambiance,
+                               EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build()))
         .hasMessage("Unsupported host filter type found for dynamically provisioned infrastructure: HostNames")
         .isInstanceOf(InvalidArgumentsException.class);
   }
@@ -188,11 +204,12 @@ public class PdcProvisionedInfrastructureMapperTest extends CategoryTest {
             .hostAttributes(ParameterField.createValueField(hostAttributes))
             .hostFilter(HostFilter.builder().type(HostFilterType.ALL).build())
             .build();
-
+    doReturn(getProvisionerExpressionEvaluatorWithoutHosts())
+        .when(provisionerExpressionEvaluatorProvider)
+        .getProvisionerExpressionEvaluator(any(), any());
     assertThatThrownBy(()
-                           -> pdcProvisionedInfrastructureMapper.toOutcome(pdcInfrastructure,
-                               getProvisionerExpressionEvaluatorWithoutHosts(), EnvironmentOutcome.builder().build(),
-                               ServiceStepOutcome.builder().build()))
+                           -> pdcProvisionedInfrastructureMapper.toOutcome(pdcInfrastructure, ambiance,
+                               EnvironmentOutcome.builder().build(), ServiceStepOutcome.builder().build()))
         .hasMessage("Cannot evaluate empty host object array")
         .isInstanceOf(InvalidRequestException.class);
   }
@@ -260,7 +277,7 @@ public class PdcProvisionedInfrastructureMapperTest extends CategoryTest {
         + "  }\n"
         + "}";
     Map<String, Object> provisionerOutputMap = RecastOrchestrationUtils.fromJson(provisionerOutput);
-    return new ProvisionerExpressionEvaluator(provisionerOutputMap);
+    return new ProvisionerExpressionEvaluator(provisionerOutputMap, null);
   }
 
   @NotNull
@@ -275,6 +292,6 @@ public class PdcProvisionedInfrastructureMapperTest extends CategoryTest {
         + "  }\n"
         + "}";
     Map<String, Object> provisionerOutputMap = RecastOrchestrationUtils.fromJson(provisionerOutputWithoutHosts);
-    return new ProvisionerExpressionEvaluator(provisionerOutputMap);
+    return new ProvisionerExpressionEvaluator(provisionerOutputMap, null);
   }
 }

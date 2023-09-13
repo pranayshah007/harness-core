@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_DISABLE_ALL_CG_TRIGGERS;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
@@ -205,6 +206,11 @@ public class WebHookServiceImpl implements WebHookService {
         return prepareResponse(webHookResponse, Response.Status.UNAUTHORIZED);
       }
 
+      if (featureFlagService.isEnabled(CDS_DISABLE_ALL_CG_TRIGGERS, app.getAccountId())) {
+        return prepareResponse(
+            WebHookResponse.builder().error("Trigger cannot be fired after migration to NextGen").build(),
+            Response.Status.MOVED_PERMANENTLY);
+      }
       return executeTriggerWebRequest(trigger.getAppId(), token, app, webHookRequest);
 
     } catch (WingsException ex) {

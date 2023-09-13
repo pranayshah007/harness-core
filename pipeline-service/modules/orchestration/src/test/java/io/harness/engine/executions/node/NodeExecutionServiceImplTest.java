@@ -14,6 +14,7 @@ import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.AYUSHI_TIWARI;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
@@ -39,6 +40,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.observers.NodeExecutionDeleteObserver;
+import io.harness.event.OrchestrationLogPublisher;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
@@ -57,8 +59,10 @@ import io.harness.utils.AmbianceTestUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -67,15 +71,18 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -86,7 +93,12 @@ import org.springframework.data.util.CloseableIterator;
 public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Mock private Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject;
   @Mock private PlanService planService;
+
   @Inject @InjectMocks @Spy private NodeExecutionServiceImpl nodeExecutionService;
+
+  private static final Set<String> GRAPH_FIELDS = Set.of(NodeExecutionKeys.mode, NodeExecutionKeys.progressData,
+      NodeExecutionKeys.unitProgresses, NodeExecutionKeys.executableResponses, NodeExecutionKeys.interruptHistories,
+      NodeExecutionKeys.retryIds, NodeExecutionKeys.oldRetry, NodeExecutionKeys.failureInfo, NodeExecutionKeys.endTs);
 
   @Before
   public void beforeTest() {
@@ -813,6 +825,24 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testCountByParentIdAndStatusIn() {
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+    String parentId = "parentId";
+    Set<Status> flowingStatuses = new HashSet<>();
+    Query query =
+        query(where(NodeExecutionKeys.parentId).is(parentId)).addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    nodeExecutionService.findCountByParentIdAndStatusIn(parentId, flowingStatuses);
+    verify(nodeExecutionReadHelperMock, times(1)).findCount(query);
+    flowingStatuses.add(RUNNING);
+    query.addCriteria(where(NodeExecutionKeys.status).in(flowingStatuses));
+    nodeExecutionService.findCountByParentIdAndStatusIn(parentId, flowingStatuses);
+    verify(nodeExecutionReadHelperMock, times(1)).findCount(query);
+  }
+
+  @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testDeleteAllNodeExecutionAndMetadata() {
@@ -831,8 +861,9 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
     doReturn(iterator)
         .when(nodeExecutionService)
-        .fetchNodeExecutionsFromAnalytics("EXECUTION_1", NodeProjectionUtils.fieldsForNodeExecutionDelete);
-    nodeExecutionService.deleteAllNodeExecutionAndMetadata("EXECUTION_1");
+        .fetchNodeExecutionsFromAnalytics(
+            new HashSet<>(Arrays.asList("EXECUTION_1")), NodeProjectionUtils.fieldsForNodeExecutionDelete);
+    nodeExecutionService.deleteAllNodeExecutionAndMetadata(new HashSet<>(Arrays.asList("EXECUTION_1")));
     verify(nodeDeleteObserverSubject, times(2)).fireInform(any(), any());
 
     verify(mongoTemplateMock, times(1))
@@ -879,6 +910,238 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     CloseableIterator<NodeExecution> fetchedIterator = nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(
         planExecutionId, stageFQNs, Collections.singletonList("node"));
     assertThat(fetchedIterator).isEqualTo(iterator);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testFetchNodeExecutionsWithoutOldRetriesIterator() {
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+    String planExecutionId = "planId";
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(planExecutionId);
+    verify(nodeExecutionReadHelperMock, times(1)).fetchNodeExecutionsIteratorWithoutProjections(query);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testFetchChildrenNodeExecutionsIteratorWithoutProjection() {
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+    NodeExecution nodeExecutions = NodeExecution.builder().build();
+    List<NodeExecution> nodeExecutionList = new LinkedList<>();
+    for (int i = 0; i < 1000; i++) {
+      String uuid = generateUuid();
+      nodeExecutionList.add(NodeExecution.builder().uuid(uuid).build());
+    }
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    List<String> parentId = new ArrayList<>();
+    doReturn(iterator).when(nodeExecutionReadHelperMock).fetchNodeExecutionsIteratorWithoutProjections(any());
+
+    CloseableIterator<NodeExecution> actualResult =
+        nodeExecutionService.fetchChildrenNodeExecutionsIteratorWithoutProjection("planExecutionId", parentId);
+    verify(nodeExecutionReadHelperMock, times(1)).fetchNodeExecutionsIteratorWithoutProjections(any());
+    assertThat(actualResult).isEqualTo(iterator);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testFetchAllStepNodeExecutions() {
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+
+    String planExecutionId = "planId";
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.STEP));
+    Set<String> fieldsToInclude = new HashSet<>();
+    for (String fieldName : fieldsToInclude) {
+      query.fields().include(fieldName);
+    }
+    nodeExecutionService.fetchAllStepNodeExecutions(planExecutionId, fieldsToInclude);
+    verify(nodeExecutionReadHelperMock, times(1)).fetchNodeExecutions(query);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testGetPipelineNodeExecutionWithProjections() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
+    String planExecutionId = "planId";
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.PIPELINE))
+                      .with(Sort.by(Sort.Direction.ASC, NodeExecutionKeys.createdAt));
+    Set<String> fields = new HashSet<>();
+    for (String fieldName : fields) {
+      query.fields().include(fieldName);
+    }
+    Optional<NodeExecution> nodeExecution =
+        nodeExecutionService.getPipelineNodeExecutionWithProjections(planExecutionId, fields);
+    verify(mongoTemplateMock, times(1)).findOne(query, NodeExecution.class);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testGetForNodeExecutionIDs() {
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+    List<String> nodeExecutionIds = new ArrayList<>();
+    for (int i = 0; i < 20; i++) {
+      String uuid = generateUuid();
+      nodeExecutionIds.add(uuid);
+    }
+
+    Query query = query(where(NodeExecutionKeys.uuid).in(nodeExecutionIds));
+    nodeExecutionService.get(nodeExecutionIds);
+    verify(nodeExecutionReadHelperMock, times(1)).fetchNodeExecutionsWithAllFields(query);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testfetchStrategyNodeExecutions() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+    List<String> stageFQNs = new ArrayList<>();
+    List<NodeExecution> nodeExecutions = new ArrayList<>();
+    doReturn(nodeExecutions).when(mongoTemplateMock).find(any(), any());
+    List<NodeExecution> actualNodeExecution =
+        nodeExecutionService.fetchStrategyNodeExecutions("placeExecutionID", stageFQNs);
+    verify(mongoTemplateMock, times(1)).find(any(), any());
+    assertThat(actualNodeExecution).isEqualTo(nodeExecutions);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testFetchNodeExecutionForPlanNodeAndRetriedId() {
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+    NodeExecution nodeExecutions = NodeExecution.builder().build();
+    List<String> retriedId = new ArrayList<>();
+    doReturn(nodeExecutions).when(nodeExecutionReadHelperMock).fetchNodeExecutionsFromSecondaryTemplate(any());
+    NodeExecution actualNodeExecution = nodeExecutionService.fetchNodeExecutionForPlanNodeAndRetriedId(
+        "placeExecutionID", "planeNodeId", false, retriedId);
+    verify(nodeExecutionReadHelperMock, times(1)).fetchNodeExecutionsFromSecondaryTemplate(any());
+    assertThat(actualNodeExecution).isEqualTo(nodeExecutions);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testFetchStageExecutionsWithProjection() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
+    Set<String> fieldsToBeIncluded = new HashSet<>();
+    List<NodeExecution> nodeExecution = new ArrayList<>();
+    doReturn(nodeExecution).when(mongoTemplateMock).find(any(), any());
+    List<NodeExecution> actualNodeExecution =
+        nodeExecutionService.fetchStageExecutionsWithProjection("planExecutionId", fieldsToBeIncluded);
+    verify(mongoTemplateMock, times(1)).find(any(), any());
+    assertThat(nodeExecution).isEqualTo(actualNodeExecution);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testFetchAllWithPlanExecutionId() {
+    NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
+    Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
+    NodeExecution nodeExecutions = NodeExecution.builder().build();
+    List<NodeExecution> nodeExecutionList = new LinkedList<>();
+    for (int i = 0; i < 1000; i++) {
+      String uuid = generateUuid();
+      nodeExecutionList.add(NodeExecution.builder().uuid(uuid).build());
+    }
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    doReturn(iterator).when(nodeExecutionReadHelperMock).fetchNodeExecutionsFromAnalytics(any());
+    Set<String> fieldsToBeIncluded = new HashSet<>();
+    CloseableIterator<NodeExecution> actualNodeExecution =
+        nodeExecutionService.fetchAllWithPlanExecutionId("placeExecutionID", fieldsToBeIncluded);
+    verify(nodeExecutionReadHelperMock, times(1)).fetchNodeExecutionsFromAnalytics(any());
+    assertThat(actualNodeExecution).isEqualTo(iterator);
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testSaveAll() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
+    List<NodeExecution> nodeExecutions = new ArrayList<>();
+    NodeExecution nodeExecution = NodeExecution.builder().uuid("12345").build();
+    doReturn(Collections.singletonList(nodeExecution)).when(mongoTemplateMock).insertAll(nodeExecutions);
+    List<NodeExecution> nodeExecutionsList = nodeExecutionService.saveAll(nodeExecutions);
+    assertThat(nodeExecutionsList.size()).isEqualTo(1);
+    assertThat(nodeExecutionsList.get(0).getUuid()).isEqualTo("12345");
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testMarkRetried() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
+    Update ops = new Update().set(NodeExecutionKeys.oldRetry, Boolean.TRUE);
+    String nodeExecutionId = "";
+    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
+    doReturn(null).when(mongoTemplateMock).findAndModify(query, ops, NodeExecution.class);
+    boolean result = nodeExecutionService.markRetried(nodeExecutionId);
+    assertThat(result).isFalse();
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testMarkRetriedWhenNodeExecutionNotNull() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
+    OrchestrationLogPublisher orchestrationLogPublisher = Mockito.mock(OrchestrationLogPublisher.class);
+    Update ops = new Update().set(NodeExecutionKeys.oldRetry, Boolean.TRUE);
+    String nodeExecutionId = "";
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("3").build();
+    NodeExecution nodeExecution = NodeExecution.builder().uuid("12345").ambiance(ambiance).build();
+    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
+    doReturn(nodeExecution).when(mongoTemplateMock).findAndModify(query, ops, NodeExecution.class);
+    boolean result = nodeExecutionService.markRetried(nodeExecutionId);
+    assertThat(result).isTrue();
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testUpdateRelationShipsForRetryNode() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
+    UpdateResult updated = UpdateResult.acknowledged(1, null, null);
+    doReturn(updated)
+        .when(mongoTemplateMock)
+        .updateMulti(any(Query.class), any(Update.class), ArgumentMatchers.eq(NodeExecution.class));
+    boolean result = nodeExecutionService.updateRelationShipsForRetryNode(any(), any());
+    assertThat(result).isFalse();
+  }
+
+  @Test
+  @Owner(developers = AYUSHI_TIWARI)
+  @Category(UnitTests.class)
+  public void testUpdateRelationShipsForRetryNodeNotAcknowledged() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
+    UpdateResult updated = UpdateResult.unacknowledged();
+    doReturn(updated)
+        .when(mongoTemplateMock)
+        .updateMulti(any(Query.class), any(Update.class), ArgumentMatchers.eq(NodeExecution.class));
+    boolean result = nodeExecutionService.updateRelationShipsForRetryNode(any(), any());
+    assertThat(result).isTrue();
   }
 
   @Test

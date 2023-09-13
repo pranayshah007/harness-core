@@ -42,7 +42,7 @@
   {
     "id": "64e44efc95107f65e31c51f7",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "specOwnerExist",
+    "identifier": "specOwnerExists",
     "name": "Owner is defined and is not unknown",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "catalog",

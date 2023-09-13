@@ -21,9 +21,9 @@ public class DataPoints {
   public static final String GITHUB_IS_FILE_EXISTS = "isFileExists";
 
   // Catalog
-  public static final String CATALOG_TECH_DOCS = "techDocsAnnotation";
-  public static final String CATALOG_PAGERDUTY = "pagerdutyAnnotation";
-  public static final String CATALOG_SPEC_OWNER = "specOwner";
+  public static final String CATALOG_TECH_DOCS = "techDocsAnnotationExists";
+  public static final String CATALOG_PAGERDUTY = "pagerdutyAnnotationExists";
+  public static final String CATALOG_SPEC_OWNER = "specOwnerExists";
 
   // Harness
   public static final String STO_ADDED_IN_PIPELINE = "stoStageAdded";

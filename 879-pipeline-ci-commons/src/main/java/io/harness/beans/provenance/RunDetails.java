@@ -18,6 +18,6 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.SSCA)
 public class RunDetails {
   private ProvenanceBuilder builder;
-  private BuildMetadata metadata;
+  private RunDetailsMetadata runDetailsMetadata;
   private List<ResourceDescriptor> byproducts;
 }

@@ -264,7 +264,6 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     String type = stepNode.get("type").asText();
     switch (type) {
       case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
-      case IACMStepSpecTypeConstants.IACM_COST_ESTIMATION:
       case IACMStepSpecTypeConstants.IACM_APPROVAL: {
         ObjectNode spec = (ObjectNode) stepNode.get("spec");
         spec.put("workspace", workspace);
@@ -272,8 +271,6 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         String command;
         if (Objects.equals(type, IACMStepSpecTypeConstants.IACM_APPROVAL)) {
           command = "approval";
-        } else if (Objects.equals(type, IACMStepSpecTypeConstants.IACM_COST_ESTIMATION)) {
-          command = "cost-estimation";
         } else {
           command = spec.get("command").asText();
         }
