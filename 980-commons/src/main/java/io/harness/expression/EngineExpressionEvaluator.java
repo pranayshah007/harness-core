@@ -70,7 +70,6 @@ public class EngineExpressionEvaluator {
   private static final Pattern ALIAS_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
   public static final String ENABLED_FEATURE_FLAGS_KEY = "ENABLED_FEATURE_FLAGS";
   public static final String PIE_EXECUTION_JSON_SUPPORT = "PIE_EXECUTION_JSON_SUPPORT";
-  public static final String PIE_EXPRESSION_CONCATENATION = "PIE_EXPRESSION_CONCATENATION";
   public static final String PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT =
       "PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT";
 
@@ -143,21 +142,21 @@ public class EngineExpressionEvaluator {
    * Return the prefixes to search for when evaluating expressions. The return value should not be null/empty. When
    * overriding this method, consider calling super.fetchPrefixes() and including the prefixes of the superclass in the
    * final list.
-   *
+   * <p>
    * Example:
-   *   If the expression is `a.b.c` and fetchPrefixes returns ["child", "qualified", ""]
-   *   We search in the following order:
-   *   - child.a.b.c
-   *   - qualified.a.b.c
-   *   - a.b.c
-   *
+   * If the expression is `a.b.c` and fetchPrefixes returns ["child", "qualified", ""]
+   * We search in the following order:
+   * - child.a.b.c
+   * - qualified.a.b.c
+   * - a.b.c
+   * <p>
    * NOTE: Expression without any prefix will only be searched if the prefixes list contains "" or null.
-   *
+   * <p>
    * Example:
    * `qualified.b.c` and fetchPrefixes returns ["child", "qualified", ""] We search in the following order:
-   *   - child.qualified.b.c
-   *   - qualified.qualified.b.c
-   *   - qualified.b.c [This searches for b.c inside contextMap entry with name 'qualified']
+   * - child.qualified.b.c
+   * - qualified.qualified.b.c
+   * - qualified.b.c [This searches for b.c inside contextMap entry with name 'qualified']
    *
    * @return the prefixes to search with
    */
@@ -227,30 +226,12 @@ public class EngineExpressionEvaluator {
       @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);
     RenderExpressionResolver resolver = new RenderExpressionResolver(this, ctx, depth, expressionMode);
-    try {
-      String finalExpression = runStringReplacer(expression, resolver);
-      if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
-          && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
-        throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
-      }
-      return finalExpression;
-    } catch (Exception e) {
-      // Adding fallback mechanism for any failures due to concat flow
-      if (ctx.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
-        ctx.removeFeatureFlag(PIE_EXPRESSION_CONCATENATION);
-        resolver = new RenderExpressionResolver(this, ctx, depth, expressionMode);
-        String finalExpression = runStringReplacer(expression, resolver);
-        if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
-            && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
-          throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
-        }
-        log.warn("[EXPRESSION_CONCATENATE]: Failed to render expression in new flow for - " + expression
-            + " whose value is - " + finalExpression);
-        log.warn("[EXPRESSION_CONCATENATE_ERRORS] - " + e.getMessage(), e);
-        return finalExpression;
-      }
-      throw e;
+    String finalExpression = runStringReplacer(expression, resolver);
+    if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
+        && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
+      throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
     }
+    return finalExpression;
   }
 
   @Deprecated
@@ -273,57 +254,40 @@ public class EngineExpressionEvaluator {
       return null;
     }
     EngineJexlContext engineJexlContext = prepareContext(ctx);
-    try {
-      return evaluateExpressionInternal(expression, engineJexlContext, MAX_DEPTH, expressionMode);
-    } catch (Exception e) {
-      // Adding fallback mechanism for any failures due to concat flow
-      if (engineJexlContext.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
-        engineJexlContext.removeFeatureFlag(PIE_EXPRESSION_CONCATENATION);
-        Object expressionValue = evaluateExpressionInternal(expression, engineJexlContext, MAX_DEPTH, expressionMode);
-        log.warn("[EXPRESSION_EVALUATE_CONCATENATE]: Failed to evaluate expression in new flow for - " + expression
-            + " whose value is - " + expressionValue);
-        log.warn("[EXPRESSION_CONCATENATE_ERRORS] - " + e.getMessage(), e);
-        return expressionValue;
-      }
-      throw e;
-    }
+    return evaluateExpressionInternal(expression, engineJexlContext, MAX_DEPTH, expressionMode);
   }
+
   protected Object evaluateExpressionInternal(
       @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);
     EvaluateExpressionResolver resolver = new EvaluateExpressionResolver(this, ctx, depth, expressionMode);
 
     try {
-      if (ctx.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
-        StringReplacerResponse replacerResponse = runStringReplacerWithResponse(expression, resolver);
-        Object evaluatedExpression = evaluateInternalV2(replacerResponse, ctx);
+      StringReplacerResponse replacerResponse = runStringReplacerWithResponse(expression, resolver);
+      Object evaluatedExpression = evaluateInternalV2(replacerResponse, ctx);
 
-        // If expression is evaluated as null, check if prefix combinations can give any valid result or not, we should
-        // do recursive check only if render expression was modified to avoid cyclic loop
-        if (evaluatedExpression == null && replacerResponse.isOriginalExpressionAltered()) {
-          Object evaluateExpressionBlock =
-              evaluateExpressionBlock(replacerResponse.getFinalExpressionValue(), ctx, depth - 1, expressionMode);
-          if (isExpressionResolvedValueSameAsGivenExpression(
-                  evaluateExpressionBlock, replacerResponse.getFinalExpressionValue(), expressionMode)
-              && replacerResponse.isOnlyRenderedExpressions()) {
-            return replacerResponse.getFinalExpressionValue();
-          } else {
-            return evaluateExpressionBlock;
-          }
+      // If expression is evaluated as null, check if prefix combinations can give any valid result or not, we should
+      // do recursive check only if render expression was modified to avoid cyclic loop
+      if (evaluatedExpression == null && replacerResponse.isOriginalExpressionAltered()) {
+        Object evaluateExpressionBlock =
+            evaluateExpressionBlock(replacerResponse.getFinalExpressionValue(), ctx, depth - 1, expressionMode);
+        if (isExpressionResolvedValueSameAsGivenExpression(
+                evaluateExpressionBlock, replacerResponse.getFinalExpressionValue(), expressionMode)
+            && replacerResponse.isOnlyRenderedExpressions()) {
+          return replacerResponse.getFinalExpressionValue();
+        } else {
+          return evaluateExpressionBlock;
         }
-
-        // If the evaluated expression has nested expressions again, then evaluate else return
-        if (evaluatedExpression instanceof String && hasExpressions((String) evaluatedExpression)) {
-          if (evaluatedExpression.equals(expression)) {
-            return evaluatedExpression;
-          }
-          return evaluateExpressionInternal((String) evaluatedExpression, ctx, depth - 1, expressionMode);
-        }
-        return evaluatedExpression;
-      } else {
-        String finalExpression = runStringReplacer(expression, resolver);
-        return evaluateInternal(finalExpression, ctx);
       }
+
+      // If the evaluated expression has nested expressions again, then evaluate else return
+      if (evaluatedExpression instanceof String && hasExpressions((String) evaluatedExpression)) {
+        if (evaluatedExpression.equals(expression)) {
+          return evaluatedExpression;
+        }
+        return evaluateExpressionInternal((String) evaluatedExpression, ctx, depth - 1, expressionMode);
+      }
+      return evaluatedExpression;
     } catch (JexlException ex) {
       log.error(format("Failed to evaluate final expression: %s", expression), ex);
 
@@ -410,6 +374,7 @@ public class EngineExpressionEvaluator {
   public PartialEvaluateResult partialEvaluateExpression(String expression) {
     return partialEvaluateExpression(expression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
   }
+
   public PartialEvaluateResult partialEvaluateExpression(String expression, ExpressionMode expressionMode) {
     return partialEvaluateExpression(expression, null, expressionMode);
   }
@@ -706,6 +671,7 @@ public class EngineExpressionEvaluator {
                                           : ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
   }
 
+  // Doesn't check render for nested expressions
   private static String runStringReplacer(@NotNull String expression, @NotNull ExpressionResolver resolver) {
     StringReplacer replacer =
         new StringReplacer(resolver, ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END);

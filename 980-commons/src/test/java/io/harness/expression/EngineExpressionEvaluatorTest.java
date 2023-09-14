@@ -391,7 +391,6 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var6", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"}]")
             .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
             .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
-            .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, Arrays.asList("PIE_EXPRESSION_CONCATENATION"))
             .build());
     // concat expressions
     assertThat(evaluator.resolve("archit-<+company>", true)).isEqualTo("archit-harness");
@@ -572,8 +571,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var6", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"}]")
             .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
             .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
-            .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY,
-                Arrays.asList("PIE_EXPRESSION_CONCATENATION", "PIE_EXECUTION_JSON_SUPPORT"))
+            .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, Arrays.asList("PIE_EXECUTION_JSON_SUPPORT"))
             .build());
     // concat expressions
     assertThat(evaluator.resolve("archit-<+company>", true)).isEqualTo("archit-harness");

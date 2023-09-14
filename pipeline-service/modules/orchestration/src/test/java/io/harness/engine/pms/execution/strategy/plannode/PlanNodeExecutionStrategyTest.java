@@ -7,7 +7,6 @@
 
 package io.harness.engine.pms.execution.strategy.plannode;
 
-import static io.harness.beans.FeatureName.PIE_EXPRESSION_CONCATENATION;
 import static io.harness.beans.FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
@@ -165,8 +164,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .putAllSetupAbstractions(prepareInputArgs())
                             .addLevels(Level.newBuilder().setRuntimeId(generateUuid()).build())
                             .setMetadata(ExecutionMetadata.newBuilder()
-                                             .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(),
-                                                 false, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
+                                             .putAllFeatureFlagToValueMap(
+                                                 Map.of(PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
                                              .build())
                             .build();
     PlanNode planNode =
@@ -191,8 +190,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     verify(waitForExecutionInputHelper, never()).waitForExecutionInput(any(), any(), any());
     ambiance.toBuilder()
         .setMetadata(ExecutionMetadata.newBuilder()
-                         .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(), true,
-                             PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), true))
+                         .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), true))
                          .build())
         .build();
     executionStrategy.runNode(ambiance, planNode, null);
@@ -244,8 +242,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .putAllSetupAbstractions(prepareInputArgs())
                             .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
                             .setMetadata(ExecutionMetadata.newBuilder()
-                                             .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(),
-                                                 false, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
+                                             .putAllFeatureFlagToValueMap(
+                                                 Map.of(PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
                                              .build())
                             .build();
 
@@ -288,8 +286,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .putAllSetupAbstractions(prepareInputArgs())
                             .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
                             .setMetadata(ExecutionMetadata.newBuilder()
-                                             .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(),
-                                                 false, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
+                                             .putAllFeatureFlagToValueMap(
+                                                 Map.of(PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
                                              .build())
                             .build();
     NodeExecution nodeExecution = NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).build();
@@ -940,10 +938,10 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
         Ambiance.newBuilder()
             .setPlanId(planId)
             .addLevels(Level.newBuilder().setRuntimeId(runtimeId).setSetupId(setupId).setRetryIndex(1).build())
-            .setMetadata(ExecutionMetadata.newBuilder()
-                             .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_CONCATENATION.name(), false,
-                                 PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
-                             .build())
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .putAllFeatureFlagToValueMap(Map.of(PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT.name(), false))
+                    .build())
             .build();
     PlanNode planNode = PlanNode.builder()
                             .expressionMode(ExpressionMode.RETURN_NULL_IF_UNRESOLVED)
