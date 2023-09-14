@@ -43,6 +43,7 @@ import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.executables.PipelineAsyncExecutable;
+import io.harness.steps.shellscript.ShellScriptStepParameters;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.tasks.ResponseData;
 
@@ -71,29 +72,33 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     CustomApprovalInstance approvalInstance = CustomApprovalInstance.fromStepParameters(ambiance, stepParameters);
-    openLogStream(ambiance, approvalInstance);
+    //    openLogStream(ambiance, approvalInstance);
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    final List<String> units = ((CustomApprovalSpecParameters) stepParameters.getSpec()).getAllCommandUnits();
+    units.forEach(logStreamingStepClient::openStream);
+
     approvalInstance = (CustomApprovalInstance) approvalInstanceService.save(approvalInstance);
     irregularApprovalInstanceHandler.wakeup();
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())
-        .addAllLogKeys(CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
-            StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))))
+        .addAllLogKeys(
+            CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), units)))
         .build();
   }
 
-  private void openLogStream(Ambiance ambiance, CustomApprovalInstance approvalInstance) {
-    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-    List<String> units;
-    if (ShellType.Bash.equals(approvalInstance.getShellType())) {
-      units = Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT);
-    } else {
-      units = Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT);
-    }
-
-    for (String unit : units) {
-      logStreamingStepClient.openStream(unit);
-    }
-  }
+  //  private void openLogStream(Ambiance ambiance, CustomApprovalInstance approvalInstance) {
+  //    ILogStreamingStepClient logStreamingStepClient =
+  //    logStreamingStepClientFactory.getLogStreamingStepClient(ambiance); List<String> units; if
+  //    (ShellType.Bash.equals(approvalInstance.getShellType())) {
+  //      units = Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT);
+  //    } else {
+  //      units = Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT);
+  //    }
+  //
+  //    for (String unit : units) {
+  //      logStreamingStepClient.openStream(unit);
+  //    }
+  //  }
 
   @Override
   public StepResponse handleAsyncResponseInternal(
@@ -131,7 +136,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
               StepResponse.StepOutcome.builder().name(OutputExpressionConstants.OUTPUT).outcome(outcome).build())
           .build();
     } finally {
-      closeLogStream(ambiance);
+      closeLogStream(ambiance, stepParameters);
     }
   }
 
@@ -147,7 +152,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
   public void handleAbort(
       Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse) {
     approvalInstanceService.abortByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
-    closeLogStream(ambiance);
+    closeLogStream(ambiance, stepParameters);
   }
 
   @Override
@@ -155,8 +160,12 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
     return StepBaseParameters.class;
   }
 
-  private void closeLogStream(Ambiance ambiance) {
+  private void closeLogStream(Ambiance ambiance, StepElementParameters stepParameters) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    // Once log-service provide the API to pass list of log-keys as parameter. Then only one call will be enough to
+    // close all log-stream. Right now we are doing forEach.
+    //    ((CustomApprovalSpecParameters) stepParameters.getSpec()).getAllCommandUnits()
+    //            .forEach(logStreamingStepClient::closeStream);
     logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
   }
 }
