@@ -32,6 +32,7 @@ import io.harness.notification.NotificationClientConfiguration;
 import io.harness.outbox.OutboxPollConfiguration;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.GovernanceConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
@@ -147,6 +148,7 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty(value = "currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
   @JsonProperty("aiEngineConfig") private AiEngineConfig aiEngineConfig;
+  @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerConf = new SwaggerBundleConfiguration();

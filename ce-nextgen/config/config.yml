@@ -276,3 +276,11 @@ aiEngineConfig:
     topK: 40
     apiEndpoint: http://35.202.125.234/complete
     genAIServiceSecret: placeholder
+
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http

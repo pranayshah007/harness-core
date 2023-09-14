@@ -42,6 +42,7 @@ import io.harness.reflection.HarnessReflections;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.NextGenConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.remote.ResourceGroupClientConfig;
@@ -266,6 +267,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "pluginExecutionConfig") private PluginExecutionConfig pluginExecutionConfig;
   @JsonProperty("signupDomainDenylistConfig")
   private SignupDomainDenylistConfiguration signupDomainDenylistConfiguration;
+  @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

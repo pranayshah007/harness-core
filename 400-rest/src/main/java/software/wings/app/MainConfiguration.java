@@ -43,6 +43,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.scheduler.SchedulerConfig;
 import io.harness.secret.ConfigSecret;
@@ -249,6 +250,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(value = "enableRedisForDelegateService", defaultValue = "false")
   private boolean enableRedisForDelegateService;
   @JsonProperty("runScheduleJobsInManagerIteratorOnly") private boolean runScheduleJobsInManagerIteratorOnly;
+  @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
 
   private int applicationPort;
   private boolean sslEnabled;

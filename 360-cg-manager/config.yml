@@ -785,3 +785,11 @@ redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
 
 lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}
 moveGitPollingToRunnable: ${MOVE_GIT_POLLING_TO_RUNNABLE:-true}
+
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http

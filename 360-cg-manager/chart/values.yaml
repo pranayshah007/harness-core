@@ -207,6 +207,14 @@ service:
   port: 9090
   grpcport: 9879
 
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
 resources:
   limits:
     cpu: 2

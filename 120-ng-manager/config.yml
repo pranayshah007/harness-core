@@ -526,3 +526,11 @@ signupDomainDenylistConfig:
   bucketName: null
 
 
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
