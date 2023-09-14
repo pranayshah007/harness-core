@@ -101,6 +101,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     List<PipelineEntity> pipelineEntities = gitAwarePersistence.find(
         criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class, true);
 
+    // Filtering entities based on pipeline view permission
     List<PipelineEntity> permittedEntity =
         getPermittedPipelineEntities(accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntities);
 
@@ -125,6 +126,9 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     return permittedEntity;
   }
 
+  /*
+  Function Returns the identifier of pipeline which have view access
+   */
   public List<String> getPermitted(
       String accountIdentifier, String orgId, String projectId, List<String> pipelineIdentifiers) {
     List<String> permittedPipelineIdentifier = new ArrayList<>();
