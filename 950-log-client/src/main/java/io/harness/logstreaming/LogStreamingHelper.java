@@ -41,6 +41,11 @@ public class LogStreamingHelper {
 
   @Nonnull
   public String generateLogBaseKey(LinkedHashMap<String, String> logStreamingAbstractions) {
+    if (logStreamingAbstractions.containsKey("isSimplified")
+        && logStreamingAbstractions.get("isSimplified").equals("true")) {
+      generateSimplifiedLogBaseKey(logStreamingAbstractions);
+    }
+
     // Generate base log key that will be used for writing logs to log streaming service
     StringBuilder logBaseKey = new StringBuilder();
     for (Map.Entry<String, String> entry : logStreamingAbstractions.entrySet()) {
@@ -54,6 +59,11 @@ public class LogStreamingHelper {
 
   @Nonnull
   public String generateSimplifiedLogBaseKey(LinkedHashMap<String, String> logStreamingAbstractions) {
+    if (logStreamingAbstractions.containsKey("isSimplified")
+        && logStreamingAbstractions.get("isSimplified").equals("true")) {
+      logStreamingAbstractions.remove("isSimplified", "true");
+    }
+
     // Generate base log key that will be used for writing logs to log streaming service
     StringBuilder logBaseKey = new StringBuilder();
     for (Map.Entry<String, String> entry : logStreamingAbstractions.entrySet()) {

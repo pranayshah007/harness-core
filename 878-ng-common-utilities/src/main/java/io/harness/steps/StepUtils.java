@@ -121,6 +121,12 @@ public class StepUtils {
     logAbstractions.put("projectId", ambiance.getSetupAbstractionsMap().getOrDefault("projectIdentifier", ""));
     logAbstractions.put("pipelineId", ambiance.getMetadata().getPipelineIdentifier());
     logAbstractions.put("runSequence", String.valueOf(ambiance.getMetadata().getRunSequence()));
+
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+      logAbstractions.put("isSimplified", "true");
+    }
+
     for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
       Level currentLevel = ambiance.getLevelsList().get(i);
       String retrySuffix = currentLevel.getRetryIndex() > 0 ? String.format("_%s", currentLevel.getRetryIndex()) : "";
