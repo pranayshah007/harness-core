@@ -14,7 +14,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.mockito.Mockito.mock;
 
-import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
@@ -215,7 +214,6 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(PipelineEnforcementService.class).toInstance(mock(PipelineEnforcementService.class));
         bind(TemplateResourceClient.class).toInstance(mock(TemplateResourceClient.class));
         bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
-        bind(AccessControlClient.class).toInstance(mock(AccessControlClient.class));
       }
     });
 
