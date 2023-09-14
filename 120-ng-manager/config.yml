@@ -551,3 +551,11 @@ webhookBranchHookEventHsqsDequeueConfig:
 
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
 
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+

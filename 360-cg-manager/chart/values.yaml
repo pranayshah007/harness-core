@@ -133,7 +133,7 @@ image:
   repository: harness/manager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80216"
+  tag: "80218"
   digest: ""
   imagePullSecrets: []
 
@@ -226,6 +226,14 @@ service:
   type: ClusterIP
   port: 9090
   grpcport: 9879
+
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
 
 resources:
   limits:

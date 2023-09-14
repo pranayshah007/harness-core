@@ -67,6 +67,14 @@ data:
   AUDIT_CLIENT_BASEURL: 'http://platform-service:9005/api/'
   NOTIFICATION_BASE_URL: 'http://platform-service:9005/api/'
   {{- end }}
+  {{- if .Values.proxy.enabled }}
+  PROXY_ENABLED: {{ .Values.proxy.enabled }}
+  PROXY_HOST: {{ .Values.proxy.host }}
+  PROXY_PORT: {{ .Values.proxy.port }}
+  PROXY_USERNAME: '{{ .Values.proxy.username }}'
+  PROXY_PASSWORD: '{{ .Values.proxy.password }}'
+  PROXY_PROTOCOL: {{ .Values.proxy.protocol }}
+  {{- end }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}

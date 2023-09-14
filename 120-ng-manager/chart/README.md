@@ -1,6 +1,6 @@
 # ng-manager
 
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.79819](https://img.shields.io/badge/AppVersion-0.0.79819-informational?style=flat-square)
+![Version: 0.8.3](https://img.shields.io/badge/Version-0.8.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80218](https://img.shields.io/badge/AppVersion-0.0.80218-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -37,6 +37,7 @@ A Helm chart for Kubernetes
 | extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
 | global.ccm.enabled | bool | `false` |  |
+| global.cg.enabled | bool | `false` |  |
 | global.chaos.enabled | bool | `false` |  |
 | global.database.mongo.extraArgs | string | `""` |  |
 | global.database.mongo.hosts | list | `[]` | provide default values if mongo.installed is set to false |
@@ -94,7 +95,7 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/ng-manager-signed"` |  |
-| image.tag | string | `"79819"` |  |
+| image.tag | string | `"80218"` |  |
 | imagePullSecrets | object | `{}` |  |
 | initContainer.image.digest | string | `""` |  |
 | initContainer.image.imagePullSecrets | list | `[]` |  |
@@ -127,6 +128,12 @@ A Helm chart for Kubernetes
 | probes.startupProbe.httpGet.port | string | `"http-ng-manager"` |  |
 | probes.startupProbe.periodSeconds | int | `10` |  |
 | probes.startupProbe.timeoutSeconds | int | `2` |  |
+| proxy.enabled | bool | `false` |  |
+| proxy.host | string | `"localhost"` |  |
+| proxy.password | string | `""` |  |
+| proxy.port | int | `80` |  |
+| proxy.protocol | string | `"http"` |  |
+| proxy.username | string | `""` |  |
 | replicaCount | int | `1` |  |
 | resources.limits.memory | string | `"8192Mi"` |  |
 | resources.requests.cpu | int | `2` |  |
