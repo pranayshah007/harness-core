@@ -13,10 +13,14 @@ import io.harness.batch.processing.cloudevents.aws.ec2.service.AWSEC2Recommendat
 import io.harness.batch.processing.cloudevents.aws.ec2.service.request.EC2RecommendationRequest;
 import io.harness.batch.processing.cloudevents.aws.ec2.service.response.EC2RecommendationResponse;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.AwsCredentialHelper;
+import io.harness.batch.processing.config.BatchMainConfig;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.services.costexplorer.AWSCostExplorerClient;
@@ -41,6 +45,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationService {
   @Autowired private AwsCredentialHelper awsCredentialHelper;
+  @Autowired private BatchMainConfig batchMainConfig;
   private static final String aWSRegion = AWS_DEFAULT_REGION;
   private static final String AMAZON_EC2 = "AmazonEC2";
 
@@ -97,6 +102,10 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
   AWSCostExplorerClient getAWSCostExplorerClient(AwsCrossAccountAttributes awsCrossAccountAttributes) {
     AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
     AWSCostExplorerClientBuilder builder = AWSCostExplorerClientBuilder.standard().withRegion(aWSRegion);
+    if (batchMainConfig.getCeProxyConfig().isEnabled()) {
+      log.info("AWSCostExplorerClientBuilder initializing with proxy config");
+      builder.withClientConfiguration(getClientConfiguration(batchMainConfig.getCeProxyConfig()));
+    }
     AWSCredentialsProvider credentialsProvider =
         new STSAssumeRoleSessionCredentialsProvider
             .Builder(awsCrossAccountAttributes.getCrossAccountRoleArn(), UUID.randomUUID().toString())
@@ -105,5 +114,20 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
             .build();
     builder.withCredentials(credentialsProvider);
     return (AWSCostExplorerClient) builder.build();
+  }
+
+  private ClientConfiguration getClientConfiguration(CEProxyConfig ceProxyConfig) {
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setProxyHost(ceProxyConfig.getHost());
+    clientConfiguration.setProxyPort(ceProxyConfig.getPort());
+    if (!ceProxyConfig.getUsername().isEmpty()) {
+      clientConfiguration.setProxyUsername(ceProxyConfig.getUsername());
+    }
+    if (!ceProxyConfig.getPassword().isEmpty()) {
+      clientConfiguration.setProxyPassword(ceProxyConfig.getPassword());
+    }
+    clientConfiguration.setProtocol(
+        ceProxyConfig.getProtocol().equalsIgnoreCase("http") ? Protocol.HTTP : Protocol.HTTPS);
+    return clientConfiguration;
   }
 }

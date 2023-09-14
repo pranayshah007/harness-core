@@ -33,12 +33,15 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.arn.Arn;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -342,8 +345,8 @@ public class AwsClientImpl implements AwsClient {
 
   @Override
   public Optional<ReportDefinition> getReportDefinition(
-      AWSCredentialsProvider credentialsProvider, String curReportName) {
-    AWSCostAndUsageReport awsCostAndUsageReportClient = getAwsCurClient(credentialsProvider);
+      AWSCredentialsProvider credentialsProvider, String curReportName, CEProxyConfig ceProxyConfig) {
+    AWSCostAndUsageReport awsCostAndUsageReportClient = getAwsCurClient(credentialsProvider, ceProxyConfig);
     DescribeReportDefinitionsRequest describeReportDefinitionsRequest = new DescribeReportDefinitionsRequest();
 
     String nextToken = null;
@@ -371,11 +374,14 @@ public class AwsClientImpl implements AwsClient {
         .build();
   }
 
-  protected AWSCostAndUsageReport getAwsCurClient(AWSCredentialsProvider credentialsProvider) {
-    return AWSCostAndUsageReportClientBuilder.standard()
-        .withRegion(DEFAULT_REGION)
-        .withCredentials(credentialsProvider)
-        .build();
+  protected AWSCostAndUsageReport getAwsCurClient(
+      AWSCredentialsProvider credentialsProvider, CEProxyConfig ceProxyConfig) {
+    AWSCostAndUsageReportClientBuilder awsCostAndUsageReportClientBuilder =
+        AWSCostAndUsageReportClientBuilder.standard().withRegion(DEFAULT_REGION).withCredentials(credentialsProvider);
+    if (ceProxyConfig.isEnabled()) {
+      awsCostAndUsageReportClientBuilder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
+    }
+    return awsCostAndUsageReportClientBuilder.build();
   }
 
   protected AWSSecurityTokenService constructAWSSecurityTokenService(AWSCredentialsProvider credentialsProvider) {
@@ -473,8 +479,8 @@ public class AwsClientImpl implements AwsClient {
   }
 
   @Override
-  public AWSOrganizationsClient getAWSOrganizationsClient(
-      String crossAccountRoleArn, String externalId, String awsAccessKey, String awsSecretKey) {
+  public AWSOrganizationsClient getAWSOrganizationsClient(String crossAccountRoleArn, String externalId,
+      String awsAccessKey, String awsSecretKey, CEProxyConfig ceProxyConfig) {
     AWSSecurityTokenService awsSecurityTokenService =
         constructAWSSecurityTokenService(constructStaticBasicAwsCredentials(awsAccessKey, awsSecretKey));
     AWSOrganizationsClientBuilder builder = AWSOrganizationsClientBuilder.standard().withRegion(DEFAULT_REGION);
@@ -484,6 +490,9 @@ public class AwsClientImpl implements AwsClient {
             .withStsClient(awsSecurityTokenService)
             .build();
     builder.withCredentials(credentialsProvider);
+    if (ceProxyConfig.isEnabled()) {
+      builder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
+    }
     return (AWSOrganizationsClient) builder.build();
   }
 
@@ -560,5 +569,20 @@ public class AwsClientImpl implements AwsClient {
 
   private String getRegion(AwsInternalConfig awsConfig) {
     return isNotBlank(awsConfig.getDefaultRegion()) ? awsConfig.getDefaultRegion() : AWS_DEFAULT_REGION;
+  }
+
+  private ClientConfiguration getClientConfiguration(CEProxyConfig ceProxyConfig) {
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setProxyHost(ceProxyConfig.getHost());
+    clientConfiguration.setProxyPort(ceProxyConfig.getPort());
+    if (!ceProxyConfig.getUsername().isEmpty()) {
+      clientConfiguration.setProxyUsername(ceProxyConfig.getUsername());
+    }
+    if (!ceProxyConfig.getPassword().isEmpty()) {
+      clientConfiguration.setProxyPassword(ceProxyConfig.getPassword());
+    }
+    clientConfiguration.setProtocol(
+        ceProxyConfig.getProtocol().equalsIgnoreCase("http") ? Protocol.HTTP : Protocol.HTTPS);
+    return clientConfiguration;
   }
 }
