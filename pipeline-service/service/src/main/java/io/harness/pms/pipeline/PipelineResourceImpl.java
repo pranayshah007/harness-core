@@ -90,9 +90,7 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
@@ -344,8 +342,15 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     Map<String, PipelineMetadataV2> pipelineMetadataMap = pipelineMetadataService.getMetadataForGivenPipelineIds(
         accountId, orgId, projectId, permittedPipelineIdentifiers);
 
+    //    Page<PMSPipelineSummaryResponseDTO> pipelines =
+    //        pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
+
     Page<PMSPipelineSummaryResponseDTO> pipelines =
-        pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
+        new PageImpl<>(pipelineEntities.stream()
+                           .filter(e -> pipelineMetadataMap.get(e.getIdentifier()) != null)
+                           .map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap))
+                           .collect(Collectors.toList()),
+            PageRequest.of(page, size), permittedPipelineIdentifiers.size());
 
     return ResponseDTO.newResponse(pipelines);
   }
