@@ -1,6 +1,6 @@
 # ce-nextgen
 
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80103](https://img.shields.io/badge/AppVersion-0.0.80103-informational?style=flat-square)
+![Version: 0.9.3](https://img.shields.io/badge/Version-0.9.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80104](https://img.shields.io/badge/AppVersion-0.0.80104-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -88,13 +88,13 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/ce-nextgen-signed"` |  |
-| image.tag | string | `"80103-000"` |  |
+| image.tag | string | `"80104-000"` |  |
 | imageClickhouseEnabled.digest | string | `""` |  |
 | imageClickhouseEnabled.imagePullSecrets | list | `[]` |  |
 | imageClickhouseEnabled.pullPolicy | string | `"Always"` |  |
 | imageClickhouseEnabled.registry | string | `"docker.io"` |  |
 | imageClickhouseEnabled.repository | string | `"harness/ce-nextgen-signed"` |  |
-| imageClickhouseEnabled.tag | string | `"80103-000"` |  |
+| imageClickhouseEnabled.tag | string | `"80104-000"` |  |
 | ingress.className | string | `"nginx"` |  |
 | java.memory | string | `"4096m"` |  |
 | java.memoryLimit | string | `"4096m"` |  |
@@ -105,10 +105,16 @@ A Helm chart for Kubernetes
 | mongoSecrets.password.name | string | `"mongodb-replicaset-chart"` |  |
 | mongoSecrets.userName.key | string | `"mongodbUsername"` |  |
 | mongoSecrets.userName.name | string | `"harness-secrets"` |  |
-| nameOverride | string | `""` |  |
+| nameOverride | string | `"nextgen-ce"` |  |
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext | object | `{}` |  |
+| proxy.enabled | bool | `false` |  |
+| proxy.host | string | `"localhost"` |  |
+| proxy.password | string | `""` |  |
+| proxy.port | int | `80` |  |
+| proxy.protocol | string | `"http"` |  |
+| proxy.username | string | `""` |  |
 | replicaCount | int | `2` |  |
 | resources.limits.memory | string | `"4Gi"` |  |
 | resources.requests.cpu | int | `1` |  |
