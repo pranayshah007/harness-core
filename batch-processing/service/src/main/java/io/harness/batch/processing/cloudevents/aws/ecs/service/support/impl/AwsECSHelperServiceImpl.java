@@ -136,7 +136,7 @@ public class AwsECSHelperServiceImpl implements AwsECSHelperService {
       }
       return allServices;
     } catch (Exception ex) {
-      log.error("Exception listServicesForCluster {}", ex.getMessage());
+      log.warn("Exception listServicesForCluster {}", ex.getMessage());
     }
     return emptyList();
   }
@@ -179,7 +179,7 @@ public class AwsECSHelperServiceImpl implements AwsECSHelperService {
       }
       return allContainerInstance;
     } catch (Exception ex) {
-      log.error("Exception listContainerInstancesForCluster {}", ex.getMessage());
+      log.warn("Exception listContainerInstancesForCluster {}", ex.getMessage());
     }
     return emptyList();
   }
@@ -208,7 +208,7 @@ public class AwsECSHelperServiceImpl implements AwsECSHelperService {
         nextToken = listTasksResult.getNextToken();
       } while (nextToken != null);
     } catch (Exception ex) {
-      log.error("Exception listTasksArnForService {}", ex.getMessage());
+      log.warn("Exception listTasksArnForService {}", ex.getMessage());
     }
     return taskArns;
   }
@@ -237,7 +237,7 @@ public class AwsECSHelperServiceImpl implements AwsECSHelperService {
       }
       return allTasks;
     } catch (Exception ex) {
-      log.error("Exception listTasksForService ", ex);
+      log.warn("Exception listTasksForService {}", ex.getMessage());
     }
     return emptyList();
   }
