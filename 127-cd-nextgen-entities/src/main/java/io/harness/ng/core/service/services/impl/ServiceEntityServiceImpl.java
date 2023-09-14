@@ -275,6 +275,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
+    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
     Optional<ServiceEntity> serviceEntityOptional =
         get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
@@ -291,38 +292,31 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           && !oldService.getGitOpsEnabled().equals(requestService.getGitOpsEnabled())) {
         throw new InvalidRequestException("GitOps Enabled is not allowed to change.");
       }
-      ServiceEntity serviceToUpdate = oldService.withYaml(requestService.getYaml())
-                                          .withDescription(requestService.getDescription())
-                                          .withName(requestService.getName())
-                                          .withTags(requestService.getTags());
 
-      // create final request service
       ServiceEntityValidator serviceEntityValidator =
-          serviceEntityValidatorFactory.getServiceEntityValidator(serviceToUpdate);
-      serviceEntityValidator.validate(serviceToUpdate);
-      Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(serviceToUpdate);
-
+          serviceEntityValidatorFactory.getServiceEntityValidator(requestService);
+      serviceEntityValidator.validate(requestService);
       ServiceEntity updatedService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity updatedResult = serviceRepository.update(criteria, serviceToUpdate);
+            ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
             if (updatedResult == null) {
               throw new InvalidRequestException(String.format(
                   "Service [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
-                  serviceToUpdate.getIdentifier(), serviceToUpdate.getProjectIdentifier(),
-                  serviceToUpdate.getOrgIdentifier()));
+                  requestService.getIdentifier(), requestService.getProjectIdentifier(),
+                  requestService.getOrgIdentifier()));
             }
             outboxService.save(ServiceUpdateEvent.builder()
-                                   .accountIdentifier(serviceToUpdate.getAccountId())
-                                   .orgIdentifier(serviceToUpdate.getOrgIdentifier())
-                                   .projectIdentifier(serviceToUpdate.getProjectIdentifier())
+                                   .accountIdentifier(requestService.getAccountId())
+                                   .orgIdentifier(requestService.getOrgIdentifier())
+                                   .projectIdentifier(requestService.getProjectIdentifier())
                                    .newService(updatedResult)
                                    .oldService(oldService)
                                    .build());
             return updatedResult;
           }));
       entitySetupUsageHelper.updateSetupUsages(updatedService, referredEntities);
-      publishEvent(serviceToUpdate.getAccountId(), serviceToUpdate.getOrgIdentifier(),
-          serviceToUpdate.getProjectIdentifier(), serviceToUpdate.getIdentifier(),
+      publishEvent(requestService.getAccountId(), requestService.getOrgIdentifier(),
+          requestService.getProjectIdentifier(), requestService.getIdentifier(),
           EventsFrameworkMetadataConstants.UPDATE_ACTION);
       return updatedService;
     } else {
