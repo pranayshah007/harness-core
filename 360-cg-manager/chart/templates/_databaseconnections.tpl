@@ -16,7 +16,7 @@
 {{- else }}
 {{- include "harnesscommon.dbconnection.dbenvuser" (dict "type" $type "secret" $passwordSecret "userKey" $userKey) }}
 {{- end }}
-{{- $mongoPasswordExtSecretName := (include "harnesscommon.secrets.getExternalKubernetesSecretName" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "secret" "MONGO_PASSWORD")) }}
+{{- $mongoPasswordExtSecretName := (include "harnesscommon.secrets.getExtSecretName" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "secret" "MONGO_PASSWORD")) }}
 {{- $mongoPasswordExtSecretKey := (include "harnesscommon.secrets.getExtSecretKey" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "secret" "MONGO_PASSWORD")) }}
 {{- if not (empty $mongoPasswordExtSecretName) }}
 {{- include "harnesscommon.dbconnection.dbenvpassword" (dict "type" $type "secret" $mongoPasswordExtSecretName "passwordKey" $mongoPasswordExtSecretKey) }}

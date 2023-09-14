@@ -1,4 +1,99 @@
 {{/*
+{{ include "harnesscommon.secrets.hasExtKubernetesSecret" (dict "variableName" "MY_VARIABLE" "extKubernetesSecretCtxs" (list .Values.secrets)) }}
+*/}}
+{{- define "harnesscommon.secrets.hasExtKubernetesSecret" -}}
+{{- $hasExtKubernetesSecret := "false" -}}
+{{- if .variableName -}}
+  {{- range .extKubernetesSecretCtxs -}}
+    {{- range . -}}
+      {{- if and . .secretName .keys -}}
+        {{- if and (hasKey .keys $.variableName) (get .keys $.variableName) -}}
+          {{- $hasExtKubernetesSecret = "true" -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- print $hasExtKubernetesSecret -}}
+{{- end -}}
+
+{{/*
+{{ include "harnesscommon.secrets.manageExtKubernetesSecretEnv" (dict "variableName" "MY_VARIABLE" "extKubernetesSecretCtxs" (list .Values.secrets)) }}
+*/}}
+{{- define "harnesscommon.secrets.manageExtKubernetesSecretEnv" -}}
+{{- $secretName := "" -}}
+{{- $secretKey := "" -}}
+{{- if .variableName -}}
+  {{- range .extKubernetesSecretCtxs -}}
+    {{- range . -}}
+      {{- if and . .secretName .keys -}}
+        {{- $currSecretKey := (get .keys $.variableName) -}}
+        {{- if and (hasKey .keys $.variableName) $currSecretKey -}}
+          {{- $secretName = .secretName -}}
+          {{- $secretKey = $currSecretKey -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if and $secretName $secretKey -}}
+- name: {{ print .variableName }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s" $secretName }}
+      key: {{ printf "%s" $secretKey }}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+{{ include "harnesscommon.secrets.hasESOSecret" (dict "variableName" "MY_VARIABLE" "esoSecretCtxs" (list .Values.secrets.secretManagement.externalSecretsOperator)) }}
+*/}}
+{{- define "harnesscommon.secrets.hasESOSecret" -}}
+{{- $hasESOSecret := "false" -}}
+{{- if .variableName -}}
+  {{- range .esoSecretCtxs -}}
+    {{- range . -}}
+      {{- if and . .secretStore .secretStore.name .secretStore.kind -}}
+        {{- $remoteKeyName := (dig "remoteKeys" $.variableName "name" "" .) -}}
+        {{- if $remoteKeyName -}}
+          {{- $hasESOSecret = "true" -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- print $hasESOSecret -}}
+{{- end -}}
+
+{{/*
+{{ include "harnesscommon.secrets.manageESOSecretEnv" (dict "variableName" "MY_VARIABLE" "esoSecretCtxs" (list .Values.secrets.secretManagement.externalSecretsOperator)) }}
+*/}}
+{{- define "harnesscommon.secrets.manageESOSecretEnv" -}}
+{{- $secretName := "" -}}
+{{- $secretKey := "" -}}
+{{- if .variableName -}}
+  {{- range .esoSecretCtxs -}}
+    {{- range . -}}
+      {{- if and . .secretStore .secretStore.name .secretStore.kind -}}
+        {{- $remoteKeyName := (dig "remoteKeys" $.variableName "name" "" .) -}}
+        {{- if $remoteKeyName -}}
+          {{- $secretName = "test-1" -}}
+          {{- $secretKey = $.variableName -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+  {{- if and $secretName $secretKey -}}
+- name: {{ print .variableName }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ printf "%s" $secretName }}
+      key: {{ printf "%s" $secretKey }}
+  {{- end -}}
+{{- end -}}
+
+{{/*
 {{ include "harnesscommon.secrets.getExternalKubernetesSecretName" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "globalSecretsCtx" .Values.Global "secret" "MONGO_USER") }}
 */}}
 {{- define "harnesscommon.secrets.getExternalKubernetesSecretName" -}}
@@ -85,42 +180,59 @@ Example:
 {{- end -}}
 
 {{/*
+Generates secretRef objects for ESO Secrets
+
+Example:
+{{ include "harnesscommon.secrets.esoSecretName" (dict "ctx" . "secretContextIdentifier" "local" "secretIdentifier" "1") }}
+*/}}
+{{- define "harnesscommon.secrets.esoSecretName" -}}
+{{- $ := .ctx -}}
+{{- $secretContextIdentifier := .secretContextIdentifier | toString -}}
+{{- $secretIdentifier := .secretIdentifier | toString -}}
+{{- if and .ctx $secretContextIdentifier $secretIdentifier -}}
+  {{- printf "%s-%s-ext-secret-%s" $.Chart.Name $secretContextIdentifier $secretIdentifier  -}}
+{{- else -}}
+  {{- print (and (not (empty .ctx)) $secretContextIdentifier $secretIdentifier) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Generates ESO External Secret CRD
 
 Example:
-{{ include "harnesscommon.secrets.generateExternalSecret" (dict "secretsCtx" .Values.secrets "secretNamePrefix" "my-secret") }}
+{{ include "harnesscommon.secrets.generateExternalSecret" (dict "ctx" . "secretsCtx" .Values.secrets "secretIdentifier" "local") }}
 */}}
 {{- define "harnesscommon.secrets.generateExternalSecret" -}}
-{{- $externalSecretIdx := 0 -}}
+{{- $ := .ctx -}}
 {{- if and .secretsCtx .secretsCtx.secretManagement .secretsCtx.secretManagement.externalSecretsOperator -}}
     {{- with .secretsCtx.secretManagement.externalSecretsOperator -}}
-        {{- range . -}}
+        {{- range $esoSecretIdx, $esoSecret := . -}}
           {{- if eq (include "harnesscommon.secrets.hasValidESOSecret" (dict "esoSecretCtx" .)) "true" -}}
-            {{- if gt $externalSecretIdx 0 -}}
+            {{- $esoSecretName := include "harnesscommon.secrets.esoSecretName" (dict "ctx" $ "secretContextIdentifier" "local" "secretIdentifier" $esoSecretIdx) -}}
+            {{- if gt $esoSecretIdx 0 -}}
 {{ printf "\n---"  }}
             {{- end -}}
-            {{- $externalSecretIdx = add1 $externalSecretIdx -}}
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
-  name: {{ printf "%s-external-secret-%d" $.secretNamePrefix $externalSecretIdx }}
+  name: {{ $esoSecretName }}
 spec:
   secretStoreRef:
-    name:  {{ .secretStore.name }}
-    kind: {{ .secretStore.kind }}
+    name:  {{ $esoSecret.secretStore.name }}
+    kind: {{ $esoSecret.secretStore.kind }}
   target:
-    name: {{ printf "%s-external-secret-%d" $.secretNamePrefix $externalSecretIdx }}
+    name: {{ $esoSecretName }}
     template:
       engineVersion: v2
       mergePolicy: Replace
       data:
-        {{- range $remoteKeyName, $remoteKey := .remoteKeys }}
+        {{- range $remoteKeyName, $remoteKey := $esoSecret.remoteKeys }}
           {{- if not (empty $remoteKey.name) }}
         {{ $remoteKeyName }}: "{{ printf "{{ .%s }}" (lower $remoteKeyName) }}"
           {{- end }}
         {{- end }}
   data:
-  {{- range $remoteKeyName, $remoteKey := .remoteKeys }}
+  {{- range $remoteKeyName, $remoteKey := $esoSecret.remoteKeys }}
     {{- if not (empty $remoteKey.name) }}
   - secretKey: {{ lower $remoteKeyName }}
     remoteRef:
@@ -150,5 +262,18 @@ Example:
     name: {{ printf "%s-external-secret-%d" $.secretNamePrefix $externalSecretIdx }}
     {{- end }}
   {{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Generates env object for Secret
+
+Example:
+{{ include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "MY_VARIABLE" "userProvidedValues" (list "values.secret1" "")  "extKubernetesSecretCtxs" (list .Values.secrets) "esoSecretCtxs" (list (dict "" .Values.secrets.secretManagement.externalSecretsOperator))) }}
+*/}}
+{{- define "harnesscommon.secrets.manageEnv" -}}
+{{- if eq (include "harnesscommon.secrets.hasESOSecret" (dict "variableName" .variableName "esoSecretCtxs" .esoSecretCtxs)) "true" -}}
+{{- else if eq (include "harnesscommon.secrets.hasExtKubernetesSecret" (dict "variableName" .variableName "extKubernetesSecretCtxs" .extKubernetesSecretCtxs)) "true" -}}
+  {{- include "harnesscommon.secrets.manageExtKubernetesSecretEnv" (dict "variableName" .variableName "extKubernetesSecretCtxs" .extKubernetesSecretCtxs) -}}
 {{- end -}}
 {{- end -}}
