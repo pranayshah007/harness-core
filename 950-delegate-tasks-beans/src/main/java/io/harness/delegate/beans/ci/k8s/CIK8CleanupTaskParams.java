@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.ci.k8s;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
@@ -15,10 +16,12 @@ import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.executioncapability.LiteEngineConnectionCapability;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Collections;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -32,6 +35,9 @@ public class CIK8CleanupTaskParams implements CICleanupTaskParams, ExecutionCapa
   @NotNull private List<String> podNameList; // Currently only single pod deletion is supported for each stage
   @NotNull private List<String> serviceNameList;
   @NotNull private List<String> cleanupContainerNames;
+  @NotNull private String LiteEngineIP;
+  @NotNull private int LiteEnginePort;
+  private Boolean isLocal;
   @Expression(ALLOW_SECRETS) @NotNull private String namespace;
   @Builder.Default private static final CICleanupTaskParams.Type type = Type.GCP_K8;
 
@@ -42,6 +48,10 @@ public class CIK8CleanupTaskParams implements CICleanupTaskParams, ExecutionCapa
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
+    if (isNotEmpty(LiteEngineIP)) {
+      return Collections.singletonList(
+          LiteEngineConnectionCapability.builder().ip(LiteEngineIP).port(LiteEnginePort).isLocal(isLocal).build());
+    }
     KubernetesClusterConfigDTO kubernetesClusterConfigDTO =
         (KubernetesClusterConfigDTO) k8sConnector.getConnectorConfig();
     return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(kubernetesClusterConfigDTO, maskingEvaluator);
