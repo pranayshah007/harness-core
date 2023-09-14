@@ -40,6 +40,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -79,10 +80,13 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
   public void setUp() {
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put("accountId", "accountId");
-    ambiance = Ambiance.newBuilder()
-                   .putAllSetupAbstractions(setupAbstractions)
-                   .addLevels(Level.newBuilder().setStepType(InitializeTaskStep.STEP_TYPE).build())
-                   .build();
+    ambiance =
+        Ambiance.newBuilder()
+            .putAllSetupAbstractions(setupAbstractions)
+            .addLevels(Level.newBuilder().setStepType(InitializeTaskStep.STEP_TYPE).build())
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     initializeStepInfo = InitializeStepInfo.builder()
                              .stageElementConfig(ciExecutionPlanTestHelper.getIntegrationStageConfig())
                              .executionSource(ciExecutionPlanTestHelper.getCIExecutionArgs().getExecutionSource())
