@@ -11,6 +11,7 @@ import static io.harness.ng.core.variable.VariableType.STRING;
 import static io.harness.ng.core.variable.VariableValueType.FIXED;
 import static io.harness.ng.core.variable.VariableValueType.FIXED_SET;
 import static io.harness.ng.core.variable.VariableValueType.REGEX;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.TEJAS;
@@ -545,5 +546,69 @@ public class VariableServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(variable));
     variableService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier, variableIdentifiers);
     verify(variableRepository, times(5)).delete(variable);
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testPagedListAccountScopeWithSearchTermWithSpecialCharacters() {
+    String accountIdentifier = randomAlphabetic(10);
+    String varID = randomAlphabetic(5);
+    String specialCharSearchTerm = "*" + varID;
+    Variable varA = getVariable(accountIdentifier, null, null, varID, varID);
+    List<Variable> varList = new ArrayList<>();
+    varList.add(varA);
+    VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, null, null, varID);
+    when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
+    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    PageResponse<VariableResponseDTO> list =
+        variableService.list(accountIdentifier, null, null, specialCharSearchTerm, false, pageable);
+    verify(variableRepository, times(1)).findAll(any(), any());
+    assertThat(list.getContent().size()).isEqualTo(varList.size());
+    assertThat(list.getContent().get(0).getVariable().getIdentifier()).isEqualTo(varID);
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testPagedListOrgScopeWithSearchTermWithSpecialCharacters() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String varID = randomAlphabetic(5);
+    String specialCharSearchTerm = "*" + varID;
+    Variable varA = getVariable(accountIdentifier, orgIdentifier, null, varID, varID);
+    List<Variable> varList = new ArrayList<>();
+    varList.add(varA);
+    VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, orgIdentifier, null, varID);
+    when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
+    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    PageResponse<VariableResponseDTO> list =
+        variableService.list(accountIdentifier, orgIdentifier, null, specialCharSearchTerm, false, pageable);
+    verify(variableRepository, times(1)).findAll(any(), any());
+    assertThat(list.getContent().size()).isEqualTo(varList.size());
+    assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);
+
+    assertThat(list.getContent().get(0).getVariable().getIdentifier()).isEqualTo(varID);
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testPagedListProjectScopeWithSearchTermWithSpecialCharacters() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String varID = randomAlphabetic(5);
+    String specialCharSearchTerm = "*" + varID;
+    Variable varA = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, varID, varID);
+    List<Variable> varList = new ArrayList<>();
+    varList.add(varA);
+    VariableResponseDTO variableResponseDTO = getVariableResponseDTO(varID, orgIdentifier, projectIdentifier, varID);
+    when(variableMapper.toResponseWrapper(varA)).thenReturn(variableResponseDTO);
+    when(variableRepository.findAll(any(), any())).thenReturn(getPage(varList, 1));
+    PageResponse<VariableResponseDTO> list = variableService.list(
+        accountIdentifier, orgIdentifier, projectIdentifier, specialCharSearchTerm, false, pageable);
+    verify(variableRepository, times(1)).findAll(any(), any());
+    assertThat(list.getContent().size()).isEqualTo(varList.size());
+    assertThat(list.getContent().get(0).getVariable().getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(list.getContent().get(0).getVariable().getProjectIdentifier()).isEqualTo(projectIdentifier);
+    assertThat(list.getContent().get(0).getVariable().getIdentifier()).isEqualTo(varID);
   }
 }
