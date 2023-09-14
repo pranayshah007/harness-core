@@ -37,6 +37,14 @@ public interface ServiceEntityService {
   Optional<ServiceEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean deleted);
 
+  /**
+   *
+   * @param includeMetadataOnly specify true if entity without YAML is sufficient. Retrieving entity with YAML may lead
+   *     to calls to SCM
+   */
+  Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, boolean deleted, boolean includeMetadataOnly);
+
   Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String serviceIdentifier, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch,
       boolean includeMetadataOnly);

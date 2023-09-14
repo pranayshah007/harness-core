@@ -246,6 +246,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean includeMetadataOnly) {
+    // default behavior to not load from cache and fallback branch
+    return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false, includeMetadataOnly);
+  }
+
+  @Override
+  public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch,
       boolean includeMetadataOnly) {
     checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
@@ -269,7 +276,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
           serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted, loadFromCache,
-          loadFromFallbackBranch, false);
+          loadFromFallbackBranch, includeMetadataOnly);
     }
   }
 
@@ -424,7 +431,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     // get just metadata
     Optional<ServiceEntity> serviceEntityOptional =
-        get(accountId, orgIdentifier, projectIdentifier, serviceRef, false, false, false, true);
+        get(accountId, orgIdentifier, projectIdentifier, serviceRef, false, true);
 
     if (serviceEntityOptional.isPresent()) {
       boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
