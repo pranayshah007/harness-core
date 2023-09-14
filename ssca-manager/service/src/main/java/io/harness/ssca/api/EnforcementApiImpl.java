@@ -14,14 +14,21 @@ import io.harness.beans.SortOrder;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.ng.beans.PageRequest;
 import io.harness.spec.server.ssca.v1.EnforcementApi;
+import io.harness.spec.server.ssca.v1.model.Artifact;
+import io.harness.spec.server.ssca.v1.model.EnforcementResultDTO;
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryDTO;
 import io.harness.spec.server.ssca.v1.model.EnforcementSummaryResponse;
 import io.harness.spec.server.ssca.v1.model.PolicyViolation;
+import io.harness.ssca.services.EnforcementResultService;
 import io.harness.ssca.services.EnforcementStepService;
+import io.harness.ssca.services.EnforcementSummaryService;
+import io.harness.ssca.services.NormalisedSbomComponentService;
 import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
+import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -38,11 +45,23 @@ import org.springframework.data.domain.Pageable;
 public class EnforcementApiImpl implements EnforcementApi {
   @Inject EnforcementStepService enforcementStepService;
 
+  @Inject EnforcementResultService enforcementResultService;
+
+  @Inject EnforcementSummaryService enforcementSummaryService;
+
+  @Inject NormalisedSbomComponentService normalisedSbomComponentService;
+
   @Override
   public Response getEnforcementSummary(String org, String project, String enforcementId, String harnessAccount) {
     EnforcementSummaryResponse response =
         enforcementStepService.getEnforcementSummary(harnessAccount, org, project, enforcementId);
     return Response.ok().entity(response).build();
+  }
+
+  @Override
+  public Response getNormalisedSbomComponent(String org, String project, @Valid Artifact body, String harnessAccount,
+      @Max(1000L) Integer limit, Integer page) {
+    return normalisedSbomComponentService.listNormalizedSbomComponent(org, project, page, limit, body, harnessAccount);
   }
 
   @Override
@@ -60,5 +79,17 @@ public class EnforcementApiImpl implements EnforcementApi {
         ApiUtils.addLinksHeader(responseBuilder, policyViolations.getTotalElements(), page, limit);
 
     return responseBuilderWithLinks.entity(policyViolations.getContent()).build();
+  }
+
+  @Override
+  public Response saveEnforcementResult(String org, String project, @Valid EnforcementResultDTO body) {
+    enforcementResultService.create(body);
+    return Response.ok().status(201).build();
+  }
+
+  @Override
+  public Response saveEnforcementSummary(String org, String project, @Valid EnforcementSummaryDTO body) {
+    enforcementSummaryService.create(body);
+    return Response.ok().status(201).build();
   }
 }

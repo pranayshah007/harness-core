@@ -28,6 +28,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.EventPayload;
 import io.harness.beans.EventType;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.WorkflowType;
 import io.harness.beans.event.cg.CgPipelineCompletePayload;
 import io.harness.beans.event.cg.CgPipelinePausePayload;
@@ -871,7 +872,12 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
           resourceConstraintService.updateActiveConstraints(context.getAppId(), workflowExecutionId);
 
       log.info("Update Blocked Resource constraints");
-      resourceConstraintService.updateBlockedConstraints(constraintIds);
+      if (featureFlagService.isEnabled(
+              FeatureName.CDS_RESOURCE_CONSTRAINT_INSTANCE_OPTIMIZATION, context.getAccountId())) {
+        resourceConstraintService.updateBlockedConstraintsV2(constraintIds, false);
+      } else {
+        resourceConstraintService.updateBlockedConstraints(constraintIds);
+      }
 
     } catch (RuntimeException exception) {
       // Do not block the execution for possible exception in the barrier update

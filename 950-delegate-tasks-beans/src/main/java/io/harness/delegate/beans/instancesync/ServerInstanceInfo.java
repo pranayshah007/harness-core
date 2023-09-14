@@ -27,6 +27,7 @@ import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import javax.annotation.Nullable;
 
 /**
  * Extend this class and create deployment specific server instance structs that will
@@ -53,4 +54,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = AwsLambdaServerInstanceInfo.class, name = "AwsLambdaServerInstanceInfo")
 })
 @OwnedBy(HarnessTeam.DX)
-public abstract class ServerInstanceInfo {}
+public abstract class ServerInstanceInfo {
+  @Nullable
+  public String getReleaseKey() {
+    return null;
+  }
+}

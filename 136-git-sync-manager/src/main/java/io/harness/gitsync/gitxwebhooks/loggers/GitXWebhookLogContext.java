@@ -17,6 +17,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GetGitXWebhookRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.ListGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookCriteriaDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookRequestDTO;
@@ -55,6 +56,12 @@ public class GitXWebhookLogContext extends AutoLogContext {
   public GitXWebhookLogContext(ListGitXWebhookRequestDTO listGitXWebhookRequestDTO) {
     super(setContextMap(listGitXWebhookRequestDTO.getAccountIdentifier(),
               listGitXWebhookRequestDTO.getWebhookIdentifier(), null, null),
+        OverrideBehavior.OVERRIDE_NESTS);
+  }
+
+  public GitXWebhookLogContext(GitXEventsListRequestDTO gitXEventsListRequestDTO) {
+    super(setContextMap(gitXEventsListRequestDTO.getAccountIdentifier(),
+              gitXEventsListRequestDTO.getWebhookIdentifier(), null, null),
         OverrideBehavior.OVERRIDE_NESTS);
   }
 

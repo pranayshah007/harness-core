@@ -18,6 +18,7 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -48,6 +49,7 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.WorkflowService;
 
 import com.google.inject.Inject;
@@ -126,7 +128,7 @@ public class MonitoredServiceMigrationService extends NgMigrationService {
     String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, cgMonitoredServiceEntity.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(
         inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
-    Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
+    Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, getTemplateScope(inputDTO));
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     String description = "Monitored Service migrated from First Gen";
@@ -149,7 +151,7 @@ public class MonitoredServiceMigrationService extends NgMigrationService {
                                 .orgIdentifier(orgIdentifier)
                                 .versionLabel("v1")
                                 .spec(monitoredServiceEntityToMonitoredServiceMapper.getMonitoredServiceJsonNode(
-                                    cgMonitoredServiceEntity.getStepNode()))
+                                    cgMonitoredServiceEntity.getStepNode(), migrationContext))
                                 .build())
                         .build())
               .ngEntityDetail(NgEntityDetail.builder()
@@ -165,6 +167,19 @@ public class MonitoredServiceMigrationService extends NgMigrationService {
       return YamlGenerationDetails.builder().yamlFileList(files).build();
     }
     return null;
+  }
+
+  private Scope getTemplateScope(MigrationInputDTO inputDTO) {
+    if (inputDTO == null) {
+      return Scope.PROJECT;
+    }
+
+    Map<NGMigrationEntityType, InputDefaults> defaults = inputDTO.getDefaults();
+    if (defaults != null && defaults.containsKey(NGMigrationEntityType.TEMPLATE)
+        && defaults.get(NGMigrationEntityType.TEMPLATE).getScope() != null) {
+      return defaults.get(NGMigrationEntityType.TEMPLATE).getScope();
+    }
+    return Scope.PROJECT;
   }
 
   @Override

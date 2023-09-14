@@ -17,6 +17,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.SSCA)
 public class ExternalParameters {
-  private String repository;
-  private String ref;
+  private CodeMetadata codeMetadata;
+  private TriggerMetadata triggerMetadata;
+  private BuildMetadata buildMetadata;
 }

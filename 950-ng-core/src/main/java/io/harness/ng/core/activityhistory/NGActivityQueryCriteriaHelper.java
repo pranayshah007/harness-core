@@ -9,6 +9,8 @@ package io.harness.ng.core.activityhistory;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.EntityType;
 import io.harness.ng.core.activityhistory.entity.NGActivity.ActivityHistoryEntityKeys;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
@@ -45,6 +47,15 @@ public class NGActivityQueryCriteriaHelper {
   public void addActivityTypeCriteria(Criteria criteria, Set<NGActivityType> ngActivityTypes) {
     if (!isEmpty(ngActivityTypes)) {
       criteria.and(ActivityHistoryEntityKeys.type).in(ngActivityTypes);
+    }
+  }
+
+  public void addSearchTermCriteria(Criteria criteria, String searchTerm) {
+    if (isNotBlank(searchTerm)) {
+      criteria.orOperator(Criteria.where(ActivityHistoryEntityKeys.referredByEntityName).regex(searchTerm),
+          Criteria.where(ActivityHistoryEntityKeys.referredByEntityIdentifier).regex(searchTerm),
+          Criteria.where(ActivityHistoryEntityKeys.referredByEntityIdentifier).regex(searchTerm),
+          Criteria.where(ActivityHistoryEntityKeys.usageType).regex(searchTerm));
     }
   }
 }

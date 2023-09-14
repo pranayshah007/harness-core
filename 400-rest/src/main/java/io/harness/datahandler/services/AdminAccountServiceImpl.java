@@ -185,8 +185,8 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   }
 
   @Override
-  public boolean enableOrDisableNextGen(String accountId, boolean enabled) {
-    accountService.updateNextGenEnabled(accountId, enabled);
+  public boolean enableOrDisableNextGen(String accountId, boolean isNextGenEnabled) {
+    accountService.updateNextGenEnabled(accountId, isNextGenEnabled, true);
     return true;
   }
 

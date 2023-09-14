@@ -7,11 +7,14 @@
 
 package io.harness.cvng.migration;
 
+import io.harness.cvng.migration.timescale.AddServiceLevelObjectiveType;
 import io.harness.cvng.migration.timescale.CreateSLOHealthIndicator;
 import io.harness.cvng.migration.timescale.CreateSLOHistoryTable;
 import io.harness.cvng.migration.timescale.CreateSLOPeriodicSummary;
 import io.harness.cvng.migration.timescale.CreateVerifyStepExecutionTables;
+import io.harness.cvng.migration.timescale.MigrateAllSLOToTimescaleDB;
 import io.harness.cvng.migration.timescale.MigrateSLOtoTimeScaleDb;
+import io.harness.cvng.migration.timescale.UpdateConstraintToIncludeNullOrgAndProject;
 import io.harness.cvng.migration.timescale.UpdateUniqueConstraintSLOHistoryTable;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
@@ -42,6 +45,11 @@ public class SRMTimescaleMigrationList implements MigrationDetails {
         .add(Pair.of(5, CreateVerifyStepExecutionTables.class))
         .add(Pair.of(6, CreateVerifyStepExecutionTables.class))
         .add(Pair.of(7, UpdateUniqueConstraintSLOHistoryTable.class))
+        .add(Pair.of(8, AddServiceLevelObjectiveType.class))
+        .add(Pair.of(9, MigrateAllSLOToTimescaleDB.class))
+        .add(Pair.of(10, UpdateConstraintToIncludeNullOrgAndProject.class))
+        .add(Pair.of(11, MigrateSLOtoTimeScaleDb.class))
+        .add(Pair.of(12, MigrateSLOtoTimeScaleDb.class))
         .build();
   }
 }

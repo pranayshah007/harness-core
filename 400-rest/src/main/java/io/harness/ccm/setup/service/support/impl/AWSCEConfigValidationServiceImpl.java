@@ -20,6 +20,7 @@ import io.harness.ccm.setup.service.support.intfc.AwsEKSHelperService;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.AwsS3BucketDetails;
@@ -27,6 +28,8 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.ce.CEAwsConfig;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.services.costandusagereport.AWSCostAndUsageReport;
@@ -79,10 +82,14 @@ public class AWSCEConfigValidationServiceImpl implements AWSCEConfigValidationSe
   public AwsS3BucketDetails validateCURReportAccessAndReturnS3Config(CEAwsConfig awsConfig) {
     AwsCrossAccountAttributes awsCrossAccountAttributes = awsConfig.getAwsCrossAccountAttributes();
     AWSCredentialsProvider credentialsProvider = getCredentialProvider(awsCrossAccountAttributes);
-    AWSCostAndUsageReport awsCostAndUsageReportClient = AWSCostAndUsageReportClientBuilder.standard()
-                                                            .withRegion(ceAWSRegion)
-                                                            .withCredentials(credentialsProvider)
-                                                            .build();
+    AWSCostAndUsageReportClientBuilder awsCostAndUsageReportClientBuilder =
+        AWSCostAndUsageReportClientBuilder.standard().withRegion(ceAWSRegion).withCredentials(credentialsProvider);
+    if (awsCredentialHelper.getCeProxyConfig().isEnabled()) {
+      log.info("awsCostAndUsageReportClientBuilder initializing with proxy config");
+      awsCostAndUsageReportClientBuilder.withClientConfiguration(
+          getClientConfiguration(awsCredentialHelper.getCeProxyConfig()));
+    }
+    AWSCostAndUsageReport awsCostAndUsageReportClient = awsCostAndUsageReportClientBuilder.build();
 
     ReportDefinition report = getReportDefinitionIfPresent(awsCostAndUsageReportClient, awsConfig.getCurReportName());
     if (report == null) {
@@ -224,6 +231,10 @@ public class AWSCEConfigValidationServiceImpl implements AWSCEConfigValidationSe
   boolean validateOrganisationReadOnlyAccess(AWSCredentialsProvider credentialsProvider) {
     AWSOrganizationsClientBuilder builder = AWSOrganizationsClientBuilder.standard().withRegion(ceAWSRegion);
     builder.withCredentials(credentialsProvider);
+    if (awsCredentialHelper.getCeProxyConfig().isEnabled()) {
+      log.info("AWSOrganizationsClientBuilder initializing with proxy config");
+      builder.withClientConfiguration(getClientConfiguration(awsCredentialHelper.getCeProxyConfig()));
+    }
     AWSOrganizationsClient awsOrganizationsClient = (AWSOrganizationsClient) builder.build();
     ListAccountsResult listAccountsResult = awsOrganizationsClient.listAccounts(new ListAccountsRequest());
     return !listAccountsResult.getAccounts().isEmpty();
@@ -248,5 +259,20 @@ public class AWSCEConfigValidationServiceImpl implements AWSCEConfigValidationSe
         .withExternalId(awsCrossAccountAttributes.getExternalId())
         .withStsClient(awsSecurityTokenService)
         .build();
+  }
+
+  private ClientConfiguration getClientConfiguration(CEProxyConfig ceProxyConfig) {
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setProxyHost(ceProxyConfig.getHost());
+    clientConfiguration.setProxyPort(ceProxyConfig.getPort());
+    if (!ceProxyConfig.getUsername().isEmpty()) {
+      clientConfiguration.setProxyUsername(ceProxyConfig.getUsername());
+    }
+    if (!ceProxyConfig.getPassword().isEmpty()) {
+      clientConfiguration.setProxyPassword(ceProxyConfig.getPassword());
+    }
+    clientConfiguration.setProtocol(
+        ceProxyConfig.getProtocol().equalsIgnoreCase("http") ? Protocol.HTTP : Protocol.HTTPS);
+    return clientConfiguration;
   }
 }

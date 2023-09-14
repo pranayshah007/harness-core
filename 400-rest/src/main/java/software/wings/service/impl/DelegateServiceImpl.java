@@ -991,7 +991,9 @@ public class DelegateServiceImpl implements DelegateService {
 
   private UpdateOperations<Delegate> getDelegateUpdateOperations(final Delegate delegate) {
     final UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
-    setUnset(updateOperations, DelegateKeys.ip, delegate.getIp());
+    if (delegate.getIp() != null) {
+      setUnset(updateOperations, DelegateKeys.ip, delegate.getIp());
+    }
     if (delegate.getStatus() != null) {
       updateOperations.set(DelegateKeys.status, delegate.getStatus());
     }

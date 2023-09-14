@@ -242,10 +242,11 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
             "Revert not required as no application got created or renamed", ERROR, CommandExecutionStatus.FAILURE);
       }
     } catch (Exception e) {
-      log.error(CLOUD_FOUNDRY_LOG_PREFIX + "Exception in reverting app names", e);
-      logCallback.saveExecutionLog(format("\n\n ----------  Failed to revert app names : %s",
-                                       ExceptionMessageSanitizer.sanitizeMessage(e.getMessage())),
-          ERROR, CommandExecutionStatus.FAILURE);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error(CLOUD_FOUNDRY_LOG_PREFIX + "Exception in reverting app names", sanitizedException);
+      logCallback.saveExecutionLog(
+          format("\n\n ----------  Failed to revert app names : %s", sanitizedException.getMessage()), ERROR,
+          CommandExecutionStatus.FAILURE);
     }
   }
   private void renamePreviousProdApp(List<TasApplicationInfo> renames, CfRequestConfig cfRequestConfig,
@@ -404,8 +405,10 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     try {
       isAutoScalarEnabled = cfDeploymentManager.checkIfAppHasAutoscalarEnabled(cfAppAutoscalarRequestData, logCallback);
     } catch (PivotalClientApiException e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       logCallback.saveExecutionLog(
           "Failed while fetching autoscalar state: " + encodeColor(currentActiveApplication.getName()), LogLevel.ERROR);
+      logCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.ERROR);
     }
     return TasApplicationInfo.builder()
         .applicationName(currentActiveApplication.getName())
@@ -490,9 +493,11 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     try {
       cfDeploymentManager.deleteApplication(cfRequestConfig);
     } catch (PivotalClientApiException e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       executionLogCallback.saveExecutionLog("Failed while deleting application: "
               + encodeColor(applicationSummary.getName()) + ", Continuing for next one",
           LogLevel.ERROR);
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.ERROR);
     }
   }
   void downsizeApplicationToZero(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
@@ -525,7 +530,9 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
             cfRequestConfig, applicationDetail.getUrls(), executionLogCallback);
       }
     } catch (PivotalClientApiException exception) {
-      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
+      log.error(sanitizedException.getMessage());
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), ERROR);
     }
   }
 
@@ -533,7 +540,9 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     try {
       cfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
     } catch (PivotalClientApiException exception) {
-      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
+      log.warn(sanitizedException.getMessage());
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
     }
   }
 
@@ -705,6 +714,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.warn("Failed to remove temp files created", sanitizedException);
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
     }
   }
 }

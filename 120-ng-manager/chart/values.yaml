@@ -5,6 +5,8 @@ global:
   kubeVersion: ""
   commonAnnotations: {}
   commonLabels: {}
+  cg:
+    enabled: false
   secrets:
     app:
       external:
@@ -241,6 +243,13 @@ service:
   grpcport: 9979
   gitsyncgrpcport: 13002
 
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
 
 resources:
   limits:
@@ -262,6 +271,8 @@ tolerations: []
 affinity: {}
 
 additionalConfigs: {}
+
+java17flags: ""
 
 # extraVolumes:
 # - name: volume-test

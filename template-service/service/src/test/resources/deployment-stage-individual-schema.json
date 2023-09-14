@@ -1,0 +1,69 @@
+{
+  "data": {
+    "type": "object",
+    "properties": {
+      "template": {
+        "type": "object",
+        "title": "template",
+        "required": [
+          "identifier",
+          "name",
+          "type",
+          "versionLabel"
+        ],
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Stage"
+            ]
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/pipeline/numberVariable"
+                },
+                {
+                  "$ref": "#/definitions/pipeline/secretVariable"
+                },
+                {
+                  "$ref": "#/definitions/pipeline/stringVariable"
+                }
+              ]
+            }
+          },
+          "versionLabel": {
+            "type": "string",
+            "pattern": "^[0-9a-zA-Z][^\\s/&]{0,63}$"
+          },
+          "spec": {
+            "$ref": "#/definitions/pipeline/stages/cd/DeploymentStageNode_template"
+          },
+          "tags": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

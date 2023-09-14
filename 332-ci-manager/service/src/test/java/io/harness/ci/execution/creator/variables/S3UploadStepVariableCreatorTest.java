@@ -99,7 +99,8 @@ public class S3UploadStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.type",
             "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.identifier",
             "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.startTs",
-            "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.endTs");
+            "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.endTs",
+            "pipeline.stages.s3_upload_jexl_success.spec.execution.steps.upload.status");
 
     List<String> fqnExtraPropertiesList1 = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get(s3UploadNode.getUploadToS3StepInfo().getUuid()) // step uuid

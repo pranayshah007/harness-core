@@ -109,7 +109,6 @@ import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.cvng.notification.jobs.MonitoredServiceNotificationHandler;
 import io.harness.cvng.notification.jobs.SLONotificationHandler;
 import io.harness.cvng.notification.jobs.SRMAnalysisStepNotificationHandler;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -955,7 +954,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .build();
     injector.injectMembers(sliDataCollectionTaskRecoverHandlerIterator);
     dataCollectionExecutor.scheduleWithFixedDelay(
-        sliDataCollectionTaskRecoverHandlerIterator::process, 0, 6, TimeUnit.HOURS);
+        sliDataCollectionTaskRecoverHandlerIterator::process, 5 + random.nextInt(10), 360, TimeUnit.MINUTES);
   }
 
   private void registerAnalysisOrchestratorQueueNextAnalysisHandler(Injector injector) {
@@ -982,7 +981,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(iterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(() -> iterator.process(), 0, 1, TimeUnit.HOURS);
+    dataCollectionExecutor.scheduleWithFixedDelay(() -> iterator.process(), 5, 60, TimeUnit.MINUTES);
   }
 
   private void registerSLORecalculationFailure(Injector injector) {
@@ -1031,13 +1030,12 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .semaphore(new Semaphore(3))
             .handler(sloHistoryTimescaleHandler)
             .schedulingType(REGULAR)
-            .filterExpander(
-                query -> query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
+
     injector.injectMembers(sloHistoryTimescaleHandlerIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 0, 1, TimeUnit.DAYS);
+    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 1, 6, TimeUnit.HOURS);
   }
 
   private void sloHealthIndicatorTimescale(Injector injector) {
@@ -1060,9 +1058,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
-    injector.injectMembers(sloHealthIndicatorTimescaleHandler);
+    injector.injectMembers(sloHealthIndicatorTimescaleHandlerIterator);
     dataCollectionExecutor.scheduleWithFixedDelay(
-        sloHealthIndicatorTimescaleHandlerIterator::process, 0, 60, TimeUnit.MINUTES);
+        sloHealthIndicatorTimescaleHandlerIterator::process, 5 + random.nextInt(5), 60, TimeUnit.MINUTES);
   }
 
   private void registerCVNGDemoPerpetualTaskIterator(Injector injector) {

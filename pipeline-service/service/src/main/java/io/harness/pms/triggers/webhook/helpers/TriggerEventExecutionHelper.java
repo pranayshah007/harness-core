@@ -175,6 +175,12 @@ public class TriggerEventExecutionHelper {
               // Added condition for webhookDTO to be not null as the flow should not go to redis if it comes via V1
               // flow.
               WebhookDTO webhookDTO = mappingRequestData.getWebhookDTO();
+              // Set the parsedResponse to use the one after webhookEventMapperHelper.mapWebhookEventToTrigger() instead
+              // of the one received from the mappingRequestData.
+              webhookDTO = webhookDTO.toBuilder()
+                               .setParsedResponse(webhookEventMappingResponse.getParseWebhookResponse())
+                               .build();
+
               TriggerExecutionDTO triggerExecutionDTO =
                   TriggerExecutionDTO.newBuilder()
                       .setWebhookDto(webhookDTO)
@@ -408,8 +414,9 @@ public class TriggerEventExecutionHelper {
         triggerPayloadBuilder.setManifestData(ManifestData.newBuilder().setVersion(build).build());
       }
       TriggerPayload triggerPayload = triggerPayloadBuilder.build();
-      PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionReques(
-          triggerDetails, triggerPayload, runtimeInputYaml);
+      PlanExecution response =
+          triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(
+              triggerDetails, triggerPayload, runtimeInputYaml);
       if (triggerPayload != null) {
         pseudoEvent.setPayload(triggerPayload.toString());
       }

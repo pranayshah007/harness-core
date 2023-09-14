@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.steps.internal;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 
@@ -56,8 +57,8 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
     final boolean isStepInsideRollback =
         YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
 
-    List<AdviserObtainment> adviserObtainmentFromMetaData =
-        PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false);
+    List<AdviserObtainment> adviserObtainmentFromMetaData = PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(
+        ctx.getDependency(), kryoSerializer, ctx.getCurrentField(), false);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
     stepElement.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));

@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 
 @Slf4j
 public class ArtifactServiceImpl implements ArtifactService {
@@ -26,7 +27,7 @@ public class ArtifactServiceImpl implements ArtifactService {
   @Override
   public ArtifactEntity getArtifactFromSbomPayload(
       String accountId, String orgIdentifier, String projectIdentifier, SbomProcessRequestBody body, SbomDTO sbomDTO) {
-    String artifactId = UUID.nameUUIDFromBytes(body.getArtifact().getRegistryUrl().getBytes()).toString();
+    String artifactId = generateArtifactId(body.getArtifact().getRegistryUrl(), body.getArtifact().getName());
     return ArtifactEntity.builder()
         .id(UUID.randomUUID().toString())
         .artifactId(artifactId)
@@ -61,5 +62,17 @@ public class ArtifactServiceImpl implements ArtifactService {
       String accountId, String orgIdentifier, String projectIdentifier, String orchestrationId) {
     return artifactRepository.findByAccountIdAndOrgIdAndProjectIdAndOrchestrationId(
         accountId, orgIdentifier, projectIdentifier, orchestrationId);
+  }
+
+  @Override
+  public Optional<ArtifactEntity> getArtifact(
+      String accountId, String orgIdentifier, String projectIdentifier, String artifactId, Sort sort) {
+    return artifactRepository.findFirstByAccountIdAndOrgIdAndProjectIdAndArtifactIdLike(
+        accountId, orgIdentifier, projectIdentifier, artifactId, sort);
+  }
+
+  @Override
+  public String generateArtifactId(String registryUrl, String name) {
+    return UUID.nameUUIDFromBytes((registryUrl + ":" + name).getBytes()).toString();
   }
 }

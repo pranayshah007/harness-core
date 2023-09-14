@@ -63,6 +63,7 @@ public class Constants {
   public static final String GITHUB_IDENTIFIER = "github";
   public static final String CATALOG_IDENTIFIER = "catalog";
   public static final String CUSTOM_IDENTIFIER = "custom";
+  public static final String PAGERDUTY_IDENTIFIER = "pagerduty";
   public static final String DSL_RESPONSE = "dsl_response";
   public static final String DATA_POINT_VALUE_KEY = "value";
   public static final String ERROR_MESSAGE_KEY = "error_messages";
@@ -85,4 +86,9 @@ public class Constants {
   public static final String HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS = "harness_ci_success_percent_in_seven_days";
 
   public static final String HARNESS_TEST_PASSING_ON_CI_IS_ZERO = "harness_test_passing_on_ci_is_zero";
+  public static final String GITHUB_DEFAULT_BRANCH_KEY = "refs/";
+  public static final String GITHUB_DEFAULT_BRANCH_KEY_ESCAPED = "\"refs/\"";
+
+  public static final String PAGERDUTY_SERVICE_DIRECTORY = "pagerduty_service_directory";
+  public static final String PAGERDUTY_INCIDENTS = "pagerduty_incidents";
 }

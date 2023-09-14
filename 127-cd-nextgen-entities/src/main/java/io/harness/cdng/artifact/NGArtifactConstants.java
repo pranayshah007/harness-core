@@ -12,7 +12,8 @@ import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class NGArtifactConstants {
   public static final String ARTIFACT_DIRECTORY = "artifactDirectory";

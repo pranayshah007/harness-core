@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.engine.executions.step.StepExecutionEntityService;
 import io.harness.execution.step.StepExecutionEntity.StepExecutionEntityKeys;
@@ -24,7 +23,6 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.steps.StepSpecTypeConstants;
-import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -51,17 +49,12 @@ public class PipelineStepExecutionUpdateEventHandler implements OrchestrationEve
           StepSpecTypeConstants.SERVICE_NOW_APPROVAL_STEP_TYPE.getType(),
           StepSpecTypeConstants.JIRA_APPROVAL_STEP_TYPE.getType());
 
-  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
     if (!STEPS_TO_UPDATE.contains(
             Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(event.getAmbiance())).getStepType().getType())) {
-      return;
-    }
-    if (!pmsFeatureFlagService.isEnabled(
-            AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.CDS_STEP_EXECUTION_DATA_SYNC)) {
       return;
     }
     if (NODE_EXECUTION_START.equals(event.getEventType())) {

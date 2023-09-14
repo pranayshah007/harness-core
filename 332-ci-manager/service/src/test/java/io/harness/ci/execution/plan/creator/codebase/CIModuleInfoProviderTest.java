@@ -9,6 +9,7 @@ package io.harness.ci.execution.plan.creator.codebase;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
+import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -53,12 +55,15 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
@@ -74,6 +79,7 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
   private CIExecutionPlanTestHelper ciExecutionPlanTestHelper = new CIExecutionPlanTestHelper();
 
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private StepExecutionParametersRepository stepExecutionParametersRepository;
   @InjectMocks private CIModuleInfoProvider ciModuleInfoProvider;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private CILicenseService ciLicenseService;
@@ -93,7 +99,9 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
             .serviceName("ci")
             .status(Status.RUNNING)
             .build();
-
+    when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))
+        .thenReturn(Optional.of(
+            StepExecutionParameters.builder().accountId("accountId").stepParameters("stepParameters").build()));
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder()
                         .found(true)
@@ -135,7 +143,6 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getCiLicenseType()).isEqualTo(LicenseType.PAID.toString());
     assertThat(ciPipelineModuleInfo.getCiEditionType()).isEqualTo(Edition.ENTERPRISE.toString());
   }
-
   @Test
   @Owner(developers = RUTVIJ_MEHTA)
   @Category(UnitTests.class)
@@ -154,6 +161,9 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
             .status(Status.RUNNING)
             .resolvedStepParameters(StepElementParameters.builder().spec(initializeStepInfo).build())
             .build();
+    when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))
+        .thenReturn(Optional.of(
+            StepExecutionParameters.builder().accountId("accountId").stepParameters("stepParameters").build()));
 
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder().build());
@@ -182,7 +192,9 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     List<CodebaseSweepingOutput.CodeBaseCommit> commits =
         new ArrayList<>(Arrays.asList(CodebaseSweepingOutput.CodeBaseCommit.builder().id("1").build(),
             CodebaseSweepingOutput.CodeBaseCommit.builder().id("2").build()));
-
+    when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))
+        .thenReturn(Optional.of(
+            StepExecutionParameters.builder().accountId("accountId").stepParameters("stepParameters").build()));
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder()
                         .found(true)
@@ -207,6 +219,64 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getTargetBranch()).isEqualTo("main");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getCommits()).isEqualTo(ciBuildCommits);
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getAuthor()).isNull();
+  }
+
+  @Test
+  @Owner(developers = HARSH)
+  @Category(UnitTests.class)
+  public void testGetPipelineStageLevelModuleWithParamsFromDB() {
+    Ambiance ambiance = getAmbianceWithLevel(
+        Level.newBuilder().setStartTs(1111L).setStepType(IntegrationStageStepPMS.STEP_TYPE).build());
+    Infrastructure infrastructure =
+        HostedVmInfraYaml.builder()
+            .spec(
+                HostedVmInfraSpec.builder()
+                    .platform(ParameterField.createValueField(Platform.builder()
+                                                                  .os(ParameterField.createValueField(OSType.MacOS))
+                                                                  .arch(ParameterField.createValueField(ArchType.Amd64))
+                                                                  .build()))
+                    .build())
+            .build();
+    StageElementParameters stageElementParameters =
+        StageElementParameters.builder()
+            .identifier("stageId")
+            .name("stageName")
+            .specConfig(IntegrationStageStepParametersPMS.builder().infrastructure(infrastructure).build())
+            .build();
+
+    String jsonString = RecastOrchestrationUtils.toJson(stageElementParameters);
+    OrchestrationEvent event = OrchestrationEvent.builder()
+                                   .ambiance(ambiance)
+                                   .serviceName("ci")
+                                   .resolvedStepParameters(null)
+                                   .status(Status.RUNNING)
+                                   .build();
+    when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))
+        .thenReturn(
+            Optional.of(StepExecutionParameters.builder().accountId("accountId").stepParameters(jsonString).build()));
+
+    when(executionSweepingOutputService.resolveOptional(
+             ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(InitializeExecutionSweepingOutput.builder().initialiseExecutionTime(1234L).build())
+                        .build());
+    when(executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STAGE_EXECUTION)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(StageExecutionSweepingOutput.builder().stageExecutionTime(5671L).build())
+                        .build());
+    CIPipelineModuleInfo ciPipelineModuleInfo =
+        (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo()).isNotNull();
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageId()).isEqualTo("stageId");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageName()).isEqualTo("stageName");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsArch()).isEqualTo("Amd64");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsType()).isEqualTo("MacOS");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageExecutionId()).isEqualTo("stageExecutionId");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getCpuTime()).isEqualTo(4437L);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageBuildTime()).isEqualTo(5671L);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStartTs()).isEqualTo(1111L);
   }
 
   @Test
@@ -237,6 +307,9 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
                     .build())
             .status(Status.RUNNING)
             .build();
+    when(stepExecutionParametersRepository.findFirstByAccountIdAndRunTimeId(any(), any()))
+        .thenReturn(Optional.of(
+            StepExecutionParameters.builder().accountId("accountId").stepParameters("stepParameters").build()));
 
     when(executionSweepingOutputService.resolveOptional(
              ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION)))

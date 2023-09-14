@@ -9,6 +9,7 @@ package io.harness.pms.triggers.webhook.helpers;
 
 import static io.harness.beans.FeatureName.SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC;
 import static io.harness.rule.OwnerRule.MEET;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
+import io.harness.eventsframework.webhookpayloads.webhookdata.TriggerExecutionDTO;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.execution.PlanExecution;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -47,6 +49,9 @@ import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.Metadata;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
+import io.harness.product.ci.scm.proto.PullRequest;
+import io.harness.product.ci.scm.proto.PullRequestHook;
+import io.harness.product.ci.scm.proto.User;
 import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
@@ -61,6 +66,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -135,7 +141,7 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
             .build();
     doReturn(planExecution)
         .when(triggerExecutionHelper)
-        .resolveRuntimeInputAndSubmitExecutionReques(any(), any(), any());
+        .resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(any(), any(), any());
     doReturn(triggerDetails.getNgTriggerConfigV2())
         .when(ngTriggerElementMapper)
         .toTriggerConfigV2(any(NGTriggerEntity.class));
@@ -225,5 +231,85 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
     when(pmsFeatureFlagService.isEnabled("accountId", SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC)).thenReturn(false);
     triggerEventExecutionHelper.handleTriggerWebhookEvent(triggerMappingRequestData);
     verify(ngTriggerRepository, times(1)).updateValidationStatus(any(), any());
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testHandleTriggerWebhookEventAsyncParsedResponse() {
+    TriggerWebhookEvent event = TriggerWebhookEvent.builder()
+                                    .isSubscriptionConfirmation(true)
+                                    .accountId("accountId")
+                                    .createdAt(10L)
+                                    .sourceRepoType("BITBUCKET")
+                                    .attemptCount(0)
+                                    .build();
+    WebhookDTO webhookDTO =
+        WebhookDTO.newBuilder()
+            .setEventId("eventId")
+            .setParsedResponse(
+                ParseWebhookResponse.newBuilder()
+                    .setPr(PullRequestHook.newBuilder()
+                               .setPr(PullRequest.newBuilder()
+                                          .setAuthor(User.newBuilder().setEmail("first@harness.io").build())
+                                          .build())
+                               .build())
+                    .build())
+            .build();
+    TriggerMappingRequestData triggerMappingRequestData =
+        TriggerMappingRequestData.builder().triggerWebhookEvent(event).webhookDTO(webhookDTO).build();
+    List<TriggerDetails> list = new ArrayList<>();
+    list.add(TriggerDetails.builder()
+                 .ngTriggerEntity(NGTriggerEntity.builder()
+                                      .accountId("accountId")
+                                      .orgIdentifier("orgId")
+                                      .projectIdentifier("projId")
+                                      .targetIdentifier("targetId")
+                                      .identifier("triggerId")
+                                      .build())
+                 .ngTriggerConfigV2(NGTriggerConfigV2.builder().build())
+                 .build());
+    WebhookEventMappingResponse webhookEventMappingResponse =
+        WebhookEventMappingResponse.builder()
+            .failedToFindTrigger(false)
+            .parseWebhookResponse(
+                ParseWebhookResponse.newBuilder()
+                    .setPr(PullRequestHook.newBuilder()
+                               .setPr(PullRequest.newBuilder()
+                                          .setAuthor(User.newBuilder().setEmail("second@harness.io").build())
+                                          .build())
+                               .build())
+                    .build())
+            .triggers(list)
+            .build();
+    doReturn(NGTriggerConfigV2.builder().build())
+        .when(ngTriggerElementMapper)
+        .toTriggerConfigV2(any(NGTriggerEntity.class));
+    when(webhookEventMapperHelper.mapWebhookEventToTriggers(triggerMappingRequestData))
+        .thenReturn(webhookEventMappingResponse);
+    when(pmsFeatureFlagService.isEnabled("accountId", SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC)).thenReturn(true);
+    triggerEventExecutionHelper.handleTriggerWebhookEvent(triggerMappingRequestData);
+    ArgumentCaptor<TriggerExecutionDTO> triggerExecutionDTOArgumentCaptor =
+        ArgumentCaptor.forClass(TriggerExecutionDTO.class);
+    verify(triggerWebhookEventPublisher, times(1))
+        .publishTriggerWebhookEvent(triggerExecutionDTOArgumentCaptor.capture());
+    assertThat(triggerExecutionDTOArgumentCaptor.getValue()
+                   .getWebhookDto()
+                   .getParsedResponse()
+                   .getPr()
+                   .getPr()
+                   .getAuthor()
+                   .getEmail())
+        .isEqualTo("second@harness.io");
+    doReturn(NGTriggerEntity.builder().build()).when(ngTriggerRepository).updateValidationStatus(any(), any());
+    when(pmsFeatureFlagService.isEnabled("accountId", SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC)).thenReturn(false);
+    triggerEventExecutionHelper.handleTriggerWebhookEvent(triggerMappingRequestData);
+    verify(ngTriggerRepository, times(1)).updateValidationStatus(any(), any());
+    ArgumentCaptor<TriggerPayload> planExecutionArgumentCaptor = ArgumentCaptor.forClass(TriggerPayload.class);
+    verify(triggerExecutionHelper, times(1))
+        .resolveRuntimeInputAndSubmitExecutionRequest(
+            any(), planExecutionArgumentCaptor.capture(), any(), any(), any(), any());
+    assertThat(planExecutionArgumentCaptor.getValue().getParsedPayload().getPr().getPr().getAuthor().getEmail())
+        .isEqualTo("second@harness.io");
   }
 }

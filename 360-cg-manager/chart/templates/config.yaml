@@ -64,13 +64,23 @@ data:
   ENABLE_ITERATORS: 'true'
   ITERATOR_CONFIG_PATH: '/opt/harness/config'
   LICENSE_INFO: '{{ .Values.global.license.cg }}'
+  {{- if .Values.proxy.enabled }}
+  PROXY_ENABLED: {{ .Values.proxy.enabled }}
+  PROXY_HOST: {{ .Values.proxy.host }}
+  PROXY_PORT: {{ .Values.proxy.port }}
+  PROXY_USERNAME: '{{ .Values.proxy.username }}'
+  PROXY_PASSWORD: '{{ .Values.proxy.password }}'
+  PROXY_PROTOCOL: {{ .Values.proxy.protocol }}
+  {{- end }}
   {{- if .Values.global.ng.enabled }}
   NG_MANAGER_BASE_URL: 'http://ng-manager:7090/'
   ACCESS_CONTROL_ENABLED: "true"
   ACCESS_CONTROL_BASE_URL: 'http://access-control:9006/api/'
   ENABLE_AUDIT: 'true'
   AUDIT_CLIENT_BASEURL: 'http://platform-service:9005/api/'
+  NOTIFICATION_BASE_URL: 'http://platform-service:9005/api/'
   {{- end }}
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}

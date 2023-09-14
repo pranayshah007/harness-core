@@ -1298,8 +1298,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:hYVPr8hqlVaacPVo6vJVQASwbGqlWa90kxokyVxWoBE=",
-    version = "v1.30.0",
+    sum = "h1:6hZxf0aETV17830fMCPrgcA4y8j/8Gdfy0xEdInUeqQ=",
+    version = "v1.31.2",
 )
 
 go_repository(
@@ -5172,10 +5172,10 @@ plain_artifacts = [
     "org.atmosphere:wasync:3.0.0",
     "org.atteo:evo-inflector:1.2.2",
     "org.bitbucket.b_c:jose4j:0.9.3",
-    "org.bouncycastle:bcpg-jdk15on:1.70",
-    "org.bouncycastle:bcpkix-jdk15on:1.70",
-    "org.bouncycastle:bcprov-ext-jdk15on:1.70",
-    "org.bouncycastle:bcprov-jdk15on:1.70",
+    "org.bouncycastle:bcpg-jdk18on:1.76",
+    "org.bouncycastle:bcpkix-jdk18on:1.76",
+    "org.bouncycastle:bcprov-ext-jdk18on:1.76",
+    "org.bouncycastle:bcprov-jdk18on:1.76",
     "org.checkerframework:checker-compat-qual:2.5.5",
     "org.checkerframework:checker-qual:3.4.0",
     "org.cloudfoundry:cloudfoundry-client-reactor:5.9.0.RELEASE",

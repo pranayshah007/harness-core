@@ -22,12 +22,16 @@ import io.harness.category.element.UnitTests;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GetGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.ListGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookResponse;
+import io.harness.spec.server.ng.v1.model.GitXWebhookEventResponse;
 import io.harness.spec.server.ng.v1.model.GitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookResponse;
@@ -46,6 +50,7 @@ import org.mockito.MockitoAnnotations;
 public class GitXWebhookApiImplTest extends CategoryTest {
   private GitXWebhooksApiImpl gitXWebhooksApi;
   @Mock GitXWebhookService gitXWebhookService;
+  @Mock GitXWebhookEventService gitXWebhookEventService;
 
   private static final String ACCOUNT_IDENTIFIER = "accountId";
   private static final String WEBHOOK_IDENTIFIER = "gitWebhook";
@@ -58,7 +63,7 @@ public class GitXWebhookApiImplTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.openMocks(this);
-    gitXWebhooksApi = new GitXWebhooksApiImpl(gitXWebhookService);
+    gitXWebhooksApi = new GitXWebhooksApiImpl(gitXWebhookService, gitXWebhookEventService);
     FOLDER_PATHS = new ArrayList<>();
     FOLDER_PATHS.add("path1");
     FOLDER_PATHS.add("path2");
@@ -152,5 +157,35 @@ public class GitXWebhookApiImplTest extends CategoryTest {
     assertTrue(listGitXWebhookResponse.get(0).isIsEnabled());
     assertEquals(WEBHOOK_IDENTIFIER2, listGitXWebhookResponse.get(1).getWebhookIdentifier());
     assertFalse(listGitXWebhookResponse.get(1).isIsEnabled());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testListWebhookEvents() {
+    GitXEventDTO gitXEventDTO1 = GitXEventDTO.builder()
+                                     .authorName("author1")
+                                     .webhookIdentifier(WEBHOOK_IDENTIFIER)
+                                     .eventIdentifier("event123")
+                                     .build();
+    GitXEventDTO gitXEventDTO2 = GitXEventDTO.builder()
+                                     .authorName("author2")
+                                     .webhookIdentifier(WEBHOOK_IDENTIFIER2)
+                                     .eventIdentifier("event234")
+                                     .build();
+    List<GitXEventDTO> gitXEventDTOList = new ArrayList<>();
+    gitXEventDTOList.add(gitXEventDTO1);
+    gitXEventDTOList.add(gitXEventDTO2);
+    GitXEventsListResponseDTO gitXEventsListResponseDTO =
+        GitXEventsListResponseDTO.builder().gitXEventDTOS(gitXEventDTOList).build();
+    when(gitXWebhookEventService.listEvents(any())).thenReturn(gitXEventsListResponseDTO);
+    Response response = gitXWebhooksApi.listGitxWebhookEvents(ACCOUNT_IDENTIFIER, 0, 10, "", null, null);
+    List<GitXWebhookEventResponse> eventResponseList = (List<GitXWebhookEventResponse>) response.getEntity();
+    assertEquals(2, eventResponseList.size());
+    assertEquals(WEBHOOK_IDENTIFIER, eventResponseList.get(0).getWebhookIdentifier());
+    assertEquals("event123", eventResponseList.get(0).getEventIdentifier());
+
+    assertEquals(WEBHOOK_IDENTIFIER2, eventResponseList.get(1).getWebhookIdentifier());
+    assertEquals("event234", eventResponseList.get(1).getEventIdentifier());
   }
 }

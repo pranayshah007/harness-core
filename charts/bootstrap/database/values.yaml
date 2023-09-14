@@ -7,7 +7,7 @@ global:
       installed: true
     mongodb:
       installed: true
-    postgresql:
+    postgres:
       installed: true
     timescaledb:
       installed: true
@@ -78,8 +78,11 @@ postgresql:
         memory: 8192Mi
 clickhouse:
   fullnameOverride: "clickhouse"
+  auth:
+    existingSecret: "clickhouse"
+    existingSecretKey: "admin-password"
   image:
-    tag: 23.3.4-debian-11-r0
+    tag: 23.3.13-debian-11-r0
   podLabels: { app: clickhouse }
   resources:
     limits:

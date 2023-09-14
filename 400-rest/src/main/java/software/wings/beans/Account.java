@@ -85,7 +85,12 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
                  .name("next_iteration_license_info2")
                  .field(AccountKeys.licenseExpiryCheckIteration)
                  .field(AccountKeys.encryptedLicenseInfo)
-                 .build())
+                 .build(),
+            CompoundMongoIndex.builder()
+                .name("account_status_deletion_iteration")
+                .field(AccountKeys.accountStatusKey)
+                .field(AccountKeys.accountDeletionIteration)
+                .build())
         .build();
   }
 
@@ -920,5 +925,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     public static final String delegateTaskRebroadcastIteration = "delegateTaskRebroadcastIteration";
     public static final String DELEGATE_CONFIGURATION_DELEGATE_VERSIONS =
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;
+    public static final String accountStatusKey = "licenseInfo.accountStatus";
   }
 }

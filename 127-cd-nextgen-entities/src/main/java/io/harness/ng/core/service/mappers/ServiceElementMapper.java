@@ -9,8 +9,11 @@ package io.harness.ng.core.service.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -29,6 +32,7 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.CacheResponseMetadataDTO;
 
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -117,6 +121,16 @@ public class ServiceElementMapper {
         .ttlLeft(cacheResponse.getTtlLeft())
         .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
         .build();
+  }
+
+  public String getServiceNotFoundError(String orgIdentifier, String projectIdentifier, @NonNull String serviceId) {
+    if (isNotEmpty(projectIdentifier)) {
+      return format("Service with identifier [%s] in project [%s], org [%s] not found", serviceId, projectIdentifier,
+          orgIdentifier);
+    } else if (isNotEmpty(orgIdentifier)) {
+      return format("Service with identifier [%s] in org [%s] not found", serviceId, orgIdentifier);
+    }
+    return format("Service with identifier [%s] in account not found", serviceId);
   }
 
   public ServiceResponseDTO writeAccessListDTO(ServiceEntity serviceEntity) {

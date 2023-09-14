@@ -19,6 +19,13 @@ if [[ "" != "$LOGGING_LEVEL" ]]; then
     export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
+if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
+  yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
+  yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE
+else
+  yq -i 'del(.logging.appenders.[] | select(.type == "gke-console"))' $CONFIG_FILE
+fi
+
 if [[ "" != "$STATIC_SCHEMA_FILE_URL" ]]; then
   export STATIC_SCHEMA_FILE_URL; yq -i '.staticSchemaFileURL=env(STATIC_SCHEMA_FILE_URL)' $CONFIG_FILE
 fi
@@ -103,7 +110,7 @@ if [[ "" != "$S3_BUCKET" ]]; then
 fi
 
 if [[ "" != "$S3_ENDPOINT" ]]; then
-  export S3_ENDPOINT; yq -i '.s3Config.Endpoint=env(S3_ENDPOINT)' $CONFIG_FILE
+  export S3_ENDPOINT; yq -i '.s3Config.endpoint=env(S3_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$S3_POLICY_BUCKET" ]]; then

@@ -83,13 +83,14 @@ public enum CIStepInfoType {
   IACM(CI_LITE_ENGINE, "IACM"),
   IACM_TERRAFORM_PLUGIN(CI_LITE_ENGINE, "IACMTerraformPlugin"),
   IACM_APPROVAL(CI_LITE_ENGINE, "IACMApproval"),
-  IACM_COST_ESTIMATION(CI_LITE_ENGINE, "IACMCostEstimation"),
+
   BACKGROUND_V1(CI_LITE_ENGINE, "background"),
   BITRISE_V1(CI_LITE_ENGINE, "bitrise"),
   ACTION_V1(CI_LITE_ENGINE, "action"),
   SSCA_ORCHESTRATION(CI_LITE_ENGINE, "SscaOrchestration"),
   SSCA_ENFORCEMENT(CI_LITE_ENGINE, "SscaEnforcement"),
-  PROVENANCE(CI_LITE_ENGINE, "provenance");
+  PROVENANCE(CI_LITE_ENGINE, "provenance"),
+  SLSA_VERIFICATION(CI_LITE_ENGINE, "SlsaVerification");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

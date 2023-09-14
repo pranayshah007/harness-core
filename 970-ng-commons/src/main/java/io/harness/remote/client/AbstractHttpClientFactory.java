@@ -82,7 +82,7 @@ public abstract class AbstractHttpClientFactory {
   private final String serviceSecret;
   private final ServiceTokenGenerator tokenGenerator;
   private final KryoConverterFactory kryoConverterFactory;
-  private final String clientId;
+  protected final String clientId;
   private final ObjectMapper objectMapper;
   private final boolean enableCircuitBreaker;
   private final ClientMode clientMode;
@@ -291,7 +291,7 @@ public abstract class AbstractHttpClientFactory {
     };
   }
 
-  private String getServiceSecret() {
+  protected String getServiceSecret() {
     String managerServiceSecret = this.serviceSecret;
     if (StringUtils.isNotBlank(managerServiceSecret)) {
       return managerServiceSecret.trim();

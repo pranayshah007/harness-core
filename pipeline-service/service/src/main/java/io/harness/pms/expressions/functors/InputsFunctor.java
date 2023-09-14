@@ -51,7 +51,10 @@ public class InputsFunctor implements LateBindingValue {
     }
 
     // This is the inputsYamlNode from pipeline yaml. It contains all metadata of the inputs.
-    YamlNode inputsYamlNode = pipelineNode.getField(YAMLFieldNameConstants.INPUTS).getNode();
+    YamlNode inputsYamlNode = pipelineNode.gotoPath("spec/inputs");
+    if (inputsYamlNode == null) {
+      return Collections.emptyMap();
+    }
 
     Map<String, Object> inputsMap = getMergedInputsMap(inputsYamlNode);
     for (Map.Entry<String, Object> entry : inputsMap.entrySet()) {

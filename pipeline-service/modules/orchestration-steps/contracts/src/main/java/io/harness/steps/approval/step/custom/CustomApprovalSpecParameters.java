@@ -19,6 +19,8 @@ import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.timeout.Timeout;
 
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,5 +63,10 @@ public class CustomApprovalSpecParameters implements SpecParameters {
         .rejectionCriteria(this.rejectionCriteria)
         .scriptTimeout(this.scriptTimeout)
         .build();
+  }
+
+  @Override
+  public List<String> stepInputsKeyExclude() {
+    return new LinkedList<>(Arrays.asList("specConfig.secretOutputVariables"));
   }
 }

@@ -779,7 +779,7 @@ public class EngineExpressionEvaluator {
 
     public boolean isAnyCollection(Object value) {
       return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
-          || value instanceof Iterable;
+          || value instanceof Iterable || (value != null && value.getClass().isArray());
     }
 
     @Override

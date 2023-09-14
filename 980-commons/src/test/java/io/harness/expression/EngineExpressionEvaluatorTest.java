@@ -387,6 +387,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var2", "'archit<+f>' + <+company>")
             .put("var3", "concatenate1")
             .put("var4", "[\"abc\", \"def\"]")
+            .put("var5", "[{\"abc\":\"def\"},{\"efg\":\"hij\"}]")
+            .put("var6", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"}]")
+            .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
+            .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, Arrays.asList("PIE_EXPRESSION_CONCATENATION"))
             .build());
     // concat expressions
@@ -516,6 +520,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.renderExpression("<+a> + <+b> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+<+a> > + <+ <+b>> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+f> + <+g> = <+<+f> + \" + \" + <+g>>")).isEqualTo("abc + def = abc + def");
+
+    assertThat(evaluator.resolve("<+var5>", true)).isEqualTo("[{\"abc\":\"def\"},{\"efg\":\"hij\"}]");
+    assertThat(evaluator.resolve("<+var6>", true)).isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"}]");
+    assertThat(evaluator.resolve("<+var7>", true)).isEqualTo("[{\"stu\":\"abc\"},{\"u\":{\"vw\":\"xyz\"}}]");
+    assertThat(evaluator.resolve("<+var8>", true))
+        .isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"},{\"u\":{\"vw\":\"def\"}}]");
   }
 
   @Test
@@ -558,6 +568,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var2", "'archit<+f>' + <+company>")
             .put("var3", "concatenate1")
             .put("var4", "[\"abc\", \"def\"]")
+            .put("var5", "[{\"abc\":\"def\"},{\"efg\":\"hij\"}]")
+            .put("var6", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"}]")
+            .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
+            .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY,
                 Arrays.asList("PIE_EXPRESSION_CONCATENATION", "PIE_EXECUTION_JSON_SUPPORT"))
             .build());
@@ -706,6 +720,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.renderExpression("<+a> + <+b> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+<+a> > + <+ <+b>> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+f> + <+g> = <+<+f> + \" + \" + <+g>>")).isEqualTo("abc + def = abc + def");
+
+    assertThat(evaluator.resolve("<+var5>", true)).isEqualTo("[{\"abc\":\"def\"},{\"efg\":\"hij\"}]");
+    assertThat(evaluator.resolve("<+var6>", true)).isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"}]");
+    assertThat(evaluator.resolve("<+var7>", true)).isEqualTo("[{\"stu\":\"abc\"},{\"u\":{\"vw\":\"xyz\"}}]");
+    assertThat(evaluator.resolve("<+var8>", true))
+        .isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"},{\"u\":{\"vw\":\"def\"}}]");
   }
 
   @Test

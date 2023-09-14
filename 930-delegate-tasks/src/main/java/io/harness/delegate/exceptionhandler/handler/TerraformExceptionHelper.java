@@ -10,6 +10,7 @@ package io.harness.delegate.exceptionhandler.handler;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.ERROR_ASKING_FOR_STATE_MIGRATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.ERROR_CONFIGURING_S3_BACKEND;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.ERROR_INSPECTING_STATE_IN_BACKEND;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.ERROR_VALIDATING_PROVIDER_CRED;
@@ -19,12 +20,14 @@ import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Cli
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.INVALID_CREDENTIALS_AWS;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.NO_VALID_CRED_FOUND_FOR_AWS;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.NO_VALID_CRED_FOUND_FOR_S3_BACKEND;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_FAIL_TO_INSTALL_PROVIDER;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_INVALID_CREDENTIALS_AWS;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG_FIE;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG_LOCATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG_LOCATION_ARGUMENT;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_ERROR_ASKING_FOR_STATE_MIGRATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_ERROR_INSPECTING_STATE_IN_BACKEND;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAILED_TO_GET_EXISTING_WORKSPACES;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAIL_TO_INSTALL_PROVIDER;
@@ -113,6 +116,11 @@ public class TerraformExceptionHelper {
       if (error.toLowerCase().contains(FAIL_TO_INSTALL_PROVIDER.toLowerCase())) {
         explanations.add(EXPLANATION_FAIL_TO_INSTALL_PROVIDER);
         hints.add(HINT_FAIL_TO_INSTALL_PROVIDER);
+      }
+
+      if (error.toLowerCase().contains(ERROR_ASKING_FOR_STATE_MIGRATION.toLowerCase())) {
+        explanations.add(EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION);
+        hints.add(HINT_ERROR_ASKING_FOR_STATE_MIGRATION);
       }
 
       handleUnknownError(error, hints, explanations, structuredErrors);

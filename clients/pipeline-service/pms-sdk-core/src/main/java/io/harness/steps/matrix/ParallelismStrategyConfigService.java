@@ -12,8 +12,10 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -27,17 +29,22 @@ import java.util.Optional;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class ParallelismStrategyConfigService implements StrategyConfigService {
   @Override
-  public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
+  public List<ChildrenExecutableResponse.Child> fetchChildren(
+      StrategyConfig strategyConfig, String childNodeId, Ambiance ambiance) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
       parallelism = strategyConfig.getParallelism().getValue();
     }
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {
+      StrategyMetadata metadata =
+          StrategyMetadata.newBuilder().setCurrentIteration(i).setTotalIterations(parallelism).build();
+      String nodeName =
+          AmbianceUtils.getStrategyPostFixUsingMetadata(metadata, AmbianceUtils.shouldUseMatrixFieldName(ambiance));
+      metadata = metadata.toBuilder().setIdentifierPostFix(nodeName).build();
       children.add(ChildrenExecutableResponse.Child.newBuilder()
                        .setChildNodeId(childNodeId)
-                       .setStrategyMetadata(
-                           StrategyMetadata.newBuilder().setCurrentIteration(i).setTotalIterations(parallelism).build())
+                       .setStrategyMetadata(metadata)
                        .build());
     }
     return children;

@@ -25,6 +25,7 @@ import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.beans.custom.executions.NodeExecutionEventData;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
+import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.engine.pms.audits.events.NodeExecutionOutboxEventConstants;
 import io.harness.engine.pms.audits.events.PipelineAbortEvent;
 import io.harness.engine.pms.audits.events.PipelineEndEvent;
@@ -41,6 +42,7 @@ import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.events.PipelineOutboxEvents;
 import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.notification.orchestration.NodeExecutionEventUtils;
+import io.harness.pms.notification.orchestration.helpers.AbortInfoHelper;
 import io.harness.pms.outbox.autoLog.OutboxLogContext;
 import io.harness.pms.pipeline.observer.PipelineActionObserver;
 import io.harness.security.PrincipalContextData;
@@ -50,6 +52,7 @@ import io.harness.security.dto.UserPrincipal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.serializer.HObjectMapper;
@@ -67,7 +70,6 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
   private final InputSetEventHandler inputSetEventHandler;
 
   @Getter private final Subject<PipelineActionObserver> pipelineActionObserverSubject = new Subject<>();
-
   @Inject
   PipelineOutboxEventHandler(AuditClientService auditClientService, InputSetEventHandler inputSetEventHandler) {
     this.objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
@@ -158,7 +160,14 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapPipelineStartEventToNodeExecutionEventData(pipelineStartEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START, null);
+    Principal principal = null;
+    if (nodeExecutionEventData.getTriggeredBy() != null) {
+      principal = new UserPrincipal(nodeExecutionEventData.getTriggeredBy().getIdentifier(),
+          getIdentifierForPrincipal(nodeExecutionEventData), nodeExecutionEventData.getTriggeredBy().getIdentifier(),
+          nodeExecutionEventData.getAccountIdentifier());
+    }
+
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START, principal);
   }
 
   private boolean handlePipelineTimeoutEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -201,11 +210,9 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
 
     Principal principal = null;
     if (nodeExecutionEventData.getTriggeredBy() != null) {
-      String email = nodeExecutionEventData.getTriggeredBy().getExtraInfo() != null
-          ? nodeExecutionEventData.getTriggeredBy().getExtraInfo().get("email")
-          : "";
-      principal = new UserPrincipal(nodeExecutionEventData.getTriggeredBy().getIdentifier(), email,
-          nodeExecutionEventData.getTriggeredBy().getIdentifier(), nodeExecutionEventData.getAccountIdentifier());
+      principal = new UserPrincipal(nodeExecutionEventData.getTriggeredBy().getIdentifier(),
+          getIdentifierForPrincipal(nodeExecutionEventData), nodeExecutionEventData.getTriggeredBy().getIdentifier(),
+          nodeExecutionEventData.getAccountIdentifier());
     }
 
     return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.ABORT, principal);
@@ -272,5 +279,16 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
         return false;
       }
     }
+  }
+
+  @VisibleForTesting
+  protected String getIdentifierForPrincipal(NodeExecutionEventData nodeExecutionEventData) {
+    if (nodeExecutionEventData.getTriggeredBy().getExtraInfo() != null
+        && !EmptyPredicate.isEmpty(nodeExecutionEventData.getTriggeredBy().getExtraInfo().get("email"))) {
+      return nodeExecutionEventData.getTriggeredBy().getExtraInfo().get("email");
+    } else if (!EmptyPredicate.isEmpty(nodeExecutionEventData.getTriggeredBy().getIdentifier())) {
+      return nodeExecutionEventData.getTriggeredBy().getIdentifier();
+    }
+    return AbortInfoHelper.SYSTEM_USER;
   }
 }

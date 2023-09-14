@@ -59,7 +59,7 @@
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "harness_sto_scan_dsl",
     "dataSourceIdentifier": "harness",
-    "type": "DirectHttp",
+    "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
       "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
@@ -77,7 +77,7 @@
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "harness_policy_evaluation_dsl",
     "dataSourceIdentifier": "harness",
-    "type": "DirectHttp",
+    "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
       "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
@@ -95,7 +95,7 @@
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "harness_ci_success_percent_in_seven_days",
     "dataSourceIdentifier": "harness",
-    "type": "DirectHttp",
+    "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
       "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
@@ -113,7 +113,7 @@
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "harness_test_passing_on_ci_is_zero",
     "dataSourceIdentifier": "harness",
-    "type": "DirectHttp",
+    "type": "CustomHttp",
     "apiRequestDetails": {
       "method": "POST",
       "url": "https://{HOST}/v1/data-sources/harness/data-point/values",
@@ -124,6 +124,38 @@
         "X-Source-Principal": "{X_SOURCE_PRINCIPAL}"
       },
       "requestBody": "{BODY}"
+    }
+  },
+  {
+    "id": "65006535c28a1a3f5607e84e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty_service_directory",
+    "dataSourceIdentifier": "pagerduty",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "https://api.pagerduty.com/service_directory/{SERVICE_ID}",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{TOKEN_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "6500a8c6c28a1a3f5607f80e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty_incidents",
+    "dataSourceIdentifier": "pagerduty",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "https://api.pagerduty.com/incidents?service_ids[]={SERVICE_ID}&limit=105&sort_by=created_at:desc&until={CURRENT_TIME_IN_UTC}",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{TOKEN_AUTH}"
+      }
     }
   }
 ]

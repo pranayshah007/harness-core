@@ -326,8 +326,8 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
 
   private Optional<ReportDefinition> validateReportResourceExists(AWSCredentialsProvider credentialsProvider,
       AwsCurAttributesDTO awsCurAttributesDTO, List<ErrorDetail> errorList) {
-    Optional<ReportDefinition> report =
-        awsClient.getReportDefinition(credentialsProvider, awsCurAttributesDTO.getReportName());
+    Optional<ReportDefinition> report = awsClient.getReportDefinition(
+        credentialsProvider, awsCurAttributesDTO.getReportName(), configuration.getCeProxyConfig());
     if (report == null || !report.isPresent()) {
       errorList.add(
           ErrorDetail.builder()

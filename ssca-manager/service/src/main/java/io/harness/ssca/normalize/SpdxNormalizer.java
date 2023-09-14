@@ -33,7 +33,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
       NormalizedSBOMComponentEntityBuilder normalizedSBOMEntityBuilder =
           NormalizedSBOMComponentEntity.builder()
               .sbomVersion(sbom.getSpdxVersion())
-              .artifactURL(settings.getArtifactURL())
+              .artifactUrl(settings.getArtifactURL())
               .artifactId(settings.getArtifactID())
               .artifactName(sbom.getName())
               .createdOn(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
@@ -42,7 +42,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
               .toolVersion(settings.getTool().getVersion())
               .toolName(settings.getTool().getName())
               .toolVendor(settings.getTool().getVendor())
-              .packageID(spdxPackage.getSPDXID())
+              .packageId(spdxPackage.getSPDXID())
               .packageName(spdxPackage.getName())
               .packageDescription(spdxPackage.getDescription())
               .packageLicense(getPackageLicenses(spdxPackage.getLicenseConcluded(), spdxPackage.getLicenseDeclared()))
@@ -52,7 +52,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
               .pipelineIdentifier(settings.getPipelineIdentifier())
               .projectIdentifier(settings.getProjectIdentifier())
               .orgIdentifier(settings.getOrgIdentifier())
-              .accountID(settings.getAccountID());
+              .accountId(settings.getAccountID());
 
       if (spdxPackage.getOriginator() != null && spdxPackage.getOriginator().contains(":")) {
         String[] splitOriginator = Strings.split(spdxPackage.getOriginator(), ':');

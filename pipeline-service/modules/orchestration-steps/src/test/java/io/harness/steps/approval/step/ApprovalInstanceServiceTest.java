@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -44,7 +45,6 @@ import io.harness.logstreaming.LogLine;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.repositories.ApprovalInstanceRepository;
@@ -117,6 +117,7 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   private static final String APPROVAL_KEY = "key";
   private static final String APPROVAL_ID = "approvalId";
   private static final String TASK_ID = "taskId";
+  private static final String KEYS_IN_CRITERIA = "status,priority,issuetype";
   private static final Long CREATED_AT = 1000L;
   private static final String APPROVAL_NAME = "Admin";
   private static final String APPROVAL_COMMENT = "Approval comment";
@@ -146,6 +147,16 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
 
     assertThat(approvalInstanceServiceImpl.get("hello")).isEqualTo(entity);
   }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetException() {
+    String instance = "Invalid";
+    when(approvalInstanceRepository.findById(instance)).thenReturn(Optional.empty());
+    assertThatThrownBy(() -> { approvalInstanceServiceImpl.get(""); })
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageStartingWith("Invalid approval instance id");
+  }
 
   @Test
   @Owner(developers = vivekveman)
@@ -158,6 +169,17 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     entity.setType(ApprovalType.HARNESS_APPROVAL);
 
     assertThat(approvalInstanceServiceImpl.getHarnessApprovalInstance("hello")).isEqualTo(entity);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetHarnessApprovalInstanceException() {
+    String approvalInstanceId = "Invalid";
+    when(approvalInstanceRepository.findById(approvalInstanceId)).thenReturn(Optional.empty());
+    assertThatThrownBy(() -> { approvalInstanceServiceImpl.get("Invalid"); })
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageStartingWith("Invalid approval instance id");
   }
 
   @Test
@@ -227,7 +249,6 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
 
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("PlanExecutionId").build();
     entity.setAmbiance(ambiance);
-    when(planExecutionService.calculateStatusExcluding(any(), any())).thenReturn(Status.SUCCEEDED);
     approvalInstanceServiceImpl.finalizeStatus("hello", ApprovalStatus.APPROVED, "errormessage", null);
     ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
     ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
@@ -247,7 +268,6 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     when(approvalInstanceRepository.updateFirst(any(), any())).thenReturn(entity);
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("PlanExecutionId").build();
     entity.setAmbiance(ambiance);
-    when(planExecutionService.calculateStatusExcluding(any(), any())).thenReturn(Status.SUCCEEDED);
     approvalInstanceServiceImpl.finalizeStatus("hello", ApprovalStatus.APPROVED, "errormessage", null);
     ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
     ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
@@ -935,6 +955,26 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
                                             ApprovalType.CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL))));
     assertThat(updateArgumentCaptor.getValue())
         .isEqualTo(new Update().set(ServiceNowApprovalInstanceKeys.latestDelegateTaskId, TASK_ID));
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testUpdateKeyListInKeyValueCriteria() {
+    approvalInstanceServiceImpl.updateKeyListInKeyValueCriteria(APPROVAL_ID, null);
+    approvalInstanceServiceImpl.updateKeyListInKeyValueCriteria("   ", "");
+
+    approvalInstanceServiceImpl.updateKeyListInKeyValueCriteria(APPROVAL_ID, KEYS_IN_CRITERIA);
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
+    ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
+    verify(approvalInstanceRepository, times(1))
+        .updateFirst(queryArgumentCaptor.capture(), updateArgumentCaptor.capture());
+    assertThat(queryArgumentCaptor.getValue())
+        .isEqualTo(new Query(Criteria.where(Mapper.ID_KEY).is(APPROVAL_ID))
+                       .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING))
+                       .addCriteria(Criteria.where(ApprovalInstanceKeys.type).is(ApprovalType.JIRA_APPROVAL)));
+    assertThat(updateArgumentCaptor.getValue())
+        .isEqualTo(new Update().set(JiraApprovalInstanceKeys.keyListInKeyValueCriteria, KEYS_IN_CRITERIA));
   }
 
   @Test

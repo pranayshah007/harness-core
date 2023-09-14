@@ -662,6 +662,100 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
+  public void testGetReadOnlyFieldsForStandardTemplate() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getReadOnlyFieldsForStandardTemplate(anyString())).thenReturn(mockCall);
+    Map<String, String> responseMap =
+        ImmutableMap.of("readonly_fields", "description,backout_plan,test_plan,implementation_plan,short_description");
+    JsonNode successResponse =
+        JsonUtils.asTree(Collections.singletonMap("result", Collections.singletonList(responseMap)));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response = serviceNowTaskNgHelper.getServiceNowResponse(
+          ServiceNowTaskNGParameters.builder()
+              .action(ServiceNowActionNG.GET_STANDARD_TEMPLATES_READONLY_FIELDS)
+              .serviceNowConnectorDTO(serviceNowConnectorDTO)
+              .build(),
+          logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getServiceNowStandardTemplateReadOnlyFields())
+          .isEqualTo("description,backout_plan,test_plan,implementation_plan,short_description");
+
+      verify(secretDecryptionService).decrypt(any(), any());
+
+      verify(serviceNowRestClient).getReadOnlyFieldsForStandardTemplate(anyString());
+    }
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetReadOnlyFieldsForStandardTemplatForNullResponse() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getReadOnlyFieldsForStandardTemplate(anyString())).thenReturn(mockCall);
+    when(mockCall.clone()).thenReturn(mockCall);
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result1", null));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters =
+          ServiceNowTaskNGParameters.builder()
+              .action(ServiceNowActionNG.GET_STANDARD_TEMPLATES_READONLY_FIELDS)
+              .serviceNowConnectorDTO(serviceNowConnectorDTO)
+              .build();
+      assertThatThrownBy(
+          () -> serviceNowTaskNgHelper.getServiceNowResponse(serviceNowTaskNGParameters, logStreamingTaskClient))
+          .isInstanceOf(ServiceNowException.class)
+          .hasMessage(
+              "Failed to fetch read only fields for standard templates  response: Response{protocol=http/1.1, code=200, message=OK, url=http://localhost/}");
+
+      verify(secretDecryptionService).decrypt(any(), any());
+
+      verify(serviceNowRestClient).getReadOnlyFieldsForStandardTemplate(anyString());
+    }
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetReadOnlyFieldsForStandardTemplateForNullString() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getReadOnlyFieldsForStandardTemplate(anyString())).thenReturn(mockCall);
+    Map<String, String> responseMap = ImmutableMap.of("dummy", "hello");
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", Collections.singleton(responseMap)));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response = serviceNowTaskNgHelper.getServiceNowResponse(
+          ServiceNowTaskNGParameters.builder()
+              .action(ServiceNowActionNG.GET_STANDARD_TEMPLATES_READONLY_FIELDS)
+              .serviceNowConnectorDTO(serviceNowConnectorDTO)
+              .build(),
+          logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getServiceNowStandardTemplateReadOnlyFields()).isEqualTo(null);
+      verify(secretDecryptionService).decrypt(any(), any());
+      verify(serviceNowRestClient).getReadOnlyFieldsForStandardTemplate(anyString());
+    }
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
   public void responseTest() throws IOException {
     Response<JsonNode> jsonNodeResponse = Response.success(200, null);
 

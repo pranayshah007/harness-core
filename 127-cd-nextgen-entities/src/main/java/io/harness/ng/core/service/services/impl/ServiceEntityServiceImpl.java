@@ -44,6 +44,7 @@ import io.harness.exception.YamlException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.events.ServiceCreateEvent;
@@ -113,6 +114,8 @@ import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
@@ -272,7 +275,6 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
-    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
     Optional<ServiceEntity> serviceEntityOptional =
         get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
@@ -289,31 +291,40 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           && !oldService.getGitOpsEnabled().equals(requestService.getGitOpsEnabled())) {
         throw new InvalidRequestException("GitOps Enabled is not allowed to change.");
       }
+      ServiceEntity serviceToUpdate = oldService.withYaml(requestService.getYaml())
+                                          .withDescription(requestService.getDescription())
+                                          .withName(requestService.getName())
+                                          .withTags(requestService.getTags())
+                                          .withType(requestService.getType())
+                                          .withGitOpsEnabled(requestService.getGitOpsEnabled());
 
+      // create final request service
       ServiceEntityValidator serviceEntityValidator =
-          serviceEntityValidatorFactory.getServiceEntityValidator(requestService);
-      serviceEntityValidator.validate(requestService);
+          serviceEntityValidatorFactory.getServiceEntityValidator(serviceToUpdate);
+      serviceEntityValidator.validate(serviceToUpdate);
+      Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(serviceToUpdate);
+
       ServiceEntity updatedService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
+            ServiceEntity updatedResult = serviceRepository.update(criteria, serviceToUpdate);
             if (updatedResult == null) {
               throw new InvalidRequestException(String.format(
                   "Service [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
-                  requestService.getIdentifier(), requestService.getProjectIdentifier(),
-                  requestService.getOrgIdentifier()));
+                  serviceToUpdate.getIdentifier(), serviceToUpdate.getProjectIdentifier(),
+                  serviceToUpdate.getOrgIdentifier()));
             }
             outboxService.save(ServiceUpdateEvent.builder()
-                                   .accountIdentifier(requestService.getAccountId())
-                                   .orgIdentifier(requestService.getOrgIdentifier())
-                                   .projectIdentifier(requestService.getProjectIdentifier())
+                                   .accountIdentifier(serviceToUpdate.getAccountId())
+                                   .orgIdentifier(serviceToUpdate.getOrgIdentifier())
+                                   .projectIdentifier(serviceToUpdate.getProjectIdentifier())
                                    .newService(updatedResult)
                                    .oldService(oldService)
                                    .build());
             return updatedResult;
           }));
       entitySetupUsageHelper.updateSetupUsages(updatedService, referredEntities);
-      publishEvent(requestService.getAccountId(), requestService.getOrgIdentifier(),
-          requestService.getProjectIdentifier(), requestService.getIdentifier(),
+      publishEvent(serviceToUpdate.getAccountId(), serviceToUpdate.getOrgIdentifier(),
+          serviceToUpdate.getProjectIdentifier(), serviceToUpdate.getIdentifier(),
           EventsFrameworkMetadataConstants.UPDATE_ACTION);
       return updatedService;
     } else {
@@ -1127,5 +1138,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       throw new InvalidRequestException(
           String.format("Error occurred while fetching list of manifests for service %s", serviceIdentifier), e);
     }
+  }
+
+  @Override
+  public RepoListResponseDTO getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllServicesAccessibleAtScope) {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, null, false, includeAllServicesAccessibleAtScope);
+
+    List<String> uniqueRepos = serviceRepository.getListOfDistinctRepos(criteria);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
+
+    return RepoListResponseDTO.builder().repositories(uniqueRepos).build();
   }
 }

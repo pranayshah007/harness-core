@@ -153,7 +153,7 @@ image:
   repository: harness/manager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80209"
+  tag: "80212"
   digest: ""
   imagePullSecrets: []
 
@@ -248,6 +248,14 @@ service:
   port: 9090
   grpcport: 9879
 
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
 resources:
   limits:
     memory: 8192Mi
@@ -280,7 +288,7 @@ featureFlags:
   # -- STO Feature Flags
   CI: "CING_ENABLED,CI_INDIRECT_LOG_UPLOAD,CI_LE_STATUS_REST_ENABLED"
   # -- STO Feature Flags
-  STO: "SECURITY,SECURITY_STAGE,STO_CI_PIPELINE_SECURITY,STO_API_V2"
+  STO: "STO_BASELINE_REGEX,STO_STEP_PALETTE_BURP_ENTERPRISE,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP"
   # -- SRM Flags
   SRM: "CVNG_ENABLED"
   # -- Custom Dashboard Flags
@@ -305,6 +313,9 @@ featureFlags:
   ADDITIONAL: ""
 
 additionalConfigs: {}
+
+java17flags: ""
+
 # extraVolumes:
   # - name: volume-test
   #   configMap:

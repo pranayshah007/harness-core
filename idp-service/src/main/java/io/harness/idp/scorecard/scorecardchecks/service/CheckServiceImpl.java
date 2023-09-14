@@ -7,8 +7,10 @@
 
 package io.harness.idp.scorecard.scorecardchecks.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
+import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
 
 import static java.lang.Boolean.parseBoolean;
@@ -24,6 +26,7 @@ import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
+import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper;
 import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
@@ -31,10 +34,13 @@ import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.DataPoint;
+import io.harness.spec.server.idp.v1.model.Rule;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -47,21 +53,25 @@ public class CheckServiceImpl implements CheckService {
   private final CheckRepository checkRepository;
   private final NGSettingsClient settingsClient;
   private final EntitySetupUsageClient entitySetupUsageClient;
+  private final DataPointService dataPointService;
   @Inject
-  public CheckServiceImpl(
-      CheckRepository checkRepository, NGSettingsClient settingsClient, EntitySetupUsageClient entitySetupUsageClient) {
+  public CheckServiceImpl(CheckRepository checkRepository, NGSettingsClient settingsClient,
+      EntitySetupUsageClient entitySetupUsageClient, DataPointService dataPointService) {
     this.checkRepository = checkRepository;
     this.settingsClient = settingsClient;
     this.entitySetupUsageClient = entitySetupUsageClient;
+    this.dataPointService = dataPointService;
   }
 
   @Override
   public void createCheck(CheckDetails checkDetails, String accountIdentifier) {
+    validateCheckSaveRequest(checkDetails, accountIdentifier);
     checkRepository.save(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
   }
 
   @Override
   public void updateCheck(CheckDetails checkDetails, String accountIdentifier) {
+    validateCheckSaveRequest(checkDetails, accountIdentifier);
     CheckEntity checkEntity = checkRepository.update(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
     if (checkEntity == null) {
       throw new InvalidRequestException("Default checks cannot be updated");
@@ -173,5 +183,20 @@ public class CheckServiceImpl implements CheckService {
         where(CheckEntity.CheckKeys.identifier)
             .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
         where(CheckEntity.CheckKeys.tags).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+  }
+
+  private void validateCheckSaveRequest(CheckDetails checkDetails, String accountIdentifier) {
+    Map<String, DataPoint> dataPointMap = dataPointService.getDataPointsMap(accountIdentifier);
+    for (Rule rule : checkDetails.getRules()) {
+      String key = rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier();
+      if (!dataPointMap.containsKey(key)) {
+        throw new InvalidRequestException(format("Data point not found for dataSource: %s, dataPoint: %s",
+            rule.getDataSourceIdentifier(), rule.getDataPointIdentifier()));
+      }
+      DataPoint dataPoint = dataPointMap.get(key);
+      if (dataPoint.isIsConditional() && isEmpty(rule.getConditionalInputValue())) {
+        throw new InvalidRequestException("Conditional input value is required");
+      }
+    }
   }
 }

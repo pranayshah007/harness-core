@@ -39,6 +39,13 @@ public class StatsModel {
         probabilityThreshold = probabilityThreshold(currentValue, mean, standardDeviation);
       }
 
+      boolean absThreshold = true;
+      if (data.getService() != null) {
+        absThreshold = absoluteThresholdServices(currentValue, mean);
+      } else {
+        absThreshold = absoluteThreshold(currentValue, mean);
+      }
+
       Anomaly currentAnomaly = Anomaly.builder()
                                    .id(data.getHash())
                                    .accountId(data.getAccountId())
@@ -50,6 +57,8 @@ public class StatsModel {
                                    .workloadType(data.getWorkloadType())
                                    .workloadName(data.getWorkloadName())
                                    .namespace(data.getNamespace())
+                                   .service(data.getService())
+                                   .serviceName(data.getServiceName())
                                    .region(data.getRegion())
                                    .cloudProvider(data.getCloudProvider())
                                    .gcpProduct(data.getGcpProduct())
@@ -63,9 +72,10 @@ public class StatsModel {
                                    .azureSubscription(data.getAzureSubscription())
                                    .azureResourceGroup(data.getAzureResourceGroup())
                                    .azureMeterCategory(data.getAzureMeterCategory())
+                                   .newEntity(data.isNewEntity())
                                    .anomalyTime(current)
                                    .relativeThreshold(relativityThreshold(currentValue, mean))
-                                   .absoluteThreshold(absoluteThreshold(currentValue, mean))
+                                   .absoluteThreshold(absThreshold)
                                    .probabilisticThreshold(probabilityThreshold)
                                    .reportedBy(AnomalyDetectionModel.STATISTICAL)
                                    .build();
@@ -93,6 +103,9 @@ public class StatsModel {
 
   private static boolean absoluteThreshold(Double original, Double expected) {
     return original > expected + AnomalyDetectionConstants.STATS_MODEL_ABSOLUTE_THRESHOLD;
+  }
+  private static boolean absoluteThresholdServices(Double original, Double expected) {
+    return original > expected;
   }
 
   private static boolean probabilityThreshold(Double original, Double mean, Double standardDeviation) {

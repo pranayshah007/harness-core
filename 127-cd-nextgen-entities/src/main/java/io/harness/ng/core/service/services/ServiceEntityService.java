@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
@@ -114,4 +115,7 @@ public interface ServiceEntityService {
   String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml);
 
   ManifestsResponseDTO getManifestIdentifiers(String yaml, String serviceIdentifier);
+
+  RepoListResponseDTO getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllServicesAccessibleAtScope);
 }

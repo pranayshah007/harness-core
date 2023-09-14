@@ -24,6 +24,7 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.ScmException;
 import io.harness.gitsync.common.helper.GitRepoHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
@@ -51,7 +52,6 @@ import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -70,61 +70,72 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   @Inject WebhookEventService webhookEventService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
-      "GitXWebhook [%s] under Account[%s] with Repo [%s] already exists";
+      "GitX Webhook with identifier [%s] or repo [%s] already exists in the account [%s].";
 
   private static final String WEBHOOK_FAILURE_ERROR_MESSAGE =
       "Unexpected error occurred while [%s] git webhook. Please contact Harness Support.";
 
+  private static final String CREATING = "creating";
+  private static final String FETCHING = "fetching";
+  private static final String UPDATING = "updating";
+  private static final String DELETING = "deleting";
+  private static final String LISTING_WEBHOOKS = "listing webhooks";
+
   @Override
   public CreateGitXWebhookResponseDTO createGitXWebhook(CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO) {
     try (GitXWebhookLogContext context = new GitXWebhookLogContext(createGitXWebhookRequestDTO)) {
-      GitXWebhook gitXWebhook = buildGitXWebhooks(createGitXWebhookRequestDTO);
-      log.info(String.format("Creating Webhook with identifier %s in account %s",
-          createGitXWebhookRequestDTO.getWebhookIdentifier(), createGitXWebhookRequestDTO.getAccountIdentifier()));
-      registerWebhookOnGit(gitXWebhook.getAccountIdentifier(), gitXWebhook.getRepoName(), gitXWebhook.getConnectorRef(),
-          gitXWebhook.getIdentifier());
-      GitXWebhook createdGitXWebhook;
       try {
-        createdGitXWebhook = gitXWebhookRepository.create(gitXWebhook);
+        GitXWebhook gitXWebhook = buildGitXWebhooks(createGitXWebhookRequestDTO);
+        log.info(String.format("Creating Webhook with identifier %s in account %s",
+            createGitXWebhookRequestDTO.getWebhookIdentifier(), createGitXWebhookRequestDTO.getAccountIdentifier()));
+        registerWebhookOnGit(gitXWebhook.getAccountIdentifier(), gitXWebhook.getRepoName(),
+            gitXWebhook.getConnectorRef(), gitXWebhook.getIdentifier());
+        GitXWebhook createdGitXWebhook = gitXWebhookRepository.create(gitXWebhook);
         if (createdGitXWebhook == null) {
           log.error(String.format("Error while saving webhook [%s] in DB", gitXWebhook.getIdentifier()));
           throw new InternalServerErrorException(
               String.format("Error while saving webhook [%s] in DB", gitXWebhook.getIdentifier()));
         }
+        return CreateGitXWebhookResponseDTO.builder().webhookIdentifier(createdGitXWebhook.getIdentifier()).build();
       } catch (DuplicateKeyException ex) {
         throw new DuplicateFieldException(
             format(DUP_KEY_EXP_FORMAT_STRING, createGitXWebhookRequestDTO.getWebhookIdentifier(),
-                createGitXWebhookRequestDTO.getAccountIdentifier(), createGitXWebhookRequestDTO.getRepoName()),
+                createGitXWebhookRequestDTO.getRepoName(), createGitXWebhookRequestDTO.getAccountIdentifier()),
             USER_SRE, ex);
+      } catch (InternalServerErrorException exception) {
+        throw exception;
+      } catch (Exception exception) {
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, CREATING));
       }
-      return CreateGitXWebhookResponseDTO.builder().webhookIdentifier(createdGitXWebhook.getIdentifier()).build();
-    } catch (Exception exception) {
-      throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "creating"));
     }
   }
 
   @Override
   public Optional<GetGitXWebhookResponseDTO> getGitXWebhook(GetGitXWebhookRequestDTO getGitXWebhookRequestDTO) {
     try (GitXWebhookLogContext context = new GitXWebhookLogContext(getGitXWebhookRequestDTO)) {
-      log.info(String.format("Retrieving Webhook with identifier %s in account %s.",
-          getGitXWebhookRequestDTO.getWebhookIdentifier(), getGitXWebhookRequestDTO.getAccountIdentifier()));
-      List<GitXWebhook> gitXWebhookList = gitXWebhookRepository.findByAccountIdentifierAndIdentifier(
-          getGitXWebhookRequestDTO.getAccountIdentifier(), getGitXWebhookRequestDTO.getWebhookIdentifier());
-      if (isEmpty(gitXWebhookList)) {
-        log.info(
-            String.format("For the given key with accountIdentifier %s and gitXWebhookIdentifier %s no webhook found.",
-                getGitXWebhookRequestDTO.getAccountIdentifier(), getGitXWebhookRequestDTO.getWebhookIdentifier()));
-        return Optional.empty();
+      try {
+        log.info(String.format("Retrieving Webhook with identifier %s in account %s.",
+            getGitXWebhookRequestDTO.getWebhookIdentifier(), getGitXWebhookRequestDTO.getAccountIdentifier()));
+        List<GitXWebhook> gitXWebhookList = gitXWebhookRepository.findByAccountIdentifierAndIdentifier(
+            getGitXWebhookRequestDTO.getAccountIdentifier(), getGitXWebhookRequestDTO.getWebhookIdentifier());
+        if (isEmpty(gitXWebhookList)) {
+          log.info(String.format(
+              "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s no webhook found.",
+              getGitXWebhookRequestDTO.getAccountIdentifier(), getGitXWebhookRequestDTO.getWebhookIdentifier()));
+          return Optional.empty();
+        }
+        List<GetGitXWebhookResponseDTO> getGitXWebhookResponseList = prepareGitXWebhooks(gitXWebhookList);
+        if (getGitXWebhookResponseList.size() > 1) {
+          throw new InternalServerErrorException(String.format(
+              "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s found more than one unique record.",
+              getGitXWebhookRequestDTO.getAccountIdentifier(), getGitXWebhookRequestDTO.getWebhookIdentifier()));
+        }
+        return Optional.of(getGitXWebhookResponseList.get(0));
+      } catch (InternalServerErrorException exception) {
+        throw exception;
+      } catch (Exception exception) {
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, FETCHING));
       }
-      List<GetGitXWebhookResponseDTO> getGitXWebhookResponseList = prepareGitXWebhooks(gitXWebhookList);
-      if (getGitXWebhookResponseList.size() > 1) {
-        throw new InternalServerErrorException(String.format(
-            "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s found more than one unique record.",
-            getGitXWebhookRequestDTO.getAccountIdentifier(), getGitXWebhookRequestDTO.getWebhookIdentifier()));
-      }
-      return Optional.of(getGitXWebhookResponseList.get(0));
-    } catch (Exception exception) {
-      throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "fetching"));
     }
   }
 
@@ -133,55 +144,64 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
       UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO) {
     try (GitXWebhookLogContext context =
              new GitXWebhookLogContext(updateGitXWebhookCriteriaDTO, updateGitXWebhookRequestDTO)) {
-      log.info(String.format("Updating Webhook with identifier %s in account %s",
-          updateGitXWebhookCriteriaDTO.getWebhookIdentifier(), updateGitXWebhookCriteriaDTO.getAccountIdentifier()));
-      Criteria criteria = buildCriteria(
-          updateGitXWebhookCriteriaDTO.getAccountIdentifier(), updateGitXWebhookCriteriaDTO.getWebhookIdentifier());
-      Query query = new Query(criteria);
-      Update update = buildUpdate(updateGitXWebhookRequestDTO);
-      if (isNotEmpty(updateGitXWebhookRequestDTO.getRepoName())) {
-        String connectorRef = getConnectorRef(updateGitXWebhookCriteriaDTO, updateGitXWebhookRequestDTO);
-        registerWebhookOnGit(updateGitXWebhookCriteriaDTO.getAccountIdentifier(),
-            updateGitXWebhookRequestDTO.getRepoName(), connectorRef,
-            updateGitXWebhookCriteriaDTO.getWebhookIdentifier());
+      try {
+        log.info(String.format("Updating Webhook with identifier %s in account %s",
+            updateGitXWebhookCriteriaDTO.getWebhookIdentifier(), updateGitXWebhookCriteriaDTO.getAccountIdentifier()));
+        Criteria criteria = buildCriteria(
+            updateGitXWebhookCriteriaDTO.getAccountIdentifier(), updateGitXWebhookCriteriaDTO.getWebhookIdentifier());
+        Query query = new Query(criteria);
+        Update update = buildUpdate(updateGitXWebhookRequestDTO);
+        if (isNotEmpty(updateGitXWebhookRequestDTO.getRepoName())) {
+          String connectorRef = getConnectorRef(updateGitXWebhookCriteriaDTO, updateGitXWebhookRequestDTO);
+          registerWebhookOnGit(updateGitXWebhookCriteriaDTO.getAccountIdentifier(),
+              updateGitXWebhookRequestDTO.getRepoName(), connectorRef,
+              updateGitXWebhookCriteriaDTO.getWebhookIdentifier());
+        }
+        GitXWebhook updatedGitXWebhook;
+        updatedGitXWebhook = gitXWebhookRepository.update(query, update);
+        if (updatedGitXWebhook == null) {
+          log.error(String.format(
+              "Error while updating webhook [%s] in DB", updateGitXWebhookCriteriaDTO.getWebhookIdentifier()));
+          throw new InternalServerErrorException(String.format(
+              "Error while updating webhook [%s] in DB", updateGitXWebhookCriteriaDTO.getWebhookIdentifier()));
+        }
+        return UpdateGitXWebhookResponseDTO.builder().webhookIdentifier(updatedGitXWebhook.getIdentifier()).build();
+      } catch (InternalServerErrorException exception) {
+        throw exception;
+      } catch (Exception exception) {
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, UPDATING));
       }
-      GitXWebhook updatedGitXWebhook;
-      updatedGitXWebhook = gitXWebhookRepository.update(query, update);
-      if (updatedGitXWebhook == null) {
-        log.error(String.format(
-            "Error while updating webhook [%s] in DB", updateGitXWebhookCriteriaDTO.getWebhookIdentifier()));
-        throw new InternalServerErrorException(String.format(
-            "Error while updating webhook [%s] in DB", updateGitXWebhookCriteriaDTO.getWebhookIdentifier()));
-      }
-      return UpdateGitXWebhookResponseDTO.builder().webhookIdentifier(updatedGitXWebhook.getIdentifier()).build();
-    } catch (Exception exception) {
-      throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "updating"));
     }
   }
 
   @Override
   public ListGitXWebhookResponseDTO listGitXWebhooks(ListGitXWebhookRequestDTO listGitXWebhookRequestDTO) {
     try (GitXWebhookLogContext context = new GitXWebhookLogContext(listGitXWebhookRequestDTO)) {
-      log.info(String.format("Get List of pipelines in account %s", listGitXWebhookRequestDTO.getAccountIdentifier()));
-      Criteria criteria = buildListCriteria(listGitXWebhookRequestDTO);
-      List<GitXWebhook> gitXWebhookList = gitXWebhookRepository.list(criteria);
-      return ListGitXWebhookResponseDTO.builder().gitXWebhooksList(prepareGitXWebhooks(gitXWebhookList)).build();
-    } catch (Exception exception) {
-      throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "listing"));
+      try {
+        log.info(
+            String.format("Get List of GitX Webhooks in account %s", listGitXWebhookRequestDTO.getAccountIdentifier()));
+        Criteria criteria = buildListCriteria(listGitXWebhookRequestDTO);
+        List<GitXWebhook> gitXWebhookList = gitXWebhookRepository.list(criteria);
+        return ListGitXWebhookResponseDTO.builder().gitXWebhooksList(prepareGitXWebhooks(gitXWebhookList)).build();
+      } catch (Exception exception) {
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, LISTING_WEBHOOKS));
+      }
     }
   }
 
   @Override
   public DeleteGitXWebhookResponseDTO deleteGitXWebhook(DeleteGitXWebhookRequestDTO deleteGitXWebhookRequestDTO) {
     try (GitXWebhookLogContext context = new GitXWebhookLogContext(deleteGitXWebhookRequestDTO)) {
-      log.info(String.format("Deleting Webhook with identifier %s in account %s",
-          deleteGitXWebhookRequestDTO.getWebhookIdentifier(), deleteGitXWebhookRequestDTO.getAccountIdentifier()));
-      Criteria criteria = buildCriteria(
-          deleteGitXWebhookRequestDTO.getAccountIdentifier(), deleteGitXWebhookRequestDTO.getWebhookIdentifier());
-      DeleteResult deleteResult = gitXWebhookRepository.delete(criteria);
-      return DeleteGitXWebhookResponseDTO.builder().successfullyDeleted(deleteResult.getDeletedCount() == 1).build();
-    } catch (Exception exception) {
-      throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "deleting"));
+      try {
+        log.info(String.format("Deleting Webhook with identifier %s in account %s",
+            deleteGitXWebhookRequestDTO.getWebhookIdentifier(), deleteGitXWebhookRequestDTO.getAccountIdentifier()));
+        Criteria criteria = buildCriteria(
+            deleteGitXWebhookRequestDTO.getAccountIdentifier(), deleteGitXWebhookRequestDTO.getWebhookIdentifier());
+        DeleteResult deleteResult = gitXWebhookRepository.delete(criteria);
+        return DeleteGitXWebhookResponseDTO.builder().successfullyDeleted(deleteResult.getDeletedCount() == 1).build();
+      } catch (Exception exception) {
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, DELETING));
+      }
     }
   }
 

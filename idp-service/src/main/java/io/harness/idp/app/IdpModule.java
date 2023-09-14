@@ -10,7 +10,7 @@ package io.harness.idp.app;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
@@ -102,6 +102,8 @@ import io.harness.idp.scorecard.scorecardchecks.service.CheckServiceImpl;
 import io.harness.idp.scorecard.scorecardchecks.service.ScorecardService;
 import io.harness.idp.scorecard.scorecardchecks.service.ScorecardServiceImpl;
 import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
+import io.harness.idp.scorecard.scores.service.ScoreComputerService;
+import io.harness.idp.scorecard.scores.service.ScoreComputerServiceImpl;
 import io.harness.idp.scorecard.scores.service.ScoreService;
 import io.harness.idp.scorecard.scores.service.ScoreServiceImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
@@ -194,7 +196,7 @@ import org.springframework.core.convert.converter.Converter;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class IdpModule extends AbstractModule {
-  public static final String REDIS = "redis";
+  public static final String REDIS_CACHE = "redis";
   public static final String IN_MEMORY = "in-memory";
   private final IdpConfiguration appConfig;
   public IdpModule(IdpConfiguration appConfig) {
@@ -376,6 +378,7 @@ public class IdpModule extends AbstractModule {
     bind(DataPointService.class).to(DataPointServiceImpl.class);
     bind(DataSourceLocationService.class).to(DataSourceLocationServiceImpl.class);
     bind(ScoreService.class).to(ScoreServiceImpl.class);
+    bind(ScoreComputerService.class).to(ScoreComputerServiceImpl.class);
     bind(DataPointService.class).to(DataPointServiceImpl.class);
     bind(DataPointsDataApi.class).to(DataPointDataApiImpl.class);
     bind(DataPointDataValueService.class).to(DataPointDataValueServiceImpl.class);
@@ -391,11 +394,16 @@ public class IdpModule extends AbstractModule {
     bind(ExecutorService.class)
         .annotatedWith(Names.named("DefaultPREnvAccountIdToNamespaceMappingCreator"))
         .toInstance(new ManagedExecutorService(Executors.newSingleThreadExecutor()));
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("ScoreComputer"))
+        .toInstance(new ManagedExecutorService(Executors.newFixedThreadPool(
+            Integer.parseInt(appConfig.getCpu()) * Integer.parseInt(appConfig.getScoreComputerThreadsPerCore()),
+            new ThreadFactoryBuilder().setNameFormat("score-computer-%d").build())));
     bind(HealthResource.class).to(HealthResourceImpl.class);
 
     if (appConfig.getDelegateSelectorsCacheMode().equals(IN_MEMORY)) {
       bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
-    } else if (appConfig.getDelegateSelectorsCacheMode().equals(REDIS)) {
+    } else if (appConfig.getDelegateSelectorsCacheMode().equals(REDIS_CACHE)) {
       bind(DelegateSelectorsCache.class).to(DelegateSelectorsRedisCache.class);
     }
 
@@ -431,7 +439,7 @@ public class IdpModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return appConfig.getDistributedLockImplementation() == null ? MONGO : appConfig.getDistributedLockImplementation();
+    return appConfig.getDistributedLockImplementation() == null ? REDIS : appConfig.getDistributedLockImplementation();
   }
 
   @Provides

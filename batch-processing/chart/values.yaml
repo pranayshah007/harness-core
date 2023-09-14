@@ -73,7 +73,7 @@ image:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80003-000"
+  tag: "80801-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -83,7 +83,7 @@ imageClickhouseEnabled:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80003-000"
+  tag: "80801-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -175,6 +175,14 @@ clickhouse:
 workloadIdentity:
   enabled: false
 
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
 resources:
   limits:
     memory: "10Gi"
@@ -196,6 +204,8 @@ extraVolumes: []
 #   - name: volume-test
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
+
+CF_CLIENT_API_KEY: "BATCH_PROCESSING_ON_PREM"
 
 lifecycleHooks: {}
 # lifecycleHooks:

@@ -57,6 +57,9 @@ public class PlanNode implements Node {
   String executionInputTemplate;
   // TODO change this to PmsStepInputs
   OrchestrationMap stepInputs;
+
+  // This is a list of keys which needs to be excluded from stepParameter to view for customer
+  List<String> excludedKeysFromStepInputs;
   @Singular List<RefObject> refObjects;
 
   // Hooks
@@ -107,6 +110,7 @@ public class PlanNode implements Node {
         .expressionMode(ExpressionModeMapper.fromExpressionModeProto(planNodeProto.getExpressionMode()))
         .serviceName(planNodeProto.getServiceName())
         .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
+        .excludedKeysFromStepInputs(planNodeProto.getStepInputsKeyExcludeList())
         .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
         .build();
   }

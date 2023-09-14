@@ -123,12 +123,16 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
     if (EngineExpressionEvaluator.hasExpressions(text)) {
       return ParameterField.createExpressionField(true, text, null, isTypeString);
     }
+
     try {
       Object refd = (valueTypeDeserializer == null)
           ? valueDeserializer.deserialize(p, ctxt)
           : valueDeserializer.deserializeWithType(p, ctxt, valueTypeDeserializer);
       return ParameterField.createValueField(refd);
     } catch (Exception ex) {
+      if (NGExpressionUtils.NULL.equals(text)) {
+        return getNullValue(ctxt);
+      }
       if (referenceType.getRawClass() == List.class) {
         return ParameterField.createValueField(JsonUtils.read(text, ArrayList.class));
       }

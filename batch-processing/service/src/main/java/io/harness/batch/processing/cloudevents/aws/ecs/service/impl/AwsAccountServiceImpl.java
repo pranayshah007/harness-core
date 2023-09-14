@@ -81,7 +81,8 @@ public class AwsAccountServiceImpl implements AwsAccountService {
   private List<CECloudAccount> getLinkedAccounts(String accountId, String settingId, String infraMasterAccountId,
       AwsCrossAccountAttributes awsCrossAccountAttributes) {
     List<CECloudAccount> ceCloudAccounts = new ArrayList<>();
-    List<Account> accountList = awsOrganizationHelperService.listAwsAccounts(awsCrossAccountAttributes);
+    List<Account> accountList =
+        awsOrganizationHelperService.listAwsAccounts(awsCrossAccountAttributes, mainConfig.getCeProxyConfig());
     String masterAwsAccountId = getMasterAccountIdFromArn(awsCrossAccountAttributes.getCrossAccountRoleArn());
     String externalId = awsCrossAccountAttributes.getExternalId();
     accountList.forEach(account -> {

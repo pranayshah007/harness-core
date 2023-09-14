@@ -14,10 +14,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.interrupts.InterruptEvent;
 
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
+
 @OwnedBy(HarnessTeam.PIPELINE)
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class NoopPmsMessageListener extends PmsAbstractMessageListener<InterruptEvent, NoopPmsEventHandler> {
   public NoopPmsMessageListener(String serviceName, NoopPmsEventHandler handler) {
     super(serviceName, InterruptEvent.class, handler);
+  }
+
+  @Override
+  protected InterruptEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return InterruptEvent.parseFrom(message);
   }
 }

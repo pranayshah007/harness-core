@@ -37,7 +37,7 @@ public class DockerInitializeTaskParamsBuilder {
   public CIVmInitializeTaskParams getDockerInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
     return vmInitializeTaskParamsBuilder.getVmInitializeParams(
-        initializeStepInfo, ambiance, "", Collections.emptyList());
+        initializeStepInfo, ambiance, "", Collections.emptyList(), false);
   }
 
   public String getHostedPoolId(ParameterField<Platform> platform) {

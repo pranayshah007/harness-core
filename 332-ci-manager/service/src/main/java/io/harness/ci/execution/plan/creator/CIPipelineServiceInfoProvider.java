@@ -82,6 +82,7 @@ import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.ssca.execution.creator.filter.SscaStepsFilterJsonCreator;
 import io.harness.ssca.execution.creator.plan.ProvenanceStepPlanCreator;
+import io.harness.ssca.execution.creator.plan.SlsaVerificationStepPlanCreator;
 import io.harness.ssca.execution.creator.plan.SscaEnforcementStepPlanCreator;
 import io.harness.ssca.execution.creator.plan.SscaOrchestrationStepPlanCreator;
 import io.harness.ssca.execution.creator.variable.SscaStepVariableCreator;
@@ -131,6 +132,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new SscaOrchestrationStepPlanCreator());
     planCreators.add(new SscaEnforcementStepPlanCreator());
     planCreators.add(new ProvenanceStepPlanCreator());
+    planCreators.add(new SlsaVerificationStepPlanCreator());
 
     // add V1 plan creators
     planCreators.add(new IntegrationStagePMSPlanCreatorV3());

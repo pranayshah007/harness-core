@@ -173,4 +173,9 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
   public ContainerStepType getType() {
     return ContainerStepType.RUN_CONTAINER;
   }
+
+  @Override
+  public List<String> excludeKeysFromStepInputs() {
+    return PMSStepInfo.super.excludeKeysFromStepInputs();
+  }
 }

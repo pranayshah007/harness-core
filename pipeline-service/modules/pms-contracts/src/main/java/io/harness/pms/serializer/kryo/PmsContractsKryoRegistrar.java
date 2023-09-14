@@ -31,6 +31,7 @@ import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.plan.ErrorResponse;
 import io.harness.pms.contracts.plan.PartialPlanResponse;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
+import io.harness.pms.contracts.plan.RetryExecutionInfo;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.contracts.steps.SkipType;
@@ -49,6 +50,7 @@ import io.harness.pms.serializer.kryo.serializers.NodeRunInfoKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.PartialPlanResponseKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.PlanCreationBlobResponseKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.RefTypeKryoSerializer;
+import io.harness.pms.serializer.kryo.serializers.RetryExecutionInfoKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.SkipInfoKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.StepOutcomeRefKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.StepTypeKryoSerializer;
@@ -87,5 +89,6 @@ public class PmsContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(PartialPlanResponse.class, PartialPlanResponseKryoSerializer.getInstance(), 2626);
     kryo.register(ErrorResponse.class, ErrorResponseKryoSerializer.getInstance(), 2625);
     kryo.register(AdviserObtainment.class, AdviserObtainmentKryoSerializer.getInstance(), 954001);
+    kryo.register(RetryExecutionInfo.class, RetryExecutionInfoKryoSerializer.getInstance(), 954002);
   }
 }

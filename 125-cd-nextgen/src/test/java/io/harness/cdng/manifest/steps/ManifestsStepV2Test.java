@@ -310,9 +310,6 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    doReturn(false)
-        .when(featureFlagHelperService)
-        .isEnabled(anyString(), eq(FeatureName.CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC));
     verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
 
     T response = executeMethod.get();
@@ -363,9 +360,6 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    doReturn(true)
-        .when(featureFlagHelperService)
-        .isEnabled(anyString(), eq(FeatureName.CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC));
     T response = executeMethod.get();
 
     ArgumentCaptor<StageExecutionInfoUpdateDTO> captor = ArgumentCaptor.forClass(StageExecutionInfoUpdateDTO.class);
@@ -433,9 +427,6 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    doReturn(false)
-        .when(featureFlagHelperService)
-        .isEnabled(anyString(), eq(FeatureName.CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC));
     verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
 
     T response = executeMethod.get();

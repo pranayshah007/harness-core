@@ -158,13 +158,15 @@ public class BaseConnectorUtils {
     return getConnectorDetailsInternalWithRetries(ngAccess, identifierRef);
   }
 
-  public ConnectorDetails getHarnessConnectorDetails(NGAccess ngAccess, String baseUrl, String authToken) {
-    log.info("Generated harness scm baseurl : {}", baseUrl);
+  public ConnectorDetails getHarnessConnectorDetails(
+      NGAccess ngAccess, String gitBaseUrl, String authToken, String apiBaseUrl) {
+    log.info("Generated harness scm baseurl : {}", gitBaseUrl);
     String accountId = ngAccess.getAccountIdentifier();
     HarnessConnectorDTO connectorConfigDTO =
         HarnessConnectorDTO.builder()
             .connectionType(GitConnectionType.ACCOUNT)
-            .url(baseUrl + "/" + accountId)
+            .url(gitBaseUrl + "/" + accountId)
+            .apiUrl(apiBaseUrl)
             .authentication(
                 HarnessAuthenticationDTO.builder()
                     .authType(GitAuthType.HTTP)
@@ -186,8 +188,7 @@ public class BaseConnectorUtils {
                            .build())
             .build();
 
-    HarnessHttpCredentialsDTO harnessHttpCredentialsDTO =
-        (HarnessHttpCredentialsDTO) connectorConfigDTO.getAuthentication().getCredentials();
+    HarnessHttpCredentialsDTO harnessHttpCredentialsDTO = connectorConfigDTO.getAuthentication().getCredentials();
     List<EncryptedDataDetail> encryptedDataDetails =
         secretManagerClientService.getEncryptionDetails(ngAccess, harnessHttpCredentialsDTO.getHttpCredentialsSpec());
     encryptedDataDetails.addAll(

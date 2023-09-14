@@ -132,7 +132,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   public List<ApprovalInstance> getApprovalInstancesByExecutionId(@NotEmpty String planExecutionId,
       @Valid ApprovalStatus approvalStatus, @Valid ApprovalType approvalType, String nodeExecutionId) {
     if (isEmpty(planExecutionId)) {
-      throw new InvalidRequestException("PlanExecutionId can be empty");
+      throw new InvalidRequestException("PlanExecutionId cannot be empty");
     }
 
     Criteria criteria = Criteria.where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId);
@@ -508,6 +508,30 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
             .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING))
             .addCriteria(
                 Criteria.where(ApprovalInstanceKeys.type).in(Arrays.asList(approvalsWithDelegateTasksInPolling))),
+        update);
+  }
+
+  @Override
+  public void updateKeyListInKeyValueCriteria(@NotNull String approvalInstanceId, String keyListInKeyValueCriteria) {
+    if (StringUtils.isBlank(approvalInstanceId)) {
+      log.warn("Skipping updating keyListInKeyValueCriteria as empty approval id received");
+      return;
+    }
+
+    if (isNull(keyListInKeyValueCriteria)) {
+      log.warn(
+          "Skipping updating keyListInKeyValueCriteria in approval instance as null keyListInKeyValueCriteria received");
+      return;
+    }
+
+    // update keyListInKeyValueCriteria in approval instance to filter fields
+    Update update = new Update().set(JiraApprovalInstanceKeys.keyListInKeyValueCriteria, keyListInKeyValueCriteria);
+    // it only makes sense to update keyListInKeyValueCriteria for Jira instances in waiting state
+    // if the instance is aborted/expired etc., and a task is queued then keyListInKeyValueCriteria will not be updated.
+    approvalInstanceRepository.updateFirst(
+        new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstanceId))
+            .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING))
+            .addCriteria(Criteria.where(ApprovalInstanceKeys.type).is(ApprovalType.JIRA_APPROVAL)),
         update);
   }
 

@@ -66,7 +66,7 @@ redisLockConfig:
   userName: ""
   password: ""
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 
 harness-mongo:
@@ -135,6 +135,7 @@ managerClientConfig:
   baseUrl: http://localhost:3457/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
 ciExecutionServiceConfig:
   miningPatternConfig:
     gcsCreds: null
@@ -197,6 +198,7 @@ ciExecutionServiceConfig:
     accessKey: "access_key"
     secretKey: "secret_key"
     region: "region"
+    projectId: "project_id"
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
@@ -354,6 +356,10 @@ ciExecutionServiceConfig:
       image: harness/slsa-plugin:latest
       entrypoint:
         - /bin/slsa-plugin
+    slsaVerificationConfig:
+      image: harness/slsa-plugin:latest
+      entrypoint:
+        - /bin/slsa-plugin
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.3.3
@@ -390,18 +396,19 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.1
   gitnessConfig:
     jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
-
+    httpClientConfig:
+      baseUrl: ${GITNESS_INTERNAL_URL:- http://localhost:3000}
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
   maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-300}
-  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkOrchestrationEventPoolConfig:
   corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-50}
   maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-300}
-  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 asyncDelegateResponseConsumption:

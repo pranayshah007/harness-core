@@ -1,3 +1,4 @@
+# Moving virtual services from next-gen-ui to here as istio takes higher precendence on rules that are created earlier.
 {{- if .Values.global.istio.enabled }}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -43,4 +44,52 @@ spec:
         port:
           number: {{ .Values.service.port }}
         host: ng-manager
+  - name: next-gen-ui
+    match:
+    - uri:
+        prefix: /ng/
+    - uri:
+        prefix: /ng
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: 80
+        host: next-gen-ui
+{{- if not .Values.global.cg.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: z-redirect-ng-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  gateways:
+    {{- if .Values.global.istio.gateway.create }}
+    - istio-system/public
+    {{- else }}
+    {{- range .Values.global.istio.virtualService.gateways }}
+    - {{ . }}
+    {{- end }}
+    {{- end }}
+  hosts:
+    {{- range .Values.global.istio.virtualService.hosts }}
+    - {{ . }}
+    {{- end }}
+  http:
+  - name: z-redirect-next-gen-ui
+    match:
+    - uri:
+        prefix: "/"
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: 80
+        host: next-gen-ui
+{{- end }}
 {{ end }}

@@ -14,7 +14,6 @@ import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
 
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
 import io.harness.yaml.schema.beans.SchemaConstants;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -37,7 +36,13 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
   // This fqnToNodeMap map has the raw unresolved values of ObjectNode for any fqn present in the complete schema. eg:
   // pipeline.stages.cd.DeploymentStageNode, pipeline.steps.ci.RunStepInfo
   Map<String, ObjectNodeWithMetadata> fqnToNodeMap = new HashMap<>();
-  private boolean isInitialised;
+  protected boolean isInitialised;
+
+  protected String PRE_QA = "stress";
+
+  final long MAX_TIME_TO_REINITIALIZE_PARSER = 900000;
+
+  private long lastInitializedTime;
 
   Map<String, ObjectNode> nodeToResolvedSchemaMap =
       new HashMap<>(); // It contains the complete resolved schema for a node. A node can be for any
@@ -47,21 +52,25 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
   // processing happens on top of this schema.
   JsonNode rootSchemaJsonNode;
 
-  abstract void init(JsonNode rootSchemaNode);
+  abstract void init();
+
+  void initParser() {
+    init();
+    isInitialised = true;
+    lastInitializedTime = System.currentTimeMillis();
+  }
 
   abstract IndividualSchemaGenContext getIndividualSchemaGenContext();
 
+  boolean shouldInitParser() {
+    if (!isInitialised) {
+      return true;
+    }
+    return checkIfParserReinitializationNeeded();
+  }
+
   abstract void checkIfRootNodeAndAddIntoFqnToNodeMap(
       String currentFqn, String childNodeRefValue, ObjectNode objectNode);
-
-  public AbstractStaticSchemaParser getInstance(JsonNode rootSchemaNode) {
-    if (!isInitialised) {
-      rootSchemaJsonNode = rootSchemaNode;
-      init(rootSchemaNode);
-      isInitialised = true;
-    }
-    return this;
-  }
 
   void traverseNodeAndExtractAllRefsRecursively(JsonNode jsonNode, String currentFqn) {
     if (jsonNode == null) {
@@ -277,8 +286,8 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
   // This method acts as an interface to get the individual schema for any node.
   @Override
   public ObjectNode getIndividualSchema(IndividualSchemaRequest individualSchemaRequest) {
-    if (!isInitialised) {
-      throw new InvalidRequestException("Parser not yet initialised.");
+    if (shouldInitParser()) {
+      initParser();
     }
     String schemaKey = individualSchemaRequest.getIndividualSchemaMetadata().generateSchemaKey();
     return nodeToResolvedSchemaMap.get(schemaKey);
@@ -309,5 +318,14 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
       }
     }
     return null;
+  }
+
+  Boolean checkIfParserReinitializationNeeded() {
+    String env = System.getenv("ENV");
+    if (PRE_QA.equals(env)) {
+      // We will reinitialise the individual schema in 15 min for stress env.
+      return System.currentTimeMillis() - lastInitializedTime >= MAX_TIME_TO_REINITIALIZE_PARSER;
+    }
+    return false;
   }
 }

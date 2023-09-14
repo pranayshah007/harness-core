@@ -156,8 +156,8 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor implements PerpetualTa
       ContainerDetailsRequest requestData, HelmVersion helmVersion) {
     long timeoutMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_STEADY_STATE_TIMEOUT);
     try {
-      List<ContainerInfo> containerInfoList = k8sTaskHelperBase.getContainerInfos(
-          requestData.getKubernetesConfig(), requestData.getReleaseName(), requestData.getNamespace(), timeoutMillis);
+      List<ContainerInfo> containerInfoList = k8sTaskHelperBase.getContainerInfos(requestData.getKubernetesConfig(),
+          requestData.getReleaseName(), requestData.getNamespace(), Collections.emptyMap(), timeoutMillis);
       return K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
           containerInfoList, requestData.getHelmChartInfo(), helmVersion);
     } catch (Exception ex) {

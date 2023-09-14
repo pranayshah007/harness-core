@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.HintException.HINT_AWS_CONNECTOR_NG_DOCUMENTATION;
 import static io.harness.exception.HintException.IAM_DETAILS_COMMAND;
 
+import static software.wings.service.impl.AwsApiHelperService.handleExceptionWhileFetchingRepositories;
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
 import static java.util.Collections.emptyMap;
@@ -25,17 +26,22 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.arn.Arn;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -65,7 +71,11 @@ import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ecr.AmazonECRClient;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
+import com.amazonaws.services.ecr.model.AmazonECRException;
+import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
+import com.amazonaws.services.ecr.model.DescribeRepositoriesResult;
 import com.amazonaws.services.ecr.model.GetAuthorizationTokenRequest;
+import com.amazonaws.services.ecr.model.Repository;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
@@ -90,6 +100,7 @@ import com.amazonaws.services.sns.message.DefaultSnsMessageHandler;
 import com.amazonaws.services.sns.message.SnsMessageManager;
 import com.amazonaws.services.sns.message.SnsNotification;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.Charset;
@@ -104,6 +115,7 @@ import javax.validation.constraints.NotNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDP)
@@ -333,8 +345,8 @@ public class AwsClientImpl implements AwsClient {
 
   @Override
   public Optional<ReportDefinition> getReportDefinition(
-      AWSCredentialsProvider credentialsProvider, String curReportName) {
-    AWSCostAndUsageReport awsCostAndUsageReportClient = getAwsCurClient(credentialsProvider);
+      AWSCredentialsProvider credentialsProvider, String curReportName, CEProxyConfig ceProxyConfig) {
+    AWSCostAndUsageReport awsCostAndUsageReportClient = getAwsCurClient(credentialsProvider, ceProxyConfig);
     DescribeReportDefinitionsRequest describeReportDefinitionsRequest = new DescribeReportDefinitionsRequest();
 
     String nextToken = null;
@@ -362,11 +374,14 @@ public class AwsClientImpl implements AwsClient {
         .build();
   }
 
-  protected AWSCostAndUsageReport getAwsCurClient(AWSCredentialsProvider credentialsProvider) {
-    return AWSCostAndUsageReportClientBuilder.standard()
-        .withRegion(DEFAULT_REGION)
-        .withCredentials(credentialsProvider)
-        .build();
+  protected AWSCostAndUsageReport getAwsCurClient(
+      AWSCredentialsProvider credentialsProvider, CEProxyConfig ceProxyConfig) {
+    AWSCostAndUsageReportClientBuilder awsCostAndUsageReportClientBuilder =
+        AWSCostAndUsageReportClientBuilder.standard().withRegion(DEFAULT_REGION).withCredentials(credentialsProvider);
+    if (ceProxyConfig.isEnabled()) {
+      awsCostAndUsageReportClientBuilder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
+    }
+    return awsCostAndUsageReportClientBuilder.build();
   }
 
   protected AWSSecurityTokenService constructAWSSecurityTokenService(AWSCredentialsProvider credentialsProvider) {
@@ -464,8 +479,8 @@ public class AwsClientImpl implements AwsClient {
   }
 
   @Override
-  public AWSOrganizationsClient getAWSOrganizationsClient(
-      String crossAccountRoleArn, String externalId, String awsAccessKey, String awsSecretKey) {
+  public AWSOrganizationsClient getAWSOrganizationsClient(String crossAccountRoleArn, String externalId,
+      String awsAccessKey, String awsSecretKey, CEProxyConfig ceProxyConfig) {
     AWSSecurityTokenService awsSecurityTokenService =
         constructAWSSecurityTokenService(constructStaticBasicAwsCredentials(awsAccessKey, awsSecretKey));
     AWSOrganizationsClientBuilder builder = AWSOrganizationsClientBuilder.standard().withRegion(DEFAULT_REGION);
@@ -475,6 +490,9 @@ public class AwsClientImpl implements AwsClient {
             .withStsClient(awsSecurityTokenService)
             .build();
     builder.withCredentials(credentialsProvider);
+    if (ceProxyConfig.isEnabled()) {
+      builder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
+    }
     return (AWSOrganizationsClient) builder.build();
   }
 
@@ -505,6 +523,42 @@ public class AwsClientImpl implements AwsClient {
     return emptyMap();
   }
 
+  @Override
+  public String getEcrImageUrl(AwsInternalConfig awsConfig, String registryId, String region, String imageName) {
+    Optional<Repository> optionalRepository = getRepository(awsConfig, registryId, region, imageName);
+    if (optionalRepository.isPresent() && isNotEmpty(String.valueOf(optionalRepository.get().getRepositoryUri()))) {
+      return optionalRepository.get().getRepositoryUri();
+    }
+    throw new InvalidRequestException(String.format(
+        "Unable to fetch the ECR repository. Please verify the input configurations\n Image Name: %s, Region: %s, RegistryId: %s",
+        imageName, region, registryId));
+  }
+
+  private Optional<Repository> getRepository(
+      AwsInternalConfig awsConfig, String registryId, String region, String repositoryName) {
+    try {
+      DescribeRepositoriesRequest describeRepositoriesRequest = new DescribeRepositoriesRequest();
+      if (StringUtils.isNotBlank(registryId)) {
+        describeRepositoriesRequest.setRegistryId(registryId);
+      }
+      describeRepositoriesRequest.setRepositoryNames(Lists.newArrayList(repositoryName));
+      DescribeRepositoriesResult describeRepositoriesResult =
+          awsApiHelperService.listRepositories(awsConfig, describeRepositoriesRequest, region);
+      List<Repository> repositories = describeRepositoriesResult.getRepositories();
+      if (isNotEmpty(repositories)) {
+        return Optional.of(repositories.get(0));
+      }
+      return Optional.empty();
+    } catch (AmazonECRException e) {
+      handleExceptionWhileFetchingRepositories(e.getStatusCode(), e.getErrorMessage());
+    } catch (Exception e) {
+      throw new InvalidRequestException(
+          "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+    }
+    return Optional.empty();
+  }
+
   @VisibleForTesting
   AmazonIdentityManagementClient getAmazonIdentityManagementClient(AwsInternalConfig awsConfig) {
     AmazonIdentityManagementClientBuilder builder =
@@ -515,5 +569,20 @@ public class AwsClientImpl implements AwsClient {
 
   private String getRegion(AwsInternalConfig awsConfig) {
     return isNotBlank(awsConfig.getDefaultRegion()) ? awsConfig.getDefaultRegion() : AWS_DEFAULT_REGION;
+  }
+
+  private ClientConfiguration getClientConfiguration(CEProxyConfig ceProxyConfig) {
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setProxyHost(ceProxyConfig.getHost());
+    clientConfiguration.setProxyPort(ceProxyConfig.getPort());
+    if (!ceProxyConfig.getUsername().isEmpty()) {
+      clientConfiguration.setProxyUsername(ceProxyConfig.getUsername());
+    }
+    if (!ceProxyConfig.getPassword().isEmpty()) {
+      clientConfiguration.setProxyPassword(ceProxyConfig.getPassword());
+    }
+    clientConfiguration.setProtocol(
+        ceProxyConfig.getProtocol().equalsIgnoreCase("http") ? Protocol.HTTP : Protocol.HTTPS);
+    return clientConfiguration;
   }
 }

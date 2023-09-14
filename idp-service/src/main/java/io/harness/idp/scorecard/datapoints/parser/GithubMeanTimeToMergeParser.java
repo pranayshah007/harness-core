@@ -7,8 +7,11 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
-import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
-import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.NO_PULL_REQUESTS_FOUND;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,28 +27,40 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.IDP)
 public class GithubMeanTimeToMergeParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> strings) {
-    Map<String, Object> dataPointInfo = new HashMap<>();
-    List<Map<String, Object>> edges = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "edges");
+  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
+    Map<String, Object> dataPointData = new HashMap<>();
+    for (String inputValue : inputValues) {
+      if (!data.containsKey(inputValue)) {
+        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+        continue;
+      }
 
-    int numberOfPullRequests = 0;
-    long totalTimeToMerge = 0;
-    for (Map<String, Object> edge : edges) {
-      Map<String, Object> node = (Map<String, Object>) edge.get("node");
-      long createdAtMillis = DateUtils.parseTimestamp((String) node.get("createdAt"));
-      long mergedAtMillis = DateUtils.parseTimestamp((String) node.get("mergedAt"));
-      long timeToMergeMillis = mergedAtMillis - createdAtMillis;
-      totalTimeToMerge += timeToMergeMillis;
-      numberOfPullRequests++;
-    }
+      Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
+      List<Map<String, Object>> edges =
+          (List<Map<String, Object>>) CommonUtils.findObjectByName(inputValueData, "edges");
+      if (isEmpty(edges)) {
+        dataPointData.putAll(
+            constructDataPointInfo(inputValue, false, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
+        continue;
+      }
+      int numberOfPullRequests = 0;
+      long totalTimeToMerge = 0;
+      for (Map<String, Object> edge : edges) {
+        Map<String, Object> node = (Map<String, Object>) edge.get("node");
+        long createdAtMillis = DateUtils.parseTimestamp((String) node.get("createdAt"));
+        long mergedAtMillis = DateUtils.parseTimestamp((String) node.get("mergedAt"));
+        long timeToMergeMillis = mergedAtMillis - createdAtMillis;
+        totalTimeToMerge += timeToMergeMillis;
+        numberOfPullRequests++;
+      }
 
-    long value = 0;
-    if (numberOfPullRequests != 0) {
-      double meanTimeToMergeMillis = (double) totalTimeToMerge / numberOfPullRequests;
-      value = (long) (meanTimeToMergeMillis / (60 * 60 * 1000));
+      long value = 0;
+      if (numberOfPullRequests != 0) {
+        double meanTimeToMergeMillis = (double) totalTimeToMerge / numberOfPullRequests;
+        value = (long) (meanTimeToMergeMillis / (60 * 60 * 1000));
+      }
+      dataPointData.putAll(constructDataPointInfo(inputValue, value, null));
     }
-    dataPointInfo.put(DATA_POINT_VALUE_KEY, value);
-    dataPointInfo.put(ERROR_MESSAGE_KEY, null);
-    return dataPointInfo;
+    return dataPointData;
   }
 }

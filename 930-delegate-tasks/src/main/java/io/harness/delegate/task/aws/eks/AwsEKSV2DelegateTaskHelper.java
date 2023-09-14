@@ -16,6 +16,8 @@ import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSec
 import static io.harness.k8s.K8sConstants.API_VERSION;
 import static io.harness.k8s.K8sConstants.EKS_AUTH_PLUGIN_BINARY;
 import static io.harness.k8s.K8sConstants.EKS_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.k8s.eks.EksConstants.AWS_STS_REGIONAL;
+import static io.harness.k8s.eks.EksConstants.AWS_STS_REGIONAL_ENDPOINTS;
 import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ARGS_EXTERNAL_ID;
 import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ARGS_I;
 import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ARGS_ROLE;
@@ -27,8 +29,11 @@ import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecA
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.beans.AwsInternalConfig.AwsInternalConfigBuilder;
 import io.harness.aws.v2.eks.EksV2Client;
@@ -59,14 +64,15 @@ import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.eks.model.Cluster;
 import software.amazon.awssdk.services.eks.model.DescribeClusterResponse;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class AwsEKSV2DelegateTaskHelper {
   @Inject private EksV2Client eksV2Client;
 
-  public KubernetesConfig getKubeConfig(
-      AwsConnectorDTO awsConnectorDTO, String regionAndClusterName, String namespace, LogCallback logCallback) {
+  public KubernetesConfig getKubeConfig(AwsConnectorDTO awsConnectorDTO, String regionAndClusterName,
+      boolean isAddRegionalParam, String namespace, LogCallback logCallback) {
     if (EmptyPredicate.isEmpty(regionAndClusterName)) {
       throw new InvalidRequestException("Cluster name is empty in Inframapping");
     }
@@ -92,7 +98,7 @@ public class AwsEKSV2DelegateTaskHelper {
               .useKubeconfigAuthentication(true);
       if (isExecAuthPluginBinaryAvailable(EKS_AUTH_PLUGIN_BINARY, logCallback)) {
         kubernetesConfigBuilder.authType(KubernetesClusterAuthType.EXEC_OAUTH);
-        kubernetesConfigBuilder.exec(getEksExecConfig(clusterName, awsInternalConfig));
+        kubernetesConfigBuilder.exec(getEksExecConfig(clusterName, awsInternalConfig, isAddRegionalParam));
       } else {
         throw new InvalidRequestException(
             "aws-iam-authenticator is required to be installed for using AWS EKS Infrastructure for k8s deployment");
@@ -102,14 +108,14 @@ public class AwsEKSV2DelegateTaskHelper {
     throw new InvalidRequestException(String.format(
         "Cannot get details of required cluster: [%s] via AWS EKS DescribeClusterRequest", regionAndClusterName));
   }
-  private Exec getEksExecConfig(String clusterName, AwsInternalConfig awsInternalConfig) {
+  private Exec getEksExecConfig(String clusterName, AwsInternalConfig awsInternalConfig, boolean isAddRegionalParam) {
     ExecBuilder execBuilder = Exec.builder()
                                   .apiVersion(API_VERSION)
                                   .command(EKS_AUTH_PLUGIN_BINARY)
                                   .interactiveMode(InteractiveMode.NEVER)
                                   .provideClusterInfo(true)
                                   .installHint(EKS_AUTH_PLUGIN_INSTALL_HINT);
-
+    List<EnvVariable> envVariables = new ArrayList<>();
     if (awsInternalConfig.getAccessKey() != null) {
       EnvVariable awsAccessKey = EnvVariable.builder()
                                      .name(EKS_KUBECFG_ENV_VARS_AWS_ACCESS_KEY_ID)
@@ -120,10 +126,17 @@ public class AwsEKSV2DelegateTaskHelper {
                                            .name(EKS_KUBECFG_ENV_VARS_AWS_SECRET_ACCESS_KEY)
                                            .value(String.valueOf(awsInternalConfig.getSecretKey()))
                                            .build();
-
-      List<EnvVariable> envVariables = new ArrayList<>();
       envVariables.add(awsAccessKey);
       envVariables.add(awsSecretAccessKey);
+    }
+
+    if (isAddRegionalParam) {
+      EnvVariable awsRegionalEndpoint =
+          EnvVariable.builder().name(AWS_STS_REGIONAL_ENDPOINTS).value(AWS_STS_REGIONAL).build();
+      envVariables.add(awsRegionalEndpoint);
+    }
+
+    if (!isEmpty(envVariables)) {
       execBuilder.env(envVariables);
     }
 

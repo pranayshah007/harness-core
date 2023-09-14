@@ -7,6 +7,8 @@
 
 package io.harness.ng;
 
+import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
+import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventServiceImpl;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookService;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookServiceImpl;
 
@@ -22,5 +24,6 @@ public class GitXWebhookModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(GitXWebhookService.class).to(GitXWebhookServiceImpl.class);
+    bind(GitXWebhookEventService.class).to(GitXWebhookEventServiceImpl.class);
   }
 }

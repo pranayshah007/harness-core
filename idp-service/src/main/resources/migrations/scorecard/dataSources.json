@@ -3,15 +3,15 @@
     "id": "64d4f28112b52ab21d072258",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "github",
-    "name": "Github",
-    "description": "Github"
+    "name": "GitHub",
+    "description": "GitHub"
   },
   {
     "id": "64d5c5bb203cd415307204e3",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "catalog",
-    "name": "Catalog info yaml",
-    "description": "Catalog info yaml"
+    "name": "Catalog Info YAML",
+    "description": "The descriptor YAML of the software catalog entity."
   },
   {
     "id": "64e4c59343ad86a7a6032b1f",
@@ -19,5 +19,12 @@
     "identifier": "harness",
     "name": "Harness",
     "description": "Harness"
+  },
+  {
+    "id": "65006cf9c28a1a3f5607e850",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty",
+    "name": "PagerDuty",
+    "description": "PagerDuty"
   }
 ]

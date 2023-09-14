@@ -7,6 +7,8 @@
 
 package io.harness.ssca;
 
+import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
+
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -16,6 +18,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.beans.stepnode.SlsaVerificationStepNode;
 import io.harness.ssca.beans.stepnode.SscaEnforcementStepNode;
 import io.harness.ssca.beans.stepnode.SscaOrchestrationStepNode;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
@@ -53,6 +56,18 @@ public class SscaBeansRegistrar {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SLSA_VERIFICATION)
+                   .clazz(SlsaVerificationStepNode.class)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CI)
+                                           .modulesSupported(ImmutableList.of(ModuleType.CI, ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
           .build();
 
   public static final ImmutableList<StepInfo> sscaStepPaletteSteps =
@@ -70,6 +85,15 @@ public class SscaBeansRegistrar {
                    .setStepMetaData(
                        StepMetaData.newBuilder().addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME).build())
                    .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
+                   .build())
+          .add(StepInfo.newBuilder()
+                   .setName(SscaConstants.SLSA_VERIFICATION)
+                   .setType(SscaConstants.SLSA_VERIFICATION)
+                   .setStepMetaData(StepMetaData.newBuilder()
+                                        .addCategory(PLUGIN)
+                                        .addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME)
+                                        .build())
+                   .setFeatureFlag(FeatureName.SSCA_SLSA_COMPLIANCE.name())
                    .build())
           .build();
 }

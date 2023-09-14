@@ -21,6 +21,8 @@ import io.harness.pms.sdk.core.execution.events.node.progress.ProgressEventHandl
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -30,5 +32,10 @@ public class ProgressEventMessageListener extends PmsAbstractMessageListener<Pro
   public ProgressEventMessageListener(
       @Named(SDK_SERVICE_NAME) String serviceName, ProgressEventHandler progressEventHandler) {
     super(serviceName, ProgressEvent.class, progressEventHandler);
+  }
+
+  @Override
+  protected ProgressEvent extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return ProgressEvent.parseFrom(message);
   }
 }

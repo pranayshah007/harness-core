@@ -57,9 +57,11 @@ public class IdentityStep
   @Override
   public StepResponse handleChildResponse(
       Ambiance ambiance, IdentityStepParameters identityParams, Map<String, ResponseData> responseDataMap) {
-    NodeExecution originalNodeExecution = nodeExecutionService.get(identityParams.getOriginalNodeExecutionId());
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.withStatus);
+
     // Copying the outcomes
-    pmsOutcomeService.cloneForRetryExecution(ambiance, originalNodeExecution.getUuid());
+    pmsOutcomeService.cloneForRetryExecution(ambiance, identityParams.getOriginalNodeExecutionId());
     return StepResponse.builder().status(originalNodeExecution.getStatus()).build();
   }
 
@@ -75,9 +77,10 @@ public class IdentityStep
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, IdentityStepParameters identityParams, Map<String, ResponseData> responseDataMap) {
-    NodeExecution originalNodeExecution = nodeExecutionService.get(identityParams.getOriginalNodeExecutionId());
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.withStatus);
     // copying the outcomes
-    pmsOutcomeService.cloneForRetryExecution(ambiance, originalNodeExecution.getUuid());
+    pmsOutcomeService.cloneForRetryExecution(ambiance, identityParams.getOriginalNodeExecutionId());
     return StepResponse.builder().status(originalNodeExecution.getStatus()).build();
   }
 

@@ -50,6 +50,9 @@ import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.individualschema.PipelineSchemaMetadata;
+import io.harness.pms.yaml.individualschema.PipelineSchemaParserV0;
+import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
@@ -112,6 +115,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private ExecutorService yamlSchemaExecutor;
 
   @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
+  @Inject PipelineSchemaParserV0 pipelineSchemaParserV0;
   Integer allowedParallelStages;
 
   private final String PIPELINE_JSON = "pipeline.json";
@@ -525,8 +529,19 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         jsonNode = schemaFetcher.fetchTriggerStaticYamlSchema();
         return (ObjectNode) jsonNode;
       default:
-        return schemaFetcher.getIndividualSchema(nodeGroup, nodeType, nodeGroupDifferentiator);
+        return getIndividualSchema(nodeGroup, nodeType, nodeGroupDifferentiator);
     }
+  }
+
+  private ObjectNode getIndividualSchema(String nodeGroup, String nodeType, String nodeGroupDifferentiator) {
+    return pipelineSchemaParserV0.getIndividualSchema(
+        PipelineSchemaRequest.builder()
+            .individualSchemaMetadata(PipelineSchemaMetadata.builder()
+                                          .nodeGroup(nodeGroup)
+                                          .nodeGroupDifferentiator(nodeGroupDifferentiator)
+                                          .nodeType(nodeType)
+                                          .build())
+            .build());
   }
 
   /*

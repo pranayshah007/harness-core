@@ -90,8 +90,15 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
     LogCallback destroyLogCallback =
         taskService.getLogCallback(getLogStreamingTaskClient(), DESTROY, commandUnitsProgress);
 
-    String baseDir =
-        TerragruntTaskService.getBaseDir(destroyTaskParameters.getAccountId(), destroyTaskParameters.getEntityId());
+    String baseDir;
+    if (destroyTaskParameters.isUseUniqueDirectoryForBaseDir()) {
+      baseDir = TerragruntTaskService.getBaseDirWithUniqueDirectory(
+          destroyTaskParameters.getAccountId(), destroyTaskParameters.getEntityId());
+    } else {
+      baseDir =
+          TerragruntTaskService.getBaseDir(destroyTaskParameters.getAccountId(), destroyTaskParameters.getEntityId());
+    }
+
     TerragruntDestroyTaskResponse destroyTaskResponse;
     try {
       destroyTaskResponse = runDestroyTask(destroyTaskParameters, commandUnitsProgress, destroyLogCallback, baseDir);

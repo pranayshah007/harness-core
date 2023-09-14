@@ -75,7 +75,9 @@ import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
 import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
@@ -152,6 +154,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -196,6 +199,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class ServiceResourceV2 {
   private final ServiceEntityService serviceEntityService;
+  private final InfrastructureEntityService infrastructureEntityService;
   private final AccessControlClient accessControlClient;
   private final ServiceEntityManagementService serviceEntityManagementService;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
@@ -250,8 +254,8 @@ public class ServiceResourceV2 {
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     } else {
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
 
     if (featureFlagService.isEnabled(accountId, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
@@ -466,7 +470,7 @@ public class ServiceResourceV2 {
       @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
           "repoName") String repoName) {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
-        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope, repoName);
     Pageable pageRequest;
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
@@ -561,7 +565,7 @@ public class ServiceResourceV2 {
     checkAccessForListingAtScope(accountId, orgIdentifier, projectIdentifier, serviceIdentifiers);
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false);
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false, null);
 
     Pageable pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
 
@@ -657,13 +661,14 @@ public class ServiceResourceV2 {
       @QueryParam("versionLabel") String versionLabel,
       @QueryParam("deploymentMetadataYaml") String deploymentMetaDataYaml,
       @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
-          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope) {
+          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope,
+      @QueryParam("envInfraMapping") Map<String, List<String>> envRefInfraRefsMapping) {
     accessControlClient.checkForAccessOrThrow(List.of(scopeAccessHelper.getPermissionCheckDtoForViewAccessForScope(
                                                   Scope.of(accountId, orgIdentifier, projectIdentifier))),
         "Unauthorized to list services");
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
-        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope, null);
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }
@@ -688,6 +693,10 @@ public class ServiceResourceV2 {
                         .stream()
                         .map(ServiceElementMapper::toAccessListResponseWrapper)
                         .collect(Collectors.toList());
+    }
+    if (featureFlagService.isEnabled(accountId, FeatureName.CDS_SCOPE_INFRA_TO_SERVICES)) {
+      serviceList = filterByScopedInfrastructures(
+          accountId, orgIdentifier, projectIdentifier, serviceList, envRefInfraRefsMapping);
     }
     List<PermissionCheckDTO> permissionCheckDTOS =
         serviceList.stream().map(CDNGRbacUtility::serviceResponseToPermissionCheckDTO).collect(Collectors.toList());
@@ -749,9 +758,8 @@ public class ServiceResourceV2 {
       return ResponseDTO.newResponse(
           NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceInputYaml).build());
     } else {
-      // todo: better error message here
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
   }
 
@@ -834,8 +842,8 @@ public class ServiceResourceV2 {
       return ResponseDTO.newResponse(
           serviceEntityService.getArtifactSourceInputs(serviceEntity.get().getYaml(), serviceIdentifier));
     } else {
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
   }
 
@@ -1116,6 +1124,22 @@ public class ServiceResourceV2 {
     return filteredAccessControlDtoList;
   }
 
+  private List<ServiceResponse> filterByScopedInfrastructures(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<ServiceResponse> serviceResponses,
+      Map<String, List<String>> envRefInfraRefsMapping) {
+    if (CollectionUtils.isEmpty(serviceResponses)) {
+      return serviceResponses;
+    }
+    List<String> currentServiceRefs = serviceResponses.stream()
+                                          .map(serviceResponse -> serviceResponse.getService().getIdentifier())
+                                          .collect(toList());
+    List<String> allowedServiceRefs = infrastructureEntityService.filterServicesByScopedInfrastructures(
+        accountIdentifier, orgIdentifier, projectIdentifier, currentServiceRefs, envRefInfraRefsMapping);
+    return serviceResponses.stream()
+        .filter(serviceResponse -> allowedServiceRefs.contains(serviceResponse.getService().getIdentifier()))
+        .collect(toList());
+  }
+
   private void throwExceptionForNoRequestDTO(List<ServiceRequestDTO> dto) {
     if (dto == null) {
       throw new InvalidRequestException(
@@ -1171,5 +1195,30 @@ public class ServiceResourceV2 {
       serviceEntities = serviceEntityService.list(criteria, pageRequest);
     }
     return serviceEntities;
+  }
+
+  @GET
+  @Path("/list-repo")
+  @Hidden
+  @ApiOperation(value = "Gets all repo list", nickname = "getRepositoryList")
+  @Operation(operationId = "getRepositoryList", summary = "Gets the list of all repositories",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a list of all the repositories of all Services")
+      })
+
+  public ResponseDTO<RepoListResponseDTO>
+  listRepos(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
+          "includeAllServicesAccessibleAtScope") boolean includeAllServicesAccessibleAtScope) {
+    RepoListResponseDTO repoListResponseDTO = serviceEntityService.getListOfRepos(
+        accountIdentifier, orgIdentifier, projectIdentifier, includeAllServicesAccessibleAtScope);
+    return ResponseDTO.newResponse(repoListResponseDTO);
   }
 }

@@ -103,6 +103,20 @@ public class TerragruntTaskServiceTest extends CategoryTest {
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
+  public void testBaseDirWithUniqueDirectory() {
+    String uniqueBaseDir1 = TerragruntTaskService.getBaseDirWithUniqueDirectory("accountID-test1", "entityID-test1");
+    String uniqueBaseDir2 = TerragruntTaskService.getBaseDirWithUniqueDirectory("accountID-test1", "entityID-test1");
+
+    assertThat(uniqueBaseDir1.contentEquals(uniqueBaseDir2)).isFalse();
+    assertThat(uniqueBaseDir1.contains("./terragrunt-working-dir/accountID-test1/entityID-test1/")).isTrue();
+    assertThat(uniqueBaseDir1).hasSize("./terragrunt-working-dir/accountID-test1/entityID-test1/".length() + 8);
+    assertThat(uniqueBaseDir2.contains("./terragrunt-working-dir/accountID-test1/entityID-test1/")).isTrue();
+    assertThat(uniqueBaseDir2).hasSize("./terragrunt-working-dir/accountID-test1/entityID-test1/".length() + 8);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
   public void testPrepareTerragruntWhenRunModule() throws IOException {
     TerragruntRunConfiguration runConfiguration =
         TerragruntRunConfiguration.builder().runType(TerragruntTaskRunType.RUN_MODULE).path(TG_RUN_PATH).build();

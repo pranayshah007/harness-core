@@ -56,6 +56,8 @@ public class AnomalyEntity {
   String workloadName;
   String workloadType;
   String namespace;
+  String service;
+  String serviceName;
 
   String gcpProject;
   String gcpSKUId;
@@ -84,6 +86,13 @@ public class AnomalyEntity {
     if (namespace != null) {
       return EntityType.NAMESPACE;
     }
+    if (service != null) {
+      return EntityType.SERVICE;
+    }
+    if (serviceName != null) {
+      return EntityType.SERVICE_NAME;
+    }
+
     if (clusterId != null) {
       return EntityType.CLUSTER;
     }
@@ -130,6 +139,12 @@ public class AnomalyEntity {
     }
     if (clusterId != null) {
       return clusterId;
+    }
+    if (service != null) {
+      return service;
+    }
+    if (serviceName != null) {
+      return serviceName;
     }
     if (gcpSKUId != null) {
       return gcpSKUId;
@@ -185,6 +200,8 @@ public class AnomalyEntity {
       NAMESPACE("namespace", DataType.STRING),
       WORKLOAD_TYPE("workloadtype", DataType.STRING),
       WORKLOAD_NAME("workloadname", DataType.STRING),
+      SERVICE("service", DataType.STRING),
+      SERVICE_NAME("servicename", DataType.STRING),
       GCP_PROJECT("gcpproject", DataType.STRING),
       GCP_PRODUCT("gcpproduct", DataType.STRING),
       GCP_SKU_ID("gcpskuid", DataType.STRING),
@@ -244,6 +261,8 @@ public class AnomalyEntity {
     public static final DbColumn workloadType;
 
     public static final DbColumn namespace;
+    public static final DbColumn service;
+    public static final DbColumn serviceName;
 
     public static final DbColumn region;
 
@@ -295,6 +314,8 @@ public class AnomalyEntity {
       namespace = table.addColumn("namespace");
       workloadType = table.addColumn("workloadtype");
       workloadName = table.addColumn("workloadname");
+      service = table.addColumn("service");
+      serviceName = table.addColumn("servicename");
 
       gcpProject = table.addColumn("gcpproject");
       gcpProduct = table.addColumn("gcpproduct");
@@ -318,7 +339,7 @@ public class AnomalyEntity {
       slackWeeklyNotification = table.addColumn("slackWeeklyNotification");
 
       newEntity = table.addColumn("newentity");
-      notificationSent = table.addColumn("notificatoinsent");
+      notificationSent = table.addColumn("notificationsent");
     }
   }
 }

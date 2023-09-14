@@ -39,6 +39,7 @@ public class KubernetesHelperServiceTest extends CategoryTest {
   public static final String MASTER_URL = "http://masterUrl/";
   public static final String OC_URL = "http://masterUrl/oapi/v1/";
   public static final char[] USERNAME = "username".toCharArray();
+  private static final String NAMESPACE = "default";
   char[] PASSWORD = "PASSWORD".toCharArray();
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -120,5 +121,21 @@ public class KubernetesHelperServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateResourceGroup() {
     assertThatThrownBy(() -> helperService.validateResourceGroup("")).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetKubernetesConfigFromServiceAccount() {
+    KubernetesConfig kubernetesConfig = KubernetesHelperService.getKubernetesConfigFromServiceAccount(NAMESPACE);
+    assertThat(kubernetesConfig).isEqualTo(KubernetesConfig.builder().namespace(NAMESPACE).build());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetKubernetesConfigFromDefaultKubeConfigFile() {
+    KubernetesConfig kubernetesConfig = KubernetesHelperService.getKubernetesConfigFromDefaultKubeConfigFile(NAMESPACE);
+    assertThat(kubernetesConfig.getNamespace()).isEqualTo(NAMESPACE);
   }
 }

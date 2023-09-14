@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.triggers.webhook.service.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -19,6 +20,9 @@ import io.harness.beans.HeaderConfig;
 import io.harness.eventsframework.webhookpayloads.webhookdata.EventHeader;
 import io.harness.eventsframework.webhookpayloads.webhookdata.TriggerExecutionDTO;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
+import io.harness.exception.InvalidRequestException;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -35,6 +39,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -112,5 +117,23 @@ public class TriggerWebhookEventExecutionServiceImpl implements TriggerWebhookEv
                    .values(eventHeader.getValuesList().stream().collect(toList()))
                    .build())
         .collect(toList());
+  }
+
+  @Override
+  public void handleEvent(
+      TriggerExecutionDTO triggerExecutionDTO, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
+    if (triggerExecutionDTO == null) {
+      return;
+    }
+
+    try {
+      try (NgTriggerAutoLogContext ignore0 =
+               new NgTriggerAutoLogContext("eventId", triggerExecutionDTO.getWebhookDto().getEventId(),
+                   triggerExecutionDTO.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+        processEvent(triggerExecutionDTO);
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException("Exception while processing TriggerExecutionDto event", e);
+    }
   }
 }

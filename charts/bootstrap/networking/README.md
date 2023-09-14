@@ -1,6 +1,6 @@
 # networking
 
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -22,15 +22,17 @@ A Helm chart for Kubernetes
 | defaultbackend.image.repository | string | `"defaultbackend-amd64"` |  |
 | defaultbackend.image.tag | string | `"1.5"` |  |
 | defaultbackend.nodeSelector | object | `{}` |  |
+| defaultbackend.podLabels | object | `{}` |  |
 | defaultbackend.resources.limits.memory | string | `"20Mi"` |  |
 | defaultbackend.resources.requests.cpu | string | `"10m"` |  |
 | defaultbackend.resources.requests.memory | string | `"20Mi"` |  |
+| defaultbackend.service.annotations | object | `{}` |  |
 | defaultbackend.tolerations | list | `[]` |  |
+| global.commonAnnotations | object | `{}` |  |
+| global.commonLabels | object | `{}` |  |
 | global.ingress.className | string | `"harness"` |  |
 | global.ingress.enabled | bool | `false` |  |
 | global.ingress.hosts[0] | string | `"myhost.example.com"` |  |
-| global.ingress.loadBalancerEnabled | bool | `false` |  |
-| global.ingress.loadBalancerIP | string | `"0.0.0.0"` |  |
 | global.ingress.tls.enabled | bool | `true` |  |
 | global.ingress.tls.secretName | string | `"harness-cert"` |  |
 | global.istio | object | `{"enabled":false,"gateway":{"create":true,"name":"","namespace":"","port":443,"protocol":"HTTPS","selector":{"istio":"ingressgateway"}},"hosts":["*"],"istioGatewayServiceUrl":"","strict":false,"tls":{"credentialName":null,"minProtocolVersion":"TLSV1_2","mode":"SIMPLE"},"virtualService":{"gateways":[""],"hosts":null}}` | Istio Ingress Settings |
@@ -53,11 +55,15 @@ A Helm chart for Kubernetes
 | nginx.image.registry | string | `"us.gcr.io"` |  |
 | nginx.image.repository | string | `"k8s-artifacts-prod/ingress-nginx/controller"` |  |
 | nginx.image.tag | string | `"v1.0.0-alpha.2"` |  |
+| nginx.loadBalancerEnabled | bool | `false` |  |
+| nginx.loadBalancerIP | string | `"0.0.0.0"` |  |
 | nginx.nodeSelector | object | `{}` |  |
 | nginx.objects.annotations | object | `{}` | annotations to be added to ingress Objects |
+| nginx.podLabels | object | `{}` |  |
 | nginx.resources.limits.memory | string | `"512Mi"` |  |
 | nginx.resources.requests.cpu | string | `"0.5"` |  |
 | nginx.resources.requests.memory | string | `"512Mi"` |  |
+| nginx.service.annotations | object | `{}` |  |
 | nginx.tolerations | list | `[]` |  |
 
 ----------------------------------------------

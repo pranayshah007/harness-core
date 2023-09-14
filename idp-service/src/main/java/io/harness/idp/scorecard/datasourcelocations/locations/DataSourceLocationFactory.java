@@ -10,6 +10,8 @@ import static io.harness.idp.common.Constants.HARNESS_CI_SUCCESS_PERCENT_IN_SEVE
 import static io.harness.idp.common.Constants.HARNESS_POLICY_EVALUATION_DSL;
 import static io.harness.idp.common.Constants.HARNESS_STO_SCAN_SETUP_DSL;
 import static io.harness.idp.common.Constants.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
+import static io.harness.idp.common.Constants.PAGERDUTY_INCIDENTS;
+import static io.harness.idp.common.Constants.PAGERDUTY_SERVICE_DIRECTORY;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.CATALOG;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
@@ -27,8 +29,10 @@ public class DataSourceLocationFactory {
   private GithubMeanTimeToMergePRDsl githubMeanTimeToMergePRDsl;
   private GithubIsBranchProtectionSetDsl githubIsBranchProtectionSetDsl;
   private GithubFileExistsDsl githubFileExistsDsl;
-  private ProxyThroughDsl proxyThroughDsl;
+  private HarnessProxyThroughDsl harnessProxyThroughDsl;
   private NoOpDsl noOpDsl;
+  private PagerDutyServiceDirectory pagerDutyServiceDirectory;
+  private PagerDutyIncidents pagerDutyIncidents;
 
   public DataSourceLocation getDataSourceLocation(String identifier) {
     switch (identifier) {
@@ -45,11 +49,18 @@ public class DataSourceLocationFactory {
       case HARNESS_POLICY_EVALUATION_DSL:
       case HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS:
       case HARNESS_TEST_PASSING_ON_CI_IS_ZERO:
-        return proxyThroughDsl;
+        return harnessProxyThroughDsl;
 
       // Catalog
       case CATALOG:
         return noOpDsl;
+
+      // Pagerduty
+      case PAGERDUTY_SERVICE_DIRECTORY:
+        return pagerDutyServiceDirectory;
+      case PAGERDUTY_INCIDENTS:
+        return pagerDutyIncidents;
+
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataSource Location for %s", identifier));
     }

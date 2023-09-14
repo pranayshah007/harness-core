@@ -30,6 +30,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.logging.LogSanitizerHelper;
 import io.harness.shell.ExecuteCommandResponse.ExecuteCommandResponseBuilder;
 import io.harness.shell.ShellExecutionData.ShellExecutionDataBuilder;
 
@@ -340,7 +341,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       ProcessResult processResult = processExecutor.execute();
 
       if (errorLog.length() > 0) {
-        log.error("[ScriptProcessExecutor-03] Error output stream:\n{}", errorLog);
+        log.error(
+            "[ScriptProcessExecutor-03] Error output stream:\n{}", LogSanitizerHelper.sanitizeJWT(errorLog.toString()));
       }
 
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
