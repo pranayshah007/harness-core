@@ -11,13 +11,14 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.core.beans.dependency.DependencyMetadataType;
+import io.harness.cvng.core.beans.dependency.ServiceDependencyDeserializer;
 import io.harness.cvng.core.beans.dependency.ServiceDependencyMetadata;
 import io.harness.cvng.core.beans.template.TemplateDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
@@ -33,6 +34,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -88,10 +90,11 @@ public class MonitoredServiceDTO {
 
   @Data
   @Builder
+  @JsonDeserialize(using = ServiceDependencyDeserializer.class)
+  @FieldNameConstants(innerTypeName = "ServiceDependencyDTOKeys")
   public static class ServiceDependencyDTO {
     @NonNull String monitoredServiceIdentifier;
     private DependencyMetadataType type;
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
     ServiceDependencyMetadata dependencyMetadata;
     public DependencyMetadataType getType() {
       if (type != null) {
