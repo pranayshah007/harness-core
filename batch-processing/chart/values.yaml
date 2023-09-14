@@ -71,7 +71,7 @@ image:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80003-000"
+  tag: "80004-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -81,7 +81,7 @@ imageClickhouseEnabled:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80003-000"
+  tag: "80004-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -171,6 +171,14 @@ clickhouse:
 
 workloadIdentity:
   enabled: false
+
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
 
 resources:
   limits:

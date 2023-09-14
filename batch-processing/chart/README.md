@@ -1,6 +1,6 @@
 # batch-processing
 
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80003](https://img.shields.io/badge/AppVersion-0.0.80003-informational?style=flat-square)
+![Version: 0.9.4](https://img.shields.io/badge/Version-0.9.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80003](https://img.shields.io/badge/AppVersion-0.0.80003-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -14,6 +14,7 @@ A Helm chart for Kubernetes
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| CF_CLIENT_API_KEY | string | `"BATCH_PROCESSING_ON_PREM"` |  |
 | additionalConfigs | object | `{}` |  |
 | affinity | object | `{}` |  |
 | autoscaling.enabled | bool | `false` |  |
@@ -76,13 +77,13 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"Always"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/batch-processing-signed"` |  |
-| image.tag | string | `"80003-000"` |  |
+| image.tag | string | `"80004-000"` |  |
 | imageClickhouseEnabled.digest | string | `""` |  |
 | imageClickhouseEnabled.imagePullSecrets | list | `[]` |  |
 | imageClickhouseEnabled.pullPolicy | string | `"Always"` |  |
 | imageClickhouseEnabled.registry | string | `"docker.io"` |  |
 | imageClickhouseEnabled.repository | string | `"harness/batch-processing-signed"` |  |
-| imageClickhouseEnabled.tag | string | `"80003-000"` |  |
+| imageClickhouseEnabled.tag | string | `"80004-000"` |  |
 | isolatedReplica | int | `0` |  |
 | java.memory | string | `"7168"` |  |
 | lifecycleHooks | object | `{}` |  |
@@ -94,6 +95,12 @@ A Helm chart for Kubernetes
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext | object | `{}` |  |
+| proxy.enabled | bool | `false` |  |
+| proxy.host | string | `"localhost"` |  |
+| proxy.password | string | `""` |  |
+| proxy.port | int | `80` |  |
+| proxy.protocol | string | `"http"` |  |
+| proxy.username | string | `""` |  |
 | replicaCount | int | `1` |  |
 | resources.limits.memory | string | `"10Gi"` |  |
 | resources.requests.cpu | string | `"1024m"` |  |

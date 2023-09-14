@@ -44,6 +44,7 @@ import io.harness.notification.NotificationClientConfiguration;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.scheduler.SchedulerConfig;
 import io.harness.secret.ConfigSecret;
@@ -253,6 +254,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("notificationClient")
   @ConfigSecret
   private NotificationClientConfiguration notificationClientConfiguration;
+  @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
 
   private int applicationPort;
   private boolean sslEnabled;

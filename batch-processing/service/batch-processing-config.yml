@@ -236,3 +236,11 @@ batchJobRepository:
   timescaleEnabled: false
   metadataCleanupSchedule: "0 */30 * * * ?"
   dataRetentionPeriodInDays: 7
+
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http

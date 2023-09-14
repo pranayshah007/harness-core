@@ -154,8 +154,8 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
     log.info("CEAwsConnectorDTO: {}", ceAwsConnectorDTO);
     List<CECloudAccount> awsAccounts = new ArrayList<>();
     try {
-      awsAccounts = awsOrganizationHelperService.getAWSAccounts(
-          accountIdentifier, identifier, ceAwsConnectorDTO, awsConfig.getAccessKey(), awsConfig.getSecretKey());
+      awsAccounts = awsOrganizationHelperService.getAWSAccounts(accountIdentifier, identifier, ceAwsConnectorDTO,
+          awsConfig.getAccessKey(), awsConfig.getSecretKey(), configuration.getCeProxyConfig());
       log.info("Number of AWS Accounts: {}, Not Processing Create AWS Account Metadata", awsAccounts.size());
     } catch (AWSOrganizationsNotInUseException ex) {
       log.info("AWSOrganizationsNotInUseException for AWS Connector: {}", ceAwsConnectorDTO.getAwsAccountId(), ex);
@@ -224,8 +224,8 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
         getCredentialProvider(ceAwsConnectorDTO.getCrossAccountAccess(), awsConfig);
     AwsCurAttributesDTO curAttributes = ceAwsConnectorDTO.getCurAttributes();
     // Report Exists
-    Optional<ReportDefinition> report =
-        awsClient.getReportDefinition(credentialProvider, curAttributes.getReportName());
+    Optional<ReportDefinition> report = awsClient.getReportDefinition(
+        credentialProvider, curAttributes.getReportName(), configuration.getCeProxyConfig());
     if (!report.isPresent()) {
       return false;
     }

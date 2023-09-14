@@ -13,6 +13,7 @@ import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REG
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.setup.config.CESetUpConfig;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.app.MainConfiguration;
 
@@ -46,5 +47,9 @@ public class AwsCredentialHelper {
 
   public String getAWSS3Bucket() {
     return configuration.getCeSetUpConfig().getAwsS3BucketName();
+  }
+
+  public CEProxyConfig getCeProxyConfig() {
+    return configuration.getCeProxyConfig();
   }
 }
