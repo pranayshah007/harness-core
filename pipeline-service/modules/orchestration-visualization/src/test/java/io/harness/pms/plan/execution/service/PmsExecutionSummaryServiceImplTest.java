@@ -30,7 +30,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -77,7 +77,7 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
   @Mock PmsExecutionSummaryRepository pmsExecutionSummaryRepositoryMock;
   @Inject PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Mock NodeExecutionService nodeExecutionService;
-  @Mock PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Mock NodeExecutionInfoService pmsGraphStepDetailsService;
   @InjectMocks PmsExecutionSummaryServiceImpl pmsExecutionSummaryService;
 
   @Before

@@ -23,12 +23,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.common.EntityTypeConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.JsonSchemaException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pipeline.yamlschema.PipelineYamlSchemaServiceClient;
+import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
+import io.harness.pms.yaml.individualschema.TemplateSchemaMetadata;
+import io.harness.pms.yaml.individualschema.TemplateSchemaParserV0;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
@@ -41,11 +45,15 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -57,6 +65,8 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   private PipelineYamlSchemaServiceClient pipelineYamlSchemaServiceClient;
   @Inject TemplateServiceConfiguration templateServiceConfiguration;
   @Inject TemplateSchemaFetcher templateSchemaFetcher;
+
+  @Inject TemplateSchemaParserV0 templateSchemaParserV0;
   Map<String, YamlSchemaClient> yamlSchemaClientMapper;
   private YamlSchemaProvider yamlSchemaProvider;
   private YamlSchemaValidator yamlSchemaValidator;
@@ -171,6 +181,18 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
         globalTemplateEntity.getTemplateEntityType());
   }
 
+  @Override
+  public ObjectNode getIndividualStaticSchema(String nodeGroup, String nodeType, String version) {
+    return getIndividualSchema(nodeGroup, nodeType);
+  }
+
+  private ObjectNode getIndividualSchema(String nodeGroup, String nodeType) {
+    return templateSchemaParserV0.getIndividualSchema(
+        PipelineSchemaRequest.builder()
+            .individualSchemaMetadata(TemplateSchemaMetadata.builder().nodeGroup(nodeGroup).nodeType(nodeType).build())
+            .build());
+  }
+
   void validateYamlSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String templateYaml,
       Scope templateScope, String childType, TemplateEntityType templateEntityType) {
     long start = System.currentTimeMillis();
@@ -188,7 +210,15 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
       // Use Static schema if ff is enabled.
       if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
               FeatureName.PIE_STATIC_YAML_SCHEMA, accountIdentifier, accountClient)) {
-        schema = templateSchemaFetcher.getStaticYamlSchema("v0");
+        String nodeGroup = getNodeGroup(templateEntityType);
+        String nodeType = getNodeType(templateEntityType, childType);
+        schema = getIndividualSchema(nodeGroup, nodeType);
+        if (EmptyPredicate.isEmpty(schema)) {
+          // FallBack logic - If we didn't find 'nodeGroup/nodeType' key in the parser, we will use template.json
+          log.warn(String.format(
+              "Individual Schema not found for v0 Templates with %s nodeGroup and %s nodeType", nodeGroup, nodeType));
+          schema = templateSchemaFetcher.getStaticYamlSchema("v0");
+        }
       } else {
         // Use traditional way of generating schema if ff is off
         schema = getTemplateSchema(
@@ -216,6 +246,40 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
                   YamlSchemaErrorDTO.builder().message(ex.getMessage()).fqn("$.pipeline").build()))
               .build();
       throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO, templateYaml);
+    }
+  }
+
+  private String getNodeType(TemplateEntityType templateEntityType, String childType) {
+    Set<TemplateEntityType> templatesWithoutNodeType = new HashSet<>(
+        Arrays.asList(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE, TemplateEntityType.MONITORED_SERVICE_TEMPLATE,
+            TemplateEntityType.SECRET_MANAGER_TEMPLATE, TemplateEntityType.STEPGROUP_TEMPLATE,
+            TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE, TemplateEntityType.PIPELINE_TEMPLATE));
+    if (templatesWithoutNodeType.contains(templateEntityType)) {
+      return null;
+    }
+    return childType;
+  }
+
+  private String getNodeGroup(TemplateEntityType templateEntityType) {
+    switch (templateEntityType) {
+      case STEP_TEMPLATE:
+        return "step";
+      case STAGE_TEMPLATE:
+        return "stage";
+      case MONITORED_SERVICE_TEMPLATE:
+        return "monitoredservice";
+      case ARTIFACT_SOURCE_TEMPLATE:
+        return "artifactsourcetemplate";
+      case CUSTOM_DEPLOYMENT_TEMPLATE:
+        return "customdeployment";
+      case PIPELINE_TEMPLATE:
+        return "pipeline";
+      case SECRET_MANAGER_TEMPLATE:
+        return "secretmanager";
+      case STEPGROUP_TEMPLATE:
+        return "stepgroup";
+      default:
+        return "template";
     }
   }
 }

@@ -46,7 +46,7 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.NodeType;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -98,7 +98,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private PmsSweepingOutputService pmsSweepingOutputService;
   @Mock private OrchestrationEngine orchestrationEngine;
   @Mock private IdentityNodeResumeHelper identityNodeResumeHelper;
-  @Mock private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Mock private NodeExecutionInfoService pmsGraphStepDetailsService;
   @Mock private AdviseHandlerFactory adviseHandlerFactory;
   @Mock private NextStepHandler nextStepHandler;
   @Mock IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;

@@ -177,7 +177,7 @@
         "value": "80"
       }
     ],
-    "expression": "harness.%ofCIPipelinePassingInPast7Days > 80",
+    "expression": "harness.PercentageOfCIPipelinePassingInPastSevenDays > 80",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Percentage of CI pipelines passing is less than 80 in past 7 days"
@@ -197,9 +197,89 @@
         "value": "true"
       }
     ],
-    "expression": "harness.noTestsFailingInCiPipeline == 0",
+    "expression": "harness.noTestsFailingInCiPipeline == true",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Tests are failing on CI pipeline"
+  },
+  {
+    "id": "65009e1bc28a1a3f5607f80c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__712025a1-c192-4212-8c29-252a37a44225",
+    "name": "Is on-call set",
+    "description": "Checks if on-call is set on PagerDuty for the service.",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "pagerduty",
+        "data_point_identifier": "isOnCallSet",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "pagerduty.isOnCallSet == true",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "On-call is not set on PagerDuty [Reference for setting up on-call - https://support.pagerduty.com/docs/schedule-basics ]"
+  },
+  {
+    "id": "65009bfec28a1a3f5607f809",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__566ff4fa-1ba8-40bf-bd4a-fd1ddb9a9b21",
+    "name": "Is escalation policy set",
+    "description": "Checks if the Escalation Policy is set on PagerDuty.",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "pagerduty",
+        "data_point_identifier": "isEscalationPolicySet",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "pagerduty.isEscalationPolicySet == true",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Escalation policy is not set on PagerDuty. [Reference for setting up Escalation Policy - https://support.pagerduty.com/docs/escalation-policies ]"
+  },
+  {
+    "id": "6500ac528ea5a4798502f512",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__c758266c-22b4-454f-83c4-bd205f0ea277",
+    "name": "Number of incidents in last 30 days is less than 20",
+    "description": "Checks if number of incidents in last 30 days is less than 20 on PagerDuty",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "pagerduty",
+        "data_point_identifier": "noOfIncidentsInLastThirtyDays",
+        "operator": "<",
+        "value": "20"
+      }
+    ],
+    "expression": "pagerduty.noOfIncidentsInLastThirtyDays < 20",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Number of incidents in last 30 days is more than 20 on PagerDuty."
+  },
+  {
+    "id": "6500ce178ea5a4798502f516",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__565c5545-2b7f-4400-95e2-6b8ac470f40e",
+    "name": "Average acknowledgement time for the last 10 incidents is less than 30 minutes",
+    "description": "Checks if the average acknowledgement time for last 10 incidents is less than 30 minutes on PagerDuty",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "pagerduty",
+        "data_point_identifier": "avgAcknowledgementTimeForLastTenIncidentsInMinutes",
+        "operator": "<",
+        "value": "30"
+      }
+    ],
+    "expression": "pagerduty.avgAcknowledgementTimeForLastTenIncidentsInMinutes < 30",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Average acknowledgement time for last 10 incidents is more than 30 minutes."
   }
 ]

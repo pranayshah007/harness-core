@@ -433,6 +433,7 @@ public enum FeatureName {
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
   GITOPS_REVERT_PR("Support for Revert PR step in GitOps pipeline flow", HarnessTeam.GITOPS),
+  GITOPS_UPDATE_APP_STEP("Support for Update GitOps App step in GitOps pipeline flow", HarnessTeam.GITOPS),
   GIT_HOST_CONNECTIVITY,
   GLOBAL_COMMAND_LIBRARY,
   GLOBAL_DISABLE_HEALTH_CHECK(Scope.GLOBAL),
@@ -882,6 +883,7 @@ public enum FeatureName {
   CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC),
   CDS_ECS_BG_GREEN_SERVICE_ROLLBACK(
       "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP),
+  CDS_NAV_2_0("FF for Navigation 2.0", HarnessTeam.CDP),
   SSCA_SLSA_COMPLIANCE("Feature flag for SLSA Compliance", HarnessTeam.SSCA),
   PL_RUN_INVALID_AUDITS_CLEANUP("Run iterator to cleanup audits with null accountIds", HarnessTeam.PL, Scope.GLOBAL),
   SSCA_MANAGER_ENABLED("FF to use SSCA manager instead of core", HarnessTeam.SSCA),
@@ -901,6 +903,7 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_RESOLVE_CUSTOM_TRIGGER_EXPRESSION(
       "This flag resolves expression for pipeline branch for Custom Trigger.", PIPELINE),
+  PL_ALLOW_TO_SET_PUBLIC_ACCESS("Allows to set Public Access of Resources on Authentication page under account settings", HarnessTeam.PL),
   PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE);
   // keep-sorted end
 

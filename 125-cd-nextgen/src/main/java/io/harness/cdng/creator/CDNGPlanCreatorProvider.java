@@ -751,6 +751,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Update GitOps App")
             .setType(StepSpecTypeConstants.UPDATE_GITOPS_APP)
+            .setFeatureFlag(FeatureName.GITOPS_UPDATE_APP_STEP.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 

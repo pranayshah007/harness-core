@@ -17,6 +17,7 @@ import io.harness.entities.DeploymentAccounts;
 import io.harness.entities.DeploymentSummary;
 import io.harness.entities.InfrastructureMapping;
 import io.harness.entities.Instance;
+import io.harness.entities.ReleaseDetailsMapping;
 import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo;
 import io.harness.rule.Owner;
 
@@ -40,5 +41,6 @@ public class InstanceMorphiaClassesRegistrarTest extends InstancesTestBase {
     assertThat(set.contains(InstanceSyncPerpetualTaskInfo.class)).isTrue();
     assertThat(set.contains(DeploymentSummary.class)).isTrue();
     assertThat(set.contains(DeploymentAccounts.class)).isTrue();
+    assertThat(set.contains(ReleaseDetailsMapping.class)).isTrue();
   }
 }

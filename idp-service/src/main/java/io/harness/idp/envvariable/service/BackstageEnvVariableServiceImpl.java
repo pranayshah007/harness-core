@@ -432,7 +432,8 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return backstageEnvVariable;
   }
 
-  private String getDecryptedValue(String envName, String secretIdentifier, String accountIdentifier) {
+  @Override
+  public String getDecryptedValue(String envName, String secretIdentifier, String accountIdentifier) {
     int maxRetries = 3;
     int baseDelayMillis = 1000;
     int retryAttempts = 0;

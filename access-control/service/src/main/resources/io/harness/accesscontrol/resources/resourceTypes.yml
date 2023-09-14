@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 35
+version: 36
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -141,3 +141,9 @@ resourceTypes:
     permissionKey: criticalevent
   - identifier: IAC_WORKSPACE
     permissionKey: workspace
+  - identifier: SEI_CONFIGURATION_SETTINGS
+    permissionKey: seiconfigurationsettings
+  - identifier: SEI_COLLECTIONS
+    permissionKey: seicollections
+  - identifier: SEI_INSIGHTS
+    permissionKey: seiinsights

@@ -19,7 +19,7 @@ import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.observers.StepDetailsUpdateInfo;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
@@ -50,8 +50,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
-// Todo(Sahil): Rename to NodeExecutionInfoService
-public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsService {
+public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
   @Inject NodeExecutionsInfoRepository nodeExecutionsInfoRepository;
   @Inject @Getter private final Subject<StepDetailsUpdateObserver> stepDetailsUpdateObserverSubject = new Subject<>();
   @Inject KryoSerializer kryoSerializer;

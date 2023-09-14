@@ -82,6 +82,8 @@ public abstract class DataSourceProvider {
 
       parseResponseAgainstDataPoint(dataToFetchWithInputValues, response, aggregatedData);
     }
+    log.info(
+        "Aggregated data for data for DataPoints - {}, aggregated data - {}", dataPointsAndInputValues, aggregatedData);
 
     return aggregatedData;
   }

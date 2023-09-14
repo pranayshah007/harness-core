@@ -175,6 +175,14 @@ clickhouse:
 workloadIdentity:
   enabled: false
 
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
 resources:
   limits:
     memory: "10Gi"

@@ -52,6 +52,7 @@ import io.harness.security.dto.UserPrincipal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.serializer.HObjectMapper;
@@ -159,7 +160,14 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapPipelineStartEventToNodeExecutionEventData(pipelineStartEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START, null);
+    Principal principal = null;
+    if (nodeExecutionEventData.getTriggeredBy() != null) {
+      principal = new UserPrincipal(nodeExecutionEventData.getTriggeredBy().getIdentifier(),
+          getIdentifierForPrincipal(nodeExecutionEventData), nodeExecutionEventData.getTriggeredBy().getIdentifier(),
+          nodeExecutionEventData.getAccountIdentifier());
+    }
+
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START, principal);
   }
 
   private boolean handlePipelineTimeoutEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -273,7 +281,8 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     }
   }
 
-  private String getIdentifierForPrincipal(NodeExecutionEventData nodeExecutionEventData) {
+  @VisibleForTesting
+  protected String getIdentifierForPrincipal(NodeExecutionEventData nodeExecutionEventData) {
     if (nodeExecutionEventData.getTriggeredBy().getExtraInfo() != null
         && !EmptyPredicate.isEmpty(nodeExecutionEventData.getTriggeredBy().getExtraInfo().get("email"))) {
       return nodeExecutionEventData.getTriggeredBy().getExtraInfo().get("email");

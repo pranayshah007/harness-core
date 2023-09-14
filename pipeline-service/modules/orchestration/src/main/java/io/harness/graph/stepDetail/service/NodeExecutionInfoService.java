@@ -20,9 +20,8 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
-// Todo: Rename to NodeExecutionInfoService
 @OwnedBy(HarnessTeam.PIPELINE)
-public interface PmsGraphStepDetailsService {
+public interface NodeExecutionInfoService {
   void addStepDetail(String nodeExecutionId, String planExecutionId, PmsStepDetails stepDetails, String name);
 
   // TODO: Make this better this should be called from no where else

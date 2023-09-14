@@ -22,7 +22,7 @@ import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.advisers.InterventionWaitAdvise;
@@ -53,7 +53,7 @@ public class RetryHelper {
   @Inject private OrchestrationEngine engine;
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
   @Inject private ExecutionInputService executionInputService;
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
   public void retryNodeExecution(String nodeExecutionId, String interruptId, InterruptConfig interruptConfig) {
     NodeExecution nodeExecution = Preconditions.checkNotNull(nodeExecutionService.get(nodeExecutionId));
     Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());

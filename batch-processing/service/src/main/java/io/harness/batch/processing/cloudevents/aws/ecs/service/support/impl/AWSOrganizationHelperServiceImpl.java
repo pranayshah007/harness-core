@@ -11,9 +11,12 @@ import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REG
 
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.AwsCredentialHelper;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AWSOrganizationHelperService;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
@@ -39,9 +42,11 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
   private static final String ceAWSRegion = AWS_DEFAULT_REGION;
 
   @Override
-  public List<Account> listAwsAccounts(AwsCrossAccountAttributes awsCrossAccountAttributes) {
+  public List<Account> listAwsAccounts(
+      AwsCrossAccountAttributes awsCrossAccountAttributes, CEProxyConfig ceProxyConfig) {
     try {
-      AWSOrganizationsClient awsOrganizationsClient = getAWSOrganizationsClient(awsCrossAccountAttributes);
+      AWSOrganizationsClient awsOrganizationsClient =
+          getAWSOrganizationsClient(awsCrossAccountAttributes, ceProxyConfig);
       return listAwsAccounts(awsOrganizationsClient);
     } catch (Exception ex) {
       log.error("Error while getting accounts", ex);
@@ -50,7 +55,8 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
   }
 
   @VisibleForTesting
-  AWSOrganizationsClient getAWSOrganizationsClient(AwsCrossAccountAttributes awsCrossAccountAttributes) {
+  AWSOrganizationsClient getAWSOrganizationsClient(
+      AwsCrossAccountAttributes awsCrossAccountAttributes, CEProxyConfig ceProxyConfig) {
     AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
     AWSOrganizationsClientBuilder builder = AWSOrganizationsClientBuilder.standard().withRegion(ceAWSRegion);
     AWSCredentialsProvider credentialsProvider =
@@ -59,6 +65,9 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
             .withExternalId(awsCrossAccountAttributes.getExternalId())
             .withStsClient(awsSecurityTokenService)
             .build();
+    if (ceProxyConfig.isEnabled()) {
+      builder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
+    }
     builder.withCredentials(credentialsProvider);
     return (AWSOrganizationsClient) builder.build();
   }
@@ -74,5 +83,20 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
       nextToken = listAccountsResult.getNextToken();
     } while (nextToken != null);
     return accountList;
+  }
+
+  private ClientConfiguration getClientConfiguration(CEProxyConfig ceProxyConfig) {
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setProxyHost(ceProxyConfig.getHost());
+    clientConfiguration.setProxyPort(ceProxyConfig.getPort());
+    if (!ceProxyConfig.getUsername().isEmpty()) {
+      clientConfiguration.setProxyUsername(ceProxyConfig.getUsername());
+    }
+    if (!ceProxyConfig.getPassword().isEmpty()) {
+      clientConfiguration.setProxyPassword(ceProxyConfig.getPassword());
+    }
+    clientConfiguration.setProtocol(
+        ceProxyConfig.getProtocol().equalsIgnoreCase("http") ? Protocol.HTTP : Protocol.HTTPS);
+    return clientConfiguration;
   }
 }

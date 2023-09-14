@@ -188,3 +188,10 @@ replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"
 
 replace_key_value aiEngineConfig.genAIService.genAIServiceSecret "$GENAI_SERVICE_SECRET"
 replace_key_value aiEngineConfig.genAIService.apiEndpoint "$GENAI_SERVICE_ENDPOINT"
+
+replace_key_value proxy.enabled "$PROXY_ENABLED"
+replace_key_value proxy.host "$PROXY_HOST"
+replace_key_value proxy.port "$PROXY_PORT"
+replace_key_value proxy.username "$PROXY_USERNAME"
+replace_key_value proxy.password "$PROXY_PASSWORD"
+replace_key_value proxy.protocol "$PROXY_PROTOCOL"

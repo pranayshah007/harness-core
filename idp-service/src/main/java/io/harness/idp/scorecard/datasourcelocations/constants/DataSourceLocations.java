@@ -27,4 +27,9 @@ public class DataSourceLocations {
 
   // Catalog
   public static final String CATALOG = "catalog";
+
+  // PagerDuty
+  public static final String PAGERDUTY_SERVICE_ID = "{SERVICE_ID}";
+  public static final String PAGERDUTY_ANNOTATION_MISSING_ERROR =
+      "PagerDuty annotation is missing in the catalog info YAML";
 }

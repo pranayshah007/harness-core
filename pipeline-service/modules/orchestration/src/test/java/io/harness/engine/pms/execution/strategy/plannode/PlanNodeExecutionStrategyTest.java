@@ -59,7 +59,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.expression.common.ExpressionMode;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.NodeType;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -141,7 +141,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
 
-  @Mock private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Mock private NodeExecutionInfoService pmsGraphStepDetailsService;
   private static final StepType TEST_STEP_TYPE =
       StepType.newBuilder().setType("TEST_STEP_PLAN").setStepCategory(StepCategory.STEP).build();
 

@@ -51,6 +51,7 @@ import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -185,11 +186,13 @@ public class SshInitCommandHandler implements CommandHandler {
     String workingDir =
         isNotBlank(commandUnit.getWorkingDirectory()) ? "'" + commandUnit.getWorkingDirectory().trim() + "'" : "";
     try (StringWriter stringWriter = new StringWriter()) {
+      // We are creating a new map because env variables can be further modified
+      Map<String, String> envVariableMap = new HashMap<>(taskParameters.getEnvironmentVariables());
       Map<String, Object> templateParams = ImmutableMap.<String, Object>builder()
                                                .put("executionId", taskParameters.getExecutionId())
                                                .put("executionStagingDir", getExecutionStagingDir(taskParameters))
-                                               .put("envVariables", taskParameters.getEnvironmentVariables())
-                                               .put("safeEnvVariables", taskParameters.getEnvironmentVariables())
+                                               .put("envVariables", envVariableMap)
+                                               .put("safeEnvVariables", envVariableMap)
                                                .put("scriptWorkingDirectory", workingDir)
                                                .put("includeTailFunctions", includeTailFunctions)
                                                .build();

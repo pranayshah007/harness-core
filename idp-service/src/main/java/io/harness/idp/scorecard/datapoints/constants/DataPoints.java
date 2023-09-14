@@ -31,6 +31,13 @@ public class DataPoints {
   public static final String PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS =
       "PercentageOfCIPipelinePassingInPastSevenDays";
   public static final String PIPELINE_TEST_FAILING_IN_CI_IS_ZERO = "noTestsFailingInCiPipeline";
+
+  // PagerDuty
+  public static final String IS_ON_CALL_SET = "isOnCallSet";
+  public static final String IS_ESCALATION_POLICY_SET = "isEscalationPolicySet";
+  public static final String NO_OF_INCIDENTS_IN_LAST_THIRTY_DAYS = "noOfIncidentsInLastThirtyDays";
+  public static final String AVG_ACKNOWLEDGEMENT_TIME_FOR_LAST_TEN_INCIDENTS_IN_MINUTES =
+      "avgAcknowledgementTimeForLastTenIncidentsInMinutes";
   public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
   public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
   public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";

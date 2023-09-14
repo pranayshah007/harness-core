@@ -63,14 +63,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
+public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
   @Mock private NodeExecutionsInfoRepository nodeExecutionsInfoRepositoryMock;
   @Inject private NodeExecutionsInfoRepository nodeExecutionsInfoRepository;
 
   @Mock private Subject<StepDetailsUpdateObserver> stepDetailsUpdateObserverSubject;
   @Inject private MongoTemplate mongoTemplate;
 
-  @Inject @InjectMocks private PmsGraphStepDetailsServiceImpl pmsGraphStepDetailsService;
+  @Inject @InjectMocks private NodeExecutionInfoServiceImpl pmsGraphStepDetailsService;
 
   @Before
   public void setUp() {
