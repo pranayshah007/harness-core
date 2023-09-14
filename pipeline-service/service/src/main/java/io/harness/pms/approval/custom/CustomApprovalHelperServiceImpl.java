@@ -150,7 +150,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
 
   private NGLogCallback getLogCallback(Ambiance ambiance, CustomApprovalInstance instance) {
     final String unit = ShellType.Bash.equals(instance.getShellType()) ? ShellScriptTaskNG.COMMAND_UNIT
-                                                                       : WinRmShellScriptTaskNG.INIT_UNIT;
+                                                                       : WinRmShellScriptTaskNG.COMMAND_UNIT;
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, unit, false);
   }
 

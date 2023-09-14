@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.delegate.task.shell.WinRmShellScriptTaskNG;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -68,5 +70,15 @@ public class CustomApprovalSpecParameters implements SpecParameters {
   @Override
   public List<String> stepInputsKeyExclude() {
     return new LinkedList<>(Arrays.asList("specConfig.secretOutputVariables"));
+  }
+
+  @NotNull
+  public List<String> getAllCommandUnits() {
+    if (ShellType.Bash.equals(getShellType())) {
+      return List.of(ShellScriptTaskNG.COMMAND_UNIT);
+    } else if (ShellType.PowerShell.equals(getShellType())) {
+      return List.of(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT);
+    }
+    return List.of();
   }
 }
