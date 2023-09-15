@@ -183,7 +183,7 @@ public interface DelegateNgManagerCgManagerClient {
   Call<RestResponse<SupportedDelegateVersion>> getPublishedDelegateVersion(
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier);
 
-  @GET("version//delegate-latest")
+  @GET("version/delegate-latest")
   Call<RestResponse<SupportedDelegateVersion>> getLatestPublishedDelegateVersion(
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier);
 }
