@@ -908,6 +908,7 @@ public enum FeatureName {
       "Allows to set Public Access of Resources on Authentication page under account settings", HarnessTeam.PL),
   CDS_SCOPE_INFRA_TO_SERVICES("This flag enables the scoping of Infrastructure to specific Services.", HarnessTeam.CDP),
   PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE);
+
   // keep-sorted end
 
   @Deprecated
