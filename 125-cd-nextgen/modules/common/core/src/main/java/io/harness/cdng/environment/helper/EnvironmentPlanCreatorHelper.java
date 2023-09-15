@@ -7,8 +7,10 @@
 
 package io.harness.cdng.environment.helper;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.protobuf.ByteString;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -57,18 +59,16 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
-import lombok.experimental.UtilityClass;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import lombok.experimental.UtilityClass;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @UtilityClass
@@ -100,9 +100,9 @@ public class EnvironmentPlanCreatorHelper {
     return PlanNode.builder()
         .uuid(envNodeUuid)
         .stepType(StepType.newBuilder()
-                .setType(ExecutionNodeType.CUSTOM_STAGE_ENVIRONMENT.getName())
-                .setStepCategory(StepCategory.STEP)
-                .build())
+                      .setType(ExecutionNodeType.CUSTOM_STAGE_ENVIRONMENT.getName())
+                      .setStepCategory(StepCategory.STEP)
+                      .build())
         .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
         .name(PlanCreatorConstants.ENVIRONMENT_NODE_NAME)
         .identifier(YamlTypes.ENVIRONMENT_YAML)

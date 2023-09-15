@@ -7,6 +7,12 @@
 
 package io.harness.cdng.creator.plan.environment;
 
+import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.YOGESH;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -25,17 +31,12 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGServiceOverrides;
 import io.harness.yaml.core.variables.NumberNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.harness.rule.OwnerRule.HINGER;
-import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
-import static io.harness.rule.OwnerRule.YOGESH;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentMapperTest extends CDNGTestBase {

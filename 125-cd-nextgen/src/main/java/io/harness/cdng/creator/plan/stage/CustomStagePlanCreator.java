@@ -7,9 +7,8 @@
 
 package io.harness.cdng.creator.plan.stage;
 
-import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
@@ -52,20 +51,24 @@ import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 =======
 >>>>>>> 5234b436ce9 ([feat]: [CDS-78377] variables & variable overrides support for custom stage env)
+=======
+import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
+>>>>>>> 26a6a7185ba ([feat]: [CDS-78377] add variables overrides for custom stage env. step)
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStageNode> {
@@ -177,12 +180,18 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     // Adding Env node
     if (envNodeExists) {
       String envNextNodeUuid = executionFieldUuid;
-      final ServiceStepV3Parameters stepParameters =
-              ServiceStepV3Parameters.builder().build();
+      final ServiceStepV3Parameters stepParameters = ServiceStepV3Parameters.builder()
+                                                         .envRef(finalEnvironmentYamlV2.getEnvironmentRef())
+                                                         .envInputs(finalEnvironmentYamlV2.getEnvironmentInputs())
+                                                         .build();
 
-      if (finalEnvironmentYamlV2.getInfrastructureDefinition() != null) {
+      if (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinition())) {
+        ParameterField<String> infraRef =
+            finalEnvironmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
+        stepParameters.setInfraId(infraRef);
+
         PlanNode infraNode = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
-                finalEnvironmentYamlV2, null, ParameterField.createValueField(false));
+            finalEnvironmentYamlV2, null, ParameterField.createValueField(false));
         planCreationResponseMap.put(infraNode.getUuid(), PlanCreationResponse.builder().planNode(infraNode).build());
         stepParameters.setChildrenNodeIds(Collections.singletonList(infraNode.getUuid()));
       }
