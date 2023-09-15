@@ -40,7 +40,6 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.LinkedHashMap;
 
 @Singleton
 public class InitialiseTaskUtils {
