@@ -903,8 +903,8 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_RESOLVE_CUSTOM_TRIGGER_EXPRESSION(
       "This flag resolves expression for pipeline branch for Custom Trigger.", PIPELINE),
-  PL_ALLOW_TO_SET_PUBLIC_ACCESS("Allows to set Public Access of Resources on Authentication page under account settings", HarnessTeam.PL),
-  PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE);
+  PL_ALLOW_TO_SET_PUBLIC_ACCESS(
+      "Allows to set Public Access of Resources on Authentication page under account settings", HarnessTeam.PL);
 
   // keep-sorted end
 
