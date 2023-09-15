@@ -93,12 +93,17 @@ public class AMIArtifactResource {
 
     // Getting the resolved connectorRef  in case of expressions
     String resolvedAwsConnectorRef =
-        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            runtimeInputYaml, awsConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef);
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, awsConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
     // Getting the resolved project  in case of expressions
-    String resolvedRegion = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
+    String resolvedRegion =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(resolvedAwsConnectorRef, accountId, orgIdentifier, projectIdentifier);
@@ -169,12 +174,18 @@ public class AMIArtifactResource {
       }
 
       // Getting the resolved connectorRef  in case of expressions
-      awsConnectorRef = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-          pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), awsConnectorRef, fqnPath, null, serviceRef);
+      awsConnectorRef = artifactResourceUtils
+                            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                projectIdentifier, pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(),
+                                awsConnectorRef, fqnPath, null, serviceRef, null)
+                            .getValue();
 
       // Getting the resolved project  in case of expressions
-      region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-          pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), region, fqnPath, null, serviceRef);
+      region =
+          artifactResourceUtils
+              .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                  pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), region, fqnPath, null, serviceRef, null)
+              .getValue();
     }
 
     IdentifierRef connectorRef =

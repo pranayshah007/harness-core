@@ -134,7 +134,7 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "https://api.pagerduty.com/service_directory/{SERVICE_ID}",
+      "url": "{TARGET_URL}/service_directory/{SERVICE_ID}",
       "headers": {
         "Accept": "application/json",
         "Content-Type": "application/json",
@@ -150,7 +150,7 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "GET",
-      "url": "https://api.pagerduty.com/incidents?service_ids[]={SERVICE_ID}&limit=105&sort_by=created_at:desc&until={CURRENT_TIME_IN_UTC}",
+      "url": "{TARGET_URL}/incidents?service_ids[]={SERVICE_ID}&limit=105&sort_by=created_at:desc&until={CURRENT_TIME_IN_UTC}",
       "headers": {
         "Accept": "application/json",
         "Content-Type": "application/json",
@@ -159,3 +159,4 @@
     }
   }
 ]
+

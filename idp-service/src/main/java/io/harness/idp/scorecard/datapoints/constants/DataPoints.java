@@ -39,6 +39,8 @@ public class DataPoints {
   public static final String AVG_ACKNOWLEDGEMENT_TIME_FOR_LAST_TEN_INCIDENTS_IN_MINUTES =
       "avgAcknowledgementTimeForLastTenIncidentsInMinutes";
   public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
+  public static final String SOURCE_LOCATION_ANNOTATION_ERROR =
+      "Invalid or missing source-location annotation in the catalog info YAML";
   public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
   public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";
   public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";

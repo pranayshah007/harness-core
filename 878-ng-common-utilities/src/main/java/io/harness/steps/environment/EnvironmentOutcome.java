@@ -30,6 +30,10 @@ public class EnvironmentOutcome implements Outcome, ExecutionSweepingOutput {
   String identifier;
   String description;
   EnvironmentType type;
+
+  // v1Type is being added to support compatibility with FG env.Type
+  String v1Type;
+
   Map<String, String> tags;
 
   // EnvironmentOutcomeV2

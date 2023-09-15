@@ -7,12 +7,14 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.common.CommonUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
@@ -21,6 +23,7 @@ import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEnt
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,8 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class DataSourceProvider {
   private String identifier;
-
-  protected static final String AUTHORIZATION_HEADER = "Authorization";
 
   DataPointService dataPointService;
   DataSourceLocationFactory dataSourceLocationFactory;
@@ -56,7 +57,8 @@ public abstract class DataSourceProvider {
   public abstract Map<String, Map<String, Object>> fetchData(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues);
 
-  protected abstract Map<String, String> getAuthHeaders(String accountIdentifier);
+  protected abstract Map<String, String> getAuthHeaders(
+      String accountIdentifier, MergedPluginConfigs mergedPluginConfigs);
 
   protected Map<String, Map<String, Object>> processOut(String accountIdentifier,
       BackstageCatalogEntity backstageCatalogEntity, Map<String, Set<String>> dataPointsAndInputValues,
@@ -105,10 +107,11 @@ public abstract class DataSourceProvider {
       DataPointEntity dataPointEntity = entry.getKey();
 
       Object values;
-      if (response.containsKey(ERROR_MESSAGE_KEY)) {
+      String errorMessage = (String) CommonUtils.findObjectByName(response, ERROR_MESSAGE_KEY);
+      if (!isEmpty(errorMessage)) {
         Map<String, Object> dataPoint = new HashMap<>();
         dataPoint.put(DATA_POINT_VALUE_KEY, null);
-        dataPoint.put(ERROR_MESSAGE_KEY, response.get(ERROR_MESSAGE_KEY));
+        dataPoint.put(ERROR_MESSAGE_KEY, errorMessage);
         values = dataPoint;
       } else {
         Set<String> inputValues = entry.getValue();

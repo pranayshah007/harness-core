@@ -331,7 +331,6 @@ public class InfrastructureMapper {
                     service, environmentOutcome, asgInfrastructure.getInfrastructureKeyValues()))
                 .baseAsgName(
                     asgInfrastructure.getBaseAsgName() != null ? asgInfrastructure.getBaseAsgName().getValue() : null)
-                .asgName(asgInfrastructure.getAsgName() != null ? asgInfrastructure.getAsgName().getValue() : null)
                 .build();
         setInfraIdentifierAndName(
             asgInfrastructureOutcome, asgInfrastructure.getInfraIdentifier(), asgInfrastructure.getInfraName());

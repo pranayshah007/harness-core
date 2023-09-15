@@ -36,10 +36,10 @@ public class AsgRollingDeployStepParameters extends AsgRollingDeployBaseStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public AsgRollingDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> skipMatching, ParameterField<Boolean> useAlreadyRunningInstances,
-      ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage,
-      AsgInstances instances) {
+      ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage, AsgInstances instances,
+      ParameterField<String> asgName) {
     super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
-        instances);
+        instances, asgName);
   }
 
   public List<String> getCommandUnits() {

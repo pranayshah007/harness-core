@@ -52,6 +52,7 @@ public class IdpBGMigrationDetails implements MigrationDetails {
         .add(Pair.of(18, ScorecardMigration.class))
         .add(Pair.of(19, ScorecardMigration.class))
         .add(Pair.of(20, ScorecardMigration.class))
+        .add(Pair.of(21, ScorecardMigration.class))
         .build();
   }
 }

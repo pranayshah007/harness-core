@@ -77,6 +77,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
@@ -126,6 +127,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -153,6 +155,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -197,6 +200,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class ServiceResourceV2 {
   private final ServiceEntityService serviceEntityService;
+  private final InfrastructureEntityService infrastructureEntityService;
   private final AccessControlClient accessControlClient;
   private final ServiceEntityManagementService serviceEntityManagementService;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
@@ -690,6 +694,11 @@ public class ServiceResourceV2 {
                         .map(ServiceElementMapper::toAccessListResponseWrapper)
                         .collect(Collectors.toList());
     }
+    if (featureFlagService.isEnabled(accountId, FeatureName.CDS_SCOPE_INFRA_TO_SERVICES)) {
+      Map<String, List<String>> envRefInfraRefsMapping = new HashMap<>();
+      serviceList = filterByScopedInfrastructures(
+          accountId, orgIdentifier, projectIdentifier, serviceList, envRefInfraRefsMapping);
+    }
     List<PermissionCheckDTO> permissionCheckDTOS =
         serviceList.stream().map(CDNGRbacUtility::serviceResponseToPermissionCheckDTO).collect(Collectors.toList());
     List<AccessControlDTO> accessControlList =
@@ -1114,6 +1123,22 @@ public class ServiceResourceV2 {
       }
     }
     return filteredAccessControlDtoList;
+  }
+
+  private List<ServiceResponse> filterByScopedInfrastructures(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<ServiceResponse> serviceResponses,
+      Map<String, List<String>> envRefInfraRefsMapping) {
+    if (CollectionUtils.isEmpty(serviceResponses)) {
+      return serviceResponses;
+    }
+    List<String> currentServiceRefs = serviceResponses.stream()
+                                          .map(serviceResponse -> serviceResponse.getService().getIdentifier())
+                                          .collect(toList());
+    List<String> allowedServiceRefs = infrastructureEntityService.filterServicesByScopedInfrastructures(
+        accountIdentifier, orgIdentifier, projectIdentifier, currentServiceRefs, envRefInfraRefsMapping);
+    return serviceResponses.stream()
+        .filter(serviceResponse -> allowedServiceRefs.contains(serviceResponse.getService().getIdentifier()))
+        .collect(toList());
   }
 
   private void throwExceptionForNoRequestDTO(List<ServiceRequestDTO> dto) {

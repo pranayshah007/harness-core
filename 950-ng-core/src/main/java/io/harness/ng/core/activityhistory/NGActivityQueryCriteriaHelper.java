@@ -8,6 +8,7 @@
 package io.harness.ng.core.activityhistory;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -17,6 +18,7 @@ import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Singleton;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @Singleton
@@ -38,9 +40,10 @@ public class NGActivityQueryCriteriaHelper {
     }
   }
 
-  public void addReferredByEntityTypeCriteria(Criteria criteria, EntityType referredByEntityType) {
-    if (referredByEntityType != null) {
-      criteria.and(ActivityHistoryEntityKeys.referredByEntityType).is(String.valueOf(referredByEntityType));
+  public void addReferredByEntityTypeCriteria(Criteria criteria, Set<EntityType> referredByEntityTypes) {
+    if (isNotEmpty(referredByEntityTypes)) {
+      criteria.and(ActivityHistoryEntityKeys.referredByEntityType)
+          .in(referredByEntityTypes.stream().map(String::valueOf).collect(Collectors.toList()));
     }
   }
 

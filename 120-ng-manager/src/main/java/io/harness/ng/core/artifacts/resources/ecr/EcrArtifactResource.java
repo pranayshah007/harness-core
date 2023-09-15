@@ -116,21 +116,31 @@ public class EcrArtifactResource {
       }
     }
 
-    ecrConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, ecrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    ecrConnectorIdentifier = artifactResourceUtils
+                                 .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                     projectIdentifier, pipelineIdentifier, runtimeInputYaml, ecrConnectorIdentifier,
+                                     fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                 .getValue();
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
-    registryId = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, registryId, fqnPath, gitEntityBasicInfo, serviceRef);
+    registryId =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, registryId, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
-    imagePath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
+    imagePath = artifactResourceUtils
+                    .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                    .getValue();
 
     // resolving region
-    region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
+    region = artifactResourceUtils
+                 .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                     pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                 .getValue();
 
     EcrResponseDTO buildDetails = ecrResourceService.getBuildDetails(
         connectorRef, registryId, imagePath, region, orgIdentifier, projectIdentifier);
@@ -280,12 +290,20 @@ public class EcrArtifactResource {
         ecrConnectorIdentifier = (String) ecrArtifactConfig.getConnectorRef().fetchFinalValue();
       }
     }
-    ecrConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, ecrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
-    registryId = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, registryId, fqnPath, gitEntityBasicInfo, serviceRef);
-    region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
+    ecrConnectorIdentifier = artifactResourceUtils
+                                 .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                     projectIdentifier, pipelineIdentifier, runtimeInputYaml, ecrConnectorIdentifier,
+                                     fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                 .getValue();
+    registryId =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, registryId, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
+    region = artifactResourceUtils
+                 .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                     pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                 .getValue();
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 

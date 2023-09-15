@@ -30,6 +30,15 @@ public class DataSourceLocations {
 
   // PagerDuty
   public static final String PAGERDUTY_SERVICE_ID = "{SERVICE_ID}";
+  public static final String PAGERDUTY_TARGET_URL = "{TARGET_URL}";
+
+  public static final String AUTHORIZATION_HEADER = "Authorization";
   public static final String PAGERDUTY_ANNOTATION_MISSING_ERROR =
       "PagerDuty annotation is missing in the catalog info YAML";
+  public static final String PAGERDUTY_PLUGIN_NOT_ENABLED_ERROR_MESSAGE = "PagerDuty Plugin is not enabled";
+  public static final String PAGERDUTY_PLUGIN_INVALID_TOKEN_ERROR_MESSAGE =
+      "PagerDuty token added in plugin is invalid";
+  public static final String PAGERDUTY_PLUGIN_INVALID_URL_ERROR_MESSAGE =
+      "Unable to get the PagerDuty data, probably target url provided in plugin is invalid";
+  public static final String PAGERDUTY_UNABLE_TO_FETCH_DATA_ERROR_MESSAGE = "Unable to fetch the data from PagerDuty";
 }

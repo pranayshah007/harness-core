@@ -17,16 +17,22 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
+import io.harness.beans.sweepingoutputs.PodCleanupDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.encryption.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -49,6 +55,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -75,21 +82,35 @@ public class ContainerStepCleanupHelper {
       Failsafe.with(retryPolicy).run(() -> {
         Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
         closeLogStream(ambiance);
-        ContainerCleanupDetails podCleanupDetails;
+        ExecutionSweepingOutput cleanupDetailsOutput;
         OptionalSweepingOutput optionalCleanupSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
                 io.harness.steps.container.constants.ContainerStepExecutionConstants.CLEANUP_DETAILS));
         if (!optionalCleanupSweepingOutput.isFound()) {
           return;
         } else {
-          podCleanupDetails = (ContainerCleanupDetails) executionSweepingOutputService.resolve(
+          cleanupDetailsOutput = executionSweepingOutputService.resolve(
               ambiance, RefObjectUtils.getSweepingOutputRefObject(CLEANUP_DETAILS));
         }
 
-        if (podCleanupDetails == null) {
+        if (cleanupDetailsOutput == null) {
           return;
         }
-        CICleanupTaskParams ciCleanupTaskParams = buildK8CleanupParameters(ambiance, podCleanupDetails);
+
+        CICleanupTaskParams ciCleanupTaskParams;
+        if (cleanupDetailsOutput instanceof PodCleanupDetails) {
+          Optional<CICleanupTaskParams> ciCleanupTaskParamsOpt =
+              buildK8CleanupParameters(ambiance, (PodCleanupDetails) cleanupDetailsOutput);
+          if (ciCleanupTaskParamsOpt.isEmpty()) {
+            return;
+          }
+          ciCleanupTaskParams = ciCleanupTaskParamsOpt.get();
+        } else if (cleanupDetailsOutput instanceof ContainerCleanupDetails) {
+          ciCleanupTaskParams = buildK8CleanupParameters(ambiance, (ContainerCleanupDetails) cleanupDetailsOutput);
+        } else {
+          throw new InvalidRequestException(
+              format("Plan cleanup event type not supported, %s", cleanupDetailsOutput.getClass().getSimpleName()));
+        }
 
         log.info("Received event to clean planExecutionId {}, level Id {}", ambiance.getPlanExecutionId(),
             level.getIdentifier());
@@ -136,6 +157,35 @@ public class ContainerStepCleanupHelper {
         .serviceNameList(new ArrayList<>())
         .useSocketCapability(useSocketCapability)
         .build();
+  }
+
+  private Optional<CICleanupTaskParams> buildK8CleanupParameters(
+      Ambiance ambiance, PodCleanupDetails podCleanupDetails) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    Infrastructure infrastructure = podCleanupDetails.getInfrastructure();
+    if (!(infrastructure instanceof K8sDirectInfraYaml)) {
+      return Optional.empty();
+    }
+    K8sDirectInfraYamlSpec containerInfraYamlSpec = ((K8sDirectInfraYaml) infrastructure).getSpec();
+
+    String clusterConnectorRef = containerInfraYamlSpec.getConnectorRef().getValue();
+    String namespace = (String) containerInfraYamlSpec.getNamespace().fetchFinalValue();
+    final List<String> podNames = new ArrayList<>();
+    podNames.add(podCleanupDetails.getPodName());
+
+    boolean useSocketCapability = pmsFeatureFlagService.isEnabled(
+        ngAccess.getAccountIdentifier(), FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG);
+
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, clusterConnectorRef);
+
+    return Optional.of(CIK8CleanupTaskParams.builder()
+                           .k8sConnector(connectorDetails)
+                           .cleanupContainerNames(podCleanupDetails.getCleanUpContainerNames())
+                           .namespace(namespace)
+                           .podNameList(podNames)
+                           .serviceNameList(new ArrayList<>())
+                           .useSocketCapability(useSocketCapability)
+                           .build());
   }
 
   private DelegateTaskRequest getDelegateCleanupTaskRequest(

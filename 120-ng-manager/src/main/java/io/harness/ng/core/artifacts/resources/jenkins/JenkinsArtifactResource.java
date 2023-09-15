@@ -150,9 +150,11 @@ public class JenkinsArtifactResource {
       }
     }
 
-    jenkinsConnectorIdentifier =
-        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            runtimeInputYaml, jenkinsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    jenkinsConnectorIdentifier = artifactResourceUtils
+                                     .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                         projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                         jenkinsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                     .getValue();
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -185,11 +187,15 @@ public class JenkinsArtifactResource {
         jobName = (String) jenkinsArtifactConfig.getJobName().fetchFinalValue();
       }
     }
-    jenkinsConnectorIdentifier =
-        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            runtimeInputYaml, jenkinsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
-    jobName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, jobName, fqnPath, gitEntityBasicInfo, serviceRef);
+    jenkinsConnectorIdentifier = artifactResourceUtils
+                                     .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                         projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                         jenkinsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                     .getValue();
+    jobName = artifactResourceUtils
+                  .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                      pipelineIdentifier, runtimeInputYaml, jobName, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                  .getValue();
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
@@ -225,13 +231,20 @@ public class JenkinsArtifactResource {
         artifactPath = (String) jenkinsArtifactConfig.getArtifactPath().fetchFinalValue();
       }
     }
-    jenkinsConnectorIdentifier =
-        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            runtimeInputYaml, jenkinsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
-    jobName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, jobName, fqnPath, gitEntityBasicInfo, serviceRef);
-    artifactPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
+    jenkinsConnectorIdentifier = artifactResourceUtils
+                                     .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                         projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                         jenkinsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                     .getValue();
+    jobName = artifactResourceUtils
+                  .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                      pipelineIdentifier, runtimeInputYaml, jobName, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                  .getValue();
+    artifactPath =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
@@ -264,11 +277,15 @@ public class JenkinsArtifactResource {
         jobName = (String) jenkinsArtifactConfig.getJobName().fetchFinalValue();
       }
     }
-    jenkinsConnectorIdentifier =
-        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            runtimeInputYaml, jenkinsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
-    jobName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, jobName, fqnPath, gitEntityBasicInfo, serviceRef);
+    jenkinsConnectorIdentifier = artifactResourceUtils
+                                     .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                         projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                         jenkinsConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                     .getValue();
+    jobName = artifactResourceUtils
+                  .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                      pipelineIdentifier, runtimeInputYaml, jobName, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                  .getValue();
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     List<JobDetails> jobDetails =

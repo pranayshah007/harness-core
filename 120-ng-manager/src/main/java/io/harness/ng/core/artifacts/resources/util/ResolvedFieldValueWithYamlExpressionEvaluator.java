@@ -5,23 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.task.gitcommon;
+package io.harness.ng.core.artifacts.resources.util;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
-import io.harness.reflection.ExpressionReflectionUtils;
+import io.harness.evaluators.CDYamlExpressionEvaluator;
 
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
-@OwnedBy(HarnessTeam.CDP)
-public class GitRequestFileConfig implements ExpressionReflectionUtils.NestedAnnotationResolver {
-  String identifier;
-  String manifestType;
-  GitStoreDelegateConfig gitStoreDelegateConfig;
-  boolean supportFolders;
-  boolean succeedIfFileNotFound;
+@OwnedBy(HarnessTeam.CDC)
+public class ResolvedFieldValueWithYamlExpressionEvaluator {
+  CDYamlExpressionEvaluator yamlExpressionEvaluator;
+  String value;
 }

@@ -12,10 +12,14 @@ import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY_ESCAPED;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_BRANCH_PROTECTED;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_OWNER;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPO_SCM;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ResponseMessage;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
@@ -61,6 +65,12 @@ public class GithubIsBranchProtectionSetDsl implements DataSourceLocation {
     String tempRequestBody = apiRequestDetails.getRequestBody(); // using temp variable to store unchanged requestBody
 
     for (String inputValue : inputValues) {
+      if (isEmpty(possibleReplaceableRequestBodyPairs.get(REPO_SCM))
+          || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_OWNER))
+          || isEmpty(possibleReplaceableRequestBodyPairs.get(REPOSITORY_NAME))) {
+        data.put(inputValue, Map.of(ERROR_MESSAGE_KEY, SOURCE_LOCATION_ANNOTATION_ERROR));
+        continue;
+      }
       apiRequestDetails.setRequestBody(tempRequestBody);
       Map<DataPointEntity, String> dataPointAndInputValueToFetch = new HashMap<>() {
         { put(dataPoint, inputValue); }
@@ -72,12 +82,11 @@ public class GithubIsBranchProtectionSetDsl implements DataSourceLocation {
           dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get(REPO_SCM));
       Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
       Map<String, Object> inputValueData = new HashMap<>();
-      Map<String, Object> convertedResponse =
-          GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
       if (response.getStatus() == 200) {
-        inputValueData.put(DSL_RESPONSE, convertedResponse);
+        inputValueData.put(
+            DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
       } else {
-        inputValueData.put(ERROR_MESSAGE_KEY, convertedResponse.get("message"));
+        inputValueData.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
       }
       data.put(inputValue, inputValueData);
     }

@@ -1028,7 +1028,8 @@ public class CfSdkClientImpl implements CfSdkClient {
   }
 
   private void handleException(Throwable t, String apiName, StringBuilder errorBuilder) {
-    log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception occurred while executing PCF api: " + apiName, t);
+    log.error(format(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception occurred while executing PCF api: %s, error: %s",
+        apiName, t.getMessage()));
     errorBuilder.append(t.getMessage());
   }
 
