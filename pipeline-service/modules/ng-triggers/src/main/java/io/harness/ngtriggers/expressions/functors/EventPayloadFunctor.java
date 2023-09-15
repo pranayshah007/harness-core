@@ -10,6 +10,7 @@ package io.harness.ngtriggers.expressions.functors;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
@@ -38,7 +39,7 @@ public class EventPayloadFunctor implements LateBindingValue {
               .orElseThrow(()
                                -> new IllegalStateException(
                                    "PlanExecution metadata null for planExecutionId " + ambiance.getPlanExecutionId()));
-      if (planExecutionMetadata.getTriggerJsonPayload() == null) {
+      if (EmptyPredicate.isEmpty(planExecutionMetadata.getTriggerJsonPayload())) {
         return null;
       }
       return JsonPipelineUtils.read(planExecutionMetadata.getTriggerJsonPayload(), HashMap.class);

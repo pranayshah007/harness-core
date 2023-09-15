@@ -62,4 +62,6 @@ public class AsgBlueGreenDeployBaseStepInfo {
 
   @ApiModelProperty(dataType = SwaggerConstants.ASG_LOAD_BALANCER_CONFIGURATION_CLASSPATH)
   List<AwsAsgLoadBalancerConfigYaml> loadBalancers;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> asgName;
 }

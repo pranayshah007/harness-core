@@ -22,5 +22,6 @@ public class GitRequestFileConfig implements ExpressionReflectionUtils.NestedAnn
   String identifier;
   String manifestType;
   GitStoreDelegateConfig gitStoreDelegateConfig;
+  boolean supportFolders;
   boolean succeedIfFileNotFound;
 }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.encryptors.clients;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -13,10 +14,12 @@ import static io.harness.eraro.ErrorCode.AWS_SECRETS_MANAGER_OPERATION_ERROR;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.helpers.GlobalSecretManagerUtils.getValueByJsonPath;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.helpers.ext.vault.VaultRestClientFactory.getFullPath;
 
+import static com.jayway.jsonpath.JsonPath.parse;
 import static java.time.Duration.ofMillis;
 
 import io.harness.annotations.dev.CodePulse;
@@ -54,10 +57,10 @@ import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.amazonaws.services.secretsmanager.model.Tag;
 import com.amazonaws.services.secretsmanager.model.UpdateSecretRequest;
 import com.amazonaws.services.secretsmanager.model.UpdateSecretResult;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -242,8 +245,8 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
     return true;
   }
 
-  private EncryptedRecord renameSecretInternal(
-      String name, EncryptedRecord existingRecord, AwsSecretsManagerConfig secretsManagerConfig) {
+  private EncryptedRecord renameSecretInternal(String name, EncryptedRecord existingRecord,
+      AwsSecretsManagerConfig secretsManagerConfig) throws JsonProcessingException {
     char[] value = fetchSecretValueInternal(existingRecord, secretsManagerConfig);
     if (isEmpty(value)) {
       String message = "Empty value fetched when trying to rename the secret " + existingRecord.getName();
@@ -252,8 +255,8 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
     return upsertSecretInternal(name, new String(value), existingRecord, secretsManagerConfig);
   }
 
-  private EncryptedRecord upsertSecretInternal(
-      String name, String value, EncryptedRecord existingSecret, AwsSecretsManagerConfig secretsManagerConfig) {
+  private EncryptedRecord upsertSecretInternal(String name, String value, EncryptedRecord existingSecret,
+      AwsSecretsManagerConfig secretsManagerConfig) throws JsonProcessingException {
     String fullSecretName = getFullPath(secretsManagerConfig.getSecretNamePrefix(), name);
     long startTime = System.currentTimeMillis();
     log.info("Saving secret '{}' into AWS Secrets Manager: {}", fullSecretName, secretsManagerConfig.getName());
@@ -308,7 +311,8 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
     return encryptedRecordDataBuilder.build();
   }
 
-  private char[] fetchSecretValueInternal(EncryptedRecord data, AwsSecretsManagerConfig secretsManagerConfig) {
+  private char[] fetchSecretValueInternal(EncryptedRecord data, AwsSecretsManagerConfig secretsManagerConfig)
+      throws JsonProcessingException {
     long startTime = System.currentTimeMillis();
 
     final String secretName;
@@ -327,19 +331,8 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
     GetSecretValueResult result = client.getSecretValue(request);
     String secretValue = result.getSecretString();
 
-    char[] decryptedValue = null;
-    if (StringUtils.isNotBlank(refKeyName)) {
-      JsonElement element = JSON_PARSER.parse(secretValue);
-      if (element.getAsJsonObject().has(refKeyName)) {
-        JsonElement refKeyedElement = element.getAsJsonObject().get(refKeyName);
-        decryptedValue = refKeyedElement.getAsString().toCharArray();
-      }
-    } else {
-      decryptedValue = secretValue.toCharArray();
-    }
-
     log.info("Done decrypting AWS secret {} in {}ms", secretName, System.currentTimeMillis() - startTime);
-    return decryptedValue;
+    return getValueByJsonPath(parse(secretValue), refKeyName).toCharArray();
   }
 
   @VisibleForTesting

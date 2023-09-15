@@ -6,6 +6,7 @@
  */
 
 package io.harness.aws.asg.manifest;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
@@ -24,7 +25,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.LaunchTemplate;
 import com.amazonaws.services.ec2.model.LaunchTemplateVersion;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,11 +68,11 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
     if (chainState.getLaunchTemplateVersion() == null) {
       AsgLaunchTemplateManifestRequest asgLaunchTemplateManifestRequest =
           (AsgLaunchTemplateManifestRequest) manifestRequest;
-
-      List<CreateLaunchTemplateRequest> manifests =
-          manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
       String asgName = chainState.getAsgName();
-      CreateLaunchTemplateRequest createLaunchTemplateRequest = manifests.get(0);
+
+      CreateLaunchTemplateRequest createLaunchTemplateRequest =
+          generateCreateLaunchTemplateRequest(asgLaunchTemplateManifestRequest);
+
       // launch template should always have same name as ASG name
       createLaunchTemplateRequest.setLaunchTemplateName(asgName);
 
@@ -116,21 +117,13 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
 
     AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
     if (autoScalingGroup != null) {
-      String launchTemplateVersion = autoScalingGroup.getLaunchTemplate().getVersion();
-
-      List<String> launchTemplateVersionList = new ArrayList<>();
-      launchTemplateVersionList.add(launchTemplateVersion);
-
-      Map<String, List<String>> asgManifestsDataForRollback = chainState.getAsgManifestsDataForRollback();
-      if (asgManifestsDataForRollback == null) {
-        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>();
-        asgManifestsDataForRollback2.put(AsgLaunchTemplate, launchTemplateVersionList);
-        chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback2);
-      } else {
-        asgManifestsDataForRollback.put(AsgLaunchTemplate, launchTemplateVersionList);
-        chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback);
+      if (chainState.getAsgManifestsDataForRollback() == null) {
+        chainState.setAsgManifestsDataForRollback(new HashMap<>());
       }
+      chainState.getAsgManifestsDataForRollback().put(
+          AsgLaunchTemplate, Arrays.asList(autoScalingGroup.getLaunchTemplate().getVersion()));
     }
+
     return chainState;
   }
 
@@ -139,5 +132,11 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
     if (manifest.getLaunchTemplateData() == null) {
       throw new InvalidRequestException("`LaunchTemplateData` is a required property for AsgLaunchTemplate manifest");
     }
+  }
+
+  CreateLaunchTemplateRequest generateCreateLaunchTemplateRequest(AsgLaunchTemplateManifestRequest manifestRequest) {
+    List<CreateLaunchTemplateRequest> manifests =
+        manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
+    return manifests.get(0);
   }
 }

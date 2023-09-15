@@ -390,6 +390,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
               getGitStoreDelegateConfig(gitStoreConfig, configFileOutcome.getIdentifier(), paths, ambiance))
           .identifier(configFileOutcome.getIdentifier())
           .succeedIfFileNotFound(false)
+          .supportFolders(true)
           .build();
     }
     throw new InvalidRequestException(

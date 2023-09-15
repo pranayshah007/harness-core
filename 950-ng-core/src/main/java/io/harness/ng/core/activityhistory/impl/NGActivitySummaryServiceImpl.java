@@ -14,6 +14,7 @@ import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.HOUR;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.WEEK;
 
+import static java.util.Objects.isNull;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.bucket;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 import static org.springframework.data.mongodb.core.aggregation.BooleanOperators.And.and;
@@ -33,6 +34,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -221,7 +223,9 @@ public class NGActivitySummaryServiceImpl implements NGActivitySummaryService {
         criteria, accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier);
     ngActivityQueryCriteriaHelper.addTimeFilterInTheCriteria(criteria, startTime, endTime);
     ngActivityQueryCriteriaHelper.addReferredEntityTypeCriteria(criteria, referredEntityType);
-    ngActivityQueryCriteriaHelper.addReferredByEntityTypeCriteria(criteria, referredByEntityType);
+    if (!isNull(referredByEntityType)) {
+      ngActivityQueryCriteriaHelper.addReferredByEntityTypeCriteria(criteria, Set.of(referredByEntityType));
+    }
     return criteria;
   }
 }

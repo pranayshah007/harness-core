@@ -65,10 +65,10 @@ public class NGActivityServiceImpl implements NGActivityService {
   @Override
   public Page<NGActivityDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, long start, long end, NGActivityStatus status,
-      EntityType referredEntityType, EntityType referredByEntityType, Set<NGActivityType> ngActivityTypes,
+      EntityType referredEntityType, Set<EntityType> referredByEntityTypes, Set<NGActivityType> ngActivityTypes,
       String searchTerm) {
     Criteria criteria = createCriteriaForEntityUsageActivity(accountIdentifier, orgIdentifier, projectIdentifier,
-        referredEntityIdentifier, status, start, end, referredEntityType, referredByEntityType, ngActivityTypes,
+        referredEntityIdentifier, status, start, end, referredEntityType, referredByEntityTypes, ngActivityTypes,
         searchTerm);
     Pageable pageable =
         PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ActivityHistoryEntityKeys.activityTime));
@@ -141,13 +141,13 @@ public class NGActivityServiceImpl implements NGActivityService {
 
   private Criteria createCriteriaForEntityUsageActivity(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, NGActivityStatus status, long startTime, long endTime,
-      EntityType referredEntityType, EntityType referredByEntityType, Set<NGActivityType> ngActivityTypes,
+      EntityType referredEntityType, Set<EntityType> referredByEntityTypes, Set<NGActivityType> ngActivityTypes,
       String searchTerm) {
     Criteria criteria = new Criteria();
     ngActivityQueryCriteriaHelper.populateEntityFQNFilterInCriteria(
         criteria, accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier);
     ngActivityQueryCriteriaHelper.addReferredEntityTypeCriteria(criteria, referredEntityType);
-    ngActivityQueryCriteriaHelper.addReferredByEntityTypeCriteria(criteria, referredByEntityType);
+    ngActivityQueryCriteriaHelper.addReferredByEntityTypeCriteria(criteria, referredByEntityTypes);
     populateActivityStatusCriteria(criteria, status);
     ngActivityQueryCriteriaHelper.addTimeFilterInTheCriteria(criteria, startTime, endTime);
     ngActivityQueryCriteriaHelper.addActivityTypeCriteria(criteria, ngActivityTypes);

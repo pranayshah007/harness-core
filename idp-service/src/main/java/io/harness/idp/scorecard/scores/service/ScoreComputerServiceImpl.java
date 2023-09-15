@@ -9,7 +9,9 @@ package io.harness.idp.scorecard.scores.service;
 
 import static io.harness.expression.common.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
+import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.idp.common.Constants.SPACE_SEPARATOR;
 import static io.harness.idp.common.JacksonUtils.convert;
 import static io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper.constructExpressionFromRules;
 import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
@@ -33,6 +35,7 @@ import io.harness.idp.scorecard.scores.entities.ScoreEntity;
 import io.harness.idp.scorecard.scores.logging.ScoreComputationLogContext;
 import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
 import io.harness.logging.AutoLogContext;
+import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
@@ -42,7 +45,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -309,6 +311,9 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
     }
     if (value == null) {
       log.warn("Could not evaluate check status for {}", checkEntity.getIdentifier());
+      if (CheckDetails.DefaultBehaviourEnum.FAIL.equals(checkEntity.getDefaultBehaviour())) {
+        return new Pair<>(CheckStatus.StatusEnum.FAIL, getCheckFailureReason(evaluator, checkEntity));
+      }
       return new Pair<>(CheckStatus.StatusEnum.valueOf(checkEntity.getDefaultBehaviour().toString()), null);
     } else {
       if (!(value instanceof Boolean)) {
@@ -330,7 +335,7 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
             Collections.singletonList(rule), checkEntity.getRuleStrategy(), ERROR_MESSAGE_KEY, true);
         Object errorMessage = evaluator.evaluateExpression(errorMessageExpression, RETURN_NULL_IF_UNRESOLVED);
         if ((errorMessage instanceof String) && !((String) errorMessage).isEmpty()) {
-          reasonBuilder.append(String.format("Reason: %s", errorMessage));
+          reasonBuilder.append(String.format("Reason: %s", errorMessage + DOT_SEPARATOR + SPACE_SEPARATOR));
         }
       } catch (Exception e) {
         log.warn("Reason expression evaluation failed", e);

@@ -1,3 +1,2 @@
 DOCKER_FILE_PATH: /harness/harness-core/332-ci-manager/build/container/Dockerfile-ci-manager-multistage
-CONTEXT_PATH: /harness/harness-core
 HELM_CHART_SOURCE_DIRECTORY: harness-core/332-ci-manager/chart

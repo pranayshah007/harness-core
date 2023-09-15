@@ -95,11 +95,14 @@ import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateResult;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateVersionRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateVersionResult;
+import com.amazonaws.services.ec2.model.DescribeLaunchTemplateVersionsRequest;
+import com.amazonaws.services.ec2.model.DescribeLaunchTemplateVersionsResult;
 import com.amazonaws.services.ec2.model.DescribeLaunchTemplatesRequest;
 import com.amazonaws.services.ec2.model.DescribeLaunchTemplatesResult;
 import com.amazonaws.services.ec2.model.LaunchTemplate;
 import com.amazonaws.services.ec2.model.LaunchTemplateVersion;
 import com.amazonaws.services.ec2.model.RequestLaunchTemplateData;
+import com.amazonaws.services.ec2.model.ResponseLaunchTemplateData;
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -705,8 +708,7 @@ public class AsgSdkManager {
 
   public void modifySpecificListenerRule(
       String region, String listenerRuleArn, List<String> targetGroupArnsList, AwsInternalConfig awsInternalConfig) {
-    Collection<software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple> targetGroups =
-        new ArrayList<>();
+    Collection<TargetGroupTuple> targetGroups = new ArrayList<>();
     if (isNotEmpty(targetGroupArnsList)) {
       targetGroupArnsList.forEach(targetGroupArn -> {
         TargetGroupTuple targetGroupTuple = TargetGroupTuple.builder().targetGroupArn(targetGroupArn).weight(1).build();
@@ -746,8 +748,7 @@ public class AsgSdkManager {
 
   public void modifyDefaultListenerRule(
       String region, String listenerArn, List<String> targetGroupArnsList, AwsInternalConfig awsInternalConfig) {
-    Collection<software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple> targetGroups =
-        new ArrayList<>();
+    Collection<TargetGroupTuple> targetGroups = new ArrayList<>();
     if (isNotEmpty(targetGroupArnsList)) {
       targetGroupArnsList.forEach(targetGroupArn -> {
         TargetGroupTuple targetGroupTuple = TargetGroupTuple.builder().targetGroupArn(targetGroupArn).weight(1).build();
@@ -927,5 +928,19 @@ public class AsgSdkManager {
       logCallback.saveExecutionLog(formatted, ERROR);
     }
     log.error(formatted);
+  }
+
+  public ResponseLaunchTemplateData getLaunchTemplateData(String templateName, String version) {
+    DescribeLaunchTemplateVersionsRequest req =
+        new DescribeLaunchTemplateVersionsRequest().withLaunchTemplateName(templateName).withVersions(version);
+    DescribeLaunchTemplateVersionsResult describeLaunchTemplateVersionsResult =
+        ec2Call(ec2Client -> ec2Client.describeLaunchTemplateVersions(req));
+    if (isEmpty(describeLaunchTemplateVersionsResult.getLaunchTemplateVersions())) {
+      return null;
+    }
+
+    LaunchTemplateVersion launchTemplateVersion =
+        describeLaunchTemplateVersionsResult.getLaunchTemplateVersions().get(0);
+    return launchTemplateVersion.getLaunchTemplateData();
   }
 }

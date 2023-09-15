@@ -10,6 +10,7 @@ package io.harness.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +28,7 @@ import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -318,6 +320,46 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     assertThat(currFields.get("summary")).isEqualTo("summary");
     assertThat(currFields.get("description")).isEqualTo("description");
     assertThat(currFields.get("customfield_10211")).isEqualTo("2022-09-30T11:30:11.000+0000");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testToJiraIssueNGWithAllFieldNames() throws IOException {
+    JsonNode json = new ObjectMapper().readTree(getResource("jira-api-output.json"));
+    JiraIssueNG issue = new JiraIssueNG(json);
+    // names map absent
+    if (json.has("names")) {
+      ObjectNode objectNode = (ObjectNode) json;
+      objectNode.remove("names");
+    }
+    JiraIssueNG returned = JiraIssueUtilsNG.toJiraIssueNGWithAllFieldNames(json);
+
+    Assertions.assertThat(returned).isNotNull();
+    Assertions.assertThat(returned.getFields()).isNotEmpty();
+    Assertions.assertThat(returned.getKey()).isEqualTo("EDNK-6594");
+    Assertions.assertThat(returned.getId()).isEqualTo("2181512");
+
+    // normal issue
+    json = new ObjectMapper().readTree(getResource("jira-api-output.json"));
+    returned = JiraIssueUtilsNG.toJiraIssueNGWithAllFieldNames(json);
+    Assertions.assertThat(returned).isNotNull();
+    Assertions.assertThat(returned.getFields()).isNotEmpty();
+    Assertions.assertThat(returned.getKey()).isEqualTo("EDNK-6594");
+    Assertions.assertThat(returned.getId()).isEqualTo("2181512");
+    Assertions.assertThat(returned.getFieldNameToKeys()).hasSize(2772);
+    // doesn't have project or issuetype
+    Assertions.assertThat(returned.getFieldNameToKeys()).doesNotContainKey(JiraConstantsNG.ISSUE_TYPE_NAME);
+    Assertions.assertThat(returned.getFieldNameToKeys()).doesNotContainKey("Project");
+    // doesn't have fields with blank names
+    Assertions.assertThat(returned.getFieldNameToKeys()).doesNotContainKey("    ");
+    // has some random custom field
+    Assertions.assertThat(returned.getFieldNameToKeys()).containsKey("Category");
+    // timetracking
+    Assertions.assertThat(returned.getFieldNameToKeys())
+        .containsEntry(JiraConstantsNG.ORIGINAL_ESTIMATE_NAME, JiraConstantsNG.TIME_TRACKING_KEY);
+    Assertions.assertThat(returned.getFieldNameToKeys())
+        .containsEntry(JiraConstantsNG.REMAINING_ESTIMATE_NAME, JiraConstantsNG.TIME_TRACKING_KEY);
   }
 
   private String getResource(String path) throws IOException {

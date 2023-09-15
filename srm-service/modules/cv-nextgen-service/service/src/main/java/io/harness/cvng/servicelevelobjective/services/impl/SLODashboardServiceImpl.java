@@ -27,6 +27,7 @@ import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
+import io.harness.cvng.servicelevelobjective.beans.EnvironmentIdentifierResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
@@ -83,7 +84,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
 
@@ -266,6 +269,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     }
     return SLOError.getNoError();
   }
+
   private SLOError getErrorForSimpleSLO(Optional<SLOHealthIndicator> sloHealthIndicator) {
     if (!sloHealthIndicator.isPresent()) {
       return SLOError.getErrorForDeletionOfSimpleSLOInConfigurationListView();
@@ -600,6 +604,28 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     return PageUtils.offsetAndLimit(msDropdownResponseList, pageParams.getPage(), pageParams.getSize());
   }
 
+  public PageResponse<EnvironmentIdentifierResponse> getSLOAssociatedEnvironmentIdentifiers(
+      ProjectParams projectParams, PageParams pageParams) {
+    List<AbstractServiceLevelObjective> serviceLevelObjectiveList =
+        serviceLevelObjectiveV2Service.getAllSLOs(projectParams, ServiceLevelObjectiveType.SIMPLE);
+
+    Set<String> monitoredServiceIdentifiers =
+        serviceLevelObjectiveList.stream()
+            .map(serviceLevelObjective
+                -> ((SimpleServiceLevelObjective) serviceLevelObjective).getMonitoredServiceIdentifier())
+            .collect(Collectors.toSet());
+    List<MonitoredServiceResponse> monitoredServiceResponseList =
+        monitoredServiceService.get(projectParams, monitoredServiceIdentifiers);
+
+    List<EnvironmentIdentifierResponse> environmentIdentifierResponseList =
+        monitoredServiceResponseList.stream()
+            .map(monitoredServiceResponse
+                -> getEnvironmentIdentifierResponse(projectParams, monitoredServiceResponse.getMonitoredServiceDTO()))
+            .collect(Collectors.toList());
+
+    return PageUtils.offsetAndLimit(environmentIdentifierResponseList, pageParams.getPage(), pageParams.getSize());
+  }
+
   @Override
   public List<SecondaryEventsResponse> getSecondaryEvents(
       ProjectParams projectParams, long startTime, long endTime, String identifier) {
@@ -715,6 +741,22 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .serviceRef(monitoredServiceDTO.getServiceRef())
         .environmentRef(monitoredServiceDTO.getEnvironmentRef())
         .build();
+  }
+
+  private EnvironmentIdentifierResponse getEnvironmentIdentifierResponse(
+      ProjectParams projectParams, MonitoredServiceDTO monitoredServiceDTO) {
+    String envIdentifier = monitoredServiceDTO.getEnvironmentRef();
+    String envName;
+    try {
+      envName = nextGenService
+                    .getEnvironment(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+                        projectParams.getProjectIdentifier(), envIdentifier)
+                    .getName();
+    } catch (Exception e) {
+      log.warn(String.format("Environment with id %s not present", envIdentifier));
+      envName = "DELETED";
+    }
+    return EnvironmentIdentifierResponse.builder().identifier(envIdentifier).name(envName).build();
   }
 
   private SLOHealthListView getSLOListView(ProjectParams projectParams, AbstractServiceLevelObjective slo,

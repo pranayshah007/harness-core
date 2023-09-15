@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -402,7 +403,8 @@ public class HelmChartManifestTaskServiceTest extends CategoryTest {
           .build();
     })
         .when(gitFetchTaskHelper)
-        .fetchFileFromRepo(any(GitStoreDelegateConfig.class), anyList(), anyString(), any(GitConfigDTO.class));
+        .fetchFileFromRepo(
+            any(GitStoreDelegateConfig.class), anyList(), anyString(), any(GitConfigDTO.class), anyBoolean());
 
     doAnswer(invocation -> {
       HelmChartManifestDelegateConfig manifestConfig = invocation.getArgument(0);
@@ -429,7 +431,8 @@ public class HelmChartManifestTaskServiceTest extends CategoryTest {
   private void validateCalledMethods(StoreDelegateConfig storeDelegateConfig, int times) {
     if (StoreDelegateConfigType.GIT == storeDelegateConfig.getType()) {
       verify(gitFetchTaskHelper, times(times))
-          .fetchFileFromRepo(any(GitStoreDelegateConfig.class), anyList(), anyString(), any(GitConfigDTO.class));
+          .fetchFileFromRepo(
+              any(GitStoreDelegateConfig.class), anyList(), anyString(), any(GitConfigDTO.class), anyBoolean());
     } else {
       verify(helmTaskHelperBase, times(times))
           .downloadHelmChart(

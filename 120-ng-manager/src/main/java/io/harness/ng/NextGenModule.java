@@ -320,6 +320,7 @@ import io.harness.reflection.HarnessReflections;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
@@ -528,6 +529,12 @@ public class NextGenModule extends AbstractModule {
   @Named("GitSyncGrpcClientConfigs")
   public Map<Microservice, GrpcClientConfig> grpcClientConfigs() {
     return appConfig.getGitGrpcClientConfigs();
+  }
+
+  @Provides
+  @Singleton
+  CEProxyConfig ceProxyConfig() {
+    return this.appConfig.getCeProxyConfig();
   }
 
   @Provides

@@ -48,8 +48,8 @@ public class ConfigReader {
     IdpExpressionEvaluator evaluator = new IdpExpressionEvaluator(Map.of(APP_CONFIG_CONTEXT, yamlData));
     Object value = evaluator.evaluateExpression(keyExpression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
     if (value == null) {
-      throw new InvalidRequestException(
-          String.format("Could not find the required data by evaluating expression for %s", keyExpression));
+      log.info("Could not find the required data by evaluating expression for - {}", keyExpression);
+      return null;
     }
     return getDecryptedValueIfNeeded(accountIdentifier, value);
   }

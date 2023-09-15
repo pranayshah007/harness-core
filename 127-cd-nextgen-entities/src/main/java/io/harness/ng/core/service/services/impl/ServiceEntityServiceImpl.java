@@ -294,7 +294,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       ServiceEntity serviceToUpdate = oldService.withYaml(requestService.getYaml())
                                           .withDescription(requestService.getDescription())
                                           .withName(requestService.getName())
-                                          .withTags(requestService.getTags());
+                                          .withTags(requestService.getTags())
+                                          .withType(requestService.getType())
+                                          .withGitOpsEnabled(requestService.getGitOpsEnabled());
 
       // create final request service
       ServiceEntityValidator serviceEntityValidator =

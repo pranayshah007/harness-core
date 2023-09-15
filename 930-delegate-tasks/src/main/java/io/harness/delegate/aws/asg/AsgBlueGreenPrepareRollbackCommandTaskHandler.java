@@ -28,7 +28,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
-import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
@@ -59,7 +58,6 @@ import software.wings.beans.LogWeight;
 import software.wings.service.impl.AwsUtils;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
-import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.TagDescription;
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -92,8 +90,6 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
 
     AsgBlueGreenPrepareRollbackDataRequest asgBlueGreenPrepareRollbackDataRequest =
         (AsgBlueGreenPrepareRollbackDataRequest) asgCommandRequest;
-    Map<String, List<String>> asgStoreManifestsContent =
-        asgBlueGreenPrepareRollbackDataRequest.getAsgStoreManifestsContent();
 
     List<AsgLoadBalancerConfig> lbConfigs = isNotEmpty(asgBlueGreenPrepareRollbackDataRequest.getLoadBalancers())
         ? asgBlueGreenPrepareRollbackDataRequest.getLoadBalancers()
@@ -105,16 +101,13 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback, elbV2Client);
       AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
-
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
 
       asgSdkManager.info("Starting BG Prepare Rollback");
 
-      String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
-      CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
-          AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
-      String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
+      String asgName = asgTaskHelper.getAsgName(
+          asgCommandRequest, asgBlueGreenPrepareRollbackDataRequest.getAsgStoreManifestsContent());
 
       if (isEmpty(asgName)) {
         throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));

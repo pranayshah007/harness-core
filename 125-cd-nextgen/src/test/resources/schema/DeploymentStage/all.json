@@ -1107,6 +1107,9 @@
         {
           "type": "object",
           "properties": {
+            "asgName": {
+              "type": "string"
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -1273,6 +1276,9 @@
             "instanceSelection"
           ],
           "properties": {
+            "asgName": {
+              "type": "string"
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -1406,9 +1412,6 @@
             "region"
           ],
           "properties": {
-            "asgName": {
-              "type": "string"
-            },
             "baseAsgName": {
               "type": "string"
             },
@@ -1521,6 +1524,9 @@
         {
           "type": "object",
           "properties": {
+            "asgName": {
+              "type": "string"
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -15505,7 +15511,6 @@
         {
           "type": "object",
           "required": [
-            "args",
             "buildTool",
             "language"
           ],

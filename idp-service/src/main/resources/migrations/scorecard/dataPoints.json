@@ -69,8 +69,7 @@
     "name": "STO stage added in pipeline",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_sto_scan_dsl",
-    "isConditional": true
+    "dataSourceLocationIdentifier": "harness_sto_scan_dsl"
   },
   {
     "id": "64ef79bbf616c89330020df6",

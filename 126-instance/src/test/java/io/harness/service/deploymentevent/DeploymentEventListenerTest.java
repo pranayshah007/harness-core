@@ -7,7 +7,9 @@
 
 package io.harness.service.deploymentevent;
 
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.SERVICE_REF;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VITALIE;
@@ -29,12 +31,17 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.GoogleFunctionServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
+import io.harness.dtos.ReleaseDetailsMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
+import io.harness.dtos.releasedetailsinfo.ReleaseDetailsDTO;
 import io.harness.entities.ArtifactDetails;
+import io.harness.entities.releasedetailsinfo.ReleaseEnvDetails;
+import io.harness.entities.releasedetailsinfo.ReleaseServiceDetails;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.models.DeploymentEvent;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -56,10 +63,13 @@ import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instancesync.InstanceSyncService;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryService;
+import io.harness.service.releasedetailsmapping.ReleaseDetailsMappingService;
 import io.harness.steps.environment.EnvironmentOutcome;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,6 +96,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
   private final String UUID = "dsafergasvfd124";
   private final long START_TS = 1234L;
   private final String RELEASE_NAME = "release";
+
   @Mock AbstractInstanceSyncHandler abstractInstanceSyncHandler;
   @Mock OutcomeService outcomeService;
   @Mock InstanceSyncHandlerFactoryService instanceSyncHandlerFactoryService;
@@ -93,12 +104,42 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
   @Mock InstanceSyncService instanceSyncService;
   @Mock InstanceInfoService instanceInfoService;
   @Mock DeploymentSummaryService deploymentSummaryService;
+  @Mock ReleaseDetailsMappingService releaseDetailsMappingService;
   @InjectMocks DeploymentEventListener deploymentEventListener;
 
   @Before
   public void setup() {
     doReturn(null).when(instanceInfoService).getDeploymentOutcomeMetadata(any(), any());
     doReturn(null).when(abstractInstanceSyncHandler).updateDeploymentInfoDTO(any(), any());
+    ReleaseServiceDetails releaseServiceDetails = ReleaseServiceDetails.builder()
+                                                      .serviceId(SERVICE_IDENTIFIER)
+                                                      .serviceName(SERVICE_REF)
+                                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                                      .orgIdentifier(ORG_IDENTIFIER)
+                                                      .build();
+    ReleaseEnvDetails releaseEnvDetails = ReleaseEnvDetails.builder()
+                                              .envId(ENVIRONMENT_IDENTIFIER)
+                                              .envName(SERVICE_REF)
+                                              .projectIdentifier(PROJECT_IDENTIFIER)
+                                              .orgIdentifier(ORG_IDENTIFIER)
+                                              .infraIdentifier(INFRASTRUCTURE_ID)
+                                              .connectorRef(CONNECTOR_REF)
+                                              .infrastructureKind(KUBERNETES_DIRECT)
+                                              .build();
+
+    ReleaseDetailsMappingDTO releaseDetailsMappingDTO =
+        ReleaseDetailsMappingDTO.builder()
+            .infraKey(INFRASTRUCTURE_KEY)
+            .releaseKey("release_namespace")
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .accountIdentifier(ACCOUNT_ID)
+            .releaseDetailsDTO(
+                ReleaseDetailsDTO.builder().serviceDetails(releaseServiceDetails).envDetails(releaseEnvDetails).build())
+            .build();
+    doReturn(Optional.of(releaseDetailsMappingDTO))
+        .when(releaseDetailsMappingService)
+        .createNewOrReturnExistingReleaseDetailsMapping(any());
   }
 
   @Test
@@ -132,7 +173,20 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
                             .build();
     OrchestrationEvent orchestrationEvent =
         OrchestrationEvent.builder().status(Status.SUCCEEDED).ambiance(ambiance).build();
-    ServerInstanceInfo serverInstanceInfo = K8sServerInstanceInfo.builder().build();
+    ServerInstanceInfo serverInstanceInfo =
+        K8sServerInstanceInfo.builder().releaseName("releaseName").namespace("namespace").build();
+    ServerInstanceInfo serverInstanceInfo2 =
+        K8sServerInstanceInfo.builder().releaseName("releaseName2").namespace("namespace2").build();
+    ServerInstanceInfo serverInstanceInfo3 =
+        K8sServerInstanceInfo.builder().releaseName("releaseName").namespace("namespace").build();
+    ServerInstanceInfo serverInstanceInfo4 = K8sServerInstanceInfo.builder().releaseName("releaseName").build();
+    ServerInstanceInfo serverInstanceInfo5 = GoogleFunctionServerInstanceInfo.builder().build();
+    List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+    serverInstanceInfoList.add(serverInstanceInfo);
+    serverInstanceInfoList.add(serverInstanceInfo2);
+    serverInstanceInfoList.add(serverInstanceInfo3);
+    serverInstanceInfoList.add(serverInstanceInfo4);
+    serverInstanceInfoList.add(serverInstanceInfo5);
     ServiceStepOutcome serviceStepOutcome = ServiceStepOutcome.builder().identifier(SERVICE_IDENTIFIER).build();
     EnvironmentOutcome environmentOutcome = EnvironmentOutcome.builder().identifier(ENVIRONMENT_IDENTIFIER).build();
     InfrastructureOutcome infrastructureOutcome = K8sDirectInfrastructureOutcome.builder()
@@ -140,7 +194,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
                                                       .environment(environmentOutcome)
                                                       .connectorRef(CONNECTOR_REF)
                                                       .build();
-    when(instanceInfoService.listServerInstances(ambiance, stepType)).thenReturn(Arrays.asList(serverInstanceInfo));
+    when(instanceInfoService.listServerInstances(ambiance, stepType)).thenReturn(serverInstanceInfoList);
     when(outcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)))
         .thenReturn(serviceStepOutcome);
     when(outcomeService.resolve(
@@ -159,6 +213,8 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
                                                             .connectorRef(CONNECTOR_REF)
                                                             .build();
     final ArgumentCaptor<InfrastructureMappingDTO> captor = ArgumentCaptor.forClass(InfrastructureMappingDTO.class);
+    final ArgumentCaptor<ReleaseDetailsMappingDTO> releaseDetailsCaptor =
+        ArgumentCaptor.forClass(ReleaseDetailsMappingDTO.class);
     when(infrastructureMappingService.createNewOrReturnExistingInfrastructureMapping(any()))
         .thenReturn(Optional.of(infrastructureMappingDTO));
     when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
@@ -167,7 +223,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
     DeploymentInfoDTO deploymentInfoDTO =
         K8sDeploymentInfoDTO.builder().releaseName(RELEASE_NAME).namespaces(namespaces).build();
     doReturn(deploymentInfoDTO).when(abstractInstanceSyncHandler).updateDeploymentInfoDTO(any(), any());
-    when(abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, Arrays.asList(serverInstanceInfo)))
+    when(abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, serverInstanceInfoList))
         .thenReturn(deploymentInfoDTO);
 
     DeploymentSummaryDTO deploymentSummaryDTO = DeploymentSummaryDTO.builder()
@@ -206,13 +262,17 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
         .thenReturn(optionalOutcome);
     deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder().artifactId("").tag("").displayName("").build());
     when(deploymentSummaryService.save(any())).thenReturn(deploymentSummaryDTO1);
-    deploymentSummaryDTO1.setServerInstanceInfoList(Arrays.asList(serverInstanceInfo));
+    deploymentSummaryDTO1.setServerInstanceInfoList(serverInstanceInfoList);
     deploymentSummaryDTO1.setInfrastructureMapping(infrastructureMappingDTO);
 
     deploymentEventListener.handleEvent(orchestrationEvent);
 
     final ArgumentCaptor<DeploymentSummaryDTO> deploymentSummaryDTOArgumentCaptor =
         ArgumentCaptor.forClass(DeploymentSummaryDTO.class);
+    verify(deploymentSummaryService, times(1)).save(deploymentSummaryDTOArgumentCaptor.capture());
+
+    verify(releaseDetailsMappingService, times(2))
+        .createNewOrReturnExistingReleaseDetailsMapping(releaseDetailsCaptor.capture());
     verify(deploymentSummaryService, times(1)).save(deploymentSummaryDTOArgumentCaptor.capture());
     DeploymentSummaryDTO actualDeploymentSummaryDTO = deploymentSummaryDTOArgumentCaptor.getValue();
     assertThat(actualDeploymentSummaryDTO.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
@@ -222,8 +282,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
     verify(infrastructureMappingService, times(1)).createNewOrReturnExistingInfrastructureMapping(captor.capture());
     InfrastructureMappingDTO actualMappingDTO = captor.getValue();
     assertThat(actualMappingDTO.getConnectorRef()).isEqualTo(infrastructureMappingDTO.getConnectorRef());
-    verify(abstractInstanceSyncHandler, times(1))
-        .getDeploymentInfo(infrastructureOutcome, Arrays.asList(serverInstanceInfo));
+    verify(abstractInstanceSyncHandler, times(1)).getDeploymentInfo(infrastructureOutcome, serverInstanceInfoList);
     verify(instanceSyncService, times(1))
         .processInstanceSyncForNewDeployment(new DeploymentEvent(deploymentSummaryDTO1, null, infrastructureOutcome));
   }

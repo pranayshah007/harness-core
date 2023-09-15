@@ -16,7 +16,10 @@ import static io.harness.logging.LogLevel.ERROR;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.connector.service.scm.ScmDelegateClient;
@@ -43,9 +46,12 @@ import io.harness.service.ScmServiceClient;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +60,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GIT_CLIENTS})
 @Singleton
 @OwnedBy(CDP)
 @Slf4j
@@ -72,6 +80,17 @@ public class ScmFetchFilesHelperNG {
     boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
     List<GitFile> gitFiles = fetchFilesFromRepo(identifier, useBranch, gitStoreDelegateConfig.getBranch(),
         gitStoreDelegateConfig.getCommitId(), filePathList, gitStoreDelegateConfig.getGitConfigDTO());
+    return FetchFilesResult.builder()
+        .files(gitFiles)
+        .commitResult(
+            CommitResult.builder().commitId(useBranch ? "latest" : gitStoreDelegateConfig.getCommitId()).build())
+        .build();
+  }
+
+  public FetchFilesResult fetchFilesAndFoldersContentFromRepoWithScm(
+      GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
+    boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
+    List<GitFile> gitFiles = fetchFilesByFolderFromRepo(gitStoreDelegateConfig, filePathList);
     return FetchFilesResult.builder()
         .files(gitFiles)
         .commitResult(
@@ -130,6 +149,63 @@ public class ScmFetchFilesHelperNG {
 
     if (isNotEmpty(gitFiles)) {
       gitFiles.forEach(gitFile -> log.info("File fetched : " + gitFile.getFilePath()));
+    }
+    return gitFiles;
+  }
+
+  private List<GitFile> fetchFilesByFolderFromRepo(
+      GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePathList) {
+    boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
+    List<GitFile> gitFiles = new ArrayList<>();
+    FileContentBatchResponse fileBatchContentResponse;
+    List<String> filteredFilePaths = new ArrayList<>();
+
+    for (String path : filePathList) {
+      fileBatchContentResponse = getFileContentBatchResponseByFolder(
+          gitStoreDelegateConfig, Collections.singleton(path), gitStoreDelegateConfig.getGitConfigDTO());
+      if (isEmpty(fileBatchContentResponse.getFileBatchContentResponse().getFileContentsList())) {
+        filteredFilePaths.add(path);
+      }
+      gitFiles.addAll(getGitFilesFromResponse(gitStoreDelegateConfig, fileBatchContentResponse, true));
+    }
+    if (isNotEmpty(filteredFilePaths)) {
+      fileBatchContentResponse = fetchFilesByFilePaths(useBranch, gitStoreDelegateConfig.getBranch(),
+          gitStoreDelegateConfig.getCommitId(), filteredFilePaths, gitStoreDelegateConfig.getGitConfigDTO());
+      gitFiles.addAll(getGitFilesFromResponse(gitStoreDelegateConfig, fileBatchContentResponse, false));
+    }
+
+    if (isNotEmpty(gitFiles)) {
+      gitFiles.forEach(gitFile -> log.info("File fetched : " + gitFile.getFilePath()));
+    }
+    return gitFiles;
+  }
+
+  private List<GitFile> getGitFilesFromResponse(GitStoreDelegateConfig gitStoreDelegateConfig,
+      FileContentBatchResponse fileBatchContentResponse, boolean useBase64) {
+    List<GitFile> gitFiles = new ArrayList<>();
+
+    List<FileContent> fileContents =
+        fileBatchContentResponse.getFileBatchContentResponse()
+            .getFileContentsList()
+            .stream()
+            .filter(fileContent -> {
+              if (fileContent.getStatus() != 200 || isNotEmpty(fileContent.getError())) {
+                throwFailedToFetchFileException(gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH,
+                    gitStoreDelegateConfig.getBranch(), gitStoreDelegateConfig.getCommitId(), fileContent);
+                return false;
+              } else {
+                return true;
+              }
+            })
+            .collect(toList());
+
+    for (FileContent fileContent : fileContents) {
+      gitFiles.add(GitFile.builder()
+                       .fileContent(useBase64 ? new String(
+                                        Base64.getDecoder().decode(fileContent.getContent()), StandardCharsets.UTF_8)
+                                              : fileContent.getContent())
+                       .filePath(fileContent.getPath())
+                       .build());
     }
     return gitFiles;
   }

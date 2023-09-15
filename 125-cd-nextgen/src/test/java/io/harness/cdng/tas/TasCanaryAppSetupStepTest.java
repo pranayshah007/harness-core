@@ -598,7 +598,7 @@ public class TasCanaryAppSetupStepTest extends CDNGTestBase {
   public void testValidateResourcesFFDisabled() {
     doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.NG_SVC_ENV_REDESIGN));
     assertThatThrownBy(() -> tasCanaryAppSetupStep.validateResources(getAmbiance(), stepElementParametersFromManifest))
-        .hasMessage("CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.");
+        .hasMessage("NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.");
   }
 
   private Ambiance getAmbiance() {

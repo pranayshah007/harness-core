@@ -159,7 +159,7 @@ public class HelmChartManifestTaskService {
     String chartYamlPath = getChartYamlPath(manifestConfig, chartPath);
 
     FetchFilesResult result = gitFetchTaskHelper.fetchFileFromRepo(
-        gitStoreDelegateConfig, Collections.singletonList(chartYamlPath), accountId, gitConfigDTO);
+        gitStoreDelegateConfig, Collections.singletonList(chartYamlPath), accountId, gitConfigDTO, false);
     if (isEmpty(result.getFiles())) {
       return;
     }

@@ -7,6 +7,8 @@
 
 package io.harness.cdng.aws.asg;
 
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+
 import static software.wings.beans.TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG;
 import static software.wings.beans.TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG_V2;
 
@@ -25,6 +27,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
@@ -105,14 +108,14 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
         asgStepCommonHelper.buildManifestContentMap(executionPassThroughData.getAsgManifestFetchData(), ambiance);
 
     AsgCanaryDeployStepParameters asgSpecParameters = (AsgCanaryDeployStepParameters) stepElementParameters.getSpec();
-
+    AsgInfraConfig asgInfraConfig = asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance);
     String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
 
     AsgCanaryDeployRequest asgCanaryDeployRequest =
         AsgCanaryDeployRequest.builder()
             .commandName(ASG_CANARY_DEPLOY_COMMAND_NAME)
             .accountId(accountId)
-            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .asgInfraConfig(asgInfraConfig)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStoreManifestsContent)
@@ -120,9 +123,11 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
             .unitValue(asgSpecParameters.getInstanceSelection().getSpec().getInstances())
             .unitType(asgSpecParameters.getInstanceSelection().getSpec().getType())
             .amiImageId(amiImageId)
+            .asgName(getParameterFieldValue(asgSpecParameters.getAsgName()))
             .build();
 
-    TaskType taskType = asgStepCommonHelper.isV2Feature(asgStoreManifestsContent, null, null)
+    TaskType taskType =
+        asgStepCommonHelper.isV2Feature(asgStoreManifestsContent, null, null, asgInfraConfig, asgSpecParameters)
         ? AWS_ASG_CANARY_DEPLOY_TASK_NG_V2
         : AWS_ASG_CANARY_DEPLOY_TASK_NG;
 

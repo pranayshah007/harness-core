@@ -21,17 +21,23 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import lombok.Value;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.codec.binary.Hex;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDP)
 @UtilityClass
-public class InfrastructureKey {
+public class InfrastructureKeyGenerator {
   private static final String HASH_ALGORITHM = "SHA-1";
   private static final String INFRA_KEY_DELIMITER = "-";
 
-  public String generate(ServiceStepOutcome service, EnvironmentOutcome env, String... params) {
+  public InfraKey createInfraKey(ServiceStepOutcome service, EnvironmentOutcome env, String... params) {
+    String hashedInfrastructureKey = createFullInfraKey(service, env, params);
+    return new InfraKey(hashedInfrastructureKey);
+  }
+
+  public String createFullInfraKey(ServiceStepOutcome service, EnvironmentOutcome env, String... params) {
     String formattedParams = String.join(INFRA_KEY_DELIMITER, params);
     String rawKey = String.join(INFRA_KEY_DELIMITER, service.getIdentifier(), env.getIdentifier(), formattedParams);
     return hashKey(rawKey.getBytes(UTF_8));
@@ -44,6 +50,20 @@ public class InfrastructureKey {
       return Hex.encodeHexString(keyBytes);
     } catch (NoSuchAlgorithmException e) {
       throw new UnexpectedException(String.format("Algorithm %s not available", HASH_ALGORITHM), e);
+    }
+  }
+
+  @Value
+  static class InfraKey {
+    private static final int SHORT_INFRA_KEY_LENGTH = 6;
+    String key;
+
+    InfraKey(String key) {
+      this.key = key;
+    }
+
+    String getShortKey() {
+      return key.substring(0, SHORT_INFRA_KEY_LENGTH);
     }
   }
 }

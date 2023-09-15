@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.instancesync.info;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -32,4 +34,12 @@ public class NativeHelmServerInstanceInfo extends ServerInstanceInfo {
   private String releaseName;
   private HelmChartInfo helmChartInfo;
   private HelmVersion helmVersion;
+
+  @Override
+  public String getReleaseKey() {
+    if (isEmpty(releaseName) || isEmpty(namespace)) {
+      return null;
+    }
+    return String.format("%s_%s", releaseName, namespace);
+  }
 }

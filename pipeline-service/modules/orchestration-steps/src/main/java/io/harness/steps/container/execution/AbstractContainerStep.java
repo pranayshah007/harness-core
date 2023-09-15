@@ -14,10 +14,13 @@ import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
@@ -32,17 +35,22 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
+import io.harness.steps.container.utils.ConnectorUtils;
 import io.harness.steps.container.utils.ContainerSpecUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
+import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
+import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +65,8 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private CIDelegateTaskExecutor taskExecutor;
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
+  @Inject private PmsFeatureFlagService featureFlagService;
+  @Inject private ConnectorUtils connectorUtils;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
@@ -84,9 +94,18 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
         - (System.currentTimeMillis() - startTs);
     timeout = Math.max(timeout, 100);
     log.info("Timeout for container step left {}", timeout);
+    List<TaskSelector> delegateSelectors = new ArrayList<>();
 
-    String parkedTaskId = taskExecutor.queueParkedDelegateTask(
-        ambiance, timeout, accountId, ContainerSpecUtils.getDelegateSelectors(containerStepInfo));
+    if (featureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CD_CONTAINER_STEP_DELEGATE_SELECTOR)
+        && ContainerStepInfra.Type.KUBERNETES_DIRECT.equals(containerStepInfo.getInfrastructure().getType())) {
+      ConnectorDetails k8sConnector = connectorUtils.getConnectorDetails(
+          AmbianceUtils.getNgAccess(ambiance), getK8sConnectorRef(containerStepInfo));
+      delegateSelectors =
+          ContainerSpecUtils.mergeStepAndConnectorOriginDelegateSelectors(containerStepInfo, k8sConnector);
+    }
+
+    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId, delegateSelectors);
     TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeout, parkedTaskId);
     String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId);
@@ -152,5 +171,10 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
             ErrorNotifyResponseData.builder()
                 .errorMessage("Delegate is not able to connect to created build farm")
                 .build()));
+  }
+
+  private String getK8sConnectorRef(ContainerStepSpec containerStepInfo) {
+    ContainerK8sInfra containerK8sInfra = (ContainerK8sInfra) containerStepInfo.getInfrastructure();
+    return containerK8sInfra.getSpec().getConnectorRef().getValue();
   }
 }

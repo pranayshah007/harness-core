@@ -6425,7 +6425,8 @@
     "customfield_37301": "Solution Fix Version",
     "customfield_27501": "SNOW Reference Number",
     "customfield_27500": "Escalation Closed",
-    "customfield_27502": "No Client provided DL"
+    "customfield_27502": "No Client provided DL",
+    "fields_with_blank_name": "    "
   },
   "schema": {
     "customfield_23942": {

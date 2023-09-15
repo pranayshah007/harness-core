@@ -10,7 +10,6 @@ package io.harness.ci.execution.execution;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
-import io.harness.ci.pipeline.executions.beans.CIImageDetails;
 import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
 import io.harness.ci.pipeline.executions.beans.CIScmDetails;
 import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
@@ -114,16 +113,6 @@ public class CIPipelineEndEventHandler implements OrchestrationEventHandler {
     if (ciBuiltMap.get(URL) != null) {
       ciBuiltMap.put(USED_CODEBASE, true);
     }
-
-    // Image details
-    HashMap<String, List<String>> imagesMap = new HashMap<>();
-    for (CIImageDetails image : moduleInfo.getImageDetailsList()) {
-      String imageName = image.getImageName();
-      String imageTag = image.getImageTag();
-      imagesMap.computeIfAbsent(imageName, k -> new ArrayList<String>());
-      imagesMap.get(imageName).add(imageTag);
-    }
-    ciBuiltMap.put(IMAGES, imagesMap);
 
     // Infrastructure details
     List<String> infraTypeList = new ArrayList<>();

@@ -113,8 +113,8 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder().build();
     doReturn(gitStoreDelegateConfig)
         .when(cdStepHelper)
-        .getGitStoreDelegateConfig(
-            githubStore, connectorInfoDTO, manifestOutcome, Collections.singletonList("path"), ambiance);
+        .getGitStoreDelegateConfigWithApiAccess(
+            githubStore, connectorInfoDTO, Collections.singletonList("path"), ambiance, manifestOutcome);
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     Mockito.mockStatic(TaskRequestsUtils.class);
