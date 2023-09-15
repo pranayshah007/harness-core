@@ -130,11 +130,21 @@ public class StepUtils {
     for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
       Level currentLevel = ambiance.getLevelsList().get(i);
       String retrySuffix = currentLevel.getRetryIndex() > 0 ? String.format("_%s", currentLevel.getRetryIndex()) : "";
+      String levelValue = currentLevel.getIdentifier() + retrySuffix;
+
+      if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+          && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+        if (levelValue.equals("spec") || levelValue.equals("execution")) {
+          continue;
+        }
+      }
       logAbstractions.put("level" + i, currentLevel.getIdentifier() + retrySuffix);
+
       if (lastGroup != null && lastGroup.equals(currentLevel.getGroup())) {
         break;
       }
     }
+
     return logAbstractions;
   }
 
@@ -146,18 +156,22 @@ public class StepUtils {
     logAbstractions.put("projectId", ambiance.getSetupAbstractionsMap().getOrDefault("projectIdentifier", ""));
     logAbstractions.put("pipelineId", ambiance.getMetadata().getPipelineIdentifier());
     logAbstractions.put("runSequence", String.valueOf(ambiance.getMetadata().getRunSequence()));
+
     for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
       Level currentLevel = ambiance.getLevelsList().get(i);
       String retrySuffix = currentLevel.getRetryIndex() > 0 ? String.format("_%s", currentLevel.getRetryIndex()) : "";
       String levelValue = currentLevel.getIdentifier() + retrySuffix;
+
       if (levelValue.equals("spec") || levelValue.equals("execution")) {
         continue;
       }
       logAbstractions.put("level" + i, levelValue);
+
       if (lastGroup != null && lastGroup.equals(currentLevel.getGroup())) {
         break;
       }
     }
+
     return logAbstractions;
   }
 
