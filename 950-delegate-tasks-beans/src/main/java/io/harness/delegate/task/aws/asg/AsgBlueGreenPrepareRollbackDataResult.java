@@ -22,7 +22,8 @@ import lombok.Data;
 public class AsgBlueGreenPrepareRollbackDataResult {
   String prodAsgName;
   String asgName;
-  AsgLoadBalancerConfig asgLoadBalancerConfig;
+  @Deprecated AsgLoadBalancerConfig asgLoadBalancerConfig;
   Map<String, List<String>> prodAsgManifestsDataForRollback;
   Map<String, List<String>> stageAsgManifestsDataForRollback;
+  List<AsgLoadBalancerConfig> loadBalancers;
 }

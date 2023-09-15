@@ -21,13 +21,29 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.beans.execution.*;
-import io.harness.beans.provenance.*;
+import io.harness.beans.execution.ProvenanceArtifact;
+import io.harness.beans.execution.PublishedImageArtifact;
+import io.harness.beans.execution.ReleaseWebhookEvent;
+import io.harness.beans.execution.WebhookExecutionSource;
+import io.harness.beans.provenance.BuildDefinition;
+import io.harness.beans.provenance.BuildMetadata;
+import io.harness.beans.provenance.CodeMetadata;
+import io.harness.beans.provenance.ExternalParameters;
+import io.harness.beans.provenance.InternalParameters;
+import io.harness.beans.provenance.ProvenanceGenerator;
+import io.harness.beans.provenance.ProvenancePredicate;
+import io.harness.beans.provenance.RunDetails;
+import io.harness.beans.provenance.RunDetailsMetadata;
+import io.harness.beans.provenance.TriggerMetadata;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
-import io.harness.beans.sweepingoutputs.*;
+import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
+import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
+import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
+import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.execution.execution.CIExecutionConfigService;
@@ -48,9 +64,10 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.plan.*;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -102,12 +119,12 @@ public class DockerStepTest extends CIExecutionTestBase {
                    .setMetadata(ExecutionMetadata.newBuilder()
                                     .setPipelineIdentifier("pipelineId")
                                     .setRunSequence(1)
-                                    .setExecutionUuid("pipelineExecutionUuid")
                                     .setTriggerInfo(
                                         ExecutionTriggerInfo.newBuilder()
                                             .setTriggeredBy(TriggeredBy.newBuilder().setIdentifier("triggerBy").build())
                                             .build())
                                     .build())
+                   .setPlanExecutionId("pipelineExecutionUuid")
                    .putAllSetupAbstractions(setupAbstractions)
                    .addLevels(Level.newBuilder()
                                   .setRuntimeId("runtimeId")

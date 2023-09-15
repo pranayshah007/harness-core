@@ -13,13 +13,17 @@ import static io.harness.delegate.task.winrm.WinRmExecutorHelper.PARTITION_SIZE_
 import static io.harness.delegate.utils.TaskExceptionUtils.calcPercentage;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.windows.CmdUtils.escapeEnvValueIllegalSymbols;
 import static io.harness.windows.CmdUtils.escapeEnvValueSpecialChars;
 import static io.harness.winrm.WinRmHelperUtils.buildErrorDetailsFromWinRmClientException;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.clienttools.ClientTool;
@@ -55,6 +59,8 @@ import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Slf4j
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -78,7 +84,9 @@ public class WinRmSession implements AutoCloseable {
     Map<String, String> processedEnvironmentMap = new HashMap<>();
     if (config.getEnvironment() != null) {
       for (Entry<String, String> entry : config.getEnvironment().entrySet()) {
-        processedEnvironmentMap.put(entry.getKey(), escapeEnvValueSpecialChars(entry.getValue()));
+        processedEnvironmentMap.put(entry.getKey(),
+            config.isDisableWinRmEnvVarEscaping() ? escapeEnvValueIllegalSymbols(entry.getValue())
+                                                  : escapeEnvValueSpecialChars(entry.getValue()));
       }
     }
     this.logCallback = logCallback;

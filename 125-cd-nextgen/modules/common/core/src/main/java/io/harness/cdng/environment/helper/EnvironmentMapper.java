@@ -24,6 +24,7 @@ import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
@@ -86,6 +87,7 @@ public class EnvironmentMapper {
         .description(stepParameters.getDescription() != null ? stepParameters.getDescription() : "")
         .tags(CollectionUtils.emptyIfNull(stepParameters.getTags()))
         .type(stepParameters.getType())
+        .v1Type(stepParameters.getType() == EnvironmentType.Production ? "PROD" : "NON_PROD")
         .environmentRef(stepParameters.getEnvironmentRef().getValue())
         .variables(stepParameters.getVariables())
         .build();
@@ -125,6 +127,7 @@ public class EnvironmentMapper {
         .description(StringUtils.defaultIfBlank(environment.getDescription(), ""))
         .tags(TagMapper.convertToMap(environment.getTags()))
         .type(environment.getType())
+        .v1Type(environment.getType() == EnvironmentType.Production ? "PROD" : "NON_PROD")
         .environmentRef(IdentifierRefHelper.getRefFromIdentifierOrRef(environment.getAccountId(),
             environment.getOrgIdentifier(), environment.getProjectIdentifier(), environment.getIdentifier()))
         .variables(variables)

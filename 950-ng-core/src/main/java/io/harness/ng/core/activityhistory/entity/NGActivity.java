@@ -59,6 +59,10 @@ public class NGActivity implements PersistentEntity, NGAccountAccess {
   @UtilityClass
   public static final class ActivityHistoryEntityKeys {
     public static final String referredByEntityType = "referredByEntityType";
+    public static final String usageType = "usageDetail.usageType";
+
+    public static final String referredByEntityName = "referredByEntity.name";
+    public static final String referredByEntityIdentifier = "referredByEntity.entityRef.identifier";
   }
 
   public static List<MongoIndex> mongoIndexes() {

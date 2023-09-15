@@ -80,6 +80,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
+import io.harness.ng.core.artifacts.resources.util.ResolvedFieldValueWithYamlExpressionEvaluator;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -342,10 +343,13 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                                                  .isErrorResponse(false)
                                                                  .completePipelineYaml(pipelineYamlWithoutTemplates)
                                                                  .build())));
-    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+pipeline.variables.image_path>",
-        "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    String imagePath =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+pipeline.variables.image_path>",
+                "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("library/nginx");
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -357,10 +361,10 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   public void testGetResolvedPathWithImagePathWhenPipelineUnderConstruction() {
     assertThatThrownBy(
         ()
-            -> artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, "-1", "",
-                "<+pipeline.variables.image_path>",
+            -> artifactResourceUtils.getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+                "-1", "", "<+pipeline.variables.image_path>",
                 "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
-                GitEntityFindInfoDTO.builder().build(), ""))
+                GitEntityFindInfoDTO.builder().build(), "", null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(
             "Couldn't resolve artifact image path expression <+pipeline.variables.image_path>, as pipeline has not been saved yet.");
@@ -439,10 +443,13 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .thenReturn(Response.success(ResponseDTO.newResponse(
             TemplateMergeResponseDTO.builder().mergedPipelineYaml(pipelineYamlWithoutTemplates).build())));
 
-    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+pipeline.variables.image_path>",
-        "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    String imagePath =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+pipeline.variables.image_path>",
+                "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("library/nginx");
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -498,42 +505,61 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     mockEnvironmentGetCall();
 
     // resolve expressions like <+service.name> in normal stage
-    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+service.name>", "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    String imagePath =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+service.name>",
+                "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve expressions like <+service.name> in parallel stage
-    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+service.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    imagePath = artifactResourceUtils
+                    .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                        "<+service.name>",
+                        "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+                        GitEntityFindInfoDTO.builder().build(), "", null)
+                    .getValue();
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in normal stage
     imagePath =
-        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
-            "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
-            GitEntityFindInfoDTO.builder().build(), "");
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+service.name>",
+                "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in parallel stage
     imagePath =
-        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
-            "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
-            GitEntityFindInfoDTO.builder().build(), "");
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+service.name>",
+                "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve env expressions in normal stage
     imagePath =
-        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
-            "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
-            GitEntityFindInfoDTO.builder().build(), "");
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+env.name>",
+                "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("env1");
 
     // resolve env expressions in parallel stage
-    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    imagePath = artifactResourceUtils
+                    .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                        "<+env.name>",
+                        "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+                        GitEntityFindInfoDTO.builder().build(), "", null)
+                    .getValue();
     assertThat(imagePath).isEqualTo("env1");
   }
 
@@ -585,44 +611,62 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     // resolve expressions like <+service.name> in normal stage
     String imagePath =
-        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
-            "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
-            GitEntityFindInfoDTO.builder().build(), "");
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+service.name>",
+                "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve expressions like <+service.name> in parallel stage
     imagePath =
-        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
-            "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
-            GitEntityFindInfoDTO.builder().build(), "");
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+service.name>",
+                "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in normal stage
-    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+service.name>",
-        "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    imagePath =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+service.name>",
+                "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("svc1");
 
     // fqnPath is for sidecar tag in parallel stage
-    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+service.name>",
-        "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    imagePath =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+service.name>",
+                "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("svc1");
 
     // resolve env expressions in normal stage
-    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+env.name>",
-        "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    imagePath =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+env.name>",
+                "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("env1");
 
     // resolve env expressions in parallel stage
     imagePath =
-        artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
-            "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
-            GitEntityFindInfoDTO.builder().build(), "");
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+env.name>",
+                "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("env1");
   }
 
@@ -677,14 +721,21 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     when(environmentService.get(anyString(), anyString(), anyString(), eq("env1"), anyBoolean()))
         .thenReturn(Optional.of(Environment.builder().name("env1").identifier("env1").build()));
 
-    String imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+service.name>", "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    String imagePath =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                "<+service.name>",
+                "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+                GitEntityFindInfoDTO.builder().build(), "", null)
+            .getValue();
     assertThat(imagePath).isEqualTo("svc1");
 
-    imagePath = artifactResourceUtils.getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
-        "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
-        GitEntityFindInfoDTO.builder().build(), "");
+    imagePath = artifactResourceUtils
+                    .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+                        "<+env.name>",
+                        "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+                        GitEntityFindInfoDTO.builder().build(), "", null)
+                    .getValue();
     assertThat(imagePath).isEqualTo("env1");
   }
 
@@ -987,8 +1038,10 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
       "library/http.regex(library.*), library/http", "http, http"})
   public void
   testGetResolvedImagePathWithFixed(String imagePathInput, String expectedImagePath) {
-    String resolvedImagePath =
-        artifactResourceUtils.getResolvedFieldValue("a", "o", "p", "p", "", imagePathInput, "fqn", null, null);
+    String resolvedImagePath = artifactResourceUtils
+                                   .getResolvedFieldValueWithYamlExpressionEvaluator(
+                                       "a", "o", "p", "p", "", imagePathInput, "fqn", null, null, null)
+                                   .getValue();
     assertThat(resolvedImagePath).isEqualTo(expectedImagePath);
   }
 
@@ -1024,26 +1077,26 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
             FQN, SERVICE_REF, GIT_ENTITY_FIND_INFO_DTO))
         .isSameAs(GAR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PKG, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PKG, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PROJECT, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PROJECT, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1068,26 +1121,26 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
             ORG_ID, PROJECT_ID, PIPELINE_ID, GAR_REQUEST_DTO_2, FQN, SERVICE_REF, GIT_ENTITY_FIND_INFO_DTO))
         .isSameAs(GAR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PKG, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PKG, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PROJECT, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PROJECT, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1106,34 +1159,34 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .when(spyartifactResourceUtils)
         .locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_REF, FQN);
 
-    doReturn(CONNECTOR_REF)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(REGION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REGION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(REPO_NAME)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REPO_NAME).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(PKG)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(PKG).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PKG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(PROJECT)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PKG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(PROJECT).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PROJECT_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PROJECT_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION_REGEX)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION_REGEX).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     doReturn(GAR_BUILD_DETAILS_DTO)
         .when(garResourceService)
@@ -1146,26 +1199,26 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    GIT_ENTITY_FIND_INFO_DTO))
         .isSameAs(GAR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PKG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PKG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PROJECT_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PROJECT_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1196,20 +1249,20 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    GcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(GCR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, HOST, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, HOST, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1232,20 +1285,20 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO, GCR_REQUEST_DTO_2))
         .isSameAs(GCR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, HOST, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, HOST, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1268,46 +1321,46 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .when(gcrResourceService)
         .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(GCR_REQUEST_DTO_2), eq(ORG_ID), eq(PROJECT_ID));
 
-    doReturn(CONNECTOR_REF)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(IMAGE)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(IMAGE).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(HOST)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(HOST).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, HOST_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, HOST_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION_REGEX)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION_REGEX).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(spyartifactResourceUtils.getSuccessfulBuildV2GCR(IMAGE_2, CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID,
                    PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
                    GcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(GCR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, HOST_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, HOST_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1338,20 +1391,20 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    EcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(ECR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1374,20 +1427,20 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO, ECR_REQUEST_DTO))
         .isSameAs(ECR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1412,46 +1465,46 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .getSuccessfulBuild(
             eq(IDENTIFIER_REF), eq(REGISTRY), eq(IMAGE), eq(ECR_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
 
-    doReturn(REGION)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REGION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(IMAGE)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(IMAGE).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(CONNECTOR_REF)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION_REGEX)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION_REGEX).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2ECR(null, IMAGE_2, CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID,
                    PROJECT_ID, FQN, SERVICE_REF, PIPELINE_ID, GIT_ENTITY_FIND_INFO_DTO,
                    EcrRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(ECR_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGION_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1489,23 +1542,23 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_BUILD_DETAILS_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1535,23 +1588,23 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_BUILD_DETAILS_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1575,30 +1628,30 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .when(acrResourceService)
         .getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPO_NAME, ORG_ID, PROJECT_ID, ACR_REQUEST_DTO);
 
-    doReturn(REGISTRY)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REGISTRY).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(SUBSCRIPTION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(SUBSCRIPTION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(REPO_NAME)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REPO_NAME).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION_REGEX)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION_REGEX).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(CONNECTOR_REF)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(
         spyartifactResourceUtils.getLastSuccessfulBuildV2ACR(SUBSCRIPTION_2, REGISTRY_2, REPO_NAME_2, CONNECTOR_REF_2,
@@ -1611,23 +1664,23 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_BUILD_DETAILS_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1662,17 +1715,17 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_RESPONSE_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1702,17 +1755,17 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_RESPONSE_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1736,22 +1789,22 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .when(acrResourceService)
         .getBuildDetails(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPO_NAME, ORG_ID, PROJECT_ID);
 
-    doReturn(REGISTRY)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REGISTRY).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(SUBSCRIPTION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(SUBSCRIPTION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(REPO_NAME)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REPO_NAME).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(CONNECTOR_REF)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(spyartifactResourceUtils.getBuildDetailsV2ACR(SUBSCRIPTION_2, REGISTRY_2, REPO_NAME_2, CONNECTOR_REF_2,
                    ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
@@ -1759,17 +1812,17 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_RESPONSE_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1803,14 +1856,14 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_REPOSITORIES_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1840,14 +1893,14 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_REPOSITORIES_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1871,18 +1924,18 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .when(acrResourceService)
         .getRepositories(IDENTIFIER_REF, ORG_ID, PROJECT_ID, SUBSCRIPTION, REGISTRY);
 
-    doReturn(REGISTRY)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REGISTRY).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(SUBSCRIPTION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(SUBSCRIPTION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(CONNECTOR_REF)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(
         spyartifactResourceUtils.getAzureRepositoriesV3(CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
@@ -1890,14 +1943,14 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_REPOSITORIES_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REGISTRY_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REGISTRY_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1930,11 +1983,11 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_REGISTRIES_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1963,11 +2016,11 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_REGISTRIES_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, SUBSCRIPTION,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -1991,14 +2044,14 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .when(acrResourceService)
         .getRegistries(IDENTIFIER_REF, ORG_ID, PROJECT_ID, SUBSCRIPTION);
 
-    doReturn(SUBSCRIPTION)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(SUBSCRIPTION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(CONNECTOR_REF)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(
         spyartifactResourceUtils.getAzureContainerRegisteriesV3(CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID,
@@ -2006,11 +2059,11 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(ACR_REGISTRIES_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, SUBSCRIPTION_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2038,8 +2091,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(AZURE_SUBSCRIPTIONS_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2066,8 +2119,8 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .isSameAs(AZURE_SUBSCRIPTIONS_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2089,18 +2142,18 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
 
     doReturn(AZURE_SUBSCRIPTIONS_DTO).when(azureResourceService).getSubscriptions(IDENTIFIER_REF, ORG_ID, PROJECT_ID);
 
-    doReturn(CONNECTOR_REF)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(spyartifactResourceUtils.getAzureSubscriptionV2(CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID,
                    PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO, pipelineYamlWithoutTemplates, SERVICE_REF))
         .isSameAs(AZURE_SUBSCRIPTIONS_DTO);
 
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2138,26 +2191,26 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    NexusRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(NEXUS_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PORT, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PORT, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, URL, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2182,34 +2235,34 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .getSuccessfulBuild(
             IDENTIFIER_REF, REPO_NAME, PORT, IMAGE, NexusConstant.DOCKER, URL, NEXUS_REQUEST_DTO, ORG_ID, PROJECT_ID);
 
-    doReturn(IMAGE)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(IMAGE).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(PORT)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(PORT).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PORT_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(URL)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PORT_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(URL).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(REPO_NAME)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, URL_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REPO_NAME).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(CONNECTOR_REF)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION_REGEX)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION_REGEX).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(
         spyartifactResourceUtils.getLastSuccessfulBuildV2Nexus3(REPO_NAME_2, PORT_2, IMAGE_2, NexusConstant.DOCKER,
@@ -2217,26 +2270,26 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
             SERVICE_REF, NexusRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(NEXUS_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PORT_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PORT_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, URL_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2286,26 +2339,26 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    SERVICE_REF, NEXUS_REQUEST_DTO))
         .isSameAs(NEXUS_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, PORT, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, PORT, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, URL, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2339,23 +2392,23 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    ArtifactoryRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, URL, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2381,23 +2434,23 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    SERVICE_REF, ARTIFACTORY_REQUEST_DTO))
         .isSameAs(ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, URL, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2421,53 +2474,53 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .getSuccessfulBuild(
             eq(IDENTIFIER_REF), eq(REPO_NAME), eq(IMAGE), eq(DOCKER), eq(URL), any(), eq(ORG_ID), eq(PROJECT_ID));
 
-    doReturn(IMAGE)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(IMAGE).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(URL)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(URL).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(REPO_NAME)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, URL_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(REPO_NAME).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(CONNECTOR_REF)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION_REGEX)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION_REGEX).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Artifactory(REPO_NAME_2, IMAGE_2, DOCKER, URL_2,
                    CONNECTOR_REF_2, ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
                    SERVICE_REF, ArtifactoryRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build()))
         .isSameAs(ARTIFACTORY_DOCKER_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, URL_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, URL_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, REPO_NAME_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, REPO_NAME_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2497,17 +2550,17 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    DockerRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build(), SERVICE_REF))
         .isSameAs(DOCKER_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2530,17 +2583,17 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                    PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO, DOCKER_REQUEST_DTO, SERVICE_REF))
         .isSameAs(DOCKER_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, VERSION_REGEX,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, VERSION_REGEX, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, CONNECTOR_REF,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   @Test
@@ -2562,39 +2615,39 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         .when(dockerResourceService)
         .getSuccessfulBuild(eq(IDENTIFIER_REF), eq(IMAGE), eq(DOCKER_REQUEST_DTO), eq(ORG_ID), eq(PROJECT_ID));
 
-    doReturn(CONNECTOR_REF)
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(CONNECTOR_REF).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(IMAGE)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(IMAGE).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
-    doReturn(VERSION_REGEX)
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
+    doReturn(ResolvedFieldValueWithYamlExpressionEvaluator.builder().value(VERSION_REGEX).build())
         .when(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
 
     assertThat(spyartifactResourceUtils.getLastSuccessfulBuildV2Docker(IMAGE_2, CONNECTOR_REF_2, null, ACCOUNT_ID,
                    ORG_ID, PROJECT_ID, PIPELINE_ID, FQN, GIT_ENTITY_FIND_INFO_DTO,
                    DockerRequestDTO.builder().runtimeInputYaml(pipelineYamlWithoutTemplates).build(), SERVICE_REF))
         .isSameAs(DOCKER_BUILD_DETAILS_DTO);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, IMAGE_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, IMAGE_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_2, FQN,
-            GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates, TAG_REGEX_2,
-            FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, TAG_REGEX_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
     verify(spyartifactResourceUtils)
-        .getResolvedFieldValue(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, pipelineYamlWithoutTemplates,
-            CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF);
+        .getResolvedFieldValueWithYamlExpressionEvaluator(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID,
+            pipelineYamlWithoutTemplates, CONNECTOR_REF_2, FQN, GIT_ENTITY_FIND_INFO_DTO, SERVICE_REF, null);
   }
 
   private void mockEnvironmentGetCall() {

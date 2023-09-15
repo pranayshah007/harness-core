@@ -60,9 +60,13 @@ public class GitFetchTaskHelper {
   }
 
   public FetchFilesResult fetchFileFromRepo(GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePaths,
-      String accountId, GitConfigDTO gitConfigDTO) throws IOException {
+      String accountId, GitConfigDTO gitConfigDTO, boolean supportFolders) throws IOException {
     if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
-      return scmFetchFilesHelper.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePaths);
+      if (supportFolders) {
+        return scmFetchFilesHelper.fetchFilesAndFoldersContentFromRepoWithScm(gitStoreDelegateConfig, filePaths);
+      } else {
+        return scmFetchFilesHelper.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePaths);
+      }
     }
     SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
         gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());

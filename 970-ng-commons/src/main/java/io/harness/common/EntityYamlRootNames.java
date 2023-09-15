@@ -33,6 +33,7 @@ public class EntityYamlRootNames {
   public static final String GITOPS_MERGE_PR = "MergePR";
   public static final String GITOPS_REVERT_PR = "RevertPR";
   public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  public static final String UPDATE_GITOPS_APP = "UpdateGitOpsApp";
   public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   public static final String GITOPS_SYNC = "GitOpsSync";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
@@ -209,7 +210,7 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   public static final String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
   public static final String IACM_APPROVAL = "IACMApproval";
-  public static final String IACM_COST_ESTIMATION = "IACMCostEstimation";
+
   public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";

@@ -34,8 +34,7 @@ public class TriggerCatalogFilter {
 
   public TriggerCatalogFilter() {
     enumTypeFeatureFlagMap.put(CD_TRIGGER_V2,
-        Sets.newHashSet(TriggerCatalogType.JENKINS, TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS3,
-            TriggerCatalogType.NEXUS2, TriggerCatalogType.AMI));
+        Sets.newHashSet(TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS2, TriggerCatalogType.AMI));
     enumTypeFeatureFlagMap.put(NG_SVC_ENV_REDESIGN, Sets.newHashSet(TriggerCatalogType.GOOGLE_CLOUD_STORAGE));
   }
 

@@ -3040,6 +3040,7 @@
 930012:io.harness.licensing.beans.modules.IACMModuleLicenseDTO
 930013:io.harness.licensing.beans.modules.CETModuleLicenseDTO
 954001:io.harness.pms.contracts.advisers.AdviserObtainment
+954002:io.harness.pms.contracts.plan.RetryExecutionInfo
 955000:io.harness.beans.CommitDetails
 955001:io.harness.beans.Repository
 955002:io.harness.beans.WebhookGitUser
@@ -3138,6 +3139,7 @@
 5731608:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse
 5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
 5731610:io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo
+5731611:io.harness.aws.beans.AsgCapacityConfig
 
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9000313:io.harness.provision.model.TfConfigInspectVersion

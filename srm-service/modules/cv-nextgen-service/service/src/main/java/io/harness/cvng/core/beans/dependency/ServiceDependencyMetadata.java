@@ -10,7 +10,6 @@ package io.harness.cvng.core.beans.dependency;
 import io.harness.cvng.beans.change.ChangeSourceType;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,9 +20,7 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "ServiceDependencyMetadataKeys")
 @NoArgsConstructor
 @SuperBuilder
-@JsonSubTypes({ @JsonSubTypes.Type(value = KubernetesDependencyMetadata.class, name = "KUBERNETES")
-                , })
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+@JsonSubTypes({ @JsonSubTypes.Type(value = KubernetesDependencyMetadata.class, name = "KUBERNETES") })
 public abstract class ServiceDependencyMetadata {
   private DependencyMetadataType type;
 

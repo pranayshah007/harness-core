@@ -58,7 +58,7 @@ public class InternalContainerParamsProviderTest extends CIExecutionTestBase {
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
 
     CIK8ContainerParams containerParams = internalContainerParamsProvider.getSetupAddonContainerParams(
-        connectorDetails, null, "workspace", null, "account", OSType.Linux);
+        connectorDetails, null, "workspace", null, "account", OSType.Linux, null);
 
     assertThat(containerParams.getName()).isEqualTo(SETUP_ADDON_CONTAINER_NAME);
     assertThat(containerParams.getContainerType()).isEqualTo(CIContainerType.ADD_ON);
@@ -76,13 +76,13 @@ public class InternalContainerParamsProviderTest extends CIExecutionTestBase {
     setupAbstractions.put("projectIdentifier", "project");
     setupAbstractions.put("orgIdentifier", "org");
     when(featureFlagService.isEnabled(FeatureName.CI_INDIRECT_LOG_UPLOAD, "account")).thenReturn(true);
-    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
-                                              .setExecutionUuid(generateUuid())
-                                              .setRunSequence(buildID)
-                                              .setPipelineIdentifier("pipeline")
-                                              .build();
-    Ambiance ambiance =
-        Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).setMetadata(executionMetadata).build();
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setRunSequence(buildID).setPipelineIdentifier("pipeline").build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(generateUuid())
+                            .putAllSetupAbstractions(setupAbstractions)
+                            .setMetadata(executionMetadata)
+                            .build();
     K8PodDetails k8PodDetails = K8PodDetails.builder().stageID("stage").build();
 
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
@@ -113,7 +113,7 @@ public class InternalContainerParamsProviderTest extends CIExecutionTestBase {
 
     CIK8ContainerParams containerParams = internalContainerParamsProvider.getLiteEngineContainerParams(connectorDetails,
         publishArtifactConnectorDetailsMap, k8PodDetails, stageCpuRequest, stageMemoryRequest, logEnvVars, tiEnvVars,
-        stoEnvVars, volumeToMountPath, "/step-exec/workspace", null, "test", ambiance, null);
+        stoEnvVars, volumeToMountPath, "/step-exec/workspace", null, "test", ambiance, null, null);
 
     assertThat(containerParams.getName()).isEqualTo(LITE_ENGINE_CONTAINER_NAME);
     assertThat(containerParams.getContainerType()).isEqualTo(CIContainerType.LITE_ENGINE);

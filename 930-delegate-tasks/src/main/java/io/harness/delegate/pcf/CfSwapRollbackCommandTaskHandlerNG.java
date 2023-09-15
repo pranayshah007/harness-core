@@ -389,6 +389,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       log.error("Failed to up size PCF application: " + inActiveAppName, sanitizedException);
       executionLogCallback.saveExecutionLog(
           "Failed while up sizing In Active application: " + encodeColor(inActiveAppName));
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage());
     }
   }
 
@@ -468,6 +469,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         log.error("Failed to downsize PCF application: " + appNameBeingDownsized, sanitizedException);
         executionLogCallback.saveExecutionLog(
             "Failed while downsizing old application: " + encodeColor(appNameBeingDownsized));
+        executionLogCallback.saveExecutionLog(sanitizedException.getMessage());
       }
     }
   }

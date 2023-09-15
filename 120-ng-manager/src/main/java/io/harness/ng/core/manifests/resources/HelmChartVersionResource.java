@@ -146,14 +146,22 @@ public class HelmChartVersionResource {
           folderPath = (String) s3StoreConfig.getFolderPath().fetchFinalValue();
         }
 
-        region = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef);
+        region = artifactResourceUtils
+                     .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                         pipelineIdentifier, runtimeInputYaml, region, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                     .getValue();
 
-        bucketName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef);
+        bucketName =
+            artifactResourceUtils
+                .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                    pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                .getValue();
 
-        folderPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef);
+        folderPath =
+            artifactResourceUtils
+                .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                    pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                .getValue();
       }
 
       if (storeConfig instanceof GcsStoreConfig) {
@@ -166,11 +174,17 @@ public class HelmChartVersionResource {
           folderPath = (String) gcsStoreConfig.getFolderPath().fetchFinalValue();
         }
 
-        bucketName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef);
+        bucketName =
+            artifactResourceUtils
+                .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                    pipelineIdentifier, runtimeInputYaml, bucketName, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                .getValue();
 
-        folderPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef);
+        folderPath =
+            artifactResourceUtils
+                .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                    pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                .getValue();
       }
 
       if (storeConfig instanceof OciHelmChartConfig) {
@@ -180,15 +194,24 @@ public class HelmChartVersionResource {
           folderPath = (String) ociHelmChartConfig.getBasePath().fetchFinalValue();
         }
 
-        folderPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef);
+        folderPath =
+            artifactResourceUtils
+                .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                    pipelineIdentifier, runtimeInputYaml, folderPath, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                .getValue();
       }
 
-      connectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-          pipelineIdentifier, runtimeInputYaml, connectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+      connectorIdentifier = artifactResourceUtils
+                                .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                    projectIdentifier, pipelineIdentifier, runtimeInputYaml, connectorIdentifier,
+                                    fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                .getValue();
 
-      chartName = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-          pipelineIdentifier, runtimeInputYaml, chartName, fqnPath, gitEntityBasicInfo, serviceRef);
+      chartName =
+          artifactResourceUtils
+              .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                  pipelineIdentifier, runtimeInputYaml, chartName, fqnPath, gitEntityBasicInfo, serviceRef, null)
+              .getValue();
     }
     HelmChartResponseDTO helmChartResponseDTO =
         helmChartService.getHelmChartVersionDetailsV2(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath,

@@ -348,24 +348,35 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, runner testintellig
 		return resp
 	}
 	// PR/Push execution
-	var errChangedFiles error
 	if isPushTriggerFn() {
 		// Get changes files from the previous successful commit
 		lastSuccessfulCommitID, err := getCommitInfoFn(ctx, r.id, r.log)
-		if err != nil || lastSuccessfulCommitID == "" {
-			// Run all tests when there's no CG present
-			log.Infow("Test Intelligence determined to run all tests to bootstrap", "error", zap.Error(err))
+		if err != nil {
+			log.Infow("Failed to get reference commit", "error", zap.Error(err))
+			r.runOnlySelectedTests = false // TI selected all the tests to be run
+			return resp
+		}
+		if lastSuccessfulCommitID == "" {
+			log.Infow("Test Intelligence determined to run all tests to bootstrap")
 			r.runOnlySelectedTests = false // TI selected all the tests to be run
 			return resp
 		}
 		log.Infof("Using reference commit: %s", lastSuccessfulCommitID)
+		var errChangedFiles error
 		files, errChangedFiles = getChangedFilesPushTriggerFn(ctx, r.id, lastSuccessfulCommitID, r.log)
-	}
-	if errChangedFiles != nil || len(files) == 0 {
-		// Select all tests if unable to find changed files list
-		log.Infow("Unable to get changed files list")
-		r.runOnlySelectedTests = false
-		return resp
+		if errChangedFiles != nil {
+			// Select all tests if unable to find changed files list
+			log.Infow("Unable to get changed files list. Running all the tests.")
+			r.runOnlySelectedTests = false
+			return resp
+		}
+	} else {
+		if len(files) == 0 {
+			// Select all tests if unable to find changed files list
+			log.Infow("Unable to get changed files list for PR. Running all the tests.")
+			r.runOnlySelectedTests = false
+			return resp
+		}
 	}
 	// Call TI svc to get test selection based on the files changed
 	files = runner.ReadPackages(files)

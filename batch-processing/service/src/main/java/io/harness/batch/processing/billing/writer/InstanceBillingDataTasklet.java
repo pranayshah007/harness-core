@@ -523,6 +523,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
         .billingAccountId("BILLING_ACCOUNT_ID")
         .startTimestamp(startTime.toEpochMilli())
         .endTimestamp(endTime.toEpochMilli())
+        .usageStartTime(instanceData.getUsageStartTime() != null ? instanceData.getUsageStartTime().toEpochMilli() : 0)
+        .usageStopTime(instanceData.getUsageStopTime() != null ? instanceData.getUsageStopTime().toEpochMilli() : 0)
         .billingAmount(billingAmount)
         .cpuBillingAmount(billingData.getBillingAmountBreakup().getCpuBillingAmount())
         .memoryBillingAmount(billingData.getBillingAmountBreakup().getMemoryBillingAmount())

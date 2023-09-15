@@ -21,6 +21,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -454,7 +455,8 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                     .build();
 
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(eksK8sInfraDelegateConfig, WORK_DIR);
-    verify(awsEKSDelegateTaskHelper, times(1)).getKubeConfig(eq(awsConnectorDTO), eq("eks"), eq("default"), eq(null));
+    verify(awsEKSDelegateTaskHelper, times(1))
+        .getKubeConfig(eq(awsConnectorDTO), eq("eks"), anyBoolean(), eq("default"), eq(null));
     verify(kubernetesContainerService).getConfigFileContent(any());
   }
 

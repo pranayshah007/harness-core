@@ -141,6 +141,8 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamInfrastructureOutcome awsSamInfrastructureOutcome = (AwsSamInfrastructureOutcome) infrastructureOutcome;
 
     String awsConnectorRef = awsSamInfrastructureOutcome.getConnectorRef();
+    String crossAccountRoleArn = null;
+    String externalId = null;
 
     String awsAccessKey = null;
     String awsSecretKey = null;
@@ -174,6 +176,11 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
         awsSecretKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
             awsManualConfigSpecDTO.getSecretKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
       }
+
+      if (awsCredentialDTO.getCrossAccountAccess() != null) {
+        crossAccountRoleArn = awsCredentialDTO.getCrossAccountAccess().getCrossAccountRoleArn();
+        externalId = awsCredentialDTO.getCrossAccountAccess().getExternalId();
+      }
     }
 
     HashMap<String, String> samDeployEnvironmentVariablesMap = new HashMap<>();
@@ -205,6 +212,14 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
 
     if (awsSecretKey != null) {
       samDeployEnvironmentVariablesMap.put("PLUGIN_AWS_SECRET_KEY", awsSecretKey);
+    }
+
+    if (crossAccountRoleArn != null) {
+      samDeployEnvironmentVariablesMap.put("PLUGIN_AWS_ROLE_ARN", crossAccountRoleArn);
+    }
+
+    if (externalId != null) {
+      samDeployEnvironmentVariablesMap.put("PLUGIN_AWS_STS_EXTERNAL_ID", externalId);
     }
 
     if (region != null) {

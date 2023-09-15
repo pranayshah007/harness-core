@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TimescaleEntityMigrationHelper {
-  private static final String DELETE_STATEMENT = "DELETE FROM %s WHERE ID=?";
+  private static final String UPDATE_IS_DELETED = "UPDATE %s SET IS_DELETED = true WHERE ID=?";
 
   public static void insertArrayData(
       int index, Connection dbConnection, PreparedStatement preparedStatement, List<String> data) throws SQLException {
@@ -33,7 +33,7 @@ public class TimescaleEntityMigrationHelper {
 
   public static void deleteFromTimescaleDB(
       String id, TimeScaleDBService timeScaleDBService, int maxTry, String tableName) {
-    String query = String.format(DELETE_STATEMENT, tableName);
+    String query = String.format(UPDATE_IS_DELETED, tableName);
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

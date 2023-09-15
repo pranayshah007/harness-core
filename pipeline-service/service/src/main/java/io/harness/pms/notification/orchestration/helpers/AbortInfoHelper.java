@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.notification.orchestration.helpers;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -23,7 +24,7 @@ import java.util.List;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class AbortInfoHelper {
   @Inject private InterruptService interruptService;
-  private static final String SYSTEM_USER = "systemUser";
+  public static final String SYSTEM_USER = "systemUser";
 
   public AbortedBy fetchAbortedByInfoFromInterrupts(String planExecutionId) {
     AbortedBy abortedBy = null;

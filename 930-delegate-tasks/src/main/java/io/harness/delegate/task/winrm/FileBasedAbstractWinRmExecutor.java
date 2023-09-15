@@ -8,6 +8,7 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.cleanupFiles;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommands;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommandsBulk;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.getScriptExecutingCommand;
@@ -211,23 +212,24 @@ public abstract class FileBasedAbstractWinRmExecutor {
       ExecutionLogWriter errorWriter, String command, boolean bulkMode) throws IOException {
     String psScriptFile = null;
     int exitCode = 0;
-    if (disableCommandEncoding) {
-      // Keep the temp script in working directory or in Temp is working directory is not set.
-      psScriptFile = config.getWorkingDirectory() == null ? WINDOWS_TEMPFILE_LOCATION : getPsScriptFile();
-      exitCode =
-          executeCommandsWithoutEncoding(session, outputWriter, errorWriter, command, bulkMode, psScriptFile, exitCode);
-    } else {
-      exitCode = session.executeCommandString(
-          psWrappedCommandWithEncoding(command, getPowershell(), config.getCommandParameters()), outputWriter,
-          errorWriter, false);
+    try {
+      if (disableCommandEncoding) {
+        // Keep the temp script in working directory or in Temp is working directory is not set.
+        psScriptFile = config.getWorkingDirectory() == null ? WINDOWS_TEMPFILE_LOCATION : getPsScriptFile();
+        exitCode = executeCommandsWithoutEncoding(
+            session, outputWriter, errorWriter, command, bulkMode, psScriptFile, exitCode);
+      } else {
+        exitCode = session.executeCommandString(
+            psWrappedCommandWithEncoding(command, getPowershell(), config.getCommandParameters()), outputWriter,
+            errorWriter, false);
+      }
+      log.info("Execute Command String returned exit code. {}", exitCode);
+      CommandExecutionStatus commandExecutionStatus = exitCode == 0 ? SUCCESS : FAILURE;
+      saveExecutionLog(format("%nCommand completed with ExitCode (%d)", exitCode), INFO);
+      return commandExecutionStatus;
+    } finally {
+      cleanupFiles(session, psScriptFile, getPowershell(), disableCommandEncoding, config.getCommandParameters());
     }
-    log.info("Execute Command String returned exit code. {}", exitCode);
-    io.harness.delegate.task.winrm.WinRmExecutorHelper.cleanupFiles(
-        session, psScriptFile, getPowershell(), disableCommandEncoding, config.getCommandParameters());
-    CommandExecutionStatus commandExecutionStatus = exitCode == 0 ? SUCCESS : FAILURE;
-    saveExecutionLog(format("%nCommand completed with ExitCode (%d)", exitCode), INFO);
-
-    return commandExecutionStatus;
   }
 
   private String getPsScriptFile() {

@@ -541,11 +541,11 @@ public class AccountServiceImpl implements AccountService {
 
   private void enableFeatureFlags(@NotNull Account account, boolean fromDataGen) {
     if (fromDataGen) {
-      updateNextGenEnabled(account.getUuid(), true);
+      updateNextGenEnabled(account.getUuid(), true, false);
       featureFlagService.enableAccount(FeatureName.CFNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CVNG_ENABLED, account.getUuid());
     } else if (account.isCreatedFromNG()) {
-      updateNextGenEnabled(account.getUuid(), true);
+      updateNextGenEnabled(account.getUuid(), true, false);
     }
   }
 
@@ -601,9 +601,12 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public Boolean updateNextGenEnabled(String accountId, boolean enabled) {
+  public Boolean updateNextGenEnabled(String accountId, boolean isNextGenEnabled, boolean isAdmin) {
     Account account = get(accountId);
-    account.setNextGenEnabled(enabled);
+    account.setNextGenEnabled(isNextGenEnabled);
+    if (isAdmin) {
+      account.setDefaultExperience(isNextGenEnabled ? DefaultExperience.NG : DefaultExperience.CG);
+    }
     update(account);
     publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
     return true;
@@ -1320,7 +1323,7 @@ public class AccountServiceImpl implements AccountService {
       }
     }
     if (enabled.contains("NEXT_GEN_ENABLED")) {
-      updateNextGenEnabled(onPremAccount.get().getUuid(), true);
+      updateNextGenEnabled(onPremAccount.get().getUuid(), true, false);
     }
 
     if (enabled.contains("ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM")) {

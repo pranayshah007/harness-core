@@ -9,6 +9,10 @@ logging:
       threshold: TRACE
       target: STDOUT
       logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
+    - type: gke-console
+      threshold: TRACE
+      target: STDOUT
+      stackdriverLogEnabled: false
 
 server:
   applicationConnectors:

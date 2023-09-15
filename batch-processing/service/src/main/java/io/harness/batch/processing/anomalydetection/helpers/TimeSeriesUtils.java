@@ -60,6 +60,7 @@ public class TimeSeriesUtils {
     }
     if (age <= AnomalyDetectionConstants.MIN_DAYS_REQUIRED_DAILY) {
       anomalyDetectionTimeSeries.setNewEntity(true);
+      log.info("Anomaly with id: {} belongs to new entity and won't be shown", anomalyDetectionTimeSeries.getId());
     }
     anomalyDetectionTimeSeries.setTrainDataPointsList(replaceInvalidPointsWithzeros(pointsList));
     return true;

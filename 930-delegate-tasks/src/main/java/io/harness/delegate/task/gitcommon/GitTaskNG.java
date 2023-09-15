@@ -96,8 +96,9 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
       if (CollectionUtils.isNotEmpty(gitTaskNGRequest.getGitRequestFileConfigs())) {
         for (GitRequestFileConfig gitRequestFileConfig : gitTaskNGRequest.getGitRequestFileConfigs()) {
           try {
-            FetchFilesResult fetchFilesResult = fetchManifestFile(gitRequestFileConfig, executionLogCallback,
-                gitTaskNGRequest.getAccountId(), gitTaskNGRequest.isCloseLogStream());
+            FetchFilesResult fetchFilesResult =
+                fetchManifestFile(gitRequestFileConfig, executionLogCallback, gitTaskNGRequest.getAccountId(),
+                    gitTaskNGRequest.isCloseLogStream(), gitRequestFileConfig.isSupportFolders());
             GitFetchFilesResult gitFetchFilesResult =
                 GitFetchFilesResult.builder()
                     .files(fetchFilesResult.getFiles() != null ? fetchFilesResult.getFiles() : Lists.newArrayList())
@@ -142,7 +143,8 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private FetchFilesResult fetchManifestFile(GitRequestFileConfig gitRequestFileConfig,
-      LogCallback executionLogCallback, String accountId, boolean closeLogStream) throws Exception {
+      LogCallback executionLogCallback, String accountId, boolean closeLogStream, boolean supportFolders)
+      throws Exception {
     executionLogCallback.saveExecutionLog(
         color(format("Fetching %s config file with identifier : %s", gitRequestFileConfig.getManifestType(),
                   gitRequestFileConfig.getIdentifier()),
@@ -173,7 +175,8 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
       filePaths = gitRequestFileConfig.getGitStoreDelegateConfig().getPaths();
       gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
     }
-    filesResult = gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+    filesResult = gitFetchTaskHelper.fetchFileFromRepo(
+        gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO, supportFolders);
     if (!gitRequestFileConfig.isSucceedIfFileNotFound()) {
       checkIfFilesContentAreNotEmpty(
           filesResult, gitRequestFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl());

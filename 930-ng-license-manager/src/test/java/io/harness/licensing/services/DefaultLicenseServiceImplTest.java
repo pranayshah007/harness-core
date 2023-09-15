@@ -15,7 +15,6 @@ import static io.harness.ModuleType.CHAOS;
 import static io.harness.ModuleType.CI;
 import static io.harness.ModuleType.CV;
 import static io.harness.ModuleType.IACM;
-import static io.harness.ModuleType.SEI;
 import static io.harness.ModuleType.SRM;
 import static io.harness.ModuleType.STO;
 import static io.harness.licensing.LicenseConstant.UNLIMITED;
@@ -145,7 +144,6 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
                                    .put(SRM, Lists.newArrayList())
                                    .put(IACM, Lists.newArrayList())
                                    .put(CET, Lists.newArrayList())
-                                   .put(SEI, Lists.newArrayList())
                                    .build())
             .build();
 

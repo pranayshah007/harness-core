@@ -8,6 +8,9 @@
 package io.harness.ng.core.activityhistory;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
 import io.harness.ng.core.activityhistory.entity.NGActivity.ActivityHistoryEntityKeys;
@@ -15,6 +18,7 @@ import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Singleton;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @Singleton
@@ -36,15 +40,25 @@ public class NGActivityQueryCriteriaHelper {
     }
   }
 
-  public void addReferredByEntityTypeCriteria(Criteria criteria, EntityType referredByEntityType) {
-    if (referredByEntityType != null) {
-      criteria.and(ActivityHistoryEntityKeys.referredByEntityType).is(String.valueOf(referredByEntityType));
+  public void addReferredByEntityTypeCriteria(Criteria criteria, Set<EntityType> referredByEntityTypes) {
+    if (isNotEmpty(referredByEntityTypes)) {
+      criteria.and(ActivityHistoryEntityKeys.referredByEntityType)
+          .in(referredByEntityTypes.stream().map(String::valueOf).collect(Collectors.toList()));
     }
   }
 
   public void addActivityTypeCriteria(Criteria criteria, Set<NGActivityType> ngActivityTypes) {
     if (!isEmpty(ngActivityTypes)) {
       criteria.and(ActivityHistoryEntityKeys.type).in(ngActivityTypes);
+    }
+  }
+
+  public void addSearchTermCriteria(Criteria criteria, String searchTerm) {
+    if (isNotBlank(searchTerm)) {
+      criteria.orOperator(Criteria.where(ActivityHistoryEntityKeys.referredByEntityName).regex(searchTerm),
+          Criteria.where(ActivityHistoryEntityKeys.referredByEntityIdentifier).regex(searchTerm),
+          Criteria.where(ActivityHistoryEntityKeys.referredByEntityIdentifier).regex(searchTerm),
+          Criteria.where(ActivityHistoryEntityKeys.usageType).regex(searchTerm));
     }
   }
 }

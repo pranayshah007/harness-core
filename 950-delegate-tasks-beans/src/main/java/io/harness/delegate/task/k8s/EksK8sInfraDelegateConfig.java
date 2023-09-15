@@ -27,4 +27,5 @@ public class EksK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   String cluster;
   AwsConnectorDTO awsConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
+  boolean addRegionalParam;
 }

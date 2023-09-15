@@ -132,6 +132,8 @@ public class ServiceNowTaskNgHelper {
         return getTicketTypes(serviceNowTaskNGParameters);
       case GET_METADATA_V2:
         return getMetadataV2(serviceNowTaskNGParameters);
+      case GET_STANDARD_TEMPLATES_READONLY_FIELDS:
+        return getReadOnlyFieldsForStandardTemplate(serviceNowTaskNGParameters);
       default:
         throw new InvalidRequestException(
             String.format("Invalid servicenow task action: %s", serviceNowTaskNGParameters.getAction()));
@@ -667,7 +669,44 @@ public class ServiceNowTaskNgHelper {
           SERVICENOW_ERROR, USER, ex);
     }
   }
+  private ServiceNowTaskNGResponse getReadOnlyFieldsForStandardTemplate(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
+    final Call<JsonNode> request = serviceNowRestClient.getReadOnlyFieldsForStandardTemplate(
+        ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
+    Response<JsonNode> response = null;
+    try {
+      response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
+      log.info("Response received from serviceNow for GET_STANDARD_TEMPLATES_READONLY_FIELDS: {}", response);
+      handleResponse(response, "Failed to get servicenow readonly metadata");
+      JsonNode responseObj = response.body().get("result");
+      if (responseObj != null) {
+        if (responseObj.get(0) == null || responseObj.get(0).get("readonly_fields") == null) {
+          log.info(
+              "Response received from serviceNow for GET_STANDARD_TEMPLATES_READONLY_FIELDS is not having readonly_fields");
+          return ServiceNowTaskNGResponse.builder().build();
+        }
+        String readonly_fields = responseObj.get(0).get("readonly_fields").asText();
+        return ServiceNowTaskNGResponse.builder().serviceNowStandardTemplateReadOnlyFields(readonly_fields).build();
+      } else {
+        throw new ServiceNowException("Failed to fetch read only fields for standard templates "
+                + " response: " + response,
+            SERVICENOW_ERROR, USER);
+      }
+    } catch (ServiceNowException e) {
+      log.error("Failed to get ServiceNow read only fields for standard template: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error(
+          "Failed to get ServiceNow read only fields for standard template: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while getting serviceNow read only fields for standard template: %s",
+              ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
+    }
+  }
   private ServiceNowTaskNGResponse createImportSet(
       ServiceNowTaskNGParameters serviceNowTaskNGParameters, LogCallback executionLogCallback) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();

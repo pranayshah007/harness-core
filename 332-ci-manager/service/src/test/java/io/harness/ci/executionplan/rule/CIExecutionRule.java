@@ -49,6 +49,7 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.code.CodeResourceClient;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
@@ -155,6 +156,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       protected void configure() {
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
         bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
+        bind(CodeResourceClient.class).toInstance(mock(CodeResourceClient.class));
       }
     });
 

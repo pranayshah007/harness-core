@@ -67,7 +67,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -755,5 +757,14 @@ public class GitClientHelper {
     } catch (Exception e) {
       return true; // If the operation fails (due to no authentication), it is a private repository
     }
+  }
+
+  // Azure return the file paths with an extra '/' in the start
+  public static Set<String> sanitiseFilesForAzureRepo(Set<String> changedFiles) {
+    Set<String> sanitisedFiles = new HashSet<>();
+    for (String file : changedFiles) {
+      sanitisedFiles.add(file.substring(1));
+    }
+    return sanitisedFiles;
   }
 }

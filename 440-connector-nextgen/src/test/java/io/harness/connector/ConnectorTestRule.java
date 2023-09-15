@@ -54,6 +54,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.InjectorRuleMixin;
@@ -242,6 +243,12 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
       @Singleton
       CEAwsSetupConfig ceAwsSetupConfig() {
         return CEAwsSetupConfig.builder().build();
+      }
+
+      @Provides
+      @Singleton
+      CEProxyConfig ceProxyConfig() {
+        return CEProxyConfig.builder().build();
       }
 
       @Provides

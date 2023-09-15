@@ -9,7 +9,7 @@ package io.harness.event.handlers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.execution.utils.SdkResponseEventUtils;
@@ -20,7 +20,7 @@ import com.google.inject.Singleton;
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AddStepDetailsInstanceRequestProcessor implements SdkResponseProcessor {
-  @Inject private PmsGraphStepDetailsService graphStepDetailsService;
+  @Inject private NodeExecutionInfoService graphStepDetailsService;
 
   @Override
   public void handleEvent(SdkResponseEventProto event) {

@@ -41,8 +41,10 @@ import io.harness.pms.yaml.YamlUtils;
 import com.google.inject.Inject;
 import com.google.protobuf.BoolValue;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -102,10 +104,15 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     if ((ciAbstractStepNode.getStepSpecType() instanceof PluginCompatibleStep)
         && (ciAbstractStepNode.getStepSpecType() instanceof WithConnectorRef)) {
       PluginCompatibleStep step = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
-
+      Map<String, String> connectorSecretEnvMap = new HashMap<>();
+      PluginSettingUtils.getConnectorSecretEnvMap(step.getNonYamlInfo().getStepInfoType())
+          .forEach((key, value) -> connectorSecretEnvMap.put(key.name(), value));
       String connectorRef = PluginSettingUtils.getConnectorRef(step);
       if (isNotEmpty(connectorRef)) {
-        pluginDetailsBuilder.addConnectorsForStep(ConnectorDetails.newBuilder().setConnectorRef(connectorRef).build());
+        pluginDetailsBuilder.addConnectorsForStep(ConnectorDetails.newBuilder()
+                                                      .setConnectorRef(connectorRef)
+                                                      .putAllConnectorSecretEnvMap(connectorSecretEnvMap)
+                                                      .build());
       }
     }
 

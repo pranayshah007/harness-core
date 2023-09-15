@@ -19,5 +19,5 @@ public interface PlanExecutionDeleteObserver {
    * Observer method to do operation on nodeExecutions delete
    * @param planExecutionIds
    */
-  void onPlanExecutionsDelete(List<PlanExecution> planExecutionIds);
+  void onPlanExecutionsDelete(List<PlanExecution> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete);
 }

@@ -8,11 +8,13 @@
 package io.harness.encryptors.clients;
 
 import static io.harness.SecretConstants.EXPIRES_ON;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
+import static java.lang.String.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
@@ -597,6 +599,62 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
     char[] value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
     assertThat(value).isEqualTo(plainText.toCharArray());
+  }
+
+  @Test
+  @Owner(developers = {ASHISHSANODIA})
+  @Category(UnitTests.class)
+  public void testFetchJsonSecretWithKey() {
+    String name = UUIDGenerator.generateUuid();
+    String jsonText =
+        "{\"key1\":\"value1\",\"key2\":{\"key21\":\"value21\",\"key22\":\"value22\"},\"key3\":{\"key31\":{\"key311\":\"value311\"}}}";
+    KeyVaultSecret keyVaultSecret = mockKeyVaultSecret(name, jsonText);
+    Response<KeyVaultSecret> response = new SimpleResponse(null, 200, null, keyVaultSecret);
+    when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
+
+    EncryptedRecord record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid()).build();
+    char[] value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(valueOf(value)).isEqualTo(jsonText);
+
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid() + "#key1").build();
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value1");
+
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid() + "#key2").build();
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(valueOf(value)).isEqualTo("{\"key21\":\"value21\",\"key22\":\"value22\"}");
+
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid() + "#key3").build();
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(valueOf(value)).isEqualTo("{\"key31\":{\"key311\":\"value311\"}}");
+
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid() + "#key3.key31").build();
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(valueOf(value)).isEqualTo("{\"key311\":\"value311\"}");
+
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid() + "#key3.key31.key311").build();
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value311");
+
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid() + "#").build();
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(valueOf(value)).isEqualTo(jsonText);
+  }
+
+  @Test(expected = SecretManagementDelegateException.class)
+  @Owner(developers = {ASHISHSANODIA})
+  @Category(UnitTests.class)
+  public void testFetchJsonSecret_throwsExceptionForInvalidKey() {
+    String name = UUIDGenerator.generateUuid();
+    String jsonText =
+        "{\"key1\":\"value1\",\"key2\":{\"key21\":\"value21\",\"key22\":\"value22\"},\"key3\":{\"key31\":{\"key311\":\"value311\"}}}";
+    KeyVaultSecret keyVaultSecret = mockKeyVaultSecret(name, jsonText);
+    Response<KeyVaultSecret> response = new SimpleResponse(null, 200, null, keyVaultSecret);
+    when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
+
+    EncryptedRecord record =
+        EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid() + "#invalidKey").build();
+    azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
   }
 
   @Test

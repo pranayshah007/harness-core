@@ -9,8 +9,6 @@ package io.harness.pms.approval.custom;
 
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 
-import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
-
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -42,7 +40,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
-import io.harness.steps.approval.step.ApprovalProgressData;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -113,12 +110,6 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
       verify(approvalInstanceService, never()).resetNextIterations(any(), any());
       verify(ngDelegate2TaskExecutor).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
       verify(waitNotifyEngine).waitForAllOn(any(), any(), any());
-      verify(waitNotifyEngine)
-          .progressOn("__ID__",
-              ApprovalProgressData.builder()
-                  .latestDelegateTaskId("__TASK_ID__")
-                  .taskName(SHELL_SCRIPT_TASK_NG.getDisplayName())
-                  .build());
       verify(approvalInstanceService, times(1)).updateLatestDelegateTaskId("__ID__", "__TASK_ID__");
     }
 
@@ -132,12 +123,6 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
       verify(approvalInstanceService, never()).resetNextIterations(any(), any());
       verify(ngDelegate2TaskExecutor, times(2)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
       verify(waitNotifyEngine, times(2)).waitForAllOn(any(), any(), any());
-      verify(waitNotifyEngine, times(2))
-          .progressOn("__ID__",
-              ApprovalProgressData.builder()
-                  .latestDelegateTaskId("__TASK_ID__")
-                  .taskName(SHELL_SCRIPT_TASK_NG.getDisplayName())
-                  .build());
       verify(approvalInstanceService, times(2)).updateLatestDelegateTaskId("__ID__", "__TASK_ID__");
     }
 

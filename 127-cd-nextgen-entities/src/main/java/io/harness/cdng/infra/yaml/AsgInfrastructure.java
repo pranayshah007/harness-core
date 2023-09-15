@@ -65,9 +65,15 @@ public class AsgInfrastructure extends InfrastructureDetailsAbstract
   @With
   ParameterField<String> region;
 
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @With ParameterField<String> baseAsgName;
+
   @Override
   public InfraMapping getInfraMapping() {
-    return AsgInfraMapping.builder().awsConnector(connectorRef.getValue()).region(region.getValue()).build();
+    return AsgInfraMapping.builder()
+        .awsConnector(connectorRef.getValue())
+        .region(region.getValue())
+        .baseAsgName(baseAsgName.getValue())
+        .build();
   }
 
   @Override
@@ -82,7 +88,7 @@ public class AsgInfrastructure extends InfrastructureDetailsAbstract
 
   @Override
   public String[] getInfrastructureKeyValues() {
-    return new String[] {connectorRef.getValue(), region.getValue()};
+    return new String[] {connectorRef.getValue(), region.getValue(), baseAsgName.getValue()};
   }
 
   @Override
@@ -104,6 +110,9 @@ public class AsgInfrastructure extends InfrastructureDetailsAbstract
     }
     if (!ParameterField.isNull(config.getProvisioner())) {
       resultantInfra.setProvisioner(config.getProvisioner());
+    }
+    if (!ParameterField.isNull(config.getBaseAsgName())) {
+      resultantInfra.withBaseAsgName(config.getBaseAsgName());
     }
 
     return resultantInfra;

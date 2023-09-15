@@ -87,12 +87,17 @@ public class GoogleCloudStorageArtifactResource {
 
     // Getting the resolved connectorRef in case of expressions
     String resolvedGcpConnectorRef =
-        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            runtimeInputYaml, gcpConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef);
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, gcpConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
     // Getting the resolved project in case of expressions
-    String resolvedProject = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, project, fqnPath, gitEntityBasicInfo, serviceRef);
+    String resolvedProject =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, project, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(resolvedGcpConnectorRef, accountId, orgIdentifier, projectIdentifier);

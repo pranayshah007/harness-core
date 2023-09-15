@@ -8,6 +8,7 @@
 package io.harness.ci.config;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.remote.client.ServiceHttpClientConfig;
 
 import lombok.Builder;
 import lombok.Value;
@@ -19,4 +20,5 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ci.config.GitnessConfig")
 public class GitnessConfig {
   String jwtSecret;
+  ServiceHttpClientConfig httpClientConfig;
 }

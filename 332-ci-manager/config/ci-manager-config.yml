@@ -135,6 +135,7 @@ managerClientConfig:
   baseUrl: http://localhost:3457/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
 ciExecutionServiceConfig:
   miningPatternConfig:
     gcsCreds: null
@@ -171,8 +172,8 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.22
-  liteEngineImage: harness/ci-lite-engine:1.16.22
+  addonImage: harness/ci-addon:1.16.23
+  liteEngineImage: harness/ci-lite-engine:1.16.23
   isLocal: false
   remoteDebugTimeout: 3600
   tmateEndpoint: ${TMATE_ENDPOINT:-"ssh.harness.io"}
@@ -395,7 +396,8 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.1
   gitnessConfig:
     jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
-
+    httpClientConfig:
+      baseUrl: ${GITNESS_INTERNAL_URL:- http://localhost:3000}
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

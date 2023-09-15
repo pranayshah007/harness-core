@@ -20,6 +20,7 @@ import io.harness.repositories.UpsertOptions;
 import com.mongodb.client.result.UpdateResult;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -91,4 +92,10 @@ public interface InfrastructureEntityService {
 
   InfrastructureInputsMergedResponseDto mergeInfraStructureInputs(String accountId, String orgIdentifier,
       String projectIdentifier, String envIdentifier, String infraIdentifier, String oldInfrastructureInputsYaml);
+
+  Page<InfrastructureEntity> getScopedInfrastructures(
+      Page<InfrastructureEntity> infrastructureEntities, List<String> serviceRefs);
+
+  List<String> filterServicesByScopedInfrastructures(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, Map<String, List<String>> envRefInfraRefsMapping);
 }

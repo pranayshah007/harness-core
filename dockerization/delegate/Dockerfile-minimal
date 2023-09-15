@@ -38,6 +38,7 @@ RUN mkdir -m 777 -p client-tools/scm/93b3c9f1 \
   && chmod -R 775 /opt/harness-delegate \
   && chgrp -R 0 /opt/harness-delegate \
   && chown -R 1001 /opt/harness-delegate
+RUN mkdir -p /opt/harness-delegate/additional_certs_pem_split
 
 COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
@@ -47,6 +48,7 @@ ENV CLIENT_TOOLS_DOWNLOAD_DISABLED=true
 ENV INSTALL_CLIENT_TOOLS_IN_BACKGROUND=true
 ENV JAVA_HOME=/opt/java/openjdk/
 ENV PATH="$JAVA_HOME/bin:${PATH}"
+ENV SHARED_CA_CERTS_PATH=/opt/harness-delegate/additional_certs_pem_split
 
 RUN curl -s -L -o delegate.jar $BASEURL/$DELEGATEVERSION/delegate.jar
 

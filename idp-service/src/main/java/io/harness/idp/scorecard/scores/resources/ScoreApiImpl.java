@@ -18,6 +18,7 @@ import io.harness.spec.server.idp.v1.model.EntityScoresResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfoResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardScore;
 import io.harness.spec.server.idp.v1.model.ScorecardScoreResponse;
@@ -55,18 +56,20 @@ public class ScoreApiImpl implements ScoresApi {
   }
 
   @Override
-  public Response getRecalibratedScoreForScorecard(
-      String harnessAccount, String scorecardIdentifier, String entityIdentifier) {
+  public Response scorecardRecalibrate(
+      @Valid ScorecardRecalibrateRequest scorecardRecalibrateRequest, String harnessAccount) {
     try {
       ScorecardSummaryInfo scorecardSummaryInfo = scoreService.getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
-          harnessAccount, entityIdentifier, scorecardIdentifier);
+          harnessAccount, scorecardRecalibrateRequest.getIdentifiers().getEntityIdentifier(),
+          scorecardRecalibrateRequest.getIdentifiers().getScorecardIdentifier());
       ScorecardRecalibrateResponse scorecardRecalibrateResponse = new ScorecardRecalibrateResponse();
       scorecardRecalibrateResponse.setRecalibratedScores(scorecardSummaryInfo);
       return Response.status(Response.Status.OK).entity(scorecardRecalibrateResponse).build();
     } catch (Exception e) {
       log.error(
           "Error in getting recalibrated score for scorecards details for account - {},  entity - {} and scorecard - {}, error = {}",
-          harnessAccount, entityIdentifier, scorecardIdentifier, e.getMessage(), e);
+          harnessAccount, scorecardRecalibrateRequest.getIdentifiers().getEntityIdentifier(),
+          scorecardRecalibrateRequest.getIdentifiers().getScorecardIdentifier(), e.getMessage(), e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

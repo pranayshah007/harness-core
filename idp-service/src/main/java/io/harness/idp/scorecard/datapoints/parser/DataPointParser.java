@@ -34,4 +34,11 @@ public interface DataPointParser {
       return Map.of(inputValue, data);
     }
   }
+
+  default Map<String, Object> constructDataPointInfoWithoutInputValue(Object value, String errorMessage) {
+    Map<String, Object> data = new HashMap<>();
+    data.put(DATA_POINT_VALUE_KEY, value);
+    data.put(ERROR_MESSAGE_KEY, errorMessage);
+    return data;
+  }
 }

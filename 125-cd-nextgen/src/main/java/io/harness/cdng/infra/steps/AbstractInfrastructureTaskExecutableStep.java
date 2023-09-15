@@ -154,6 +154,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject protected InstanceOutcomeHelper instanceOutcomeHelper;
   @Inject protected InfrastructureOutcomeProvider infrastructureOutcomeProvider;
+  @Inject private InfrastructureProvisionerHelper infrastructureProvisionerHelper;
 
   @Data
   @AllArgsConstructor
@@ -182,6 +183,9 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance, logCallback);
+    if (infrastructure.isDynamicallyProvisioned()) {
+      infrastructureProvisionerHelper.resolveProvisionerExpressions(ambiance, infrastructure);
+    }
     validateInfrastructure(infrastructure);
 
     saveExecutionLog(logCallback, "Fetching environment information...");

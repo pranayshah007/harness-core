@@ -140,6 +140,7 @@ import io.harness.gitsync.common.events.FullSyncMessageListener;
 import io.harness.gitsync.common.events.GitSyncProjectCleanup;
 import io.harness.gitsync.core.webhook.createbranchevent.GitBranchHookEventStreamListener;
 import io.harness.gitsync.core.webhook.pushevent.GitPushEventStreamListener;
+import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookPushEventListener;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -319,6 +320,7 @@ import io.harness.reflection.HarnessReflections;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
@@ -527,6 +529,12 @@ public class NextGenModule extends AbstractModule {
   @Named("GitSyncGrpcClientConfigs")
   public Map<Microservice, GrpcClientConfig> grpcClientConfigs() {
     return appConfig.getGitGrpcClientConfigs();
+  }
+
+  @Provides
+  @Singleton
+  CEProxyConfig ceProxyConfig() {
+    return this.appConfig.getCeProxyConfig();
   }
 
   @Provides
@@ -1164,6 +1172,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM))
         .to(GitPushEventStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkConstants.GITX_WEBHOOK_PUSH_EVENT_STREAM))
+        .to(GitXWebhookPushEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM))
         .to(GitBranchHookEventStreamListener.class);

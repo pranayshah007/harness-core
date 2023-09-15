@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: t4e4wu6mfxgxh
+  id: 71zlevtplmzn6
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -134,14 +134,14 @@ paths:
             application/json:
               schema:
                 type: object
-                properties: { }
+                properties: {}
               examples:
                 example-resp:
-                  value: { }
+                  value: {}
             application/yaml:
               schema:
                 type: object
-                properties: { }
+                properties: {}
               examples:
                 example-resp:
                   value: |
@@ -279,14 +279,14 @@ paths:
             application/json:
               schema:
                 type: object
-                properties: { }
+                properties: {}
               examples:
                 example-resp:
-                  value: { }
+                  value: {}
             application/yaml:
               schema:
                 type: object
-                properties: { }
+                properties: {}
               examples:
                 example-resp:
                   value: |
@@ -428,14 +428,14 @@ paths:
             application/json:
               schema:
                 type: object
-                properties: { }
+                properties: {}
               examples:
                 example-resp:
-                  value: { }
+                  value: {}
             application/yaml:
               schema:
                 type: object
-                properties: { }
+                properties: {}
               examples:
                 example-resp:
                   value: |
@@ -510,12 +510,54 @@ paths:
         - $ref: '#/components/parameters/AccountHeaderParam'
       requestBody:
         $ref: '#/components/requestBodies/TemplateImportRequestBody'
+  /v1/template-schema/individual-schema:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - Schemas
+      responses:
+        '200':
+          $ref: '#/components/responses/TemplateSchemaResponse'
+      operationId: get-template-schema
+      x-stoplight:
+        id: povddnc9u1qra
+      description: Gets Templates Schema
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - artifactsourcetemplate
+              - customdeployment
+              - monitoredservice
+              - secretmanager
+              - stage
+              - pipeline
+              - step
+              - stepgroup
+              - template
+          in: query
+          name: node_group
+        - schema:
+            type: string
+          in: query
+          name: node_type
+        - $ref: '#/components/parameters/AccountHeaderParam'
+        - schema:
+            type: string
+            enum:
+              - v0
+              - v1
+            default: v0
+          in: query
+          name: version
+      x-internal: true
+    parameters: []
 components:
   schemas:
     TemplateResponse:
       title: templateResponse
       x-stoplight:
-        id: kj7anewxbf9xe
+        id: nptypdq43im7r
       type: object
       description: Default response when a template is returned
       x-examples:
@@ -669,7 +711,7 @@ components:
     TemplateMetadataSummaryResponse:
       title: TemplateMetadataSummaryResponse
       x-stoplight:
-        id: 92a2rxt8uqji1
+        id: jnoyaie2mo2wg
       type: object
       x-examples:
         example-1:
@@ -789,7 +831,7 @@ components:
     TemplateWithInputsResponse:
       title: templateWithInputsResponse
       x-stoplight:
-        id: 3fo3c6coeu472
+        id: qiwd91nu030jx
       type: object
       x-examples:
         example-1:
@@ -857,7 +899,7 @@ components:
     TemplateMetaDataList:
       title: TemplateMetaDataList
       x-stoplight:
-        id: ld1ggfzj0v0nv
+        id: tp841s30ani5t
       type: array
       items:
         $ref: '#/components/schemas/TemplateMetadataSummaryResponse'
@@ -893,7 +935,7 @@ components:
     EntityGitDetails:
       title: entityGitDetails
       x-stoplight:
-        id: bu0i4dwga5nkz
+        id: irhvwq9fxfk4l
       type: object
       description: Git Experience related details of the Entity.
       x-examples:
@@ -930,7 +972,7 @@ components:
     GitFindDetails:
       title: GitFindDetails
       x-stoplight:
-        id: 8b3cs1apis8zf
+        id: l7tmqawduygir
       type: object
       x-examples:
         example-1:
@@ -967,7 +1009,7 @@ components:
     GitCreateDetails:
       title: Create Git Details
       x-stoplight:
-        id: 18xzr2klzl8kn
+        id: gfirhlf9yqkrq
       type: object
       description: Contains parameters related to creating an Entity for Git Experience.
       properties:
@@ -1007,7 +1049,7 @@ components:
     GitUpdateDetails:
       title: GitUpdateDetails
       x-stoplight:
-        id: jejwgam2kmatw
+        id: mtrzgwpll2va4
       type: object
       description: Contains parameters related to Updating an Entity for Git Experience.
       x-examples:
@@ -1055,7 +1097,7 @@ components:
     TemplateUpdateRequestBody:
       title: TemplateUpdateRequestBody
       x-stoplight:
-        id: ok69fcmiqlm1c
+        id: qjty67kied77w
       type: object
       x-examples:
         example-2:
@@ -1109,7 +1151,7 @@ components:
     TemplateCreateRequestBody:
       title: TemplateCreateRequestBody
       x-stoplight:
-        id: mp9rm9sp09yru
+        id: 9zt3grzbnjzu6
       type: object
       x-examples:
         example-2:
@@ -1165,7 +1207,7 @@ components:
     TemplateUpdateStableResponse:
       title: TemplateUpdateStableResponse
       x-stoplight:
-        id: 1h4plmwhpjnp4
+        id: tmacxpz2dkqa7
       type: object
       properties:
         stable_version:
@@ -1176,7 +1218,7 @@ components:
     GitImportDetails:
       title: Git Import Details
       x-stoplight:
-        id: bbds2rpqe3pqw
+        id: clvi7nfz003tp
       type: object
       description: Contains parameters related to importing an Entity for Git Experience.
       properties:
@@ -1193,7 +1235,7 @@ components:
     TemplateImportRequestDTO:
       title: Template Import Request DTO
       x-stoplight:
-        id: 03dzgfw2f3met
+        id: h8lvekr94ngjl
       type: object
       description: Information of Tempalte import request DTO
       properties:
@@ -1206,7 +1248,7 @@ components:
     TemplateImportRequestBody:
       title: TemplateImportRequestBody
       x-stoplight:
-        id: gcku4ku2gffc8
+        id: trjw2e85cosmn
       type: object
       description: Template Import Request Body
       properties:
@@ -1217,7 +1259,7 @@ components:
     TemplateImportResponseBody:
       title: TemplateImportResponseBody
       x-stoplight:
-        id: 25p5q0nndqepd
+        id: dkchlnghvus5i
       type: object
       description: Contains the Template details for the given Template ID and version
       properties:
@@ -1225,6 +1267,16 @@ components:
           type: string
         template_version:
           type: string
+    TemplateSchemaResponse:
+      title: TemplateSchemaResponse
+      x-stoplight:
+        id: f6g15vfehnntx
+      type: object
+      properties:
+        data:
+          type: object
+          x-stoplight:
+            id: fs9wir9tgj9a8
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2001,5 +2053,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/TemplateImportResponseBody'
+    TemplateSchemaResponse:
+      description: Template Schema Response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TemplateSchemaResponse'
 security:
   - x-api-key: []

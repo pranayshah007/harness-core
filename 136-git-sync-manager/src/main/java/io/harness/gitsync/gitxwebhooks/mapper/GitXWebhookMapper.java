@@ -17,12 +17,15 @@ import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GetGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GetGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.ListGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.ListGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookResponseDTO;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookResponse;
+import io.harness.spec.server.ng.v1.model.GitXWebhookEventResponse;
 import io.harness.spec.server.ng.v1.model.GitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookResponse;
@@ -139,6 +142,48 @@ public class GitXWebhookMapper {
     responseBody.setConnectorRef(gitXWebhook.getConnectorRef());
     responseBody.setFolderPaths(gitXWebhook.getFolderPaths());
     responseBody.setIsEnabled(gitXWebhook.isIsEnabled());
+    return responseBody;
+  }
+
+  public GitXEventsListRequestDTO buildEventsListGitXWebhookRequestDTO(
+      String accountIdentifier, String webhookIdentifier, Long eventStartTime, Long eventEndTime) {
+    if ((eventStartTime == null && eventEndTime != null) || (eventStartTime != null && eventEndTime == null)) {
+      throw new InvalidRequestException(String.format(
+          "Either the Event start time [%d] or the Event end time [%d] not provided.", eventStartTime, eventEndTime));
+    }
+    return GitXEventsListRequestDTO.builder()
+        .accountIdentifier(accountIdentifier)
+        .webhookIdentifier(webhookIdentifier)
+        .eventStartTime(eventStartTime)
+        .eventEndTime(eventEndTime)
+        .build();
+  }
+
+  public Page<GitXWebhookEventResponse> buildListGitXWebhookEventResponse(
+      GitXEventsListResponseDTO gitXEventsListResponseDTO, Integer page, Integer limit) {
+    List<GitXWebhookEventResponse> eventResponseList =
+        emptyIfNull(gitXEventsListResponseDTO.getGitXEventDTOS())
+            .stream()
+            .map(gitXEventDTO -> {
+              GitXWebhookEventResponse gitXWebhookEventResponse = new GitXWebhookEventResponse();
+              gitXWebhookEventResponse.setEventIdentifier(gitXEventDTO.getEventIdentifier());
+              gitXWebhookEventResponse.setWebhookIdentifier(gitXEventDTO.getWebhookIdentifier());
+              gitXWebhookEventResponse.setEventTriggerTime(gitXEventDTO.getEventTriggerTime());
+              gitXWebhookEventResponse.setPayload(gitXEventDTO.getPayload());
+              gitXWebhookEventResponse.setAuthorName(gitXEventDTO.getAuthorName());
+              return gitXWebhookEventResponse;
+            })
+            .collect(Collectors.toList());
+    return PageUtils.getPage(eventResponseList, page, limit);
+  }
+
+  public GitXWebhookEventResponse buildGitXWebhookEventResponse(GitXWebhookEventResponse gitXWebhookEventResponse) {
+    GitXWebhookEventResponse responseBody = new GitXWebhookEventResponse();
+    responseBody.setEventIdentifier(gitXWebhookEventResponse.getEventIdentifier());
+    responseBody.setWebhookIdentifier(gitXWebhookEventResponse.getWebhookIdentifier());
+    responseBody.setEventTriggerTime(gitXWebhookEventResponse.getEventTriggerTime());
+    responseBody.setPayload(gitXWebhookEventResponse.getPayload());
+    responseBody.setAuthorName(gitXWebhookEventResponse.getAuthorName());
     return responseBody;
   }
 }
