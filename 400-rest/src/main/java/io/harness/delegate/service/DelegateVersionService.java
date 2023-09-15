@@ -109,11 +109,9 @@ public class DelegateVersionService {
 
     final String ringImage = delegateRingService.getDelegateImageTag(accountId);
     if (isNotEmpty(ringImage)) {
-      String[] split = ringImage.split(":");
-      String latestVersion = split[1];
       return SupportedDelegateVersion.builder()
-          .latestSupportedVersion(latestVersion)
-          .latestSupportedMinimalVersion(latestVersion.concat(".minimal"))
+          .latestSupportedVersion(ringImage)
+          .latestSupportedMinimalVersion(ringImage.concat(".minimal"))
           .build();
     }
     throw new IllegalStateException("No immutable delegate image tag found in ring");
