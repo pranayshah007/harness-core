@@ -17,16 +17,20 @@ import io.harness.health.HealthService;
 import io.harness.rest.RestResponse;
 
 import com.codahale.metrics.health.HealthCheck;
+import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class HealthResourceImpl implements HealthResource {
-  private HealthService healthService;
+  private final HealthService healthService;
+
+  private final ThreadDeadlockHealthCheck threadDeadlockHealthCheck;
 
   @Inject
   public HealthResourceImpl(HealthService healthService) {
     this.healthService = healthService;
+    this.threadDeadlockHealthCheck = new ThreadDeadlockHealthCheck();
   }
 
   public RestResponse<String> get() throws Exception {
@@ -44,6 +48,16 @@ public class HealthResourceImpl implements HealthResource {
       return new RestResponse<>("healthy");
     }
 
+    throw new HealthException(check.getMessage(), check.getError());
+  }
+
+  @Override
+  public RestResponse<String> doLivenessCheck() {
+    HealthCheck.Result check = threadDeadlockHealthCheck.execute();
+    if (check.isHealthy()) {
+      return new RestResponse<>("live");
+    }
+    log.info(check.getMessage());
     throw new HealthException(check.getMessage(), check.getError());
   }
 }
