@@ -888,7 +888,9 @@ public enum FeatureName {
       "This flag enables GCS artifact type support for SSH/WinRm deployment type", HarnessTeam.CDP),
   OPA_AIDA_WIDGET("FF for enabling the AIDA integration for OPA Service", HarnessTeam.OPA),
   CD_CONTAINER_STEP_DELEGATE_SELECTOR(
-      "FF to not respect stage/pipeline delegate selectors for container step", HarnessTeam.CDC);
+      "FF to not respect stage/pipeline delegate selectors for container step", HarnessTeam.CDC),
+  CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS(
+      "This flag disables WinRm special character escaping for environment variables usage", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated
