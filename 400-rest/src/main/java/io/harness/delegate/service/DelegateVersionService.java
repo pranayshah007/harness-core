@@ -18,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import io.harness.configuration.DeployMode;
+import io.harness.delegate.beans.SupportedDelegateVersion;
 import io.harness.delegate.beans.VersionOverride;
 import io.harness.delegate.beans.VersionOverride.VersionOverrideKeys;
 import io.harness.delegate.beans.VersionOverrideType;
@@ -87,18 +88,33 @@ public class DelegateVersionService {
    * @return
    */
   public String getImmutableDelegateImageTag(final String accountId) {
+    return getAccountImmutableDelegateImageTag(accountId).getLatestSupportedVersion();
+  }
+
+  /**
+   * Separate function to generate delegate image tag for delegates in ng.
+   *
+   * @param accountId
+   * @return SupportedDelegateVersion
+   */
+  public SupportedDelegateVersion getAccountImmutableDelegateImageTag(final String accountId) {
     final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
-      return versionOverride.getVersion();
+      return SupportedDelegateVersion.builder().latestSupportedVersion(versionOverride.getVersion()).build();
     }
 
     if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-      return fetchImmutableDelegateImageOnPrem();
+      return SupportedDelegateVersion.builder().latestSupportedVersion(fetchImmutableDelegateImageOnPrem()).build();
     }
 
     final String ringImage = delegateRingService.getDelegateImageTag(accountId);
-    if (isNotBlank(ringImage)) {
-      return ringImage;
+    if (isNotEmpty(ringImage)) {
+      String[] split = ringImage.split(":");
+      String latestVersion = split[1];
+      return SupportedDelegateVersion.builder()
+          .latestSupportedVersion(latestVersion)
+          .latestSupportedMinimalVersion(latestVersion.concat(".minimal"))
+          .build();
     }
     throw new IllegalStateException("No immutable delegate image tag found in ring");
   }

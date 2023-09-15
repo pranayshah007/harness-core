@@ -221,6 +221,27 @@ public class DelegateSetupNgResource {
     return new RestResponse<>(supportedDelegateVersion);
   }
 
+  @GET
+  @Timed
+  @Path("latest-delegate-version")
+  @ExceptionMetered
+  @ApiOperation(value = "Gets the latest supported delegate version", nickname = "publishedAccountDelegateVersion")
+  @Operation(operationId = "publishedAccountDelegateVersion",
+      summary =
+          "Gets the latest supported delegate version. The version has YY.MM.XXXXX format. You can use any version lower than the returned results(upto 3 months old)",
+      responses =
+      { @ApiResponse(responseCode = "default", description = "Gets the latest supported delegate version") })
+  public RestResponse<SupportedDelegateVersion>
+  publishedLatestDelegateVersion(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier) throws IOException {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, null, null),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+    SupportedDelegateVersion supportedDelegateVersion =
+        CGRestUtils.getResponse(delegateNgManagerCgManagerClient.getLatestPublishedDelegateVersion(accountIdentifier));
+
+    return new RestResponse<>(supportedDelegateVersion);
+  }
+
   @PUT
   @Path("/override-delegate-tag")
   @ApiOperation(value = "Overrides delegate image tag for account", nickname = "overrideDelegateImageTag")
