@@ -35,7 +35,7 @@ global:
       extraArgs: ""
       secrets:
         kubernetesSecrets:
-        - secretName: "global-secret"
+        - secretName: ""
           keys:
             MONGO_USER: "global-user"
             MONGO_PASSWORD: "global-password"
@@ -47,7 +47,7 @@ global:
           externalSecretsOperator:
           - secretStore:
               name: "my-ext-secret-store-1"
-              kind: "ClusterSecretStore"
+              kind: ""
             remoteKeys:
               MONGO_USER:
                 name: "myMongoUser"
