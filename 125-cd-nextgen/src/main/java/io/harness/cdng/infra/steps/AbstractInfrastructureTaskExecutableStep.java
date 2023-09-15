@@ -112,7 +112,6 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -179,14 +178,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   protected OutcomeSet fetchRequiredOutcomes(Ambiance ambiance) {
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
-    ServiceStepOutcome serviceOutcome;
-    OptionalOutcome optionalServiceOutcome = outcomeService.resolveOptional(
+    ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
-    if (optionalServiceOutcome.isFound()) {
-      serviceOutcome = (ServiceStepOutcome) optionalServiceOutcome.getOutcome();
-    } else {
-      serviceOutcome = ServiceStepOutcome.builder().type(null).identifier(null).build();
-    }
     return new OutcomeSet(serviceOutcome, environmentOutcome);
   }
 

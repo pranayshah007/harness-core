@@ -11,7 +11,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.beans.CustomStageSpecParams;
@@ -56,6 +55,7 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+<<<<<<< HEAD
 =======
 >>>>>>> 5234b436ce9 ([feat]: [CDS-78377] variables & variable overrides support for custom stage env)
 =======
@@ -63,6 +63,8 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 >>>>>>> 26a6a7185ba ([feat]: [CDS-78377] add variables overrides for custom stage env. step)
+=======
+>>>>>>> 8274fe1564e ([feat]: [CDS-78377] remove infra changes)
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -183,19 +185,8 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
       final ServiceStepV3Parameters stepParameters = ServiceStepV3Parameters.builder()
                                                          .envRef(finalEnvironmentYamlV2.getEnvironmentRef())
                                                          .envInputs(finalEnvironmentYamlV2.getEnvironmentInputs())
+                                                         .childrenNodeIds(new ArrayList<>())
                                                          .build();
-
-      if (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinition())) {
-        ParameterField<String> infraRef =
-            finalEnvironmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
-        stepParameters.setInfraId(infraRef);
-
-        PlanNode infraNode = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
-            finalEnvironmentYamlV2, null, ParameterField.createValueField(false));
-        planCreationResponseMap.put(infraNode.getUuid(), PlanCreationResponse.builder().planNode(infraNode).build());
-        stepParameters.setChildrenNodeIds(Collections.singletonList(infraNode.getUuid()));
-      }
-
       ByteString advisorParameters = ByteString.copyFrom(
           kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(envNextNodeUuid).build()));
       final PlanNode envNode =
