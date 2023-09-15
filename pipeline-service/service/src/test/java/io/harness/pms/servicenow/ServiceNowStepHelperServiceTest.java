@@ -45,6 +45,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
@@ -100,11 +101,14 @@ public class ServiceNowStepHelperServiceTest extends CategoryTest {
 
   private static final List<TaskSelector> TASK_SELECTORS = TaskSelectorYaml.toTaskSelector(DELEGATE_SELECTORS);
 
-  private static final Ambiance AMBIANCE = Ambiance.newBuilder()
-                                               .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT)
-                                               .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
-                                               .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
-                                               .build();
+  private static final Ambiance AMBIANCE =
+      Ambiance.newBuilder()
+          .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT)
+          .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
+          .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
+          .setMetadata(
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+          .build();
   private static final ConnectorDTO CONNECTOR_DTO =
       ConnectorDTO.builder()
           .connectorInfo(
@@ -285,10 +289,13 @@ public class ServiceNowStepHelperServiceTest extends CategoryTest {
                     .build())
             .build());
     ServiceNowTaskNGParametersBuilder paramsBuilder = ServiceNowTaskNGParameters.builder();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
-                                "projectIdentfier", "orgIdentifier", "orgIdentifier"))
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .putAllSetupAbstractions(Maps.of(
+                "accountId", "accountId", "projectIdentifier", "projectIdentfier", "orgIdentifier", "orgIdentifier"))
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
 
     when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO1);
     assertThatThrownBy(()

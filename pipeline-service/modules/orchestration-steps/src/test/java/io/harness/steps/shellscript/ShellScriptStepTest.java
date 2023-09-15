@@ -30,6 +30,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
@@ -77,6 +78,8 @@ public class ShellScriptStepTest extends CategoryTest {
         .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+        .setMetadata(
+            ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
         .build();
   }
 

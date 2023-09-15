@@ -47,6 +47,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -79,11 +80,14 @@ public class JenkinsBuildStepHelperServiceImplTest extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
   @InjectMocks JenkinsBuildStepHelperServiceImpl jenkinsBuildStepHelperService;
 
-  private final Ambiance ambiance = Ambiance.newBuilder()
-                                        .putSetupAbstractions("accountId", "accountId")
-                                        .putSetupAbstractions("orgIdentifier", "orgIdentifier")
-                                        .putSetupAbstractions("projectIdentifier", "projectIdentifier")
-                                        .build();
+  private final Ambiance ambiance =
+      Ambiance.newBuilder()
+          .putSetupAbstractions("accountId", "accountId")
+          .putSetupAbstractions("orgIdentifier", "orgIdentifier")
+          .putSetupAbstractions("projectIdentifier", "projectIdentifier")
+          .setMetadata(
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+          .build();
   private final String connectorRef = "connectorref";
   private final ConnectorDTO jenkinsConnector =
       ConnectorDTO.builder()

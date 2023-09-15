@@ -34,6 +34,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -100,11 +101,14 @@ public class ResourceRestraintStepTest extends CategoryTest {
     String planNodeId = generateUuid();
     String consumerId = generateUuid();
     String planExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
-                            .build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(planExecutionId)
+            .addAllLevels(
+                Collections.singletonList(Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)

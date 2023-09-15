@@ -85,6 +85,7 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
@@ -146,7 +147,11 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
 
   private final String ACCOUNT_ID = "accountId";
   private final Ambiance ambiance =
-      Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
+      Ambiance.newBuilder()
+          .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
+          .setMetadata(
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+          .build();
 
   private final AzureConnectorDTO azureConnectorDTO =
       AzureConnectorDTO.builder().delegateSelectors(ImmutableSet.of("delegate1")).build();

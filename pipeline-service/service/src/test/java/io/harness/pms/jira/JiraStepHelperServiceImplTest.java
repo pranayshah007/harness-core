@@ -48,6 +48,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -93,11 +94,14 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
   private static final List<TaskSelector> TASK_SELECTORS =
       TaskSelectorYaml.toTaskSelector(TASK_SELECTOR_YAML_PARAMETER);
 
-  private static final Ambiance AMBIANCE = Ambiance.newBuilder()
-                                               .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT)
-                                               .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
-                                               .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
-                                               .build();
+  private static final Ambiance AMBIANCE =
+      Ambiance.newBuilder()
+          .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT)
+          .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
+          .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
+          .setMetadata(
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+          .build();
   private static final ConnectorDTO JIRA_CONNECTOR =
       ConnectorDTO.builder()
           .connectorInfo(ConnectorInfoDTO.builder()

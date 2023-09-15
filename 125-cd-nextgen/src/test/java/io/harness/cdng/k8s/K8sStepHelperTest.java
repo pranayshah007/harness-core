@@ -194,6 +194,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
@@ -283,11 +284,14 @@ public class K8sStepHelperTest extends CDNGTestBase {
   @Spy @InjectMocks private K8sStepHelper k8sStepHelper;
 
   @Mock private LogCallback mockLogCallback;
-  private final Ambiance ambiance = Ambiance.newBuilder()
-                                        .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                                        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                                        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                                        .build();
+  private final Ambiance ambiance =
+      Ambiance.newBuilder()
+          .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
+          .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
+          .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+          .setMetadata(
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+          .build();
   private static final String SOME_URL = "https://url.com/owner/repo.git";
 
   private final String ENCODED_REPO_NAME = "c26979e4-1d8c-344e-8181-45f484c57fe5";
@@ -317,7 +321,11 @@ public class K8sStepHelperTest extends CDNGTestBase {
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
 
-    return Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).build();
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(setupAbstractions)
+        .setMetadata(
+            ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+        .build();
   }
 
   @Test

@@ -214,6 +214,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -288,12 +289,15 @@ public class TasStepHelperTest extends CategoryTest {
   private final String ORG_ID = "test-org";
   private final String PROJECT_ID = "test-account";
 
-  private final Ambiance ambiance = Ambiance.newBuilder()
-                                        .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
-                                        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
-                                        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
-                                        .setStageExecutionId(STAGE_EXECUTION_ID)
-                                        .build();
+  private final Ambiance ambiance =
+      Ambiance.newBuilder()
+          .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
+          .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
+          .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
+          .setStageExecutionId(STAGE_EXECUTION_ID)
+          .setMetadata(
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+          .build();
   private final EnvironmentOutcome environment =
       EnvironmentOutcome.builder()
           .identifier("env")

@@ -1357,6 +1357,7 @@ public class ServiceStepV3Test extends CategoryTest {
                                                .setPrincipal("prinicipal")
                                                .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
                                                .build())
+                         .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
                          .build())
         .build();
   }

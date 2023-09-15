@@ -51,6 +51,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -125,12 +126,18 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
     planExecutionService.save(planExecution);
 
     // creating NodeExecution
-    NodeExecution dummyStart = NodeExecution.builder()
-                                   .uuid(generateUuid())
-                                   .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecution.getUuid()).build())
-                                   .mode(ExecutionMode.SYNC)
-                                   .status(Status.QUEUED)
-                                   .build();
+    NodeExecution dummyStart =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId(planExecution.getUuid())
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .status(Status.QUEUED)
+            .build();
     nodeExecutionService.save(dummyStart);
 
     // creating cached graph
@@ -190,26 +197,30 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                             .identifier("identifier1")
                             .serviceName("PIPELINE")
                             .build();
-    NodeExecution dummyStart = NodeExecution.builder()
-                                   .uuid(generateUuid())
-                                   .ambiance(Ambiance.newBuilder()
-                                                 .setPlanExecutionId(planExecution.getUuid())
-                                                 .addLevels(Level.newBuilder()
-                                                                .setStepType(stepType)
-                                                                .setNodeType(NodeType.PLAN_NODE.name())
-                                                                .setSetupId(planNode.getUuid())
-                                                                .build())
-                                                 .build())
-                                   .mode(ExecutionMode.SYNC)
-                                   .status(SUCCEEDED)
-                                   .nodeId(planNode.getUuid())
-                                   .name(planNode.getName())
-                                   .resolvedParams(PmsStepParameters.parse(new HashMap<>()))
-                                   .stepType(planNode.getStepType())
-                                   .identifier(planNode.getIdentifier())
-                                   .module(planNode.getServiceName())
-                                   .skipGraphType(planNode.getSkipGraphType())
-                                   .build();
+    NodeExecution dummyStart =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId(planExecution.getUuid())
+                          .addLevels(Level.newBuilder()
+                                         .setStepType(stepType)
+                                         .setNodeType(NodeType.PLAN_NODE.name())
+                                         .setSetupId(planNode.getUuid())
+                                         .build())
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .status(SUCCEEDED)
+            .nodeId(planNode.getUuid())
+            .name(planNode.getName())
+            .resolvedParams(PmsStepParameters.parse(new HashMap<>()))
+            .stepType(planNode.getStepType())
+            .identifier(planNode.getIdentifier())
+            .module(planNode.getServiceName())
+            .skipGraphType(planNode.getSkipGraphType())
+            .build();
     nodeExecutionService.save(dummyStart);
 
     // creating cached graph
@@ -283,29 +294,33 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                             .identifier("identifier1")
                             .serviceName("PIPELINE")
                             .build();
-    NodeExecution dummyStart = NodeExecution.builder()
-                                   .uuid(generateUuid())
-                                   .ambiance(Ambiance.newBuilder()
-                                                 .setPlanExecutionId(planExecution.getUuid())
-                                                 .addLevels(Level.newBuilder()
-                                                                .setStepType(stepType)
-                                                                .setNodeType(NodeType.PLAN_NODE.name())
-                                                                .setSetupId(planNode.getUuid())
-                                                                .build())
-                                                 .build())
-                                   .mode(ExecutionMode.SYNC)
-                                   .status(SUCCEEDED)
-                                   .nodeId(planNode.getUuid())
-                                   .name(planNode.getName())
-                                   .previousId("previousId")
-                                   .parentId("parentId")
-                                   .oldRetry(true)
-                                   .resolvedParams(PmsStepParameters.parse(new HashMap<>()))
-                                   .stepType(planNode.getStepType())
-                                   .identifier(planNode.getIdentifier())
-                                   .module(planNode.getServiceName())
-                                   .skipGraphType(planNode.getSkipGraphType())
-                                   .build();
+    NodeExecution dummyStart =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId(planExecution.getUuid())
+                          .addLevels(Level.newBuilder()
+                                         .setStepType(stepType)
+                                         .setNodeType(NodeType.PLAN_NODE.name())
+                                         .setSetupId(planNode.getUuid())
+                                         .build())
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .status(SUCCEEDED)
+            .nodeId(planNode.getUuid())
+            .name(planNode.getName())
+            .previousId("previousId")
+            .parentId("parentId")
+            .oldRetry(true)
+            .resolvedParams(PmsStepParameters.parse(new HashMap<>()))
+            .stepType(planNode.getStepType())
+            .identifier(planNode.getIdentifier())
+            .module(planNode.getServiceName())
+            .skipGraphType(planNode.getSkipGraphType())
+            .build();
     nodeExecutionService.save(dummyStart);
 
     // creating cached graph
@@ -362,28 +377,32 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                             .identifier("identifier1")
                             .serviceName("PIPELINE")
                             .build();
-    NodeExecution dummyStart = NodeExecution.builder()
-                                   .uuid(generateUuid())
-                                   .ambiance(Ambiance.newBuilder()
-                                                 .setPlanExecutionId(planExecution.getUuid())
-                                                 .addLevels(Level.newBuilder()
-                                                                .setStepType(stepType)
-                                                                .setNodeType(NodeType.PLAN_NODE.name())
-                                                                .setSetupId(planNode.getUuid())
-                                                                .build())
-                                                 .build())
-                                   .mode(ExecutionMode.SYNC)
-                                   .status(SUCCEEDED)
-                                   .nodeId(planNode.getUuid())
-                                   .name(planNode.getName())
-                                   .previousId("previousId")
-                                   .parentId("parentId")
-                                   .resolvedParams(PmsStepParameters.parse(new HashMap<>()))
-                                   .stepType(planNode.getStepType())
-                                   .identifier(planNode.getIdentifier())
-                                   .module(planNode.getServiceName())
-                                   .skipGraphType(planNode.getSkipGraphType())
-                                   .build();
+    NodeExecution dummyStart =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId(planExecution.getUuid())
+                          .addLevels(Level.newBuilder()
+                                         .setStepType(stepType)
+                                         .setNodeType(NodeType.PLAN_NODE.name())
+                                         .setSetupId(planNode.getUuid())
+                                         .build())
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .build())
+                          .build())
+            .mode(ExecutionMode.SYNC)
+            .status(SUCCEEDED)
+            .nodeId(planNode.getUuid())
+            .name(planNode.getName())
+            .previousId("previousId")
+            .parentId("parentId")
+            .resolvedParams(PmsStepParameters.parse(new HashMap<>()))
+            .stepType(planNode.getStepType())
+            .identifier(planNode.getIdentifier())
+            .module(planNode.getServiceName())
+            .skipGraphType(planNode.getSkipGraphType())
+            .build();
     nodeExecutionService.save(dummyStart);
 
     // creating cached graph
@@ -473,6 +492,9 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                                          .setNodeType(NodeType.PLAN_NODE.name())
                                          .setSetupId("planNodeUuid")
                                          .build())
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .build())
                           .build())
             .mode(ExecutionMode.SYNC)
             .status(SUCCEEDED)

@@ -43,6 +43,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -96,7 +97,11 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldObtainTask() {
-    Ambiance ambiance = Ambiance.newBuilder().build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
     doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
@@ -132,7 +137,11 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldThrowErrorIfDeploymentRepoOutcomeNotFound() {
-    Ambiance ambiance = Ambiance.newBuilder().build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
     doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
@@ -145,7 +154,11 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldThrowErrorWhenTaskResponseStatusIsFail() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder().build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
     doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
@@ -165,7 +178,11 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldThrowErrorWhenClusterOutcomeNotFound() {
-    Ambiance ambiance = Ambiance.newBuilder().build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
     doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
@@ -187,7 +204,11 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldThrowErrorWhenGitOpsServiceThrowsError() throws IOException {
-    Ambiance ambiance = Ambiance.newBuilder().build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
     doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
@@ -249,7 +270,11 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldNotSetOutcomeWhenNoAppsFound() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder().build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
     doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
@@ -277,6 +302,8 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
         .putSetupAbstractions("accountId", "ACC_ID")
         .putSetupAbstractions("orgIdentifier", "ORG_ID")
         .putSetupAbstractions("projectIdentifier", "PROJ_ID")
+        .setMetadata(
+            ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
         .build();
   }
 

@@ -99,7 +99,11 @@ public class CustomApprovalStepTest extends CategoryTest {
                       .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
                       .build())
             .build();
-    Ambiance ambiance = Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     when(approvalInstanceService.save(any()))
         .thenReturn(CustomApprovalInstance.fromStepParameters(ambiance, stepElementParameters));
 
@@ -114,7 +118,11 @@ public class CustomApprovalStepTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testSyncResponseSuccess() {
-    Ambiance ambiance = Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     ApprovalInstance instance = CustomApprovalInstance.builder().build();
     instance.setStatus(ApprovalStatus.APPROVED);
     when(approvalInstanceService.get(anyString())).thenReturn(instance);
@@ -141,7 +149,11 @@ public class CustomApprovalStepTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testSyncResponseFailure() {
-    Ambiance ambiance = Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     ApprovalInstance instance = CustomApprovalInstance.builder().build();
     instance.setStatus(ApprovalStatus.FAILED);
     instance.setErrorMessage("Custom Approval has no output fields. At least one output field must be set");
@@ -159,7 +171,11 @@ public class CustomApprovalStepTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testAbort() {
-    Ambiance ambiance = Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     customApprovalStep.handleAbort(ambiance, null, null);
     verify(approvalInstanceService).abortByNodeExecutionId(any());
     verify(logStreamingStepClient).closeAllOpenStreamsWithPrefix(any());
@@ -169,7 +185,11 @@ public class CustomApprovalStepTest extends CategoryTest {
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testAsyncResponseRejected() {
-    Ambiance ambiance = Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+            .build();
     ApprovalInstance instance = CustomApprovalInstance.builder().build();
     instance.setStatus(ApprovalStatus.REJECTED);
     when(approvalInstanceService.get(anyString())).thenReturn(instance);

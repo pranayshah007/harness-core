@@ -873,6 +873,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                                                .setPrincipalType(PrincipalType.USER)
                                                .setShouldValidateRbac(true)
                                                .build())
+                         .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
                          .build())
         .build();
   }
