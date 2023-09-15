@@ -245,10 +245,10 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceRef, boolean deleted, boolean includeMetadataOnly) {
-    // includeMetadataOnly fetches the entity from db so source code params are false
-    return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false, includeMetadataOnly);
+  public Optional<ServiceEntity> getMetadataOnly(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
+    // includeMetadataOnly fetches the entity from db so source code params are not needed
+    return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false, true);
   }
 
   @Override
@@ -435,9 +435,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
 
-    // get just metadata
     Optional<ServiceEntity> serviceEntityOptional =
-        get(accountId, orgIdentifier, projectIdentifier, serviceRef, false, true);
+        getMetadataOnly(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
 
     if (serviceEntityOptional.isPresent()) {
       boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {

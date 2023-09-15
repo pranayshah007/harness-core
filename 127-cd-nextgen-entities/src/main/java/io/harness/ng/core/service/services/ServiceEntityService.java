@@ -38,12 +38,13 @@ public interface ServiceEntityService {
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean deleted);
 
   /**
-   *
-   * @param includeMetadataOnly specify true if entity without YAML is sufficient. Retrieving entity with YAML may lead
-   *     to calls to SCM
+   * this method will return the service entity as stored in the MongoDB
+   * database itself. No additional data (YAML) will be fetched from the source code repository.
+   * @return An Optional containing the retrieved or fetched ServiceEntity, or an empty Optional if
+   *         no matching entity is found.
    */
-  Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceIdentifier, boolean deleted, boolean includeMetadataOnly);
+  Optional<ServiceEntity> getMetadataOnly(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean deleted);
 
   Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String serviceIdentifier, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch);
