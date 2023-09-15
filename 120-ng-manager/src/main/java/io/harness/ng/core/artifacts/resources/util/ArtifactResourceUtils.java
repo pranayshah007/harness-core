@@ -217,6 +217,11 @@ public class ArtifactResourceUtils {
         mergedCompleteYaml = applyTemplatesOnGivenYaml(
             accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);
       }
+
+      // serviceRef, gitBranch
+      // envRef, gitBranch
+
+      //
       String[] split = fqnPath.split("\\.");
       String stageIdentifier = split[2];
       YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);

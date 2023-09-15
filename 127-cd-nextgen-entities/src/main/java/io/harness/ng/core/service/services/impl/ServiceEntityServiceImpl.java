@@ -247,12 +247,18 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String serviceRef, boolean deleted, boolean includeMetadataOnly) {
-    // default behavior to not load from cache and fallback branch
+    // includeMetadataOnly fetches the entity from db so source code params are false
     return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false, includeMetadataOnly);
   }
 
   @Override
   public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    return get(
+        accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache, loadFromFallbackBranch, false);
+  }
+
+  private Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch,
       boolean includeMetadataOnly) {
     checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);

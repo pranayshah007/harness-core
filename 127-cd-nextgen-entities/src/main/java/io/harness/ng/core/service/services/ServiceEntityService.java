@@ -46,8 +46,7 @@ public interface ServiceEntityService {
       String serviceIdentifier, boolean deleted, boolean includeMetadataOnly);
 
   Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceIdentifier, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch,
-      boolean includeMetadataOnly);
+      String serviceIdentifier, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   // TODO(archit): make it transactional
   ServiceEntity update(ServiceEntity requestService);
