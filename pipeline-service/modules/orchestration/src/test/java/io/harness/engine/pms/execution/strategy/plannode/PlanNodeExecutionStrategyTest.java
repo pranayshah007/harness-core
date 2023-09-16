@@ -961,7 +961,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     verify(pmsEngineExpressionService, times(1))
         .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode(), List.of());
     verify(executionStrategy, times(1)).getResolvedStepInputs(any(), any());
-    verify(pmsGraphStepDetailsService, times(1)).addStepInputs(any(), any());
+    verify(pmsGraphStepDetailsService, times(1)).addStepInputs(any(), any(), any());
     verify(nodeExecutionService, times(1)).updateV2(any(), any());
   }
 

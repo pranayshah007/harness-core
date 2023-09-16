@@ -78,18 +78,18 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
     }
     nodeExecutionsInfoBuilder.strategyMetadata(metadata);
     nodeExecutionsInfoRepository.save(nodeExecutionsInfoBuilder.build());
-    stepDetailsUpdateObserverSubject.fireInform(StepDetailsUpdateObserver::onStepInputsAdd,
-        StepDetailsUpdateInfo.builder().nodeExecutionId(nodeExecutionId).planExecutionId(planExecutionId).build());
   }
 
   @Override
-  public void addStepInputs(String nodeExecutionId, PmsStepParameters resolvedInputs) {
+  public void addStepInputs(String nodeExecutionId, PmsStepParameters resolvedInputs, String planExecutionId) {
     // TODO (Sahil) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
     // for maps Find a better way to do this
     Update update = new Update().set(
         NodeExecutionsInfoKeys.resolvedInputs, new Binary(kryoSerializer.asDeflatedBytes(resolvedInputs)));
     Criteria criteria = Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).is(nodeExecutionId);
     mongoTemplate.findAndModify(new Query(criteria), update, NodeExecutionsInfo.class);
+    stepDetailsUpdateObserverSubject.fireInform(StepDetailsUpdateObserver::onStepInputsAdd,
+        StepDetailsUpdateInfo.builder().nodeExecutionId(nodeExecutionId).planExecutionId(planExecutionId).build());
   }
 
   @Override
