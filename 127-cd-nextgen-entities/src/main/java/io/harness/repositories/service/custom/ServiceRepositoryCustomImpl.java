@@ -276,7 +276,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
   @Override
   public Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
-      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean includeMetadataOnly) {
+      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly) {
     Query query = new Query(buildCriteriaForServiceIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, !notDeleted));
 
@@ -286,7 +286,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
       return Optional.empty();
     }
 
-    if (includeMetadataOnly) {
+    if (getMetadataOnly) {
       return Optional.of(savedEntity);
     }
 

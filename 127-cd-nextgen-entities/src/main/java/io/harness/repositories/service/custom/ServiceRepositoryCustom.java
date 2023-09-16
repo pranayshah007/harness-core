@@ -46,7 +46,7 @@ public interface ServiceRepositoryCustom {
 
   Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
-      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean includeMetadataOnly);
+      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly);
 
   List<String> getListOfDistinctRepos(Criteria criteria);
 }

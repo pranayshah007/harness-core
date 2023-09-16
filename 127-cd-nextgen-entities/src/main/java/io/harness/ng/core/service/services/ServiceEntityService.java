@@ -34,8 +34,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface ServiceEntityService {
   ServiceEntity create(ServiceEntity serviceEntity);
 
-  Optional<ServiceEntity> get(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean deleted);
+  Optional<ServiceEntity> get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, boolean deleted);
 
   /**
    * this method will return the service entity as stored in the MongoDB
@@ -43,10 +43,10 @@ public interface ServiceEntityService {
    * @return An Optional containing the retrieved or fetched ServiceEntity, or an empty Optional if
    *         no matching entity is found.
    */
-  Optional<ServiceEntity> getMetadataOnly(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean deleted);
+  Optional<ServiceEntity> getMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, boolean deleted);
 
-  Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+  Optional<ServiceEntity> get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceIdentifier, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   // TODO(archit): make it transactional
@@ -116,7 +116,7 @@ public interface ServiceEntityService {
   List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   Optional<ServiceEntity> getService(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
 
   ValidateTemplateInputsResponseDTO validateTemplateInputs(
       String accountId, String orgId, String projectId, String serviceIdentifier, String loadFromCache);
