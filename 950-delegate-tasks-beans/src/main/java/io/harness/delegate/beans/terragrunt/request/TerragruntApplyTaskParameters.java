@@ -25,4 +25,5 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TerragruntApplyTaskParameters extends AbstractTerragruntTaskParameters {
   EncryptedRecordData encryptedTfPlan;
+  Boolean saveExecutionLogsToDelegate;
 }

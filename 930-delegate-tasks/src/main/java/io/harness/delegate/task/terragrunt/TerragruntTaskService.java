@@ -42,6 +42,7 @@ import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLocalLogCallback;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
@@ -130,9 +131,11 @@ public class TerragruntTaskService {
   }
 
   public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
-      CommandUnitsProgress commandUnitsProgress) {
+      CommandUnitsProgress commandUnitsProgress, Boolean saveExecutionLogsToDelegate) {
+    if (saveExecutionLogsToDelegate == Boolean.TRUE) {
+      return new NGDelegateLocalLogCallback();
+    }
     boolean shouldOpenStream = shouldOpenStream(commandUnitName, commandUnitsProgress);
-
     return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
   }
 

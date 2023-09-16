@@ -26,4 +26,5 @@ public class TerragruntPlanTaskParameters extends AbstractTerragruntTaskParamete
   TerragruntCommandType commandType;
   boolean exportJsonPlan;
   String planName;
+  Boolean saveExecutionLogsToDelegate;
 }

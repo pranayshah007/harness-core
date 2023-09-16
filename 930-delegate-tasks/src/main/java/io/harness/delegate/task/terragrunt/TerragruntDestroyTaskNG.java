@@ -88,7 +88,7 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
         : CommandUnitsProgress.builder().build();
 
     LogCallback destroyLogCallback =
-        taskService.getLogCallback(getLogStreamingTaskClient(), DESTROY, commandUnitsProgress);
+        taskService.getLogCallback(getLogStreamingTaskClient(), DESTROY, commandUnitsProgress, destroyTaskParameters.getSaveExecutionLogsToDelegate());
 
     String baseDir;
     if (destroyTaskParameters.isUseUniqueDirectoryForBaseDir()) {
@@ -108,7 +108,7 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
       log.error("Terragrunt destroy task failed", sanitizedException);
       TaskExceptionUtils.handleExceptionCommandUnits(commandUnitsProgress,
           unitName
-          -> taskService.getLogCallback(getLogStreamingTaskClient(), unitName, commandUnitsProgress),
+          -> taskService.getLogCallback(getLogStreamingTaskClient(), unitName, commandUnitsProgress, destroyTaskParameters.getSaveExecutionLogsToDelegate()),
           sanitizedException);
 
       throw new TaskNGDataException(
@@ -124,7 +124,7 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
       taskService.mapGitConfig(destroyTaskParameters);
       taskService.decryptTaskParameters(destroyTaskParameters);
       LogCallback fetchFilesLogCallback =
-          taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
+          taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress, destroyTaskParameters.getSaveExecutionLogsToDelegate());
       TerragruntContext terragruntContext =
           taskService.prepareTerragrunt(fetchFilesLogCallback, destroyTaskParameters, baseDir, destroyLogCallback);
 

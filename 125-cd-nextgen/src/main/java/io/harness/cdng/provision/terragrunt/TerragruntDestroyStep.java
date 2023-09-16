@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
+import static io.harness.beans.FeatureName.CDS_NG_TERRAGRUNT_SAVE_EXECUTION_LOGS_TO_DELEGATE_LOGS;
 import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG;
 import static io.harness.cdng.provision.terragrunt.TerragruntStepHelper.DEFAULT_TIMEOUT;
@@ -225,7 +226,9 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
             helper.tfPlanEncryptionOnManager(accountId, inheritOutput.encryptionConfig))
         .useUniqueDirectoryForBaseDir(
             cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG))
-        .timeoutInMillis(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), DEFAULT_TIMEOUT));
+        .timeoutInMillis(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), DEFAULT_TIMEOUT))
+        .saveExecutionLogsToDelegate(
+            cdFeatureFlagHelper.isEnabled(accountId, CDS_NG_TERRAGRUNT_SAVE_EXECUTION_LOGS_TO_DELEGATE_LOGS));
     builder.build();
 
     return prepareCDTaskRequest(ambiance, builder, StepBaseParameters, stepParameters);

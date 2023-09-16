@@ -92,7 +92,7 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
     CommandUnitsProgress commandUnitsProgress = applyTaskParameters.getCommandUnitsProgress() != null
         ? applyTaskParameters.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
-    LogCallback applyLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), APPLY, commandUnitsProgress);
+    LogCallback applyLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), APPLY, commandUnitsProgress, Boolean.FALSE);
 
     String baseDir;
     if (applyTaskParameters.isUseUniqueDirectoryForBaseDir()) {
@@ -112,7 +112,7 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
       log.error("Terragrunt apply task failed", sanitizedException);
       TaskExceptionUtils.handleExceptionCommandUnits(commandUnitsProgress,
           unitName
-          -> taskService.getLogCallback(getLogStreamingTaskClient(), unitName, commandUnitsProgress),
+          -> taskService.getLogCallback(getLogStreamingTaskClient(), unitName, commandUnitsProgress, Boolean.FALSE),
           sanitizedException);
 
       throw new TaskNGDataException(
@@ -129,7 +129,7 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
       taskService.decryptTaskParameters(applyTaskParameters);
 
       LogCallback fetchFilesLogCallback =
-          taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
+          taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress, applyTaskParameters.getSaveExecutionLogsToDelegate());
       TerragruntContext terragruntContext =
           taskService.prepareTerragrunt(fetchFilesLogCallback, applyTaskParameters, baseDir, applyLogCallback);
 

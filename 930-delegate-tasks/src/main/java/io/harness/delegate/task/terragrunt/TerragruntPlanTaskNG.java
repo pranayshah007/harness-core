@@ -120,9 +120,10 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
       taskService.mapGitConfig(planTaskParameters);
       taskService.decryptTaskParameters(planTaskParameters);
 
-      LogCallback fetchFilesLogCallback =
-          taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
-      LogCallback planLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), PLAN, commandUnitsProgress);
+      LogCallback fetchFilesLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES,
+          commandUnitsProgress, planTaskParameters.getSaveExecutionLogsToDelegate());
+      LogCallback planLogCallback = taskService.getLogCallback(
+          getLogStreamingTaskClient(), PLAN, commandUnitsProgress, planTaskParameters.getSaveExecutionLogsToDelegate());
 
       TerragruntContext terragruntContext =
           taskService.prepareTerragrunt(fetchFilesLogCallback, planTaskParameters, baseDir, planLogCallback);
@@ -246,7 +247,8 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
       log.error("Terragrunt plan task failed", sanitizedException);
       TaskExceptionUtils.handleExceptionCommandUnits(commandUnitsProgress,
           unitName
-          -> taskService.getLogCallback(getLogStreamingTaskClient(), unitName, commandUnitsProgress),
+          -> taskService.getLogCallback(getLogStreamingTaskClient(), unitName, commandUnitsProgress,
+              planTaskParameters.getSaveExecutionLogsToDelegate()),
           sanitizedException);
 
       throw new TaskNGDataException(

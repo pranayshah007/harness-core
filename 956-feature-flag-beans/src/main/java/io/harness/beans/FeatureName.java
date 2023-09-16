@@ -909,7 +909,10 @@ public enum FeatureName {
   CDS_SCOPE_INFRA_TO_SERVICES("This flag enables the scoping of Infrastructure to specific Services.", HarnessTeam.CDP),
   PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE),
   CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS(
-      "This flag disables WinRm special character escaping for environment variables usage", HarnessTeam.CDP);
+      "This flag disables WinRm special character escaping for environment variables usage", HarnessTeam.CDP),
+  CDS_NG_TERRAGRUNT_SAVE_EXECUTION_LOGS_TO_DELEGATE_LOGS(
+      "Allows execution logs for terragrunt step to saved in the delegate logs and not being sent over to Harness. Intended for debugging purposes when logs can contain sensitive data",
+      HarnessTeam.CDP);
 
   // keep-sorted end
 

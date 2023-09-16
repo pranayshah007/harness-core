@@ -15,6 +15,7 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
+import static io.harness.beans.FeatureName.CDS_NG_TERRAGRUNT_SAVE_EXECUTION_LOGS_TO_DELEGATE_LOGS;
 import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG;
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
@@ -187,6 +188,8 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
         .encryptDecryptPlanForHarnessSMOnManager(helper.tfPlanEncryptionOnManager(accountId, planSecretManagerConfig))
         .useUniqueDirectoryForBaseDir(
             cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG))
+        .saveExecutionLogsToDelegate(
+            cdFeatureFlagHelper.isEnabled(accountId, CDS_NG_TERRAGRUNT_SAVE_EXECUTION_LOGS_TO_DELEGATE_LOGS))
         .build();
 
     TaskType terragruntTaskType = builder.build().getDelegateTaskTypeForPlanStep();
