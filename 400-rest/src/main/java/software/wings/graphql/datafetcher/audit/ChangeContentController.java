@@ -19,7 +19,7 @@ import software.wings.audit.AuditHeader;
 import software.wings.audit.AuditHeaderYamlResponse;
 import software.wings.audit.AuditHeaderYamlResponse.AuditHeaderYamlResponseBuilder;
 import software.wings.audit.EntityAuditRecord;
-import software.wings.beans.EntityYamlRecord;
+import software.wings.beans.record.EntityYamlRecord;
 import software.wings.dl.WingsPersistence;
 import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.QLPageInfo;

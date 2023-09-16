@@ -27,9 +27,9 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.api.PhaseElement;
-import software.wings.beans.HelmChartConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.appmanifest.ApplicationManifest;
+import software.wings.beans.helm.HelmChartConfig;
 import software.wings.beans.settings.helm.HelmRepoConfig;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams.HelmChartConfigParamsBuilder;

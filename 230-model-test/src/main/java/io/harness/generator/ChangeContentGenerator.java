@@ -8,8 +8,8 @@
 package io.harness.generator;
 
 import software.wings.beans.Account;
-import software.wings.beans.EntityYamlRecord;
-import software.wings.beans.EntityYamlRecord.EntityYamlRecordBuilder;
+import software.wings.beans.record.EntityYamlRecord;
+import software.wings.beans.record.EntityYamlRecord.EntityYamlRecordBuilder;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;

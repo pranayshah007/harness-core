@@ -75,8 +75,6 @@ import software.wings.beans.Event.Type;
 import software.wings.beans.GitFetchFilesTaskParams;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GitFileConfig.GitFileConfigKeys;
-import software.wings.beans.HelmChartConfig;
-import software.wings.beans.HelmChartConfig.HelmChartConfigKeys;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
@@ -87,6 +85,8 @@ import software.wings.beans.appmanifest.ApplicationManifest.ApplicationManifestK
 import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.beans.appmanifest.ManifestFile.ManifestFileKeys;
 import software.wings.beans.appmanifest.StoreType;
+import software.wings.beans.helm.HelmChartConfig;
+import software.wings.beans.helm.HelmChartConfig.HelmChartConfigKeys;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfig;

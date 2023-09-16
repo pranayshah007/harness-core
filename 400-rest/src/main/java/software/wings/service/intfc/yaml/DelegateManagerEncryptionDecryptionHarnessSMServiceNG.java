@@ -15,8 +15,8 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.security.encryption.EncryptedRecordData;
 
 import software.wings.DelegateFileEncryptedRecordDataPackage;
-import software.wings.beans.DecryptedRecord;
 import software.wings.beans.DelegateFileMetadata;
+import software.wings.beans.record.DecryptedRecord;
 
 import java.io.IOException;
 

@@ -23,12 +23,12 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.manifest.CustomSourceConfig;
 
 import software.wings.beans.GitFileConfig;
-import software.wings.beans.HelmChartConfig;
 import software.wings.beans.Service;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ApplicationManifest.Yaml;
 import software.wings.beans.appmanifest.StoreType;
+import software.wings.beans.helm.HelmChartConfig;
 import software.wings.beans.yaml.Change;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;

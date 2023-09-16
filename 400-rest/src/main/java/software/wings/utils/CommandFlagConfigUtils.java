@@ -10,13 +10,13 @@ package software.wings.utils;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
-import static software.wings.beans.HelmCommandFlagConstants.getHelmSubCommands;
+import static software.wings.beans.helm.HelmCommandFlagConstants.getHelmSubCommands;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.HelmVersion;
 
-import software.wings.beans.HelmCommandFlagConfig;
-import software.wings.beans.HelmCommandFlagConstants.HelmSubCommand;
+import software.wings.beans.helm.HelmCommandFlagConfig;
+import software.wings.beans.helm.HelmCommandFlagConstants.HelmSubCommand;
 
 import com.google.inject.Singleton;
 import java.util.Set;

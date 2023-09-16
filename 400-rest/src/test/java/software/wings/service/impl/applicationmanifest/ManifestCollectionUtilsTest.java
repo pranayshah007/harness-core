@@ -44,12 +44,12 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.HelmChartConfig;
 import software.wings.beans.Service;
 import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.StoreType;
+import software.wings.beans.helm.HelmChartConfig;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;

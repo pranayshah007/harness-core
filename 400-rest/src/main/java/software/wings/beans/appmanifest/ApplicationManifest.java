@@ -26,9 +26,9 @@ import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
 import software.wings.beans.GitFileConfig;
-import software.wings.beans.HelmChartConfig;
-import software.wings.beans.HelmChartConfig.HelmChartConfigKeys;
-import software.wings.beans.HelmCommandFlagConfig;
+import software.wings.beans.helm.HelmChartConfig;
+import software.wings.beans.helm.HelmChartConfig.HelmChartConfigKeys;
+import software.wings.beans.helm.HelmCommandFlagConfig;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;

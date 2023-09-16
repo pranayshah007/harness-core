@@ -29,8 +29,8 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.DelegateFileEncryptedRecordDataPackage;
-import software.wings.beans.DecryptedRecord;
 import software.wings.beans.DelegateFileMetadata;
+import software.wings.beans.record.DecryptedRecord;
 import software.wings.service.intfc.DelegateManagerEncryptionDecryptionHarnessSMService;
 import software.wings.service.intfc.FileService;
 

@@ -23,7 +23,7 @@ import io.harness.scm.SecretName;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AzureAvailabilitySet;
 import software.wings.beans.AzureConfig;
-import software.wings.beans.AzureVirtualMachineScaleSet;
+import software.wings.beans.azure.AzureVirtualMachineScaleSet;
 import software.wings.helpers.ext.azure.AzureDelegateHelperService;
 import software.wings.helpers.ext.azure.AzureHelperService;
 import software.wings.rules.Integration;

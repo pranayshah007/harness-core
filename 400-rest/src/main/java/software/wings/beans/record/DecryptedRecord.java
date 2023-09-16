@@ -5,14 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.beans;
+package software.wings.beans.record;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 
@@ -20,8 +19,7 @@ import lombok.Value;
     components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Value
 @Builder
-@JsonTypeName("encryptedRecord")
 @OwnedBy(HarnessTeam.CDP)
-public class EncryptedRecord {
-  byte[] content;
+public class DecryptedRecord {
+  char[] decryptedValue;
 }

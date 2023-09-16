@@ -22,10 +22,10 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.DeploymentType;
-import software.wings.beans.HelmChartConfig;
 import software.wings.beans.Service;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
+import software.wings.beans.helm.HelmChartConfig;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.ServiceResourceService;
 

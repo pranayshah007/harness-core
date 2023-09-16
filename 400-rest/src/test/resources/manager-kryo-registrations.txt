@@ -1206,8 +1206,8 @@
 8073:software.wings.api.ContinuePipelineResponseData
 8074:software.wings.service.impl.dynatrace.DynaTraceApplication
 8075:software.wings.security.authentication.totp.RateLimitProtection
-8076:software.wings.beans.HelmCommandFlagConstants.HelmSubCommand
-8077:software.wings.beans.HelmCommandFlagConfig
+8076:software.wings.beans.helm.HelmCommandFlagConstants.HelmSubCommand
+8077:software.wings.beans.helm.HelmCommandFlagConfig
 8084:software.wings.api.ecs.EcsRunTaskStateExecutionData
 8085:software.wings.sm.states.EcsRunTaskDataBag
 8086:software.wings.helpers.ext.ecs.request.EcsDeployRollbackDataFetchRequest
@@ -1995,7 +1995,7 @@
 40054:io.harness.ccm.cluster.entities.ClusterRecord
 40055:io.harness.ccm.cluster.entities.AzureKubernetesCluster
 40056:software.wings.beans.appmanifest.ApplicationManifest
-40057:software.wings.beans.HelmChartConfig
+40057:software.wings.beans.helm.HelmChartConfig
 40058:software.wings.service.impl.yaml.gitdiff.gitaudit.AuditYamlHelperForFailedChanges.ArtifactStreamWithOnlyAuditNeededData
 40059:software.wings.beans.artifact.AzureMachineImageArtifactStream
 40061:software.wings.beans.artifact.SmbArtifactStream

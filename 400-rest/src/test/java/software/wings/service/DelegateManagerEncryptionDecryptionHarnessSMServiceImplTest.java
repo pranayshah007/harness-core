@@ -33,9 +33,9 @@ import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.SecretManagerType;
 
 import software.wings.DelegateFileEncryptedRecordDataPackage;
-import software.wings.beans.DecryptedRecord;
 import software.wings.beans.DelegateFileMetadata;
 import software.wings.beans.GcpKmsConfig;
+import software.wings.beans.record.DecryptedRecord;
 import software.wings.service.impl.DelegateManagerEncryptionDecryptionHarnessSMServiceImpl;
 import software.wings.service.impl.FileServiceImpl;
 

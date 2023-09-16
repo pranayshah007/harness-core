@@ -30,7 +30,6 @@ import io.harness.k8s.model.HelmVersion;
 import io.harness.rule.Owner;
 
 import software.wings.beans.ExecutionArgs;
-import software.wings.beans.HelmChartConfig;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Workflow;
@@ -39,6 +38,7 @@ import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
 import software.wings.beans.appmanifest.StoreType;
+import software.wings.beans.helm.HelmChartConfig;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.service.intfc.ApplicationManifestService;
 

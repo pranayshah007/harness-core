@@ -19,10 +19,10 @@ import io.harness.security.annotations.DelegateAuth;
 import io.harness.security.encryption.EncryptedRecordData;
 
 import software.wings.DelegateFileEncryptedRecordDataPackage;
-import software.wings.beans.DecryptedRecord;
 import software.wings.beans.DelegateFileEncryptedDataPackage;
-import software.wings.beans.EncryptedRecord;
 import software.wings.beans.EncryptedSMData;
+import software.wings.beans.record.DecryptedRecord;
+import software.wings.beans.record.EncryptedRecord;
 import software.wings.service.impl.DelegateManagerEncryptionDecryptionHarnessSMServiceImpl;
 
 import com.google.inject.Inject;

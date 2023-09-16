@@ -20,7 +20,7 @@ import io.harness.generator.OwnerManager;
 import io.harness.generator.Randomizer;
 import io.harness.rule.Owner;
 
-import software.wings.beans.EntityYamlRecord;
+import software.wings.beans.record.EntityYamlRecord;
 import software.wings.graphql.schema.type.QLPageInfo;
 import software.wings.graphql.schema.type.audit.QLChangeContent;
 import software.wings.graphql.schema.type.audit.QLChangeContentConnection;

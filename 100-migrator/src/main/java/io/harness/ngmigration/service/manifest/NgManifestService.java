@@ -18,8 +18,8 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.pms.yaml.ParameterField;
 
-import software.wings.beans.HelmCommandFlagConstants;
 import software.wings.beans.appmanifest.ApplicationManifest;
+import software.wings.beans.helm.HelmCommandFlagConstants;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 

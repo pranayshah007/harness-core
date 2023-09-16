@@ -22,8 +22,8 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.GitFileConfig;
-import software.wings.beans.HelmCommandFlagConfig;
-import software.wings.beans.HelmCommandFlagConstants.HelmSubCommand;
+import software.wings.beans.helm.HelmCommandFlagConfig;
+import software.wings.beans.helm.HelmCommandFlagConstants.HelmSubCommand;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
 
 import com.google.common.collect.MapDifference;
