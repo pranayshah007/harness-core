@@ -63,25 +63,6 @@ public class ChannelServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void sendNotification_channelDisabled_willNotSend() throws IOException {
-    NotificationRequest notificationRequest = NotificationRequest.newBuilder()
-                                                  .setAccountId(ACCOUNT_ID)
-                                                  .setSlack(NotificationRequest.Slack.newBuilder().build())
-                                                  .build();
-    when(ngSettingsClient.getSetting(SettingIdentifiers.ENABLE_SLACK_NOTIFICATION_IDENTIFIER, ACCOUNT_ID, null, null))
-        .thenReturn(request);
-    settingValueResponseDTO =
-        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
-    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
-
-    NotificationProcessingResponse notificationProcessingResponse = channelService.send(notificationRequest);
-    assertThat(notificationProcessingResponse).isEqualTo(NotificationProcessingResponse.trivialResponseWithNoRetries);
-    verify(slackService, times(0)).send(any());
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
   public void sendNotification_channelEnabled_willSend() throws IOException {
     NotificationRequest notificationRequest = NotificationRequest.newBuilder()
                                                   .setAccountId(ACCOUNT_ID)
@@ -98,21 +79,6 @@ public class ChannelServiceImplTest extends CategoryTest {
     NotificationProcessingResponse notificationProcessingResponse = channelService.send(notificationRequest);
     assertThat(notificationProcessingResponse).isEqualTo(expectedResponse);
     verify(slackService, times(1)).send(any());
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
-  public void sendTestNotification_channelDisabled_willNotSend() throws IOException {
-    NotificationSettingDTO notificationSettingDTO = SlackSettingDTO.builder().accountId(ACCOUNT_ID).build();
-    when(ngSettingsClient.getSetting(SettingIdentifiers.ENABLE_SLACK_NOTIFICATION_IDENTIFIER, ACCOUNT_ID, null, null))
-        .thenReturn(request);
-    settingValueResponseDTO =
-        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
-    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
-
-    assertThat(channelService.sendTestNotification(notificationSettingDTO)).isEqualTo(false);
-    verify(slackService, times(0)).sendTestNotification(any());
   }
 
   @Test

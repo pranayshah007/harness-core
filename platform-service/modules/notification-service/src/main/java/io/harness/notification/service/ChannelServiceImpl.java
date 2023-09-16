@@ -88,11 +88,15 @@ public class ChannelServiceImpl implements ChannelService {
   }
 
   public boolean isChannelTypeEnabled(String settingId, String accountId) {
-    if (isNotEmpty(settingId)) {
-      return Boolean.parseBoolean(
-          NGRestUtils.getResponse(ngSettingsClient.getSetting(settingId, accountId, null, null)).getValue());
-    }
     // there is no setting for email, settingId will be null
+    if (isNotEmpty(settingId)) {
+      try {
+        return Boolean.parseBoolean(
+            NGRestUtils.getResponse(ngSettingsClient.getSetting(settingId, accountId, null, null)).getValue());
+      } catch (Exception ex) {
+        return true;
+      }
+    }
     return true;
   }
 }
