@@ -15,7 +15,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.EntityType;
-import software.wings.beans.SubEntityType;
+import software.wings.beans.entity.SubEntityType;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.expression.ExpressionBuilderService;
 import software.wings.sm.StateType;

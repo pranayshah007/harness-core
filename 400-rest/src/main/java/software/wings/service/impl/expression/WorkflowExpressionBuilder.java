@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static software.wings.beans.EntityType.ENVIRONMENT;
 import static software.wings.beans.EntityType.SERVICE;
-import static software.wings.beans.SubEntityType.NOTIFICATION_GROUP;
+import static software.wings.beans.entity.SubEntityType.NOTIFICATION_GROUP;
 
 import static java.util.Arrays.asList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -20,8 +20,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.ff.FeatureFlagService;
 
-import software.wings.beans.SubEntityType;
 import software.wings.beans.Workflow;
+import software.wings.beans.entity.SubEntityType;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.sm.StateType;

@@ -47,6 +47,7 @@ java_library(
         "//400-rest/src/main/java/software/wings/beans/ce/depricated:module",
         "//400-rest/src/main/java/software/wings/beans/customdeployment:module",
         "//400-rest/src/main/java/software/wings/beans/datatretention:module",
+        "//400-rest/src/main/java/software/wings/beans/entity:module",
         "//400-rest/src/main/java/software/wings/beans/execution:module",
         "//400-rest/src/main/java/software/wings/beans/jira:module",
         "//400-rest/src/main/java/software/wings/beans/marketplace:module",

@@ -42,13 +42,13 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Application;
 import software.wings.beans.Base;
-import software.wings.beans.EntityReference;
 import software.wings.beans.EntityType;
 import software.wings.beans.Environment;
 import software.wings.beans.Environment.EnvironmentKeys;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.beans.User;
+import software.wings.beans.entity.EntityReference;
 import software.wings.beans.security.AppPermission;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.restrictions.AppRestrictionsSummary;

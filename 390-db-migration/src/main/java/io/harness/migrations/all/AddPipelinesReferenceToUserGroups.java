@@ -16,7 +16,7 @@ import io.harness.persistence.HIterator;
 import software.wings.beans.Account;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Pipeline.PipelineKeys;
-import software.wings.beans.UserGroupEntityReference;
+import software.wings.beans.entity.UserGroupEntityReference;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.PipelineService;

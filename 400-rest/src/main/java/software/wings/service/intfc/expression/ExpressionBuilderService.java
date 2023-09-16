@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.beans.EntityType;
-import software.wings.beans.SubEntityType;
+import software.wings.beans.entity.SubEntityType;
 import software.wings.sm.StateType;
 
 import java.util.Set;

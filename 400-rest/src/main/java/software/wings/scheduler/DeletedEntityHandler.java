@@ -22,9 +22,9 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
-import software.wings.beans.DeletedEntity;
-import software.wings.beans.DeletedEntity.DeletedEntityKeys;
-import software.wings.beans.DeletedEntity.DeletedEntityType;
+import software.wings.beans.entity.DeletedEntity;
+import software.wings.beans.entity.DeletedEntity.DeletedEntityKeys;
+import software.wings.beans.entity.DeletedEntity.DeletedEntityType;
 import software.wings.helpers.ext.account.DeleteAccountHelper;
 
 import com.google.inject.Inject;

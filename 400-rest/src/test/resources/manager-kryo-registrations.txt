@@ -2054,7 +2054,7 @@
 50007:software.wings.infra.RancherKubernetesInfrastructure
 50008:software.wings.beans.ClusterSelectionCriteriaEntry
 50009:software.wings.sm.states.rancher.RancherStateExecutionData
-50010:software.wings.beans.UserGroupEntityReference
+50010:software.wings.beans.entity.UserGroupEntityReference
 50011:software.wings.helpers.ext.k8s.response.K8sRollingDeployRollbackResponse
 50012:software.wings.beans.settings.helm.OciHelmRepoConfig
 50013:software.wings.expression.EncryptedDataDetails

@@ -5,17 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.beans;
+package software.wings.beans.entity;
 
 import lombok.Builder;
 import lombok.Data;
 
+/**
+ * Generic entity reference
+ * @author rktummala on 12/08/17
+ */
 @Data
 @Builder
-public class SampleAppEntityStatus {
-  private String entityName;
+public class EntityReference {
+  private String id;
+  private String name;
+  private String appId;
   private String entityType;
-  private Health health;
-  public enum Health { GOOD, BAD }
-  ;
 }

@@ -30,7 +30,7 @@ import io.harness.annotations.dev.OwnedBy;
 import software.wings.beans.Account;
 import software.wings.beans.Application;
 import software.wings.beans.EntityType;
-import software.wings.beans.SubEntityType;
+import software.wings.beans.entity.SubEntityType;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.expression.ExpressionBuilderService;

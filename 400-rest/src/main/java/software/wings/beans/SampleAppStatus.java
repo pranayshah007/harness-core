@@ -7,7 +7,8 @@
 
 package software.wings.beans;
 
-import software.wings.beans.SampleAppEntityStatus.Health;
+import software.wings.beans.entity.SampleAppEntityStatus;
+import software.wings.beans.entity.SampleAppEntityStatus.Health;
 
 import java.util.List;
 import lombok.Builder;

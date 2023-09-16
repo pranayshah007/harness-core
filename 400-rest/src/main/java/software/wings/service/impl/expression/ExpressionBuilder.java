@@ -55,7 +55,7 @@ import software.wings.beans.EntityType;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
-import software.wings.beans.SubEntityType;
+import software.wings.beans.entity.SubEntityType;
 import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ServiceTemplateService;
