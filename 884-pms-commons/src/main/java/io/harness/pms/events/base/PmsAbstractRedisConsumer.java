@@ -116,7 +116,6 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     messages = redisConsumer.read(Duration.ofSeconds(WAIT_TIME_IN_SECONDS));
     for (Message message : messages) {
       messageId = message.getId();
-      log.info("Read message with message id {} from redis", messageId);
       messageProcessed = handleMessage(message);
       if (messageProcessed) {
         redisConsumer.acknowledge(messageId);
@@ -137,8 +136,12 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
 
   @Override
   protected boolean processMessage(Message message) {
+    if (!messageListener.isProcessable(message)) {
+      return true;
+    }
+    log.info("Read message with message id {} from redis", message.getId());
     AtomicBoolean success = new AtomicBoolean(true);
-    if (messageListener.isProcessable(message) && !isAlreadyProcessed(message)) {
+    if (!isAlreadyProcessed(message)) {
       long readTs = System.currentTimeMillis();
       executorService.submit(() -> {
         try (AutoLogContext ignore = new MessageLogContext(message)) {
