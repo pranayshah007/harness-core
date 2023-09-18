@@ -10,6 +10,7 @@ package io.harness.cdng.jenkins;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.YOGESH;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -86,7 +87,7 @@ public class JenkinsBuildStepHelperServiceImplTest extends CategoryTest {
           .putSetupAbstractions("orgIdentifier", "orgIdentifier")
           .putSetupAbstractions("projectIdentifier", "projectIdentifier")
           .setMetadata(
-              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
           .build();
   private final String connectorRef = "connectorref";
   private final ConnectorDTO jenkinsConnector =

@@ -9,6 +9,7 @@ package io.harness.cdng.gitops.steps;
 
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -100,7 +101,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
@@ -140,7 +141,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
@@ -157,7 +158,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
@@ -181,7 +182,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
@@ -207,7 +208,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
@@ -273,7 +274,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
@@ -302,8 +303,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
         .putSetupAbstractions("accountId", "ACC_ID")
         .putSetupAbstractions("orgIdentifier", "ORG_ID")
         .putSetupAbstractions("projectIdentifier", "PROJ_ID")
-        .setMetadata(
-            ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+        .setMetadata(ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
         .build();
   }
 

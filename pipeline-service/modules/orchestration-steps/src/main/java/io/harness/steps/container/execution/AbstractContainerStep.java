@@ -9,6 +9,7 @@
 package io.harness.steps.container.execution;
 
 import static io.harness.plancreator.NGCommonUtilPlanCreationConstants.STEP_GROUP;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.util.Collections.singletonList;
 
@@ -161,7 +162,7 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   private String getLogPrefix(Ambiance ambiance) {
     String logBaseKey = "";
     if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY)) {
       logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
           StepUtils.generateSimplifiedLogAbstractions(ambiance, "STEP"));
     } else {

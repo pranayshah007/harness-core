@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,7 +107,7 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
                     .addAllLevels(Collections.singletonList(
                         Level.newBuilder().setSetupId("node1_plan").setNodeType(NodeType.PLAN_NODE.name()).build()))
                     .setMetadata(ExecutionMetadata.newBuilder()
-                                     .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                      .build())
                     .build())
             .mode(ExecutionMode.SYNC)
@@ -347,7 +348,7 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
             .ambiance(Ambiance.newBuilder()
                           .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.toString()).build())
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .module("cd")

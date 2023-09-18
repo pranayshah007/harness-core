@@ -10,6 +10,7 @@ package io.harness.pms.servicenow;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -107,7 +108,7 @@ public class ServiceNowStepHelperServiceTest extends CategoryTest {
           .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
           .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
           .setMetadata(
-              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
           .build();
   private static final ConnectorDTO CONNECTOR_DTO =
       ConnectorDTO.builder()
@@ -294,7 +295,7 @@ public class ServiceNowStepHelperServiceTest extends CategoryTest {
             .putAllSetupAbstractions(Maps.of(
                 "accountId", "accountId", "projectIdentifier", "projectIdentfier", "orgIdentifier", "orgIdentifier"))
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
 
     when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO1);

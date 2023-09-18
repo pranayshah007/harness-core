@@ -17,6 +17,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSI
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.lang.String.format;
 
@@ -530,7 +531,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   private String getLogPrefix(Ambiance ambiance) {
     String logBaseKey = "";
     if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY)) {
       logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
           StepUtils.generateSimplifiedLogAbstractions(ambiance, "STAGE"));
     } else {

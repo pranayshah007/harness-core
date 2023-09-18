@@ -6,6 +6,8 @@
  */
 
 package io.harness.logstreaming;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -56,7 +58,7 @@ public class LogStreamingStepClientFactory {
     try {
       String logBaseKey = "";
       if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-          && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+          && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY)) {
         logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
             StepUtils.generateSimplifiedLogAbstractions(ambiance, null));
       } else {

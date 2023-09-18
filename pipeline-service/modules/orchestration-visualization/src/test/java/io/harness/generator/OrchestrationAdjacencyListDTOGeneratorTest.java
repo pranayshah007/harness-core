@@ -8,6 +8,7 @@
 package io.harness.generator;
 
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -84,7 +85,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .addAllLevels(Collections.singletonList(
                               Level.newBuilder().setSetupId(STARTING_EXECUTION_NODE_ID).build()))
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)
@@ -99,7 +100,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .setPlanExecutionId(PLAN_EXECUTION_ID)
                           .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("section_2").build()))
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.CHILD)
@@ -114,7 +115,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                     .setPlanExecutionId(PLAN_EXECUTION_ID)
                     .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("child_section_2").build()))
                     .setMetadata(ExecutionMetadata.newBuilder()
-                                     .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                      .build())
                     .build())
             .mode(ExecutionMode.SYNC)
@@ -155,7 +156,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .addAllLevels(Collections.singletonList(
                               Level.newBuilder().setSetupId("section_chain_plan_node").build()))
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.CHILD_CHAIN)
@@ -171,7 +172,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .addAllLevels(Collections.singletonList(
                               Level.newBuilder().setSetupId("section_chain_child1_plan_node").build()))
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.TASK)
@@ -189,7 +190,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .addAllLevels(Collections.singletonList(
                               Level.newBuilder().setSetupId("section_chain_child2_plan_node").build()))
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.TASK)
@@ -207,7 +208,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                     .setPlanExecutionId(PLAN_EXECUTION_ID)
                     .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("dummy_plan_node_1").build()))
                     .setMetadata(ExecutionMetadata.newBuilder()
-                                     .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                      .build())
                     .build())
             .mode(ExecutionMode.SYNC)
@@ -225,7 +226,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                     .setPlanExecutionId(PLAN_EXECUTION_ID)
                     .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("dummy_plan_node_2").build()))
                     .setMetadata(ExecutionMetadata.newBuilder()
-                                     .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                      .build())
                     .build())
             .mode(ExecutionMode.SYNC)
@@ -264,22 +265,21 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
   public void shouldGenerateOrchestrationGraphWithFork() {
     StepParameters forkStepParams =
         DummyForkStepParameters.builder().parallelNodeId("parallel_node_1").parallelNodeId("parallel_node_2").build();
-    NodeExecution fork =
-        NodeExecution.builder()
-            .uuid("node1")
-            .ambiance(Ambiance.newBuilder()
-                          .setPlanExecutionId(PLAN_EXECUTION_ID)
-                          .addAllLevels(Collections.singletonList(
-                              Level.newBuilder().setSetupId(STARTING_EXECUTION_NODE_ID).build()))
-                          .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+    NodeExecution fork = NodeExecution.builder()
+                             .uuid("node1")
+                             .ambiance(Ambiance.newBuilder()
+                                           .setPlanExecutionId(PLAN_EXECUTION_ID)
+                                           .addAllLevels(Collections.singletonList(
+                                               Level.newBuilder().setSetupId(STARTING_EXECUTION_NODE_ID).build()))
+                                           .setMetadata(ExecutionMetadata.newBuilder()
+                                                            .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                            .build())
                                            .build())
-                          .build())
-            .mode(ExecutionMode.CHILDREN)
-            .resolvedStepParameters(RecastOrchestrationUtils.toMap(forkStepParams))
-            .createdAt(System.currentTimeMillis())
-            .lastUpdatedAt(System.currentTimeMillis())
-            .build();
+                             .mode(ExecutionMode.CHILDREN)
+                             .resolvedStepParameters(RecastOrchestrationUtils.toMap(forkStepParams))
+                             .createdAt(System.currentTimeMillis())
+                             .lastUpdatedAt(System.currentTimeMillis())
+                             .build();
     NodeExecution parallelNode1 =
         NodeExecution.builder()
             .uuid("parallel_node_1")
@@ -288,7 +288,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .addAllLevels(
                               Collections.singletonList(Level.newBuilder().setSetupId("parallel_plan_node_1").build()))
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)
@@ -304,7 +304,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .addAllLevels(
                               Collections.singletonList(Level.newBuilder().setSetupId("parallel_plan_node_2").build()))
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)
@@ -340,7 +340,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                     .setPlanExecutionId(PLAN_EXECUTION_ID)
                     .addAllLevels(Collections.singletonList(Level.newBuilder().setSetupId("dummy_plan_node_1").build()))
                     .setMetadata(ExecutionMetadata.newBuilder()
-                                     .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                      .build())
                     .build())
             .mode(ExecutionMode.SYNC)
@@ -349,22 +349,21 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
             .build();
     StepParameters forkStepParams =
         DummyForkStepParameters.builder().parallelNodeId("parallel_node_1").parallelNodeId("parallel_node_2").build();
-    NodeExecution fork =
-        NodeExecution.builder()
-            .uuid("node1")
-            .ambiance(Ambiance.newBuilder()
-                          .setPlanExecutionId(PLAN_EXECUTION_ID)
-                          .addAllLevels(Collections.singletonList(
-                              Level.newBuilder().setSetupId(STARTING_EXECUTION_NODE_ID).build()))
-                          .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+    NodeExecution fork = NodeExecution.builder()
+                             .uuid("node1")
+                             .ambiance(Ambiance.newBuilder()
+                                           .setPlanExecutionId(PLAN_EXECUTION_ID)
+                                           .addAllLevels(Collections.singletonList(
+                                               Level.newBuilder().setSetupId(STARTING_EXECUTION_NODE_ID).build()))
+                                           .setMetadata(ExecutionMetadata.newBuilder()
+                                                            .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                            .build())
                                            .build())
-                          .build())
-            .mode(ExecutionMode.CHILDREN)
-            .resolvedStepParameters(RecastOrchestrationUtils.toMap(forkStepParams))
-            .createdAt(System.currentTimeMillis())
-            .lastUpdatedAt(System.currentTimeMillis())
-            .build();
+                             .mode(ExecutionMode.CHILDREN)
+                             .resolvedStepParameters(RecastOrchestrationUtils.toMap(forkStepParams))
+                             .createdAt(System.currentTimeMillis())
+                             .lastUpdatedAt(System.currentTimeMillis())
+                             .build();
     NodeExecution parallelNode1 =
         NodeExecution.builder()
             .uuid("parallel_node_1")
@@ -373,7 +372,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .addAllLevels(
                               Collections.singletonList(Level.newBuilder().setSetupId("parallel_plan_node_1").build()))
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)
@@ -389,7 +388,7 @@ public class OrchestrationAdjacencyListDTOGeneratorTest extends OrchestrationVis
                           .addAllLevels(
                               Collections.singletonList(Level.newBuilder().setSetupId("parallel_plan_node_2").build()))
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)

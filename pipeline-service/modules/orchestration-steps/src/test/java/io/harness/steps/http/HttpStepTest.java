@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -112,7 +113,7 @@ public class HttpStepTest extends CategoryTest {
         Ambiance.newBuilder()
             .putSetupAbstractions("accountId", "accountId")
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     Mockito.when(pmsFeatureFlagHelper.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
   }
@@ -274,7 +275,7 @@ public class HttpStepTest extends CategoryTest {
     ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     httpStepParameters = HttpStepParameters.infoBuilder()
                              .method(ParameterField.createValueField("GET"))
@@ -311,7 +312,7 @@ public class HttpStepTest extends CategoryTest {
     ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
 
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
@@ -373,7 +374,7 @@ public class HttpStepTest extends CategoryTest {
     ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     httpStepParameters = HttpStepParameters.infoBuilder()
                              .method(ParameterField.createValueField("GET"))
@@ -439,7 +440,7 @@ public class HttpStepTest extends CategoryTest {
     ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
 
     List<NGVariable> inputVariables = new ArrayList<>();

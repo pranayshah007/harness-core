@@ -7,6 +7,8 @@
 
 package io.harness.pms.sdk.core.plugin;
 
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
@@ -125,7 +127,7 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   private String getLogPrefix(Ambiance ambiance) {
     String logBaseKey = "";
     if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY)) {
       logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
           StepUtils.generateSimplifiedLogAbstractions(ambiance, "STEP"));
     } else {

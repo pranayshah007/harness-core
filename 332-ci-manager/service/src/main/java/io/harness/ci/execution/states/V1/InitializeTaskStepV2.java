@@ -27,6 +27,7 @@ import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 import static io.harness.steps.StepUtils.buildAbstractions;
 import static io.harness.steps.StepUtils.generateLogAbstractions;
 
@@ -511,7 +512,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   private String getLogKey(Ambiance ambiance) {
     String logBaseKey = "";
     if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY)) {
       logBaseKey =
           LogStreamingHelper.generateSimplifiedLogBaseKey(StepUtils.generateSimplifiedLogAbstractions(ambiance, null));
     } else {
@@ -758,7 +759,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   private String getLogPrefix(Ambiance ambiance) {
     String logBaseKey = "";
     if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY)) {
       logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
           StepUtils.generateSimplifiedLogAbstractions(ambiance, "STAGE"));
     } else {

@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.YUVRAJ;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -132,7 +133,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
             .ambiance(Ambiance.newBuilder()
                           .setPlanExecutionId(planExecution.getUuid())
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)
@@ -208,7 +209,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                                          .setSetupId(planNode.getUuid())
                                          .build())
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)
@@ -305,7 +306,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                                          .setSetupId(planNode.getUuid())
                                          .build())
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)
@@ -388,7 +389,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                                          .setSetupId(planNode.getUuid())
                                          .build())
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)
@@ -493,7 +494,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
                                          .setSetupId("planNodeUuid")
                                          .build())
                           .setMetadata(ExecutionMetadata.newBuilder()
-                                           .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                            .build())
                           .build())
             .mode(ExecutionMode.SYNC)

@@ -94,6 +94,8 @@ public class StepUtils {
 
   public static final String DEFAULT_STEP_TIMEOUT = "10m";
 
+  public static String PIE_SIMPLIFY_LOG_BASE_KEY = "PIE_SIMPLIFY_LOG_BASE_KEY";
+
   public static Task prepareDelegateTaskInput(
       String accountId, TaskData taskData, Map<String, String> setupAbstractions) {
     return createHDelegateTask(accountId, taskData, setupAbstractions, new LinkedHashMap<>());
@@ -123,7 +125,7 @@ public class StepUtils {
     logAbstractions.put("runSequence", String.valueOf(ambiance.getMetadata().getRunSequence()));
 
     if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY)) {
       logAbstractions.put("isSimplified", "true");
     }
 
@@ -133,7 +135,7 @@ public class StepUtils {
       String levelValue = currentLevel.getIdentifier() + retrySuffix;
 
       if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-          && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+          && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY)) {
         if (levelValue.equals("spec") || levelValue.equals("execution")) {
           continue;
         }

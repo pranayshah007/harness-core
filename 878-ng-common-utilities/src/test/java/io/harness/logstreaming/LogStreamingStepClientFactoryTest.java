@@ -9,6 +9,7 @@ package io.harness.logstreaming;
 
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.VED;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.spy;
@@ -44,7 +45,7 @@ public class LogStreamingStepClientFactoryTest extends CategoryTest {
         Ambiance.newBuilder()
             .putSetupAbstractions("accountId", ACCOUNT_ID)
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
 
     logStreamingStepClientFactory.accountIdToTokenCache.put(ACCOUNT_ID, TOKEN);
@@ -67,7 +68,7 @@ public class LogStreamingStepClientFactoryTest extends CategoryTest {
         Ambiance.newBuilder()
             .putSetupAbstractions("accountId", ACCOUNT_ID)
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", true).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, true).build())
             .build();
 
     logStreamingStepClientFactory.accountIdToTokenCache.put(ACCOUNT_ID, TOKEN);

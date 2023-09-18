@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.SOURABH;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static software.wings.beans.TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG;
 
@@ -259,8 +260,7 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
     return Ambiance.newBuilder()
         .putAllSetupAbstractions(setupAbstractions)
         .setStageExecutionId("stageExecutionId")
-        .setMetadata(
-            ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+        .setMetadata(ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
         .build();
   }
 

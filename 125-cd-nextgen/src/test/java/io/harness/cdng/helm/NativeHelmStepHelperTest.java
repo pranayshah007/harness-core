@@ -24,6 +24,7 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -243,7 +244,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
           .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
           .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
           .setMetadata(
-              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
           .build();
   private static final String SOME_URL = "https://url.com/owner/repo.git";
   private static final String INFRA_KEY = "svcId_envId";

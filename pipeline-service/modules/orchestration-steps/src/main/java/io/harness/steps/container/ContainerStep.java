@@ -8,6 +8,7 @@
 package io.harness.steps.container;
 
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -98,7 +99,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   private String getLogPrefix(Ambiance ambiance) {
     String logBaseKey = "";
     if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get("PIE_SIMPLIFY_LOG_BASE_KEY")) {
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY)) {
       logBaseKey = LogStreamingHelper.generateSimplifiedLogBaseKey(
           StepUtils.generateSimplifiedLogAbstractions(ambiance, "STEP"));
     } else {

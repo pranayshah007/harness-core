@@ -10,6 +10,7 @@ package io.harness.steps.custom;
 import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -102,7 +103,7 @@ public class CustomApprovalStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     when(approvalInstanceService.save(any()))
         .thenReturn(CustomApprovalInstance.fromStepParameters(ambiance, stepElementParameters));
@@ -121,7 +122,7 @@ public class CustomApprovalStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     ApprovalInstance instance = CustomApprovalInstance.builder().build();
     instance.setStatus(ApprovalStatus.APPROVED);
@@ -152,7 +153,7 @@ public class CustomApprovalStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     ApprovalInstance instance = CustomApprovalInstance.builder().build();
     instance.setStatus(ApprovalStatus.FAILED);
@@ -174,7 +175,7 @@ public class CustomApprovalStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     customApprovalStep.handleAbort(ambiance, null, null);
     verify(approvalInstanceService).abortByNodeExecutionId(any());
@@ -188,7 +189,7 @@ public class CustomApprovalStepTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder()
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     ApprovalInstance instance = CustomApprovalInstance.builder().build();
     instance.setStatus(ApprovalStatus.REJECTED);

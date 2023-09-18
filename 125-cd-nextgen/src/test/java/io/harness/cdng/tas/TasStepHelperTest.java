@@ -32,6 +32,7 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RISHABH;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -296,7 +297,7 @@ public class TasStepHelperTest extends CategoryTest {
           .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
           .setStageExecutionId(STAGE_EXECUTION_ID)
           .setMetadata(
-              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
           .build();
   private final EnvironmentOutcome environment =
       EnvironmentOutcome.builder()

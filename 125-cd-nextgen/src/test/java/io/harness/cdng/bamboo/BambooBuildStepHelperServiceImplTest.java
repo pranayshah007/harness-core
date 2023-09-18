@@ -8,6 +8,7 @@
 package io.harness.cdng.bamboo;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -70,7 +71,7 @@ public class BambooBuildStepHelperServiceImplTest extends CDNGTestBase {
       Ambiance.newBuilder()
           .putAllSetupAbstractions(ACCOUNT_ORG_PROJECT)
           .setMetadata(
-              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
           .build();
   private static final ConnectorDTO BAMBOO_CONNECTOR =
       ConnectorDTO.builder()

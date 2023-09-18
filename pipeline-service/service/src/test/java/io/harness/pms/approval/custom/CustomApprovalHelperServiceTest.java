@@ -8,6 +8,7 @@
 package io.harness.pms.approval.custom;
 
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
@@ -98,7 +99,7 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
             .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "__ORG__")
             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "__PROJ__")
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build());
 
     when(shellScriptHelperService.buildShellScriptTaskParametersNG(any(), any()))
@@ -162,7 +163,7 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
             .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "__ORG__")
             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "__PROJ__")
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build());
 
     when(shellScriptHelperService.buildShellScriptTaskParametersNG(any(), any()))

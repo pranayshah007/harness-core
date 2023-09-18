@@ -8,6 +8,7 @@
 package io.harness.cdng.infra.steps;
 
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -873,7 +874,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                                                .setPrincipalType(PrincipalType.USER)
                                                .setShouldValidateRbac(true)
                                                .build())
-                         .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                          .build())
         .build();
   }

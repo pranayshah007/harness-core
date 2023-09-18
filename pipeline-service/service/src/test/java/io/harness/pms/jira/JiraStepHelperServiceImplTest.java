@@ -10,6 +10,7 @@ package io.harness.pms.jira;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -100,7 +101,7 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
           .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
           .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
           .setMetadata(
-              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
           .build();
   private static final ConnectorDTO JIRA_CONNECTOR =
       ConnectorDTO.builder()

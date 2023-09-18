@@ -33,6 +33,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -290,7 +291,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
           .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
           .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
           .setMetadata(
-              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
           .build();
   private static final String SOME_URL = "https://url.com/owner/repo.git";
 
@@ -323,8 +324,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
 
     return Ambiance.newBuilder()
         .putAllSetupAbstractions(setupAbstractions)
-        .setMetadata(
-            ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+        .setMetadata(ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
         .build();
   }
 

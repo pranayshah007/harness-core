@@ -19,6 +19,7 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.SHUBHAM;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -168,7 +169,7 @@ public class RunStepTest extends CIExecutionTestBase {
                    .setMetadata(ExecutionMetadata.newBuilder()
                                     .setPipelineIdentifier("pipelineId")
                                     .setRunSequence(1)
-                                    .putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false)
+                                    .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                                     .build())
                    .putAllSetupAbstractions(setupAbstractions)
                    .addLevels(Level.newBuilder()

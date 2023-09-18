@@ -10,6 +10,7 @@ package io.harness.ci.execution.states;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.SHUBHAM;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -85,7 +86,7 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
             .putAllSetupAbstractions(setupAbstractions)
             .addLevels(Level.newBuilder().setStepType(InitializeTaskStep.STEP_TYPE).build())
             .setMetadata(
-                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap("PIE_SIMPLIFY_LOG_BASE_KEY", false).build())
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
     initializeStepInfo = InitializeStepInfo.builder()
                              .stageElementConfig(ciExecutionPlanTestHelper.getIntegrationStageConfig())
