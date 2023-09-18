@@ -17,7 +17,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
-import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
@@ -77,9 +76,7 @@ public class PipelineExecutionSummaryDtoMapper {
                 ? new ArrayList<>()
                 : pipelineExecutionSummaryEntity.getModules())
         .gitDetails(entityGitDetails)
-        .canRetry((pipelineExecutionSummaryEntity.getExecutionMode() != ExecutionMode.POST_EXECUTION_ROLLBACK)
-            && (pipelineExecutionSummaryEntity.getExecutionMode() != ExecutionMode.PIPELINE_ROLLBACK)
-            && pipelineExecutionSummaryEntity.isLatestExecution())
+        .canRetry(pipelineExecutionSummaryEntity.isLatestExecution())
         .showRetryHistory(!pipelineExecutionSummaryEntity.isLatestExecution()
             || !pipelineExecutionSummaryEntity.getPlanExecutionId().equals(
                 pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId()))
