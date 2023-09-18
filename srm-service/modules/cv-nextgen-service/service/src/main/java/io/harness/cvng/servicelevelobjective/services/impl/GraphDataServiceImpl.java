@@ -15,12 +15,14 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOValue;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeSLOEvaluator;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
@@ -44,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -57,6 +60,8 @@ public class GraphDataServiceImpl implements GraphDataService {
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject MonitoredServiceService monitoredServiceService;
   @Inject EntityDisabledTimeService entityDisabledTimeService;
+
+  @Inject Map<CompositeSLOFormulaType, CompositeSLOEvaluator> formulaTypeCompositeSLOEvaluatorMap;
   @Inject private Clock clock;
   @VisibleForTesting static int MAX_NUMBER_OF_POINTS = 2000;
 
@@ -188,16 +193,9 @@ public class GraphDataServiceImpl implements GraphDataService {
     if (evaluationType == SLIEvaluationType.WINDOW) {
       return sloValue.sloPercentage();
     }
-    double sloPercentage = 0.0;
-    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
-      Double weightage = serviceLevelObjectivesDetail.getWeightagePercentage() / 100;
-      SLIRecord sliRecord = sloRecord.getScopedIdentifierSLIRecordMap().get(
-          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
-      SLIRecord prevSLIRecord = prevSLORecord.getScopedIdentifierSLIRecordMap().get(
-          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
-      sloPercentage += weightage * (SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord).sliPercentage());
-    }
+    double sloPercentage =
+        formulaTypeCompositeSLOEvaluatorMap.get(compositeServiceLevelObjective.getCompositeSLOFormulaType())
+            .getSloPercentage(compositeServiceLevelObjective, sloRecord, prevSLORecord);
     return sloPercentage;
   }
 
