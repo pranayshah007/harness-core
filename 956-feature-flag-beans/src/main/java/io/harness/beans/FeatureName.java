@@ -871,7 +871,8 @@ public enum FeatureName {
   CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC),
   OPA_AIDA_WIDGET("FF for enabling the AIDA integration for OPA Service", HarnessTeam.OPA),
   CDS_ECS_BG_GREEN_SERVICE_ROLLBACK(
-      "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP);
+      "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP),
+  CDS_NAV_2_0("FF for Navigation 2.0", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated
