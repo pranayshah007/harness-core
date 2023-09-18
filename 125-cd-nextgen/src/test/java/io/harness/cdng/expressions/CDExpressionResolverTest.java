@@ -32,9 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.opensaml.xmlsec.signature.P;
 
 public class CDExpressionResolverTest extends CategoryTest {
   @InjectMocks private CDExpressionResolver cdExpressionResolver;
