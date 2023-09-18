@@ -87,6 +87,24 @@ global:
       userKey: "redis-user"
       passwordKey: "redis-password"
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              REDIS_USERNAME: ""
+              REDIS_PASSWORD": ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                REDIS_USERNAME:
+                  name: ""
+                  key: ""
+                REDIS_PASSWORD":
+                  name: ""
+                  key: ""
   mongoSSL: false
   license:
     cg: ''
@@ -359,36 +377,22 @@ virtualService:
 ingress:
   annotations: {}
 
-secret1: "test12"
 secrets:
   kubernetesSecrets:
-  # - secretName: "local-secret"
-  #   keys:
-  #     MONGO_USER: "local-user"
-  #     MONGO_PASSWORD: "local-password"
-  # - secretName: ""
-  #   keys:
-  #     MONGO_USER: ""
-  #     MONGO_PASSWORD: ""
+  - secretName: ""
+    keys:
+      REDIS_USERNAME: ""
+      REDIS_PASSWORD: ""
   secretManagement: 
     externalSecretsOperator:
-    # - secretStore:
-    #     name: "my-ext-secret-store-1"
-    #     kind: ""
-    #   remoteKeys:
-    #     MONGO_USER:
-    #       name: "myMongoUser"
-    #       key: ""
-    #     MONGO_PASSWORD:
-    #       name: ""
-    #       key: ""
-    # - secretStore:
-    #     name: "my-ext-secret-store-2"
-    #     kind: "ClusterSecretStore"
-    #   remoteKeys:
-    #     MONGO_USER:
-    #       name: ""
-    #       key: ""
-    #     MONGO_PASSWORD:
-    #       name: "myMongoPassword"
-    #       key: ""
+    - secretStore:
+        name: ""
+        kind: ""
+      remoteKeys:
+        REDIS_USERNAME:
+          name: ""
+          key: ""
+        REDIS_PASSWORD:
+          name: ""
+          key: ""
+
