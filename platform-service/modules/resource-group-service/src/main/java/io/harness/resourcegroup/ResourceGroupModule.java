@@ -36,6 +36,7 @@ import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -135,6 +136,7 @@ public class ResourceGroupModule extends AbstractModule {
     requireBinding(CodeResourceClient.class);
     requireBinding(GovernanceRuleClient.class);
     requireBinding(FeatureFlagResourceClient.class);
+    requireBinding(OpaServiceClient.class);
   }
 
   private void installResourceValidators() {

@@ -19,6 +19,10 @@ import io.harness.beans.ScopeLevel;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.exception.InvalidRequestException;
+import io.harness.network.SafeHttpCall;
+import io.harness.opaclient.OpaServiceClient;
+import io.harness.opaclient.model.PolicySetData;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
@@ -27,12 +31,15 @@ import io.harness.resourcegroup.v2.model.AttributeFilter;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -43,6 +50,8 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Slf4j
 public class PolicySetResourceImpl implements Resource {
+  private final OpaServiceClient opaServiceClient;
+  private final Integer pageSize = 100;
   @Override
   public String getType() {
     return "GOVERNANCEPOLICYSETS";
@@ -80,7 +89,20 @@ public class PolicySetResourceImpl implements Resource {
 
   @Override
   public List<Boolean> validate(List<String> resourceIds, Scope scope) {
-    return Collections.emptyList();
+    if (resourceIds.isEmpty()) {
+      return Collections.emptyList();
+    }
+    try {
+      List<PolicySetData> opaPolicySetListResponseResponse =
+          SafeHttpCall.executeWithExceptions(opaServiceClient.listOpaPolicySets(
+              scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), pageSize));
+      final Set<String> policyIdentifiers =
+          opaPolicySetListResponseResponse.stream().map(PolicySetData::getIdentifier).collect(Collectors.toSet());
+      return resourceIds.stream().map(policyIdentifiers::contains).collect(Collectors.toList());
+    } catch (IOException ex) {
+      log.error("Exception while listing OPA policies", ex);
+      throw new InvalidRequestException("failed to verify policyset identifiers");
+    }
   }
 
   @Override
