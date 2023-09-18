@@ -103,7 +103,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     ObjectListing s3Object = createNonEmptyObjectListing();
 
     doReturn(Optional.of(report)).when(awsClient).getReportDefinition(any(), any(), any());
-    doReturn(s3Object).when(awsClient).getBucket(any(), any(), any());
+    doReturn(s3Object).when(awsClient).getBucket(any(), any(), any(), any());
 
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
 
@@ -158,7 +158,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     ObjectListing s3Object = createNonEmptyObjectListing();
 
     doReturn(Optional.of(report)).when(awsClient).getReportDefinition(any(), any(), any());
-    doReturn(s3Object).when(awsClient).getBucket(any(), any(), any());
+    doReturn(s3Object).when(awsClient).getBucket(any(), any(), any(), any());
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
     assertThat(result.getErrors()).isNullOrEmpty();
@@ -174,7 +174,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     ObjectListing s3Object = createNonEmptyObjectListing();
 
     doReturn(Optional.empty()).when(awsClient).getReportDefinition(any(), any(), any());
-    doReturn(s3Object).when(awsClient).getBucket(any(), any(), any());
+    doReturn(s3Object).when(awsClient).getBucket(any(), any(), any(), any());
 
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
 
@@ -194,7 +194,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     ReportDefinition report = createReportDefinition();
 
     doReturn(Optional.of(report)).when(awsClient).getReportDefinition(any(), any(), any());
-    doReturn(null).when(awsClient).getBucket(any(), any(), any());
+    doReturn(null).when(awsClient).getBucket(any(), any(), any(), any());
 
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
 
@@ -216,7 +216,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
         .when(awsClient)
         .simulatePrincipalPolicy(any(), any(), any(), any(), any());
     doReturn(Optional.of(report)).when(awsClient).getReportDefinition(any(), any(), any());
-    doReturn(s3Object).when(awsClient).getBucket(any(), any(), any());
+    doReturn(s3Object).when(awsClient).getBucket(any(), any(), any(), any());
 
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
 
