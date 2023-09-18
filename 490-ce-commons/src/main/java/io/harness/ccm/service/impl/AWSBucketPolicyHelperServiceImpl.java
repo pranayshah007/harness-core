@@ -13,6 +13,7 @@ import io.harness.ccm.commons.beans.billing.CEBucketPolicyStatement;
 import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
@@ -38,12 +39,12 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
   private static final String aws = "AWS";
 
   @Override
-  public boolean updateBucketPolicy(
-      String crossAccountRoleArn, String awsS3Bucket, String awsAccessKey, String awsSecretKey) {
+  public boolean updateBucketPolicy(String crossAccountRoleArn, String awsS3Bucket, String awsAccessKey,
+      String awsSecretKey, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
     AWSCredentialsProvider credentialsProvider =
         awsClient.constructStaticBasicAwsCredentials(awsAccessKey, awsSecretKey);
-    try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
-             new CloseableAmazonWebServiceClient(awsClient.getAmazonS3Client(credentialsProvider))) {
+    try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client = new CloseableAmazonWebServiceClient(
+             awsClient.getAmazonS3Client(credentialsProvider, ceAwsServiceEndpointConfig))) {
       BucketPolicy bucketPolicy = closeableAmazonS3Client.getClient().getBucketPolicy(awsS3Bucket);
       CEBucketPolicyJson policyJson;
       if (bucketPolicy == null || StringUtils.isEmpty(bucketPolicy.getPolicyText())) {

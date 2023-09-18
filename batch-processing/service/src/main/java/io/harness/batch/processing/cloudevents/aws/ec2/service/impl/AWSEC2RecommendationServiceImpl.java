@@ -102,7 +102,7 @@ public class AWSEC2RecommendationServiceImpl implements AWSEC2RecommendationServ
   AWSCostExplorerClient getAWSCostExplorerClient(AwsCrossAccountAttributes awsCrossAccountAttributes) {
     AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
     AWSCostExplorerClientBuilder builder = AWSCostExplorerClientBuilder.standard().withRegion(aWSRegion);
-    if (batchMainConfig.getCeProxyConfig().isEnabled()) {
+    if (batchMainConfig.getCeProxyConfig() != null && batchMainConfig.getCeProxyConfig().isEnabled()) {
       log.info("AWSCostExplorerClientBuilder initializing with proxy config");
       builder.withClientConfiguration(getClientConfiguration(batchMainConfig.getCeProxyConfig()));
     }

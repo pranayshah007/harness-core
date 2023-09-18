@@ -165,7 +165,8 @@ public class GovernanceRecommendationService {
         regions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder()
                                                       .crossAccountRoleArn(recommendationAdhoc.getRoleArn())
                                                       .externalId(recommendationAdhoc.getExternalId())
-                                                      .build());
+                                                      .build(),
+            configuration.getCeAwsServiceEndpointConfig());
       }
       for (Rule rule : ruleList) {
         for (String region : regions) {

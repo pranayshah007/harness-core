@@ -92,10 +92,11 @@ public class AwsAccountTagsCollectionService {
     log.info("awsAccountId: {}, roleArn: {}, externalId: {}", ceAwsConnectorDTO.getAwsAccountId(),
         ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(),
         ceAwsConnectorDTO.getCrossAccountAccess().getExternalId());
-    AWSOrganizationsClient awsOrganizationsClient = awsClient.getAWSOrganizationsClient(
-        ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(),
-        ceAwsConnectorDTO.getCrossAccountAccess().getExternalId(), mainConfig.getAwsS3SyncConfig().getAwsAccessKey(),
-        mainConfig.getAwsS3SyncConfig().getAwsSecretKey(), mainConfig.getCeProxyConfig());
+    AWSOrganizationsClient awsOrganizationsClient =
+        awsClient.getAWSOrganizationsClient(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(),
+            ceAwsConnectorDTO.getCrossAccountAccess().getExternalId(),
+            mainConfig.getAwsS3SyncConfig().getAwsAccessKey(), mainConfig.getAwsS3SyncConfig().getAwsSecretKey(),
+            mainConfig.getCeProxyConfig(), mainConfig.getCeAwsServiceEndpointConfig());
     // We want to fetch tags for all child accounts as well
     List<com.amazonaws.services.organizations.model.Account> awsAccountList =
         awsOrganizationHelperService.listAwsAccounts(awsOrganizationsClient);

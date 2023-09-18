@@ -11,12 +11,14 @@ import static java.util.Collections.emptyList;
 
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.AwsCredentialHelper;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsEC2HelperService;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
@@ -25,6 +27,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +43,7 @@ import software.amazon.awssdk.services.account.AccountClient;
 import software.amazon.awssdk.services.account.model.ListRegionsRequest;
 import software.amazon.awssdk.services.account.model.RegionOptStatus;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.StsClientBuilder;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
@@ -74,9 +78,10 @@ public class AwsEC2HelperServiceImpl implements AwsEC2HelperService {
   }
 
   @Override
-  public List<String> listRegions(AwsCrossAccountAttributes awsCrossAccountAttributes) {
+  public List<String> listRegions(
+      AwsCrossAccountAttributes awsCrossAccountAttributes, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
     try {
-      AccountClient accountClient = getAmazonAccountClient(awsCrossAccountAttributes);
+      AccountClient accountClient = getAmazonAccountClient(awsCrossAccountAttributes, ceAwsServiceEndpointConfig);
       List<String> regions =
           accountClient.listRegions(ListRegionsRequest.builder().regionOptStatusContains(REGION_OPT_STATUSES).build())
               .regions()
@@ -99,7 +104,7 @@ public class AwsEC2HelperServiceImpl implements AwsEC2HelperService {
   @VisibleForTesting
   AmazonEC2Client getAmazonEC2Client(String region, AwsCrossAccountAttributes awsCrossAccountAttributes) {
     AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
-    AmazonEC2ClientBuilder builder = AmazonEC2ClientBuilder.standard().withRegion(region);
+    AmazonEC2ClientBuilder builder = AmazonEC2ClientBuilder.standard();
     AWSCredentialsProvider credentialsProvider =
         new STSAssumeRoleSessionCredentialsProvider
             .Builder(awsCrossAccountAttributes.getCrossAccountRoleArn(), UUID.randomUUID().toString())
@@ -107,30 +112,44 @@ public class AwsEC2HelperServiceImpl implements AwsEC2HelperService {
             .withStsClient(awsSecurityTokenService)
             .build();
     builder.withCredentials(credentialsProvider);
-    return (AmazonEC2Client) builder.build();
+    CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig = awsCredentialHelper.getCeAwsServiceEndpointConfig();
+    if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
+      return (AmazonEC2Client) builder
+          .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+              ceAwsServiceEndpointConfig.getEc2EndPointUrl(), ceAwsServiceEndpointConfig.getEndPointRegion()))
+          .build();
+    }
+    return (AmazonEC2Client) builder.withRegion(region).build();
   }
 
   @VisibleForTesting
-  AccountClient getAmazonAccountClient(AwsCrossAccountAttributes awsCrossAccountAttributes) {
+  AccountClient getAmazonAccountClient(
+      AwsCrossAccountAttributes awsCrossAccountAttributes, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
     return AccountClient.builder()
-        .credentialsProvider(getStsAssumeRoleAwsCredentialsProvider(awsCrossAccountAttributes))
+        .credentialsProvider(
+            getStsAssumeRoleAwsCredentialsProvider(awsCrossAccountAttributes, ceAwsServiceEndpointConfig))
         .region(Region.of(AWS_DEFAULT_REGION))
         .build();
   }
 
   private AwsCredentialsProvider getStsAssumeRoleAwsCredentialsProvider(
-      AwsCrossAccountAttributes awsCrossAccountAttributes) {
+      AwsCrossAccountAttributes awsCrossAccountAttributes, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
     AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
                                               .roleArn(awsCrossAccountAttributes.getCrossAccountRoleArn())
                                               .roleSessionName(UUID.randomUUID().toString())
                                               .externalId(awsCrossAccountAttributes.getExternalId())
                                               .build();
 
-    StsClient stsClient = StsClient.builder()
-                              .region(Region.of(AWS_DEFAULT_REGION))
-                              .credentialsProvider(awsCredentialHelper.getAwsCredentialsProvider())
-                              .build();
+    StsClientBuilder stsClientBuilder =
+        StsClient.builder().credentialsProvider(awsCredentialHelper.getAwsCredentialsProvider());
+    if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
+      stsClientBuilder.region(Region.of(ceAwsServiceEndpointConfig.getEndPointRegion()))
+          .endpointOverride(URI.create(ceAwsServiceEndpointConfig.getStsEndPointUrl()));
+    }
 
-    return StsAssumeRoleCredentialsProvider.builder().stsClient(stsClient).refreshRequest(assumeRoleRequest).build();
+    return StsAssumeRoleCredentialsProvider.builder()
+        .stsClient(stsClientBuilder.build())
+        .refreshRequest(assumeRoleRequest)
+        .build();
   }
 }

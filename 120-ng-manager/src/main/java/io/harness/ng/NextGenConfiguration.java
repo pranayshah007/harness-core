@@ -39,6 +39,7 @@ import io.harness.outbox.OutboxPollConfiguration;
 import io.harness.pms.redisConsumer.DebeziumConsumersConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
@@ -268,6 +269,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("signupDomainDenylistConfig")
   private SignupDomainDenylistConfiguration signupDomainDenylistConfiguration;
   @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
+  @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
