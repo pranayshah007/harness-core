@@ -53,6 +53,10 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
       final ArrayList<String> assumeRoleCmd = Lists.newArrayList("aws", "sts", "assume-role", "--role-arn",
           s3SyncRecord.getRoleArn(), String.format("--role-session-name=%s", s3SyncRecord.getAccountId()),
           "--external-id", s3SyncRecord.getExternalId());
+      if (configuration.getCeProxyConfig() != null && configuration.getCeProxyConfig().isEnabled()) {
+        assumeRoleCmd.addAll(
+            Lists.newArrayList("--endpoint-url", configuration.getCeAwsServiceEndpointConfig().getStsEndPointUrl()));
+      }
       log.info("Running the assume-role command '{}'...", String.join(" ", assumeRoleCmd));
       ProcessResult processResult =
           getProcessExecutor().command(assumeRoleCmd).environment(envVariables).readOutput(true).execute();
@@ -77,6 +81,10 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
       final ArrayList<String> cmd =
           Lists.newArrayList("aws", "s3", "sync", s3SyncRecord.getBillingBucketPath(), destinationBucketPath,
               "--source-region", s3SyncRecord.getBillingBucketRegion(), "--acl", "bucket-owner-full-control");
+      if (configuration.getCeProxyConfig() != null && configuration.getCeProxyConfig().isEnabled()) {
+        cmd.addAll(
+            Lists.newArrayList("--endpoint-url", configuration.getCeAwsServiceEndpointConfig().getS3EndPointUrl()));
+      }
       trySyncBucket(cmd, roleEnvVariables);
     } catch (InvalidExitValueException e) {
       log.error("output: {}", e.getResult().outputUTF8());

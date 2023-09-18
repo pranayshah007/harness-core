@@ -192,7 +192,8 @@ public class GovernanceRecommendationService {
           regions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder()
                                                         .crossAccountRoleArn(recommendationAdhoc.getRoleInfo())
                                                         .externalId(recommendationAdhoc.getRoleId())
-                                                        .build());
+                                                        .build(),
+              configuration.getCeAwsServiceEndpointConfig());
         } else if (ruleCloudProviderType == RuleCloudProviderType.AZURE) {
           regions = azureHelperService.getValidRegions(accountId, recommendationAdhoc);
           log.info("Regions for running azure policy : {}", regions);

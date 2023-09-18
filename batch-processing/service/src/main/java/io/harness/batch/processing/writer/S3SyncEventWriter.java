@@ -143,7 +143,7 @@ public class S3SyncEventWriter extends EventWriter implements ItemWriter<Setting
           awsClient.constructStaticBasicAwsCredentials(
               mainConfig.getAwsS3SyncConfig().getAwsAccessKey(), mainConfig.getAwsS3SyncConfig().getAwsSecretKey()),
           connectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(),
-          connectorDTO.getCrossAccountAccess().getExternalId());
+          connectorDTO.getCrossAccountAccess().getExternalId(), mainConfig.getCeAwsServiceEndpointConfig());
       return awsClient.getReportDefinition(
           credentialsProvider, connectorDTO.getCurAttributes().getReportName(), mainConfig.getCeProxyConfig());
     } catch (Exception ex) {
