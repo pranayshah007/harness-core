@@ -768,9 +768,13 @@ public class ServiceResourceV2 {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
-    List<ServiceEntity> serviceEntities = serviceEntityService.getServices(
-        accountId, orgIdentifier, projectIdentifier, servicesYamlMetadataApiInput.getServiceIdentifiers());
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @Parameter(
+          description = "This contains details of Git Entity") @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    List<ServiceEntity> serviceEntities = serviceEntityService.getServicesWithYaml(accountId, orgIdentifier,
+        projectIdentifier, servicesYamlMetadataApiInput.getServiceIdentifiers(),
+        GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache));
 
     List<ServiceV2YamlMetadata> serviceV2YamlMetadataList = new ArrayList<>();
     serviceEntities.forEach(serviceEntity -> serviceV2YamlMetadataList.add(createServiceV2YamlMetadata(serviceEntity)));

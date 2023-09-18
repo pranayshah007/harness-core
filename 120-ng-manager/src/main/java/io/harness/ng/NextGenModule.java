@@ -627,6 +627,19 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("cdGitXThreadPool")
+  public ThreadPoolExecutor cdGitXThreadPool() {
+    ThreadPoolConfig threadPoolConfig = appConfig != null && appConfig.getLogStreamingServiceConfig() != null
+            && appConfig.getLogStreamingServiceConfig().getThreadPoolConfig() != null
+        ? appConfig.getLogStreamingServiceConfig().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(50).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("cd-gitx-pool-%d").build());
+  }
+
+  @Provides
+  @Singleton
   @Named("webhookBranchHookEventHsqsDequeueConfig")
   public HsqsDequeueConfig getWebhookBranchHookEventHsqsDequeueConfig() {
     return appConfig.getWebhookBranchHookEventHsqsDequeueConfig();

@@ -25,6 +25,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
@@ -42,6 +43,8 @@ import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.RepoListResponseDTO;
@@ -78,6 +81,9 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
@@ -105,6 +111,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -147,6 +158,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+
+  @Inject @Named("cdGitXThreadPool") ThreadPoolExecutor cdGitXThreadPool;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -265,6 +278,51 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     return getServiceByRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache,
         loadFromFallbackBranch, getMetadataOnly);
+  }
+
+  public List<ServiceEntity> getServicesByRefsWithYaml(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, boolean deleted, boolean loadFromCache,
+      boolean loadFromFallbackBranch, boolean getMetadataOnly) throws InterruptedException, ExecutionException {
+    if (isEmpty(serviceRefs)) {
+      return emptyList();
+    }
+
+    List<ServiceEntity> serviceEntities = new ArrayList<>();
+
+    for (String serviceRef : serviceRefs) {
+      Optional<ServiceEntity> optionalServiceEntity = getServiceByRef(accountIdentifier, orgIdentifier,
+          projectIdentifier, serviceRef, deleted, loadFromCache, loadFromFallbackBranch, getMetadataOnly);
+
+      optionalServiceEntity.ifPresent(serviceEntities::add);
+    }
+    return serviceEntities;
+  }
+
+  public List<ServiceEntity> getServicesByRefsWithYamlBeta(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, boolean deleted, boolean loadFromCache,
+      boolean loadFromFallbackBranch, boolean getMetadataOnly) throws InterruptedException, ExecutionException {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+
+    List<CompletableFuture<Optional<ServiceEntity>>> futures = new ArrayList<>();
+
+    for (String serviceRef : serviceRefs) {
+      CompletableFuture<Optional<ServiceEntity>> future = CompletableFuture.supplyAsync(() -> {
+        SecurityContextBuilder.setContext(new ServicePrincipal(AuthorizationServiceHeader.NG_MANAGER.getServiceId()));
+        SourcePrincipalContextBuilder.setSourcePrincipal(
+            new ServicePrincipal(AuthorizationServiceHeader.NG_MANAGER.getServiceId()));
+
+        GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+        return getServiceByRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache,
+            loadFromFallbackBranch, getMetadataOnly);
+      }, cdGitXThreadPool);
+      futures.add(future);
+    }
+
+    return futures.stream()
+        .map(CompletableFuture::join)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toList());
   }
 
   private Optional<ServiceEntity> getServiceByRef(String accountIdentifier, String orgIdentifier,
@@ -625,6 +683,24 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       return emptyList();
     }
     return getScopedServiceEntities(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
+  }
+
+  @Override
+  public List<ServiceEntity> getServicesWithYaml(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, boolean loadFromCache) {
+    if (isEmpty(serviceRefs)) {
+      return emptyList();
+    }
+
+    List<ServiceEntity> serviceEntities = null;
+    try {
+      serviceEntities = getServicesByRefsWithYamlBeta(
+          accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs, false, loadFromCache, false, false);
+    } catch (Exception ex) {
+      log.error("Error occurred in beta: ", ex);
+    }
+
+    return serviceEntities;
   }
 
   private List<ServiceEntity> getScopedServiceEntities(

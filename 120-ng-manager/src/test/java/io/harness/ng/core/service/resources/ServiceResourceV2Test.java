@@ -22,6 +22,7 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -345,7 +346,7 @@ public class ServiceResourceV2Test extends CategoryTest {
 
     doReturn(Arrays.asList(service1, service2))
         .when(serviceEntityService)
-        .getServices(anyString(), anyString(), anyString(), anyList());
+        .getServicesWithYaml(anyString(), anyString(), anyString(), anyList(), anyBoolean());
     doReturn("input-set1", "input-set2").when(serviceEntityService).createServiceInputsYaml(anyString(), anyString());
 
     when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY))
@@ -353,7 +354,7 @@ public class ServiceResourceV2Test extends CategoryTest {
 
     final ResponseDTO<ServicesV2YamlMetadataDTO> servicesYamlAndRuntimeInputsResponse =
         serviceResourceV2.getServicesYamlAndRuntimeInputs(
-            servicesYamlMetadataApiInput, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+            servicesYamlMetadataApiInput, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "true", null);
 
     final ServicesV2YamlMetadataDTO data = servicesYamlAndRuntimeInputsResponse.getData();
     assertThat(data).isNotNull();

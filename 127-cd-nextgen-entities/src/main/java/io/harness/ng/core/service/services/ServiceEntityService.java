@@ -111,6 +111,9 @@ public interface ServiceEntityService {
   List<ServiceEntity> getServices(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
 
+  List<ServiceEntity> getServicesWithYaml(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceIdentifiers, boolean loadFromCache);
+
   boolean isServiceField(String fieldName, JsonNode value);
 
   List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);

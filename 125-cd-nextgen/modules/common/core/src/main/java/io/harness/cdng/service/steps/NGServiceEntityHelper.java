@@ -55,6 +55,8 @@ public class NGServiceEntityHelper {
     if (isEmpty(serviceRefs)) {
       return Collections.emptyMap();
     }
+
+    // todo(hinger): rename this to getServicesMetadata or other method to getServicesWithYaml
     List<ServiceEntity> serviceEntityList =
         serviceEntityService.getServices(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
 
