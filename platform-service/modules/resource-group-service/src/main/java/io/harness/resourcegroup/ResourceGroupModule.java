@@ -36,6 +36,8 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.opaclient.OpaClientModule;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.outbox.api.OutboxEventHandler;
