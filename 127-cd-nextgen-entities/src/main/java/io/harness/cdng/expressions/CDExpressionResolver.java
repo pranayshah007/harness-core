@@ -74,15 +74,24 @@ public class CDExpressionResolver {
   }
 
   public <T> T evaluateExpression(Ambiance ambiance, String expression, Class<T> type) {
+    if (expression == null) {
+      return null;
+    }
     Object result = engineExpressionService.evaluateExpression(ambiance, expression);
     return type.cast(result);
   }
 
   public String renderExpression(Ambiance ambiance, String expression) {
+    if (expression == null) {
+      return null;
+    }
     return engineExpressionService.renderExpression(ambiance, expression);
   }
 
   public String renderExpression(Ambiance ambiance, String expression, boolean skipUnresolvedExpressionCheck) {
+    if (expression == null) {
+      return null;
+    }
     return engineExpressionService.renderExpression(ambiance, expression, skipUnresolvedExpressionCheck);
   }
 }
