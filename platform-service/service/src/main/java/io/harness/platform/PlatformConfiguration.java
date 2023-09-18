@@ -15,6 +15,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.logstreaming.LogStreamingServiceConfiguration;
+import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.platform.audit.AuditServiceConfiguration;
 import io.harness.platform.notification.NotificationServiceConfiguration;
 import io.harness.redis.RedisConfig;
