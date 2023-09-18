@@ -1111,6 +1111,17 @@ public class DelegateModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("serviceNowFetchTicketExecutor")
+  public ExecutorService serviceNowFetchTicketExecutor() {
+    return ThreadPool.create(3, 30, 7, TimeUnit.SECONDS,
+        new ThreadFactoryBuilder()
+            .setNameFormat("serviceNowFetchTicketExecutor-%d")
+            .setPriority(Thread.NORM_PRIORITY)
+            .build());
+  }
+
+  @Provides
+  @Singleton
   @Named("jenkinsExecutor")
   public ExecutorService jenkinsExecutor() {
     return ThreadPool.create(1, 40, 1, TimeUnit.SECONDS,

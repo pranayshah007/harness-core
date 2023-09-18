@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.servicenow.beans.UpdateMultipleTaskNode;
 
 import java.util.List;
 import java.util.Map;
@@ -33,10 +34,12 @@ import org.springframework.data.annotation.TypeAlias;
 public class ServiceNowUpdateSpecParameters implements SpecParameters {
   @NotNull ParameterField<String> connectorRef;
   @NotNull ParameterField<String> ticketType;
-  @NotNull ParameterField<String> ticketNumber;
+  ParameterField<String> ticketNumber;
   Map<String, ParameterField<String>> fields;
 
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  UpdateMultipleTaskNode updateMultiple;
 
   // template fields
   ParameterField<String> templateName;
