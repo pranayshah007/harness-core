@@ -7,11 +7,19 @@
 
 package io.harness.cvng.servicelevelobjective.beans.slospec;
 
+import io.harness.cvng.servicelevelobjective.beans.SLIValue;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+
+import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.math3.util.Pair;
 
 public class LeastPerformanceCompositeSLOEvaluator extends CompositeSLOEvaluator {
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Override
   public Pair<Double, Double> evaluate(
       List<Double> weightage, List<Integer> goodSliValues, List<Integer> badSliValues) {
@@ -21,5 +29,21 @@ public class LeastPerformanceCompositeSLOEvaluator extends CompositeSLOEvaluator
     List<Double> badSliWithWeightage = getSLOValuesOfIndividualSLIs(weightage, badSliValues);
     double runningBadCount = Collections.max(badSliWithWeightage);
     return Pair.create(1.0 - runningBadCount, runningBadCount);
+  }
+
+  public Double getSloPercentage(CompositeServiceLevelObjective compositeServiceLevelObjective,
+      CompositeSLORecord sloRecord, CompositeSLORecord prevSLORecord) {
+    double sloPercentage = 0.0;
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
+      Double weightage = serviceLevelObjectivesDetail.getWeightagePercentage() / 100;
+      SLIRecord sliRecord = sloRecord.getScopedIdentifierSLIRecordMap().get(
+          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+      SLIRecord prevSLIRecord = prevSLORecord.getScopedIdentifierSLIRecordMap().get(
+          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+      sloPercentage = Math.max(
+          weightage * (SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord).sliPercentage()), sloPercentage);
+    }
+    return sloPercentage;
   }
 }
