@@ -78,7 +78,8 @@ public enum FeatureName {
   CCM_COST_CATEGORIES_DASHBOARD(
       "Cost Categories will reflect in bigQuery and eventually in Looker Dashboards", HarnessTeam.CE),
   CDB_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CDB UI", HarnessTeam.CDB),
-  CDB_AIDA_WIDGET("FF for enabling the AIDA integration within Custom Dashboards for generating Dashboard widgets", HarnessTeam.CDB),
+  CDB_AIDA_WIDGET("FF for enabling the AIDA integration within Custom Dashboards for generating Dashboard widgets",
+      HarnessTeam.CDB),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
   CDP_SKIP_DEFAULT_VALUES_YAML_CG(
@@ -448,6 +449,8 @@ public enum FeatureName {
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   HTTP_HEADERS_CAPABILITY_CHECK,
   IACM_ENABLED("Enable support for IACM micro front end capabilities", HarnessTeam.IACM),
+  IACM_COST_ESTIMATION("Enable support for cost estimate in IACM", HarnessTeam.IACM),
+  IACM_OPA_WORKSPACE_GOVERNANCE("Enable support for OPA in IACM", HarnessTeam.IACM),
   IDP_DYNAMIC_SECRET_RESOLUTION("Enable dynamic resolution of secrets", HarnessTeam.IDP),
   IDP_ENABLED("This for enabling IDP on UI", HarnessTeam.IDP),
   IDP_ENABLE_EDIT_HARNESS_CI_CD_PLUGIN(
@@ -584,7 +587,7 @@ public enum FeatureName {
   PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
       "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
   PL_AI_SUPPORT_CHATBOT("Enables the chatbot for a user", HarnessTeam.PL),
-  PL_EULA_ENABLED("Enables End User License Agreement According in Default Settings", HarnessTeam.PL),    
+  PL_EULA_ENABLED("Enables End User License Agreement According in Default Settings", HarnessTeam.PL),
   POST_PROD_ROLLBACK("Flag to enable/disable PostProd Rollback", HarnessTeam.PIPELINE),
   PRUNE_KUBERNETES_RESOURCES,
   PURGE_DANGLING_APP_ENV_REFS("Explicitly purge dangling references of app/env", HarnessTeam.SPG),
@@ -866,6 +869,7 @@ public enum FeatureName {
   CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE),
   CDS_SERVICE_GITX("Onboard Service entity to GitX", HarnessTeam.CDC),
   CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC),
+  OPA_AIDA_WIDGET("FF for enabling the AIDA integration for OPA Service", HarnessTeam.OPA),
   CDS_ECS_BG_GREEN_SERVICE_ROLLBACK(
       "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP);
   // keep-sorted end
