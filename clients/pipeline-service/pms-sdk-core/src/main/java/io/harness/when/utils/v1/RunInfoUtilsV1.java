@@ -34,7 +34,7 @@ public class RunInfoUtilsV1 {
   String ALWAYS = "Always";
   String ROLLBACK_MODE_EXECUTION = "OnRollbackModeExecution";
 
-  boolean isRollbackMode(ExecutionMode executionMode) {
+  public boolean isRollbackMode(ExecutionMode executionMode) {
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
 

@@ -23,6 +23,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -69,11 +70,23 @@ public class ExecutionSummaryUpdateUtils {
     if (isBarrierNode(level)) {
       updated = performUpdatesOnBarrierNode(update, nodeExecution);
     }
+    if (RunInfoUtilsV1.isRollbackMode(nodeExecution.getAmbiance().getMetadata().getExecutionMode())) {
+      String startingNodeId =
+          nodeExecution.getAmbiance().getMetadata().getPostExecutionRollbackInfo(0).getPostExecutionRollbackStageId();
+      if (Objects.equals(nodeExecution.getNodeId(), startingNodeId)) {
+        if (OrchestrationUtils.isStageNode(nodeExecution)) {
+          ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
+          updated = updateStageNode(update, nodeExecution, status, level) || updated;
+        }
+      }
+      return updated;
+    }
     if (OrchestrationUtils.isStageNode(nodeExecution)) {
       ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
       updated = updateStageNode(update, nodeExecution, status, level) || updated;
     }
 
+    // is stage node and mode postprod rollback made update only for stage id in list
     return updated;
   }
 
