@@ -11,7 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.OpaShouldEvaluateResponse;
+import io.harness.opaclient.model.PolicyData;
+import io.harness.opaclient.model.PolicySetData;
 
+import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -38,4 +41,14 @@ public interface OpaServiceClient {
   Call<OpaShouldEvaluateResponse> shouldEvaluateByTypeAndAction(@Query("accountIdentifier") String accountId,
       @Query("orgIdentifier") String orgId, @Query("projectIdentifier") String projId, @Query("type") String type,
       @Query("action") String action);
+
+  @GET(API_PREFIX + "policies")
+  Call<List<PolicyData>> listOpaPolicies(@Query("accountIdentifier") String accountId,
+      @Query("orgIdentifier") String orgId, @Query("projectIdentifier") String projId,
+      @Query("per_page") Integer perPage);
+
+  @GET(API_PREFIX + "policysets")
+  Call<List<PolicySetData>> listOpaPolicySets(@Query("accountIdentifier") String accountId,
+      @Query("orgIdentifier") String orgId, @Query("projectIdentifier") String projId,
+      @Query("per_page") Integer perPage);
 }
