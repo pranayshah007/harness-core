@@ -8,6 +8,7 @@
 package io.harness.steps.servicenow.update;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.CHANGE_TASK;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,6 +16,8 @@ import io.harness.beans.IdentifierRef;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -25,12 +28,16 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.servicenow.ChangeTaskUpdateMultiple;
 import io.harness.servicenow.ServiceNowActionNG;
+import io.harness.servicenow.ServiceNowUpdateMultipleTaskNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.ServiceNowStepUtils;
+import io.harness.steps.servicenow.beans.ChangeTaskUpdateMultipleSpec;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -41,6 +48,7 @@ import java.util.List;
 @OwnedBy(CDC)
 public class ServiceNowUpdateStep extends PipelineTaskExecutable<ServiceNowTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SERVICE_NOW_UPDATE_STEP_TYPE;
+  public static final String NULLABLE = "null";
 
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private ServiceNowStepHelperService serviceNowStepHelperService;
@@ -64,11 +72,38 @@ public class ServiceNowUpdateStep extends PipelineTaskExecutable<ServiceNowTaskN
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     ServiceNowUpdateSpecParameters specParameters = (ServiceNowUpdateSpecParameters) stepParameters.getSpec();
+    ServiceNowUpdateMultipleTaskNode updateMultipleTaskNode = null;
+    if (specParameters.getUpdateMultiple() != null) {
+      String updateMultipleType = specParameters.getUpdateMultiple().getType().name();
+      if (updateMultipleType.equalsIgnoreCase(CHANGE_TASK)) {
+        ChangeTaskUpdateMultipleSpec changeTaskSpec =
+            (ChangeTaskUpdateMultipleSpec) specParameters.getUpdateMultiple().getSpec();
+        if (NULLABLE.equalsIgnoreCase(changeTaskSpec.getChangeRequestNumber().getValue())) {
+          throw new InvalidRequestException(
+              "Cannot resolve the expression for changeRequestNumber", WingsException.USER);
+        }
+        if (NULLABLE.equalsIgnoreCase(changeTaskSpec.getChangeTaskType().getValue())) {
+          throw new InvalidRequestException("Cannot resolve the expression for changeTaskType", WingsException.USER);
+        }
+        updateMultipleTaskNode = ServiceNowUpdateMultipleTaskNode.builder()
+                                     .type(specParameters.getUpdateMultiple().getType().name())
+                                     .spec(ChangeTaskUpdateMultiple.builder()
+                                               .changeTaskType(changeTaskSpec.getChangeTaskType().getValue())
+                                               .changeRequestNumber(changeTaskSpec.getChangeRequestNumber().getValue())
+                                               .build())
+                                     .build();
+      }
+    }
+
+    ParameterField<String> ticketType = specParameters.getTicketType();
+    ParameterField<String> ticketNumber = specParameters.getTicketNumber();
+
     ServiceNowTaskNGParametersBuilder paramsBuilder =
         ServiceNowTaskNGParameters.builder()
             .action(ServiceNowActionNG.UPDATE_TICKET)
-            .ticketType(specParameters.getTicketType().getValue())
-            .ticketNumber(specParameters.getTicketNumber().getValue())
+            .ticketType(ticketType != null ? ticketType.getValue() : null)
+            .ticketNumber(ticketNumber != null ? ticketNumber.getValue() : null)
+            .updateMultiple(updateMultipleTaskNode)
             .templateName(specParameters.getTemplateName().getValue())
             .useServiceNowTemplate(specParameters.getUseServiceNowTemplate().getValue())
             .delegateSelectors(
