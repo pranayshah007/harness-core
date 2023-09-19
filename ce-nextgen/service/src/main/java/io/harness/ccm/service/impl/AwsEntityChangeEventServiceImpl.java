@@ -94,7 +94,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
                                                     .build());
           awsBucketPolicyHelperService.updateBucketPolicy(
               ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(), destinationBucket,
-              awsConfig.getAccessKey(), awsConfig.getSecretKey(), configuration.getCeAwsServiceEndpointConfig());
+              awsConfig.getAccessKey(), awsConfig.getSecretKey(), configuration.getCeProxyConfig());
         }
         if (isVisibilityFeatureEnabled(ceAwsConnectorDTO)) {
           updateEventData(action, identifier, accountIdentifier,
@@ -121,7 +121,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
                                                     .build());
           awsBucketPolicyHelperService.updateBucketPolicy(
               ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(), destinationBucket,
-              awsConfig.getAccessKey(), awsConfig.getSecretKey(), configuration.getCeAwsServiceEndpointConfig());
+              awsConfig.getAccessKey(), awsConfig.getSecretKey(), configuration.getCeProxyConfig());
         }
         if (isVisibilityFeatureEnabled(ceAwsConnectorDTO)) {
           updateEventData(action, identifier, accountIdentifier,

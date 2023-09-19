@@ -76,6 +76,7 @@ public class BatchMainConfig {
   @JsonProperty("governanceConfig") private GovernanceConfig governanceConfig;
   @JsonProperty("azureVmPricingConfig") private ServiceHttpClientConfig azureVmPricingConfig;
   @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
+  @JsonProperty("cliProxy") private CEProxyConfig ceCliProxyConfig;
   @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
 
   public List<String> getDbAliases() {

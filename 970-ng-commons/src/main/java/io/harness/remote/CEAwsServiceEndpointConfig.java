@@ -17,9 +17,7 @@ import lombok.Data;
 public class CEAwsServiceEndpointConfig {
   private boolean enabled;
   private String endPointRegion;
-  private String s3EndPointUrl;
   private String stsEndPointUrl;
-  private String ec2EndPointUrl;
   private String ecsEndPointUrl;
   private String cloudwatchEndPointUrl;
 }

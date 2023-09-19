@@ -8,14 +8,15 @@
 package io.harness.batch.processing.cloudevents.aws.ecs.service.support;
 
 import io.harness.batch.processing.config.BatchMainConfig;
-import io.harness.remote.CEAwsServiceEndpointConfig;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.security.authentication.AwsS3SyncConfig;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +34,11 @@ public class AwsCredentialHelper {
     AwsS3SyncConfig awsS3SyncConfig = batchMainConfig.getAwsS3SyncConfig();
     AWSCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(
         new BasicAWSCredentials(awsS3SyncConfig.getAwsAccessKey(), awsS3SyncConfig.getAwsSecretKey()));
-    if (getCeAwsServiceEndpointConfig() != null && getCeAwsServiceEndpointConfig().isEnabled()) {
+    if (getCeProxyConfig() != null && getCeProxyConfig().isEnabled()) {
       return AWSSecurityTokenServiceClientBuilder.standard()
           .withCredentials(awsCredentialsProvider)
-          .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-              getCeAwsServiceEndpointConfig().getStsEndPointUrl(), getCeAwsServiceEndpointConfig().getEndPointRegion()))
+          .withRegion(ceAWSRegion)
+          .withClientConfiguration(getClientConfiguration())
           .build();
     }
     return AWSSecurityTokenServiceClientBuilder.standard()
@@ -53,7 +54,23 @@ public class AwsCredentialHelper {
     return StaticCredentialsProvider.create(awsBasicCredentials);
   }
 
-  public CEAwsServiceEndpointConfig getCeAwsServiceEndpointConfig() {
-    return batchMainConfig.getCeAwsServiceEndpointConfig();
+  public CEProxyConfig getCeProxyConfig() {
+    return batchMainConfig.getCeProxyConfig();
+  }
+
+  public ClientConfiguration getClientConfiguration() {
+    CEProxyConfig ceProxyConfig = getCeProxyConfig();
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setProxyHost(ceProxyConfig.getHost());
+    clientConfiguration.setProxyPort(ceProxyConfig.getPort());
+    if (!ceProxyConfig.getUsername().isEmpty()) {
+      clientConfiguration.setProxyUsername(ceProxyConfig.getUsername());
+    }
+    if (!ceProxyConfig.getPassword().isEmpty()) {
+      clientConfiguration.setProxyPassword(ceProxyConfig.getPassword());
+    }
+    clientConfiguration.setProtocol(
+        ceProxyConfig.getProtocol().equalsIgnoreCase("http") ? Protocol.HTTP : Protocol.HTTPS);
+    return clientConfiguration;
   }
 }

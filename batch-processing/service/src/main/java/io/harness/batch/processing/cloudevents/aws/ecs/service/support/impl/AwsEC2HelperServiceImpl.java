@@ -12,13 +12,13 @@ import static java.util.Collections.emptyList;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.AwsCredentialHelper;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsEC2HelperService;
 import io.harness.remote.CEAwsServiceEndpointConfig;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
@@ -112,11 +112,10 @@ public class AwsEC2HelperServiceImpl implements AwsEC2HelperService {
             .withStsClient(awsSecurityTokenService)
             .build();
     builder.withCredentials(credentialsProvider);
-    CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig = awsCredentialHelper.getCeAwsServiceEndpointConfig();
-    if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
-      return (AmazonEC2Client) builder
-          .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-              ceAwsServiceEndpointConfig.getEc2EndPointUrl(), ceAwsServiceEndpointConfig.getEndPointRegion()))
+    CEProxyConfig ceProxyConfig = awsCredentialHelper.getCeProxyConfig();
+    if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      return (AmazonEC2Client) builder.withClientConfiguration(awsCredentialHelper.getClientConfiguration())
+          .withRegion(region)
           .build();
     }
     return (AmazonEC2Client) builder.withRegion(region).build();
