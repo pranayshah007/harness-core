@@ -15,6 +15,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.pdcconnector.outcome.HostOutcomeDTO;
 import io.harness.delegate.beans.connector.pdcconnector.outcome.PhysicalDataCenterConnectorOutcomeDTO;
 
@@ -41,6 +42,7 @@ import lombok.EqualsAndHashCode;
 public class PhysicalDataCenterConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @JsonDeserialize(using = HostDTOsDeserializer.class) @JsonProperty("hosts") @Valid List<HostDTO> hosts;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

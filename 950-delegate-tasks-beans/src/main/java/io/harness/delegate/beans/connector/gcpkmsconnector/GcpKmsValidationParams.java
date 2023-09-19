@@ -41,7 +41,7 @@ public class GcpKmsValidationParams implements ConnectorValidationParams, Execut
     executionCapabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         "https://cloudkms.googleapis.com/", maskingEvaluator));
     if (gcpKmsConnectorDTO != null) {
-      populateDelegateSelectorCapability(executionCapabilities, gcpKmsConnectorDTO.getDelegateSelectors());
+      populateDelegateSelectorCapability(executionCapabilities, gcpKmsConnectorDTO.getDelegateSelectors(), gcpKmsConnectorDTO.getConnectorType());
     }
     return executionCapabilities;
   }

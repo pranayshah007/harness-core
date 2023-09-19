@@ -33,7 +33,7 @@ public class AwsCodeCommitTaskParams
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     AwsCodeCommitCapabilityHelper.populateDelegateSelectorCapability(
-        capabilityList, awsConnector.getDelegateSelectors());
+        capabilityList, awsConnector.getDelegateSelectors(), awsConnector.getConnectorType());
     return capabilityList;
   }
 }

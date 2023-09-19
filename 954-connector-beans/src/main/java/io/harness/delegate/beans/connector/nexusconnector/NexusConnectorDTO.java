@@ -14,6 +14,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.nexusconnector.outcome.NexusAuthenticationOutcomeDTO;
 import io.harness.delegate.beans.connector.nexusconnector.outcome.NexusConnectorOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
@@ -47,6 +48,7 @@ public class NexusConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @NotNull @NotBlank String version;
   @Valid NexusAuthenticationDTO auth;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

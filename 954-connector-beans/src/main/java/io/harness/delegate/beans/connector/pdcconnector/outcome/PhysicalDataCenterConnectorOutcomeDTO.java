@@ -17,6 +17,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
+
+import io.harness.delegate.beans.connector.ConnectorType;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,4 +31,5 @@ import lombok.EqualsAndHashCode;
 public class PhysicalDataCenterConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @Valid List<HostOutcomeDTO> hosts;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 }

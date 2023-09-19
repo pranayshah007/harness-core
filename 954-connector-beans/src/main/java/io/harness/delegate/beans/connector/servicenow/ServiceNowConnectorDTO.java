@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -62,6 +63,7 @@ public class ServiceNowConnectorDTO extends ConnectorConfigDTO implements Decryp
   @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   SecretRefData passwordRef;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
   @Valid @NotNull ServiceNowAuthenticationDTO auth;
 
   @Override

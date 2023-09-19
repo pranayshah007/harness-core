@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 
@@ -49,6 +50,7 @@ public class GitConfigOutcomeDTO extends ConnectorConfigOutcomeDTO implements De
   @Valid
   @NotNull
   GitAuthenticationOutcomeDTO spec;
+  ConnectorType connectorType;
 
   @Builder
   public GitConfigOutcomeDTO(GitAuthType type, GitAuthenticationOutcomeDTO spec, GitConnectionType connectionType,

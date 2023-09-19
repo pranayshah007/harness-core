@@ -86,7 +86,7 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
         populateDelegateSelectorCapability(
-            capabilities, httpHelmStoreConfig.getHttpHelmConnector().getDelegateSelectors());
+            capabilities, httpHelmStoreConfig.getHttpHelmConnector().getDelegateSelectors(), httpHelmStoreConfig.getHttpHelmConnector().getConnectorType());
         break;
 
       case OCI_HELM:
@@ -101,7 +101,7 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
         populateDelegateSelectorCapability(
-            capabilities, ociHelmStoreConfig.getOciHelmConnector().getDelegateSelectors());
+            capabilities, ociHelmStoreConfig.getOciHelmConnector().getDelegateSelectors(), ociHelmStoreConfig.getOciHelmConnector().getConnectorType());
         break;
 
       case S3_HELM:

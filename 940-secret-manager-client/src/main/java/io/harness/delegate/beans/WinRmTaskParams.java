@@ -43,7 +43,7 @@ public class WinRmTaskParams implements TaskParameters, ExecutionCapabilityDeman
       return Collections.singletonList(getSocketConnectivityCapability());
     } else {
       List<ExecutionCapability> capabilityList = new ArrayList<>(Arrays.asList(getSocketConnectivityCapability()));
-      ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(capabilityList, delegateSelectors);
+      ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(capabilityList, delegateSelectors, null);
       return capabilityList;
     }
   }

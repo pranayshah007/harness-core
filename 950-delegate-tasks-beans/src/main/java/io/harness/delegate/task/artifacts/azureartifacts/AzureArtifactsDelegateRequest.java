@@ -130,7 +130,7 @@ public class AzureArtifactsDelegateRequest implements ArtifactSourceDelegateRequ
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             encryptedDataDetails, maskingEvaluator));
 
-    populateDelegateSelectorCapability(capabilities, azureArtifactsConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilities, azureArtifactsConnectorDTO.getDelegateSelectors(), azureArtifactsConnectorDTO.getConnectorType());
 
     capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         azureArtifactsConnectorDTO.getAzureArtifactsUrl().endsWith("/")

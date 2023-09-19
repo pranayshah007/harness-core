@@ -25,6 +25,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 import io.harness.security.encryption.AccessType;
@@ -76,4 +77,5 @@ public class VaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implemen
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
   @Schema(description = ENABLE_CACHE) @Builder.Default private boolean enableCache = true;
   private AccessType accessType;
+  ConnectorType connectorType;
 }

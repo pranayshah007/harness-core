@@ -57,7 +57,7 @@ public class GitCapabilityHelper extends ConnectorCapabilityBaseHelper {
     }
 
     if (includeDelegateSelectors) {
-      populateDelegateSelectorCapability(capabilityList, gitConfig.getDelegateSelectors());
+      populateDelegateSelectorCapability(capabilityList, gitConfig.getDelegateSelectors(), gitConfig.getConnectorType());
     }
     return capabilityList;
   }
@@ -84,7 +84,7 @@ public class GitCapabilityHelper extends ConnectorCapabilityBaseHelper {
       gitConnectionNGCapability.encryptedDataDetails(encryptedDataDetails);
     }
     capabilityList.add(gitConnectionNGCapability.build());
-    populateDelegateSelectorCapability(capabilityList, gitConfig.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, gitConfig.getDelegateSelectors(), gitConfig.getConnectorType());
     return capabilityList;
   }
 

@@ -26,7 +26,7 @@ public class BambooCapabilityHelper extends ConnectorCapabilityBaseHelper {
     final String bambooRegistryUrl = bambooConnectorDTO.getBambooUrl();
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         bambooRegistryUrl.endsWith("/") ? bambooRegistryUrl : bambooRegistryUrl.concat("/"), maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, bambooConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, bambooConnectorDTO.getDelegateSelectors(), bambooConnectorDTO.getConnectorType());
     return capabilityList;
   }
 }

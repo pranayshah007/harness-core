@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 
@@ -43,6 +44,7 @@ public class GitlabConnectorOutcomeDTO
   Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
   String gitConnectionUrl;
+  ConnectorType connectorType;
 
   @Builder
   public GitlabConnectorOutcomeDTO(GitConnectionType type, String url, String validationRepo,

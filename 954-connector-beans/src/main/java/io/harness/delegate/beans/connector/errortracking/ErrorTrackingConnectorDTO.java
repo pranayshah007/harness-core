@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -42,6 +43,7 @@ public class ErrorTrackingConnectorDTO extends ConnectorConfigDTO implements Dec
   @NotNull @NotBlank String url;
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData apiKeyRef;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

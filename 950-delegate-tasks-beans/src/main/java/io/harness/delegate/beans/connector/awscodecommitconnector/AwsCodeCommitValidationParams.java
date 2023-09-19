@@ -38,7 +38,7 @@ public class AwsCodeCommitValidationParams
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     capabilityList.add(
         HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(AWS_URL, maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, awsConnector.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, awsConnector.getDelegateSelectors(), awsConnector.getConnectorType());
     return capabilityList;
   }
 

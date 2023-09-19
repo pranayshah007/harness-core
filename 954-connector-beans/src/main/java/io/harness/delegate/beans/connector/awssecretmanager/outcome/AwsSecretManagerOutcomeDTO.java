@@ -17,6 +17,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
 import javax.validation.Valid;
@@ -43,4 +44,5 @@ public class AwsSecretManagerOutcomeDTO extends ConnectorConfigOutcomeDTO implem
 
   @Schema(description = SecretManagerDescriptionConstants.AWS_SECRET_NAME_PREFIX) private String secretNamePrefix;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
+  ConnectorType connectorType;
 }

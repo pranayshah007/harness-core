@@ -28,7 +28,7 @@ public class JiraCapabilityHelper extends ConnectorCapabilityBaseHelper {
             jiraUrl.endsWith("/") ? jiraUrl : jiraUrl.concat("/"), maskingEvaluator);
     httpConnectionExecutionCapability.setIgnoreRedirect(true);
     capabilityList.add(httpConnectionExecutionCapability);
-    populateDelegateSelectorCapability(capabilityList, jiraConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, jiraConnectorDTO.getDelegateSelectors(),jiraConnectorDTO.getConnectorType());
     return capabilityList;
   }
 }

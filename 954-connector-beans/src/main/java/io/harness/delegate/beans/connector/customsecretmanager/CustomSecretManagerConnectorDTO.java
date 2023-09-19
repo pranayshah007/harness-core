@@ -15,6 +15,7 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.connector.utils.TemplateDetails;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.customsecretmanager.outcome.CustomSecretManagerConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
@@ -53,6 +54,7 @@ public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implemen
   @Builder.Default Boolean onDelegate = Boolean.FALSE;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema @JsonIgnore private boolean harnessManaged;
+  ConnectorType connectorType;
 
   @SecretReference
   @ApiModelProperty(dataType = "string")

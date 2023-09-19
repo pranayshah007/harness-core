@@ -17,6 +17,7 @@ import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
@@ -40,6 +41,7 @@ public class SpotConnectorDTO extends ConnectorConfigDTO implements DelegateSele
   @Valid @NotNull SpotCredentialDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

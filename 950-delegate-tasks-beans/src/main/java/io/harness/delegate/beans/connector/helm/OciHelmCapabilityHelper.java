@@ -29,7 +29,7 @@ public class OciHelmCapabilityHelper extends ConnectorCapabilityBaseHelper {
                            .version(HelmVersion.V380)
                            .criteria("OCI_HELM_REPO: " + helmRepoUrl)
                            .build());
-    populateDelegateSelectorCapability(capabilityList, helmConnector.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, helmConnector.getDelegateSelectors(), helmConnector.getConnectorType());
     return capabilityList;
   }
 }

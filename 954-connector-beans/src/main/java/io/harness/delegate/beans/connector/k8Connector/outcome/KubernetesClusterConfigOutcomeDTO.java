@@ -13,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
+import io.harness.delegate.beans.connector.ConnectorType;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,4 +26,5 @@ import lombok.EqualsAndHashCode;
 public class KubernetesClusterConfigOutcomeDTO extends ConnectorConfigOutcomeDTO {
   @Valid @NotNull KubernetesCredentialOutcomeDTO credential;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 }

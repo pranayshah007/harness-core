@@ -30,7 +30,7 @@ public class PagerDutyCapabilityHelper {
     PagerDutyConnectorDTO connectorDTO = (PagerDutyConnectorDTO) connectorConfigDTO;
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         PagerDutyUtils.getBaseUrl(), maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors(),connectorDTO.getConnectorType() );
     return capabilityList;
   }
 }

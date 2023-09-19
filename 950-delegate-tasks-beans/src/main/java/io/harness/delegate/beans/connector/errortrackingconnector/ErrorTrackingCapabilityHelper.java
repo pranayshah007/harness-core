@@ -30,7 +30,7 @@ public class ErrorTrackingCapabilityHelper {
     ErrorTrackingConnectorDTO connectorDTO = (ErrorTrackingConnectorDTO) connectorConfigDTO;
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         connectorDTO.getUrl(), maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors(), connectorDTO.getConnectorType());
     return capabilityList;
   }
 }

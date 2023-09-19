@@ -41,7 +41,7 @@ public class GcpCapabilityHelper extends ConnectorCapabilityBaseHelper {
     } else {
       throw new UnknownEnumTypeException("Gcp Credential Type", String.valueOf(credential.getGcpCredentialType()));
     }
-    populateDelegateSelectorCapability(capabilityList, gcpConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, gcpConnectorDTO.getDelegateSelectors(), gcpConnectorDTO.getConnectorType());
     return capabilityList;
   }
 }

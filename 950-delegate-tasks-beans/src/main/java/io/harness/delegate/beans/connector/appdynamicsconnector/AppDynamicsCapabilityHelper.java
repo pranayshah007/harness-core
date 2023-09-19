@@ -25,7 +25,7 @@ public class AppDynamicsCapabilityHelper extends ConnectorCapabilityBaseHelper {
     AppDynamicsConnectorDTO appDynamicsConnectorDTO = (AppDynamicsConnectorDTO) connectorConfigDTO;
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         appDynamicsConnectorDTO.getControllerUrl(), maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, appDynamicsConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, appDynamicsConnectorDTO.getDelegateSelectors(),null);
     return capabilityList;
   }
 }

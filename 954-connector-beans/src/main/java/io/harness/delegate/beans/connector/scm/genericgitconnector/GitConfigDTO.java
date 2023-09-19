@@ -58,6 +58,7 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
   private Set<String> delegateSelectors;
   private Boolean executeOnDelegate;
   private String gitConnectionUrl;
+  ConnectorType connectorType;
 
   @JsonProperty("spec")
   @JsonTypeInfo(

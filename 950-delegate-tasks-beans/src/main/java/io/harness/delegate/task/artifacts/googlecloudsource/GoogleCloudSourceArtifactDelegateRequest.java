@@ -63,7 +63,7 @@ public class GoogleCloudSourceArtifactDelegateRequest implements ArtifactSourceD
         throw new UnknownEnumTypeException(
             "Gcr Credential Type", String.valueOf(gcpConnectorDTO.getCredential().getGcpCredentialType()));
       }
-      populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors());
+      populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors(), gcpConnectorDTO.getConnectorType());
     }
     return capabilities;
   }

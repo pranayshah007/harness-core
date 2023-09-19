@@ -62,9 +62,9 @@ public class GcrArtifactDelegateRequest implements ArtifactSourceDelegateRequest
             encryptedDataDetails, maskingEvaluator));
     if (gcpConnectorDTO.getCredential() != null) {
       if (gcpConnectorDTO.getCredential().getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
-        populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors());
+        populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors(), gcpConnectorDTO.getConnectorType());
       } else if (gcpConnectorDTO.getCredential().getGcpCredentialType() == GcpCredentialType.MANUAL_CREDENTIALS) {
-        populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors());
+        populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors(),gcpConnectorDTO.getConnectorType());
         capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
             "https://" + registryHostname, maskingEvaluator));
       } else {

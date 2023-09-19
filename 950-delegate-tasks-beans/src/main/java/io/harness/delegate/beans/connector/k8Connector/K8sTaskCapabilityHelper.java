@@ -45,7 +45,7 @@ public class K8sTaskCapabilityHelper extends ConnectorCapabilityBaseHelper {
       throw new UnknownEnumTypeException(
           "Kubernetes Credential Type", String.valueOf(credential.getKubernetesCredentialType()));
     }
-    populateDelegateSelectorCapability(capabilityList, kubernetesClusterConfigDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, kubernetesClusterConfigDTO.getDelegateSelectors(), kubernetesClusterConfigDTO.getConnectorType());
     return capabilityList;
   }
 }

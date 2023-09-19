@@ -14,6 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -52,4 +53,5 @@ public class GcpKmsConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO impleme
 
   private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
+  ConnectorType connectorType;
 }

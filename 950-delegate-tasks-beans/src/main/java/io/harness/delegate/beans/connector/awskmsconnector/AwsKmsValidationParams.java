@@ -53,7 +53,7 @@ public class AwsKmsValidationParams implements ConnectorValidationParams, Execut
       executionCapabilities.add(
           SelectorCapability.builder().selectors(delegateSelectors).selectorOrigin(TASK_SELECTORS).build());
     }
-    populateDelegateSelectorCapability(executionCapabilities, awsKmsConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(executionCapabilities, awsKmsConnectorDTO.getDelegateSelectors(), awsKmsConnectorDTO.getConnectorType());
     return executionCapabilities;
   }
 

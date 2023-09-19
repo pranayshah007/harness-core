@@ -14,6 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -43,4 +44,5 @@ public class GcpSecretManagerConnectorOutcomeDTO extends ConnectorConfigOutcomeD
 
   @Schema(description = SecretManagerDescriptionConstants.ASSUME_CREDENTIALS_ON_DELEGATE)
   Boolean assumeCredentialsOnDelegate;
+  ConnectorType connectorType;
 }

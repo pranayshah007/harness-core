@@ -28,7 +28,7 @@ public class NexusCapabilityHelper extends ConnectorCapabilityBaseHelper {
     final String nexusServerUrl = nexusConnectorDTO.getNexusServerUrl();
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         nexusServerUrl.endsWith("/") ? nexusServerUrl : nexusServerUrl.concat("/"), maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, delegateSelectors);
+    populateDelegateSelectorCapability(capabilityList, delegateSelectors, ((NexusConnectorDTO) connectorConfigDTO).getConnectorType());
     return capabilityList;
   }
 }

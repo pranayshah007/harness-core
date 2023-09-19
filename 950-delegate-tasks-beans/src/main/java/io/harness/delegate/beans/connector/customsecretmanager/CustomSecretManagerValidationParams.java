@@ -32,7 +32,7 @@ public class CustomSecretManagerValidationParams implements ConnectorValidationP
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> executionCapabilities = new ArrayList<>();
     if (customSecretManagerConnectorDTO != null) {
-      populateDelegateSelectorCapability(executionCapabilities, customSecretManagerConnectorDTO.getDelegateSelectors());
+      populateDelegateSelectorCapability(executionCapabilities, customSecretManagerConnectorDTO.getDelegateSelectors(), getConnectorType());
     }
     return executionCapabilities;
   }

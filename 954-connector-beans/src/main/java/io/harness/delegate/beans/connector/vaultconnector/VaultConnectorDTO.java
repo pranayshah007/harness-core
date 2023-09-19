@@ -33,6 +33,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.vaultconnector.outcome.VaultConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
@@ -109,6 +110,7 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
   @Schema(description = ENABLE_CACHE) private boolean enableCache = true;
+  ConnectorType connectorType;
 
   @Builder
   public VaultConnectorDTO(SecretRefData authToken, String basePath, String vaultUrl, boolean isReadOnly,

@@ -31,7 +31,7 @@ public class TerraformCloudCapabilityHelper extends ConnectorCapabilityBaseHelpe
     if (terraformCloudConnectorDTO != null) {
       executionCapabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
           terraformCloudConnectorDTO.getTerraformCloudUrl(), maskingEvaluator));
-      populateDelegateSelectorCapability(executionCapabilities, terraformCloudConnectorDTO.getDelegateSelectors());
+      populateDelegateSelectorCapability(executionCapabilities, terraformCloudConnectorDTO.getDelegateSelectors(), terraformCloudConnectorDTO.getConnectorType());
     }
     return executionCapabilities;
   }

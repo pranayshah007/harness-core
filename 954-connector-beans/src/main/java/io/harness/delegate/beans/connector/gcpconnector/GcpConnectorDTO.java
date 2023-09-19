@@ -16,6 +16,7 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.gcpconnector.outcome.GcpConnectorCredentialOutcomeDTO;
 import io.harness.delegate.beans.connector.gcpconnector.outcome.GcpConnectorOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
@@ -50,6 +51,7 @@ public class GcpConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
   @Valid @NotNull GcpConnectorCredentialDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

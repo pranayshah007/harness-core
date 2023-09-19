@@ -44,7 +44,7 @@ public interface ArtifactoryBaseArtifactDelegateRequest extends ArtifactSourceDe
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             getEncryptedDataDetails(), maskingEvaluator));
-    populateDelegateSelectorCapability(capabilities, getArtifactoryConnectorDTO().getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilities, getArtifactoryConnectorDTO().getDelegateSelectors(),getArtifactoryConnectorDTO().getConnectorType());
     capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         getArtifactoryConnectorDTO().getArtifactoryServerUrl(), maskingEvaluator));
     return capabilities;

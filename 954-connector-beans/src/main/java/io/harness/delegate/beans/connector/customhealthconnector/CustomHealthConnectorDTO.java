@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
+
+import io.harness.delegate.beans.connector.ConnectorType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -50,6 +52,7 @@ public class CustomHealthConnectorDTO extends ConnectorConfigDTO implements Decr
   String validationBody;
   String validationPath;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

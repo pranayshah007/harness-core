@@ -34,7 +34,7 @@ public class SpotCapabilityHelper extends ConnectorCapabilityBaseHelper {
       capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
           spotInstHealthUrl, maskingEvaluator));
     }
-    populateDelegateSelectorCapability(capabilityList, spotConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, spotConnectorDTO.getDelegateSelectors(), spotConnectorDTO.getConnectorType());
     return capabilityList;
   }
 }

@@ -33,7 +33,7 @@ public class PrometheusCapabilityHelper {
         HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
             connectorDTO.getUrl() + PROMETHEUS_BASIC_QUERY, maskingEvaluator, true,
             HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY));
-    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors(), connectorDTO.getConnectorType());
     return capabilityList;
   }
 }

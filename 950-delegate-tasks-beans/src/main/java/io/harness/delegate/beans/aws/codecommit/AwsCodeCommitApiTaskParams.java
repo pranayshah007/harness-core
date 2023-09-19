@@ -41,7 +41,7 @@ public class AwsCodeCommitApiTaskParams
     capabilityList.add(
         HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(AWS_URL, maskingEvaluator));
     if (awsCodeCommitConnectorDTO != null) {
-      populateDelegateSelectorCapability(capabilityList, awsCodeCommitConnectorDTO.getDelegateSelectors());
+      populateDelegateSelectorCapability(capabilityList, awsCodeCommitConnectorDTO.getDelegateSelectors(), awsCodeCommitConnectorDTO.getConnectorType());
     }
     return capabilityList;
   }

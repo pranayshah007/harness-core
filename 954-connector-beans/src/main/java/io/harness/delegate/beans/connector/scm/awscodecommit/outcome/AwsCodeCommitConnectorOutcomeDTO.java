@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.scm.awscodecommit.outcome;
 
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -34,6 +35,7 @@ public class AwsCodeCommitConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO 
   @Valid @NotNull AwsCodeCommitAuthenticationOutcomeDTO authentication;
   Set<String> delegateSelectors;
   String gitConnectionUrl;
+  ConnectorType connectorType;
 
   @Builder
   public AwsCodeCommitConnectorOutcomeDTO(AwsCodeCommitUrlType type, String url,

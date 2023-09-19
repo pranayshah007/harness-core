@@ -15,6 +15,7 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.tasconnector.outcome.TasConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.tasconnector.outcome.TasCredentialOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
@@ -42,6 +43,7 @@ public class TasConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
   @NotNull @Valid TasCredentialDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

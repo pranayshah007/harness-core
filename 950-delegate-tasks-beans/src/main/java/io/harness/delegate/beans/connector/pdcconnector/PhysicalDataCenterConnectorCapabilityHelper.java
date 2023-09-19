@@ -44,7 +44,7 @@ public class PhysicalDataCenterConnectorCapabilityHelper extends ConnectorCapabi
             })
             .collect(Collectors.toList());
 
-    populateDelegateSelectorCapability(capabilityList, physicalDataCenterConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, physicalDataCenterConnectorDTO.getDelegateSelectors(), physicalDataCenterConnectorDTO.getConnectorType());
     return capabilityList;
   }
 

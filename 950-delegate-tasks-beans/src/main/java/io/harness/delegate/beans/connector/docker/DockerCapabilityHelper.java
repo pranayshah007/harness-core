@@ -29,7 +29,7 @@ public class DockerCapabilityHelper extends ConnectorCapabilityBaseHelper {
         ((DockerConnectorDTO) connectorConfigDTO).getDockerRegistryUrl(), dockerConnectorDTO.getProviderType());
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         dockerRegistryUrl, maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, dockerConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, dockerConnectorDTO.getDelegateSelectors(), dockerConnectorDTO.getConnectorType());
     return capabilityList;
   }
 }

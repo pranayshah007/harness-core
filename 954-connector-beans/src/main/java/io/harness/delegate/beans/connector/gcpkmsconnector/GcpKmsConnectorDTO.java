@@ -15,6 +15,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
@@ -65,6 +66,7 @@ public class GcpKmsConnectorDTO extends ConnectorConfigDTO implements DelegateSe
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @JsonIgnore private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Builder
   public GcpKmsConnectorDTO(String projectId, String region, String keyRing, String keyName, SecretRefData credentials,

@@ -13,6 +13,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.helm.outcome.OciHelmAuthenticationOutcomeDTO;
 import io.harness.delegate.beans.connector.helm.outcome.OciHelmConnectorOutcomeDTO;
 
@@ -44,6 +45,7 @@ public class OciHelmConnectorDTO extends ConnectorConfigDTO implements DelegateS
   @NotNull @NotBlank String helmRepoUrl;
   @Valid OciHelmAuthenticationDTO auth;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

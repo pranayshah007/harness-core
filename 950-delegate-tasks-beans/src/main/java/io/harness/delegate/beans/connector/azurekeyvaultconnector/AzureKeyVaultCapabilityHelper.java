@@ -46,7 +46,7 @@ public class AzureKeyVaultCapabilityHelper extends ConnectorCapabilityBaseHelper
 
       executionCapabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
           encryptionServiceUrl, maskingEvaluator));
-      populateDelegateSelectorCapability(executionCapabilities, azurekeyvaultConnectorDTO.getDelegateSelectors());
+      populateDelegateSelectorCapability(executionCapabilities, azurekeyvaultConnectorDTO.getDelegateSelectors(), azurekeyvaultConnectorDTO.);
     }
     return executionCapabilities;
   }

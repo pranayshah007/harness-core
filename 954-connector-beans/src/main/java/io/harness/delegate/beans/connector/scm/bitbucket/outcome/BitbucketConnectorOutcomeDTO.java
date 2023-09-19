@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 
@@ -46,6 +47,7 @@ public class BitbucketConnectorOutcomeDTO
   private Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
   private String gitConnectionUrl;
+  ConnectorType connectorType;
 
   @Builder
   public BitbucketConnectorOutcomeDTO(GitConnectionType type, String url, String validationRepo,

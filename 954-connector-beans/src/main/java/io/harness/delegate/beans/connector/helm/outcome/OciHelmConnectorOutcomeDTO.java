@@ -14,6 +14,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
+import io.harness.delegate.beans.connector.ConnectorType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,4 +36,5 @@ public class OciHelmConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implem
   @NotNull @NotBlank String helmRepoUrl;
   @Valid OciHelmAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 }

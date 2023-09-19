@@ -30,7 +30,7 @@ public class CustomHealthCapabilityHelper {
     capabilityList.add(
         HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
             connectorDTO.getBaseURL(), maskingEvaluator, true));
-    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors(), ((CustomHealthConnectorDTO) customHealthConnectorDTO).getConnectorType());
     return capabilityList;
   }
 }

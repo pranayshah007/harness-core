@@ -67,7 +67,7 @@ public class S3ArtifactDelegateRequest implements ArtifactSourceDelegateRequest 
       if (awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.INHERIT_FROM_DELEGATE
           || awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.MANUAL_CREDENTIALS
           || awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.IRSA) {
-        populateDelegateSelectorCapability(capabilities, awsConnectorDTO.getDelegateSelectors());
+        populateDelegateSelectorCapability(capabilities, awsConnectorDTO.getDelegateSelectors(), awsConnectorDTO.getConnectorType());
         if (awsConnectorDTO.getCredential().getAwsCredentialType() == AwsCredentialType.MANUAL_CREDENTIALS) {
           capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
               AwsInternalConfig.AWS_URL, maskingEvaluator));

@@ -28,4 +28,7 @@ public class NotificationRules {
   @ApiModelProperty(dataType = "io.harness.notification.bean.NotificationChannelWrapper")
   @JsonProperty("notificationMethod")
   ParameterField<NotificationChannelWrapper> notificationChannelWrapper;
+
+  //new notification wrapper
+
 }

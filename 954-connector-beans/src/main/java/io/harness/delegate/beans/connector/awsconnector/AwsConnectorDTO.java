@@ -19,6 +19,7 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsConnectorOutcomeDTO.AwsConnectorOutcomeDTOBuilder;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsCredentialOutcomeDTO;
@@ -50,6 +51,7 @@ public class AwsConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
   @Valid AwsSdkClientBackoffStrategyDTO awsSdkClientBackOffStrategyOverride;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

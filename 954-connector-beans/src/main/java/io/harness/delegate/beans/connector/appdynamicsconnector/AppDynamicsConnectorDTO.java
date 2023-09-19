@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
@@ -49,6 +50,7 @@ public class AppDynamicsConnectorDTO extends ConnectorConfigDTO implements Decry
   @NotNull String accountname;
   @URL @NotNull @NotBlank String controllerUrl;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData passwordRef;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData clientSecretRef;

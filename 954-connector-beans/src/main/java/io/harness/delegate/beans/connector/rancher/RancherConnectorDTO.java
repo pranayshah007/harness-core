@@ -16,6 +16,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +42,7 @@ import lombok.experimental.FieldDefaults;
 @RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorDTO")
 public class RancherConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Valid @JsonProperty("credential") RancherConnectorConfigDTO config;
 

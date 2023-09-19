@@ -33,7 +33,7 @@ public class AwsCodeCommitCapabilityHelper extends ConnectorCapabilityBaseHelper
       capabilityList.add(
           HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(AWS_URL, maskingEvaluator));
     }
-    populateDelegateSelectorCapability(capabilityList, awsCodeCommitConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, awsCodeCommitConnectorDTO.getDelegateSelectors(), awsCodeCommitConnectorDTO.getConnectorType());
     return capabilityList;
   }
 }

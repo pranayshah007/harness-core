@@ -14,6 +14,7 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.terraformcloudconnector.outcome.TerraformCloudConnectorOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -41,6 +42,7 @@ public class TerraformCloudConnectorDTO extends ConnectorConfigDTO implements De
   @NotNull @Valid TerraformCloudCredentialDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

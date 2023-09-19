@@ -18,9 +18,16 @@ import java.util.Set;
 public class ConnectorCapabilityBaseHelper {
   private static final String origin = "connector";
   public static void populateDelegateSelectorCapability(
-      List<ExecutionCapability> capabilityList, Set<String> delegateSelectors) {
+      List<ExecutionCapability> capabilityList, Set<String> delegateSelectors, ConnectorType connectorType) {
     if (isNotEmpty(delegateSelectors)) {
-      capabilityList.add(SelectorCapability.builder().selectors(delegateSelectors).selectorOrigin(origin).build());
+      StringBuilder connectorOrigin = new StringBuilder();
+      if (connectorType != null) {
+        connectorOrigin.append(connectorType.getDisplayName());
+        connectorOrigin.append(" ");
+      }
+      connectorOrigin.append(origin);
+      capabilityList.add(
+          SelectorCapability.builder().selectors(delegateSelectors).selectorOrigin(connectorOrigin.toString()).build());
     }
   }
 }

@@ -54,7 +54,7 @@ public class AcrArtifactDelegateRequest implements ArtifactSourceDelegateRequest
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             encryptedDataDetails, maskingEvaluator));
-    populateDelegateSelectorCapability(capabilities, azureConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilities, azureConnectorDTO.getDelegateSelectors(), azureConnectorDTO.getConnectorType());
     return capabilities;
   }
 }

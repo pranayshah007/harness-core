@@ -19,6 +19,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awskmsconnector.outcome.AwsKmsConnectorCredentialOutcomeDTO;
 import io.harness.delegate.beans.connector.awskmsconnector.outcome.AwsKmsConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
@@ -68,6 +69,7 @@ public class AwsKmsConnectorDTO extends ConnectorConfigDTO implements DelegateSe
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema @JsonIgnore private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Builder
   public AwsKmsConnectorDTO(SecretRefData kmsArn, String region, AwsKmsConnectorCredentialDTO credential,

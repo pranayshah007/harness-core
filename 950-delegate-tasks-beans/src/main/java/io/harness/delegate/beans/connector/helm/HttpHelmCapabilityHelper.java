@@ -36,7 +36,7 @@ public class HttpHelmCapabilityHelper extends ConnectorCapabilityBaseHelper {
     } else {
       SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(helmRepoUrl, capabilityList);
     }
-    populateDelegateSelectorCapability(capabilityList, helmConnector.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, helmConnector.getDelegateSelectors(), ((HttpHelmConnectorDTO) connectorConfigDTO).getConnectorType());
     return capabilityList;
   }
 }

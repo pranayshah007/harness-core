@@ -63,7 +63,7 @@ public class BambooArtifactDelegateRequest implements ArtifactSourceDelegateRequ
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             encryptedDataDetails, maskingEvaluator));
-    populateDelegateSelectorCapability(capabilities, bambooConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilities, bambooConnectorDTO.getDelegateSelectors(), bambooConnectorDTO.getConnectorType());
     capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         bambooConnectorDTO.getBambooUrl().endsWith("/") ? bambooConnectorDTO.getBambooUrl()
                                                         : bambooConnectorDTO.getBambooUrl().concat("/"),

@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -46,4 +47,5 @@ public class DockerConnectorOutcomeDTO
   @Valid DockerAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  ConnectorType connectorType;
 }

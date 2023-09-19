@@ -18,6 +18,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
+import io.harness.delegate.beans.connector.ConnectorType;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,4 +36,5 @@ public class TerraformCloudConnectorOutcomeDTO
   @Valid @NotNull TerraformCloudCredentialOutcomeDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  ConnectorType connectorType;
 }

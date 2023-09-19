@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -44,6 +45,7 @@ public class NewRelicConnectorDTO extends ConnectorConfigDTO implements Decrypta
   @URL @NotNull @NotBlank String url;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData apiKeyRef;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);

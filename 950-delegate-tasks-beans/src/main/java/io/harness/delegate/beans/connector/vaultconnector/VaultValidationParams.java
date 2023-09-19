@@ -41,7 +41,7 @@ public class VaultValidationParams implements ConnectorValidationParams, Executi
     if (vaultConnectorDTO != null) {
       executionCapabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
           vaultConnectorDTO.getVaultUrl(), maskingEvaluator));
-      populateDelegateSelectorCapability(executionCapabilities, vaultConnectorDTO.getDelegateSelectors());
+      populateDelegateSelectorCapability(executionCapabilities, vaultConnectorDTO.getDelegateSelectors(), vaultConnectorDTO.getConnectorType());
     }
     return executionCapabilities;
   }

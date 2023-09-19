@@ -26,7 +26,7 @@ public class JenkinsCapabilityHelper extends ConnectorCapabilityBaseHelper {
     final String jenkinsRegistryUrl = jenkinsConnectorDTO.getJenkinsUrl();
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         jenkinsRegistryUrl.endsWith("/") ? jenkinsRegistryUrl : jenkinsRegistryUrl.concat("/"), maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, jenkinsConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, jenkinsConnectorDTO.getDelegateSelectors(), jenkinsConnectorDTO.getConnectorType());
     return capabilityList;
   }
 }

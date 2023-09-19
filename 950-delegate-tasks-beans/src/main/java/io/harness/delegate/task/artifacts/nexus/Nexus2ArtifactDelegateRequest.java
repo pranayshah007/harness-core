@@ -66,7 +66,7 @@ public class Nexus2ArtifactDelegateRequest implements ArtifactSourceDelegateRequ
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             encryptedDataDetails, maskingEvaluator));
-    populateDelegateSelectorCapability(capabilities, nexusConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilities, nexusConnectorDTO.getDelegateSelectors(), nexusConnectorDTO.getConnectorType());
     capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         nexusConnectorDTO.getNexusServerUrl(), maskingEvaluator));
     return capabilities;

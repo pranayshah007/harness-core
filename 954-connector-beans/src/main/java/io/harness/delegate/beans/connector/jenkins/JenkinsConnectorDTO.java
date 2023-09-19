@@ -15,6 +15,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.jenkins.outcome.JenkinsAuthenticationOutcomeDTO;
 import io.harness.delegate.beans.connector.jenkins.outcome.JenkinsConnectorOutcomeDTO;
 
@@ -48,6 +49,7 @@ public class JenkinsConnectorDTO extends ConnectorConfigDTO implements DelegateS
   @URL @NotNull @NotBlank String jenkinsUrl;
   @Valid JenkinsAuthenticationDTO auth;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

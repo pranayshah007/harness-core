@@ -21,7 +21,7 @@ public class TasCapabilityHelper extends ConnectorCapabilityBaseHelper {
       ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     TasConnectorDTO tasConnectorDTO = (TasConnectorDTO) connectorConfigDTO;
-    populateDelegateSelectorCapability(capabilityList, tasConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, tasConnectorDTO.getDelegateSelectors(), tasConnectorDTO.getConnectorType());
     return capabilityList;
   }
 }

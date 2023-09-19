@@ -46,7 +46,7 @@ public class GitHubPollingDelegateRequest implements GitPollingSourceDelegateReq
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
     GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDetails.getConnectorConfig();
-    GitCapabilityHelper.populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors());
+    GitCapabilityHelper.populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors(), githubConnectorDTO.getConnectorType());
     capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
         connectorDetails.getEncryptedDataDetails(), maskingEvaluator));
     return capabilities;

@@ -65,7 +65,7 @@ public class GoogleCloudStorageArtifactDelegateRequest implements ArtifactSource
             "Gcr Credential Type", String.valueOf(gcpConnectorDTO.getCredential().getGcpCredentialType()));
       }
       // todo: do we need to add more capabilities
-      populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors());
+      populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors(), gcpConnectorDTO.getConnectorType());
     }
     return capabilities;
   }

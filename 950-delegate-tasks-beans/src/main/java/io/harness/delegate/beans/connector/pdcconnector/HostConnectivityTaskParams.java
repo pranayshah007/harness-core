@@ -13,6 +13,7 @@ import static io.harness.delegate.task.utils.PhysicalDataCenterConstants.DEFAULT
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.connector.ConnectorTaskParams;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
@@ -34,11 +35,12 @@ public class HostConnectivityTaskParams
   private String hostName;
   private int port;
   @Builder.Default private int socketTimeout = DEFAULT_HOST_SOCKET_TIMEOUT_MS;
+  ConnectorType connectorType;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
-    ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(capabilityList, delegateSelectors);
+    ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(capabilityList, delegateSelectors, connectorType);
     return capabilityList;
   }
 }

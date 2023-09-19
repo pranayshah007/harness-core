@@ -31,7 +31,7 @@ public class SignalFXCapabilityHelper {
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         connectorDTO.getUrl() + SIGNALFX_BASIC_QUERY,
         HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY, maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors(), connectorDTO.getConnectorType());
     return capabilityList;
   }
 }

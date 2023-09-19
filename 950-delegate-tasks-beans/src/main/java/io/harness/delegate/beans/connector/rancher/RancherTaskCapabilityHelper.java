@@ -33,7 +33,7 @@ public class RancherTaskCapabilityHelper extends ConnectorCapabilityBaseHelper {
       throw new UnknownEnumTypeException(
           "Rancher credential type", clusterConfigDetails.getCredentials().getAuthType().toString());
     }
-    populateDelegateSelectorCapability(capabilityList, clusterConfig.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, clusterConfig.getDelegateSelectors(), clusterConfig.getConnectorType());
     return capabilityList;
   }
 }

@@ -15,6 +15,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
@@ -65,6 +66,7 @@ public class JiraConnectorDTO extends ConnectorConfigDTO implements DecryptableE
   SecretRefData passwordRef;
   Set<String> delegateSelectors;
   @Valid @NotNull JiraAuthenticationDTO auth;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

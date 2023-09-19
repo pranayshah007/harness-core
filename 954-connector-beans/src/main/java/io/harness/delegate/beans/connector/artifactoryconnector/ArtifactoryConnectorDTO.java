@@ -16,6 +16,7 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.artifactoryconnector.outcome.ArtifactoryAuthenticationOutcomeDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.outcome.ArtifactoryConnectorOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
@@ -50,6 +51,8 @@ public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements Deleg
   @Valid ArtifactoryAuthenticationDTO auth;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  ConnectorType connectorType;
+
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

@@ -28,7 +28,7 @@ public class ServiceNowCapabilityHelper extends ConnectorCapabilityBaseHelper {
     String serviceNowUrl = serviceNowConnectorDTO.getServiceNowUrl();
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         serviceNowUrl.endsWith("/") ? serviceNowUrl : serviceNowUrl.concat("/"), maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, serviceNowConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilityList, serviceNowConnectorDTO.getDelegateSelectors(), serviceNowConnectorDTO.getConnectorType());
     return capabilityList;
   }
 

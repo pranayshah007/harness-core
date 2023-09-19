@@ -41,7 +41,7 @@ public class AwsSecretManagerValidationParams implements ConnectorValidationPara
     List<ExecutionCapability> executionCapabilities =
         new ArrayList<>(Arrays.asList(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
             awsSecretManagerDTO.getRegion(), maskingEvaluator)));
-    populateDelegateSelectorCapability(executionCapabilities, awsSecretManagerDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(executionCapabilities, awsSecretManagerDTO.getDelegateSelectors(), getConnectorType());
     return executionCapabilities;
   }
 }

@@ -91,7 +91,7 @@ public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDele
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             encryptedDataDetails, maskingEvaluator));
-    populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors(), githubConnectorDTO.getConnectorType());
 
     capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         "https://api.github.com", maskingEvaluator));

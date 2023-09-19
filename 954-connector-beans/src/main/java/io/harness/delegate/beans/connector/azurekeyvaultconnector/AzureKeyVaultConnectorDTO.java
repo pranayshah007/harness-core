@@ -18,6 +18,7 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.outcome.AzureKeyVaultConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
@@ -66,6 +67,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   @Schema(description = "This specifies the Azure Environment type, which is AZURE by default.")
   private AzureEnvironmentType azureEnvironmentType = AZURE;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Schema(description = "Boolean value to indicate if managed identity is used") private Boolean useManagedIdentity;
   @Schema(description = "Managed Identity Type") private AzureManagedIdentityType azureManagedIdentityType;

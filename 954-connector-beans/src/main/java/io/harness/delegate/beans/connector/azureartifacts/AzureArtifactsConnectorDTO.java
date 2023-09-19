@@ -62,6 +62,7 @@ public class AzureArtifactsConnectorDTO extends ConnectorConfigDTO implements De
   @Schema(description = "Selected Connectivity Modes") Set<String> delegateSelectors;
 
   Boolean executeOnDelegate = true;
+  ConnectorType connectorType;
 
   @Builder
   public AzureArtifactsConnectorDTO(String azureArtifactsUrl, AzureArtifactsAuthenticationDTO auth,

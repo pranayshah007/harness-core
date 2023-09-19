@@ -10,6 +10,7 @@ package io.harness.delegate.beans;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
@@ -40,7 +41,7 @@ public class SSHTaskParams implements TaskParameters, ExecutionCapabilityDemande
       return Collections.singletonList(getSocketConnectivityCapability());
     } else {
       List<ExecutionCapability> capabilityList = new ArrayList<>(Arrays.asList(getSocketConnectivityCapability()));
-      ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(capabilityList, delegateSelectors);
+      ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(capabilityList, delegateSelectors, null);
       return capabilityList;
     }
   }

@@ -42,7 +42,7 @@ public class GcpSecretManagerValidationParams implements ConnectorValidationPara
     List<ExecutionCapability> executionCapabilities =
         new ArrayList<>(Arrays.asList(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
             ENCRYPTION_SERVICE_URL, maskingEvaluator)));
-    populateDelegateSelectorCapability(executionCapabilities, gcpSecretManagerConnectorDTO.getDelegateSelectors());
+    populateDelegateSelectorCapability(executionCapabilities, gcpSecretManagerConnectorDTO.getDelegateSelectors(), getConnectorType());
     return executionCapabilities;
   }
 }

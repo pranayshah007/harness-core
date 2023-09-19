@@ -46,7 +46,7 @@ public class AzureCapabilityHelper extends ConnectorCapabilityBaseHelper {
       }
       executionCapabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
           encryptionServiceUrl, maskingEvaluator));
-      populateDelegateSelectorCapability(executionCapabilities, azureConnectorDTO.getDelegateSelectors());
+      populateDelegateSelectorCapability(executionCapabilities, azureConnectorDTO.getDelegateSelectors(), azureConnectorDTO.);
     }
     return executionCapabilities;
   }

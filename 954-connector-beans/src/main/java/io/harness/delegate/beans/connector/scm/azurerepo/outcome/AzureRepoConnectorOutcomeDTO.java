@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 
@@ -44,6 +45,8 @@ public class AzureRepoConnectorOutcomeDTO
   Boolean executeOnDelegate = true;
   String gitConnectionUrl;
   private static final String AZURE_REPO_NAME_SEPARATOR = "_git/";
+  ConnectorType connectorType;
+
 
   @Builder
   public AzureRepoConnectorOutcomeDTO(AzureRepoConnectionTypeDTO type, String url, String validationRepo,

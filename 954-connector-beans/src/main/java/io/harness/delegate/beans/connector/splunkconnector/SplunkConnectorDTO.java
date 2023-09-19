@@ -13,6 +13,7 @@ import static io.harness.exception.WingsException.USER;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
@@ -50,6 +51,7 @@ public class SplunkConnectorDTO extends ConnectorConfigDTO implements Decryptabl
   String username;
   @NotNull String accountId;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Builder.Default @JsonProperty("type") SplunkAuthType authType = SplunkAuthType.USER_PASSWORD;
 

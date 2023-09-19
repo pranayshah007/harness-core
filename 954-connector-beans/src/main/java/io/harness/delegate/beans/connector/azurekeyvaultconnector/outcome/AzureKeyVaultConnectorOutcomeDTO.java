@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
@@ -53,4 +54,5 @@ public class AzureKeyVaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO 
   @Schema(description = "Boolean value to indicate if managed identity is used") private Boolean useManagedIdentity;
   @Schema(description = "Managed Identity Type") private AzureManagedIdentityType azureManagedIdentityType;
   @Schema(description = "Client Id of the ManagedIdentity resource") String managedClientId;
+  ConnectorType connectorType;
 }

@@ -15,6 +15,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.bamboo.outcome.BambooAuthenticationOutcomeDTO;
 import io.harness.delegate.beans.connector.bamboo.outcome.BambooConnectorOutcomeDTO;
 
@@ -48,6 +49,7 @@ public class BambooConnectorDTO extends ConnectorConfigDTO implements DelegateSe
   @URL @NotNull @NotBlank String bambooUrl;
   @Valid BambooAuthenticationDTO auth;
   Set<String> delegateSelectors;
+  ConnectorType connectorType;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
