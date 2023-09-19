@@ -91,7 +91,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     when(ceConnectorsHelper.isDataSyncCheck(any(), any(), any(), any())).thenReturn(true);
     doReturn(Collections.singletonList(new EvaluationResult().withEvalDecision("allowed")))
         .when(awsClient)
-        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -135,7 +135,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
     doReturn(Collections.singletonList(DENY_EVALUATION_RESULT))
         .when(awsClient)
-        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any(), any());
 
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
 
@@ -214,7 +214,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
 
     doReturn(Collections.singletonList(DENY_EVALUATION_RESULT))
         .when(awsClient)
-        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any(), any());
     doReturn(Optional.of(report)).when(awsClient).getReportDefinition(any(), any(), any());
     doReturn(s3Object).when(awsClient).getBucket(any(), any(), any(), any());
 
@@ -251,7 +251,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
     doReturn(Collections.singletonList(DENY_EVALUATION_RESULT))
         .when(awsClient)
-        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any(), any());
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
 
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
@@ -284,7 +284,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
     doReturn(Collections.singletonList(DENY_EVALUATION_RESULT))
         .when(awsClient)
-        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any(), any());
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
 
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
@@ -302,7 +302,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
   public void testSimulatePrincipalPolicyPermissionMissing() {
     doThrow(new AmazonIdentityManagementException(MESSAGE))
         .when(awsClient)
-        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any(), any());
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
     System.out.println(result.getErrorSummary());
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
@@ -334,7 +334,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
     ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
     doReturn(Collections.singletonList(DENY_EVALUATION_RESULT))
         .when(awsClient)
-        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any(), any());
     ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
 
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);

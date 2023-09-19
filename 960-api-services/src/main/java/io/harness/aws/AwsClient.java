@@ -52,13 +52,15 @@ public interface AwsClient {
 
   AWSCredentialsProvider constructStaticBasicAwsCredentials(@NotNull String accessKey, @NotNull String secretKey);
 
-  List<String> listRolePolicyNames(AWSCredentialsProvider awsCredentialsProvider, @NotNull String roleName);
+  List<String> listRolePolicyNames(
+      AWSCredentialsProvider awsCredentialsProvider, @NotNull String roleName, CEProxyConfig ceProxyConfig);
 
   List<EvaluationResult> simulatePrincipalPolicy(AWSCredentialsProvider credentialsProvider,
       @NotNull String policySourceArn, @NotEmpty List<String> actionNames, @Nullable List<String> resourceArns,
-      @NotNull String region);
+      @NotNull String region, CEProxyConfig ceProxyConfig);
 
-  Policy getRolePolicy(AWSCredentialsProvider credentialsProvider, String roleName, String policyName);
+  Policy getRolePolicy(
+      AWSCredentialsProvider credentialsProvider, String roleName, String policyName, CEProxyConfig ceProxyConfig);
 
   ObjectListing getBucket(AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix,
       CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);

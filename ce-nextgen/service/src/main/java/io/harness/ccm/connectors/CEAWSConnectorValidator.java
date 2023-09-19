@@ -279,7 +279,8 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
 
       List<EvaluationResult> evaluationResults =
           awsClient.simulatePrincipalPolicy(credentialsProvider, crossAccountRoleArn, actions, resources,
-              isAWSGovCloudConnector ? configuration.getAwsGovCloudConfig().getAwsRegionName() : AWS_DEFAULT_REGION);
+              isAWSGovCloudConnector ? configuration.getAwsGovCloudConfig().getAwsRegionName() : AWS_DEFAULT_REGION,
+              configuration.getCeProxyConfig());
       log.info(evaluationResults.toString());
       evaluationResults =
           evaluationResults.stream().filter(x -> !"allowed".equals(x.getEvalDecision())).collect(Collectors.toList());
