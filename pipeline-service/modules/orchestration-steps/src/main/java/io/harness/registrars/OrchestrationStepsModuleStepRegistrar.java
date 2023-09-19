@@ -18,6 +18,7 @@ import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyInternalStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyStep;
 import io.harness.plancreator.steps.pluginstep.InitContainerV2Step;
+import io.harness.plancreator.steps.pluginstep.InitKubernetesInfraContainerStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -107,6 +108,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(SscaConstants.CD_SSCA_ORCHESTRATION_STEP_TYPE, CdSscaOrchestrationStep.class);
     engineSteps.put(INIT_CONTAINER_V2_STEP_TYPE, InitContainerV2Step.class);
     engineSteps.put(CdSscaEnforcementStep.STEP_TYPE, CdSscaEnforcementStep.class);
+    engineSteps.put(InitKubernetesInfraContainerStep.STEP_TYPE, InitKubernetesInfraContainerStep.class);
 
     return engineSteps;
   }

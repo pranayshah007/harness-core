@@ -77,6 +77,7 @@ message SubmitTaskRequest {
 message SubmitTaskResponse {
   TaskId task_id = 1;
   google.protobuf.Timestamp total_expiry = 2;
+  string infraRefID = 3;
 }
 
 message CancelTaskRequest {

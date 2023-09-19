@@ -51,4 +51,27 @@ public class InitContainerStepPlanCreater {
         .skipExpressionChain(false)
         .build();
   }
+
+  public PlanNode createPlanForK8sInfraField(
+      String runStepNodeId, StepParameters stepElementParameters, ByteString advisorParams, String stepType) {
+    return PlanNode.builder()
+        .uuid(runStepNodeId)
+        .name(ContainerCommandUnitConstants.InitK8sInfra)
+        .identifier(ContainerCommandUnitConstants.InitK8sInfra)
+        .stepType(StepType.newBuilder().setType(stepType).setStepCategory(StepCategory.STEP).build())
+        .group(StepOutcomeGroup.STEP.name())
+        .stepParameters(stepElementParameters)
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
+                .build())
+        .adviserObtainment(
+            AdviserObtainment.newBuilder()
+                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+                .setParameters(advisorParams)
+                .build())
+        .skipGraphType(SkipType.NOOP)
+        .skipExpressionChain(false)
+        .build();
+  }
 }

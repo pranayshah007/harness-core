@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.tasks.TaskExecutor;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.tasks.ResponseData;
+import io.harness.tasks.SubmitTaskResponseData;
 
 import java.time.Duration;
 import java.util.Map;
@@ -41,6 +42,16 @@ public class NoopTaskExecutor implements TaskExecutor {
   @Override
   public <T extends ResponseData> T executeTask(Map<String, String> setupAbstractions, TaskRequest taskRequest)
       throws InterruptedException {
+    return null;
+  }
+
+  @Override
+  public SubmitTaskResponseData queueInitTask(TaskRequest taskRequest, Duration holdFor) {
+    return null;
+  }
+
+  @Override
+  public String queueExecuteTask(TaskRequest taskRequest, Duration holdFor) {
     return null;
   }
 }

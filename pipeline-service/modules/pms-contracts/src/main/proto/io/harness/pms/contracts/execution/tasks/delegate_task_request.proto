@@ -10,6 +10,7 @@ package io.harness.pms.contracts.execution.tasks;
 option java_multiple_files = true;
 
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/delegate_service.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/delegate_task_apis.proto";
 
 message DelegateTaskRequest {
   repeated string units = 7;
@@ -20,4 +21,6 @@ message DelegateTaskRequest {
   // We are not creating a dto object for this because we need to keep both in sync which can lead to gaps in supported
   // properties and duplicated effort on the delegate and pipeline side
   io.harness.delegate.SubmitTaskRequest request = 12;
+  io.harness.delegate.SetupExecutionInfrastructureRequest initRequest = 13;
+  io.harness.delegate.ScheduleTaskRequest executeRequest = 14;
 }

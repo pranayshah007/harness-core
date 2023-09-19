@@ -7,7 +7,10 @@
  */
 
 package io.harness.steps.container.execution;
+
+import static io.harness.beans.FeatureName.CDS_USE_DELEGATE_BIJOU_API_CONTAINER_STEPS;
 import static io.harness.plancreator.NGCommonUtilPlanCreationConstants.STEP_GROUP;
+import static io.harness.steps.TaskRequestsUtils.prepareExecuteTaskRequest;
 
 import static java.util.Collections.singletonList;
 
@@ -23,6 +26,11 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.encryption.Scope;
+import io.harness.engine.pms.data.PmsSweepingOutputService;
+import io.harness.engine.pms.data.RawOptionalSweepingOutput;
+import io.harness.engine.pms.tasks.TaskExecutor;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
@@ -32,8 +40,10 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
@@ -71,6 +81,8 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   @Inject private PmsFeatureFlagService featureFlagService;
   @Inject private ConnectorUtils connectorUtils;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private Map<TaskCategory, TaskExecutor> taskExecutorMap;
+  @Inject private PmsSweepingOutputService pmsSweepingOutputService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -108,6 +120,26 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
           ContainerSpecUtils.mergeStepAndConnectorOriginDelegateSelectors(containerStepInfo, k8sConnector);
     }
 
+    if (featureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), CDS_USE_DELEGATE_BIJOU_API_CONTAINER_STEPS)) {
+      TaskExecutor taskExecutor = taskExecutorMap.get(TaskCategory.DELEGATE_TASK_V2);
+      RawOptionalSweepingOutput infraRefIdOutput =
+          pmsSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject("infraRefId"));
+      if (!infraRefIdOutput.isFound()) {
+        throw new InvalidRequestException("Not found k8sInfra infraRefId");
+      }
+      String infraRefId = infraRefIdOutput.getOutput();
+      String queueExecuteTaskId = taskExecutor.queueExecuteTask(
+          prepareExecuteTaskRequest(ambiance, getTaskData(), referenceFalseKryoSerializer, timeout,
+              TaskCategory.DELEGATE_TASK_V2, true, delegateSelectors, Scope.PROJECT, infraRefId),
+          Duration.ofSeconds(0));
+
+      return AsyncExecutableResponse.newBuilder()
+          .addCallbackIds(queueExecuteTaskId)
+          .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(getLogPrefix(ambiance))))
+          .build();
+    }
+
     String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId, delegateSelectors);
     TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeout, parkedTaskId);
@@ -120,6 +152,15 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
         .addCallbackIds(liteEngineTaskId)
         .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(getLogPrefix(ambiance))))
         .build();
+  }
+
+  private TaskData getTaskData() {
+    //    Object params =
+    //            referenceFalseKryoSerializer.asInflatedObject(submitTaskRequest.getDetails().getKryoParameters().toByteArray());
+    String taskType = "SHELL_SCRIPT_TASK_NG";
+    Object params = null;
+
+    return TaskData.builder().async(true).parameters(new Object[] {params}).taskType(taskType).async(true).build();
   }
 
   @Override

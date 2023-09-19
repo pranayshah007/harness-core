@@ -13,8 +13,11 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.ScheduleTaskRequest;
+import io.harness.delegate.SetupExecutionInfrastructureRequest;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.engine.pms.tasks.TaskExecutor;
 import io.harness.engine.progress.EngineProgressCallback;
@@ -29,8 +32,12 @@ import io.harness.pms.contracts.execution.events.QueueTaskRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.execution.tasks.Type;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.SdkResponseEventUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.tasks.ResponseData;
+import io.harness.tasks.SubmitTaskResponseData;
 import io.harness.waiter.ProgressCallback;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -53,6 +60,7 @@ public class QueueTaskRequestProcessor implements SdkResponseProcessor {
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private OrchestrationEngine orchestrationEngine;
+  @Inject private PmsSweepingOutputService pmsSweepingOutputService;
 
   @Override
   public void handleEvent(SdkResponseEventProto event) {
@@ -105,8 +113,8 @@ public class QueueTaskRequestProcessor implements SdkResponseProcessor {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     try {
       TaskExecutor taskExecutor = taskExecutorMap.get(taskRequest.getTaskCategory());
-      String taskId =
-          Preconditions.checkNotNull(taskExecutor.queueTask(setupAbstractionsMap, taskRequest, Duration.ofSeconds(0)));
+
+      String taskId = Preconditions.checkNotNull(queueTask(ambiance, taskRequest, setupAbstractionsMap, taskExecutor));
       log.info("TaskRequestQueued for NodeExecutionId : {}, TaskId; {}", nodeExecutionId, taskId);
       return taskId;
     } catch (Exception ex) {
@@ -114,5 +122,23 @@ public class QueueTaskRequestProcessor implements SdkResponseProcessor {
       orchestrationEngine.handleError(ambiance, ex);
       return null;
     }
+  }
+
+  private String queueTask(
+      Ambiance ambiance, TaskRequest taskRequest, Map<String, String> setupAbstractionsMap, TaskExecutor taskExecutor) {
+    if (taskRequest.hasType() && taskRequest.getType().equals(Type.INIT)) {
+      SubmitTaskResponseData responseData = taskExecutor.queueInitTask(taskRequest, Duration.ofSeconds(0));
+
+      // this is only for POC, need to find a way how to propagate init task response to
+      // InitKubernetesInfraContainerStep
+      pmsSweepingOutputService.consume(
+          ambiance, "infraRefId", responseData.getInfraRefId(), StepOutcomeGroup.STEP_GROUP.name());
+
+      return responseData.getTaskId();
+    } else if (taskRequest.hasType() && taskRequest.getType().equals(Type.EXECUTE)) {
+      return taskExecutor.queueExecuteTask(taskRequest, Duration.ofSeconds(0));
+    }
+
+    return taskExecutor.queueTask(setupAbstractionsMap, taskRequest, Duration.ofSeconds(0));
   }
 }

@@ -17,6 +17,12 @@ import io.harness.beans.EnvironmentType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.Capability;
+import io.harness.delegate.Execution;
+import io.harness.delegate.ExecutionInfrastructure;
+import io.harness.delegate.ExecutionInput;
+import io.harness.delegate.ScheduleTaskRequest;
+import io.harness.delegate.SchedulingConfig;
+import io.harness.delegate.SetupExecutionInfrastructureRequest;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskLogAbstractions;
@@ -24,6 +30,8 @@ import io.harness.delegate.TaskMode;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.TaskType;
+import io.harness.delegate.beans.DelegateTaskPackage;
+import io.harness.delegate.beans.RunnerType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
@@ -36,6 +44,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.execution.tasks.Type;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.serializer.KryoSerializer;
 
@@ -262,5 +271,90 @@ public class TaskRequestsUtils {
           "Sending following command units to delegate task: [" + Joiner.on(", ").skipNulls().join(units) + "]";
       log.info(commandUnits);
     }
+  }
+
+  public static TaskRequest prepareK8sInfraTaskRequest(Ambiance ambiance,
+      ExecutionInfrastructure executionInfrastructure, long timeout, TaskCategory taskCategory, boolean withLogs,
+      List<TaskSelector> selectors, Scope taskScope) {
+    String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
+    Map<String, String> setupAbstractionsMap = StepUtils.buildAbstractions(ambiance, taskScope);
+
+    LinkedHashMap<String, String> logAbstractionMap =
+        withLogs ? StepUtils.generateLogAbstractions(ambiance) : new LinkedHashMap<>();
+
+    SchedulingConfig schedulingConfig =
+        SchedulingConfig.newBuilder()
+            .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
+            .setSetupAbstractions(TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractionsMap).build())
+            .setRunnerType(RunnerType.RUNNER_TYPE_K8S)
+            .setAccountId(accountId)
+            .setExecutionTimeout(Duration.newBuilder().setSeconds(timeout / 1000).build())
+            .setSelectionTrackingLogEnabled(true)
+            .build();
+
+    SetupExecutionInfrastructureRequest setupExecutionInfrastructureRequest =
+        SetupExecutionInfrastructureRequest.newBuilder()
+            .setConfig(schedulingConfig)
+            .setInfra(executionInfrastructure)
+            .build();
+
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.newBuilder()
+            .addAllUnits(Collections.emptyList())
+            .addAllLogKeys(
+                CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(logAbstractionMap, Collections.emptyList())))
+            .setInitRequest(setupExecutionInfrastructureRequest)
+            .setTaskName(Type.INIT.name())
+            .build();
+
+    return TaskRequest.newBuilder()
+        .setType(Type.INIT)
+        .setUseReferenceFalseKryoSerializer(true)
+        .setDelegateTaskRequest(delegateTaskRequest)
+        .setTaskCategory(taskCategory)
+        .build();
+  }
+
+  public static TaskRequest prepareExecuteTaskRequest(Ambiance ambiance, TaskData taskData,
+      KryoSerializer referenceFalseKryoSerializer, long timeout, TaskCategory taskCategory, boolean withLogs,
+      List<TaskSelector> selectors, Scope taskScope, String infraRefId) {
+    String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
+    LinkedHashMap<String, String> logAbstractionMap =
+        withLogs ? StepUtils.generateLogAbstractions(ambiance) : new LinkedHashMap<>();
+
+    Map<String, String> setupAbstractionsMap = StepUtils.buildAbstractions(ambiance, taskScope);
+    SchedulingConfig schedulingConfig =
+        SchedulingConfig.newBuilder()
+            .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
+            .setSetupAbstractions(TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractionsMap).build())
+            .setRunnerType(RunnerType.RUNNER_TYPE_K8S)
+            .setAccountId(accountId)
+            .setExecutionTimeout(Duration.newBuilder().setSeconds(timeout / 1000).build())
+            .setSelectionTrackingLogEnabled(true)
+            .build();
+
+    DelegateTaskPackage delegateTaskPackage = DelegateTaskPackage.builder().accountId(accountId).data(taskData).build();
+    byte[] taskPackageBytes = referenceFalseKryoSerializer.asDeflatedBytes(delegateTaskPackage);
+    ExecutionInput executionInput = ExecutionInput.newBuilder().setData(ByteString.copyFrom(taskPackageBytes)).build();
+    Execution execution = Execution.newBuilder().setInfraRefId(infraRefId).setInput(executionInput).build();
+
+    ScheduleTaskRequest scheduleTaskRequest =
+        ScheduleTaskRequest.newBuilder().setExecution(execution).setConfig(schedulingConfig).build();
+
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.newBuilder()
+            .addAllUnits(Collections.emptyList())
+            .addAllLogKeys(
+                CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(logAbstractionMap, Collections.emptyList())))
+            .setExecuteRequest(scheduleTaskRequest)
+            .setTaskName(Type.EXECUTE.name())
+            .build();
+
+    return TaskRequest.newBuilder()
+        .setType(Type.EXECUTE)
+        .setUseReferenceFalseKryoSerializer(true)
+        .setDelegateTaskRequest(delegateTaskRequest)
+        .setTaskCategory(taskCategory)
+        .build();
   }
 }

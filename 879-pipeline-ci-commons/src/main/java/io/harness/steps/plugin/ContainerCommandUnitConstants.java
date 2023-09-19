@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface ContainerCommandUnitConstants {
   String InitContainer = "Initialize";
+  String InitK8sInfra = "Initialize";
   String ContainerStep = "Container Step";
   String SscaOrchestrationStep = "Ssca Orchestration Step";
   String SscaEnforcementStep = "Ssca Enforcement Step";

@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.steps.pluginstep;
+
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
@@ -51,6 +52,7 @@ import io.harness.steps.common.steps.stepgroup.StepGroupStepParameters;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.PlanCreatorUtilsCommon;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
@@ -73,6 +75,8 @@ import java.util.Set;
     module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStepNode> extends ChildrenPlanCreator<T> {
   @Inject KryoSerializer kryoSerializer;
+
+  @Inject private PmsFeatureFlagService featureFlagService;
 
   @Override public abstract Map<String, Set<String>> getSupportedTypes();
 
@@ -98,8 +102,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
         ((ContainerStepSpec) stepElementParameters.getSpec()).setIdentifier(config.getIdentifier());
       }
     }
-    PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
-        initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
+    PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForK8sInfraField(initStepNodeId, stepParameters,
+        advisorParametersInitStep, StepSpecTypeConstants.INIT_KUBERNETES_INFRA_CONTAINER_STEP);
     PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters, getAdviserObtainmentsForStepNode(ctx));
 
     planCreationResponseMap.put(initPlanNode.getUuid(), PlanCreationResponse.builder().planNode(initPlanNode).build());
