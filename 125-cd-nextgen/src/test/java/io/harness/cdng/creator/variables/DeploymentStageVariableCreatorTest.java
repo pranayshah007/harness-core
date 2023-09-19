@@ -303,7 +303,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
         serviceOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
     assertThat(serviceLocalNamePropertiesList)
         .containsExactly("service.identifier", "service.name", "service.description", "service.type", "service.tags",
-            "service.gitOpsEnabled");
+            "service.gitOpsEnabled", "service.release");
 
     List<String> serviceFQNPropertiesList =
         serviceOutputProperties.stream().map(YamlProperties::getFqn).collect(Collectors.toList());
@@ -311,7 +311,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
         .containsExactlyInAnyOrder("pipeline.stages.deployStage.spec.service.identifier",
             "pipeline.stages.deployStage.spec.service.name", "pipeline.stages.deployStage.spec.service.description",
             "pipeline.stages.deployStage.spec.service.type", "pipeline.stages.deployStage.spec.service.tags",
-            "pipeline.stages.deployStage.spec.service.gitOpsEnabled");
+            "pipeline.stages.deployStage.spec.service.gitOpsEnabled",
+            "pipeline.stages.deployStage.spec.service.release");
   }
 
   @Test
@@ -538,10 +539,10 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     List<String> keys = new ArrayList<>(variablesForChildrenNodesV2.keySet());
 
     List<String> expectedSvcFqn = List.of("service.identifier", "service.name", "service.description", "service.type",
-        "service.tags", "service.gitOpsEnabled", "manifests.nginx.identifier", "manifests.nginx.type",
-        "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType", "manifests.nginx.store.branch",
-        "manifests.nginx.store.commitId", "manifests.nginx.store.paths", "manifests.nginx.store.folderPath",
-        "manifests.nginx.store.repoName", "manifests.nginx.skipResourceVersioning",
+        "service.tags", "service.gitOpsEnabled", "service.release", "manifests.nginx.identifier",
+        "manifests.nginx.type", "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
+        "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
+        "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName", "manifests.nginx.skipResourceVersioning",
         "manifests.nginx.enableDeclarativeRollback", "manifests.nginx.valuesPaths",
         "artifacts.sidecars.gcr_test.connectorRef", "artifacts.sidecars.gcr_test.imagePath",
         "artifacts.sidecars.gcr_test.tag", "artifacts.sidecars.gcr_test.tagRegex",
@@ -580,25 +581,25 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
   }
 
   private Object[][] getTestData() {
-    TestData data1 =
-        TestData.builder()
-            .pipelineYamlFile("pipelineWithV2ServiceEnv_ServiceInfraRuntime.yaml")
-            .serviceYamlFile("serviceV2.yaml")
-            .envYamlFile("environmentV2.yaml")
-            .infraYamlFile("k8sDirectInfrastructure.yaml")
-            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
-                "service.tags", "service.gitOpsEnabled", "serviceVariables.envVar1", "serviceVariables.svar1"))
-            .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.v1Type",
-                "env.tags", "env.environmentRef", "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef",
-                "env.envGroupName"))
-            .provisionerDependencyIndex(-1)
-            .expectedInfraFqn(List.of())
-            .envFqnIndex(0)
-            .svcFqnIndex(1)
-            .infraFqnIndex(-1)
-            .executionDependencyIndex(2)
-            .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
-            .build();
+    TestData data1 = TestData.builder()
+                         .pipelineYamlFile("pipelineWithV2ServiceEnv_ServiceInfraRuntime.yaml")
+                         .serviceYamlFile("serviceV2.yaml")
+                         .envYamlFile("environmentV2.yaml")
+                         .infraYamlFile("k8sDirectInfrastructure.yaml")
+                         .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description",
+                             "service.type", "service.tags", "service.gitOpsEnabled", "service.release",
+                             "serviceVariables.envVar1", "serviceVariables.svar1"))
+                         .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type",
+                             "env.v1Type", "env.tags", "env.environmentRef", "env.variables.envVar1",
+                             "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))
+                         .provisionerDependencyIndex(-1)
+                         .expectedInfraFqn(List.of())
+                         .envFqnIndex(0)
+                         .svcFqnIndex(1)
+                         .infraFqnIndex(-1)
+                         .executionDependencyIndex(2)
+                         .executionDependencyValue("pipeline/stages/[0]/stage/spec/execution")
+                         .build();
 
     TestData data2 =
         TestData.builder()
@@ -607,7 +608,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .envYamlFile("environmentV2.yaml")
             .infraYamlFile("k8sDirectInfrastructure.yaml")
             .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
-                "service.tags", "service.gitOpsEnabled", "artifacts.primary.connectorRef",
+                "service.tags", "service.gitOpsEnabled", "service.release", "artifacts.primary.connectorRef",
                 "artifacts.primary.imagePath", "artifacts.primary.tag", "artifacts.primary.tagRegex",
                 "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
                 "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.label",
@@ -639,15 +640,15 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .serviceYamlFile("ServiceWithArtifactSourcesButFixedPrimaryRef.yaml")
             .envYamlFile("environmentV2.yaml")
             .infraYamlFile("k8sDirectInfrastructure.yaml")
-            .expectedSvcFqn(
-                List.of("service.identifier", "service.name", "service.description", "service.type", "service.tags",
-                    "service.gitOpsEnabled", "artifacts.primary.connectorRef", "artifacts.primary.repositoryName",
-                    "artifacts.primary.artifactPath", "artifacts.primary.repositoryFormat", "artifacts.primary.tag",
-                    "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-                    "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePath",
-                    "artifacts.primary.imagePullSecret", "artifacts.primary.dockerConfigJsonSecret",
-                    "artifacts.primary.registryHostname", "artifacts.primary.digest", "artifacts.primary.metadata",
-                    "artifacts.primary.label", "serviceVariables.envVar1", "serviceVariables.svar1"))
+            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
+                "service.tags", "service.gitOpsEnabled", "service.release", "artifacts.primary.connectorRef",
+                "artifacts.primary.repositoryName", "artifacts.primary.artifactPath",
+                "artifacts.primary.repositoryFormat", "artifacts.primary.tag", "artifacts.primary.tagRegex",
+                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
+                "artifacts.primary.image", "artifacts.primary.imagePath", "artifacts.primary.imagePullSecret",
+                "artifacts.primary.dockerConfigJsonSecret", "artifacts.primary.registryHostname",
+                "artifacts.primary.digest", "artifacts.primary.metadata", "artifacts.primary.label",
+                "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.v1Type",
                 "env.tags", "env.environmentRef", "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef",
                 "env.envGroupName"))
@@ -668,8 +669,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .envYamlFile("environmentV2.yaml")
             .infraYamlFile("k8sDirectInfrastructure.yaml")
             .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
-                "service.tags", "service.gitOpsEnabled", "manifests.nginx.identifier", "manifests.nginx.type",
-                "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
+                "service.tags", "service.gitOpsEnabled", "service.release", "manifests.nginx.identifier",
+                "manifests.nginx.type", "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
                 "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
                 "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName",
                 "manifests.nginx.skipResourceVersioning", "manifests.nginx.enableDeclarativeRollback",
@@ -707,8 +708,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .envYamlFile("environmentV2.yaml")
             .infraYamlFile("k8sDirectInfrastructure.yaml")
             .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
-                "service.tags", "service.gitOpsEnabled", "manifests.nginx.identifier", "manifests.nginx.type",
-                "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
+                "service.tags", "service.gitOpsEnabled", "service.release", "manifests.nginx.identifier",
+                "manifests.nginx.type", "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
                 "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
                 "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName",
                 "manifests.nginx.skipResourceVersioning", "manifests.nginx.enableDeclarativeRollback",
@@ -747,8 +748,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .envYamlFile("environmentV2.yaml")
             .infraYamlFile("k8sDirectInfrastructure.yaml")
             .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
-                "service.tags", "service.gitOpsEnabled", "manifests.nginx.identifier", "manifests.nginx.type",
-                "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
+                "service.tags", "service.gitOpsEnabled", "service.release", "manifests.nginx.identifier",
+                "manifests.nginx.type", "manifests.nginx.store.connectorRef", "manifests.nginx.store.gitFetchType",
                 "manifests.nginx.store.branch", "manifests.nginx.store.commitId", "manifests.nginx.store.paths",
                 "manifests.nginx.store.folderPath", "manifests.nginx.store.repoName",
                 "manifests.nginx.skipResourceVersioning", "manifests.nginx.enableDeclarativeRollback",

@@ -161,6 +161,9 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
 
   @Override
   public NodeType getNodeType() {
+    if (null == ambiance) {
+      return null;
+    }
     if (EmptyPredicate.isEmpty(nodeType)) {
       return NodeType.valueOf(AmbianceUtils.obtainNodeType(ambiance));
     }

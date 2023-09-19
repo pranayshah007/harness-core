@@ -62,6 +62,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -319,7 +320,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), environmentRef.getValue(), false);
       environmentEntityOptional.ifPresent(environment -> {
-        filterBuilder.environmentName(environment.getName());
+        filterBuilder.environmentName(environmentRef.getValue());
         final List<InfraStructureDefinitionYaml> infraList = getInfraStructureDefinitionYamlsList(env);
         addFiltersForInfraYamlList(filterCreationContext, filterBuilder, environment, infraList);
       });
@@ -430,14 +431,19 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           filterCreationContext.getSetupMetadata().getProjectId(), serviceRefs);
       for (ServiceEntity se : serviceEntities) {
         NGServiceV2InfoConfig config = NGServiceEntityMapper.toNGServiceConfig(se).getNgServiceV2InfoConfig();
-        filterBuilder.serviceName(se.getName());
+        String scopedIdentifier = IdentifierRefHelper
+                                      .getIdentifierRefWithScope(se.getAccountId(), se.getOrgIdentifier(),
+                                          se.getProjectIdentifier(), se.getIdentifier())
+                                      .buildScopedIdentifier();
+        filterBuilder.serviceName(scopedIdentifier);
         if (config.getServiceDefinition() == null) {
-          throw new InvalidYamlRuntimeException(
-              format("ServiceDefinition should be present in service [%s]. Please add it and try again", se.getName()));
+          throw new InvalidYamlRuntimeException(format(
+              "ServiceDefinition should be present in service [%s]. Please add it and try again", scopedIdentifier));
         }
         if (config.getServiceDefinition().getType() != deploymentType) {
-          throw new InvalidYamlRuntimeException(format(
-              "deploymentType should be the same as in service [%s]. Please correct it and try again", se.getName()));
+          throw new InvalidYamlRuntimeException(
+              format("deploymentType should be the same as in service [%s]. Please correct it and try again",
+                  scopedIdentifier));
         }
         filterBuilder.deploymentType(config.getServiceDefinition().getType().getYamlName());
       }
@@ -474,14 +480,16 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           filterCreationContext.getSetupMetadata().getProjectId(), serviceEntityRef.getValue(), false);
       serviceEntityOptional.ifPresent(se -> {
         NGServiceV2InfoConfig config = NGServiceEntityMapper.toNGServiceConfig(se).getNgServiceV2InfoConfig();
-        filterBuilder.serviceName(se.getName());
+        filterBuilder.serviceName(serviceEntityRef.getValue());
         if (config.getServiceDefinition() == null) {
           throw new InvalidYamlRuntimeException(
-              format("ServiceDefinition should be present in service [%s]. Please add it and try again", se.getName()));
+              format("ServiceDefinition should be present in service [%s]. Please add it and try again",
+                  serviceEntityRef.getValue()));
         }
         if (config.getServiceDefinition().getType() != deploymentType) {
-          throw new InvalidYamlRuntimeException(format(
-              "deploymentType should be the same as in service [%s]. Please correct it and try again", se.getName()));
+          throw new InvalidYamlRuntimeException(
+              format("deploymentType should be the same as in service [%s]. Please correct it and try again",
+                  serviceEntityRef.getValue()));
         }
         filterBuilder.deploymentType(config.getServiceDefinition().getType().getYamlName());
       });
@@ -498,8 +506,8 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           "One of service, serviceRef and useFromStage should be present in stage [%s]. Please add it and try again",
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
-    if (service != null && isNotEmpty(service.getName())) {
-      cdFilter.serviceName(service.getName());
+    if (service != null && isNotEmpty(service.getIdentifier())) {
+      cdFilter.serviceName(service.getIdentifier());
     }
 
     ParameterField<String> serviceRef = serviceConfig.getServiceRef();
@@ -507,7 +515,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), serviceRef.getValue(), false);
-      serviceEntityOptional.ifPresent(serviceEntity -> cdFilter.serviceName(serviceEntity.getName()));
+      serviceEntityOptional.ifPresent(serviceEntity -> cdFilter.serviceName(serviceRef.getValue()));
     }
 
     ServiceDefinition serviceDefinition = serviceConfig.getServiceDefinition();
@@ -531,8 +539,8 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
 
-    if (infrastructure.getEnvironment() != null && isNotEmpty(infrastructure.getEnvironment().getName())) {
-      cdFilter.environmentName(infrastructure.getEnvironment().getName());
+    if (infrastructure.getEnvironment() != null && isNotEmpty(infrastructure.getEnvironment().getIdentifier())) {
+      cdFilter.environmentName(infrastructure.getEnvironment().getIdentifier());
     }
 
     ParameterField<String> environmentRef = infrastructure.getEnvironmentRef();
@@ -540,7 +548,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       Optional<Environment> environmentEntityOptional = environmentService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), environmentRef.getValue(), false);
-      environmentEntityOptional.ifPresent(environment -> cdFilter.environmentName(environment.getName()));
+      environmentEntityOptional.ifPresent(environment -> cdFilter.environmentName(environmentRef.getValue()));
     }
 
     if (infrastructure.getInfrastructureDefinition() != null

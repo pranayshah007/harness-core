@@ -28,7 +28,7 @@ import static com.google.common.collect.ImmutableMap.of;
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
 import io.harness.Microservice;
-import io.harness.accesscontrol.acl.worker.DisableRedundantACLService;
+import io.harness.accesscontrol.acl.worker.RemoveRedundantACLService;
 import io.harness.accesscontrol.commons.bootstrap.AccessControlManagementJob;
 import io.harness.accesscontrol.commons.events.EntityCrudEventListenerService;
 import io.harness.accesscontrol.commons.events.UserMembershipEventListenerService;
@@ -290,9 +290,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     environment.lifecycle().manage(injector.getInstance(SupportRoleAssignmentsReconciliationService.class));
     environment.lifecycle().manage(injector.getInstance(UserRoleAssignmentRemovalService.class));
     environment.lifecycle().manage(injector.getInstance(ProjectOrgBasicRoleCreationService.class));
-    if (configuration.isDisableRedundantACLs()) {
-      environment.lifecycle().manage(injector.getInstance(DisableRedundantACLService.class));
-    }
+    environment.lifecycle().manage(injector.getInstance(RemoveRedundantACLService.class));
   }
 
   private void registerJerseyProviders(Environment environment) {

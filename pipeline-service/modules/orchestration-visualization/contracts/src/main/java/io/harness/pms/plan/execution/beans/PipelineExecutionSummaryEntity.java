@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.execution.beans;
 
+import io.harness.abort.AbortedBy;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
@@ -15,7 +16,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.AbortedBy;
 import io.harness.data.validator.Trimmed;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;

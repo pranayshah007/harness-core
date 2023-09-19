@@ -124,7 +124,7 @@ public class NotificationRuleResource {
   @GET
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get notificationRule data", nickname = "getNotificationRuleData")
+  @ApiOperation(value = "get notificationRule data", nickname = "getNotificationRule")
   public ResponseDTO<PageResponse<NotificationRuleResponse>> getNotificationRuleData(
       @BeanParam ProjectParams projectParams,
       @QueryParam("notificationRuleIdentifiers") List<String> notificationRuleIdentifiers,

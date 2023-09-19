@@ -24,7 +24,6 @@ import io.harness.cvng.client.NextGenServiceImpl.EntityKey;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.OrganizationResponse;
-import io.harness.ng.core.dto.ProjectAggregateDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -197,20 +196,19 @@ public class NextGenServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetAllProjects() throws IOException {
-    Call<ResponseDTO<PageResponse<ProjectAggregateDTO>>> call = Mockito.mock(Call.class);
+    Call<ResponseDTO<PageResponse<ProjectResponse>>> call = Mockito.mock(Call.class);
     when(call.clone()).thenReturn(call);
-    when(nextGenNonPrivilegedClient.listAccessibleProjects(accountId, null, 0, 100)).thenReturn(call);
+    when(nextGenNonPrivilegedClient.listProjectsForUser(accountId, null, 0, 100)).thenReturn(call);
     ProjectResponse projectResponse =
         ProjectResponse.builder()
             .project(ProjectDTO.builder().identifier(projectIdentifier).orgIdentifier(orgIdentifier).build())
             .build();
-    PageResponse<ProjectAggregateDTO> pageResponse =
-        PageResponse.<ProjectAggregateDTO>builder()
-            .content(Collections.singletonList(ProjectAggregateDTO.builder().projectResponse(projectResponse).build()))
-            .totalPages(1)
-            .pageIndex(0)
-            .pageSize(1)
-            .build();
+    PageResponse<ProjectResponse> pageResponse = PageResponse.<ProjectResponse>builder()
+                                                     .content(Collections.singletonList(projectResponse))
+                                                     .totalPages(1)
+                                                     .pageIndex(0)
+                                                     .pageSize(1)
+                                                     .build();
     when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(pageResponse)));
     List<ProjectDTO> projectDTOS = nextGenService.listAccessibleProjects(accountId);
     assertThat(projectDTOS).isNotNull();

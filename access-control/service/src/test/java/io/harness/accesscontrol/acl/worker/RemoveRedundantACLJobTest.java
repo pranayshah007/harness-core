@@ -7,7 +7,7 @@
 
 package io.harness.accesscontrol.acl.worker;
 
-import static io.harness.accesscontrol.acl.worker.DisableRedundantACLJob.REFERENCE_TIMESTAMP;
+import static io.harness.accesscontrol.acl.worker.RemoveRedundantACLJob.REFERENCE_TIMESTAMP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 
@@ -18,6 +18,7 @@ import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.ACL.ACLKeys;
 import io.harness.accesscontrol.acl.persistence.ACLOptimizationMigrationOffset;
+import io.harness.accesscontrol.acl.persistence.RemoveRedundantACLJobState;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.permissions.persistence.PermissionDBO;
 import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
@@ -41,7 +42,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(PL)
-public class DisableRedundantACLJobTest extends AccessControlTestBase {
+public class RemoveRedundantACLJobTest extends AccessControlTestBase {
   public static final String CORE_USERGROUP_MANAGE_PERMISSION = "core_usergroup_manage";
   public static final String USERGROUP_RESOURCE_NAME = "usergroup";
   public static final String USERGROUP_RESOURCE_IDENTIFIER = "USERGROUP";
@@ -63,7 +64,7 @@ public class DisableRedundantACLJobTest extends AccessControlTestBase {
   @Inject @Named(ACL.PRIMARY_COLLECTION) private ACLRepository aclRepository;
   @Mock private PersistentLocker persistentLocker;
   private InMemoryPermissionRepository inMemoryPermissionRepository;
-  private DisableRedundantACLJob disableRedundantACLJob;
+  private RemoveRedundantACLJob removeRedundantACLJob;
 
   @Before
   public void setup() {
@@ -85,68 +86,86 @@ public class DisableRedundantACLJobTest extends AccessControlTestBase {
         ResourceTypeDBO.builder().identifier(USER_RESOURCE_IDENTIFIER).permissionKey(USER_RESOURCE_NAME).build());
     mongoTemplate.save(
         ResourceTypeDBO.builder().identifier(SERVICE_RESOURCE_IDENTIFIER).permissionKey(SERVICE_RESOURCE_NAME).build());
-
     inMemoryPermissionRepository =
         new InMemoryPermissionRepository(mongoTemplate, of("ccm_perspective_view", Set.of("CCM_FOLDER")));
-    disableRedundantACLJob = new DisableRedundantACLJob(mongoTemplate, persistentLocker, inMemoryPermissionRepository);
+    removeRedundantACLJob = new RemoveRedundantACLJob(mongoTemplate, persistentLocker, inMemoryPermissionRepository);
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testDisableRedundantACLs() {
+  public void testRemoveRedundantACLs() {
     createEntities();
 
-    disableRedundantACLJob.execute();
+    removeRedundantACLJob.execute();
 
+    List<ACL> currentACLs = getCurrentACLs();
     List<ACL> disabledACLs = getDisabledACLs();
 
-    assertThat(disabledACLs.size()).isEqualTo(3);
+    assertThat(currentACLs.size()).isEqualTo(4);
+    assertThat(disabledACLs.size()).isEqualTo(0);
+
+    RemoveRedundantACLJobState state = mongoTemplate.findOne(new Query(), RemoveRedundantACLJobState.class);
+    assertThat(state.isJobCompleted()).isTrue();
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testDisableRedundantACLsIfOffsetIsReferenceTimestamp() {
-    mongoTemplate.save(ACLOptimizationMigrationOffset.builder().offset(REFERENCE_TIMESTAMP).build());
+  public void testRemovedRedundantACLsIfOffsetIsReferenceTimestamp() {
+    mongoTemplate.save(RemoveRedundantACLJobState.builder().offset(REFERENCE_TIMESTAMP).build());
     createEntities();
 
-    disableRedundantACLJob.execute();
+    removeRedundantACLJob.execute();
 
+    List<ACL> currentACLs = getCurrentACLs();
     List<ACL> disabledACLs = getDisabledACLs();
 
-    assertThat(disabledACLs.size()).isEqualTo(3);
+    assertThat(currentACLs.size()).isEqualTo(4);
+    assertThat(disabledACLs.size()).isEqualTo(0);
+
+    RemoveRedundantACLJobState state = mongoTemplate.findOne(new Query(), RemoveRedundantACLJobState.class);
+    assertThat(state.isJobCompleted()).isTrue();
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testDisableRedundantACLsIfOffsetIsSetToSomeACLId() {
-    mongoTemplate.save(ACLOptimizationMigrationOffset.builder().offset("000000060000000000000000").build());
+  public void testRemoveRedundantACLsIfOffsetIsSetToSomeACLId() {
+    mongoTemplate.save(RemoveRedundantACLJobState.builder().offset("000000060000000000000000").build());
     createEntities();
 
-    disableRedundantACLJob.execute();
+    removeRedundantACLJob.execute();
 
+    List<ACL> currentACLs = getCurrentACLs();
     List<ACL> disabledACLs = getDisabledACLs();
 
-    assertThat(disabledACLs.size()).isEqualTo(1);
+    assertThat(currentACLs.size()).isEqualTo(4);
+    assertThat(disabledACLs.size()).isEqualTo(0);
+
+    RemoveRedundantACLJobState state = mongoTemplate.findOne(new Query(), RemoveRedundantACLJobState.class);
+    assertThat(state.isJobCompleted()).isTrue();
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testDisableRedundantACLsAndOffsetShouldSetToLastACLDisabled() {
+  public void testRemoveRedundantACLsAndOffsetShouldSetToLastACLRemoved() {
     mongoTemplate.save(ACLOptimizationMigrationOffset.builder().offset("000000050000000000000000").build());
+    mongoTemplate.save(RemoveRedundantACLJobState.builder().offset("000000050000000000000000").build());
     createEntities();
 
-    disableRedundantACLJob.execute();
+    removeRedundantACLJob.execute();
 
+    List<ACL> currentACLs = getCurrentACLs();
     List<ACL> disabledACLs = getDisabledACLs();
 
-    assertThat(disabledACLs.size()).isEqualTo(2);
+    assertThat(currentACLs.size()).isEqualTo(4);
+    assertThat(disabledACLs.size()).isEqualTo(0);
 
-    ACLOptimizationMigrationOffset newOffset = mongoTemplate.findOne(new Query(), ACLOptimizationMigrationOffset.class);
-    assertThat(newOffset.getOffset()).isEqualTo("000000070000000000000000");
+    RemoveRedundantACLJobState state = mongoTemplate.findOne(new Query(), RemoveRedundantACLJobState.class);
+    assertThat(state.getOffset()).isEqualTo("000000070000000000000000");
+    assertThat(state.isJobCompleted()).isTrue();
   }
 
   @Test
@@ -160,28 +179,65 @@ public class DisableRedundantACLJobTest extends AccessControlTestBase {
                  .resourceSelector("/*/*")
                  .enabled(true)
                  .build());
+    acls.add(ACL.builder()
+                 .id("000000090000000000000000")
+                 .permissionIdentifier(CORE_USERGROUP_MANAGE_PERMISSION)
+                 .resourceSelector("/*/*")
+                 .enabled(true)
+                 .build());
     aclRepository.insertAllIgnoringDuplicates(acls);
 
-    disableRedundantACLJob.execute();
+    removeRedundantACLJob.execute();
 
+    List<ACL> currentACLs = getCurrentACLs();
     List<ACL> disabledACLs = getDisabledACLs();
+
+    assertThat(currentACLs.size()).isEqualTo(2);
     assertThat(disabledACLs.size()).isEqualTo(0);
 
-    ACLOptimizationMigrationOffset newOffset = mongoTemplate.findOne(new Query(), ACLOptimizationMigrationOffset.class);
-    assertThat(newOffset.getOffset()).isEqualTo("000000080000000000000000");
+    RemoveRedundantACLJobState state = mongoTemplate.findOne(new Query(), RemoveRedundantACLJobState.class);
+    assertThat(state.getOffset()).isEqualTo("000000090000000000000000");
+    assertThat(state.isJobCompleted()).isTrue();
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testUpdateInOffsetEvenIfNoRedundantACLToDisable() {
-    disableRedundantACLJob.execute();
+  public void testUpdateInOffsetEvenIfNoRedundantACLToRemove() {
+    removeRedundantACLJob.execute();
 
+    List<ACL> currentACLs = getCurrentACLs();
     List<ACL> disabledACLs = getDisabledACLs();
+
+    assertThat(currentACLs.size()).isEqualTo(0);
     assertThat(disabledACLs.size()).isEqualTo(0);
 
-    ACLOptimizationMigrationOffset newOffset = mongoTemplate.findOne(new Query(), ACLOptimizationMigrationOffset.class);
-    assertThat(newOffset.getOffset()).isEqualTo(REFERENCE_TIMESTAMP);
+    RemoveRedundantACLJobState state = mongoTemplate.findOne(new Query(), RemoveRedundantACLJobState.class);
+    assertThat(state.getOffset()).isEqualTo(REFERENCE_TIMESTAMP);
+    assertThat(state.isJobCompleted()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void doNotRunJobIfItIsAlreadySuccessful() {
+    mongoTemplate.save(RemoveRedundantACLJobState.builder().offset("some-offset").jobCompleted(true).build());
+    List<ACL> acls = new ArrayList<>();
+    acls.add(ACL.builder()
+                 .id("000000110000000000000000")
+                 .permissionIdentifier(CORE_USER_VIEW_PERMISSION)
+                 .resourceSelector("/ACCOUNT/account-id$/SERVICE/*")
+                 .enabled(false)
+                 .build());
+    aclRepository.insertAllIgnoringDuplicates(acls);
+
+    removeRedundantACLJob.execute();
+
+    List<ACL> currentACLs = getCurrentACLs();
+    assertThat(currentACLs.size()).isEqualTo(1);
+
+    RemoveRedundantACLJobState state = mongoTemplate.findOne(new Query(), RemoveRedundantACLJobState.class);
+    assertThat(state.getOffset()).isEqualTo("some-offset");
   }
 
   private void createEntities() {
@@ -217,22 +273,26 @@ public class DisableRedundantACLJobTest extends AccessControlTestBase {
                  .id("000000050000000000000000")
                  .permissionIdentifier(CORE_RESOURCEGROUP_MANAGE_PERMISSION)
                  .resourceSelector("/ACCOUNT/account-id$/USERGROUP/*")
-                 .enabled(true)
+                 .enabled(false)
                  .build());
     acls.add(ACL.builder()
                  .id("000000060000000000000000")
                  .permissionIdentifier(CORE_RESOURCEGROUP_VIEW_PERMISSION)
                  .resourceSelector("/ACCOUNT/account-id$/SERVICE/*")
-                 .enabled(true)
+                 .enabled(false)
                  .build());
     acls.add(ACL.builder()
                  .id("000000070000000000000000")
                  .permissionIdentifier(CORE_SERVICE_VIEW_PERMISSION)
                  .resourceSelector("/ACCOUNT/account-id$/RESOURCEGROUP/*")
-                 .enabled(true)
+                 .enabled(false)
                  .build());
 
     aclRepository.insertAllIgnoringDuplicates(acls);
+  }
+
+  private List<ACL> getCurrentACLs() {
+    return mongoTemplate.find(new Query(), ACL.class);
   }
 
   private List<ACL> getDisabledACLs() {

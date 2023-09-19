@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -198,7 +199,7 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void shouldSetServiceName() {
-    doReturn(Status.ERRORED).when(planExecutionService).calculateStatus(any());
+    doReturn(Status.ERRORED).when(planExecutionService).calculateStatus(any(), anyBoolean());
     doReturn(PlanExecution.builder().status(Status.ERRORED).build())
         .when(planExecutionService)
         .updateStatus(any(), any(), any());

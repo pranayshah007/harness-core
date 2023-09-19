@@ -163,9 +163,7 @@ import io.harness.version.VersionInfoManager;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
-import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.ApplicationRole;
@@ -189,6 +187,8 @@ import software.wings.beans.UserInvite.UserInviteKeys;
 import software.wings.beans.UserInviteSource;
 import software.wings.beans.UserInviteSource.SourceType;
 import software.wings.beans.ZendeskSsoLoginResponse;
+import software.wings.beans.account.AccountJoinRequest;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.loginSettings.LoginSettingsService;
 import software.wings.beans.loginSettings.PasswordSource;
 import software.wings.beans.loginSettings.PasswordStrengthViolations;

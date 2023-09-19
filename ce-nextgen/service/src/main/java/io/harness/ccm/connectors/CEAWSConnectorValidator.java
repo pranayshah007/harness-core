@@ -279,7 +279,8 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
 
       List<EvaluationResult> evaluationResults =
           awsClient.simulatePrincipalPolicy(credentialsProvider, crossAccountRoleArn, actions, resources,
-              isAWSGovCloudConnector ? configuration.getAwsGovCloudConfig().getAwsRegionName() : AWS_DEFAULT_REGION);
+              isAWSGovCloudConnector ? configuration.getAwsGovCloudConfig().getAwsRegionName() : AWS_DEFAULT_REGION,
+              configuration.getCeProxyConfig());
       log.info(evaluationResults.toString());
       evaluationResults =
           evaluationResults.stream().filter(x -> !"allowed".equals(x.getEvalDecision())).collect(Collectors.toList());
@@ -319,7 +320,8 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
                              : configuration.getAwsConfig().getSecretKey());
     final AWSCredentialsProvider credentialsProvider = awsClient.getAssumedCredentialsProviderWithRegion(
         BasicAwsCredentials, crossAccountAccessDTO.getCrossAccountRoleArn(), crossAccountAccessDTO.getExternalId(),
-        isAWSGovCloudAccount ? configuration.getAwsGovCloudConfig().getAwsRegionName() : AWS_DEFAULT_REGION);
+        isAWSGovCloudAccount ? configuration.getAwsGovCloudConfig().getAwsRegionName() : AWS_DEFAULT_REGION,
+        configuration.getCeAwsServiceEndpointConfig());
     credentialsProvider.getCredentials();
     return credentialsProvider;
   }
@@ -393,7 +395,8 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     Date latestFileLastmodifiedTime = Date.from(Instant.EPOCH);
     String latestFileName = "";
     try {
-      S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(credentialsProvider, s3BucketName, s3PathPrefix);
+      S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(
+          credentialsProvider, s3BucketName, s3PathPrefix, configuration.getCeAwsServiceEndpointConfig());
       // Caveat: This can be slow for some accounts.
       for (S3ObjectSummary objectSummary : s3Objects) {
         if (objectSummary.getKey().endsWith(".csv.gz")) {

@@ -23,6 +23,7 @@ import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.servicenow.ServiceNowActionNG;
+import io.harness.servicenow.ServiceNowUpdateMultipleTaskNode;
 
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,9 @@ public class ServiceNowTaskNGParameters implements TaskParameters, ExecutionCapa
   String templateName;
   // use template for creating/updating issues
   boolean useServiceNowTemplate;
+
+  // use for update multiple issues
+  ServiceNowUpdateMultipleTaskNode updateMultiple;
 
   // import set fields
   String stagingTableName;

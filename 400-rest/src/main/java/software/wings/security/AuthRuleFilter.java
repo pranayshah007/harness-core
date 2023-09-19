@@ -43,11 +43,11 @@ import io.harness.security.annotations.PublicApiWithWhitelist;
 import io.harness.security.annotations.ScimAPI;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.Event;
 import software.wings.beans.HttpMethod;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.resources.graphql.GraphQLUtils;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;

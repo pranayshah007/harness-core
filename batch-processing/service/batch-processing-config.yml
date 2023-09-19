@@ -256,3 +256,12 @@ proxy:
   username: ""
   password: ""
   protocol: http
+
+awsServiceEndpointUrls:
+  enabled: false
+  endPointRegion: us-east-1
+  s3EndPointUrl: https://s3.us-east-1.amazonaws.com
+  stsEndPointUrl: https://sts.us-east-1.amazonaws.com
+  ec2EndPointUrl: https://ec2.us-east-1.amazonaws.com
+  ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
+  cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com

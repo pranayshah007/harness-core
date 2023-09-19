@@ -5,27 +5,24 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.beans;
+package software.wings.beans.aws;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.ExecutionStatus;
 
-import java.util.List;
+import software.wings.api.AwsLambdaContextElement.FunctionMeta;
+
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@OwnedBy(CDC)
-@Value
+@Data
 @Builder
+@OwnedBy(CDP)
 @TargetModule(HarnessModule._957_CG_BEANS)
-public class StateExecutionElement {
-  private String executionContextElementId;
-  private ExecutionStatus status;
-  private String name;
-  private int progress;
-  private List<String> runningSteps;
+public class AwsLambdaExecutionSummary {
+  private FunctionMeta functionMeta;
+  private boolean success;
 }

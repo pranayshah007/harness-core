@@ -58,13 +58,22 @@ data:
   {{- end }}
   USE_WORKLOAD_IDENTITY: {{ .Values.workloadIdentity.enabled | quote }}
   GCP_SERVICE_ACCOUNT_EMAIL: {{ .Values.cloudProviderConfig.GCP_SERVICE_ACCOUNT_EMAIL | quote }}
-  {{- if .Values.proxy.enabled }}
-  PROXY_ENABLED: {{ .Values.proxy.enabled }}
-  PROXY_HOST: {{ .Values.proxy.host }}
-  PROXY_PORT: {{ .Values.proxy.port }}
-  PROXY_USERNAME: '{{ .Values.proxy.username }}'
-  PROXY_PASSWORD: '{{ .Values.proxy.password }}'
-  PROXY_PROTOCOL: {{ .Values.proxy.protocol }}
+  {{- if .Values.global.proxy.enabled }}
+  PROXY_ENABLED: '{{ .Values.global.proxy.enabled }}'
+  PROXY_HOST: {{ .Values.global.proxy.host }}
+  PROXY_PORT: '{{ .Values.global.proxy.port }}'
+  PROXY_USERNAME: '{{ .Values.global.proxy.username }}'
+  PROXY_PASSWORD: '{{ .Values.global.proxy.password }}'
+  PROXY_PROTOCOL: {{ .Values.global.proxy.protocol }}
+  {{- end }}
+  {{- if .Values.global.awsServiceEndpointUrls.enabled }}
+  AWS_SERVICE_ENDPOINT_URLS_ENABLED: '{{ .Values.global.awsServiceEndpointUrls.enabled }}'
+  AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION: {{ .Values.global.awsServiceEndpointUrls.endPointRegion }}
+  AWS_SERVICE_ENDPOINT_URLS_S3_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.s3EndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.stsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_EC2_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.ec2EndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.ecsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.cloudwatchEndPointUrl }}
   {{- end }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}

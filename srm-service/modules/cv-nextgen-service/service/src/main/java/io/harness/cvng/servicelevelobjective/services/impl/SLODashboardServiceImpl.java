@@ -77,6 +77,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,7 +117,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         sloPageResponse.getContent()
             .stream()
             .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
-            .map(slo -> ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier())
+            .map(simpleSlo -> ((SimpleServiceLevelObjective) simpleSlo).getMonitoredServiceIdentifier())
             .collect(Collectors.toSet());
     Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifierToUnavailabilityStatusesDTOMap =
         downtimeService.getMonitoredServicesAssociatedUnavailabilityInstanceMap(
@@ -142,6 +143,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                 -> getSLOListView(projectParams, sloResponse, scopedMonitoredServiceIdentifierToDTOMap,
                     scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap,
                     monitoredServiceIdentifierToUnavailabilityStatusesDTOMap, scopedIdentifierToSLOErrorMap))
+            .filter(sloHealthListView -> sloHealthListView != null)
             .collect(Collectors.toList());
 
     return PageResponse.<SLOHealthListView>builder()
@@ -156,72 +158,92 @@ public class SLODashboardServiceImpl implements SLODashboardService {
 
   private Map<String, MonitoredServiceDTO> getScopedMonitoredServiceIdentifierToDTOMap(
       List<AbstractServiceLevelObjective> serviceLevelObjectives, ProjectParams projectParams) {
-    Set<String> monitoredServiceIdentifiers =
-        serviceLevelObjectives.stream()
-            .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
-            .map(slo -> ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier())
-            .collect(Collectors.toSet());
-    Set<String> scopedMonitoredServices =
-        serviceLevelObjectives.stream()
-            .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
-            .map(slo
-                -> getScopedIdentifier(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
-                    ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier()))
-            .collect(Collectors.toSet());
-    List<MonitoredServiceResponse> monitoredServicesFromIdentifiers =
-        monitoredServiceService.get(projectParams.getAccountIdentifier(), monitoredServiceIdentifiers);
-    List<MonitoredServiceResponse> monitoredServicesFromScopedIdentifiers =
-        monitoredServicesFromIdentifiers.stream()
-            .filter(monitoredService
-                -> scopedMonitoredServices.contains(getScopedIdentifier(projectParams.getAccountIdentifier(),
-                    monitoredService.getMonitoredServiceDTO().getOrgIdentifier(),
-                    monitoredService.getMonitoredServiceDTO().getProjectIdentifier(),
-                    monitoredService.getMonitoredServiceDTO().getIdentifier())))
-            .collect(Collectors.toList());
-    return monitoredServicesFromScopedIdentifiers.stream()
-        .map(MonitoredServiceResponse::getMonitoredServiceDTO)
-        .collect(Collectors.toMap(monitoredServiceDTO
-            -> getScopedIdentifier(projectParams.getAccountIdentifier(), monitoredServiceDTO.getOrgIdentifier(),
-                monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getIdentifier()),
-            monitoredServiceDTO -> monitoredServiceDTO));
+    Map<String, MonitoredServiceDTO> scopedMonitoredServiceIdentifierToDTOMap = new HashMap<>();
+    try {
+      Set<String> monitoredServiceIdentifiers =
+          serviceLevelObjectives.stream()
+              .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
+              .map(slo -> ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier())
+              .collect(Collectors.toSet());
+      Set<String> scopedMonitoredServices =
+          serviceLevelObjectives.stream()
+              .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
+              .map(slo
+                  -> getScopedIdentifier(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
+                      ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier()))
+              .collect(Collectors.toSet());
+      List<MonitoredServiceResponse> monitoredServicesFromIdentifiers =
+          monitoredServiceService.get(projectParams.getAccountIdentifier(), monitoredServiceIdentifiers);
+      List<MonitoredServiceResponse> monitoredServicesFromScopedIdentifiers =
+          monitoredServicesFromIdentifiers.stream()
+              .filter(monitoredService
+                  -> scopedMonitoredServices.contains(getScopedIdentifier(projectParams.getAccountIdentifier(),
+                      monitoredService.getMonitoredServiceDTO().getOrgIdentifier(),
+                      monitoredService.getMonitoredServiceDTO().getProjectIdentifier(),
+                      monitoredService.getMonitoredServiceDTO().getIdentifier())))
+              .collect(Collectors.toList());
+      scopedMonitoredServiceIdentifierToDTOMap =
+          monitoredServicesFromScopedIdentifiers.stream()
+              .map(MonitoredServiceResponse::getMonitoredServiceDTO)
+              .collect(Collectors.toMap(monitoredServiceDTO
+                  -> getScopedIdentifier(projectParams.getAccountIdentifier(), monitoredServiceDTO.getOrgIdentifier(),
+                      monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getIdentifier()),
+                  monitoredServiceDTO -> monitoredServiceDTO));
+    } catch (Exception e) {
+      log.warn("[SLO HealthListView] Error occurred while building the ScopedMonitoredServiceIdentifierToDTOMap", e);
+    }
+    return scopedMonitoredServiceIdentifierToDTOMap;
   }
 
   private Map<String, SLOHealthIndicator> getScopedSloIdentifierToHealthIndicatorMap(
       List<AbstractServiceLevelObjective> serviceLevelObjectives, ProjectParams projectParams) {
-    List<String> sloIdentifiers =
-        serviceLevelObjectives.stream().map(AbstractServiceLevelObjective::getIdentifier).collect(Collectors.toList());
-    List<String> scopedSLOIdentifiers = serviceLevelObjectives.stream()
-                                            .map(slo -> serviceLevelObjectiveV2Service.getScopedIdentifier(slo))
-                                            .collect(Collectors.toList());
-    List<SLOHealthIndicator> sloHealthIndicatorsFromIdentifiers =
-        sloHealthIndicatorService.getBySLOIdentifiers(projectParams.getAccountIdentifier(), sloIdentifiers);
-    List<SLOHealthIndicator> sloHealthIndicatorsFromScopedIdentifiers =
-        sloHealthIndicatorsFromIdentifiers.stream()
-            .filter(sloHealthIndicator
-                -> scopedSLOIdentifiers.contains(sloHealthIndicatorService.getScopedIdentifier(sloHealthIndicator)))
-            .collect(Collectors.toList());
-    return sloHealthIndicatorsFromScopedIdentifiers.stream().collect(Collectors.toMap(sloHealthIndicator
-        -> sloHealthIndicatorService.getScopedIdentifier(sloHealthIndicator),
-        sloHealthIndicator -> sloHealthIndicator));
+    Map<String, SLOHealthIndicator> scopedSloIdentifierToHealthIndicatorMap = new HashMap<>();
+    try {
+      List<String> sloIdentifiers = serviceLevelObjectives.stream()
+                                        .map(AbstractServiceLevelObjective::getIdentifier)
+                                        .collect(Collectors.toList());
+      List<String> scopedSLOIdentifiers = serviceLevelObjectives.stream()
+                                              .map(slo -> serviceLevelObjectiveV2Service.getScopedIdentifier(slo))
+                                              .collect(Collectors.toList());
+      List<SLOHealthIndicator> sloHealthIndicatorsFromIdentifiers =
+          sloHealthIndicatorService.getBySLOIdentifiers(projectParams.getAccountIdentifier(), sloIdentifiers);
+      List<SLOHealthIndicator> sloHealthIndicatorsFromScopedIdentifiers =
+          sloHealthIndicatorsFromIdentifiers.stream()
+              .filter(sloHealthIndicator
+                  -> scopedSLOIdentifiers.contains(sloHealthIndicatorService.getScopedIdentifier(sloHealthIndicator)))
+              .collect(Collectors.toList());
+      scopedSloIdentifierToHealthIndicatorMap =
+          sloHealthIndicatorsFromScopedIdentifiers.stream().collect(Collectors.toMap(sloHealthIndicator
+              -> sloHealthIndicatorService.getScopedIdentifier(sloHealthIndicator),
+              sloHealthIndicator -> sloHealthIndicator));
+    } catch (Exception e) {
+      log.warn("[SLO HealthListView] Error occurred while building the ScopedSloIdentifierToHealthIndicatorMap", e);
+    }
+    return scopedSloIdentifierToHealthIndicatorMap;
   }
 
   private Map<String, AbstractServiceLevelObjective> getScopedIdentifierToAllSLOsIncUnderlyingSLOsMap(
       List<AbstractServiceLevelObjective> serviceLevelObjectives, ProjectParams projectParams) {
-    Map<String, AbstractServiceLevelObjective> scopedIdentifierToAllSLOsIncUnderlyingSLOsMap =
-        serviceLevelObjectives.stream().collect(
-            Collectors.toMap(slo -> serviceLevelObjectiveV2Service.getScopedIdentifier(slo), slo -> slo));
-    List<CompositeServiceLevelObjective> compositeServiceLevelObjectives =
-        serviceLevelObjectives.stream()
-            .filter(
-                serviceLevelObjective -> serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE))
-            .map(slo -> (CompositeServiceLevelObjective) slo)
-            .collect(Collectors.toList());
-    List<AbstractServiceLevelObjective> referredSimpleServiceLevelObjectiveList =
-        serviceLevelObjectiveV2Service.getAllReferredSLOs(projectParams, compositeServiceLevelObjectives);
-    scopedIdentifierToAllSLOsIncUnderlyingSLOsMap.putAll(
-        referredSimpleServiceLevelObjectiveList.stream()
-            .filter(serviceLevelObjective -> serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE))
-            .collect(Collectors.toMap(slo -> serviceLevelObjectiveV2Service.getScopedIdentifier(slo), slo -> slo)));
+    Map<String, AbstractServiceLevelObjective> scopedIdentifierToAllSLOsIncUnderlyingSLOsMap = new HashMap<>();
+    try {
+      scopedIdentifierToAllSLOsIncUnderlyingSLOsMap = serviceLevelObjectives.stream().collect(
+          Collectors.toMap(slo -> serviceLevelObjectiveV2Service.getScopedIdentifier(slo), slo -> slo));
+      List<CompositeServiceLevelObjective> compositeServiceLevelObjectives =
+          serviceLevelObjectives.stream()
+              .filter(
+                  serviceLevelObjective -> serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE))
+              .map(slo -> (CompositeServiceLevelObjective) slo)
+              .collect(Collectors.toList());
+      List<AbstractServiceLevelObjective> referredSimpleServiceLevelObjectiveList =
+          serviceLevelObjectiveV2Service.getAllReferredSLOs(projectParams, compositeServiceLevelObjectives);
+      scopedIdentifierToAllSLOsIncUnderlyingSLOsMap.putAll(
+          referredSimpleServiceLevelObjectiveList.stream()
+              .filter(serviceLevelObjective -> serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE))
+              .collect(Collectors.toMap(slo -> serviceLevelObjectiveV2Service.getScopedIdentifier(slo), slo -> slo)));
+    } catch (Exception e) {
+      log.warn(
+          "[SLO HealthListView] Error occurred while building the getScopedIdentifierToAllSLOsIncUnderlyingSLOsMap", e);
+    }
     return scopedIdentifierToAllSLOsIncUnderlyingSLOsMap;
   }
 
@@ -229,26 +251,31 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       List<AbstractServiceLevelObjective> serviceLevelObjectives,
       Map<String, AbstractServiceLevelObjective> scopedIdentifierToAllSLOsIncUnderlyingSLOsMap,
       Map<String, SLOHealthIndicator> scopedSloIdentifierToHealthIndicatorMap) {
-    Map<String, SLOError> scopedIdentifierToSLOErrorMap =
-        serviceLevelObjectives.stream()
-            .filter(serviceLevelObjective -> serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE))
-            .collect(Collectors.toMap(serviceLevelObjective
-                -> serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjective),
-                serviceLevelObjective
-                -> getErrorForSimpleSLO(Optional.ofNullable(scopedSloIdentifierToHealthIndicatorMap.get(
-                    serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjective))))));
-    List<CompositeServiceLevelObjective> compositeServiceLevelObjectives =
-        serviceLevelObjectives.stream()
-            .filter(
-                serviceLevelObjective -> serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE))
-            .map(slo -> (CompositeServiceLevelObjective) slo)
-            .collect(Collectors.toList());
-    scopedIdentifierToSLOErrorMap.putAll(
-        compositeServiceLevelObjectives.stream().collect(Collectors.toMap(serviceLevelObjective
-            -> serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjective),
-            serviceLevelObjective
-            -> getErrorForCompositeSLO(serviceLevelObjective, scopedIdentifierToAllSLOsIncUnderlyingSLOsMap,
-                scopedSloIdentifierToHealthIndicatorMap))));
+    Map<String, SLOError> scopedIdentifierToSLOErrorMap = new HashMap<>();
+    try {
+      scopedIdentifierToSLOErrorMap =
+          serviceLevelObjectives.stream()
+              .filter(serviceLevelObjective -> serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE))
+              .collect(Collectors.toMap(serviceLevelObjective
+                  -> serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjective),
+                  serviceLevelObjective
+                  -> getErrorForSimpleSLO(Optional.ofNullable(scopedSloIdentifierToHealthIndicatorMap.get(
+                      serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjective))))));
+      List<CompositeServiceLevelObjective> compositeServiceLevelObjectives =
+          serviceLevelObjectives.stream()
+              .filter(
+                  serviceLevelObjective -> serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE))
+              .map(slo -> (CompositeServiceLevelObjective) slo)
+              .collect(Collectors.toList());
+      scopedIdentifierToSLOErrorMap.putAll(
+          compositeServiceLevelObjectives.stream().collect(Collectors.toMap(serviceLevelObjective
+              -> serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjective),
+              serviceLevelObjective
+              -> getErrorForCompositeSLO(serviceLevelObjective, scopedIdentifierToAllSLOsIncUnderlyingSLOsMap,
+                  scopedSloIdentifierToHealthIndicatorMap))));
+    } catch (Exception e) {
+      log.warn("[SLO HealthListView] Error occurred while trying to build the scopedIdentifierToSLOErrorMap", e);
+    }
     return scopedIdentifierToSLOErrorMap;
   }
 
@@ -753,7 +780,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                         projectParams.getProjectIdentifier(), envIdentifier)
                     .getName();
     } catch (Exception e) {
-      log.warn(String.format("Environment with id %s not present", envIdentifier));
+      log.warn(String.format("Environment with id %s not present ", envIdentifier));
       envName = "DELETED";
     }
     return EnvironmentIdentifierResponse.builder().identifier(envIdentifier).name(envName).build();
@@ -765,75 +792,107 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       Map<String, String> userJourneyIdentifierToNameMap,
       Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap,
       Map<String, SLOError> scopedIdentifierToSLOErrorMap) {
-    Optional<SLOHealthIndicator> sloHealthIndicator = Optional.ofNullable(
-        scopedSloIdentifierToHealthIndicatorMap.get(serviceLevelObjectiveV2Service.getScopedIdentifier(slo)));
-    if (!sloHealthIndicator.isPresent()) {
-      if (slo.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-        return SLOHealthListView.getSLOHealthListViewBuilderForDeletedSimpleSLO(slo).build();
+    try {
+      Optional<SLOHealthIndicator> sloHealthIndicator = Optional.ofNullable(
+          scopedSloIdentifierToHealthIndicatorMap.get(serviceLevelObjectiveV2Service.getScopedIdentifier(slo)));
+      if (!sloHealthIndicator.isPresent()) {
+        if (slo.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+          return SLOHealthListView.getSLOHealthListViewBuilderForDeletedSimpleSLO(slo).build();
+        }
       }
-    }
-    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), slo.getZoneOffset());
-    List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
-        sloErrorBudgetResetService.getErrorBudgetResets(projectParams, slo.getIdentifier());
-    int totalErrorBudgetMinutes = slo.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
-    List<UserJourneyDTO> userJourneys = slo.getUserJourneyIdentifiers()
-                                            .stream()
-                                            .map(userJourneyIdentifier
-                                                -> UserJourneyDTO.builder()
-                                                       .identifier(userJourneyIdentifier)
-                                                       .name(userJourneyIdentifierToNameMap.get(userJourneyIdentifier))
-                                                       .build())
-                                            .collect(Collectors.toList());
-    SLOError sloError = scopedIdentifierToSLOErrorMap.get(serviceLevelObjectiveV2Service.getScopedIdentifier(slo));
-    if (slo.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-      SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) slo;
-      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
-          "Only one service level indicator is supported");
-      MonitoredServiceDTO monitoredService = scopedMonitoredServiceIdentifierToDTOMap.get(
-          getScopedIdentifier(projectParams.getAccountIdentifier(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
-              ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier()));
-      String projectName =
-          getProjectName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier(), slo.getProjectIdentifier());
-      String orgName = getOrgName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier());
+      LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), slo.getZoneOffset());
+      List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
+          sloErrorBudgetResetService.getErrorBudgetResets(projectParams, slo.getIdentifier());
+
+      int totalErrorBudgetMinutes = slo.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
+      List<UserJourneyDTO> userJourneys =
+          slo.getUserJourneyIdentifiers()
+              .stream()
+              .map(userJourneyIdentifier
+                  -> UserJourneyDTO.builder()
+                         .identifier(userJourneyIdentifier)
+                         .name(userJourneyIdentifierToNameMap.get(userJourneyIdentifier))
+                         .build())
+              .collect(Collectors.toList());
+
+      SLOError sloError = scopedIdentifierToSLOErrorMap.get(serviceLevelObjectiveV2Service.getScopedIdentifier(slo));
+
+      if (slo.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+        SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) slo;
+        Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
+            "Only one service level indicator is supported");
+        MonitoredServiceDTO monitoredService = scopedMonitoredServiceIdentifierToDTOMap.get(
+            getScopedIdentifier(projectParams.getAccountIdentifier(), slo.getOrgIdentifier(),
+                slo.getProjectIdentifier(), ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier()));
+        String projectName =
+            getProjectName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier(), slo.getProjectIdentifier());
+        String orgName = getOrgName(projectParams.getAccountIdentifier(), slo.getOrgIdentifier());
+        return SLOHealthListView
+            .getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator.get(), sloError)
+            .monitoredServiceIdentifier(monitoredService.getIdentifier())
+            .monitoredServiceName(monitoredService.getName())
+            .environmentIdentifier(monitoredService.getEnvironmentRef())
+            .projectName(projectName)
+            .orgName(orgName)
+            .environmentName(getEnvironmentName(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
+                monitoredService.getEnvironmentRef()))
+            .serviceName(getServiceName(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
+                monitoredService.getServiceRef()))
+            .serviceIdentifier(monitoredService.getServiceRef())
+            .healthSourceIdentifier(simpleServiceLevelObjective.getHealthSourceIdentifier())
+            .healthSourceName(
+                getHealthSourceName(monitoredService, simpleServiceLevelObjective.getHealthSourceIdentifier()))
+            .sliType(simpleServiceLevelObjective.getServiceLevelIndicatorType())
+            .sliIdentifier(simpleServiceLevelObjective.getServiceLevelIndicators().get(0))
+            .downtimeStatusDetails(
+                getDownTimeStatusDetails(monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap, monitoredService))
+            .build();
+      }
       return SLOHealthListView
           .getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator.get(), sloError)
-          .monitoredServiceIdentifier(monitoredService.getIdentifier())
-          .monitoredServiceName(monitoredService.getName())
-          .environmentIdentifier(monitoredService.getEnvironmentRef())
-          .projectName(projectName)
-          .orgName(orgName)
-          .environmentName(nextGenService
-                               .getEnvironment(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
-                                   monitoredService.getEnvironmentRef())
-                               .getName())
-          .serviceName(nextGenService
-                           .getService(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
-                               monitoredService.getServiceRef())
-                           .getName())
-          .serviceIdentifier(monitoredService.getServiceRef())
-          .healthSourceIdentifier(simpleServiceLevelObjective.getHealthSourceIdentifier())
-          .healthSourceName(
-              getHealthSourceName(monitoredService, simpleServiceLevelObjective.getHealthSourceIdentifier()))
-          .sliType(simpleServiceLevelObjective.getServiceLevelIndicatorType())
-          .sliIdentifier(simpleServiceLevelObjective.getServiceLevelIndicators().get(0))
-          .downtimeStatusDetails(
-              monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.containsKey(monitoredService.getIdentifier())
-                  ? DowntimeStatusDetails
-                        .getDowntimeStatusDetailsInstanceBuilder(
-                            monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap
-                                .get(monitoredService.getIdentifier())
-                                .getStartTime(),
-                            monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap
-                                .get(monitoredService.getIdentifier())
-                                .getEndTime(),
-                            clock)
-                        .build()
-                  : null)
           .build();
+    } catch (Exception e) {
+      log.warn("[SLO HealthListView] Error occurred while building SLOHealthListView for slo with id {}",
+          slo.getIdentifier(), e);
+      return null;
     }
-    return SLOHealthListView
-        .getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator.get(), sloError)
-        .build();
+  }
+
+  private DowntimeStatusDetails getDownTimeStatusDetails(
+      Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap,
+      MonitoredServiceDTO monitoredService) {
+    return monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.containsKey(monitoredService.getIdentifier())
+        ? DowntimeStatusDetails
+              .getDowntimeStatusDetailsInstanceBuilder(
+                  monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.get(monitoredService.getIdentifier())
+                      .getStartTime(),
+                  monitoredServiceIdentifiersToUnavailabilityStatusesDTOMap.get(monitoredService.getIdentifier())
+                      .getEndTime(),
+                  clock)
+              .build()
+        : null;
+  }
+
+  private String getEnvironmentName(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    String envName = "";
+    try {
+      envName = nextGenService.getEnvironment(accountId, orgIdentifier, projectIdentifier, envIdentifier).getName();
+    } catch (Exception e) {
+      log.warn("[SLO HealthListView] Error fetching the environment name for envIdentifier {}", envIdentifier, e);
+    }
+    return envName;
+  }
+
+  private String getServiceName(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    String serviceName = "";
+    try {
+      serviceName = nextGenService.getService(accountId, orgIdentifier, projectIdentifier, serviceIdentifier).getName();
+    } catch (Exception e) {
+      log.warn("[SLO HealthListView] Error fetching the Service Name for serviceIdentifier {}", serviceIdentifier, e);
+    }
+    return serviceName;
   }
 
   private String getHealthSourceName(MonitoredServiceDTO monitoredServiceDTO, String healthSourceRef) {
@@ -855,16 +914,20 @@ public class SLODashboardServiceImpl implements SLODashboardService {
 
   private String getOrgName(String accountIdentifier, String orgIdentifier) {
     String orgName = "";
-    if (orgIdentifier != null) {
+    try {
       orgName = nextGenService.getOrganization(accountIdentifier, orgIdentifier).getName();
+    } catch (Exception e) {
+      log.error("Error fetching the organization Name");
     }
     return orgName;
   }
 
   private String getProjectName(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     String projectName = "";
-    if (orgIdentifier != null) {
+    try {
       projectName = nextGenService.getCachedProject(accountIdentifier, orgIdentifier, projectIdentifier).getName();
+    } catch (Exception e) {
+      log.error("Error fetching the project Name");
     }
     return projectName;
   }

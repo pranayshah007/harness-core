@@ -81,7 +81,6 @@ import io.harness.validation.Create;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.ArtifactVariable;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.EntityType;
@@ -99,6 +98,7 @@ import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
+import software.wings.beans.account.AccountEventType;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.DeploymentMetadata.Include;
 import software.wings.beans.trigger.Trigger;

@@ -40,6 +40,7 @@ java_library(
         "//400-rest/src/main/java/software/wings/api/lambda:module",
         "//400-rest/src/main/java/software/wings/api/terraform:module",
         "//400-rest/src/main/java/software/wings/api/terragrunt:module",
+        "//400-rest/src/main/java/software/wings/beans/account:module",
         "//400-rest/src/main/java/software/wings/beans/accountdetails:module",
         "//400-rest/src/main/java/software/wings/beans/accountdetails/events:module",
         "//400-rest/src/main/java/software/wings/beans/accountdetails/outbox:module",

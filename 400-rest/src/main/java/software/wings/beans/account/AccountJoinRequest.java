@@ -5,20 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.beans;
+package software.wings.beans.account;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-
-import io.harness.annotations.dev.OwnedBy;
-
-import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
-@OwnedBy(PL)
 @Value
 @Builder
-public class AccountAuditFilter {
-  private List<String> resourceTypes;
-  private List<String> resourceIds;
+public class AccountJoinRequest {
+  private String name;
+  private String email;
+  private String companyName;
+  private String note;
+  private String accountAdminEmail;
 }

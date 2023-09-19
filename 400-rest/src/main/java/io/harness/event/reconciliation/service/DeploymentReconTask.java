@@ -22,8 +22,8 @@ import io.harness.lock.PersistentLocker;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.search.entities.deployment.DeploymentExecutionEntity;

@@ -111,10 +111,16 @@ public class EmailStep extends PipelineSyncExecutable {
       log.error("Failed to fetch setting value for {}", EMAIL_TO_NON_HARNESS_USERS_SETTING_KEY, ex);
     }
 
+    String[] lines = emailStepParameters.body.getValue().split("\n");
+    StringBuilder body = new StringBuilder();
+    for (String line : lines) {
+      body.append("<br>").append(line).append("</br>");
+    }
+
     EmailDTO emailDTO = EmailDTO.builder()
                             .toRecipients(toRecipients)
                             .ccRecipients(ccRecipients)
-                            .body(emailStepParameters.body.getValue())
+                            .body(body.toString())
                             .subject(emailStepParameters.subject.getValue())
                             .accountId(accountId)
                             .notificationId(notificationId)

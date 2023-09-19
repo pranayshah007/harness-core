@@ -22,16 +22,16 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
-public class DisableRedundantACLService implements Managed {
-  private Future<?> disableRedundantACLJobFuture;
+public class RemoveRedundantACLService implements Managed {
+  private Future<?> removeRedundantACLJobFuture;
   private final ScheduledExecutorService executorService;
-  private static final String DEBUG_MESSAGE = "DisableRedundantACLService: ";
-  private final DisableRedundantACLJob disableRedundantACLJob;
+  private static final String DEBUG_MESSAGE = "RemoveRedundantACLService: ";
+  private final RemoveRedundantACLJob removeRedundantACLJob;
 
   @Inject
-  public DisableRedundantACLService(DisableRedundantACLJob disableRedundantACLJob) {
-    this.disableRedundantACLJob = disableRedundantACLJob;
-    String threadName = "disable-redundant-acl-service-thread";
+  public RemoveRedundantACLService(RemoveRedundantACLJob removeRedundantACLJob) {
+    this.removeRedundantACLJob = removeRedundantACLJob;
+    String threadName = "remove-redundant-acl-service-thread";
     this.executorService =
         Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat(threadName).build());
   }
@@ -41,14 +41,14 @@ public class DisableRedundantACLService implements Managed {
     log.info(DEBUG_MESSAGE + "started...");
     Random random = new Random();
     int delay = random.nextInt(15) + 15;
-    disableRedundantACLJobFuture =
-        executorService.scheduleWithFixedDelay(disableRedundantACLJob, delay, 2880, TimeUnit.MINUTES);
+    removeRedundantACLJobFuture =
+        executorService.scheduleWithFixedDelay(removeRedundantACLJob, delay, 7200, TimeUnit.MINUTES);
   }
 
   @Override
   public void stop() throws Exception {
     log.info(DEBUG_MESSAGE + "stopping...");
-    disableRedundantACLJobFuture.cancel(false);
+    removeRedundantACLJobFuture.cancel(false);
     executorService.shutdown();
   }
 }

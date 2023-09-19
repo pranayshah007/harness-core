@@ -5,28 +5,28 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.beans;
+package software.wings.beans.account;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import lombok.experimental.FieldNameConstants;
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
-@FieldNameConstants(innerTypeName = "AccountPreferencesKeys")
-@TargetModule(HarnessModule._955_ACCOUNT_MGMT)
-@OwnedBy(HarnessTeam.PL)
-public class AccountPreferences {
-  Integer delegateSecretsCacheTTLInHours = 1;
+@OwnedBy(HarnessTeam.CDP)
+@TargetModule(HarnessModule._870_CG_ORCHESTRATION)
+public enum AccountEventType {
+  APP_CREATED,
+  SERVICE_CREATED,
+  ENV_CREATED,
+  WORKFLOW_CREATED,
+  WORKFLOW_DEPLOYED,
+  PIPELINE_DEPLOYED,
+  DELEGATE_INSTALLED,
+  CLOUD_PROVIDER_CREATED,
+  ARTIFACT_REPO_CREATED,
+  PIPELINE_CREATED,
+  ARTIFACT_STREAM_ADDED,
+  INFRA_MAPPING_ADDED,
+  INFRA_DEFINITION_ADDED,
+  CUSTOM
 }

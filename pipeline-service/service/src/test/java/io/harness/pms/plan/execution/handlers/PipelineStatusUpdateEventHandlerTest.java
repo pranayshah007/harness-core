@@ -7,28 +7,23 @@
 
 package io.harness.pms.plan.execution.handlers;
 
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.AbortInfoHelper;
 import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionService;
-import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
-import io.harness.pms.notification.orchestration.helpers.AbortInfoHelper;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
@@ -43,10 +38,7 @@ import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 
 public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBase {
   @Mock private PlanExecutionService planExecutionService;
@@ -60,39 +52,6 @@ public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBas
   public void setUp() throws Exception {
     pipelineStatusUpdateEventHandler = new PipelineStatusUpdateEventHandler(
         planExecutionService, pmsExecutionSummaryRepository, eventEmitter, waitNotifyEngine, abortInfoHelper);
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestOnPlanStatusUpdate() {
-    PlanExecution planExecution =
-        PlanExecution.builder().uuid(generateUuid()).status(Status.SUCCEEDED).endTs(11L).build();
-    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecution.getUuid()).build();
-
-    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
-    ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
-
-    when(planExecutionService.get(anyString())).thenReturn(planExecution);
-
-    when(pmsExecutionSummaryRepository.update(queryArgumentCaptor.capture(), updateArgumentCaptor.capture()))
-        .thenReturn(null);
-
-    pipelineStatusUpdateEventHandler.onPlanStatusUpdate(ambiance);
-
-    Query query = queryArgumentCaptor.getValue();
-    assertThat(query).isNotNull();
-    assertThat(query.getQueryObject())
-        .isEqualTo(new Document().append("planExecutionId", ambiance.getPlanExecutionId()));
-
-    Update update = updateArgumentCaptor.getValue();
-    assertThat(update).isNotNull();
-    assertThat(update.getUpdateObject())
-        .isEqualTo(new Document().append("$set",
-            new Document()
-                .append(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.internalStatus, Status.SUCCEEDED)
-                .append(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.status, ExecutionStatus.SUCCESS)
-                .append(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.endTs, planExecution.getEndTs())));
   }
 
   @Test

@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
@@ -349,7 +350,18 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     doReturn(ImmutableList.of(Status.RUNNING, Status.FAILED, Status.ABORTED))
         .when(nodeExecutionService)
-        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId, false);
+    Status status = planExecutionService.calculateStatus(planExecutionId);
+    assertEquals(Status.ABORTED, status);
+  }
+
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void shouldTestCalculateStatusExcludingIdentityNode() {
+    String planExecutionId = generateUuid();
+    doReturn(ImmutableList.of(Status.RUNNING, Status.FAILED, Status.ABORTED))
+        .when(nodeExecutionService)
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId, true);
     Status status = planExecutionService.calculateStatus(planExecutionId);
     assertEquals(Status.ABORTED, status);
   }
@@ -361,7 +373,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     doReturn(ImmutableList.of(Status.RUNNING, Status.PAUSED))
         .when(nodeExecutionService)
-        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId, false);
     Status status = planExecutionService.calculateStatus(planExecutionId);
     planExecutionService.save(PlanExecution.builder().status(Status.QUEUED).uuid(planExecutionId).build());
     PlanExecution planExecution = planExecutionService.updateCalculatedStatus(planExecutionId);

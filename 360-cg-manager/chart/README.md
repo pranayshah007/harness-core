@@ -49,6 +49,13 @@ A Helm chart for Kubernetes
 | featureFlags.SRM | string | `"CVNG_ENABLED"` | SRM Flags |
 | featureFlags.STO | string | `"STO_BASELINE_REGEX,STO_STEP_PALETTE_BURP_ENTERPRISE,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP"` | STO Feature Flags |
 | fullnameOverride | string | `""` |  |
+| global.awsServiceEndpointUrls.cloudwatchEndPointUrl | string | `"https://monitoring.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.ec2EndPointUrl | string | `"https://ec2.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.ecsEndPointUrl | string | `"https://ecs.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.enabled | bool | `false` |  |
+| global.awsServiceEndpointUrls.endPointRegion | string | `"us-east-2"` |  |
+| global.awsServiceEndpointUrls.s3EndPointUrl | string | `"https://s3.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.stsEndPointUrl | string | `"https://sts.us-east-2.amazonaws.com"` |  |
 | global.ccm.enabled | bool | `false` |  |
 | global.cd.enabled | bool | `false` |  |
 | global.cet.enabled | bool | `false` |  |
@@ -106,6 +113,12 @@ A Helm chart for Kubernetes
 | global.ng.enabled | bool | `true` |  |
 | global.ngcustomdashboard.enabled | bool | `false` |  |
 | global.opa.enabled | bool | `false` |  |
+| global.proxy.enabled | bool | `false` |  |
+| global.proxy.host | string | `"localhost"` |  |
+| global.proxy.password | string | `""` |  |
+| global.proxy.port | int | `80` |  |
+| global.proxy.protocol | string | `"http"` |  |
+| global.proxy.username | string | `""` |  |
 | global.saml.autoaccept | bool | `false` |  |
 | global.secrets.app.external.enabled | bool | `false` |  |
 | global.secrets.app.external.kind.csiSecretDriver | bool | `false` |  |
@@ -155,12 +168,6 @@ A Helm chart for Kubernetes
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext | object | `{}` |  |
-| proxy.enabled | bool | `false` |  |
-| proxy.host | string | `"localhost"` |  |
-| proxy.password | string | `""` |  |
-| proxy.port | int | `80` |  |
-| proxy.protocol | string | `"http"` |  |
-| proxy.username | string | `""` |  |
 | redisConfig.nettyThreads | string | `"32"` |  |
 | replicaCount | int | `1` |  |
 | resources.limits.memory | string | `"8192Mi"` |  |

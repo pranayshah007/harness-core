@@ -94,7 +94,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
                                                     .build());
           awsBucketPolicyHelperService.updateBucketPolicy(
               ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(), destinationBucket,
-              awsConfig.getAccessKey(), awsConfig.getSecretKey());
+              awsConfig.getAccessKey(), awsConfig.getSecretKey(), configuration.getCeAwsServiceEndpointConfig());
         }
         if (isVisibilityFeatureEnabled(ceAwsConnectorDTO)) {
           updateEventData(action, identifier, accountIdentifier,
@@ -121,7 +121,7 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
                                                     .build());
           awsBucketPolicyHelperService.updateBucketPolicy(
               ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(), destinationBucket,
-              awsConfig.getAccessKey(), awsConfig.getSecretKey());
+              awsConfig.getAccessKey(), awsConfig.getSecretKey(), configuration.getCeAwsServiceEndpointConfig());
         }
         if (isVisibilityFeatureEnabled(ceAwsConnectorDTO)) {
           updateEventData(action, identifier, accountIdentifier,
@@ -155,7 +155,8 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
     List<CECloudAccount> awsAccounts = new ArrayList<>();
     try {
       awsAccounts = awsOrganizationHelperService.getAWSAccounts(accountIdentifier, identifier, ceAwsConnectorDTO,
-          awsConfig.getAccessKey(), awsConfig.getSecretKey(), configuration.getCeProxyConfig());
+          awsConfig.getAccessKey(), awsConfig.getSecretKey(), configuration.getCeProxyConfig(),
+          configuration.getCeAwsServiceEndpointConfig());
       log.info("Number of AWS Accounts: {}, Not Processing Create AWS Account Metadata", awsAccounts.size());
     } catch (AWSOrganizationsNotInUseException ex) {
       log.info("AWSOrganizationsNotInUseException for AWS Connector: {}", ceAwsConnectorDTO.getAwsAccountId(), ex);
@@ -237,9 +238,9 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
       CrossAccountAccessDTO crossAccountAccessDTO, AwsConfig awsConfig) {
     final AWSCredentialsProvider staticBasicAwsCredentials =
         awsClient.constructStaticBasicAwsCredentials(awsConfig.getAccessKey(), awsConfig.getSecretKey());
-    final AWSCredentialsProvider credentialsProvider =
-        awsClient.getAssumedCredentialsProvider(staticBasicAwsCredentials,
-            crossAccountAccessDTO.getCrossAccountRoleArn(), crossAccountAccessDTO.getExternalId());
+    final AWSCredentialsProvider credentialsProvider = awsClient.getAssumedCredentialsProvider(
+        staticBasicAwsCredentials, crossAccountAccessDTO.getCrossAccountRoleArn(),
+        crossAccountAccessDTO.getExternalId(), configuration.getCeAwsServiceEndpointConfig());
     credentialsProvider.getCredentials();
     return credentialsProvider;
   }

@@ -31,7 +31,6 @@ import io.harness.validation.Create;
 import io.harness.validation.Update;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.CannySsoLoginResponse;
@@ -40,6 +39,7 @@ import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
 import software.wings.beans.ZendeskSsoLoginResponse;
+import software.wings.beans.account.AccountJoinRequest;
 import software.wings.beans.loginSettings.PasswordSource;
 import software.wings.beans.loginSettings.PasswordStrengthViolations;
 import software.wings.beans.marketplace.MarketPlaceType;

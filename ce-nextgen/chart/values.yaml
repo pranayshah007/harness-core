@@ -77,6 +77,21 @@ global:
   stackDriverLoggingEnabled: false
   ccm:
     gcpProjectId: "placeHolder"
+  proxy:
+    enabled: false
+    host: localhost
+    port: 80
+    username: ""
+    password: ""
+    protocol: http
+  awsServiceEndpointUrls:
+    enabled: false
+    endPointRegion: us-east-2
+    s3EndPointUrl: https://s3.us-east-2.amazonaws.com
+    stsEndPointUrl: https://sts.us-east-2.amazonaws.com
+    ec2EndPointUrl: https://ec2.us-east-2.amazonaws.com
+    ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
+    cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
 
 replicaCount: 2
 
@@ -192,14 +207,6 @@ clickhouse:
 
 workloadIdentity:
   enabled: false
-
-proxy:
-  enabled: false
-  host: localhost
-  port: 80
-  username: ""
-  password: ""
-  protocol: http
 
 resources:
   limits:

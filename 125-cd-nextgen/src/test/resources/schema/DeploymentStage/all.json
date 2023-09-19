@@ -3543,6 +3543,18 @@
             "webApp"
           ],
           "properties": {
+            "clean": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -9571,6 +9583,18 @@
         }
       ]
     },
+    "HarnessRelease": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessStore": {
       "allOf": [
         {
@@ -11892,6 +11916,9 @@
             },
             "manifestConfigurations": {
               "$ref": "#/definitions/ManifestConfigurations"
+            },
+            "release": {
+              "$ref": "#/definitions/HarnessRelease"
             }
           }
         }
@@ -12922,6 +12949,9 @@
             },
             "manifestConfigurations": {
               "$ref": "#/definitions/ManifestConfigurations"
+            },
+            "release": {
+              "$ref": "#/definitions/HarnessRelease"
             }
           }
         }

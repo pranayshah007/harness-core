@@ -51,6 +51,7 @@ import software.wings.beans.ExecutionArgs.ExecutionArgsKeys;
 import software.wings.beans.NameValuePair.NameValuePairKeys;
 import software.wings.beans.PipelineExecution.PipelineExecutionKeys;
 import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.aws.AwsLambdaExecutionSummary;
 import software.wings.beans.concurrency.ConcurrencyStrategy;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.execution.WorkflowExecutionInfo;

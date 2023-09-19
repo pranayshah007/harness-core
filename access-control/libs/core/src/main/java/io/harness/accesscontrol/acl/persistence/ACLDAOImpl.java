@@ -39,15 +39,12 @@ public class ACLDAOImpl implements ACLDAO {
   private static final String INCLUDE_CHILD_SCOPES_IDENTIFIER = "**";
   private final ACLRepository aclRepository;
   private final Set<String> scopeResourceTypes;
-  private final boolean disableRedundantACLs;
 
   @Inject
-  public ACLDAOImpl(@Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository, Map<String, ScopeLevel> scopeLevels,
-      @Named("disableRedundantACLs") boolean disableRedundantACLs) {
+  public ACLDAOImpl(@Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository, Map<String, ScopeLevel> scopeLevels) {
     this.aclRepository = aclRepository;
     this.scopeResourceTypes =
         scopeLevels.values().stream().map(ScopeLevel::getResourceType).collect(Collectors.toSet());
-    this.disableRedundantACLs = disableRedundantACLs;
   }
 
   private String getResourceSelector(String resourceType, String resourceIdentifier) {
@@ -157,9 +154,7 @@ public class ACLDAOImpl implements ACLDAO {
       aclQueryStrings.addAll(queryStrings);
     });
 
-    List<ACL> aclsPresentInDB = disableRedundantACLs
-        ? aclRepository.getByAclQueryStringInAndEnabled(aclQueryStrings, true)
-        : aclRepository.getByAclQueryStringIn(aclQueryStrings);
+    List<ACL> aclsPresentInDB = aclRepository.getByAclQueryStringInAndEnabled(aclQueryStrings, true);
     return aclQueryStringsPerPermission.stream()
         .map(queryStringsForPermission
             -> aclsPresentInDB.stream()

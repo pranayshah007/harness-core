@@ -147,8 +147,6 @@ public enum FeatureName {
       "Makes authenticated custom webhook calls use service principal instead of the principal inherited from the API key",
       HarnessTeam.CDC),
   CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
-  CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN(
-      "Enable the check if Vault secret manager is read only", HarnessTeam.CDP),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CDS_PAUSE_JIRA_APPROVAL_CG("Pause CG Jira Approval", HarnessTeam.CDC),
@@ -203,6 +201,7 @@ public enum FeatureName {
       "This is to diable checking for the HTTP status code and instead just check for a valid response",
       HarnessTeam.CDP),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
+  CDS_WEBAPP_ENABLE_CLEAN_OPTION("Feature flag to enable clean option for slot deployment step", HarnessTeam.CDP),
   CDS_GITHUB_APP_AUTHENTICATION("This flag enables the github app authentication fo github connector", HarnessTeam.CDP),
   CDS_RESOURCE_CONSTRAINT_INSTANCE_OPTIMIZATION(
       "This is to optimize resource constraint Instance read Query In CG", HarnessTeam.CDC),
@@ -550,7 +549,6 @@ public enum FeatureName {
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
   PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
-  PL_ADD_ACL_CHECKS_NG_SCIM_API("Enable access control checks on token for NG SCIM API calls", HarnessTeam.PL),
   PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
@@ -876,6 +874,7 @@ public enum FeatureName {
       "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP),
   CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL("For removing usage of retry interval field for ", HarnessTeam.CDC),
   CDS_DISABLE_EVALUATE_EXPORT_VARIABLES("For exporting variables without evaluating in command step", HarnessTeam.CDC),
+  CDS_NG_UPDATE_MULTIPLE_SNOW_CHANGE_REQUEST("Enable update multiple tasks in service now", HarnessTeam.CDC),
   CDS_NG_FETCH_FILES_REFACTOR(
       "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP),
   CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE),
