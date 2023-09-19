@@ -9,6 +9,7 @@ package io.harness.ngmigration.expressions.step;
 
 import io.harness.ngmigration.beans.StepOutput;
 
+import java.util.HashMap;
 import org.apache.commons.lang3.StringUtils;
 
 public class ApprovalFunctor extends StepExpressionFunctor {
@@ -22,12 +23,13 @@ public class ApprovalFunctor extends StepExpressionFunctor {
   public synchronized Object get(Object key) {
     String newKey = key.toString();
 
-    if ("approvedBy.name".equals(key.toString())) {
-      newKey = "user.name";
-    }
-
-    if ("approvedBy.email".equals(key.toString())) {
-      newKey = "user.email";
+    if ("approvedBy".equals(key.toString())) {
+      return new HashMap<>() {
+        {
+          put("name", getFQN("user.name"));
+          put("email", getFQN("user.email"));
+        }
+      };
     }
 
     if ("approvalStatus".equals(key.toString())) {
@@ -42,6 +44,10 @@ public class ApprovalFunctor extends StepExpressionFunctor {
       newKey = "comments";
     }
 
+    return getFQN(newKey);
+  }
+
+  private String getFQN(String newKey) {
     if (StringUtils.equals(stepOutput.getStageIdentifier(), getCurrentStageIdentifier())) {
       return String.format("%s.output.approvalActivities[0].%s>", getStepFQN(), newKey);
     }
