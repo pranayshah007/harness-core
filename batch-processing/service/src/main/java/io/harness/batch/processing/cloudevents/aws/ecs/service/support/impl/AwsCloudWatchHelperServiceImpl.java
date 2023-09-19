@@ -11,6 +11,7 @@ import io.harness.batch.processing.cloudevents.aws.ecs.service.support.AwsCreden
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsCloudWatchHelperService;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.request.AwsCloudWatchMetricDataRequest;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.AwsCloudWatchMetricDataResponse;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.beans.ExecutionStatus;
 import io.harness.remote.CEAwsServiceEndpointConfig;
 
@@ -38,6 +39,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperService {
   @Autowired private AwsCredentialHelper awsCredentialHelper;
+  @Autowired private BatchMainConfig batchMainConfig;
 
   @Override
   public AwsCloudWatchMetricDataResponse getMetricData(AwsCloudWatchMetricDataRequest request) {
@@ -82,7 +84,7 @@ public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperServic
             .withStsClient(awsSecurityTokenService)
             .build();
     builder.withCredentials(credentialsProvider);
-    CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig = awsCredentialHelper.getCeAwsServiceEndpointConfig();
+    CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig = batchMainConfig.getCeAwsServiceEndpointConfig();
     if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
       return (AmazonCloudWatchClient) builder
           .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(

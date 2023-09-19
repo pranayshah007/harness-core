@@ -15,6 +15,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.AwsCredentialHelper;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsECSHelperService;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.remote.CEAwsServiceEndpointConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
@@ -63,6 +64,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AwsECSHelperServiceImpl implements AwsECSHelperService {
   @Autowired private AwsCredentialHelper awsCredentialHelper;
+  @Autowired private BatchMainConfig batchMainConfig;
   private static final String exceptionMessage = "Error while calling cluster  {} {} {} ";
 
   @Override
@@ -255,7 +257,7 @@ public class AwsECSHelperServiceImpl implements AwsECSHelperService {
             .withStsClient(awsSecurityTokenService)
             .build();
     builder.withCredentials(credentialsProvider);
-    CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig = awsCredentialHelper.getCeAwsServiceEndpointConfig();
+    CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig = batchMainConfig.getCeAwsServiceEndpointConfig();
     if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
       return (AmazonECSClient) builder
           .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
