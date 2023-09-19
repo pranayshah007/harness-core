@@ -336,12 +336,11 @@ public class AwsClientImpl implements AwsClient {
         .build();
   }
 
-  public AmazonS3Client getAmazonS3Client(
-      AWSCredentialsProvider credentialsProvider, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
-    if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
+  public AmazonS3Client getAmazonS3Client(AWSCredentialsProvider credentialsProvider, CEProxyConfig ceProxyConfig) {
+    if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
       return (AmazonS3Client) AmazonS3ClientBuilder.standard()
-          .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-              ceAwsServiceEndpointConfig.getS3EndPointUrl(), ceAwsServiceEndpointConfig.getEndPointRegion()))
+          .withClientConfiguration(getClientConfiguration(ceProxyConfig))
+          .withRegion(DEFAULT_REGION)
           .withForceGlobalBucketAccessEnabled(Boolean.TRUE)
           .withCredentials(credentialsProvider)
           .build();
@@ -473,9 +472,9 @@ public class AwsClientImpl implements AwsClient {
 
   @Override
   public ObjectListing getBucket(AWSCredentialsProvider credentialsProvider, @NotNull String s3BucketName,
-      @Nullable String s3Prefix, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
+      @Nullable String s3Prefix, CEProxyConfig ceProxyConfig) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
-             new CloseableAmazonWebServiceClient(getAmazonS3Client(credentialsProvider, ceAwsServiceEndpointConfig))) {
+             new CloseableAmazonWebServiceClient(getAmazonS3Client(credentialsProvider, ceProxyConfig))) {
       return closeableAmazonS3Client.getClient().listObjects(s3BucketName, s3Prefix);
 
     } catch (Exception e) {
@@ -485,12 +484,11 @@ public class AwsClientImpl implements AwsClient {
   }
 
   @Override
-  public S3Objects getIterableS3ObjectSummaries(AWSCredentialsProvider credentialsProvider, String s3BucketName,
-      String s3Prefix, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
+  public S3Objects getIterableS3ObjectSummaries(
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix, CEProxyConfig ceProxyConfig) {
     s3Prefix = s3Prefix.replaceFirst("^//", "/");
     try {
-      return S3Objects.withPrefix(
-          getAmazonS3Client(credentialsProvider, ceAwsServiceEndpointConfig), s3BucketName, s3Prefix);
+      return S3Objects.withPrefix(getAmazonS3Client(credentialsProvider, ceProxyConfig), s3BucketName, s3Prefix);
     } catch (Exception e) {
       log.error("Exception getIterableS3ObjectSummaries", e);
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);

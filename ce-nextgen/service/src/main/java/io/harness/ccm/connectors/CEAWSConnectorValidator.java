@@ -395,7 +395,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     String latestFileName = "";
     try {
       S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(
-          credentialsProvider, s3BucketName, s3PathPrefix, configuration.getCeAwsServiceEndpointConfig());
+          credentialsProvider, s3BucketName, s3PathPrefix, configuration.getCeProxyConfig());
       // Caveat: This can be slow for some accounts.
       for (S3ObjectSummary objectSummary : s3Objects) {
         if (objectSummary.getKey().endsWith(".csv.gz")) {

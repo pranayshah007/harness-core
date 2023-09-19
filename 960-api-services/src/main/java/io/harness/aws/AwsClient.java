@@ -60,11 +60,11 @@ public interface AwsClient {
 
   Policy getRolePolicy(AWSCredentialsProvider credentialsProvider, String roleName, String policyName);
 
-  ObjectListing getBucket(AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix,
-      CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
+  ObjectListing getBucket(
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix, CEProxyConfig ceProxyConfig);
 
-  S3Objects getIterableS3ObjectSummaries(AWSCredentialsProvider credentialsProvider, String s3BucketName,
-      String s3Prefix, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
+  S3Objects getIterableS3ObjectSummaries(
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix, CEProxyConfig ceProxyConfig);
 
   AWSOrganizationsClient getAWSOrganizationsClient(String crossAccountRoleArn, String externalId, String awsAccessKey,
       String awsSecretKey, CEProxyConfig ceProxyConfig, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);

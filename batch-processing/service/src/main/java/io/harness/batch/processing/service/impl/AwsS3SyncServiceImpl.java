@@ -10,6 +10,7 @@ package io.harness.batch.processing.service.impl;
 import io.harness.batch.processing.ccm.S3SyncRecord;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.service.intfc.AwsS3SyncService;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.security.authentication.AwsS3SyncConfig;
 
@@ -40,6 +41,7 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
   private static final String AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY";
   private static final String AWS_DEFAULT_REGION = "AWS_DEFAULT_REGION";
   private static final String SESSION_TOKEN = "AWS_SESSION_TOKEN";
+  private static final String HTTPS_PROXY = "HTTPS_PROXY";
 
   @Override
   @SuppressWarnings("PMD")
@@ -53,7 +55,8 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
       final ArrayList<String> assumeRoleCmd = Lists.newArrayList("aws", "sts", "assume-role", "--role-arn",
           s3SyncRecord.getRoleArn(), String.format("--role-session-name=%s", s3SyncRecord.getAccountId()),
           "--external-id", s3SyncRecord.getExternalId());
-      if (configuration.getCeProxyConfig() != null && configuration.getCeProxyConfig().isEnabled()) {
+      if (configuration.getCeAwsServiceEndpointConfig() != null
+          && configuration.getCeAwsServiceEndpointConfig().isEnabled()) {
         assumeRoleCmd.addAll(
             Lists.newArrayList("--endpoint-url", configuration.getCeAwsServiceEndpointConfig().getStsEndPointUrl()));
       }
@@ -62,10 +65,16 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
           getProcessExecutor().command(assumeRoleCmd).environment(envVariables).readOutput(true).execute();
       JsonObject credentials =
           new Gson().fromJson(processResult.getOutput().getString(), JsonObject.class).getAsJsonObject("Credentials");
-      ImmutableMap<String, String> roleEnvVariables =
-          ImmutableMap.of(AWS_ACCESS_KEY_ID, credentials.get("AccessKeyId").getAsString(), AWS_SECRET_ACCESS_KEY,
-              credentials.get("SecretAccessKey").getAsString(), AWS_DEFAULT_REGION, awsCredentials.getRegion(),
-              SESSION_TOKEN, credentials.get("SessionToken").getAsString());
+      ImmutableMap.Builder<String, String> roleEnvVariables =
+          ImmutableMap.<String, String>builder()
+              .put(AWS_ACCESS_KEY_ID, credentials.get("AccessKeyId").getAsString())
+              .put(AWS_SECRET_ACCESS_KEY, credentials.get("SecretAccessKey").getAsString())
+              .put(AWS_DEFAULT_REGION, awsCredentials.getRegion())
+              .put(SESSION_TOKEN, credentials.get("SessionToken").getAsString());
+      if (configuration.getCeCliProxyConfig() != null && configuration.getCeCliProxyConfig().isEnabled()) {
+        log.info("Using proxy env variable HTTPS_PROXY {}", getProxyUrl(configuration.getCeCliProxyConfig()));
+        roleEnvVariables.put(HTTPS_PROXY, getProxyUrl(configuration.getCeCliProxyConfig()));
+      }
 
       JsonObject assumedRoleUser = new Gson()
                                        .fromJson(processResult.getOutput().getString(), JsonObject.class)
@@ -81,11 +90,7 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
       final ArrayList<String> cmd =
           Lists.newArrayList("aws", "s3", "sync", s3SyncRecord.getBillingBucketPath(), destinationBucketPath,
               "--source-region", s3SyncRecord.getBillingBucketRegion(), "--acl", "bucket-owner-full-control");
-      if (configuration.getCeProxyConfig() != null && configuration.getCeProxyConfig().isEnabled()) {
-        cmd.addAll(
-            Lists.newArrayList("--endpoint-url", configuration.getCeAwsServiceEndpointConfig().getS3EndPointUrl()));
-      }
-      trySyncBucket(cmd, roleEnvVariables);
+      trySyncBucket(cmd, roleEnvVariables.build());
     } catch (InvalidExitValueException e) {
       log.error("output: {}", e.getResult().outputUTF8());
       return false;
@@ -116,5 +121,15 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
 
   ProcessExecutor getProcessExecutor() {
     return new ProcessExecutor();
+  }
+
+  private String getProxyUrl(CEProxyConfig ceProxyConfig) {
+    String url = ceProxyConfig.getProtocol();
+    url = url + "://";
+    if (!ceProxyConfig.getUsername().isEmpty() && !ceProxyConfig.getPassword().isEmpty()) {
+      url = url + ceProxyConfig.getUsername() + ":" + ceProxyConfig.getPassword() + "@";
+    }
+    url = url + ceProxyConfig.getHost() + ":" + ceProxyConfig.getPort();
+    return url;
   }
 }
