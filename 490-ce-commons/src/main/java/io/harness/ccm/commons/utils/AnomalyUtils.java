@@ -32,6 +32,7 @@ public class AnomalyUtils {
   private static final String RELATIVE_TIME_TEMPLATE = "%s %s ago";
   public static final Integer DEFAULT_LIMIT = 1000;
   public static final Integer DEFAULT_OFFSET = 0;
+  //
 
   public static String getRelativeTime(long anomalyTime, String template) {
     long currentTime = System.currentTimeMillis();
