@@ -98,6 +98,15 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
+  public List<PipelineEntity> findAllWithProjections(Criteria criteria, List<String> projections) {
+    Query query = new Query(criteria);
+    for (String key : projections) {
+      query.fields().include(key);
+    }
+    return mongoTemplate.find(query, PipelineEntity.class);
+  }
+
+  @Override
   public Long countAllPipelines(Criteria criteria) {
     Query query = new Query(criteria);
     return pipelineEntityReadHelper.findCount(query);

@@ -26,6 +26,8 @@ public interface PMSPipelineRepositoryCustom {
   Page<PipelineEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, boolean getDistinctFromBranches);
 
+  List<PipelineEntity> findAllWithProjections(Criteria criteria, List<String> projections);
+
   Long countAllPipelines(Criteria criteria);
 
   Long countAllPipelinesInAccount(String accountId);

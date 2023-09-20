@@ -764,6 +764,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
+  public List<PipelineEntity> listWithProjection(Criteria criteria, List<String> projections) {
+    return pmsPipelineRepository.findAllWithProjections(criteria, projections);
+  }
+
+  @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(

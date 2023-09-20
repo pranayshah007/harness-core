@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
@@ -19,6 +20,9 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,6 +32,8 @@ import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.engine.OrchestrationService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptPackage;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
@@ -61,6 +67,7 @@ import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.ResolveInputYamlType;
+import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.plan.execution.ModuleInfoOperators;
@@ -71,6 +78,7 @@ import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.security.PrincipalHelper;
 import io.harness.security.SecurityContextBuilder;
@@ -94,6 +102,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -121,6 +130,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private PMSPipelineService pmsPipelineService;
+  @Inject private AccessControlClient accessControlClient;
 
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
@@ -148,6 +158,16 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
           accountId, projectId, orgId, Collections.singletonList(pipelineIdentifier));
       if (permittedPipelineIdentifier.size() != 0) {
         criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+      } else {
+        throw new AccessDeniedException(
+            String.format("Missing permission %s on %s", PipelineRbacPermissions.PIPELINE_VIEW, "pipeline"),
+            ErrorCode.NG_ACCESS_DENIED, USER);
+      }
+    } else {
+      // If the user does not have permission for all pipelines then add the criteria for only view permission pipeline
+      if (!accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), Resource.of("PIPELINE", null),
+              PipelineRbacPermissions.PIPELINE_VIEW)) {
+        setViewPermissionIdentifier(accountId, orgId, projectId, criteria);
       }
     }
     // To show non-child execution. First or condition is added for older execution which do not have parentStageInfo
@@ -250,6 +270,26 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     return criteria;
   }
 
+  private void setViewPermissionIdentifier(String accountId, String orgId, String projectId, Criteria criteria) {
+    List<PipelineEntity> pipelineEntities = pmsPipelineService.listWithProjection(
+        PMSPipelineFilterHelper.getCriteriaForAllPipelinesInProject(accountId, orgId, projectId),
+        Collections.singletonList(PipelineEntity.PipelineEntityKeys.identifier));
+    List<String> identifiers =
+        pipelineEntities.stream()
+            .map(PipelineEntity::getIdentifier) // Assuming "getIdentifier" is the method to retrieve the identifier
+            .collect(Collectors.toList());
+
+    List<String> permittedPipelineIdentifier =
+        pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, identifiers);
+    if (permittedPipelineIdentifier.size() != 0) {
+      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(permittedPipelineIdentifier);
+    } else {
+      throw new AccessDeniedException(
+          String.format("Missing permission %s on %s", PipelineRbacPermissions.PIPELINE_VIEW, "pipeline"),
+          ErrorCode.NG_ACCESS_DENIED, USER);
+    }
+  }
+
   @Override
   public Criteria formCriteriaForRepoAndBranchListing(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String repoName) {
@@ -320,8 +360,14 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       List<String> permittedPipelineIdentifier =
           pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, pipelineIdentifier);
       if (permittedPipelineIdentifier.size() != 0) {
-        pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(permittedPipelineIdentifier);
+        pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+      } else {
+        throw new AccessDeniedException(
+            String.format("Missing permission %s on %s", PipelineRbacPermissions.PIPELINE_VIEW, "pipeline"),
+            ErrorCode.NG_ACCESS_DENIED, USER);
       }
+    } else {
+      setViewPermissionIdentifier(accountId, orgId, projectId, criteria);
     }
 
     Criteria filterCriteria = new Criteria();
