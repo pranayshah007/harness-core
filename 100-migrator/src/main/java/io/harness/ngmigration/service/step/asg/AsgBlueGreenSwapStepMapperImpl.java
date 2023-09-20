@@ -13,7 +13,6 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -23,7 +22,7 @@ import software.wings.sm.states.AwsAmiSwitchRoutesState;
 
 import java.util.Map;
 
-public class AsgBlueGreenSwapStepMapperImpl extends StepMapper {
+public class AsgBlueGreenSwapStepMapperImpl extends AsgBaseStepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE;

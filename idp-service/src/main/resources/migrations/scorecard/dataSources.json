@@ -19,5 +19,12 @@
     "identifier": "harness",
     "name": "Harness",
     "description": "Harness"
+  },
+  {
+    "id": "65006cf9c28a1a3f5607e850",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty",
+    "name": "PagerDuty",
+    "description": "PagerDuty"
   }
 ]

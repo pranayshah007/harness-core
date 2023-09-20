@@ -54,6 +54,7 @@ import io.harness.cdng.gitops.UpdateReleaseRepoStepNode;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepNode;
 import io.harness.cdng.gitops.revertpr.RevertPRStepNode;
 import io.harness.cdng.gitops.syncstep.SyncStepNode;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepNode;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepNode;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepNode;
 import io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStepNode;
@@ -246,6 +247,20 @@ public class CDNGRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
+
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.UPDATE_GITOPS_APP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(UpdateGitOpsAppStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.GITOPS_SYNC)
                    .availableAtProjectLevel(true)

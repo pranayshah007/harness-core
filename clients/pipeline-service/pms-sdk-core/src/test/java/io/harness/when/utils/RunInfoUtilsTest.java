@@ -10,6 +10,7 @@ package io.harness.when.utils;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,6 +55,34 @@ public class RunInfoUtilsTest extends CategoryTest {
                                             .build()));
     assertThat(failureRunCondition).isNotEmpty();
     assertThat(failureRunCondition).isEqualTo("<+OnPipelineFailure> && (<+stage.name> == \"dev\")");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void shouldTestGetStageRunConditionForRollbackMode() {
+    assertThatThrownBy(()
+                           -> RunInfoUtils.getRunConditionForStage(
+                               ParameterField.createValueField(StageWhenCondition.builder().build())))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Pipeline Status in stage when condition cannot be empty.");
+    String successRunCondition = RunInfoUtils.getRunConditionForStage(
+        ParameterField.createValueField(StageWhenCondition.builder()
+                                            .pipelineStatus(WhenConditionStatus.SUCCESS)
+                                            .condition(ParameterField.createValueField("<+stage.name> == \"dev\""))
+                                            .build()),
+        ExecutionMode.POST_EXECUTION_ROLLBACK);
+    assertThat(successRunCondition).isNotEmpty();
+    assertThat(successRunCondition).isEqualTo("<+Always> && (<+stage.name> == \"dev\")");
+
+    String failureRunCondition = RunInfoUtils.getRunConditionForStage(
+        ParameterField.createValueField(StageWhenCondition.builder()
+                                            .pipelineStatus(WhenConditionStatus.FAILURE)
+                                            .condition(ParameterField.createValueField("<+stage.name> == \"dev\""))
+                                            .build()),
+        ExecutionMode.POST_EXECUTION_ROLLBACK);
+    assertThat(failureRunCondition).isNotEmpty();
+    assertThat(failureRunCondition).isEqualTo("<+Always> && (<+stage.name> == \"dev\")");
   }
 
   @Test

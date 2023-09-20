@@ -25,12 +25,14 @@ import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceServi
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Singleton
 public class ResourceRestraintObserver
     implements OrchestrationEndObserver, NodeStatusUpdateObserver, AsyncInformObserver {
   private final ExecutorService executorService = Executors.newSingleThreadExecutor();

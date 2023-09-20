@@ -225,7 +225,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception {
+  public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) {
     MergedPluginConfigs mergedPluginConfigs = new MergedPluginConfigs();
     List<String> allEnabledPluginConfigs = getAllEnabledPluginConfigs(accountIdentifier);
     boolean isAllEnabledPluginsWithNoConfig = allEnabledPluginConfigs.stream().allMatch(config -> config == null);

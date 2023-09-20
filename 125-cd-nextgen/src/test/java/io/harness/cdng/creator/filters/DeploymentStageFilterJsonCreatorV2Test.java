@@ -164,7 +164,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     PipelineFilter filter = filterCreator.getFilter(ctx, node);
     assertThat(filter.toJson())
         .isEqualTo(
-            "{\"deploymentTypes\":[\"Kubernetes\"],\"environmentNames\":[\"my-env\"],\"serviceNames\":[\"my-service\"],\"infrastructureTypes\":[\"KubernetesDirect\"]}");
+            "{\"deploymentTypes\":[\"Kubernetes\"],\"environmentNames\":[\"env-id\"],\"serviceNames\":[\"service-id\"],\"infrastructureTypes\":[\"KubernetesDirect\"]}");
   }
 
   @Test
@@ -239,7 +239,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     PipelineFilter filter = filterCreator.getFilter(ctx, node);
     assertThat(filter.toJson())
         .isEqualTo(
-            "{\"deploymentTypes\":[\"Kubernetes\"],\"environmentNames\":[\"my-env\"],\"serviceNames\":[\"my-service\"],\"infrastructureTypes\":[]}");
+            "{\"deploymentTypes\":[\"Kubernetes\"],\"environmentNames\":[\"env-id\"],\"serviceNames\":[\"service-id\"],\"infrastructureTypes\":[]}");
   }
 
   @Test
@@ -258,7 +258,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     PipelineFilter filter = filterCreator.getFilter(ctx, node);
     assertThat(filter.toJson())
         .isEqualTo(
-            "{\"deploymentTypes\":[\"Kubernetes\"],\"environmentNames\":[\"my-env\"],\"serviceNames\":[\"my-service\"],\"infrastructureTypes\":[]}");
+            "{\"deploymentTypes\":[\"Kubernetes\"],\"environmentNames\":[\"env-id\"],\"serviceNames\":[\"service-id\"],\"infrastructureTypes\":[]}");
   }
 
   @Test
@@ -312,7 +312,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     PipelineFilter filter = filterCreator.getFilter(ctx, node);
     assertThat(filter.toJson())
         .isEqualTo(
-            "{\"deploymentTypes\":[],\"environmentNames\":[\"my-env\"],\"serviceNames\":[],\"infrastructureTypes\":[]}");
+            "{\"deploymentTypes\":[],\"environmentNames\":[\"env-id\"],\"serviceNames\":[],\"infrastructureTypes\":[]}");
   }
 
   private Object[][] dataForUseFromStage() {

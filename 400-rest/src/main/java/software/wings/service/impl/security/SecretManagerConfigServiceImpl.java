@@ -28,7 +28,6 @@ import static software.wings.service.intfc.security.SecretManager.CREATED_AT_KEY
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 import io.harness.exception.InvalidRequestException;
@@ -326,8 +325,7 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
   private void updateConfigForAppRoleTokenRenewal(SecretManagerConfig secretManagerConfig, String accountId) {
     if ((secretManagerConfig instanceof BaseVaultConfig)
         && (((BaseVaultConfig) secretManagerConfig).getAccessType() == APP_ROLE)
-        && ((BaseVaultConfig) secretManagerConfig).getRenewAppRoleToken()
-        && (accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId))) {
+        && ((BaseVaultConfig) secretManagerConfig).getRenewAppRoleToken()) {
       ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
     }
   }

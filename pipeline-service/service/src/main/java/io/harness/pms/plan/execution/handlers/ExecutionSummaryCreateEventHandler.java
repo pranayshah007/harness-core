@@ -235,10 +235,10 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
   private String getPipelineTemplate(PlanExecutionMetadata planExecutionMetadata) {
     StagesExecutionMetadata stagesExecutionMetadata = planExecutionMetadata.getStagesExecutionMetadata();
     if (stagesExecutionMetadata != null && stagesExecutionMetadata.isStagesExecution()) {
-      return InputSetTemplateHelper.createTemplateFromPipelineForGivenStages(
+      return InputSetTemplateHelper.createTemplateFromWithDefaultValuesPipelineForGivenStages(
           planExecutionMetadata.getPipelineYaml(), stagesExecutionMetadata.getStageIdentifiers());
     }
-    return InputSetTemplateHelper.createTemplateFromPipeline(planExecutionMetadata.getPipelineYaml());
+    return InputSetTemplateHelper.createTemplateWithDefaultValuesFromPipeline(planExecutionMetadata.getPipelineYaml());
   }
 
   private void updateExecutionInfoInPipelineEntity(String accountId, String orgId, String projectId, String pipelineId,

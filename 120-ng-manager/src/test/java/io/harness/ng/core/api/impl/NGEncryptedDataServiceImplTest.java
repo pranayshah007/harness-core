@@ -153,56 +153,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void testCreateSecret_withVault_doNotRenewAppRoleToken_FF_disabled() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    String identifier = randomAlphabetic(10);
-    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
-                                  .type(SecretType.SecretText)
-                                  .orgIdentifier(orgIdentifier)
-                                  .projectIdentifier(projectIdentifier)
-                                  .spec(SecretTextSpecDTO.builder()
-                                            .secretManagerIdentifier(identifier)
-                                            .valueType(ValueType.Inline)
-                                            .value("value")
-                                            .build())
-                                  .build();
-    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
-                                           .accountIdentifier(accountIdentifier)
-                                           .orgIdentifier(orgIdentifier)
-                                           .projectIdentifier(projectIdentifier)
-                                           .type(SettingVariableTypes.SECRET_TEXT)
-                                           .build();
-    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(null);
-    when(encryptedDataDao.save(any())).thenReturn(encryptedDataDTO);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
-    SecretManagerConfigDTO vaultConfigDTO = VaultConfigDTO.builder()
-                                                .accountIdentifier(accountIdentifier)
-                                                .appRoleId("appRoleId")
-                                                .secretId("secretId")
-                                                .renewAppRoleToken(true)
-                                                .build();
-    vaultConfigDTO.setEncryptionType(VAULT);
-    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
-        .thenReturn(vaultConfigDTO);
-    ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
-        .thenReturn(NGEncryptedData.builder()
-                        .name("name")
-                        .encryptedValue("encryptedValue".toCharArray())
-                        .encryptionKey("encryptionKey")
-                        .build());
-    NGEncryptedData result = ngEncryptedDataService.createSecretText(accountIdentifier, secretDTOV2);
-    assertThat(result).isNotNull();
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
-    BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
-    assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(true);
-  }
-
-  @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void testCreateSecret_withVault_whereSecretManagerDelegatesAreNotAvailable() {
@@ -297,7 +247,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
                         .build());
     NGEncryptedData result = ngEncryptedDataService.createSecretText(accountIdentifier, secretDTOV2);
     assertThat(result).isNotNull();
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
   }
@@ -335,7 +284,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
     assertThat(deleted).isEqualTo(true);
@@ -375,7 +323,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
     assertThat(deleted).isEqualTo(true);
@@ -416,48 +363,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
-    assertThat(deleted).isEqualTo(true);
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void testDeleteSecret_appRoleBased_doNotRenewToken_ff_disabled() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    String identifier = randomAlphabetic(10);
-    String encryptedValue = randomAlphabetic(10);
-    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
-                                           .accountIdentifier(accountIdentifier)
-                                           .orgIdentifier(orgIdentifier)
-                                           .projectIdentifier(projectIdentifier)
-                                           .type(SettingVariableTypes.SECRET_TEXT)
-                                           .encryptedValue(encryptedValue.toCharArray())
-                                           .secretManagerIdentifier(identifier)
-                                           .build();
-    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
-    SecretManagerConfigDTO vaultConfigDTO = VaultConfigDTO.builder()
-                                                .accountIdentifier(accountIdentifier)
-                                                .appRoleId("appRoleId")
-                                                .secretId("secretId")
-                                                .renewAppRoleToken(true)
-                                                .build();
-    vaultConfigDTO.setEncryptionType(VAULT);
-    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
-        .thenReturn(vaultConfigDTO);
-    ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(true);
-    when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted =
-        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
-    BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
-    assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(true);
     assertThat(deleted).isEqualTo(true);
   }
 

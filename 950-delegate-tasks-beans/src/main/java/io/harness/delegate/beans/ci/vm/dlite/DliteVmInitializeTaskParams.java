@@ -23,6 +23,7 @@ import lombok.Value;
 public class DliteVmInitializeTaskParams implements CIInitializeTaskParams {
   @JsonProperty("setup_vm_request") SetupVmRequest setupVmRequest;
   @JsonProperty("services") List<ExecuteStepRequest> services;
+  @JsonProperty("distributed") boolean distributed;
 
   @Builder.Default private static final CIInitializeTaskParams.Type type = Type.DLITE_VM;
 

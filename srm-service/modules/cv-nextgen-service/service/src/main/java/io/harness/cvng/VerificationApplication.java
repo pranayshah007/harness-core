@@ -1033,8 +1033,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
+
     injector.injectMembers(sloHistoryTimescaleHandlerIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 1, 24, TimeUnit.HOURS);
+    dataCollectionExecutor.scheduleWithFixedDelay(sloHistoryTimescaleHandlerIterator::process, 1, 6, TimeUnit.HOURS);
   }
 
   private void sloHealthIndicatorTimescale(Injector injector) {
@@ -1209,7 +1210,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    migrationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 5, 15, TimeUnit.MINUTES);
+    migrationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 15, TimeUnit.MINUTES);
   }
 
   private void registerNotificationTemplates(VerificationConfiguration configuration, Injector injector) {
@@ -1264,8 +1265,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    notificationExecutor.scheduleWithFixedDelay(
-        dataCollectionIterator::process, random.nextInt(5), 5, TimeUnit.MINUTES);
+    notificationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 5, TimeUnit.MINUTES);
   }
 
   private void registerMonitoredServiceNotificationIterator(Injector injector) {

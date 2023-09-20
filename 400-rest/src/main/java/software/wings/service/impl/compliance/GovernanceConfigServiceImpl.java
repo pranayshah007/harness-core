@@ -704,7 +704,9 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
 
   private void validateAppEnvFilterOneAppWhenServiceFilterTypeIsCustom(List<ApplicationFilter> appSelections) {
     if (appSelections.stream()
-            .filter(selection -> selection.getFilterType() == BlackoutWindowFilterType.CUSTOM)
+            .filter(selection
+                -> selection.getFilterType() == BlackoutWindowFilterType.CUSTOM
+                    && Objects.nonNull(selection.getServiceSelection()))
             .anyMatch(appSelection
                 -> appSelection.getServiceSelection().getFilterType() == ServiceFilterType.CUSTOM
                     && ((CustomAppFilter) appSelection).getApps().size() != 1)) {

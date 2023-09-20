@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.api.impl;
+
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
@@ -38,7 +39,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DecryptedSecretValue;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.helper.CustomSecretManagerHelper;
@@ -328,9 +328,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         validateEncryptedRecord(encryptedRecord);
       } else if (VAULT.equals(secretManagerType)) {
         if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
-            && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
-            && (ngFeatureFlagHelperService.isEnabled(
-                encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
+            && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())) {
           ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
         }
         encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
@@ -370,9 +368,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
 
       } else if (VAULT.equals(secretManagerType)) {
         if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
-            && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
-            && (ngFeatureFlagHelperService.isEnabled(
-                encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
+            && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())) {
           ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
         }
         if (!Optional.ofNullable(existingEncryptedData.getPath()).isPresent()) {
@@ -712,9 +708,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     SecretManagerType secretManagerType = secretManagerConfig.getType();
     if (VAULT.equals(secretManagerType)) {
       if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
-          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
-          && (ngFeatureFlagHelperService.isEnabled(
-              encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
+          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
       }
       try {
@@ -865,10 +859,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   }
 
   private void validatePath(String path, EncryptionType encryptionType) {
-    if (path != null && encryptionType == EncryptionType.VAULT && path.indexOf('#') < 0) {
-      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR,
-          "Secret path need to include the # sign with the the key name after. E.g. /foo/bar/my-secret#my-key.", USER);
-    }
     // check if reference secrets are allowed based on EncryptionType
     if (Arrays.asList(GCP_KMS, KMS).contains(encryptionType)) {
       throw new SecretManagementException(

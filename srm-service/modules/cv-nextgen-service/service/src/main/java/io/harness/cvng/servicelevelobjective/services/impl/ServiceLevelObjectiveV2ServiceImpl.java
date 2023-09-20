@@ -29,6 +29,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.SRM_SLO_CRUD_L
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeGraphResponse;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -184,6 +185,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject
   private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
       notificationRuleConditionTypeTemplateDataGeneratorMap;
+  private Query<AbstractServiceLevelObjective> sloQuery;
 
   @Override
   public TimeGraphResponse getOnboardingGraph(CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
@@ -811,6 +813,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     : null)
             .sliEvaluationType(filter.getEvaluationType())
             .childResource(filter.isChildResource())
+            .compositeSLO(filter.isCompositeSLO())
+            .envIdentifiers(filter.getEnvIdentifiers())
             .build());
   }
 
@@ -1382,6 +1386,9 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     if (isNotEmpty(filter.getUserJourneys())) {
       sloQuery.field(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers).hasAnyOf(filter.getUserJourneys());
     }
+    if (filter.isCompositeSLO()) {
+      sloQuery = sloQuery.filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE);
+    }
     if (isNotEmpty(filter.getIdentifiers())) {
       sloQuery.field(ServiceLevelObjectiveV2Keys.identifier).in(filter.getIdentifiers());
     }
@@ -1402,6 +1409,11 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       sloQuery.filter(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier, filter.monitoredServiceIdentifier);
     }
     List<AbstractServiceLevelObjective> serviceLevelObjectiveList = sloQuery.asList();
+    if (isNotEmpty(filter.getEnvIdentifiers())) {
+      serviceLevelObjectiveList = serviceLevelObjectiveList.stream()
+                                      .filter(slo -> envFilter(slo, filter.getEnvIdentifiers()))
+                                      .collect(Collectors.toList());
+    }
     if (filter.getNotificationRuleRef() != null) {
       serviceLevelObjectiveList =
           serviceLevelObjectiveList.stream()
@@ -1446,6 +1458,26 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                 || accessibleProjects.contains(
                     getScopedInformation(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier())))
         .collect(Collectors.toList());
+  }
+
+  private boolean envFilter(AbstractServiceLevelObjective slo, List<String> envIdentifiers) {
+    Optional<String> msIdentifier = slo.mayBeGetMonitoredServiceIdentifier();
+    if (msIdentifier.isPresent()) {
+      MonitoredServiceResponse monitoredServiceResponse =
+          monitoredServiceService.get(ProjectParams.builder()
+                                          .accountIdentifier(slo.getAccountId())
+                                          .orgIdentifier(slo.getOrgIdentifier())
+                                          .projectIdentifier(slo.getProjectIdentifier())
+                                          .build(),
+              msIdentifier.get());
+      String envIdentifier = monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef();
+      for (String identifier : envIdentifiers) {
+        if (Objects.equals(identifier, envIdentifier)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private PageResponse<AbstractServiceLevelObjective> getResponse(ProjectParams projectParams, Integer offset,
@@ -1530,5 +1562,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     ServiceLevelObjectiveType sloType;
     SLIEvaluationType sliEvaluationType;
     boolean childResource;
+    boolean compositeSLO;
+    List<String> envIdentifiers;
   }
 }

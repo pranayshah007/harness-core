@@ -98,6 +98,11 @@ public abstract class StepMapper {
     return Collections.emptyList();
   }
 
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, String stepGroupName, GraphNode graphNode) {
+    return Collections.emptyList();
+  }
+
   public abstract AbstractStepNode getSpec(
       MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode);
 

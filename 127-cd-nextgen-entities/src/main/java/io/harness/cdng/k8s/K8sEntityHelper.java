@@ -31,7 +31,9 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -85,6 +87,7 @@ public class K8sEntityHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private AccountClient accountClient;
+  @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final String CLASS_CAST_EXCEPTION_ERROR =
       "Unsupported Connector for Infrastructure type: [%s]. Connector provided is of type: [%s]. Configure connector of type: [%s] to resolve the issue";
@@ -212,6 +215,8 @@ public class K8sEntityHelper {
               .cluster(k8sAwsInfrastructure.getCluster())
               .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
               .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+              .addRegionalParam(cdFeatureFlagHelper.isEnabled(
+                  connectorDTO.getAccountIdentifier(), FeatureName.CDS_EKS_ADD_REGIONAL_PARAM))
               .build();
 
         case KUBERNETES_RANCHER:

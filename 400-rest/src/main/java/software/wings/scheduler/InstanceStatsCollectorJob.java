@@ -20,8 +20,8 @@ import io.harness.logging.AutoLogContext;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.beans.instance.dashboard.InstanceStatsUtils;
 import software.wings.service.intfc.AccountService;

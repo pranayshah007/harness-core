@@ -30,6 +30,8 @@ COPY immutable-scripts /opt/harness-delegate/
 
 WORKDIR /opt/harness-delegate
 
+RUN mkdir -p /opt/harness-delegate/additional_certs_pem_split
+
 COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV LANG=en_US.UTF-8
@@ -68,6 +70,7 @@ ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.4/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.2/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/oc/v4.13.4/:$PATH
+ENV SHARED_CA_CERTS_PATH=/opt/harness-delegate/additional_certs_pem_split
 
 RUN curl -s -L -o delegate.jar $BASEURL/$DELEGATEVERSION/delegate.jar
 

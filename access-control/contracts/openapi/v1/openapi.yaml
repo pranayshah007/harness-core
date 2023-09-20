@@ -103,6 +103,47 @@ paths:
       tags:
         - Public Access
       x-internal: true
+  /v1/public-access/disable:
+    parameters: []
+    put:
+      summary: Disable public access on a Resource
+      operationId: disable-public-access
+      responses:
+        '200':
+          $ref: '#/components/responses/PublicAccessResponse'
+      description: Disable Public Access
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: string
+          in: query
+          name: account
+          description: Account Identifier
+        - schema:
+            type: string
+          in: query
+          name: org
+          description: Organisation Identifier
+        - schema:
+            type: string
+          in: query
+          name: project
+          description: Project Identifier
+        - schema:
+            type: string
+          in: query
+          name: resource_type
+          description: Resource type
+        - schema:
+            type: string
+          in: query
+          name: resource_identifier
+          description: Resource Identifier
+      tags:
+        - Public Access
+      x-internal: true
   '/v1/roles/{role}':
     parameters:
       - $ref: '#/components/parameters/RoleParam'

@@ -774,7 +774,7 @@ public class PipelineServiceModule extends AbstractModule {
         configuration.getPlanCreatorMergeServicePoolConfig().getMaxPoolSize(),
         configuration.getPlanCreatorMergeServicePoolConfig().getIdleTime(),
         configuration.getPlanCreatorMergeServicePoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("PipelineExecutorService-%d").build());
+        new ThreadFactoryBuilder().setNameFormat("PipelineMergeCreatorExecutorService-%d").build());
   }
 
   @Provides

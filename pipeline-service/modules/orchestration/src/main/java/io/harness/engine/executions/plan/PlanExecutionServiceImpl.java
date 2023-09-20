@@ -19,6 +19,7 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.statusupdate.NodeStatusUpdateHandlerFactory;
 import io.harness.engine.observers.NodeStatusUpdateHandler;
@@ -132,6 +133,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     if (StatusUtils.isFinalStatus(status)) {
       waitNotifyEngine.doneWith(
           String.format(ENFORCEMENT_CALLBACK_ID, planExecutionId), StringNotifyResponseData.builder().build());
+      waitNotifyEngine.doneWith(planExecutionId, PipelineStageResponseData.builder().status(status).build());
     }
     return updated;
   }
@@ -229,7 +231,13 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
 
   @Override
   public Status calculateStatus(String planExecutionId) {
-    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
+    return calculateStatus(planExecutionId, false);
+  }
+
+  @Override
+  public Status calculateStatus(String planExecutionId, boolean shouldSkipIdentityNodes) {
+    List<Status> statuses =
+        nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId, shouldSkipIdentityNodes);
     return OrchestrationUtils.calculateStatusForPlanExecution(statuses, planExecutionId);
   }
 
@@ -249,7 +257,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     try (AcquiredLock<?> lock =
              persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
       if (lock == null) {
-        log.debug(String.format(
+        log.warn(String.format(
             "[PLAN_EXECUTION_STATUS_UPDATE] Not able to take lock on plan status update for lockName - %s, returning early.",
             lockName));
       }
@@ -365,7 +373,8 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds) {
+  public void deleteAllPlanExecutionAndMetadata(
+      Set<String> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete) {
     // Uses idx index
     Query query = query(where(PlanExecutionKeys.uuid).in(planExecutionIds));
     for (String fieldName : PlanExecutionProjectionConstants.fieldsForPlanExecutionDelete) {
@@ -377,22 +386,23 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
         PlanExecution next = iterator.next();
         batchPlanExecutions.add(next);
         if (batchPlanExecutions.size() >= PersistenceModule.MAX_BATCH_SIZE) {
-          deletePlanExecutionMetadataInternal(batchPlanExecutions);
+          deletePlanExecutionMetadataInternal(batchPlanExecutions, retainPipelineExecutionDetailsAfterDelete);
           batchPlanExecutions.clear();
         }
       }
     }
     if (EmptyPredicate.isNotEmpty(batchPlanExecutions)) {
       // at end if any execution metadata is left, delete those as well
-      deletePlanExecutionMetadataInternal(batchPlanExecutions);
+      deletePlanExecutionMetadataInternal(batchPlanExecutions, retainPipelineExecutionDetailsAfterDelete);
     }
     deletePlanExecutionsInternal(planExecutionIds);
   }
 
-  private void deletePlanExecutionMetadataInternal(List<PlanExecution> batchPlanExecutions) {
+  private void deletePlanExecutionMetadataInternal(
+      List<PlanExecution> batchPlanExecutions, boolean retainPipelineExecutionDetailsAfterDelete) {
     // Delete planExecutionMetadata example - PlanExecutionMetadata, PipelineExecutionSummaryEntity
-    planExecutionDeleteObserverSubject.fireInform(
-        PlanExecutionDeleteObserver::onPlanExecutionsDelete, batchPlanExecutions);
+    planExecutionDeleteObserverSubject.fireInform(PlanExecutionDeleteObserver::onPlanExecutionsDelete,
+        batchPlanExecutions, retainPipelineExecutionDetailsAfterDelete);
   }
 
   private void deletePlanExecutionsInternal(Set<String> planExecutionIds) {

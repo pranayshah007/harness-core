@@ -502,21 +502,24 @@ public class KubernetesResource {
   }
 
   public static String redactSecretValues(String spec) {
+    final String redacted = "***";
+    return redactSecretValues(spec, redacted, redacted);
+  }
+
+  public static String redactSecretValues(String spec, String maskValue, String stringMaskValue) {
     String result = "Error in redactSecretValues. skipped.\n";
 
     try {
       V1Secret v1Secret = Yaml.loadAs(spec, V1Secret.class);
-
-      final String redacted = "***";
       if (isNotEmpty(v1Secret.getData())) {
         for (Entry e : v1Secret.getData().entrySet()) {
-          e.setValue(redacted);
+          e.setValue(maskValue);
         }
       }
 
       if (isNotEmpty(v1Secret.getStringData())) {
         for (Entry e : v1Secret.getStringData().entrySet()) {
-          e.setValue(redacted);
+          e.setValue(stringMaskValue);
         }
       }
       org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();

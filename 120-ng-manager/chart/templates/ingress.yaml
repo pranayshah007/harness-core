@@ -263,6 +263,13 @@ spec:
                   number: {{ $.Values.service.port }}
             path: /(v1/gitx-webhooks)
             pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/gitx-webhook-events)
+            pathType: ImplementationSpecific
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}
   tls:

@@ -7,6 +7,8 @@
 
 package io.harness.steps.servicenow.update;
 
+import static io.harness.rule.OwnerRule.RAFAEL;
+
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +29,10 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.servicenow.ServiceNowStepUtils;
+import io.harness.steps.servicenow.beans.ChangeTaskUpdateMultipleSpec;
 import io.harness.steps.servicenow.beans.ServiceNowField;
+import io.harness.steps.servicenow.beans.UpdateMultipleSpecType;
+import io.harness.steps.servicenow.beans.UpdateMultipleTaskNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,24 +75,81 @@ public class ServiceNowUpdateStepPlanCreatorTest extends OrchestrationStepsTestB
   @Test
   @Owner(developers = OwnerRule.NAMANG)
   @Category(UnitTests.class)
-  public void testValidateServiceNowTemplate() {
-    ServiceNowUpdateStepInfo serviceNowUpdateStepInfoNormal = getServiceNowUpdateStepInfo(
-        ParameterField.createValueField(true), ParameterField.createValueField("templateName"));
-    ServiceNowUpdateStepInfo serviceNowUpdateStepInfoNormal1 =
-        getServiceNowUpdateStepInfo(ParameterField.createValueField(false), null);
-    ServiceNowUpdateStepInfo serviceNowUpdateStepInfoMalformed =
-        getServiceNowUpdateStepInfo(ParameterField.createValueField(true), null);
-    ServiceNowUpdateStepInfo serviceNowUpdateStepInfoMalformed1 =
-        getServiceNowUpdateStepInfo(ParameterField.createValueField(true), ParameterField.createValueField("   "));
-    serviceNowUpdateStepPlanCreator.validateServiceNowTemplate(serviceNowUpdateStepInfoNormal);
-    serviceNowUpdateStepPlanCreator.validateServiceNowTemplate(serviceNowUpdateStepInfoNormal1);
-    verify(serviceNowUpdateStepPlanCreator, times(2)).validateServiceNowTemplate(any());
-    assertThatThrownBy(
-        () -> serviceNowUpdateStepPlanCreator.validateServiceNowTemplate(serviceNowUpdateStepInfoMalformed))
-        .isInstanceOf(InvalidRequestException.class);
-    assertThatThrownBy(
-        () -> serviceNowUpdateStepPlanCreator.validateServiceNowTemplate(serviceNowUpdateStepInfoMalformed1))
-        .isInstanceOf(InvalidRequestException.class);
+  public void testValidateServiceNowSingleTask() {
+    ServiceNowUpdateStepInfo serviceNowUpdateStepInfoNormal =
+        getServiceNowUpdateStepInfoWithSingleTask("number", "type", false, null);
+
+    ServiceNowUpdateStepInfo malformed1 = getServiceNowUpdateStepInfoWithSingleTask("number", "", false, null);
+    ServiceNowUpdateStepInfo malformed2 = getServiceNowUpdateStepInfoWithSingleTask("", "type", false, null);
+
+    List<ServiceNowUpdateStepInfo> serviceNowUpdateStepInfoList = List.of(malformed1, malformed2);
+
+    serviceNowUpdateStepPlanCreator.validateServiceNowSingleTask(serviceNowUpdateStepInfoNormal);
+
+    verify(serviceNowUpdateStepPlanCreator, times(1)).validateServiceNowSingleTask(any());
+    for (ServiceNowUpdateStepInfo s : serviceNowUpdateStepInfoList) {
+      assertThatThrownBy(() -> serviceNowUpdateStepPlanCreator.validateServiceNowSingleTask(s))
+          .isInstanceOf(InvalidRequestException.class);
+    }
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testValidateServiceNowMultipleTask() {
+    ServiceNowUpdateStepInfo serviceNowUpdateStepInfoNormal =
+        getChangeTaskUpdateMultiple("type", "number", false, null, "type");
+    ServiceNowUpdateStepInfo serviceNowUpdateStepInfoNormal2 =
+        getChangeTaskUpdateMultiple("", "number", false, null, "type");
+
+    ServiceNowUpdateStepInfo malformed1 = getChangeTaskUpdateMultiple("type", "", false, null, "type");
+    ServiceNowUpdateStepInfo malformed2 = getChangeTaskUpdateMultiple("", "", false, null, "type");
+    ServiceNowUpdateStepInfo malformed3 = getChangeTaskUpdateMultiple("type", "number", false, null, "");
+    ServiceNowUpdateStepInfo malformed4 = getChangeTaskUpdateMultiple("", "", false, null, "");
+
+    List<ServiceNowUpdateStepInfo> serviceNowUpdateStepInfoList =
+        List.of(malformed1, malformed2, malformed3, malformed4);
+
+    serviceNowUpdateStepPlanCreator.validateServiceNowMultipleTask(serviceNowUpdateStepInfoNormal);
+    serviceNowUpdateStepPlanCreator.validateServiceNowMultipleTask(serviceNowUpdateStepInfoNormal2);
+
+    verify(serviceNowUpdateStepPlanCreator, times(2)).validateServiceNowMultipleTask(any());
+    for (ServiceNowUpdateStepInfo s : serviceNowUpdateStepInfoList) {
+      assertThatThrownBy(() -> serviceNowUpdateStepPlanCreator.validateServiceNowMultipleTask(s))
+          .isInstanceOf(InvalidRequestException.class);
+    }
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testValidateServiceNowUsingTemplate() {
+    ServiceNowUpdateStepInfo normalMultiple1 =
+        getChangeTaskUpdateMultiple("type", "number", true, "templateName", "type");
+    ServiceNowUpdateStepInfo normalMultiple2 =
+        getChangeTaskUpdateMultiple("type", "number", false, "templateName", "type");
+
+    ServiceNowUpdateStepInfo normalSingle1 = getServiceNowUpdateStepInfoWithSingleTask("number", "type", false, null);
+    ServiceNowUpdateStepInfo normalSingle2 =
+        getServiceNowUpdateStepInfoWithSingleTask("number", "type", true, "templateName");
+
+    ServiceNowUpdateStepInfo normalSingleMalformed =
+        getServiceNowUpdateStepInfoWithSingleTask("number", "type", true, "");
+
+    ServiceNowUpdateStepInfo normalUpdateMalformed = getChangeTaskUpdateMultiple("type", "number", true, "", "type");
+
+    List<ServiceNowUpdateStepInfo> serviceNowUpdateStepInfoList = List.of(normalUpdateMalformed, normalSingleMalformed);
+
+    serviceNowUpdateStepPlanCreator.validateServiceNowTemplate(normalMultiple1);
+    serviceNowUpdateStepPlanCreator.validateServiceNowTemplate(normalSingle1);
+    serviceNowUpdateStepPlanCreator.validateServiceNowTemplate(normalMultiple2);
+    serviceNowUpdateStepPlanCreator.validateServiceNowTemplate(normalSingle2);
+
+    verify(serviceNowUpdateStepPlanCreator, times(4)).validateServiceNowTemplate(any());
+    for (ServiceNowUpdateStepInfo s : serviceNowUpdateStepInfoList) {
+      assertThatThrownBy(() -> serviceNowUpdateStepPlanCreator.validateServiceNowTemplate(s))
+          .isInstanceOf(InvalidRequestException.class);
+    }
   }
 
   @Test
@@ -96,6 +158,7 @@ public class ServiceNowUpdateStepPlanCreatorTest extends OrchestrationStepsTestB
   public void testValidateServiceNowForUnresolvedFields() {
     doNothing().when(mockNgLogCallback).saveExecutionLog(any(), any());
     ServiceNowUpdateStepInfo serviceNowUpdateStepInfoNormal = getServiceNowUpdateStepInfo(
+        ParameterField.createValueField("Ticket Number"), ParameterField.createValueField("Ticket Type"),
         ParameterField.createValueField(true), ParameterField.createValueField("templateName"));
     List<ServiceNowField> fields = new ArrayList<>();
 
@@ -119,6 +182,7 @@ public class ServiceNowUpdateStepPlanCreatorTest extends OrchestrationStepsTestB
     doNothing().when(mockNgLogCallback).saveExecutionLog(any(), any());
 
     ServiceNowUpdateStepInfo serviceNowUpdateStepInfoNormal = getServiceNowUpdateStepInfo(
+        ParameterField.createValueField("Ticket Number"), ParameterField.createValueField("Ticket Type"),
         ParameterField.createValueField(true), ParameterField.createValueField("templateName"));
     List<ServiceNowField> fields = new ArrayList<>();
 
@@ -135,14 +199,52 @@ public class ServiceNowUpdateStepPlanCreatorTest extends OrchestrationStepsTestB
     assertThat(result.containsValue("null")).isFalse();
   }
 
-  private ServiceNowUpdateStepInfo getServiceNowUpdateStepInfo(
-      ParameterField<Boolean> useServiceNowTemplate, ParameterField<String> templateName) {
+  private ServiceNowUpdateStepInfo getServiceNowUpdateStepInfo(ParameterField<String> ticketNumber,
+      ParameterField<String> ticketType, ParameterField<Boolean> useServiceNowTemplate,
+      ParameterField<String> templateName) {
     return ServiceNowUpdateStepInfo.builder()
         .useServiceNowTemplate(useServiceNowTemplate)
         .templateName(templateName)
         .connectorRef(ParameterField.createValueField("ConnectorRef"))
-        .ticketType(ParameterField.createValueField("TicketType"))
-        .ticketNumber(ParameterField.createValueField("TicketNumber"))
+        .ticketNumber(ticketNumber)
+        .ticketType(ticketType)
+        .build();
+  }
+
+  private ServiceNowUpdateStepInfo getServiceNowUpdateMultipleStepInfo(ParameterField<Boolean> useServiceNowTemplate,
+      ParameterField<String> templateName, UpdateMultipleTaskNode updateMultipleTasksNode, String ticketType) {
+    return ServiceNowUpdateStepInfo.builder()
+        .useServiceNowTemplate(useServiceNowTemplate)
+        .ticketType(ParameterField.createValueField(ticketType))
+        .updateMultiple(updateMultipleTasksNode)
+        .templateName(templateName)
+        .connectorRef(ParameterField.createValueField("ConnectorRef"))
+        .build();
+  }
+
+  public ServiceNowUpdateStepInfo getChangeTaskUpdateMultiple(
+      String changeTaskType, String changeRequestNumber, boolean isTemplate, String templateName, String ticketType) {
+    ChangeTaskUpdateMultipleSpec changeSpec =
+        ChangeTaskUpdateMultipleSpec.builder()
+            .changeTaskType(ParameterField.createValueField(changeTaskType))
+            .changeRequestNumber(ParameterField.createValueField(changeRequestNumber))
+            .build();
+
+    UpdateMultipleTaskNode updateMultipleTasksNode =
+        UpdateMultipleTaskNode.builder().spec(changeSpec).type(UpdateMultipleSpecType.CHANGE_TASK).build();
+
+    return getServiceNowUpdateMultipleStepInfo(ParameterField.createValueField(isTemplate),
+        ParameterField.createValueField(templateName), updateMultipleTasksNode, ticketType);
+  }
+
+  private ServiceNowUpdateStepInfo getServiceNowUpdateStepInfoWithSingleTask(
+      String ticketNumber, String ticketType, boolean useServiceNowTemplate, String templateName) {
+    return ServiceNowUpdateStepInfo.builder()
+        .useServiceNowTemplate(ParameterField.createValueField(useServiceNowTemplate))
+        .templateName(ParameterField.createValueField(templateName))
+        .connectorRef(ParameterField.createValueField("ConnectorRef"))
+        .ticketNumber(ParameterField.createValueField(ticketNumber))
+        .ticketType(ParameterField.createValueField(ticketType))
         .build();
   }
 }

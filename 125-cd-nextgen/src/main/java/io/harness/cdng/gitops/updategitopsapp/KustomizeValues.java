@@ -11,6 +11,8 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
@@ -23,6 +25,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@OwnedBy(HarnessTeam.GITOPS)
 @RecasterAlias("io.harness.cdng.gitops.updategitopsapp.KustomizeValues")
 public class KustomizeValues {
   @YamlSchemaTypes(expression)

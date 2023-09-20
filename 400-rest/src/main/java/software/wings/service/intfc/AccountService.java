@@ -70,7 +70,7 @@ public interface AccountService {
 
   boolean isNextGenEnabled(String accountId);
 
-  Boolean updateNextGenEnabled(String accountId, boolean enabled);
+  Boolean updateNextGenEnabled(String accountId, boolean isNextGenEnabled, boolean isAdmin);
 
   Boolean syncNextgenWithCG(String accountId);
 

@@ -151,7 +151,7 @@ public class DowntimeServiceImpl implements DowntimeService {
   @Override
   public PageResponse<MSDropdownResponse> getDowntimeAssociatedMonitoredServices(
       ProjectParams projectParams, PageParams pageParams) {
-    List<Downtime> downtimes = get(projectParams);
+    List<Downtime> downtimes = getDowntime(projectParams);
     List<MonitoredServiceDetail> monitoredServiceDetails;
     List<Downtime> allMonitoredServicesAssociatedDowntime =
         downtimes.stream()
@@ -179,28 +179,34 @@ public class DowntimeServiceImpl implements DowntimeService {
   @Override
   public Map<String, EntityUnavailabilityStatusesDTO> getMonitoredServicesAssociatedUnavailabilityInstanceMap(
       ProjectParams projectParams, Set<String> msIdentifiers) {
-    List<Downtime> downtimes = get(projectParams);
-    List<Downtime> filteredDowntimes = filterDowntimesOnMonitoredServices(downtimes, msIdentifiers);
-    List<String> downtimeIdentifiers =
-        filteredDowntimes.stream().map(Downtime::getIdentifier).collect(Collectors.toList());
-    List<EntityUnavailabilityStatusesDTO> activeOrFirstUpcomingInstances =
-        entityUnavailabilityStatusesService.getActiveOrFirstUpcomingInstance(projectParams, downtimeIdentifiers);
-
     Map<String, EntityUnavailabilityStatusesDTO> monitoredServiceIdentifierToUnavailabilityStatusesDTOMap =
         new HashMap<>();
-    activeOrFirstUpcomingInstances.forEach(instance -> {
-      EntitiesRule entitiesRule = instance.getEntitiesRule();
-      if (entitiesRule.getType().equals(RuleType.ALL)) {
-        msIdentifiers.forEach(identifier
-            -> addToMonitoredServiceIdentifierToUnavailabilityStatusesDTOMap(
-                identifier, monitoredServiceIdentifierToUnavailabilityStatusesDTOMap, instance));
-      } else {
-        List<EntityDetails> entityDetails = ((EntityIdentifiersRule) entitiesRule).getEntityIdentifiers();
-        entityDetails.forEach(detail
-            -> addToMonitoredServiceIdentifierToUnavailabilityStatusesDTOMap(
-                detail.getEntityRef(), monitoredServiceIdentifierToUnavailabilityStatusesDTOMap, instance));
-      }
-    });
+    try {
+      List<Downtime> downtimes = getDowntime(projectParams);
+      List<Downtime> filteredDowntimes = filterDowntimesOnMonitoredServices(downtimes, msIdentifiers);
+      List<String> downtimeIdentifiers =
+          filteredDowntimes.stream().map(Downtime::getIdentifier).collect(Collectors.toList());
+      List<EntityUnavailabilityStatusesDTO> activeOrFirstUpcomingInstances =
+          entityUnavailabilityStatusesService.getActiveOrFirstUpcomingInstance(projectParams, downtimeIdentifiers);
+
+      activeOrFirstUpcomingInstances.forEach(instance -> {
+        EntitiesRule entitiesRule = instance.getEntitiesRule();
+        if (entitiesRule.getType() == RuleType.ALL) {
+          msIdentifiers.forEach(identifier
+              -> addToMonitoredServiceIdentifierToUnavailabilityStatusesDTOMap(
+                  identifier, monitoredServiceIdentifierToUnavailabilityStatusesDTOMap, instance));
+        } else {
+          List<EntityDetails> entityDetails = ((EntityIdentifiersRule) entitiesRule).getEntityIdentifiers();
+          entityDetails.forEach(detail
+              -> addToMonitoredServiceIdentifierToUnavailabilityStatusesDTOMap(
+                  detail.getEntityRef(), monitoredServiceIdentifierToUnavailabilityStatusesDTOMap, instance));
+        }
+      });
+    } catch (Exception e) {
+      log.warn(
+          "[SLO HealthListView] Error occurred while building the monitoredServiceIdentifierToUnavailabilityStatusesDTOMap",
+          e);
+    }
     return monitoredServiceIdentifierToUnavailabilityStatusesDTOMap;
   }
 
@@ -452,7 +458,7 @@ public class DowntimeServiceImpl implements DowntimeService {
 
   private PageResponse<DowntimeListView> getDowntimeListViewResponse(
       ProjectParams projectParams, Integer offset, Integer pageSize, Filter filter) {
-    List<Downtime> downtimes = get(projectParams);
+    List<Downtime> downtimes = getDowntime(projectParams);
     downtimes = removePastDowntimes(downtimes);
     if (!isEmpty(filter.getSearchFilter())) {
       downtimes = filterDowntimes(downtimes, filter.getSearchFilter());
@@ -488,7 +494,7 @@ public class DowntimeServiceImpl implements DowntimeService {
                .build()));
   }
 
-  private List<Downtime> get(ProjectParams projectParams) {
+  private List<Downtime> getDowntime(ProjectParams projectParams) {
     Query<Downtime> downtimeQuery = hPersistence.createQuery(Downtime.class)
                                         .disableValidation()
                                         .filter(DowntimeKeys.accountId, projectParams.getAccountIdentifier())

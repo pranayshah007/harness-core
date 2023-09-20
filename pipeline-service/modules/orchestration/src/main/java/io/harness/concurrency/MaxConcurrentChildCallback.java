@@ -15,7 +15,7 @@ import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -43,7 +43,7 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
 
   @Inject OrchestrationEngine engine;
   @Inject NodeExecutionService nodeExecutionService;
-  @Inject PmsGraphStepDetailsService nodeExecutionInfoService;
+  @Inject NodeExecutionInfoService nodeExecutionInfoService;
   @Inject PersistentLocker persistentLocker;
 
   long maxConcurrency;

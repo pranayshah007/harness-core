@@ -10,6 +10,7 @@ package io.harness.ngtriggers.eventmapper.filters.impl;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
@@ -33,12 +34,15 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.git.GitClientHelper;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
@@ -261,6 +265,9 @@ public class FilepathTriggerFilter implements TriggerFilter {
       case BITBUCKET:
         connector = (BitbucketConnectorDTO) connectorConfigDTO;
         break;
+      case AZURE_REPO:
+        connector = (AzureRepoConnectorDTO) connectorConfigDTO;
+        break;
       default:
         break;
     }
@@ -268,7 +275,10 @@ public class FilepathTriggerFilter implements TriggerFilter {
     if (connector != null) {
       String completeUrl = connector.getUrl();
       GitConnectionType gitConnectionType = getGitConnectionType(connectorDetails);
-      if (isNotEmpty(webhookMetadata.getGit().getRepoName())
+      if (isAzureRepoProjectLevel(connector)) {
+        completeUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(
+            completeUrl, webhookMetadata.getGit().getRepoName());
+      } else if (isNotEmpty(webhookMetadata.getGit().getRepoName())
           && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
         completeUrl = StringUtils.stripEnd(connector.getUrl(), "/") + "/"
             + StringUtils.stripStart(webhookMetadata.getGit().getRepoName(), "/");
@@ -297,12 +307,25 @@ public class FilepathTriggerFilter implements TriggerFilter {
       AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO
                                                                     : GitConnectionType.ACCOUNT;
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getConnectionType() == AzureRepoConnectionTypeDTO.REPO ? GitConnectionType.REPO
+                                                                                 : GitConnectionType.PROJECT;
+
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getGitConnectionType();
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }
+  }
+
+  private boolean isAzureRepoProjectLevel(ScmConnector connector) {
+    if (connector instanceof AzureRepoConnectorDTO
+        && ((AzureRepoConnectorDTO) connector).getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
+      return true;
+    }
+    return false;
   }
 
   // Gitlab docs say, payload would contains details about 20 commits.

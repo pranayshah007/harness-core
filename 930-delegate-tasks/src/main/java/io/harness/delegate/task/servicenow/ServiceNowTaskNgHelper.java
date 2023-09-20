@@ -8,6 +8,18 @@
 package io.harness.delegate.task.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.CHANGE_TASK;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.INVALID_SERVICE_NOW_CREDENTIALS;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.ISSUE_NUMBER;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.NOT_FOUND;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.QUERY_FOR_GETTING_CHANGE_TASK;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.QUERY_FOR_GETTING_CHANGE_TASK_ALL;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.RETURN_FIELDS;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.SYS_ID;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.TIME_OUT;
+import static io.harness.delegate.task.servicenow.ServiceNowUtils.errorWhileUpdatingTicket;
+import static io.harness.delegate.task.servicenow.ServiceNowUtils.failedToUpdateTicket;
+import static io.harness.delegate.task.servicenow.ServiceNowUtils.isUnauthorizedError;
 import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.network.Http.getOkHttpClientBuilder;
@@ -35,6 +47,7 @@ import io.harness.network.Http;
 import io.harness.retry.RetryHelper;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.JsonUtils;
+import io.harness.servicenow.ChangeTaskUpdateMultiple;
 import io.harness.servicenow.ServiceNowFieldAllowedValueNG;
 import io.harness.servicenow.ServiceNowFieldNG;
 import io.harness.servicenow.ServiceNowFieldNG.ServiceNowFieldNGBuilder;
@@ -50,6 +63,7 @@ import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowTicketNG.ServiceNowTicketNGBuilder;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
 import io.harness.servicenow.ServiceNowTicketTypeNG;
+import io.harness.servicenow.ServiceNowUpdateMultipleTaskNode;
 import io.harness.servicenow.ServiceNowUtils;
 
 import software.wings.beans.LogColor;
@@ -60,6 +74,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.github.resilience4j.retry.Retry;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -70,6 +85,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -90,11 +109,10 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 @Singleton
 public class ServiceNowTaskNgHelper {
-  public static final String INVALID_SERVICE_NOW_CREDENTIALS = "Invalid ServiceNow credentials";
-  public static final String NOT_FOUND = "404 Not found";
   private final SecretDecryptionService secretDecryptionService;
-  static final long TIME_OUT = 120;
   private final Retry retry = buildRetryAndRegisterListeners();
+
+  @Inject @Named("serviceNowFetchTicketExecutor") public ExecutorService executorService;
 
   @Inject
   public ServiceNowTaskNgHelper(SecretDecryptionService secretDecryptionService) {
@@ -132,6 +150,8 @@ public class ServiceNowTaskNgHelper {
         return getTicketTypes(serviceNowTaskNGParameters);
       case GET_METADATA_V2:
         return getMetadataV2(serviceNowTaskNGParameters);
+      case GET_STANDARD_TEMPLATES_READONLY_FIELDS:
+        return getReadOnlyFieldsForStandardTemplate(serviceNowTaskNGParameters);
       default:
         throw new InvalidRequestException(
             String.format("Invalid servicenow task action: %s", serviceNowTaskNGParameters.getAction()));
@@ -220,8 +240,8 @@ public class ServiceNowTaskNgHelper {
       String ticketNumber = responseObj.get("record_number").asText();
       String ticketSysId = responseObj.get("record_sys_id").asText();
 
-      ServiceNowTicketNGBuilder serviceNowTicketNGBuilder =
-          fetchServiceNowTicketUsingSysId(ticketSysId, serviceNowTaskNGParameters);
+      ServiceNowTicketNGBuilder serviceNowTicketNGBuilder = fetchServiceNowTicketUsingSysId(
+          ticketSysId, serviceNowTaskNGParameters.getTicketType(), serviceNowTaskNGParameters);
       log.info(String.format("Created ticket with number: %s, sys_id: %s", ticketNumber, ticketSysId));
       // get url from sys_id instead of ticket number
       String ticketUrlFromSysId = ServiceNowUtils.prepareTicketUrlFromTicketId(
@@ -240,32 +260,137 @@ public class ServiceNowTaskNgHelper {
     }
   }
 
-  private ServiceNowTaskNGResponse updateTicket(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
-    validateServiceNowTaskInputs(serviceNowTaskNGParameters);
-    if (!serviceNowTaskNGParameters.isUseServiceNowTemplate()) {
-      return updateTicketWithoutTemplate(serviceNowTaskNGParameters);
-    } else {
-      return updateTicketUsingServiceNowTemplate(serviceNowTaskNGParameters);
+  private List<String> fetchChangeTasksFromCR(
+      String changeRequestNumber, String changeTaskType, ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
+
+    List<String> changeTaskIds = new ArrayList<>();
+
+    String query = changeTaskType == null
+        ? String.format(QUERY_FOR_GETTING_CHANGE_TASK_ALL, changeRequestNumber)
+        : String.format(QUERY_FOR_GETTING_CHANGE_TASK, changeRequestNumber, changeTaskType);
+
+    Call<JsonNode> request = serviceNowRestClient.fetchChangeTasksFromCR(
+        ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO), CHANGE_TASK, RETURN_FIELDS, query);
+
+    try {
+      Response<JsonNode> response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
+      log.info("Response received from serviceNow: {}", response);
+      handleResponse(response, "Failed to fetch tasks for service now change request ticket");
+      JsonNode responseObj = response.body().get("result");
+      if (responseObj.isArray()) {
+        for (JsonNode changeTaskObj : responseObj) {
+          if (serviceNowTaskNGParameters.isUseServiceNowTemplate()) {
+            changeTaskIds.add(changeTaskObj.get(ISSUE_NUMBER).textValue());
+          } else {
+            changeTaskIds.add(changeTaskObj.get(SYS_ID).textValue());
+          }
+        }
+        return changeTaskIds;
+      } else {
+        throw new ServiceNowException(
+            "Response for fetching changeTasks is not an array. Response: " + response, SERVICENOW_ERROR, USER);
+      }
+    } catch (ServiceNowException e) {
+      log.error("Failed to fetch service now tasks {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error("Failed to fetch service now tasks {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(errorWhileUpdatingTicket(ex), SERVICENOW_ERROR, USER, ex);
     }
   }
 
-  private ServiceNowTaskNGResponse updateTicketUsingServiceNowTemplate(
-      ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+  public ServiceNowTaskNGResponse updateMultipleTickets(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters, String ticketId) {
+    if (CHANGE_TASK.equalsIgnoreCase(serviceNowTaskNGParameters.getUpdateMultiple().getType())) {
+      ChangeTaskUpdateMultiple changeRequestUpdateMultiple =
+          (ChangeTaskUpdateMultiple) serviceNowTaskNGParameters.getUpdateMultiple().getSpec();
+
+      List<String> changeTaskIdsToUpdate =
+          fetchChangeTasksFromCR(ticketId, changeRequestUpdateMultiple.getChangeTaskType(), serviceNowTaskNGParameters);
+
+      Map<String, String> fieldsBody = serviceNowTaskNGParameters.getFields()
+                                           .entrySet()
+                                           .stream()
+                                           .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
+                                           .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+      List<ServiceNowTicketNG> updatedTickets = new ArrayList<>();
+
+      List<Future<ServiceNowTaskNGResponse>> futures = new ArrayList<>();
+
+      log.info("Body of the update issue request made to the ServiceNow server: {}", fieldsBody);
+      for (String changeTaskId : changeTaskIdsToUpdate) {
+        Callable<ServiceNowTaskNGResponse> task = () -> updateSingleTicket(serviceNowTaskNGParameters, changeTaskId);
+
+        Future<ServiceNowTaskNGResponse> future = executorService.submit(task);
+        futures.add(future);
+      }
+
+      for (Future<ServiceNowTaskNGResponse> future : futures) {
+        try {
+          ServiceNowTaskNGResponse partialResult = future.get(TIME_OUT, TimeUnit.SECONDS);
+          updatedTickets.add(partialResult.getTicket());
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+          log.error("Failed to update ticket in updateMultipleTask", e);
+          throw new ServiceNowException(
+              "Failed to update ticket in updateMultipleTask, please contact support", SERVICENOW_ERROR, USER);
+        }
+      }
+
+      return ServiceNowTaskNGResponse.builder().tickets(updatedTickets).build();
+    }
+
+    log.error("Failed to update multiple in ServiceNow type: {} is not supported",
+        serviceNowTaskNGParameters.getUpdateMultiple().getType());
+    throw new ServiceNowException(
+        String.format("Error occurred while updating multiple in serviceNow for ticket type {}",
+            serviceNowTaskNGParameters.getUpdateMultiple().getType()),
+        SERVICENOW_ERROR, USER);
+  }
+
+  private ServiceNowTaskNGResponse updateTicket(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    String ticketId = "";
+
+    if (StringUtils.isNotBlank(serviceNowTaskNGParameters.getTicketNumber())) {
+      ticketId = serviceNowTaskNGParameters.getTicketNumber();
+    } else {
+      ticketId = getTicketNumberFromUpdateMultiple(serviceNowTaskNGParameters);
+    }
+
+    if (serviceNowTaskNGParameters.getUpdateMultiple() != null) {
+      return updateMultipleTickets(serviceNowTaskNGParameters, ticketId);
+    }
+    return updateSingleTicket(serviceNowTaskNGParameters, ticketId);
+  }
+
+  private ServiceNowTaskNGResponse updateSingleTicket(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters, String ticketId) {
+    if (!serviceNowTaskNGParameters.isUseServiceNowTemplate()) {
+      return updateTicketWithoutTemplate(serviceNowTaskNGParameters, ticketId);
+    } else {
+      return updateTicketWithTemplate(serviceNowTaskNGParameters, ticketId);
+    }
+  }
+
+  private ServiceNowTaskNGResponse updateTicketWithTemplate(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters, String ticketId) {
     if (serviceNowTaskNGParameters.getTemplateName() == null) {
       throw new ServiceNowException("templateName can not be empty", SERVICENOW_ERROR, USER);
     }
+    String ticketType = serviceNowTaskNGParameters.getTicketType().toLowerCase();
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
     final Call<JsonNode> request =
         serviceNowRestClient.updateUsingTemplate(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
-            serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTemplateName(),
-            serviceNowTaskNGParameters.getTicketNumber());
+            ticketType, serviceNowTaskNGParameters.getTemplateName(), ticketId);
     Response<JsonNode> response = null;
 
     try {
-      log.info("updateUsingTemplate called for ticketType: {}, templateName: {}",
-          serviceNowTaskNGParameters.getTicketType(), serviceNowTaskNGParameters.getTemplateName());
+      log.info("updateUsingTemplate called for ticketType: {}, templateName: {}", ticketType,
+          serviceNowTaskNGParameters.getTemplateName());
       response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
       log.info("Response received for updateUsingTemplate: {}", response);
       handleResponse(response, "Failed to update ServiceNow ticket");
@@ -274,22 +399,20 @@ public class ServiceNowTaskNgHelper {
       String ticketSysId = parseTicketSysIdFromResponse(responseObj);
 
       ServiceNowTicketNGBuilder serviceNowTicketNGBuilder =
-          fetchServiceNowTicketUsingSysId(ticketSysId, serviceNowTaskNGParameters);
+          fetchServiceNowTicketUsingSysId(ticketSysId, ticketType, serviceNowTaskNGParameters);
 
       log.info(String.format("Updated ticket with number: %s, sys_id: %s", ticketNumber, ticketSysId));
       String ticketUrlFromSysId = ServiceNowUtils.prepareTicketUrlFromTicketId(
-          serviceNowConnectorDTO.getServiceNowUrl(), ticketSysId, serviceNowTaskNGParameters.getTicketType());
+          serviceNowConnectorDTO.getServiceNowUrl(), ticketSysId, ticketType);
       return ServiceNowTaskNGResponse.builder()
           .ticket(serviceNowTicketNGBuilder.url(ticketUrlFromSysId).build())
           .build();
     } catch (ServiceNowException e) {
-      log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(e), e);
+      log.error(failedToUpdateTicket(), ExceptionUtils.getMessage(e), e);
       throw e;
     } catch (Exception ex) {
-      log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(
-          String.format("Error occurred while updating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
-          SERVICENOW_ERROR, USER, ex);
+      log.error(failedToUpdateTicket(), ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(errorWhileUpdatingTicket(ex), SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -344,15 +467,14 @@ public class ServiceNowTaskNgHelper {
   }
 
   private ServiceNowTicketNGBuilder fetchServiceNowTicketUsingSysId(
-      String ticketSysId, ServiceNowTaskNGParameters parameters) {
+      String ticketSysId, String ticketType, ServiceNowTaskNGParameters parameters) {
     String query = "sys_id=" + ticketSysId;
     ServiceNowConnectorDTO serviceNowConnectorDTO = parameters.getServiceNowConnectorDTO();
 
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request =
-        serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
-            parameters.getTicketType().toString().toLowerCase(), query, "all");
+    final Call<JsonNode> request = serviceNowRestClient.getIssue(
+        ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO), ticketType.toLowerCase(), query, "all");
     Response<JsonNode> response = null;
     try {
       response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
@@ -397,13 +519,17 @@ public class ServiceNowTaskNgHelper {
     return ServiceNowTicketNG.builder().number(fields.get("number").getDisplayValue()).fields(fields);
   }
 
-  private ServiceNowTaskNGResponse updateTicketWithoutTemplate(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+  private ServiceNowTaskNGResponse updateTicketWithoutTemplate(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters, String ticketId) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
-    String ticketId = null;
+
+    String ticketType = serviceNowTaskNGParameters.getTicketType().toLowerCase();
+
     if (serviceNowTaskNGParameters.getTicketNumber() != null) {
       ticketId = getIssueIdFromIssueNumber(serviceNowTaskNGParameters);
     }
+
     Map<String, String> body = new HashMap<>();
     // todo: process servicenow fields before client uses these
     serviceNowTaskNGParameters.getFields().forEach((key, value) -> {
@@ -414,7 +540,7 @@ public class ServiceNowTaskNgHelper {
 
     final Call<JsonNode> request =
         serviceNowRestClient.updateTicket(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
-            serviceNowTaskNGParameters.getTicketType().toLowerCase(), ticketId, "all", null, body);
+            ticketType.toLowerCase(), ticketId, "all", null, body);
     Response<JsonNode> response = null;
 
     try {
@@ -427,18 +553,26 @@ public class ServiceNowTaskNgHelper {
       ServiceNowTicketNG ticketNg = serviceNowTicketNGBuilder.build();
       log.info("ticketNumber updated for ServiceNow: {}", ticketNg.getNumber());
       String ticketUrlFromTicketId = ServiceNowUtils.prepareTicketUrlFromTicketNumber(
-          serviceNowConnectorDTO.getServiceNowUrl(), ticketNg.getNumber(), serviceNowTaskNGParameters.getTicketType());
+          serviceNowConnectorDTO.getServiceNowUrl(), ticketNg.getNumber(), ticketType);
       ticketNg.setUrl(ticketUrlFromTicketId);
       return ServiceNowTaskNGResponse.builder().ticket(ticketNg).build();
     } catch (ServiceNowException e) {
-      log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(e), e);
+      log.error(failedToUpdateTicket(), ExceptionUtils.getMessage(e), e);
       throw e;
     } catch (Exception ex) {
-      log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(
-          String.format("Error occurred while updating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
-          SERVICENOW_ERROR, USER, ex);
+      log.error(failedToUpdateTicket(), ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(errorWhileUpdatingTicket(ex), SERVICENOW_ERROR, USER, ex);
     }
+  }
+
+  private String getTicketNumberFromUpdateMultiple(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    ServiceNowUpdateMultipleTaskNode updateMultiple = serviceNowTaskNGParameters.getUpdateMultiple();
+
+    if (updateMultiple != null) {
+      ChangeTaskUpdateMultiple changeTaskUpdateMultiple = (ChangeTaskUpdateMultiple) updateMultiple.getSpec();
+      return changeTaskUpdateMultiple != null ? changeTaskUpdateMultiple.getChangeRequestNumber() : "";
+    }
+    return "";
   }
 
   private ServiceNowTaskNGResponse getTemplateList(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
@@ -667,7 +801,44 @@ public class ServiceNowTaskNgHelper {
           SERVICENOW_ERROR, USER, ex);
     }
   }
+  private ServiceNowTaskNGResponse getReadOnlyFieldsForStandardTemplate(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
+    final Call<JsonNode> request = serviceNowRestClient.getReadOnlyFieldsForStandardTemplate(
+        ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
+    Response<JsonNode> response = null;
+    try {
+      response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
+      log.info("Response received from serviceNow for GET_STANDARD_TEMPLATES_READONLY_FIELDS: {}", response);
+      handleResponse(response, "Failed to get servicenow readonly metadata");
+      JsonNode responseObj = response.body().get("result");
+      if (responseObj != null) {
+        if (responseObj.get(0) == null || responseObj.get(0).get("readonly_fields") == null) {
+          log.info(
+              "Response received from serviceNow for GET_STANDARD_TEMPLATES_READONLY_FIELDS is not having readonly_fields");
+          return ServiceNowTaskNGResponse.builder().build();
+        }
+        String readonly_fields = responseObj.get(0).get("readonly_fields").asText();
+        return ServiceNowTaskNGResponse.builder().serviceNowStandardTemplateReadOnlyFields(readonly_fields).build();
+      } else {
+        throw new ServiceNowException("Failed to fetch read only fields for standard templates "
+                + " response: " + response,
+            SERVICENOW_ERROR, USER);
+      }
+    } catch (ServiceNowException e) {
+      log.error("Failed to get ServiceNow read only fields for standard template: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error(
+          "Failed to get ServiceNow read only fields for standard template: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while getting serviceNow read only fields for standard template: %s",
+              ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
+    }
+  }
   private ServiceNowTaskNGResponse createImportSet(
       ServiceNowTaskNGParameters serviceNowTaskNGParameters, LogCallback executionLogCallback) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
@@ -938,10 +1109,6 @@ public class ServiceNowTaskNgHelper {
       throw new ServiceNowException(message + " : " + response.message(), SERVICENOW_ERROR, USER);
     }
     throw new ServiceNowException(message + " : " + response.errorBody().string(), SERVICENOW_ERROR, USER);
-  }
-
-  public static boolean isUnauthorizedError(Response<?> response) {
-    return 401 == response.code();
   }
 
   @NotNull

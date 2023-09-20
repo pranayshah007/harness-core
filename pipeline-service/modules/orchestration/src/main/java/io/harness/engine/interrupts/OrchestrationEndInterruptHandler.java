@@ -17,12 +17,14 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class OrchestrationEndInterruptHandler implements AsyncInformObserver, OrchestrationEndObserver {
   @Inject private InterruptService interruptService;
   @Inject @Named("EngineExecutorService") ExecutorService executorService;

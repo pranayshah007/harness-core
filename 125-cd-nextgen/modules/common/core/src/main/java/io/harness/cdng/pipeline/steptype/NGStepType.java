@@ -47,6 +47,10 @@ public enum NGStepType {
   GITOPS_SYNC(
       "GitOps Sync", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_SYNC),
 
+  @JsonProperty(StepSpecTypeConstants.UPDATE_GITOPS_APP)
+  UPDATE_GITOPS_APP("Update GitOps App", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.UPDATE_GITOPS_APP),
+
   // k8s steps
   @JsonProperty("APPLY")
   APPLY("Apply", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.PLACEHOLDER),

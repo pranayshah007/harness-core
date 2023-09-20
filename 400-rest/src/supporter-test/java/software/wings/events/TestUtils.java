@@ -29,10 +29,10 @@ import io.harness.scm.SecretName;
 
 import software.wings.beans.Account;
 import software.wings.beans.Account.Builder;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

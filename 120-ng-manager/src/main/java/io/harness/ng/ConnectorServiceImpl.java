@@ -180,8 +180,7 @@ public class ConnectorServiceImpl implements ConnectorService {
       ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
       VaultConnectorDTO vaultConnectorDTO = (VaultConnectorDTO) connectorInfoDTO.getConnectorConfig();
       if (AccessType.APP_ROLE.equals(vaultConnectorDTO.getAccessType())) {
-        vaultConnectorDTO.setRenewAppRoleToken(
-            !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.DO_NOT_RENEW_APPROLE_TOKEN));
+        vaultConnectorDTO.setRenewAppRoleToken(false);
         connectorInfoDTO.setConnectorConfig(vaultConnectorDTO);
         connectorDTO.setConnectorInfo(connectorInfoDTO);
       }

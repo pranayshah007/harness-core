@@ -128,9 +128,8 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   }
   @Override
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext ctx, YamlField config) {
-    // Create graphLayout only if stages node is child of parent.(Return empty if its child of parallel.spec)
-    if (EmptyPredicate.isEmpty(config.getNode().getParentNode().getType())
-        || !config.getNode().getParentNode().getType().equals(YAMLFieldNameConstants.PIPELINE)) {
+    // Create graphLayout only if stages node is grand child of pipeline.(Return empty if its child of parallel.spec)
+    if (!isStagesNodeGrandChildOfPipelineNode(config)) {
       return GraphLayoutResponse.builder().build();
     }
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
@@ -162,6 +161,15 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
         .layoutNodes(stageYamlFieldMap)
         .startingNodeId(stagesYamlField.get(0).getNode().getUuid())
         .build();
+  }
+
+  private boolean isStagesNodeGrandChildOfPipelineNode(YamlField config) {
+    YamlNode parentYamlNode = config.getNode().getParentNode();
+    if (parentYamlNode != null && parentYamlNode.getParentNode() != null
+        && YAMLFieldNameConstants.PIPELINE.equals(parentYamlNode.getParentNode().getType())) {
+      return true;
+    }
+    return false;
   }
 
   @Override

@@ -62,6 +62,7 @@ import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
@@ -110,6 +111,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -176,6 +178,18 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     if (isEmpty(vmDetailsOutcome.getIpAddress())) {
       throw new CIStageExecutionException("Ip address in initialise outcome cannot be empty");
     }
+    String parkedTaskId = "";
+    Set<String> taskIDs = new HashSet<>();
+    List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
+
+    // create parked task for distributed dlite
+    if (stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM
+        && ((DliteVmStageInfraDetails) stageInfraDetails).isDistributed()) {
+      parkedTaskId = ciDelegateTaskExecutor.queueParkedDelegateTaskDlite(ambiance, timeoutInMillis, accountId);
+      taskIDs.add(parkedTaskId);
+    } else {
+      eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
+    }
     boolean isBareMetalUsed = vmExecuteStepUtils.isBareMetalUsed(vmDetailsOutcome.getPoolDriverUsed());
 
     logBackgroundStepForBackwardCompatibility(
@@ -190,18 +204,23 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     Set<String> secrets = vmStepSerializer.getStepSecrets(vmStepInfo, ambiance);
     secrets.addAll(stepPreProcessSecrets);
     CIExecuteStepTaskParams params = getVmTaskParams(ambiance, vmStepInfo, secrets, stageInfraDetails, stageDetails,
-        vmDetailsOutcome, runtimeId, stepIdentifier, logKey);
-    List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
-    if (isNotEmpty(vmDetailsOutcome.getDelegateId())) {
-      eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
+        vmDetailsOutcome, runtimeId, stepIdentifier, logKey, parkedTaskId);
+
+    String taskType = CI_EXECUTE_STEP;
+    if (params.getType() == CIExecuteStepTaskParams.Type.DLITE_VM) {
+      if (((DliteVmStageInfraDetails) stageInfraDetails).isDistributed()) {
+        taskType = TaskType.DLITE_CI_VM_EXECUTE_TASK_V2.getDisplayName();
+      } else {
+        taskType = TaskType.DLITE_CI_VM_EXECUTE_TASK.getDisplayName();
+      }
     }
+
     String taskId = queueDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, params,
-        new ArrayList<>(), eligibleToExecuteDelegateIds);
-
-    log.info("Created VM task {} for step {}", taskId, stepIdentifier);
-
+        new ArrayList<>(), eligibleToExecuteDelegateIds, taskType);
+    taskIDs.add(taskId);
+    log.info("Created parked task {} and VM task {} for step {}", parkedTaskId, taskId, stepIdentifier);
     return AsyncExecutableResponse.newBuilder()
-        .addCallbackIds(taskId)
+        .addAllCallbackIds(taskIDs)
         .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
         .build();
   }
@@ -249,7 +268,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
 
   private CIExecuteStepTaskParams getVmTaskParams(Ambiance ambiance, VmStepInfo vmStepInfo, Set<String> secrets,
       StageInfraDetails stageInfraDetails, StageDetails stageDetails, VmDetailsOutcome vmDetailsOutcome,
-      String runtimeId, String stepIdentifier, String logKey) {
+      String runtimeId, String stepIdentifier, String logKey, String taskId) {
     StageInfraDetails.Type type = stageInfraDetails.getType();
     if (type != StageInfraDetails.Type.VM && type != StageInfraDetails.Type.DLITE_VM) {
       throw new CIStageExecutionException("Invalid stage infra details type for vm or docker");
@@ -291,10 +310,15 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       return ciVmExecuteStepTaskParams;
     }
 
+    // Dlite processing
+    DliteVmStageInfraDetails infraDetails = (DliteVmStageInfraDetails) stageInfraDetails;
+    ExecuteStepRequest executeStepRequest = vmExecuteStepUtils.convertStep(ciVmExecuteStepTaskParams).build();
+    if (infraDetails.isDistributed()) {
+      executeStepRequest.setTaskID(taskId);
+      executeStepRequest.setDistributed(true);
+    }
     DliteVmExecuteStepTaskParams dliteVmExecuteStepTaskParams =
-        DliteVmExecuteStepTaskParams.builder()
-            .executeStepRequest(vmExecuteStepUtils.convertStep(ciVmExecuteStepTaskParams).build())
-            .build();
+        DliteVmExecuteStepTaskParams.builder().executeStepRequest(executeStepRequest).build();
     hostedVmSecretResolver.resolve(ambiance, dliteVmExecuteStepTaskParams);
     return dliteVmExecuteStepTaskParams;
   }
@@ -471,12 +495,10 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
 
   private String queueDelegateTask(Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor,
       CIExecuteStepTaskParams ciExecuteStepTaskParams, List<TaskSelector> taskSelectors,
-      List<String> eligibleToExecuteDelegateIds) {
-    String taskType = CI_EXECUTE_STEP;
+      List<String> eligibleToExecuteDelegateIds, String taskType) {
     boolean executeOnHarnessHostedDelegates = false;
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     if (ciExecuteStepTaskParams.getType() == CIExecuteStepTaskParams.Type.DLITE_VM) {
-      taskType = TaskType.DLITE_CI_VM_EXECUTE_TASK.getDisplayName();
       serializationFormat = SerializationFormat.JSON;
       executeOnHarnessHostedDelegates = true;
     }
@@ -513,6 +535,9 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     return responseDataMap.entrySet()
         .stream()
         .filter(entry -> entry.getValue() instanceof VmTaskExecutionResponse)
+        .filter(entry
+            -> ((VmTaskExecutionResponse) entry.getValue()).getCommandExecutionStatus()
+                != CommandExecutionStatus.RUNNING)
         .findFirst()
         .map(obj -> (VmTaskExecutionResponse) obj.getValue())
         .orElse(null);

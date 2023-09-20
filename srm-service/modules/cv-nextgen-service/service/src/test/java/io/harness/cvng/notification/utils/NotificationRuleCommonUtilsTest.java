@@ -90,6 +90,7 @@ public class NotificationRuleCommonUtilsTest extends CvNextGenTestBase {
     verify(currentHealthScoreMock).getRiskStatus();
     verify(currentHealthScoreMock).getHealthScore();
   }
+
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
@@ -98,7 +99,7 @@ public class NotificationRuleCommonUtilsTest extends CvNextGenTestBase {
     Instant instantMock = mock(Instant.class);
     String result = NotificationRuleCommonUtils.getSloPerformanceSectionForReport(
         mSHealthReportAssociatedSLOsDetailsList, instantMock, "baseUrl1", "SLOPerformanceSection1");
-    assertThat(result).isEqualTo("");
+    assertThat(result).isEqualTo(" ");
   }
 
   @Test

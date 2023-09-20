@@ -7,6 +7,7 @@
 
 package io.harness.cvng.notification.resources;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,6 +16,8 @@ import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ErrorDTO;
+import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -25,6 +28,9 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -45,6 +51,27 @@ import retrofit2.http.Body;
 @ExposeInternalException
 @NextGenManagerAuth
 @OwnedBy(HarnessTeam.CV)
+@Tag(name = "Srm Notification", description = "This contains APIs related to CRUD operations of srm notifications")
+@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
+    description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
+    content =
+    {
+      @Content(mediaType = NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE,
+          schema = @Schema(implementation = FailureDTO.class))
+      ,
+          @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
+              schema = @Schema(implementation = FailureDTO.class))
+    })
+@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE,
+    description = NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE,
+    content =
+    {
+      @Content(mediaType = NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE,
+          schema = @Schema(implementation = ErrorDTO.class))
+      ,
+          @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
+              schema = @Schema(implementation = ErrorDTO.class))
+    })
 public class NotificationRuleResource {
   @Inject NotificationRuleService notificationRuleService;
 
@@ -87,7 +114,17 @@ public class NotificationRuleResource {
   @GET
   @Timed
   @ExceptionMetered
+  @Path("{identifier}")
   @ApiOperation(value = "get notificationRule data", nickname = "getNotificationRuleData")
+  public RestResponse<NotificationRuleResponse> getNotificationRuleData(@BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") String identifier) {
+    return new RestResponse<>(notificationRuleService.get(projectParams, identifier));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "get notificationRule data", nickname = "getNotificationRule")
   public ResponseDTO<PageResponse<NotificationRuleResponse>> getNotificationRuleData(
       @BeanParam ProjectParams projectParams,
       @QueryParam("notificationRuleIdentifiers") List<String> notificationRuleIdentifiers,

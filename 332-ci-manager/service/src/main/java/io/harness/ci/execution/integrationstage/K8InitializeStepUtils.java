@@ -53,6 +53,8 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.StepContainerUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -99,6 +101,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -407,7 +410,7 @@ public class K8InitializeStepUtils {
         .containerType(CIContainerType.PLUGIN)
         .stepIdentifier(identifier)
         .stepName(stepName)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(CIStepInfoUtils.getImagePullPolicy(stepInfo)))
+        .imagePullPolicy(getImagePullPolicy(stageNode, stepInfo))
         .privileged(privileged)
         .runAsUser(runAsUser)
         .build();
@@ -474,7 +477,7 @@ public class K8InitializeStepUtils {
         .stepName(name)
         .privileged(runStepInfo.getPrivileged().getValue())
         .runAsUser(runAsUser)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(runStepInfo.getImagePullPolicy()))
+        .imagePullPolicy(getImagePullPolicy(stageNode, runStepInfo))
         .build();
   }
 
@@ -541,7 +544,7 @@ public class K8InitializeStepUtils {
         .stepName(name)
         .privileged(backgroundStepInfo.getPrivileged().getValue())
         .runAsUser(runAsUser)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(backgroundStepInfo.getImagePullPolicy()))
+        .imagePullPolicy(getImagePullPolicy(stageNode, backgroundStepInfo))
         .build();
   }
 
@@ -595,7 +598,7 @@ public class K8InitializeStepUtils {
         .containerType(CIContainerType.TEST_INTELLIGENCE)
         .privileged(runTestsStepInfo.getPrivileged().getValue())
         .runAsUser(runAsUser)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(runTestsStepInfo.getImagePullPolicy()))
+        .imagePullPolicy(getImagePullPolicy(stageNode, runTestsStepInfo))
         .build();
   }
 
@@ -640,7 +643,7 @@ public class K8InitializeStepUtils {
         .stepName(name)
         .privileged(pluginStepInfo.getPrivileged().getValue())
         .runAsUser(runAsUser)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(pluginStepInfo.getImagePullPolicy()))
+        .imagePullPolicy(getImagePullPolicy(stageNode, pluginStepInfo))
         .build();
   }
 
@@ -1283,5 +1286,44 @@ public class K8InitializeStepUtils {
       default:
         return null;
     }
+  }
+
+  private String getImagePullPolicy(IntegrationStageNode stageNode, CIStepInfo ciStepInfo) {
+    String imagePullPolicy = null;
+    if (ciStepInfo != null) {
+      switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
+        case RUN:
+          RunStepInfo runStepInfo = (RunStepInfo) ciStepInfo;
+          imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(runStepInfo.getImagePullPolicy());
+          break;
+        case BACKGROUND:
+          BackgroundStepInfo backgroundStepInfo = (BackgroundStepInfo) ciStepInfo;
+          imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(backgroundStepInfo.getImagePullPolicy());
+          break;
+        case RUN_TESTS:
+          RunTestsStepInfo runTestsStepInfo = (RunTestsStepInfo) ciStepInfo;
+          imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(runTestsStepInfo.getImagePullPolicy());
+          break;
+        case PLUGIN:
+          PluginStepInfo pluginStepInfo = (PluginStepInfo) ciStepInfo;
+          imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(pluginStepInfo.getImagePullPolicy());
+          break;
+        default:
+          if (ciStepInfo instanceof PluginCompatibleStep) {
+            PluginCompatibleStep pluginCompatibleStep = (PluginCompatibleStep) ciStepInfo;
+            imagePullPolicy =
+                RunTimeInputHandler.resolveImagePullPolicy(CIStepInfoUtils.getImagePullPolicy(pluginCompatibleStep));
+          }
+      }
+    }
+
+    if (stageNode != null && stageNode.getIntegrationStageConfig() != null) {
+      Infrastructure infra = stageNode.getIntegrationStageConfig().getInfrastructure();
+      if (infra.getType() == Infrastructure.Type.KUBERNETES_DIRECT && StringUtils.isBlank(imagePullPolicy)) {
+        K8sDirectInfraYaml k8Infra = (K8sDirectInfraYaml) infra;
+        imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(k8Infra.getSpec().getImagePullPolicy());
+      }
+    }
+    return imagePullPolicy;
   }
 }

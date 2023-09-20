@@ -48,6 +48,7 @@ import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.revertpr.RevertPRStepInfo;
 import io.harness.cdng.gitops.syncstep.SyncStepInfo;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepInfo;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepInfo;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepInfo;
 import io.harness.cdng.googlefunctions.deploygenone.GoogleFunctionsGenOneDeployStep;
@@ -125,18 +126,19 @@ import io.swagger.annotations.ApiModel;
     components = {HarnessModuleComponent.CDS_GITOPS, HarnessModuleComponent.CDS_SERVERLESS,
         HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @ApiModel(
-    subTypes = {MergePRStepInfo.class, RevertPRStepInfo.class, SyncStepInfo.class, K8sApplyStepInfo.class,
-        K8sBlueGreenStepInfo.class, K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class,
-        K8sScaleStepInfo.class, K8sDeleteStepInfo.class, K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class,
-        TerraformApplyStepInfo.class, TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class,
-        TerraformRollbackStepInfo.class, HelmDeployStepInfo.class, HelmRollbackStepInfo.class,
-        CloudformationCreateStackStepInfo.class, CloudformationDeleteStackStepInfo.class,
-        ServerlessAwsLambdaDeployStepInfo.class, ServerlessAwsLambdaRollbackStepInfo.class,
-        CloudformationRollbackStepInfo.class, CommandStepInfo.class, AzureWebAppSlotDeploymentStepInfo.class,
-        AzureWebAppTrafficShiftStepInfo.class, AzureWebAppSwapSlotStepInfo.class, AzureWebAppRollbackStepInfo.class,
-        JenkinsBuildStepInfo.class, AzureCreateARMResourceStepInfo.class, AzureCreateBPStepInfo.class,
-        AzureARMRollbackStepInfo.class, EcsRollingDeployStepInfo.class, EcsRollingRollbackStepInfo.class,
-        EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class, EcsBlueGreenCreateServiceStepInfo.class,
+    subTypes = {MergePRStepInfo.class, RevertPRStepInfo.class, UpdateGitOpsAppStepInfo.class, SyncStepInfo.class,
+        K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class, K8sCanaryStepInfo.class, K8sRollingStepInfo.class,
+        K8sRollingRollbackStepInfo.class, K8sScaleStepInfo.class, K8sDeleteStepInfo.class,
+        K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class, TerraformApplyStepInfo.class,
+        TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class, TerraformRollbackStepInfo.class,
+        HelmDeployStepInfo.class, HelmRollbackStepInfo.class, CloudformationCreateStackStepInfo.class,
+        CloudformationDeleteStackStepInfo.class, ServerlessAwsLambdaDeployStepInfo.class,
+        ServerlessAwsLambdaRollbackStepInfo.class, CloudformationRollbackStepInfo.class, CommandStepInfo.class,
+        AzureWebAppSlotDeploymentStepInfo.class, AzureWebAppTrafficShiftStepInfo.class,
+        AzureWebAppSwapSlotStepInfo.class, AzureWebAppRollbackStepInfo.class, JenkinsBuildStepInfo.class,
+        AzureCreateARMResourceStepInfo.class, AzureCreateBPStepInfo.class, AzureARMRollbackStepInfo.class,
+        EcsRollingDeployStepInfo.class, EcsRollingRollbackStepInfo.class, EcsCanaryDeployStepInfo.class,
+        EcsCanaryDeleteStepInfo.class, EcsBlueGreenCreateServiceStepInfo.class,
         EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class,
         FetchInstanceScriptStepInfo.class, ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class,
         EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,

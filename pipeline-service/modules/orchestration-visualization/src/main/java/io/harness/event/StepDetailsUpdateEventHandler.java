@@ -10,7 +10,7 @@ package io.harness.event;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationGraph;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
@@ -28,7 +28,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class StepDetailsUpdateEventHandler {
-  @Inject PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject NodeExecutionInfoService pmsGraphStepDetailsService;
 
   public OrchestrationGraph handleEvent(String planExecutionId, String nodeExecutionId,
       OrchestrationGraph orchestrationGraph, Update summaryEntityUpdate) {

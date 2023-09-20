@@ -14,11 +14,14 @@ import io.harness.cvng.core.beans.DatadogMetricHealthDefinition;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DatadogMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.monitoredservice.utils.HealthSourceFieldMapper;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 
 import software.wings.beans.GraphNode;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.states.DatadogState;
 
 import java.util.ArrayList;
@@ -29,11 +32,11 @@ import java.util.stream.Collectors;
 
 public class DataDogMetricHealthSourceGenerator extends HealthSourceGenerator {
   @Override
-  public HealthSourceSpec generateHealthSourceSpec(GraphNode graphNode) {
+  public HealthSourceSpec generateHealthSourceSpec(GraphNode graphNode, MigrationContext migrationContext) {
     Map<String, Object> properties = CollectionUtils.emptyIfNull(graphNode.getProperties());
     DatadogState state = new DatadogState(graphNode.getName());
     state.parseProperties(properties);
-    return getSpec(state, graphNode);
+    return getSpec(state, graphNode, migrationContext);
   }
 
   @Override
@@ -41,9 +44,11 @@ public class DataDogMetricHealthSourceGenerator extends HealthSourceGenerator {
     return MonitoredServiceDataSourceType.DATADOG_METRICS;
   }
 
-  public DatadogMetricHealthSourceSpec getSpec(DatadogState state, GraphNode graphNode) {
+  public DatadogMetricHealthSourceSpec getSpec(
+      DatadogState state, GraphNode graphNode, MigrationContext migrationContext) {
     return DatadogMetricHealthSourceSpec.builder()
-        .connectorRef(MigratorUtility.RUNTIME_INPUT.getValue())
+        .connectorRef(MigratorUtility.getIdentifierWithScopeDefaults(migrationContext.getMigratedEntities(),
+            state.getAnalysisServerConfigId(), NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT))
         .feature("Datadog Cloud Metrics")
         .metricDefinitions(getMetricDefinitions(state, graphNode))
         .build();

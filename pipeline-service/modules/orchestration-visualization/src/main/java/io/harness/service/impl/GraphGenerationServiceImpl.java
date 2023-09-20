@@ -164,6 +164,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     boolean updateRequired = false;
     Update executionSummaryUpdate = new Update();
     Set<String> nodeExecutionIds = new HashSet<>();
+    PlanExecution planExecution = null;
     for (OrchestrationEventLog orchestrationEventLog : unprocessedEventLogs) {
       String nodeExecutionId = orchestrationEventLog.getNodeExecutionId();
       OrchestrationEventType orchestrationEventType = orchestrationEventLog.getOrchestrationEventType();
@@ -173,7 +174,13 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
       lastUpdatedAt = orchestrationEventLog.getCreatedAt();
       switch (orchestrationEventType) {
         case PLAN_EXECUTION_STATUS_UPDATE:
-          orchestrationGraph = planExecutionStatusUpdateEventHandler.handleEvent(planExecutionId, orchestrationGraph);
+          if (planExecution != null) {
+            // If planExecution is notNull then the PLAN_EXECUTION_STATUS_UPDATE has already been applied.
+            break;
+          }
+          planExecution = planExecutionService.get(planExecutionId);
+          executionSummaryUpdate = pmsExecutionSummaryService.updateStatusOps(planExecution, executionSummaryUpdate);
+          orchestrationGraph = planExecutionStatusUpdateEventHandler.handleEvent(planExecution, orchestrationGraph);
           updateRequired = true;
           break;
         case STEP_DETAILS_UPDATE:
@@ -274,16 +281,19 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   @Override
-  public void deleteAllGraphMetadataForGivenExecutionIds(Set<String> planExecutionIds) {
+  public void deleteAllGraphMetadataForGivenExecutionIds(
+      Set<String> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete) {
     // Delete all related orchestration logs
     orchestrationEventLogRepository.deleteAllOrchestrationLogEvents(planExecutionIds);
     // Delete related cache entities
     List<OrchestrationGraph> cacheEntities = new LinkedList<>();
-    for (String planExecutionId : planExecutionIds) {
-      OrchestrationGraph graph = OrchestrationGraph.builder().cacheKey(planExecutionId).cacheParams(null).build();
-      cacheEntities.add(graph);
+    if (!retainPipelineExecutionDetailsAfterDelete) {
+      for (String planExecutionId : planExecutionIds) {
+        OrchestrationGraph graph = OrchestrationGraph.builder().cacheKey(planExecutionId).cacheParams(null).build();
+        cacheEntities.add(graph);
+      }
+      mongoStore.delete(cacheEntities);
     }
-    mongoStore.delete(cacheEntities);
   }
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {

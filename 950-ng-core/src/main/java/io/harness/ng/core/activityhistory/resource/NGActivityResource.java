@@ -71,15 +71,16 @@ public class NGActivityResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
       @QueryParam(NGCommonEntityConstants.STATUS) NGActivityStatus status,
       @NotNull @QueryParam(NGCommonEntityConstants.REFERRED_ENTITY_TYPE) EntityType referredEntityType,
-      @QueryParam(NGCommonEntityConstants.REFERRED_BY_ENTITY_TYPE) EntityType referredByEntityType,
-      @QueryParam(NGCommonEntityConstants.ACTIVITY_TYPES) Set<NGActivityType> ngActivityTypes) {
+      @QueryParam(NGCommonEntityConstants.REFERRED_BY_ENTITY_TYPE) Set<EntityType> referredByEntityTypes,
+      @QueryParam(NGCommonEntityConstants.ACTIVITY_TYPES) Set<NGActivityType> ngActivityTypes,
+      @QueryParam(NGCommonEntityConstants.SEARCH_TERM) String searchTerm) {
     if (isEmpty(ngActivityTypes)) {
       ngActivityTypes = new HashSet<>(List.of(NGActivityType.values()));
       ngActivityTypes.remove(NGActivityType.CONNECTIVITY_CHECK);
     }
     return ResponseDTO.newResponse(activityHistoryService.list(page, size, accountIdentifier, orgIdentifier,
         projectIdentifier, referredEntityIdentifier, startTime, endTime, status, referredEntityType,
-        referredByEntityType, ngActivityTypes));
+        referredByEntityTypes, ngActivityTypes, searchTerm));
   }
 
   @GET

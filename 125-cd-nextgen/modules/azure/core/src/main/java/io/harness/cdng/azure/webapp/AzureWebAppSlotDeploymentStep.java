@@ -15,6 +15,7 @@ import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNES
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
+import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
@@ -22,8 +23,12 @@ import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -35,6 +40,7 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails.AzureWebAppsStageExecutionDetailsKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -91,6 +97,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AZURE_WEBAPP})
 public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollbackAndRbac {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AZURE_SLOT_DEPLOYMENT.getYamlType())
@@ -105,6 +113,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
+
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
@@ -335,6 +345,10 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     AzureWebAppsStageExecutionDetails prevExecutionDetails =
         azureWebAppStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
 
+    boolean cleanDeployment =
+        cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_WEBAPP_ENABLE_CLEAN_OPTION)
+        && getBooleanParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getClean());
+
     AzureWebAppSlotDeploymentRequest slotDeploymentRequest =
         AzureWebAppSlotDeploymentRequest.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -353,6 +367,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
                 prevExecutionDetails != null ? prevExecutionDetails.getUserAddedConnStringNames() : null)
             .prevExecUserChangedStartupCommand(prevExecutionDetails != null
                 && Boolean.TRUE.equals(prevExecutionDetails.getUserChangedStartupCommand()))
+            .cleanDeployment(cleanDeployment)
             .build();
 
     TaskType taskType = isNotEmpty(passThroughData.getTaskType()) ? TaskType.valueOf(passThroughData.getTaskType())

@@ -9,7 +9,10 @@ package io.harness.delegate.task.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.servicenow.ServiceNowFieldNG;
@@ -35,13 +38,17 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ServiceNowTaskNGResponse implements DelegateTaskNotifyResponseData {
   DelegateMetaInfo delegateMetaInfo;
   List<ServiceNowFieldNG> serviceNowFieldNGList;
   ServiceNowTicketNG ticket;
+  List<ServiceNowTicketNG> tickets;
   List<ServiceNowTemplate> serviceNowTemplateList;
   ServiceNowImportSetResponseNG serviceNowImportSetResponseNG;
   List<ServiceNowStagingTable> serviceNowStagingTableList;
   List<ServiceNowTicketTypeDTO> serviceNowTicketTypeList;
   String serviceNowFieldJsonNGListAsString;
+  String serviceNowStandardTemplateReadOnlyFields;
 }

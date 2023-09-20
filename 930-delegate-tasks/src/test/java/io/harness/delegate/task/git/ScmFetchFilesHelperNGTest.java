@@ -8,6 +8,7 @@
 package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
@@ -66,9 +67,10 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testShouldFetchFilesFromRepoWithScm() {
+  public void testShouldFetchFilesFromRepoWithScmFilePath() {
     ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
-    List<String> filePathList = Collections.singletonList("test");
+    // when providing the file path
+    List<String> filePathList = Collections.singletonList("test.yaml");
     GitStoreDelegateConfig gitStoreDelegateConfig =
         GitStoreDelegateConfig.builder().fetchType(FetchType.BRANCH).branch("branch").build();
     doReturn(FileContentBatchResponse.builder()
@@ -86,6 +88,86 @@ public class ScmFetchFilesHelperNGTest extends CategoryTest {
     assertThat(result.getFiles().size()).isEqualTo(2);
     assertThat(result.getFiles().get(0).getFileContent()).isEqualTo("content");
     assertThat(result.getFiles().get(1).getFileContent()).isEqualTo("content");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testShouldFetchFilesFromRepoWithScmFolderPath() {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    // when providing the folder path
+    String fileContent1 = "content1";
+    String fileContent2 = "content2";
+    List<String> filePathList = Collections.singletonList("testFolder");
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().fetchType(FetchType.BRANCH).branch("branch").build();
+    doReturn(FileContentBatchResponse.builder()
+                 .fileBatchContentResponse(
+                     FileBatchContentResponse.newBuilder()
+                         .addFileContents(FileContent.newBuilder()
+                                              .setStatus(200)
+                                              .setContent(Base64.getEncoder().encodeToString(fileContent1.getBytes()))
+                                              .build())
+                         .addFileContents(FileContent.newBuilder()
+                                              .setStatus(200)
+                                              .setContent(Base64.getEncoder().encodeToString(fileContent2.getBytes()))
+                                              .build())
+                         .build())
+                 .build())
+        .when(scmDelegateClient)
+        .processScmRequest(any());
+
+    FetchFilesResult result =
+        spyScmFetchFilesHelperNG.fetchFilesAndFoldersContentFromRepoWithScm(gitStoreDelegateConfig, filePathList);
+
+    assertThat(result.getFiles().size()).isEqualTo(2);
+    assertThat(result.getFiles().get(0).getFileContent()).isEqualTo(fileContent1);
+    assertThat(result.getFiles().get(1).getFileContent()).isEqualTo(fileContent2);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testShouldFetchFilesFromRepoWithScmFolderAndFilePath() {
+    ScmFetchFilesHelperNG spyScmFetchFilesHelperNG = spy(scmFetchFilesHelperNG);
+    // when providing the folder and folder path
+    String fileContent1 = "content1";
+    String fileContent2 = "content2";
+    List<String> filePathList = List.of("folderPath", "filePath.yaml");
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().fetchType(FetchType.BRANCH).branch("branch").build();
+    doReturn(FileContentBatchResponse.builder()
+                 .fileBatchContentResponse(
+                     FileBatchContentResponse.newBuilder()
+                         .addFileContents(FileContent.newBuilder()
+                                              .setStatus(200)
+                                              .setContent(Base64.getEncoder().encodeToString(fileContent1.getBytes()))
+                                              .build())
+                         .addFileContents(FileContent.newBuilder()
+                                              .setStatus(200)
+                                              .setContent(Base64.getEncoder().encodeToString(fileContent2.getBytes()))
+                                              .build())
+                         .build())
+                 .build(),
+        FileContentBatchResponse.builder()
+            .fileBatchContentResponse(FileBatchContentResponse.newBuilder().build())
+            .build(),
+        FileContentBatchResponse.builder()
+            .fileBatchContentResponse(
+                FileBatchContentResponse.newBuilder()
+                    .addFileContents(FileContent.newBuilder().setStatus(200).setContent("FileYamlContent").build())
+                    .build())
+            .build())
+        .when(scmDelegateClient)
+        .processScmRequest(any());
+
+    FetchFilesResult result =
+        spyScmFetchFilesHelperNG.fetchFilesAndFoldersContentFromRepoWithScm(gitStoreDelegateConfig, filePathList);
+
+    assertThat(result.getFiles().size()).isEqualTo(3);
+    assertThat(result.getFiles().get(0).getFileContent()).isEqualTo(fileContent1);
+    assertThat(result.getFiles().get(1).getFileContent()).isEqualTo(fileContent2);
+    assertThat(result.getFiles().get(2).getFileContent()).isEqualTo("FileYamlContent");
   }
 
   @Test

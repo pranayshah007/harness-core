@@ -38,9 +38,9 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.account.AccountStatus;
 import software.wings.service.impl.LicenseUtils;
 import software.wings.service.intfc.AccountService;
 

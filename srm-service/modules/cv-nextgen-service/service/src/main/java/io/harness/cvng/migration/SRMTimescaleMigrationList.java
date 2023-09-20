@@ -7,6 +7,7 @@
 
 package io.harness.cvng.migration;
 
+import io.harness.cvng.migration.timescale.AddSLOHealthToSLOHealthIndicator;
 import io.harness.cvng.migration.timescale.AddServiceLevelObjectiveType;
 import io.harness.cvng.migration.timescale.CreateSLOHealthIndicator;
 import io.harness.cvng.migration.timescale.CreateSLOHistoryTable;
@@ -49,6 +50,8 @@ public class SRMTimescaleMigrationList implements MigrationDetails {
         .add(Pair.of(9, MigrateAllSLOToTimescaleDB.class))
         .add(Pair.of(10, UpdateConstraintToIncludeNullOrgAndProject.class))
         .add(Pair.of(11, MigrateSLOtoTimeScaleDb.class))
+        .add(Pair.of(12, MigrateSLOtoTimeScaleDb.class))
+        .add(Pair.of(13, AddSLOHealthToSLOHealthIndicator.class))
         .build();
   }
 }
