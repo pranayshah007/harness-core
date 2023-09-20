@@ -46,7 +46,7 @@ public class NoopTaskExecutor implements TaskExecutor {
   }
 
   @Override
-  public SubmitTaskResponseData queueInitTask(TaskRequest taskRequest, Duration holdFor) {
+  public String queueInitTask(TaskRequest taskRequest, Duration holdFor) {
     return null;
   }
 

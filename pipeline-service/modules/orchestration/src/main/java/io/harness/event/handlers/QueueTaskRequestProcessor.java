@@ -126,16 +126,17 @@ public class QueueTaskRequestProcessor implements SdkResponseProcessor {
 
   private String queueTask(
       Ambiance ambiance, TaskRequest taskRequest, Map<String, String> setupAbstractionsMap, TaskExecutor taskExecutor) {
-    if (taskRequest.hasType() && taskRequest.getType().equals(Type.INIT)) {
-      SubmitTaskResponseData responseData = taskExecutor.queueInitTask(taskRequest, Duration.ofSeconds(0));
+    if (taskRequest.hasDelegateTaskRequest() && taskRequest.getDelegateTaskRequest().getType().equals(Type.INIT)) {
+      String taskId = taskExecutor.queueInitTask(taskRequest, Duration.ofSeconds(0));
 
       // this is only for POC, need to find a way how to propagate init task response to
       // InitKubernetesInfraContainerStep
       pmsSweepingOutputService.consume(
-          ambiance, "infraRefId", responseData.getInfraRefId(), StepOutcomeGroup.STEP_GROUP.name());
+          ambiance, "infraRefId", "{\"" + taskId + "\": \"value\"}", StepOutcomeGroup.STEP_GROUP.name());
 
-      return responseData.getTaskId();
-    } else if (taskRequest.hasType() && taskRequest.getType().equals(Type.EXECUTE)) {
+      return taskId;
+    } else if (taskRequest.hasDelegateTaskRequest()
+        && taskRequest.getDelegateTaskRequest().getType().equals(Type.EXECUTE)) {
       return taskExecutor.queueExecuteTask(taskRequest, Duration.ofSeconds(0));
     }
 

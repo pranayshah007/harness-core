@@ -20,12 +20,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.encryption.Scope;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.data.RawOptionalSweepingOutput;
@@ -46,6 +48,7 @@ import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.container.utils.ConnectorUtils;
 import io.harness.steps.container.utils.ContainerSpecUtils;
@@ -53,11 +56,18 @@ import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
+import io.harness.steps.shellscript.ShellScriptHelperService;
+import io.harness.steps.shellscript.ShellScriptInlineSource;
+import io.harness.steps.shellscript.ShellScriptSourceWrapper;
+import io.harness.steps.shellscript.ShellScriptStepParameters;
+import io.harness.steps.shellscript.ShellType;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.timeout.Timeout;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -83,6 +93,7 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private Map<TaskCategory, TaskExecutor> taskExecutorMap;
   @Inject private PmsSweepingOutputService pmsSweepingOutputService;
+  @Inject private ShellScriptHelperService shellScriptHelperService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -157,10 +168,27 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   private TaskData getTaskData() {
     //    Object params =
     //            referenceFalseKryoSerializer.asInflatedObject(submitTaskRequest.getDetails().getKryoParameters().toByteArray());
-    String taskType = "SHELL_SCRIPT_TASK_NG";
-    Object params = null;
 
-    return TaskData.builder().async(true).parameters(new Object[] {params}).taskType(taskType).async(true).build();
+    // get from stepElementParameters >> shell script task params
+    ShellScriptStepParameters stepParameters =
+        ShellScriptStepParameters.infoBuilder()
+            .shellType(ShellType.Bash)
+            .onDelegate(ParameterField.createValueField(false))
+            .source(ShellScriptSourceWrapper.builder()
+                        .spec(ShellScriptInlineSource.builder()
+                                  .script(ParameterField.createValueField("echo 'POC FOR BIJOU API'"))
+                                  .build())
+                        .type("Inline")
+                        .build())
+            .uuid("unique_uuid")
+            .build();
+
+    return TaskData.builder()
+        .async(true)
+        .parameters(new Object[] {stepParameters})
+        .taskType(TaskType.SHELL_SCRIPT_TASK_NG.name())
+        .timeout(StepUtils.getTimeoutMillis(null, StepUtils.DEFAULT_STEP_TIMEOUT))
+        .build();
   }
 
   @Override

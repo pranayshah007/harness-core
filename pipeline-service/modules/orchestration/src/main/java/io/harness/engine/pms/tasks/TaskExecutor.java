@@ -24,7 +24,7 @@ public interface TaskExecutor {
   <T extends ResponseData> T executeTask(Map<String, String> setupAbstractions, TaskRequest taskRequest)
       throws InterruptedException;
 
-  SubmitTaskResponseData queueInitTask(TaskRequest taskRequest, Duration holdFor);
+  String queueInitTask(TaskRequest taskRequest, Duration holdFor);
 
   String queueExecuteTask(TaskRequest taskRequest, Duration holdFor);
 }

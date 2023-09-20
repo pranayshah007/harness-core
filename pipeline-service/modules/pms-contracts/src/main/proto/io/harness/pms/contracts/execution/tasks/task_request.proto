@@ -16,7 +16,6 @@ message TaskRequest {
   oneof request {
     DelegateTaskRequest delegateTaskRequest = 1;
     SkipTaskRequest skipTaskRequest = 3;
-    Type type = 5;
   }
   TaskCategory taskCategory = 2;
   bool useReferenceFalseKryoSerializer = 4;
@@ -26,11 +25,4 @@ enum TaskCategory {
   UNKNOWN_CATEGORY = 0;
   DELEGATE_TASK_V1 = 1;
   DELEGATE_TASK_V2 = 2;
-}
-
-enum Type {
-  SUBMIT = 0;
-  INIT = 1;
-  EXECUTE = 2;
-  CLEANUP = 3;
 }

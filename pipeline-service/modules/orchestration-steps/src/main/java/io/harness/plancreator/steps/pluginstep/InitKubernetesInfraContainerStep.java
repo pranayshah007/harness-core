@@ -60,16 +60,15 @@ public class InitKubernetesInfraContainerStep
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<SubmitTaskResponseData> responseDataSupplier) throws Exception {
-    SubmitTaskResponseData submitTaskResponseData = responseDataSupplier.get();
+    // SubmitTaskResponseData submitTaskResponseData = responseDataSupplier.get();
     Status succeeded = Status.SUCCEEDED; // TODO need to check how to get status
     return StepResponse.builder()
         .status(succeeded)
-        .stepOutcome(
-            StepResponse.StepOutcome.builder()
-                .name(KUBERNETES_INFRA_OUTCOME)
-                .outcome(KubernetesInfraOutcome.builder().infraRefId(submitTaskResponseData.getInfraRefId()).build())
-                .group(StepCategory.STEP_GROUP.name())
-                .build())
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(KUBERNETES_INFRA_OUTCOME)
+                         .outcome(KubernetesInfraOutcome.builder().infraRefId("").build())
+                         .group(StepCategory.STEP_GROUP.name())
+                         .build())
         .build();
   }
 
@@ -82,17 +81,17 @@ public class InitKubernetesInfraContainerStep
     ExecutionInfrastructure executionInfrastructure = buildExecutionInfrastructure(ambiance, stepElementParameters);
     long timeout =
         Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
-    return TaskRequestsUtils.prepareK8sInfraTaskRequest(ambiance, executionInfrastructure, timeout,
+    return TaskRequestsUtils.prepareInitTaskRequest(ambiance, executionInfrastructure, timeout,
         TaskCategory.DELEGATE_TASK_V2, true, delegateSelectors, Scope.PROJECT);
   }
 
   private ExecutionInfrastructure buildExecutionInfrastructure(
       Ambiance ambiance, StepElementParameters stepElementParameters) {
-    // get from stepElementParameters
+    // get from stepElementParameters >> shell script task params
     String cpu = "100m";
     String memory = "100Mi";
-    String image = "imijailovic/shell-task-ng:1.0";
-    List<Long> ports = List.of(20002L);
+    String image = "imijailovic/shell-task-ng-linux-amd64:2.0";
+    // List<Long> ports = List.of(20002L);
 
     // need to check
     String logKey = initialiseTaskUtils.getLogPrefix(ambiance, "STEP");
@@ -102,7 +101,7 @@ public class InitKubernetesInfraContainerStep
         K8sInfraSpec.newBuilder()
             .addAllTasks(List.of(ContainerSpec.newBuilder()
                                      .setImage(image)
-                                     .addAllPort(ports)
+                                     //.addAllPort(ports)
                                      .setResource(ComputingResource.newBuilder().setCpu(cpu).setMemory(memory).build())
                                      .build()))
             .build();

@@ -273,9 +273,8 @@ public class TaskRequestsUtils {
     }
   }
 
-  public static TaskRequest prepareK8sInfraTaskRequest(Ambiance ambiance,
-      ExecutionInfrastructure executionInfrastructure, long timeout, TaskCategory taskCategory, boolean withLogs,
-      List<TaskSelector> selectors, Scope taskScope) {
+  public static TaskRequest prepareInitTaskRequest(Ambiance ambiance, ExecutionInfrastructure executionInfrastructure,
+      long timeout, TaskCategory taskCategory, boolean withLogs, List<TaskSelector> selectors, Scope taskScope) {
     String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
     Map<String, String> setupAbstractionsMap = StepUtils.buildAbstractions(ambiance, taskScope);
 
@@ -305,10 +304,10 @@ public class TaskRequestsUtils {
                 CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(logAbstractionMap, Collections.emptyList())))
             .setInitRequest(setupExecutionInfrastructureRequest)
             .setTaskName(Type.INIT.name())
+            .setType(Type.INIT)
             .build();
 
     return TaskRequest.newBuilder()
-        .setType(Type.INIT)
         .setUseReferenceFalseKryoSerializer(true)
         .setDelegateTaskRequest(delegateTaskRequest)
         .setTaskCategory(taskCategory)
@@ -348,10 +347,12 @@ public class TaskRequestsUtils {
                 CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(logAbstractionMap, Collections.emptyList())))
             .setExecuteRequest(scheduleTaskRequest)
             .setTaskName(Type.EXECUTE.name())
+            .setType(Type.EXECUTE)
             .build();
 
-    return TaskRequest.newBuilder()
-        .setType(Type.EXECUTE)
+    return TaskRequest
+        .newBuilder()
+
         .setUseReferenceFalseKryoSerializer(true)
         .setDelegateTaskRequest(delegateTaskRequest)
         .setTaskCategory(taskCategory)

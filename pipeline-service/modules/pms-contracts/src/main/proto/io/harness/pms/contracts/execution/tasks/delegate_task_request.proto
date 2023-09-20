@@ -23,4 +23,12 @@ message DelegateTaskRequest {
   io.harness.delegate.SubmitTaskRequest request = 12;
   io.harness.delegate.SetupExecutionInfrastructureRequest initRequest = 13;
   io.harness.delegate.ScheduleTaskRequest executeRequest = 14;
+  Type type = 15;
+}
+
+enum Type {
+  SUBMIT = 0;
+  INIT = 1;
+  EXECUTE = 2;
+  CLEANUP = 3;
 }
