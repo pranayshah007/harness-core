@@ -10,10 +10,13 @@ package io.harness.cdng.creator.plan.steps.aws.asg;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStepNode;
+import io.harness.cdng.aws.asg.AsgCanaryDeployStepParameters;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -33,5 +36,16 @@ public class AsgCanaryDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<AsgCa
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, AsgCanaryDeployStepNode stepElement) {
     return super.createPlanForField(ctx, stepElement);
+  }
+
+  @Override
+  protected StepParameters getStepParameters(PlanCreationContext ctx, AsgCanaryDeployStepNode stepElement) {
+    final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
+    AsgCanaryDeployStepParameters asgCanaryDeployStepParameters =
+        (AsgCanaryDeployStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    asgCanaryDeployStepParameters.setDelegateSelectors(stepElement.getAsgCanaryDeployStepInfo().getDelegateSelectors());
+    asgCanaryDeployStepParameters.setAsgName(stepElement.getAsgCanaryDeployStepInfo().getAsgName());
+
+    return stepParameters;
   }
 }

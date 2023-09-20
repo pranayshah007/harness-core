@@ -9,6 +9,10 @@ package software.wings.helpers.ext.vault;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.helpers.GlobalSecretManagerUtils.getValueByJsonPath;
+
+import static com.jayway.jsonpath.JsonPath.parse;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
@@ -24,6 +28,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.ConnectionPool;
@@ -115,25 +123,28 @@ public class VaultRestClientFactory {
     }
   }
 
-  private static VaultPathAndKey parseFullPath(String fullPath) {
-    // Strip the leading '/' if present.
-    fullPath = fullPath.startsWith(PATH_SEPARATOR) ? fullPath.substring(1) : fullPath;
-    VaultPathAndKey result = new VaultPathAndKey();
-    int index = fullPath.indexOf(KEY_NAME_SEPARATOR);
-    if (index > 0) {
-      result.path = fullPath.substring(0, index);
-      result.keyName = fullPath.substring(index + 1);
-    } else {
-      result.path = fullPath;
-      result.keyName = DEFAULT_KEY_NAME;
-    }
-    return result;
+  public static VaultPathAndKey parseFullPath(String fullPath) {
+    return parseFullPath(fullPath, DEFAULT_KEY_NAME);
   }
 
-  static class V1Impl implements VaultRestClient {
+  public static VaultPathAndKey parseFullPath(String fullPath, String defaultKeyName) {
+    // Strip the leading '/' if present.
+    fullPath = fullPath.startsWith(PATH_SEPARATOR) ? fullPath.substring(1) : fullPath;
+    int index = fullPath.indexOf(KEY_NAME_SEPARATOR);
+    if (index > 0) {
+      return VaultPathAndKey.builder()
+          .path(fullPath.substring(0, index))
+          .keyName(fullPath.substring(index + 1))
+          .build();
+    } else {
+      return VaultPathAndKey.builder().path(fullPath).keyName(defaultKeyName).build();
+    }
+  }
+
+  public static class V1Impl implements VaultRestClient {
     private VaultRestClientV1 vaultRestClient;
 
-    V1Impl(VaultRestClientV1 vaultRestClient) {
+    public V1Impl(VaultRestClientV1 vaultRestClient) {
       this.vaultRestClient = vaultRestClient;
     }
 
@@ -182,7 +193,9 @@ public class VaultRestClientFactory {
             "Response from vault for the secret with path {} is {} successful with the status code : {} and message : {}",
             fullPath, result.isSuccessful() ? "" : "not", result.code(), result.message());
       }
-      return response == null || response.getData() == null ? null : response.getData().get(pathAndKey.keyName);
+      return response == null || response.getData() == null
+          ? null
+          : getValueByJsonPath(parse(response.getData()), pathAndKey.keyName);
     }
 
     @Override
@@ -193,10 +206,10 @@ public class VaultRestClientFactory {
     }
   }
 
-  static class V2Impl implements VaultRestClient {
+  public static class V2Impl implements VaultRestClient {
     private VaultRestClientV2 vaultRestClient;
 
-    V2Impl(VaultRestClientV2 vaultRestClient) {
+    public V2Impl(VaultRestClientV2 vaultRestClient) {
       this.vaultRestClient = vaultRestClient;
     }
 
@@ -204,7 +217,7 @@ public class VaultRestClientFactory {
     public boolean writeSecret(String authToken, String namespace, String secretEngine, String fullPath, String value)
         throws IOException {
       VaultPathAndKey pathAndKey = parseFullPath(fullPath);
-      Map<String, String> dataMap = new HashMap<>();
+      Map<String, Object> dataMap = new HashMap<>();
       dataMap.put(pathAndKey.keyName, value);
       VaultSecretValue vaultSecretValue = new VaultSecretValue(dataMap);
       Response<Void> response =
@@ -236,14 +249,15 @@ public class VaultRestClientFactory {
     @Override
     public String readSecret(String authToken, String namespace, String secretEngine, String fullPath)
         throws IOException {
-      VaultPathAndKey pathAndKey = parseFullPath(fullPath);
+      VaultPathAndKey pathAndKey = parseFullPath(fullPath, EMPTY);
 
       Response<VaultReadResponseV2> result =
           vaultRestClient.readSecret(authToken, namespace, secretEngine, pathAndKey.path).execute();
       if (result.isSuccessful()) {
         VaultReadResponseV2 response = result.body();
-        return response == null || response.getData() == null ? null
-                                                              : response.getData().getData().get(pathAndKey.keyName);
+        return response == null || response.getData() == null
+            ? null
+            : getValueByJsonPath(parse(response.getData().getData()), pathAndKey.keyName);
       }
       logAndThrowErrorIfRequestFailed(result, "V2Impl-readSecret");
       return null;
@@ -278,7 +292,11 @@ public class VaultRestClientFactory {
     }
   }
 
-  private static class VaultPathAndKey {
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class VaultPathAndKey {
     String path;
     String keyName;
   }

@@ -14,6 +14,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.TimeRange;
 import io.harness.yaml.core.NGLabel;
@@ -47,7 +48,8 @@ public class PipelineExecutionFilterPropertiesDTO extends FilterPropertiesDTO {
   private String pipelineName;
   private TimeRange timeRange;
   private org.bson.Document moduleProperties;
-
+  private List<TriggerType> triggerTypes;
+  private List<String> triggerIdentifiers;
   @Override
   public FilterType getFilterType() {
     return FilterType.PIPELINEEXECUTION;

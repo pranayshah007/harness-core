@@ -20,4 +20,13 @@ public class ServiceNowConstants {
   public static final String USERNAME_PASSWORD = "UsernamePassword";
   public static final String ADFS = "AdfsClientCredentialsWithCertificate";
   public static final String REFRESH_TOKEN = "RefreshTokenGrantType";
+  public static final long TIME_OUT = 120;
+  public static final String INVALID_SERVICE_NOW_CREDENTIALS = "Invalid ServiceNow credentials";
+  public static final String NOT_FOUND = "404 Not found";
+  public static final String CHANGE_TASK = "change_task";
+  public static final String SYS_ID = "sys_id";
+  public static final String ISSUE_NUMBER = "number";
+  public static final String RETURN_FIELDS = "number,sys_id,change_task_type";
+  public static final String QUERY_FOR_GETTING_CHANGE_TASK = "change_request.number=%s^change_task_type=%s";
+  public static final String QUERY_FOR_GETTING_CHANGE_TASK_ALL = "change_request.number=%s";
 }

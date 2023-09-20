@@ -15,6 +15,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -79,8 +80,10 @@ public class RoleChangeConsumerImplTest extends AggregatorTestBase {
     RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler = mock(RoleAssignmentCRUDEventHandler.class);
     UserGroupService userGroupService = mock(UserGroupService.class);
     scopeService = mock(ScopeService.class);
+    inMemoryPermissionRepository = mock(InMemoryPermissionRepository.class);
+    when(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(any(), any())).thenReturn(true);
     ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(roleService, userGroupService,
-        resourceGroupService, scopeService, new HashMap<>(), aclRepository, false, inMemoryPermissionRepository);
+        resourceGroupService, scopeService, new HashMap<>(), aclRepository, inMemoryPermissionRepository);
     roleChangeConsumer = new RoleChangeConsumerImpl(aclRepository, roleAssignmentRepository, roleRepository,
         AggregatorJobType.PRIMARY.name(), changeConsumerService);
     aclRepository.cleanCollection();

@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.api.impl;
+
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
@@ -865,10 +866,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   }
 
   private void validatePath(String path, EncryptionType encryptionType) {
-    if (path != null && encryptionType == EncryptionType.VAULT && path.indexOf('#') < 0) {
-      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR,
-          "Secret path need to include the # sign with the the key name after. E.g. /foo/bar/my-secret#my-key.", USER);
-    }
     // check if reference secrets are allowed based on EncryptionType
     if (Arrays.asList(GCP_KMS, KMS).contains(encryptionType)) {
       throw new SecretManagementException(

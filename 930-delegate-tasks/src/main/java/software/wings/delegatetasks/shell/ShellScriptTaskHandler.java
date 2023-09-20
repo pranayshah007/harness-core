@@ -85,6 +85,7 @@ public class ShellScriptTaskHandler {
         try {
           SshSessionConfig expectedSshConfig =
               parameters.sshSessionConfig(encryptionService, secretManagementDelegateService);
+          expectedSshConfig.setEnvVariables(parameters.getEscapedServiceVariables());
           BaseScriptExecutor executor =
               sshExecutorFactory.getExecutor(expectedSshConfig, parameters.isSaveExecutionLogs());
           enableJSchLogsPerSSHTaskExecution(parameters.isEnableJSchLogs());

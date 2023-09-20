@@ -19,6 +19,7 @@ import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @CodePulse(
     module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
@@ -26,10 +27,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 public interface NGTemplateSchemaService {
   JsonNode getTemplateSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope,
       String templateChildType, TemplateEntityType templateEntityType);
-
-  JsonNode getStaticYamlSchema(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String templateChildType, TemplateEntityType entityType, Scope scope, String version);
-
   void validateYamlSchemaInternal(TemplateEntity templateEntity);
   void validateYamlSchemaInternal(GlobalTemplateEntity templateEntity);
+
+  ObjectNode getIndividualStaticSchema(String nodeGroup, String nodeType, String version);
 }

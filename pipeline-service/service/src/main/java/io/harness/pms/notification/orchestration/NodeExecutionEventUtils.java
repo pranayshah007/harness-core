@@ -7,11 +7,11 @@
 
 package io.harness.pms.notification.orchestration;
 
+import io.harness.abort.AbortedBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.custom.executions.NodeExecutionEventData;
 import io.harness.audit.beans.custom.executions.TriggeredByInfoAuditDetails;
-import io.harness.beans.AbortedBy;
 import io.harness.engine.observers.beans.NodeOutboxInfo;
 import io.harness.engine.pms.audits.events.PipelineAbortEvent;
 import io.harness.engine.pms.audits.events.PipelineEndEvent;

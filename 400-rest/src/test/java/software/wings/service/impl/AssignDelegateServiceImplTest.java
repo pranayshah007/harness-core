@@ -2334,6 +2334,36 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
+  public void testTaskAssignmentFailureMessage_OnAbortTask() {
+    String accountId = generateUuid();
+    String delegateId = generateUuid();
+    Delegate delegate = Delegate.builder()
+                            .accountId(accountId)
+                            .uuid(delegateId)
+                            .status(ENABLED)
+                            .hostName("HOSTNAME")
+                            .lastHeartBeat(clock.millis())
+                            .supportedTaskTypes(Arrays.asList(TaskType.HTTP.name()))
+                            .build();
+    DelegateTask delegateTask = DelegateTask.builder()
+                                    .accountId(accountId)
+                                    .eligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList(delegateId)))
+                                    .status(DelegateTask.Status.ABORTED)
+                                    .delegateId(delegate.getUuid())
+                                    .data(TaskData.builder().taskType(TaskType.HTTP.name()).build())
+                                    .executionCapabilities(emptyList())
+                                    .build();
+
+    when(delegateCache.get(accountId, delegateId)).thenReturn(delegate);
+
+    String errorMessage =
+        assignDelegateService.getDelegateTaskAssignmentFailureMessage(delegateTask, TaskFailureReason.EXPIRED);
+    assertThat(errorMessage).isEqualTo("The delegate task expired. Check your time-out configuration.\n\n\n");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
   public void testTaskAssignmentFailureMessage_TASK_TIMEDOUT() {
     String accountId = generateUuid();
     String delegateId = generateUuid();

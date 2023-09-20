@@ -45,11 +45,9 @@ public class HarnessProxyThroughDsl implements DataSourceLocation {
     ApiRequestDetails apiRequestDetails =
         ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
     String apiUrl = apiRequestDetails.getUrl();
-    String method = apiRequestDetails.getMethod();
-    Map<String, String> headers = apiRequestDetails.getHeaders();
     String requestBody = apiRequestDetails.getRequestBody();
 
-    matchAndReplaceHeaders(headers, replaceableHeaders);
+    matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
     log.info("RequestBodyPlaceholder - {}",
         prepareRequestBodyReplaceablePairs(dataPointsAndInputValues, backstageCatalogEntity));
     requestBody = replaceRequestBodyPlaceholdersIfAny(
@@ -58,8 +56,10 @@ public class HarnessProxyThroughDsl implements DataSourceLocation {
 
     log.info("HarnessProxyDsl, Replaced API - {} Replaced Body - {} ", apiUrl, requestBody);
 
+    apiRequestDetails.setRequestBody(requestBody);
+    apiRequestDetails.setUrl(apiUrl);
     DslClient dslClient = dslClientFactory.getClient(accountIdentifier, null);
-    Response response = dslClient.call(accountIdentifier, apiUrl, method, headers, requestBody);
+    Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
 
     log.info("Response Status", response.getStatus());
     log.info("Response Entity", response.getEntity().toString());
@@ -94,7 +94,7 @@ public class HarnessProxyThroughDsl implements DataSourceLocation {
 
   @Override
   public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, Set<String>> dataPointIdsAndInputValues, String requestBody) {
+      Map<String, String> dataPointIdsAndInputValues, String requestBody) {
     return null;
   }
 }

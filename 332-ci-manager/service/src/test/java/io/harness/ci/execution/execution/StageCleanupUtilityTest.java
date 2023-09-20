@@ -22,6 +22,7 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.execution.buildstate.ConnectorUtils;
@@ -40,6 +41,7 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -85,9 +87,9 @@ public class StageCleanupUtilityTest extends CIExecutionTestBase {
                                     .build())
                         .build());
 
-    CICleanupTaskParams cik8CleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
-
-    assertThat(cik8CleanupTaskParams).isNotNull();
+    Pair<CICleanupTaskParams, StageInfraDetails> params = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
+    assertThat(params.getLeft()).isNotNull();
+    assertThat(params.getRight()).isNotNull();
   }
 
   @Test
@@ -109,10 +111,11 @@ public class StageCleanupUtilityTest extends CIExecutionTestBase {
                         .output(StageDetails.builder().stageRuntimeID(stageRuntimeId).build())
                         .build());
 
-    CICleanupTaskParams cleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
+    Pair<CICleanupTaskParams, StageInfraDetails> params = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
-    assertThat(cleanupTaskParams).isNotNull();
-    assertEquals(cleanupTaskParams.getType(), CICleanupTaskParams.Type.VM);
+    assertThat(params.getLeft()).isNotNull();
+    assertThat(params.getRight()).isNotNull();
+    assertEquals(params.getLeft().getType(), CICleanupTaskParams.Type.VM);
   }
 
   @Test
@@ -133,9 +136,11 @@ public class StageCleanupUtilityTest extends CIExecutionTestBase {
                         .build());
     when(outcomeService.resolve(any(), any())).thenReturn(LiteEnginePodDetailsOutcome.builder().ipAddress(ip).build());
 
-    CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
+    Pair<CICleanupTaskParams, StageInfraDetails> params = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
-    assertThat(((CIK8CleanupTaskParams) ciCleanupTaskParams).getLiteEngineIP()).isEqualTo(ip);
-    assertThat(((CIK8CleanupTaskParams) ciCleanupTaskParams).getLiteEnginePort()).isEqualTo(LITE_ENGINE_PORT);
+    assertThat(params.getLeft()).isNotNull();
+    assertThat(params.getRight()).isNotNull();
+    assertThat(((CIK8CleanupTaskParams) params.getLeft()).getLiteEngineIP()).isEqualTo(ip);
+    assertThat(((CIK8CleanupTaskParams) params.getLeft()).getLiteEnginePort()).isEqualTo(LITE_ENGINE_PORT);
   }
 }

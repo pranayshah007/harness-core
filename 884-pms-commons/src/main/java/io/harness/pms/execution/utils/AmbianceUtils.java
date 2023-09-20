@@ -447,7 +447,9 @@ public class AmbianceUtils {
   }
 
   public String getPipelineExecutionIdentifier(Ambiance ambiance) {
-    if (ambiance.getMetadata() != null) {
+    if (EmptyPredicate.isNotEmpty(ambiance.getPlanExecutionId())) {
+      return ambiance.getPlanExecutionId();
+    } else if (ambiance.getMetadata() != null) {
       return ambiance.getMetadata().getExecutionUuid();
     }
     return null;

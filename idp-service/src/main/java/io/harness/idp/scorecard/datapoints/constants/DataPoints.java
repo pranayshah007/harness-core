@@ -21,9 +21,9 @@ public class DataPoints {
   public static final String GITHUB_IS_FILE_EXISTS = "isFileExists";
 
   // Catalog
-  public static final String CATALOG_TECH_DOCS = "techDocsAnnotation";
-  public static final String CATALOG_PAGERDUTY = "pagerdutyAnnotation";
-  public static final String CATALOG_SPEC_OWNER = "specOwner";
+  public static final String CATALOG_TECH_DOCS = "techDocsAnnotationExists";
+  public static final String CATALOG_PAGERDUTY = "pagerdutyAnnotationExists";
+  public static final String CATALOG_SPEC_OWNER = "specOwnerExists";
 
   // Harness
   public static final String STO_ADDED_IN_PIPELINE = "stoStageAdded";
@@ -31,6 +31,17 @@ public class DataPoints {
   public static final String PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS =
       "PercentageOfCIPipelinePassingInPastSevenDays";
   public static final String PIPELINE_TEST_FAILING_IN_CI_IS_ZERO = "noTestsFailingInCiPipeline";
+
+  // PagerDuty
+  public static final String IS_ON_CALL_SET = "isOnCallSet";
+  public static final String IS_ESCALATION_POLICY_SET = "isEscalationPolicySet";
+  public static final String NO_OF_INCIDENTS_IN_LAST_THIRTY_DAYS = "noOfIncidentsInLastThirtyDays";
+  public static final String AVG_ACKNOWLEDGEMENT_TIME_FOR_LAST_TEN_INCIDENTS_IN_MINUTES =
+      "avgAcknowledgementTimeForLastTenIncidentsInMinutes";
   public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
+  public static final String SOURCE_LOCATION_ANNOTATION_ERROR =
+      "Invalid or missing source-location annotation in the catalog info YAML";
+  public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
+  public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";
   public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
 }

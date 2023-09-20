@@ -32,10 +32,10 @@ spec:
   http:
   - name: ci-manager
     match:
-      - uri:
-          prefix: /ng/api/
-      - uri:
-          prefix: /ng/api
+    - uri:
+        prefix: /ci/
+    - uri:
+        prefix: /ci
     rewrite:
       uri: /
     route:

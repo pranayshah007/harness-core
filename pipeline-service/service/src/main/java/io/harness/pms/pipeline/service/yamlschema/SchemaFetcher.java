@@ -7,8 +7,6 @@
 
 package io.harness.pms.pipeline.service.yamlschema;
 
-import static io.harness.pms.yaml.YAMLFieldNameConstants.PIPELINE;
-
 import static java.lang.String.format;
 
 import io.harness.EntityType;
@@ -26,11 +24,6 @@ import io.harness.logging.ResponseTimeRecorder;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.SchemaCacheUtils;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
-import io.harness.pms.yaml.PipelineVersion;
-import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
-import io.harness.pms.yaml.individualschema.PipelineSchemaMetadata;
-import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
-import io.harness.pms.yaml.individualschema.StaticSchemaParserFactory;
 import io.harness.serializer.JsonUtils;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
@@ -38,7 +31,6 @@ import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -65,8 +57,6 @@ public class SchemaFetcher {
   @Inject @Named("schemaDetailsCache") Cache<SchemaCacheKey, YamlSchemaDetailsWrapperValue> schemaDetailsCache;
   @Inject @Named("partialSchemaCache") Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> schemaCache;
   @Inject private SchemaGetterFactory schemaGetterFactory;
-  @Inject private StaticSchemaParserFactory staticSchemaParserFactory;
-
   private JsonNode pipelineStaticSchemaV0 = null;
   private JsonNode pipelineStaticSchemaV1 = null;
 
@@ -234,26 +224,6 @@ public class SchemaFetcher {
       triggerStaticSchema = fetchFile(TRIGGER_JSON_PATH_V0);
     }
     return triggerStaticSchema;
-  }
-
-  public ObjectNode getIndividualSchema(String nodeGroup, String nodeType, String nodeGroupDifferentiator) {
-    JsonNode jsonNode;
-    try {
-      jsonNode = getPipelineStaticSchema("v0");
-    } catch (IOException ex) {
-      log.error("Not able to read json from {} path", PIPELINE_JSON_PATH_V0);
-      throw new InvalidRequestException(String.format("Not able to read json from %s path", PIPELINE_JSON_PATH_V0));
-    }
-    AbstractStaticSchemaParser abstractStaticSchemaParser =
-        staticSchemaParserFactory.getParser(PIPELINE, PipelineVersion.V0, jsonNode);
-    return abstractStaticSchemaParser.getIndividualSchema(
-        PipelineSchemaRequest.builder()
-            .individualSchemaMetadata(PipelineSchemaMetadata.builder()
-                                          .nodeGroup(nodeGroup)
-                                          .nodeGroupDifferentiator(nodeGroupDifferentiator)
-                                          .nodeType(nodeType)
-                                          .build())
-            .build());
   }
 
   private JsonNode fetchFile(String filePath) throws IOException {

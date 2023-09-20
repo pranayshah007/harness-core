@@ -16,7 +16,7 @@ import io.harness.exception.GcpMarketplaceException;
 import io.harness.marketplace.gcp.procurement.pubsub.ProcurementPubsubMessage;
 import io.harness.marketplace.gcp.procurement.pubsub.ProcurementPubsubMessage.AccountMessage;
 
-import software.wings.beans.AccountStatus;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.marketplace.gcp.GCPMarketplaceCustomer;
 import software.wings.beans.marketplace.gcp.GCPMarketplaceCustomer.GCPMarketplaceCustomerKeys;
 import software.wings.beans.marketplace.gcp.GCPMarketplaceProduct;

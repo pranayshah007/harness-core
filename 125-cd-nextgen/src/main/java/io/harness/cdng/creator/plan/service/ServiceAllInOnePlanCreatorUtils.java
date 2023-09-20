@@ -18,6 +18,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
+import io.harness.cdng.aws.asg.AsgServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
@@ -361,6 +362,27 @@ public class ServiceAllInOnePlanCreatorUtils {
       planCreationResponseMap.put(
           elastigroupSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(elastigroupSettingsNode).build());
     }
+
+    // Add ASG settings node
+    if (serviceType == ServiceDefinitionType.ASG) {
+      PlanNode asgSettingsNode =
+          PlanNode.builder()
+              .uuid("asg-settings-" + UUIDGenerator.generateUuid())
+              .stepType(AsgServiceSettingsStep.STEP_TYPE)
+              .name(PlanCreatorConstants.ASG_SERVICE_SETTINGS_NODE)
+              .identifier(YamlTypes.ASG_SERVICE_SETTINGS_STEP)
+              .stepParameters(new EmptyStepParameters())
+              .facilitatorObtainment(
+                  FacilitatorObtainment.newBuilder()
+                      .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                      .build())
+              .skipExpressionChain(true)
+              .build();
+      nodeIds.add(asgSettingsNode.getUuid());
+      planCreationResponseMap.put(
+          asgSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(asgSettingsNode).build());
+    }
+
     return nodeIds;
   }
 

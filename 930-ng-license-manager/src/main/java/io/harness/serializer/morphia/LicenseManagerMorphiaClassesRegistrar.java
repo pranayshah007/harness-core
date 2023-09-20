@@ -17,6 +17,7 @@ import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ChaosModuleLicense;
 import io.harness.licensing.entities.modules.IACMModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
+import io.harness.licensing.entities.modules.SEIModuleLicense;
 import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
 import io.harness.morphia.MorphiaRegistrar;
@@ -33,6 +34,7 @@ public class LicenseManagerMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(ModuleLicense.class);
     set.add(CDModuleLicense.class);
     set.add(CEModuleLicense.class);
+    set.add(SEIModuleLicense.class);
     set.add(CFModuleLicense.class);
     set.add(CIModuleLicense.class);
     set.add(SRMModuleLicense.class);

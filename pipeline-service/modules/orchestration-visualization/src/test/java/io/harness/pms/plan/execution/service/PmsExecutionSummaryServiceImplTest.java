@@ -7,6 +7,8 @@
 
 package io.harness.pms.plan.execution.service;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
@@ -22,7 +24,9 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import io.harness.AbortInfoHelper;
 import io.harness.OrchestrationVisualizationTestBase;
+import io.harness.abort.AbortedBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
@@ -30,7 +34,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.execution.PlanExecution;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -77,7 +82,8 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
   @Mock PmsExecutionSummaryRepository pmsExecutionSummaryRepositoryMock;
   @Inject PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Mock NodeExecutionService nodeExecutionService;
-  @Mock PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Mock NodeExecutionInfoService pmsGraphStepDetailsService;
+  @Mock AbortInfoHelper abortInfoHelper;
   @InjectMocks PmsExecutionSummaryServiceImpl pmsExecutionSummaryService;
 
   @Before
@@ -446,5 +452,34 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
             Sets.newHashSet(PlanExecutionSummaryKeys.accountId, PlanExecutionSummaryKeys.notesExistForPlanExecutionId));
 
     assertThat(pipelineExecutionSummaryWithProjections.getNotesExistForPlanExecutionId()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testUpdateStatus() {
+    PlanExecution planExecution =
+        PlanExecution.builder().uuid(generateUuid()).status(RUNNING).endTs(System.currentTimeMillis()).build();
+    AbortedBy abortedBy = AbortedBy.builder().email("admin@harness.io").userName("admin").build();
+    doReturn(abortedBy).when(abortInfoHelper).fetchAbortedByInfoFromInterrupts(planExecution.getUuid());
+    Update summaryUpdate = new Update();
+    pmsExecutionSummaryService.updateStatusOps(planExecution, summaryUpdate);
+
+    Document document = (Document) summaryUpdate.getUpdateObject().get("$set");
+    assertThat(document.get("internalStatus").toString()).isEqualTo("RUNNING");
+    assertThat(document.get("status").toString()).isEqualTo("RUNNING");
+    assertThat(document.get("endTs")).isNull();
+    assertThat(document.get("abortedBy")).isNull();
+
+    planExecution =
+        PlanExecution.builder().uuid(planExecution.getUuid()).status(ABORTED).endTs(System.currentTimeMillis()).build();
+
+    summaryUpdate = new Update();
+    pmsExecutionSummaryService.updateStatusOps(planExecution, summaryUpdate);
+    document = (Document) summaryUpdate.getUpdateObject().get("$set");
+    assertThat(document.get("internalStatus").toString()).isEqualTo("ABORTED");
+    assertThat(document.get("status").toString()).isEqualTo("ABORTED");
+    assertThat(document.get("endTs")).isEqualTo(planExecution.getEndTs());
+    assertThat(document.get("abortedBy")).isEqualTo(abortedBy);
   }
 }

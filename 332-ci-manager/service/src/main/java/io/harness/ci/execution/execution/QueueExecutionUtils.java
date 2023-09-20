@@ -16,6 +16,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.CIExecutionRepository;
 
 import com.google.inject.Inject;
+import java.util.List;
 
 public class QueueExecutionUtils {
   @Inject private CIExecutionRepository ciExecutionRepository;
@@ -36,8 +37,8 @@ public class QueueExecutionUtils {
     }
   }
 
-  public long getActiveExecutionsCount(String accountID) {
-    return ciExecutionRepository.countByAccountIdAndStatus(accountID, Status.RUNNING.toString());
+  public long getActiveExecutionsCount(String accountID, List<String> status) {
+    return ciExecutionRepository.countByAccountIdAndStatusIn(accountID, status);
   }
 
   public long getActiveMacExecutionsCount(String accountID) {

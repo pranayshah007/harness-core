@@ -17,7 +17,6 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -28,7 +27,7 @@ import software.wings.sm.states.AwsAmiServiceSetup;
 
 import java.util.Map;
 
-public class AsgRollingDeployStepMapperImpl extends StepMapper {
+public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     AwsAmiServiceSetup state = (AwsAmiServiceSetup) getState(stepYaml);

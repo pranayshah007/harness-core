@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 58
+version: 59
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -1053,3 +1053,62 @@ roles:
       isPublic: true
       permissions:
         - core_pipeline_view
+    - identifier: _sei_admin
+      name: SEI Admin
+      description: Can create, edit, and view SEI resources
+      permissions:
+        - sei_seiconfigurationsettings_view
+        - sei_seiconfigurationsettings_edit
+        - sei_seiconfigurationsettings_delete
+        - sei_seicollections_create
+        - sei_seicollections_view
+        - sei_seicollections_edit
+        - sei_seicollections_delete
+        - sei_seiinsights_create
+        - sei_seiinsights_view
+        - sei_seiinsights_edit
+        - sei_seiinsights_delete
+        - core_resourcegroup_view
+        - core_resourcegroup_edit
+        - core_resourcegroup_delete
+        - core_project_create
+        - core_project_view
+        - core_project_edit
+        - core_project_delete
+        - core_usergroup_view
+        - core_usergroup_manage
+        - core_role_view
+        - core_user_invite
+        - core_user_view
+        - core_user_manage
+      managed: true
+      isPublic: false
+      internal: true
+      allowedScopeLevels:
+        - account
+    - identifier: _sei_viewer
+      name: SEI Viewer
+      description: Can view SEI resources
+      permissions:
+        - sei_seiinsights_view
+      managed: true
+      isPublic: false
+      internal: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
+    - identifier: _sei_collections_admin
+      name: SEI Collections Admin
+      description: Can create, edit, and view SEI Teams
+      permissions:
+        - sei_seicollections_view
+        - sei_seicollections_edit
+        - sei_seiinsights_view
+      managed: true
+      isPublic: false
+      internal: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project

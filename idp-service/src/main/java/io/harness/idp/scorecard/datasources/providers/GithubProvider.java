@@ -9,6 +9,7 @@ package io.harness.idp.scorecard.datasources.providers;
 
 import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.GITHUB_TOKEN;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.AUTHORIZATION_HEADER;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_BRANCH;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_OWNER;
@@ -25,12 +26,15 @@ import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class GithubProvider extends DataSourceProvider {
   private static final String SOURCE_LOCATION_ANNOTATION = "backstage.io/source-location";
@@ -49,18 +53,21 @@ public class GithubProvider extends DataSourceProvider {
   @Override
   public Map<String, Map<String, Object>> fetchData(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier);
+    Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, null);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
 
     String catalogLocation = entity.getMetadata().getAnnotations().get(SOURCE_LOCATION_ANNOTATION);
-    Map<String, String> possibleReplaceableRequestBodyPairs = prepareRequestBodyReplaceablePairs(catalogLocation);
+    Map<String, String> possibleReplaceableRequestBodyPairs = new HashMap<>();
+    if (catalogLocation != null) {
+      possibleReplaceableRequestBodyPairs = prepareRequestBodyReplaceablePairs(catalogLocation);
+    }
 
     return processOut(accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders,
         possibleReplaceableRequestBodyPairs, Collections.emptyMap());
   }
 
   @Override
-  public Map<String, String> getAuthHeaders(String accountIdentifier) {
+  public Map<String, String> getAuthHeaders(String accountIdentifier, MergedPluginConfigs mergedPluginConfigs) {
     BackstageEnvSecretVariableEntity backstageEnvSecretVariableEntity =
         (BackstageEnvSecretVariableEntity) backstageEnvVariableRepository
             .findByEnvNameAndAccountIdentifier(GITHUB_TOKEN, accountIdentifier)
@@ -77,10 +84,14 @@ public class GithubProvider extends DataSourceProvider {
 
     String[] catalogLocationParts = catalogLocation.split("/");
 
-    possibleReplaceableRequestBodyPairs.put(REPO_SCM, catalogLocationParts[2]);
-    possibleReplaceableRequestBodyPairs.put(REPOSITORY_OWNER, catalogLocationParts[3]);
-    possibleReplaceableRequestBodyPairs.put(REPOSITORY_NAME, catalogLocationParts[4]);
-    possibleReplaceableRequestBodyPairs.put(REPOSITORY_BRANCH, catalogLocationParts[6]);
+    try {
+      possibleReplaceableRequestBodyPairs.put(REPO_SCM, catalogLocationParts[2]);
+      possibleReplaceableRequestBodyPairs.put(REPOSITORY_OWNER, catalogLocationParts[3]);
+      possibleReplaceableRequestBodyPairs.put(REPOSITORY_NAME, catalogLocationParts[4]);
+      possibleReplaceableRequestBodyPairs.put(REPOSITORY_BRANCH, catalogLocationParts[6]);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      log.error("Error occurred while reading source location annotation ", e);
+    }
 
     return possibleReplaceableRequestBodyPairs;
   }

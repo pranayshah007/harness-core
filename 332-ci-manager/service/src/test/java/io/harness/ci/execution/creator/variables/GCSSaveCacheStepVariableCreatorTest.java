@@ -98,7 +98,8 @@ public class GCSSaveCacheStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.type",
             "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.identifier",
             "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.startTs",
-            "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.endTs");
+            "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.endTs",
+            "pipeline.stages.gcs_save_cache.spec.execution.steps.saveCacheTar.status");
 
     List<String> fqnExtraPropertiesList1 = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get(saveCacheGCSNode.getSaveCacheGCSStepInfo().getUuid()) // step uuid

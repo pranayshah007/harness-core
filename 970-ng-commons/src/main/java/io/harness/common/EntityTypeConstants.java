@@ -24,6 +24,7 @@ public interface EntityTypeConstants {
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   String GITOPS_SYNC = "GitOpsSync";
+  String UPDATE_GITOPS_APP = "UpdateGitOpsApp";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -207,7 +208,6 @@ public interface EntityTypeConstants {
   String CONTAINER_STEP = "Container";
   String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
   String IACM_APPROVAL = "IACMApproval";
-  String IACM_COST_ESTIMATION = "IACMCostEstimation";
 
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";

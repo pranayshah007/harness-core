@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/rest/api/2/issue/TJI-321",
+    "queryParameters": {
+      "expand": {
+        "contains": "names,schema"
+      },
+      "fields": {
+        "contains": "priority,project,issuetype,status,timetracking,labels"
+      }
+    }
+  },
+
+  "response": {
+    "status": 404,
+    "jsonBody": {
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

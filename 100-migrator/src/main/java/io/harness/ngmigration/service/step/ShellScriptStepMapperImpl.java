@@ -227,6 +227,29 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   }
 
   @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, String stepGroupName, GraphNode graphNode) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(stepGroupName, context.getIdentifierCaseFormat()))
+                   .expression(exp)
+                   .build())
+        .map(ShellScriptStepFunctor::new)
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public boolean loopingSupported() {
     return true;
   }

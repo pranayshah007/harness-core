@@ -922,6 +922,62 @@ public class ServiceStepV3Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.ABHINAV2)
+  @Category(UnitTests.class)
+  public void testWithReleaseOpt() {
+    StepResponse stepResponse = getStepResponse("Kubernetes", ServiceDefinitionType.KUBERNETES);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
+    ServiceStepOutcome outcome = (ServiceStepOutcome) stepResponse.getStepOutcomes().iterator().next().getOutcome();
+    assertThat(outcome.getRelease()).isNotNull();
+    assertThat(outcome.getRelease().getName()).isEqualTo("testsvc");
+
+    stepResponse = getStepResponse("Ssh", ServiceDefinitionType.SSH);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
+    outcome = (ServiceStepOutcome) stepResponse.getStepOutcomes().iterator().next().getOutcome();
+    assertThat(outcome.getRelease()).isNull();
+  }
+
+  private StepResponse getStepResponse(String serviceType, ServiceDefinitionType definitionType) {
+    ServiceEntity service = ServiceEntity.builder()
+                                .accountId("accountId")
+                                .orgIdentifier("orgId")
+                                .projectIdentifier("projectId")
+                                .identifier("service-id")
+                                .name("service-name")
+                                .type(definitionType)
+                                .yaml(getServiceYaml(serviceType))
+                                .build();
+
+    Environment environment = testEnvEntity();
+    doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
+        .when(sweepingOutputService)
+        .resolve(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT)));
+
+    return step.handleChildrenResponse(buildAmbiance(),
+        ServiceStepV3Parameters.builder()
+            .serviceRef(ParameterField.createValueField(service.getIdentifier()))
+            .envRef(ParameterField.createValueField(environment.getIdentifier()))
+            .childrenNodeIds(new ArrayList<>())
+            .build(),
+        Map.of("taskid1", StepResponseNotifyData.builder().nodeUuid("nodeuuid").status(Status.SUCCEEDED).build()));
+  }
+
+  private String getServiceYaml(String serviceType) {
+    return "service:\n"
+        + "  name: service-name\n"
+        + "  identifier: service-id\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      release:\n"
+        + "        name: testsvc\n"
+        + "    type: " + serviceType + "\n";
+  }
+
+  @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testHandleResponse_1() {

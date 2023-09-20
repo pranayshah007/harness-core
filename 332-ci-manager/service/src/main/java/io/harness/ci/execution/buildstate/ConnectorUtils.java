@@ -42,7 +42,6 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.JWTTokenServiceUtils;
-import io.harness.security.dto.PrincipalType;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -162,9 +161,12 @@ public class ConnectorUtils extends BaseConnectorUtils {
     if (isGitConnector && isEmpty(connectorIdentifier)
         && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
       log.info("fetching harness scm connector");
-      String baseUrl = getSCMBaseUrl(ngBaseUrl);
+      String gitBaseUrl = getSCMBaseUrl(ngBaseUrl);
       String authToken = "";
-      return super.getHarnessConnectorDetails(ngAccess, baseUrl, authToken);
+      // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas and
+      // scm on prem or vice versa
+      return super.getHarnessConnectorDetails(ngAccess, gitBaseUrl, authToken,
+          cIExecutionServiceConfig.getGitnessConfig().getHttpClientConfig().getBaseUrl());
     }
 
     if (isEmpty(connectorIdentifier)) {
@@ -181,7 +183,10 @@ public class ConnectorUtils extends BaseConnectorUtils {
         log.info("fetching harness scm connector");
         String baseUrl = getSCMBaseUrl(ngBaseUrl);
         String authToken = fetchAuthToken(ngAccess, ambiance, repoName);
-        return super.getHarnessConnectorDetails(ngAccess, baseUrl, authToken);
+        // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas
+        // and scm on prem or vice versa
+        return super.getHarnessConnectorDetails(ngAccess, baseUrl, authToken,
+            cIExecutionServiceConfig.getGitnessConfig().getHttpClientConfig().getBaseUrl());
       } else {
         throw new CIStageExecutionException("Git connector is mandatory in case git clone is enabled");
       }
@@ -193,6 +198,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
   private String fetchAuthToken(NGAccess ngAccess, Ambiance ambiance, String repoName) {
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
+    io.harness.pms.contracts.plan.PrincipalType principalType = executionPrincipalInfo.getPrincipalType();
 
     String completeRepoName = GitClientHelper.convertToHarnessRepoName(ngAccess.getAccountIdentifier(),
                                   ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), repoName)
@@ -200,7 +206,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
 
     String[] allowedResources = {completeRepoName};
 
-    ImmutableMap<String, String> claims = ImmutableMap.of("name", principal, "type", PrincipalType.USER.toString());
+    ImmutableMap<String, String> claims = ImmutableMap.of("name", principal, "type", principalType.name());
     ImmutableMap<String, String[]> arrayClaims = ImmutableMap.of("allowedResources", allowedResources);
 
     return JWTTokenServiceUtils.generateJWTToken(

@@ -12,6 +12,7 @@ import io.harness.ssca.beans.SbomDTO;
 import io.harness.ssca.entities.ArtifactEntity;
 
 import java.util.Optional;
+import org.springframework.data.domain.Sort;
 
 public interface ArtifactService {
   ArtifactEntity getArtifactFromSbomPayload(
@@ -19,4 +20,11 @@ public interface ArtifactService {
 
   Optional<ArtifactEntity> getArtifact(
       String accountId, String orgIdentifier, String projectIdentifier, String orchestrationId);
+
+  Optional<ArtifactEntity> getArtifact(
+      String accountId, String orgIdentifier, String projectIdentifier, String artifactId, Sort sort);
+
+  String generateArtifactId(String registryUrl, String name);
+
+  void saveArtifactAndInvalidateOldArtifact(ArtifactEntity artifact);
 }

@@ -125,5 +125,38 @@
       },
       "requestBody": "{BODY}"
     }
+  },
+  {
+    "id": "65006535c28a1a3f5607e84e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty_service_directory",
+    "dataSourceIdentifier": "pagerduty",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{TARGET_URL}/service_directory/{SERVICE_ID}",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{TOKEN_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "6500a8c6c28a1a3f5607f80e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty_incidents",
+    "dataSourceIdentifier": "pagerduty",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{TARGET_URL}/incidents?service_ids[]={SERVICE_ID}&limit=105&sort_by=created_at:desc&until={CURRENT_TIME_IN_UTC}",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{TOKEN_AUTH}"
+      }
+    }
   }
 ]
+

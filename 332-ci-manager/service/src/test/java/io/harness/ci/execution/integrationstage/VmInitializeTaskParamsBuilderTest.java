@@ -187,6 +187,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
         vmInitializeTaskParamsBuilder.getHostedVmInitializeTaskParams(initializeStepInfo, ambiance);
     assertThat(response.getSetupVmRequest().getId()).isEqualTo(stageRuntimeId);
     assertThat(response.getSetupVmRequest().getFallbackPoolIDs().isEmpty());
+    assertThat(response.isDistributed()).isFalse();
   }
 
   @Test
@@ -300,11 +301,13 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(ciExecutionServiceConfig.getHostedVmConfig())
         .thenReturn(HostedVmConfig.builder().splitLinuxAmd64Pool(false).internalAccounts(internalAccounts).build());
     doNothing().when(hostedVmSecretResolver).resolve(any(), any());
+    when(featureFlagService.isEnabled(FeatureName.CI_DLITE_DISTRIBUTED, accountId)).thenReturn(true);
 
     DliteVmInitializeTaskParams response =
         vmInitializeTaskParamsBuilder.getHostedVmInitializeTaskParams(initializeStepInfo, ambiance);
     assertThat(response.getSetupVmRequest().getId()).isEqualTo(stageRuntimeId);
     assertThat(response.getSetupVmRequest().getPoolID()).isEqualTo("linux-amd64-bare-metal");
     assertThat(response.getSetupVmRequest().getFallbackPoolIDs().contains("linux-amd64"));
+    assertThat(response.isDistributed()).isTrue();
   }
 }

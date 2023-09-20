@@ -13,9 +13,19 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.entities.ArtifactEntity;
 
+import java.util.Optional;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 @OwnedBy(SSCA)
 public interface ArtifactRepository
-    extends PagingAndSortingRepository<ArtifactEntity, String>, ArtifactRepositoryCustom {}
+    extends PagingAndSortingRepository<ArtifactEntity, String>, ArtifactRepositoryCustom {
+  Optional<ArtifactEntity> findFirstByUrlLike(String url, Sort sort);
+
+  Optional<ArtifactEntity> findByAccountIdAndOrgIdAndProjectIdAndOrchestrationId(
+      String accountId, String orgId, String projectId, String orchestrationId);
+
+  Optional<ArtifactEntity> findFirstByAccountIdAndOrgIdAndProjectIdAndArtifactIdLike(
+      String accountId, String orgId, String projectId, String artifactId, Sort sort);
+}

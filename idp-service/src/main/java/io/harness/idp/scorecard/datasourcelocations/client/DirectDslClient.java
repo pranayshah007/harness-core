@@ -12,6 +12,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 
 import java.util.Map;
 import java.util.Objects;
@@ -31,10 +32,13 @@ public class DirectDslClient implements DslClient {
   private static final String GET_METHOD = "GET";
 
   @Override
-  public Response call(String accountIdentifier, String url, String method, Map<String, String> headers, String body) {
+  public Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails) {
     OkHttpClient client = buildOkHttpClient();
+    String url = apiRequestDetails.getUrl();
+    String method = apiRequestDetails.getMethod();
+    String body = apiRequestDetails.getRequestBody();
     log.info("Executing request through direct DSL for url = {}, method = {}, body - {}", url, method, body);
-    Request request = buildRequest(url, method, headers, body);
+    Request request = buildRequest(url, method, apiRequestDetails.getHeaders(), body);
     log.info("Request - {}", request.body());
     log.info("Request - {} ", request.toString());
     return executeRequest(client, request);

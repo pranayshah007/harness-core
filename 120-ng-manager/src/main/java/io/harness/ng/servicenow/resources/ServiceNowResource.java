@@ -10,7 +10,10 @@ package io.harness.ng.servicenow.resources;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -56,6 +59,7 @@ import lombok.AllArgsConstructor;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ServiceNowResource {
   private final ServiceNowResourceService serviceNowResourceService;
   @GET
@@ -169,5 +173,22 @@ public class ServiceNowResource {
     ServiceNowTicketNG ticketDetails = serviceNowResourceService.getTicketDetails(
         connectorRef, orgId, projectId, ticketType, ticketNumber, fieldsList);
     return ResponseDTO.newResponse(ticketDetails);
+  }
+
+  @GET
+  @Path("getStandardTemplateReadOnlyFields")
+  @ApiOperation(
+      value = "Get read-only fields for standard change templates", nickname = "getStandardTemplateReadOnlyFields")
+  public ResponseDTO<List<String>>
+  getStandardTemplateReadOnlyFields(@NotNull @QueryParam("connectorRef") String serviceNowConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(serviceNowConnectorRef, accountId, orgId, projectId);
+    List<String> standardTemplateReadOnlyFields =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(connectorRef, orgId, projectId);
+    return ResponseDTO.newResponse(standardTemplateReadOnlyFields);
   }
 }

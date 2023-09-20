@@ -48,7 +48,8 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
       CIInitTaskArgs ciInitTaskArgs = RecastOrchestrationUtils.fromJson(payload, CIInitTaskArgs.class);
       Ambiance ambiance = ciInitTaskArgs.getAmbiance();
       builder.accountId(AmbianceUtils.getAccountId(ambiance));
-      if (!buildEnforcer.checkBuildEnforcement(AmbianceUtils.getAccountId(ambiance))) {
+      if (!buildEnforcer.checkBuildEnforcement(
+              AmbianceUtils.getAccountId(ambiance), Arrays.asList(Status.RUNNING.toString()))) {
         log.info(String.format("skipping execution for account id: %s because of concurrency enforcement failure",
             AmbianceUtils.getAccountId(ambiance)));
         return builder.success(false).build();

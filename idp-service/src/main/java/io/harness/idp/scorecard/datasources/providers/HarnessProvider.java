@@ -25,6 +25,7 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,7 +58,7 @@ public class HarnessProvider extends DataSourceProvider {
   public Map<String, Map<String, Object>> fetchData(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
     Map<String, String> replaceableHeaders = new HashMap<>();
-    Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier);
+    Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, null);
     replaceableHeaders.put(HARNESS_ACCOUNT, accountIdentifier);
     replaceableHeaders.putAll(authHeaders);
     log.info(
@@ -70,7 +71,7 @@ public class HarnessProvider extends DataSourceProvider {
   }
 
   @Override
-  public Map<String, String> getAuthHeaders(String accountIdentifier) {
+  public Map<String, String> getAuthHeaders(String accountIdentifier, MergedPluginConfigs mergedPluginConfigs) {
     return idpAuthInterceptor.getAuthHeaders();
   }
 

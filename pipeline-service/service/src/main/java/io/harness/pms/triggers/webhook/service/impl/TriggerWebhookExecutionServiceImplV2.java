@@ -85,6 +85,8 @@ public class TriggerWebhookExecutionServiceImplV2 implements TriggerWebhookExecu
       }
 
       saveTriggerExecutionHistoryRecords(responseList);
+    } catch (InvalidRequestException e) {
+      log.warn("Invalid Request Exception while processing webhook event. Please check", e);
     } catch (Exception e) {
       log.error("Exception while processing webhook event. Please check", e);
     }

@@ -776,13 +776,13 @@ instrPackages: p1, p2, p3`
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
 echo x
-mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
+echo "Skipping test run, received no tests to execute"
 echo y`
 	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
-	assert.Equal(t, r.runOnlySelectedTests, false) // Since there was an error in execution
+	assert.Equal(t, r.runOnlySelectedTests, true)
 	assert.Equal(t, got, want)
-	assert.Equal(t, called, 3)
+	assert.Equal(t, called, 4)
 }
 
 func TestGetCmd_PushTrigger_SelectAll(t *testing.T) {

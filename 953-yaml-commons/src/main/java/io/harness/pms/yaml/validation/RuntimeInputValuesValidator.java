@@ -21,6 +21,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -215,7 +216,8 @@ public class RuntimeInputValuesValidator {
     }
     ParameterField<String> inputSetField;
     try {
-      inputSetField = YamlUtils.read(inputSetValue, new TypeReference<ParameterField<String>>() {});
+      inputSetField = YamlUtils.read(
+          JsonPipelineUtils.writeJsonString(inputSetValue), new TypeReference<ParameterField<String>>() {});
     } catch (IOException e) {
       log.error(String.format("Error mapping input set value %s to ParameterField class", inputSetValue), e);
       return null;

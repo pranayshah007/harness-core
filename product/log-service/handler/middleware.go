@@ -199,7 +199,7 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 				case entity.QUEUED:
 				case entity.IN_PROGRESS:
 					logger.FromRequest(r).Infoln("Returning queued or inprogress for prefix", prefix)
-					WriteJSON(w, info, 200)
+					WriteUnescapeJSON(w, info, 200)
 					return
 				case entity.ERROR:
 					err := c.Delete(ctx, prefix)
@@ -215,11 +215,11 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 						return
 					}
 					logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Deleted from cache")
-					WriteJSON(w, info, 200)
+					WriteUnescapeJSON(w, info, 200)
 					return
 				case entity.SUCCESS:
 					logger.FromRequest(r).Infoln("Returning success found in cache for prefix", prefix)
-					WriteJSON(w, info, 200)
+					WriteUnescapeJSON(w, info, 200)
 					return
 				default:
 					logger.FromRequest(r).WithField("Prefix", prefix).Infoln("info status does not match, going to default")

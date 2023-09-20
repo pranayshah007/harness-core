@@ -15,8 +15,10 @@ import static io.harness.eraro.ErrorCode.AZURE_AUTHENTICATION_ERROR;
 import static io.harness.eraro.ErrorCode.AZURE_KEY_VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.helpers.GlobalSecretManagerUtils.getValueByJsonPath;
 import static io.harness.threading.Morpheus.sleep;
 
+import static com.jayway.jsonpath.JsonPath.parse;
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 
@@ -387,7 +389,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
         throw new AzureKeyVaultOperationException("Received null value for " + parsedSecretReference.getSecretName(),
             AZURE_KEY_VAULT_OPERATION_ERROR, USER_SRE);
       }
-      return response.getValue().getValue().toCharArray();
+      return getValueByJsonPath(parse(response.getValue().getValue()), parsedSecretReference.getKey()).toCharArray();
     } catch (KeyVaultErrorException | MsalException ex) {
       throw ex;
     } catch (Exception ex) {
@@ -398,6 +400,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, message, USER);
     }
   }
+
   private SecretClient getAzureVaultSecretsClient(AzureVaultConfig azureVaultConfig) {
     return KeyVaultAuthenticator.getSecretsClient(azureVaultConfig.getVaultName(),
         KeyVaultAuthenticator.getAzureHttpPipeline(azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey(),

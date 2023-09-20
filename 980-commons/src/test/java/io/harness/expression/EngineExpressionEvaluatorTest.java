@@ -387,6 +387,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var2", "'archit<+f>' + <+company>")
             .put("var3", "concatenate1")
             .put("var4", "[\"abc\", \"def\"]")
+            .put("var5", "[{\"abc\":\"def\"},{\"efg\":\"hij\"}]")
+            .put("var6", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"}]")
+            .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
+            .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, Arrays.asList("PIE_EXPRESSION_CONCATENATION"))
             .build());
     // concat expressions
@@ -437,6 +441,14 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(
         evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
         .isEqualTo(false);
+    // EQ operator
+    assertThat(
+        evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && (<+c2.anotherStatus> eq \"IGNORE_FAILED\")"))
+        .isEqualTo(true);
+    // NE operator
+    assertThat(
+        evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> ne \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
     // and operator
     assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
@@ -449,6 +461,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // !~ operator
     assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
+    // size operator
+    assertThat(evaluator.resolve("<+size(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("18");
+    // empty operator
+    assertThat(evaluator.resolve("<+empty(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("false");
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
@@ -516,6 +534,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.renderExpression("<+a> + <+b> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+<+a> > + <+ <+b>> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+f> + <+g> = <+<+f> + \" + \" + <+g>>")).isEqualTo("abc + def = abc + def");
+
+    assertThat(evaluator.resolve("<+var5>", true)).isEqualTo("[{\"abc\":\"def\"},{\"efg\":\"hij\"}]");
+    assertThat(evaluator.resolve("<+var6>", true)).isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"}]");
+    assertThat(evaluator.resolve("<+var7>", true)).isEqualTo("[{\"stu\":\"abc\"},{\"u\":{\"vw\":\"xyz\"}}]");
+    assertThat(evaluator.resolve("<+var8>", true))
+        .isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"},{\"u\":{\"vw\":\"def\"}}]");
   }
 
   @Test
@@ -558,9 +582,14 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var2", "'archit<+f>' + <+company>")
             .put("var3", "concatenate1")
             .put("var4", "[\"abc\", \"def\"]")
+            .put("var5", "[{\"abc\":\"def\"},{\"efg\":\"hij\"}]")
+            .put("var6", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"}]")
+            .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
+            .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY,
                 Arrays.asList("PIE_EXPRESSION_CONCATENATION", "PIE_EXECUTION_JSON_SUPPORT"))
             .build());
+
     // concat expressions
     assertThat(evaluator.resolve("archit-<+company>", true)).isEqualTo("archit-harness");
     assertThat(evaluator.evaluateExpression("archit-<+company>")).isEqualTo("archit-harness");
@@ -650,6 +679,14 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(
         evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
         .isEqualTo(false);
+    // EQ operator
+    assertThat(
+        evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && (<+c2.anotherStatus> eq \"IGNORE_FAILED\")"))
+        .isEqualTo(true);
+    // NE operator
+    assertThat(
+        evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> ne \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
     // and operator
     assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
@@ -662,6 +699,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // !~ operator
     assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
+    // size operator
+    assertThat(evaluator.resolve("<+size(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("18");
+    // empty operator
+    assertThat(evaluator.resolve("<+empty(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("false");
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
@@ -706,6 +749,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.renderExpression("<+a> + <+b> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+<+a> > + <+ <+b>> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+f> + <+g> = <+<+f> + \" + \" + <+g>>")).isEqualTo("abc + def = abc + def");
+
+    assertThat(evaluator.resolve("<+var5>", true)).isEqualTo("[{\"abc\":\"def\"},{\"efg\":\"hij\"}]");
+    assertThat(evaluator.resolve("<+var6>", true)).isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"}]");
+    assertThat(evaluator.resolve("<+var7>", true)).isEqualTo("[{\"stu\":\"abc\"},{\"u\":{\"vw\":\"xyz\"}}]");
+    assertThat(evaluator.resolve("<+var8>", true))
+        .isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"},{\"u\":{\"vw\":\"def\"}}]");
   }
 
   @Test

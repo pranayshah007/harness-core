@@ -474,12 +474,15 @@ public class PipelineMigrationService extends NgMigrationService {
             .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(stepWrapper)).build())
             .build());
     approvalStageNode.setFailureStrategies(WorkflowHandler.getDefaultFailureStrategy());
-    approvalStageNode.setWhen(
-        ParameterField.createValueField(StageWhenCondition.builder()
-                                            .pipelineStatus(WhenConditionStatus.SUCCESS)
-                                            .condition(ParameterField.createValueField(getWhenCondition(
-                                                migrationContext, stageElement, stageIdentifier, functors)))
-                                            .build()));
+    String whenCondition = getWhenCondition(migrationContext, stageElement, stageIdentifier, functors);
+    if (!Boolean.TRUE.toString().equals(whenCondition)) {
+      approvalStageNode.setWhen(
+          ParameterField.createValueField(StageWhenCondition.builder()
+                                              .pipelineStatus(WhenConditionStatus.SUCCESS)
+                                              .condition(ParameterField.createValueField(whenCondition))
+                                              .build()));
+    }
+
     existingIdentifiers.add(approvalStageNode.getIdentifier());
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(approvalStageNode)).build();
   }
@@ -970,12 +973,14 @@ public class PipelineMigrationService extends NgMigrationService {
     stageNode.setDescription(ParameterField.createValueField(""));
     stageNode.setPipelineStageConfig(pipelineStageConfig);
     stageNode.setFailureStrategies(WorkflowHandler.getDefaultFailureStrategy());
-    stageNode.setWhen(
-        ParameterField.createValueField(StageWhenCondition.builder()
-                                            .condition(ParameterField.createValueField(getWhenCondition(
-                                                migrationContext, stageElement, stageIdentifier, functors)))
-                                            .pipelineStatus(WhenConditionStatus.SUCCESS)
-                                            .build()));
+    String whenCondition = getWhenCondition(migrationContext, stageElement, stageIdentifier, functors);
+    if (!Boolean.TRUE.toString().equals(whenCondition)) {
+      stageNode.setWhen(ParameterField.createValueField(StageWhenCondition.builder()
+                                                            .condition(ParameterField.createValueField(whenCondition))
+                                                            .pipelineStatus(WhenConditionStatus.SUCCESS)
+                                                            .build()));
+    }
+
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(stageNode)).build();
   }
 

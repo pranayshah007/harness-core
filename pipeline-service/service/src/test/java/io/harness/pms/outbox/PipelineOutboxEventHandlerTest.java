@@ -30,11 +30,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.custom.executions.NodeExecutionEventData;
+import io.harness.audit.beans.custom.executions.TriggeredByInfoAuditDetails;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.engine.pms.audits.events.NodeExecutionOutboxEventConstants;
 import io.harness.engine.pms.audits.events.PipelineAbortEvent;
+import io.harness.engine.pms.audits.events.PipelineStartEvent;
 import io.harness.engine.pms.audits.events.TriggeredInfo;
 import io.harness.outbox.OutboxEvent;
 import io.harness.pms.events.PipelineCreateEvent;
@@ -53,6 +55,7 @@ import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -280,6 +283,63 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
         ((NodeExecutionEventData) auditEntry.getAuditEventData()).getTriggeredBy().getExtraInfo().get("email"));
   }
 
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testStartPipeline() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+
+    TriggeredInfo triggeredInfo =
+        TriggeredInfo.builder().identifier("admin").extraInfo(Map.of("email", "email@em.com")).build();
+
+    PipelineStartEvent pipelineStartEvent = new PipelineStartEvent(accountIdentifier, orgIdentifier, projectIdentifier,
+        identifier, "planExecutionId", triggeredInfo, Instant.now().toEpochMilli());
+    String eventData = objectMapper.writeValueAsString(pipelineStartEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .resource(pipelineStartEvent.getResource())
+                                  .resourceScope(pipelineStartEvent.getResourceScope())
+                                  .eventType(NodeExecutionOutboxEventConstants.PIPELINE_START)
+                                  .blocked(false)
+                                  .globalContext(new GlobalContext())
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .eventData(eventData)
+                                  .id(randomAlphabetic(10))
+                                  .build();
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    eventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, identifier, auditEntry, outboxEvent);
+    assertEquals(Action.START, auditEntry.getAction());
+    assertEquals("email@em.com",
+        ((NodeExecutionEventData) auditEntry.getAuditEventData()).getTriggeredBy().getExtraInfo().get("email"));
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testGetIdentifierForPrincipal() {
+    TriggeredInfo triggeredInfo =
+        TriggeredInfo.builder().identifier("admin").extraInfo(Map.of("email", "email@em.com")).build();
+
+    NodeExecutionEventData nodeExecutionEventData = buildNodeExecutionEventData(triggeredInfo);
+    String identifierForPrincipal = eventHandler.getIdentifierForPrincipal(nodeExecutionEventData);
+    assertEquals(identifierForPrincipal, "email@em.com");
+
+    TriggeredInfo triggeredInfo1 = TriggeredInfo.builder().identifier("admin").extraInfo(Map.of("email", "")).build();
+
+    nodeExecutionEventData = buildNodeExecutionEventData(triggeredInfo1);
+
+    String identifierForPrincipal1 = eventHandler.getIdentifierForPrincipal(nodeExecutionEventData);
+    assertEquals(identifierForPrincipal1, "admin");
+  }
+
   private void assertAuditEntry(String accountId, String orgIdentifier, String projectIdentifier, String identifier,
       AuditEntry auditEntry, OutboxEvent outboxEvent) {
     assertNotNull(auditEntry);
@@ -290,5 +350,26 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
     assertEquals(identifier, auditEntry.getResource().getIdentifier());
     assertEquals(ModuleType.PMS, auditEntry.getModule());
     assertEquals(outboxEvent.getCreatedAt().longValue(), auditEntry.getTimestamp());
+  }
+
+  private NodeExecutionEventData buildNodeExecutionEventData(TriggeredInfo triggeredInfo) {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    String planExecutionId = randomAlphabetic(10);
+
+    return NodeExecutionEventData.builder()
+        .accountIdentifier(accountIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .pipelineIdentifier(identifier)
+        .planExecutionId(planExecutionId)
+        .triggeredBy(TriggeredByInfoAuditDetails.builder()
+                         .type(triggeredInfo.getType())
+                         .identifier(triggeredInfo.getIdentifier())
+                         .extraInfo(triggeredInfo.getExtraInfo())
+                         .build())
+        .build();
   }
 }

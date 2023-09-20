@@ -7,6 +7,8 @@
 
 package io.harness.cdng.servicenow.resources.service;
 
+import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -43,6 +45,7 @@ import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.rule.Owner;
@@ -605,6 +608,101 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     assertThat(parameters.getQueryFields()).isEqualTo("active,opened_at,approval_set,number,caused_by");
   }
 
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyFields() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    String serviceNowStandardTemplateReadOnlyFields =
+        "description,backout_plan,test_plan,implementation_plan,short_description";
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder()
+                        .serviceNowStandardTemplateReadOnlyFields(serviceNowStandardTemplateReadOnlyFields)
+                        .build());
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(5);
+    assertThat(result.get(0)).isEqualTo("description");
+    assertThat(result.get(1)).isEqualTo("backout_plan");
+    assertThat(result.get(2)).isEqualTo("test_plan");
+    assertThat(result.get(3)).isEqualTo("implementation_plan");
+    assertThat(result.get(4)).isEqualTo("short_description");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyFieldsForEmptyString() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    String serviceNowStandardTemplateReadOnlyFields = "";
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder()
+                        .serviceNowStandardTemplateReadOnlyFields(serviceNowStandardTemplateReadOnlyFields)
+                        .build());
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(0);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyFieldsForSingleEntry() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    String serviceNowStandardTemplateReadOnlyFields = "description";
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder()
+                        .serviceNowStandardTemplateReadOnlyFields(serviceNowStandardTemplateReadOnlyFields)
+                        .build());
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0)).isEqualTo("description");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyFieldsForNullString() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(ServiceNowTaskNGResponse.builder().build());
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(0);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyHandleException() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new ServiceNowException(
+            "User is unauthorized to access table: std_change_properties", SERVICENOW_ERROR, USER));
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(4);
+    assertThat(result).contains("description", "backout_plan", "test_plan", "implementation_plan");
+  }
   private JsonNode readResource(String filePath) throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL jsonFile = classLoader.getResource(filePath);

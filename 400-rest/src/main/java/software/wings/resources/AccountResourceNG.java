@@ -22,9 +22,9 @@ import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.security.UserGroup;
 import software.wings.helpers.ext.url.SubdomainUrlHelper;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;

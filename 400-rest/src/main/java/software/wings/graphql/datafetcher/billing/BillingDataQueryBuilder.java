@@ -1885,6 +1885,8 @@ public class BillingDataQueryBuilder {
         return schema.getNamespace();
       case WorkloadName:
         return schema.getWorkloadName();
+      case Service:
+        return schema.getServiceId();
       case ClusterName:
       case StartTime:
         return null;

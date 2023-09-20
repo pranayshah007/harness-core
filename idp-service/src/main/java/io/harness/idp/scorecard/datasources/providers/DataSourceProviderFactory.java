@@ -11,6 +11,7 @@ import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
 import static io.harness.idp.common.Constants.CUSTOM_IDENTIFIER;
 import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.HARNESS_IDENTIFIER;
+import static io.harness.idp.common.Constants.PAGERDUTY_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,6 +21,7 @@ import io.harness.idp.scorecard.datapoints.parser.DataSourceDataPointParserFacto
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
 import com.google.inject.Inject;
@@ -38,6 +40,8 @@ public class DataSourceProviderFactory {
   @Inject IdpAuthInterceptor idpAuthInterceptor;
   @Inject @Named("env") private String env;
 
+  @Inject ConfigReader configReader;
+
   public DataSourceProvider getProvider(String dataSource) {
     switch (dataSource) {
       case CATALOG_IDENTIFIER:
@@ -53,6 +57,9 @@ public class DataSourceProviderFactory {
       case CUSTOM_IDENTIFIER:
         return new CustomProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(CUSTOM_IDENTIFIER));
+      case PAGERDUTY_IDENTIFIER:
+        return new PagerDutyProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataSourceDataPointParserFactory.getDataPointParserFactory(PAGERDUTY_IDENTIFIER), configReader);
       default:
         throw new IllegalArgumentException("DataSource provider " + dataSource + " is not supported yet");
     }

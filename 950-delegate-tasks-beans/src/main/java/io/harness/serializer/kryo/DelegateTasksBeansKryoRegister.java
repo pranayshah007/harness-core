@@ -21,6 +21,7 @@ import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.audit.streaming.outgoing.Principal;
 import io.harness.audit.streaming.outgoing.Resource;
 import io.harness.audit.streaming.outgoing.ResourceScope;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.beans.HttpCertificate;
 import io.harness.beans.HttpCertificateNG;
@@ -232,6 +233,7 @@ import io.harness.delegate.beans.connector.docker.DockerValidationParams;
 import io.harness.delegate.beans.connector.gcp.GcpValidationParams;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsValidationParams;
 import io.harness.delegate.beans.connector.gcpsecretmanagerconnector.GcpSecretManagerValidationParams;
+import io.harness.delegate.beans.connector.helm.EcrHelmApiListTagsTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
@@ -2189,6 +2191,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureWebAppSlotDeploymentExceptionData.class, 55409);
     kryo.register(OciHelmDockerApiListTagsTaskParams.class, 55440);
     kryo.register(OciHelmDockerApiListTagsTaskResponse.class, 55441);
+    kryo.register(EcrHelmApiListTagsTaskParams.class, 55442);
 
     // GIT
     kryo.register(GitTaskNGRequest.class, 573401);
@@ -2283,6 +2286,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgBlueGreenDeployResponse.class, 5731608);
     kryo.register(AsgBlueGreenDeployResult.class, 5731609);
     kryo.register(NativeHelmServerInstanceInfo.class, 5731610);
+    kryo.register(AsgCapacityConfig.class, 5731611);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);

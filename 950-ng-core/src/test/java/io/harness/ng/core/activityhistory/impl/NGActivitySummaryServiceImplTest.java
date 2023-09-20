@@ -171,7 +171,7 @@ public class NGActivitySummaryServiceImplTest extends NGCoreTestBase {
         long activityTime = getRandomNumberUsingNextInt(time, time + timeUnit);
         NGActivityDTO activity =
             createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier,
-                NGActivityStatus.SUCCESS, activityTime, NGActivityType.ENTITY_USAGE, EntityType.PIPELINES);
+                null, NGActivityStatus.SUCCESS, activityTime, NGActivityType.ENTITY_USAGE, EntityType.PIPELINES);
         ngActivityService.save(activity);
       }
 
@@ -179,7 +179,7 @@ public class NGActivitySummaryServiceImplTest extends NGCoreTestBase {
         long activityTime = getRandomNumberUsingNextInt(time, time + timeUnit);
         NGActivityDTO activity =
             createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier,
-                NGActivityStatus.FAILED, activityTime, NGActivityType.ENTITY_USAGE, EntityType.PIPELINES);
+                null, NGActivityStatus.FAILED, activityTime, NGActivityType.ENTITY_USAGE, EntityType.PIPELINES);
         ngActivityService.save(activity);
       }
 
@@ -187,7 +187,7 @@ public class NGActivitySummaryServiceImplTest extends NGCoreTestBase {
         long activityTime = getRandomNumberUsingNextInt(time, time + timeUnit);
         NGActivityDTO activity =
             createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier,
-                NGActivityStatus.FAILED, activityTime, NGActivityType.CONNECTIVITY_CHECK, EntityType.PIPELINES);
+                null, NGActivityStatus.FAILED, activityTime, NGActivityType.CONNECTIVITY_CHECK, EntityType.PIPELINES);
         ngActivityService.save(activity);
       }
     }

@@ -34,6 +34,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +71,22 @@ public class CIDelegateTaskExecutor {
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
     return queueTask(abstractions, task, taskSelectors, new ArrayList<>(), false, ambiance.getStageExecutionId());
+  }
+
+  public String queueParkedDelegateTaskDlite(Ambiance ambiance, long timeout, String accountId) {
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .parked(true)
+                                  .taskType(TaskType.DLITE_CI_VM_EXECUTE_TASK_V2.name())
+                                  .parameters(new Object[] {StepStatusTaskParameters.builder().build()})
+                                  .timeout(timeout)
+                                  .build();
+
+    Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
+    HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
+
+    return queueTask(
+        abstractions, task, Collections.emptyList(), Collections.emptyList(), true, ambiance.getStageExecutionId());
   }
 
   public String queueTask(Ambiance ambiance, TaskData taskData, String accountId) {

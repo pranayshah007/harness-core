@@ -11,13 +11,16 @@ import io.harness.batch.processing.cloudevents.aws.ecs.service.support.AwsCreden
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsCloudWatchHelperService;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.request.AwsCloudWatchMetricDataRequest;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.response.AwsCloudWatchMetricDataResponse;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.beans.ExecutionStatus;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.cloudwatch.model.GetMetricDataRequest;
@@ -36,6 +39,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperService {
   @Autowired private AwsCredentialHelper awsCredentialHelper;
+  @Autowired private BatchMainConfig batchMainConfig;
 
   @Override
   public AwsCloudWatchMetricDataResponse getMetricData(AwsCloudWatchMetricDataRequest request) {
@@ -72,7 +76,7 @@ public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperServic
   @VisibleForTesting
   AmazonCloudWatchClient getAwsCloudWatchClient(String region, AwsCrossAccountAttributes awsCrossAccountAttributes) {
     AWSSecurityTokenService awsSecurityTokenService = awsCredentialHelper.constructAWSSecurityTokenService();
-    AmazonCloudWatchClientBuilder builder = AmazonCloudWatchClientBuilder.standard().withRegion(region);
+    AmazonCloudWatchClientBuilder builder = AmazonCloudWatchClientBuilder.standard();
     AWSCredentialsProvider credentialsProvider =
         new STSAssumeRoleSessionCredentialsProvider
             .Builder(awsCrossAccountAttributes.getCrossAccountRoleArn(), UUID.randomUUID().toString())
@@ -80,6 +84,13 @@ public class AwsCloudWatchHelperServiceImpl implements AwsCloudWatchHelperServic
             .withStsClient(awsSecurityTokenService)
             .build();
     builder.withCredentials(credentialsProvider);
-    return (AmazonCloudWatchClient) builder.build();
+    CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig = batchMainConfig.getCeAwsServiceEndpointConfig();
+    if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
+      return (AmazonCloudWatchClient) builder
+          .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+              ceAwsServiceEndpointConfig.getCloudwatchEndPointUrl(), ceAwsServiceEndpointConfig.getEndPointRegion()))
+          .build();
+    }
+    return (AmazonCloudWatchClient) builder.withRegion(region).build();
   }
 }

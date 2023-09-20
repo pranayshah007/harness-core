@@ -9,6 +9,7 @@ package io.harness.delegate.task.aws.eks;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.K8sConstants.EKS_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.k8s.eks.EksConstants.AWS_STS_REGIONAL_ENDPOINTS;
 import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ENV_VARS_AWS_ACCESS_KEY_ID;
 import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ENV_VARS_AWS_SECRET_ACCESS_KEY;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
@@ -94,7 +95,7 @@ public class AwsEKSV2DelegateTaskHelperTest extends CategoryTest {
     Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
 
     KubernetesConfig result = awsEKSV2DelegateTaskHelper.getKubeConfig(
-        awsConnectorDTO, "us-west-2/test-cluster", "test-namespace", logCallback);
+        awsConnectorDTO, "us-west-2/test-cluster", true, "test-namespace", logCallback);
     kubeConfigAuthPluginHelper.close();
     assertNotNull(result);
     assertEquals("endpoint/", result.getMasterUrl());
@@ -119,11 +120,13 @@ public class AwsEKSV2DelegateTaskHelperTest extends CategoryTest {
 
     List<EnvVariable> env = exec.getEnv();
     assertNotNull(env);
-    assertEquals(2, env.size());
+    assertEquals(3, env.size());
     assertEquals(EKS_KUBECFG_ENV_VARS_AWS_ACCESS_KEY_ID, env.get(0).getName());
     assertEquals("access-key", env.get(0).getValue());
     assertEquals(EKS_KUBECFG_ENV_VARS_AWS_SECRET_ACCESS_KEY, env.get(1).getName());
     assertEquals("secret-key", env.get(1).getValue());
+    assertEquals(AWS_STS_REGIONAL_ENDPOINTS, env.get(2).getName());
+    assertEquals("regional", env.get(2).getValue());
   }
 
   @Test
@@ -134,8 +137,9 @@ public class AwsEKSV2DelegateTaskHelperTest extends CategoryTest {
     AwsConnectorDTO awsConnectorDTO = mock(AwsConnectorDTO.class);
     LogCallback logCallback = mock(LogCallback.class);
 
-    assertThatThrownBy(
-        () -> awsEKSV2DelegateTaskHelper.getKubeConfig(awsConnectorDTO, "test-cluster", "test-namespace", logCallback))
+    assertThatThrownBy(()
+                           -> awsEKSV2DelegateTaskHelper.getKubeConfig(
+                               awsConnectorDTO, "test-cluster", false, "test-namespace", logCallback))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(String.format("Cluster name is not in proper format. "
                 + "Expected format is <Region/ClusterName> i.e us-east-1/test-cluster. Provided cluster name: [%s]",

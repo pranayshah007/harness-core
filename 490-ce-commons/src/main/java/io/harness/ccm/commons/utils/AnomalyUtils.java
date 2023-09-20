@@ -66,6 +66,10 @@ public class AnomalyUtils {
         builder.append(SEPARATOR);
         builder.append(anomaly.getWorkloadname());
       }
+      if (anomaly.getServicename() != null) {
+        builder.append(SEPARATOR);
+        builder.append(anomaly.getServicename());
+      }
     } else if (anomaly.getGcpproject() != null) {
       builder.append(anomaly.getGcpproject());
       if (anomaly.getGcpproduct() != null) {
@@ -111,6 +115,10 @@ public class AnomalyUtils {
       if (anomaly.getWorkloadname() != null) {
         builder.append(SEPARATOR);
         builder.append(ViewFieldConstants.WORKLOAD_NAME_FIELD_ID);
+      }
+      if (anomaly.getServicename() != null) {
+        builder.append(SEPARATOR);
+        builder.append(ViewFieldConstants.SERVICE_NAME_FIELD_ID);
       }
       return builder.toString();
     } else if (anomaly.getGcpproject() != null) {
@@ -158,6 +166,9 @@ public class AnomalyUtils {
       }
       if (anomaly.getNamespace() != null) {
         return ViewFieldConstants.NAMESPACE_FIELD_ID;
+      }
+      if (anomaly.getService() != null) {
+        return ViewFieldConstants.SERVICE_NAME_FIELD_ID;
       }
       return ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
     } else if (anomaly.getGcpproject() != null) {
@@ -233,6 +244,8 @@ public class AnomalyUtils {
         .namespace(anomaly.getNamespace())
         .workloadName(anomaly.getWorkloadname())
         .workloadType(anomaly.getWorkloadtype())
+        .service(anomaly.getService())
+        .serviceName(anomaly.getServicename())
         .gcpProjectId(anomaly.getGcpproject())
         .gcpSKUId(anomaly.getGcpskuid())
         .gcpSKUDescription(anomaly.getGcpskudescription())

@@ -10,7 +10,9 @@ package io.harness.ci.enforcement;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
+
 @OwnedBy(HarnessTeam.CI)
 public interface CIBuildEnforcer {
-  boolean checkBuildEnforcement(String accountID);
+  boolean checkBuildEnforcement(String accountID, List<String> status);
 }

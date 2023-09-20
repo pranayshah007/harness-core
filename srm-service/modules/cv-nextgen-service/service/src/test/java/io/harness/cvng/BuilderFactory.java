@@ -1436,6 +1436,27 @@ public class BuilderFactory {
         .setExecutionTime(1000l);
   }
 
+  public InternalChangeEventDTO.Builder getInternalChangeEventBuilderCE() {
+    return InternalChangeEventDTO.newBuilder()
+        .setAccountId(context.getAccountId())
+        .setOrgIdentifier(context.getOrgIdentifier())
+        .setProjectIdentifier(context.getProjectIdentifier())
+        .addServiceIdentifier("Service1")
+        .addEnvironmentIdentifier("Env1")
+        .setEventDetails(EventDetails.newBuilder()
+                             .setUser("user")
+                             .addEventDetails("test event detail")
+                             .setInternalLinkToEntity("testInternalUrl")
+                             .setChangeEventDetailsLink("testChangeEventDetailsLink")
+                             .build())
+        .setType("CHAOS_EXPERIMENT")
+        .setPipelineId("test pipeline id")
+        .setPlanExecutionId("test plan execution id")
+        .setStageId("test stage id")
+        .setStageStepId("test stage step id")
+        .setExecutionTime(1000l);
+  }
+
   private ChangeSourceDTOBuilder getChangeSourceDTOBuilder(ChangeSourceType changeSourceType) {
     return ChangeSourceDTO.builder()
         .identifier(generateUuid())

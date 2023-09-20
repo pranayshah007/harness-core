@@ -154,7 +154,7 @@ public class TasStageValidatorHelper implements StageValidatorHelper {
           }
         }
       } catch (IOException e) {
-        throw new InvalidRequestException("Unable to parse these steps in yaml: " + wrapperConfig);
+        throw new InvalidRequestException("Unable to parse these steps in yaml: " + wrapperConfig, e);
       }
     }
   }
@@ -260,7 +260,7 @@ public class TasStageValidatorHelper implements StageValidatorHelper {
           addTemplateByScope(stepGroup.getTemplate().getTemplateRef(), templateScopeToIds);
         }
       } catch (IOException e) {
-        throw new InvalidRequestException("Unable to parse these steps in yaml");
+        throw new InvalidRequestException("Unable to parse these steps in yaml", e);
       }
     }
   }

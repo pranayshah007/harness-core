@@ -63,6 +63,7 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.code.CodeResourceClientModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.core.ci.dashboard.BuildNumberService;
@@ -421,6 +422,10 @@ public class CIManagerServiceModule extends AbstractModule {
       }
     });
     install(new CICacheRegistrar());
+    install(new CodeResourceClientModule(
+        ciManagerConfiguration.getCiExecutionServiceConfig().getGitnessConfig().getHttpClientConfig(),
+        ciManagerConfiguration.getCiExecutionServiceConfig().getGitnessConfig().getJwtSecret(), serviceId,
+        ClientMode.PRIVILEGED));
     if (configurationOverride.getServiceHeader() == AuthorizationServiceHeader.CI_MANAGER) {
       install(FeatureFlagModule.getInstance());
     } else {
