@@ -7,7 +7,6 @@
 
 package io.harness.service.instancestats;
 
-import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.models.InstanceStats;
 import io.harness.models.InstanceStatsIterator;
@@ -28,17 +27,15 @@ public class InstanceStatsServiceImpl implements InstanceStatsService {
   public Instant getLastSnapshotTime(String accountId, String orgId, String projectId, String serviceId)
       throws Exception {
     InstanceStats record = instanceStatsRepository.getLatestRecord(accountId, orgId, projectId, serviceId);
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME)) {
-      InstanceStatsIterator iteratorRecord =
-          instanceStatsIteratorRepository.getLatestRecord(accountId, orgId, projectId, serviceId);
-      if (iteratorRecord != null) {
-        if (record == null) {
-          return iteratorRecord.getReportedAt().toInstant();
-        }
-        return record.getReportedAt().toInstant().isAfter(iteratorRecord.getReportedAt().toInstant())
-            ? record.getReportedAt().toInstant()
-            : iteratorRecord.getReportedAt().toInstant();
+    InstanceStatsIterator iteratorRecord =
+        instanceStatsIteratorRepository.getLatestRecord(accountId, orgId, projectId, serviceId);
+    if (iteratorRecord != null) {
+      if (record == null) {
+        return iteratorRecord.getReportedAt().toInstant();
       }
+      return record.getReportedAt().toInstant().isAfter(iteratorRecord.getReportedAt().toInstant())
+          ? record.getReportedAt().toInstant()
+          : iteratorRecord.getReportedAt().toInstant();
     }
     if (record == null) {
       // no record found
