@@ -6,5 +6,5 @@ metadata:
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: platform-service
+    matchLabels:
+      {{- include "platform-service.selectorLabels" . | nindent 6 }}
