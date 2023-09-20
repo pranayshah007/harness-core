@@ -6,5 +6,5 @@ metadata:
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: template-service
+    matchLabels:
+      {{- include "template-service.selectorLabels" . | nindent 6 }}
