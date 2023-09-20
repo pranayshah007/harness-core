@@ -8,6 +8,7 @@
 package io.harness.resourcegroup.resourceclient.opa;
 
 import static io.harness.annotations.dev.HarnessTeam.OPA;
+import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
 
@@ -32,7 +33,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PolicySetResourceImpl implements Resource {
   private final OpaServiceClient opaServiceClient;
-  private final Integer pageSize = 100;
+  private static final Integer PAGE_SIZE = 100;
   @Override
   public String getType() {
     return "GOVERNANCEPOLICYSETS";
@@ -78,6 +78,7 @@ public class PolicySetResourceImpl implements Resource {
     if (Objects.isNull(entityChangeDTO)) {
       return null;
     }
+    log.info("Resource Info received for policySet {}", entityChangeDTO);
     return ResourceInfo.builder()
         .accountIdentifier(stripToNull(entityChangeDTO.getAccountIdentifier().getValue()))
         .orgIdentifier(stripToNull(entityChangeDTO.getOrgIdentifier().getValue()))
@@ -92,10 +93,11 @@ public class PolicySetResourceImpl implements Resource {
     if (resourceIds.isEmpty()) {
       return Collections.emptyList();
     }
+    log.info("Validating policySet resources with resource IDs: {}", resourceIds);
     try {
       List<PolicySetData> opaPolicySetListResponseResponse =
           SafeHttpCall.executeWithExceptions(opaServiceClient.listOpaPolicySets(
-              scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), pageSize));
+              scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), PAGE_SIZE));
       final Set<String> policyIdentifiers =
           opaPolicySetListResponseResponse.stream().map(PolicySetData::getIdentifier).collect(Collectors.toSet());
       return resourceIds.stream().map(policyIdentifiers::contains).collect(Collectors.toList());
@@ -107,7 +109,8 @@ public class PolicySetResourceImpl implements Resource {
 
   @Override
   public ImmutableMap<ScopeLevel, EnumSet<ValidatorType>> getSelectorKind() {
-    return ImmutableMap.of(ScopeLevel.ACCOUNT, EnumSet.of(BY_RESOURCE_TYPE, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
+    return ImmutableMap.of(ScopeLevel.ACCOUNT,
+        EnumSet.of(BY_RESOURCE_TYPE, BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
         ScopeLevel.ORGANIZATION, EnumSet.of(BY_RESOURCE_TYPE, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
         ScopeLevel.PROJECT, EnumSet.of(BY_RESOURCE_TYPE));
   }
