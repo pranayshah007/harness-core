@@ -308,7 +308,7 @@ public class MigratorUtility {
       }
     } else {
       if (timeoutInMillis > 0) {
-        timeBuilder.append(timeoutInMillis).append("s");
+        timeBuilder.append(timeoutInMillis).append('s');
       }
     }
   }
