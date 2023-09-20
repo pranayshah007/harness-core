@@ -335,7 +335,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
     else {
       pipelineEntities = pmsPipelineService.list(criteria,
-          PageUtils.getPageRequest(page, 50000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt)),
+          PageUtils.getPageRequest(0, 50000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt)),
           accountId, orgId, projectId, getDistinctFromBranches);
       List<PipelineEntity> permittedPipelineEntities =
           pmsPipelineService.getPermittedPipelineEntities(pipelineEntities.getContent());
