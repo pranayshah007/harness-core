@@ -349,7 +349,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
                         .type("Inline")
                         .build())
             .scriptTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10m").build()))
-            .retryInterval(MigratorUtility.getTimeout(approvalParams.getRetryInterval()))
+            .retryInterval(MigratorUtility.getTimeout(approvalParams.getRetryInterval().longValue()))
             .outputVariables(Collections.emptyList())
             .environmentVariables(Collections.emptyList())
             .shell(ShellType.Bash)

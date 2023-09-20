@@ -187,7 +187,8 @@ public abstract class StepMapper {
   }
 
   public ParameterField<Timeout> getTimeout(State state) {
-    return MigratorUtility.getTimeout(state.getTimeoutMillis());
+    Integer timeoutMillis = state.getTimeoutMillis();
+    return MigratorUtility.getTimeout(timeoutMillis != null ? timeoutMillis.longValue() : null);
   }
 
   public String getDescription(GraphNode stepYaml) {
