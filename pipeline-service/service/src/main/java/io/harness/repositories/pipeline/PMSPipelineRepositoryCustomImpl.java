@@ -12,11 +12,6 @@ import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.EntityType;
-import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
-import io.harness.accesscontrol.acl.api.AccessControlDTO;
-import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
-import io.harness.accesscontrol.acl.api.ResourceScope;
-import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
@@ -47,7 +42,6 @@ import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.pipeline.service.PipelineEntityReadHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
-import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
 import io.harness.utils.PipelineExceptionsHelper;
@@ -55,17 +49,14 @@ import io.harness.utils.PipelineGitXHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -88,7 +79,6 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   private final OutboxService outboxService;
   private final GitSyncSdkService gitSyncSdkService;
   private final PipelineEntityReadHelper pipelineEntityReadHelper;
-  private final AccessControlClient accessControlClient;
 
   @Override
   public Page<PipelineEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier,
@@ -101,57 +91,10 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     List<PipelineEntity> pipelineEntities = gitAwarePersistence.find(
         criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class, true);
 
-    // Filtering entities based on pipeline view permission
-    List<PipelineEntity> permittedEntity =
-        getPermittedPipelineEntities(accountIdentifier, orgIdentifier, projectIdentifier, pipelineEntities);
-
-    return PageableExecutionUtils.getPage(permittedEntity, pageable,
+    return PageableExecutionUtils.getPage(pipelineEntities, pageable,
         ()
             -> gitAwarePersistence.count(
                 criteria, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class));
-  }
-
-  @NotNull
-  private List<PipelineEntity> getPermittedPipelineEntities(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<PipelineEntity> pipelineEntities) {
-    List<String> pipelineIdentifiers =
-        pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());
-
-    List<String> permittedPipelineIdentifiers =
-        getPermitted(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifiers);
-
-    List<PipelineEntity> permittedEntity = pipelineEntities.stream()
-                                               .filter(e -> permittedPipelineIdentifiers.contains(e.getIdentifier()))
-                                               .collect(Collectors.toList());
-    return permittedEntity;
-  }
-
-  /*
-  Function Returns the identifier of pipeline which have view access
-   */
-  public List<String> getPermitted(
-      String accountIdentifier, String orgId, String projectId, List<String> pipelineIdentifiers) {
-    List<String> permittedPipelineIdentifier = new ArrayList<>();
-    List<PermissionCheckDTO> permissionChecks =
-        pipelineIdentifiers.stream()
-            .map(identifier
-                -> PermissionCheckDTO.builder()
-                       .permission(PipelineRbacPermissions.PIPELINE_VIEW)
-                       .resourceIdentifier(identifier)
-                       .resourceScope(ResourceScope.of(accountIdentifier, orgId, projectId))
-                       .resourceType("PIPELINE")
-                       .build())
-            .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
-
-    log.info(accessCheckResponse.toString());
-    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
-      if (accessControlDTO.isPermitted()) {
-        permittedPipelineIdentifier.add(accessControlDTO.getResourceIdentifier());
-      }
-    }
-
-    return permittedPipelineIdentifier;
   }
 
   @Override

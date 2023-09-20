@@ -17,6 +17,9 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -106,6 +109,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
+  private final AccessControlClient accessControlClient;
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Deprecated
@@ -320,12 +324,23 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
     Criteria criteria = pipelineServiceHelper.formCriteria(
         accountId, orgId, projectId, filterIdentifier, filterProperties, false, module, searchTerm);
-
     Pageable pageRequest =
         PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
+    Page<PipelineEntity> pipelineEntities;
+    if (accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), Resource.of("PIPELINE", null),
+            PipelineRbacPermissions.PIPELINE_VIEW)) {
+      pipelineEntities =
+          pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
 
-    Page<PipelineEntity> pipelineEntities =
-        pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
+    }
+
+    else {
+      pipelineEntities = pmsPipelineService.list(
+          criteria, Pageable.ofSize(50000), accountId, orgId, projectId, getDistinctFromBranches);
+      List<PipelineEntity> permittedPipelineEntities =
+          pmsPipelineService.getPermittedPipelineEntities(pipelineEntities.getContent());
+      pipelineEntities = PageUtils.getPage(permittedPipelineEntities, page, size);
+    }
 
     List<String> pipelineIdentifiers =
         pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());

@@ -22,6 +22,11 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineSettingsService;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -92,6 +97,7 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.PipelineVersion;
@@ -108,10 +114,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
@@ -164,6 +167,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private final AccessControlClient accessControlClient;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -957,6 +961,39 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
 
     return pipelineAfterUpdate.getIdentifier();
+  }
+
+  @Override
+  public List<PipelineEntity> getPermittedPipelineEntities(List<PipelineEntity> pipelineEntities) {
+    if (isEmpty(pipelineEntities)) {
+      return Collections.emptyList();
+    }
+
+    Map<String, PipelineEntity> identifierToEntityMap =
+        pipelineEntities.stream().collect(Collectors.toMap(PipelineEntity::getIdentifier, entity -> entity));
+
+    List<PipelineEntity> permittedPipelineEntity = new ArrayList<>();
+    List<PermissionCheckDTO> permissionChecks =
+        pipelineEntities.stream()
+            .map(entity
+                -> PermissionCheckDTO.builder()
+                       .permission(PipelineRbacPermissions.PIPELINE_VIEW)
+                       .resourceIdentifier(entity.getIdentifier())
+                       .resourceScope(ResourceScope.of(
+                           entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier()))
+                       .resourceType("PIPELINE")
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+
+    log.info(accessCheckResponse.toString());
+    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedPipelineEntity.add(identifierToEntityMap.get(accessControlDTO.getResourceIdentifier()));
+      }
+    }
+
+    return permittedPipelineEntity;
   }
 
   private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
