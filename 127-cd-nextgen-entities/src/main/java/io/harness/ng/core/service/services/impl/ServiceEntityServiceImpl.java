@@ -1144,7 +1144,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   public RepoListResponseDTO getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       boolean includeAllServicesAccessibleAtScope) {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        accountIdentifier, orgIdentifier, projectIdentifier, null, false, includeAllServicesAccessibleAtScope);
+        accountIdentifier, orgIdentifier, projectIdentifier, null, false, includeAllServicesAccessibleAtScope, null);
 
     List<String> uniqueRepos = serviceRepository.getListOfDistinctRepos(criteria);
     CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
