@@ -17,6 +17,7 @@ import static org.mockito.Mockito.mock;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.rule.Owner;
 
 import software.wings.beans.AwsCrossAccountAttributes;
@@ -85,14 +86,15 @@ public class AwsEC2HelperServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListRegions() {
     AccountClient mockClient = mock(AccountClient.class);
-    doReturn(mockClient).when(awsEC2HelperService).getAmazonAccountClient(any());
+    doReturn(mockClient).when(awsEC2HelperService).getAmazonAccountClient(any(), any());
 
     List<Region> regions = Collections.singletonList(Region.builder().regionName("us-east-1").build());
     doReturn(ListRegionsResponse.builder().regions(regions).build())
         .when(mockClient)
         .listRegions(ListRegionsRequest.builder().regionOptStatusContains(REGION_OPT_STATUSES).build());
 
-    List<String> actualRegions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder().build());
+    List<String> actualRegions = awsEC2HelperService.listRegions(
+        AwsCrossAccountAttributes.builder().build(), CEAwsServiceEndpointConfig.builder().build());
     assertThat(actualRegions).hasSize(1);
     assertThat(actualRegions.get(0)).isEqualTo(regions.get(0).regionName());
   }
@@ -102,11 +104,12 @@ public class AwsEC2HelperServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListRegions_ListRegionsThrowsException() {
     AccountClient mockClient = mock(AccountClient.class);
-    doReturn(mockClient).when(awsEC2HelperService).getAmazonAccountClient(any());
+    doReturn(mockClient).when(awsEC2HelperService).getAmazonAccountClient(any(), any());
 
     doReturn(null).when(mockClient).listRegions(ListRegionsRequest.builder().build());
 
-    List<String> actualRegions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder().build());
+    List<String> actualRegions = awsEC2HelperService.listRegions(
+        AwsCrossAccountAttributes.builder().build(), CEAwsServiceEndpointConfig.builder().build());
     assertThat(actualRegions).hasSize(5);
   }
 }
