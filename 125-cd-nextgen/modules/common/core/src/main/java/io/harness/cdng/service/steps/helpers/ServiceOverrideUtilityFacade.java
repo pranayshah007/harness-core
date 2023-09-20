@@ -186,12 +186,6 @@ public class ServiceOverrideUtilityFacade {
       throw new InvalidRequestException("Environment Ref given for overrides has not been resolved");
     }
 
-    // Todo : remove warning and add exception, warning was added for the case where user has inflight pipelines between
-    // two NG Manager deployments
-    if (ParameterField.isNull(parameters.getInfraId()) || isEmpty(parameters.getInfraId().getValue())) {
-      log.warn("Infra Identifier has not been resolved to get service overrides");
-    }
-
     EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesMap = new EnumMap<>(ServiceOverridesType.class);
     String isOverrideV2EnabledValue =
         NGRestUtils
