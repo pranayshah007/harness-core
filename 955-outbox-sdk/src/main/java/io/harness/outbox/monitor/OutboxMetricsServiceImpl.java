@@ -25,13 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 public class OutboxMetricsServiceImpl {
   private final MetricService metricService;
 
-  public void recordMetrics(String resourceType, String metricName) {
-    try (OutboxContext ignore = new OutboxContext(resourceType)) {
-      metricService.incCounter(metricName);
-    }
-  }
-  public void recordMetricsWithDuration(String resourceType, Duration duration, String metricName) {
-    try (OutboxContext ignore = new OutboxContext(resourceType)) {
+  public void recordMetricsWithDuration(
+      String serviceId, String eventType, String resourceType, Duration duration, String metricName) {
+    try (OutboxContext ignore = new OutboxContext(serviceId, eventType, resourceType)) {
       metricService.recordDuration(metricName, duration);
     }
   }
