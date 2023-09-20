@@ -2609,6 +2609,8 @@ public class DelegateServiceImpl implements DelegateService {
         : getProjectIdentifierUsingTokenFromGlobalContext(delegateParams.getAccountId(), delegateTokenName)
               .orElse(null);
 
+    log.error("registering delegate with token name {}. AccountId {}, OrgId{}, projectId{}", delegateTokenName,
+        delegateParams.getAccountId(), orgIdentifier, projectIdentifier);
     // tokenName here will be used for auditing the delegate register event
     DelegateSetupDetails delegateSetupDetails =
         DelegateSetupDetails.builder()

@@ -832,6 +832,9 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
                                             .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")))
                                             .heartbeatAsObject(true)
                                             .build();
+        log.error("registering delegate {} with accountIdentifier {}, orgIdentifier {}, projectIdentifier {}",
+            delegateParams.getDelegateId(), delegateParams.getAccountId(), delegateParams.getOrgIdentifier(),
+            delegateParams.getProjectIdentifier());
         restResponse =
             executeRestCall(managerClient.registerDelegate(getDelegateConfiguration().getAccountId(), delegateParams));
       } catch (Exception e) {

@@ -45,7 +45,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @FieldNameConstants(innerTypeName = "DelegateTokenKeys")
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateToken implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware, NameAndValueAccess {
-  public static final Duration REVOKED_TOKEN_TTL = ofDays(3);
+  public static final Duration REVOKED_TOKEN_TTL = ofDays(30);
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
