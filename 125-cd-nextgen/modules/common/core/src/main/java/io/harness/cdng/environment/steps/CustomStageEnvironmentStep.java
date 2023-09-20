@@ -9,7 +9,6 @@ package io.harness.cdng.environment.steps;
 
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_GLOBAL_OVERRIDE;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
@@ -56,8 +55,6 @@ import io.harness.steps.SdkCoreStepUtils;
 import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
-import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.core.variables.SecretNGVariable;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
@@ -99,111 +96,82 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<ServiceSte
   }
 
   public ChildrenExecutableResponse obtainChildren(
-      Ambiance ambiance, ServiceStepV3Parameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, ServiceStepV3Parameters parameters, StepInputPackage inputPackage) {
     try {
-      final String accountId = AmbianceUtils.getAccountId(ambiance);
-      final String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
-      final String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-
-      final ParameterField<String> envRef = stepParameters.getEnvRef();
-      final ParameterField<Map<String, Object>> envInputs = stepParameters.getEnvInputs();
+      final ParameterField<String> envRef = parameters.getEnvRef();
       if (ParameterField.isNull(envRef)) {
         throw new InvalidRequestException("Environment ref not found in stage yaml");
       }
 
-      if (envRef.isExpression()) {
-        serviceStepsHelper.resolve(ambiance, envRef);
-      }
-
-      log.info("Starting execution for Environment Step [{}]", envRef.getValue());
-
       EnvironmentStepsUtils.checkForEnvAccessOrThrow(accessControlClient, ambiance, envRef);
 
-      if (envRef.fetchFinalValue() != null) {
-        Optional<Environment> environment =
-            environmentService.get(accountId, orgIdentifier, projectIdentifier, envRef.getValue(), false);
-        if (environment.isEmpty()) {
-          throw new InvalidRequestException(String.format("Environment with ref: [%s] not found", envRef.getValue()));
-        }
+      String finalEnvRef = (String) envRef.fetchFinalValue();
 
-        final NGLogCallback logCallback =
-            new NGLogCallback(logStreamingStepClientFactory, ambiance, ENVIRONMENT_COMMAND_UNIT, true);
+      log.info("Starting execution for Environment Step [{}]", finalEnvRef);
 
-        EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
-            new EnumMap<>(ServiceOverridesType.class);
+      final String accountId = AmbianceUtils.getAccountId(ambiance);
+      final String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+      final String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
-        boolean isOverridesV2enabled =
-            overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
-
-        if (isOverridesV2enabled) {
-          if (!ParameterField.isNull(stepParameters.getInfraId()) && stepParameters.getInfraId().isExpression()) {
-            serviceStepsHelper.resolve(ambiance, stepParameters.getInfraId());
-          }
-          try {
-            mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigsForCustomStage(
-                accountId, orgIdentifier, projectIdentifier, stepParameters, environment.get(), logCallback);
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        }
-
-        // handle old environments
-        if (isEmpty(environment.get().getYaml())) {
-          serviceStepsHelper.setYamlInEnvironment(environment.get());
-        }
-
-        NGEnvironmentConfig ngEnvironmentConfig;
-        try {
-          ngEnvironmentConfig = serviceStepsHelper.mergeEnvironmentInputs(
-              accountId, environment.get().getIdentifier(), environment.get().getYaml(), envInputs);
-        } catch (IOException ex) {
-          throw new InvalidRequestException(
-              "Unable to read yaml for environment: " + environment.get().getIdentifier(), ex);
-        }
-        serviceStepsHelper.resolve(ambiance, ngEnvironmentConfig);
-
-        List<NGVariable> secretNGVariables = new ArrayList<>();
-        if (isOverridesV2enabled) {
-          if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
-              && !mergedOverrideV2Configs.containsKey(ENV_GLOBAL_OVERRIDE)) {
-            mergedOverrideV2Configs.put(
-                ENV_GLOBAL_OVERRIDE, serviceStepsHelper.toOverrideConfigV2(ngEnvironmentConfig, accountId));
-          }
-          secretNGVariables = serviceStepsHelper.getSecretVariablesFromOverridesV2(mergedOverrideV2Configs);
-
-        } else {
-          if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
-              && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables() != null) {
-            secretNGVariables.addAll(ngEnvironmentConfig.getNgEnvironmentInfoConfig()
-                                         .getVariables()
-                                         .stream()
-                                         .filter(SecretNGVariable.class ::isInstance)
-                                         .collect(Collectors.toList()));
-          }
-        }
-        serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
-
-        NGServiceOverrideConfig ngServiceOverrides =
-            NGServiceOverrideConfig.builder().serviceOverrideInfoConfig(null).build();
-
-        final EnvironmentOutcome environmentOutcome = EnvironmentMapper.toEnvironmentOutcome(environment.get(),
-            ngEnvironmentConfig, ngServiceOverrides, null, mergedOverrideV2Configs, isOverridesV2enabled);
-
-        sweepingOutputService.consume(
-            ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());
-
-        serviceStepsHelper.processServiceVariables(
-            ambiance, null, logCallback, environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
+      Optional<Environment> environment =
+          environmentService.get(accountId, orgIdentifier, projectIdentifier, finalEnvRef, false);
+      if (environment.isEmpty()) {
+        throw new InvalidRequestException(String.format("Environment with ref: [%s] not found", finalEnvRef));
       }
+
+      // handle old environments
+      if (isEmpty(environment.get().getYaml())) {
+        serviceStepsHelper.setYamlInEnvironment(environment.get());
+      }
+
+      final NGLogCallback logCallback =
+          new NGLogCallback(logStreamingStepClientFactory, ambiance, ENVIRONMENT_COMMAND_UNIT, true);
+
+      EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
+          new EnumMap<>(ServiceOverridesType.class);
+
+      boolean isOverridesV2enabled =
+          overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
+
+      if (isOverridesV2enabled) {
+        if (!ParameterField.isNull(parameters.getInfraId()) && parameters.getInfraId().isExpression()) {
+          serviceStepsHelper.resolve(ambiance, parameters.getInfraId());
+        }
+        try {
+          mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigsForCustomStage(
+              accountId, orgIdentifier, projectIdentifier, parameters, environment.get(), logCallback);
+        } catch (IOException e) {
+          throw new InvalidRequestException("An error occurred while resolving overrides", e);
+        }
+      }
+
+      NGEnvironmentConfig ngEnvironmentConfig =
+          serviceStepsHelper.getNgEnvironmentConfig(ambiance, parameters, accountId, environment);
+
+      NGServiceOverrideConfig ngServiceOverrides = NGServiceOverrideConfig.builder().build();
+
+      serviceStepsHelper.handleSecretVariables(
+          ngEnvironmentConfig, ngServiceOverrides, mergedOverrideV2Configs, ambiance, isOverridesV2enabled);
+
+      final EnvironmentOutcome environmentOutcome = EnvironmentMapper.toEnvironmentOutcome(environment.get(),
+          ngEnvironmentConfig, ngServiceOverrides, null, mergedOverrideV2Configs, isOverridesV2enabled);
+
+      sweepingOutputService.consume(
+          ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());
+
+      serviceStepsHelper.processServiceAndEnvironmentVariables(
+          ambiance, null, logCallback, environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
+
       return ChildrenExecutableResponse.newBuilder()
           .addAllLogKeys(emptyIfNull(StepUtils.generateLogKeys(
               StepUtils.generateLogAbstractions(ambiance), List.of(ENVIRONMENT_COMMAND_UNIT))))
           .addAllUnits(List.of(ENVIRONMENT_COMMAND_UNIT))
-          .addAllChildren(stepParameters.getChildrenNodeIds()
+          .addAllChildren(parameters.getChildrenNodeIds()
                               .stream()
                               .map(id -> ChildrenExecutableResponse.Child.newBuilder().setChildNodeId(id).build())
                               .collect(Collectors.toList()))
           .build();
+
     } catch (WingsException wingsException) {
       throw wingsException;
     } catch (Exception ex) {

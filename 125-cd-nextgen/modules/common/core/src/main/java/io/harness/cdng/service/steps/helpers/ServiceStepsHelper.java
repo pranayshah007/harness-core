@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
 import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_GLOBAL_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_SERVICE_OVERRIDE;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
@@ -33,9 +34,11 @@ import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.service.steps.constants.ServiceConfigStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -50,6 +53,8 @@ import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
@@ -90,10 +95,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -264,7 +271,7 @@ public class ServiceStepsHelper {
     }
   }
 
-  public void processServiceVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
+  public void processServiceAndEnvironmentVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
       NGLogCallback serviceStepLogCallback, EnvironmentOutcome environmentOutcome, boolean isOverridesV2Enabled,
       Map<ServiceOverridesType, NGServiceOverrideConfigV2> overridesV2Configs) {
     VariablesSweepingOutput variablesSweepingOutput = null;
@@ -302,9 +309,11 @@ public class ServiceStepsHelper {
 
       sweepingOutputService.consume(ambiance, YAMLFieldNameConstants.SERVICE_VARIABLES,
           (VariablesSweepingOutput) outputObj, StepCategory.STAGE.name());
-    }
 
-    saveExecutionLog(serviceStepLogCallback, "Processed service variables");
+      saveExecutionLog(serviceStepLogCallback, "Processed service & environment variables");
+    } else {
+      saveExecutionLog(serviceStepLogCallback, "Processed environment variables");
+    }
   }
 
   private VariablesSweepingOutput getVariablesSweepingOutputFromOverridesV2(NGServiceV2InfoConfig serviceV2InfoConfig,
@@ -406,6 +415,21 @@ public class ServiceStepsHelper {
     environment.setYaml(io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml(ngEnvironmentConfig));
   }
 
+  public NGEnvironmentConfig getNgEnvironmentConfig(
+      Ambiance ambiance, ServiceStepV3Parameters stepParameters, String accountId, Optional<Environment> environment) {
+    NGEnvironmentConfig ngEnvironmentConfig;
+    final ParameterField<Map<String, Object>> envInputs = stepParameters.getEnvInputs();
+    try {
+      ngEnvironmentConfig =
+          mergeEnvironmentInputs(accountId, environment.get().getIdentifier(), environment.get().getYaml(), envInputs);
+    } catch (IOException ex) {
+      throw new InvalidRequestException(
+          "Unable to read yaml for environment: " + environment.get().getIdentifier(), ex);
+    }
+    resolve(ambiance, ngEnvironmentConfig);
+    return ngEnvironmentConfig;
+  }
+
   public NGEnvironmentConfig getNgEnvironmentConfig(String accountId, String identifier, String yaml)
       throws IOException {
     try {
@@ -456,6 +480,28 @@ public class ServiceStepsHelper {
         .build();
   }
 
+  private NGServiceOverrideConfigV2 toOverrideConfigV2(
+      NGServiceOverrideConfig configV1, String accountId, NGEnvironmentConfig ngEnvironmentConfig) {
+    NGServiceOverrideInfoConfig serviceOverrideInfoConfig = configV1.getServiceOverrideInfoConfig();
+    NGEnvironmentInfoConfig ngEnvironmentInfoConfig = ngEnvironmentConfig.getNgEnvironmentInfoConfig();
+    final String envRef =
+        IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, ngEnvironmentInfoConfig.getOrgIdentifier(),
+            ngEnvironmentInfoConfig.getProjectIdentifier(), ngEnvironmentInfoConfig.getIdentifier());
+    return NGServiceOverrideConfigV2.builder()
+        .identifier(generateEnvServiceOverrideV2Identifier(
+            serviceOverrideInfoConfig.getEnvironmentRef(), serviceOverrideInfoConfig.getServiceRef()))
+        .environmentRef(envRef)
+        .type(ENV_SERVICE_OVERRIDE)
+        .spec(ServiceOverridesSpec.builder()
+                  .variables(serviceOverrideInfoConfig.getVariables())
+                  .manifests(serviceOverrideInfoConfig.getManifests())
+                  .configFiles(serviceOverrideInfoConfig.getConfigFiles())
+                  .connectionStrings(serviceOverrideInfoConfig.getConnectionStrings())
+                  .applicationSettings(serviceOverrideInfoConfig.getApplicationSettings())
+                  .build())
+        .build();
+  }
+
   public String generateEnvServiceOverrideV2Identifier(String envRef, String serviceRef) {
     return String.join("_", envRef, serviceRef).replace(".", "_");
   }
@@ -474,6 +520,45 @@ public class ServiceStepsHelper {
     if (logCallback != null) {
       logCallback.saveExecutionLog(line);
     }
+  }
+
+  public void handleSecretVariables(NGEnvironmentConfig ngEnvironmentConfig, NGServiceOverrideConfig ngServiceOverrides,
+      EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs, Ambiance ambiance,
+      boolean isOverridesV2enabled) {
+    List<NGVariable> secretNGVariables = new ArrayList<>();
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+    if (isOverridesV2enabled) {
+      if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
+          && !mergedOverrideV2Configs.containsKey(ENV_GLOBAL_OVERRIDE)) {
+        mergedOverrideV2Configs.put(ENV_GLOBAL_OVERRIDE, toOverrideConfigV2(ngEnvironmentConfig, accountId));
+      }
+      if (ngServiceOverrides != null && ngServiceOverrides.getServiceOverrideInfoConfig() != null
+          && !mergedOverrideV2Configs.containsKey(ENV_SERVICE_OVERRIDE)) {
+        mergedOverrideV2Configs.put(
+            ENV_SERVICE_OVERRIDE, toOverrideConfigV2(ngServiceOverrides, accountId, ngEnvironmentConfig));
+      }
+      secretNGVariables = getSecretVariablesFromOverridesV2(mergedOverrideV2Configs);
+
+    } else {
+      if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
+          && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables() != null) {
+        secretNGVariables.addAll(ngEnvironmentConfig.getNgEnvironmentInfoConfig()
+                                     .getVariables()
+                                     .stream()
+                                     .filter(SecretNGVariable.class ::isInstance)
+                                     .collect(Collectors.toList()));
+      }
+
+      if (ngServiceOverrides != null && ngServiceOverrides.getServiceOverrideInfoConfig() != null
+          && ngServiceOverrides.getServiceOverrideInfoConfig().getVariables() != null) {
+        secretNGVariables.addAll(ngServiceOverrides.getServiceOverrideInfoConfig()
+                                     .getVariables()
+                                     .stream()
+                                     .filter(SecretNGVariable.class ::isInstance)
+                                     .collect(Collectors.toList()));
+      }
+    }
+    checkForAccessOrThrow(ambiance, secretNGVariables);
   }
 
   @Data

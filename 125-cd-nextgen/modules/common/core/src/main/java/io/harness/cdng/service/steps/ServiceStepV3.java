@@ -19,8 +19,6 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
-import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_GLOBAL_OVERRIDE;
-import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_SERVICE_OVERRIDE;
 
 import static java.lang.String.format;
 
@@ -76,7 +74,6 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
-import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
@@ -86,9 +83,7 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
-import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
-import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -402,7 +397,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     sweepingOutputService.consume(ambiance, GITOPS_ENV_OUTCOME, gitOpsEnvOutCome, StepCategory.STAGE.name());
 
-    serviceStepsHelper.processServiceVariables(
+    serviceStepsHelper.processServiceAndEnvironmentVariables(
         ambiance, servicePartResponse, serviceStepLogCallback, null, false, new HashMap<>());
 
     serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
@@ -465,10 +460,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     final String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
     final ParameterField<String> envRef = parameters.getEnvRef();
-    final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
     if (ParameterField.isNull(envRef)) {
       throw new InvalidRequestException("Environment ref not found in stage yaml");
     }
+
+    final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
 
     if (envRef.isExpression()) {
       serviceStepsHelper.resolve(ambiance, envRef);
@@ -499,19 +495,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             accountId, orgIdentifier, projectIdentifier, parameters, environment.get(), overrideLogCallback);
       }
 
-      NGEnvironmentConfig ngEnvironmentConfig;
       // handle old environments
       if (isEmpty(environment.get().getYaml())) {
         serviceStepsHelper.setYamlInEnvironment(environment.get());
       }
 
-      try {
-        ngEnvironmentConfig = serviceStepsHelper.mergeEnvironmentInputs(
-            accountId, environment.get().getIdentifier(), environment.get().getYaml(), envInputs);
-      } catch (IOException ex) {
-        throw new InvalidRequestException(
-            "Unable to read yaml for environment: " + environment.get().getIdentifier(), ex);
-      }
+      NGEnvironmentConfig ngEnvironmentConfig =
+          serviceStepsHelper.getNgEnvironmentConfig(ambiance, parameters, accountId, environment);
 
       final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
           serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), orgIdentifier, projectIdentifier,
@@ -524,41 +514,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       serviceStepsHelper.resolve(ambiance, ngEnvironmentConfig, ngServiceOverrides);
 
-      List<NGVariable> secretNGVariables = new ArrayList<>();
-      if (isOverridesV2enabled) {
-        if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
-            && !mergedOverrideV2Configs.containsKey(ENV_GLOBAL_OVERRIDE)) {
-          mergedOverrideV2Configs.put(
-              ENV_GLOBAL_OVERRIDE, serviceStepsHelper.toOverrideConfigV2(ngEnvironmentConfig, accountId));
-        }
-        if (ngServiceOverrides != null && ngServiceOverrides.getServiceOverrideInfoConfig() != null
-            && !mergedOverrideV2Configs.containsKey(ENV_SERVICE_OVERRIDE)) {
-          mergedOverrideV2Configs.put(
-              ENV_SERVICE_OVERRIDE, toOverrideConfigV2(ngServiceOverrides, accountId, ngEnvironmentConfig));
-        }
-        secretNGVariables = serviceStepsHelper.getSecretVariablesFromOverridesV2(mergedOverrideV2Configs);
+      serviceStepsHelper.handleSecretVariables(
+          ngEnvironmentConfig, ngServiceOverrides, mergedOverrideV2Configs, ambiance, isOverridesV2enabled);
 
-      } else {
-        if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
-            && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables() != null) {
-          secretNGVariables.addAll(ngEnvironmentConfig.getNgEnvironmentInfoConfig()
-                                       .getVariables()
-                                       .stream()
-                                       .filter(SecretNGVariable.class ::isInstance)
-                                       .collect(Collectors.toList()));
-        }
-
-        if (ngServiceOverrides != null && ngServiceOverrides.getServiceOverrideInfoConfig() != null
-            && ngServiceOverrides.getServiceOverrideInfoConfig().getVariables() != null) {
-          secretNGVariables.addAll(ngServiceOverrides.getServiceOverrideInfoConfig()
-                                       .getVariables()
-                                       .stream()
-                                       .filter(SecretNGVariable.class ::isInstance)
-                                       .collect(Collectors.toList()));
-        }
-      }
-
-      serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
       entityMap.put(FreezeEntityType.ENVIRONMENT,
           Lists.newArrayList(IdentifierRefHelper.getRefFromIdentifierOrRef(environment.get().getAccountId(),
               environment.get().getOrgIdentifier(), environment.get().getProjectIdentifier(),
@@ -578,7 +536,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       sweepingOutputService.consume(
           ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());
 
-      serviceStepsHelper.processServiceVariables(ambiance, servicePartResponse, serviceStepLogCallback,
+      serviceStepsHelper.processServiceAndEnvironmentVariables(ambiance, servicePartResponse, serviceStepLogCallback,
           environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
 
       if (isOverridesV2enabled) {
@@ -940,27 +898,5 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       }
     }
     return null;
-  }
-
-  private NGServiceOverrideConfigV2 toOverrideConfigV2(
-      NGServiceOverrideConfig configV1, String accountId, NGEnvironmentConfig ngEnvironmentConfig) {
-    NGServiceOverrideInfoConfig serviceOverrideInfoConfig = configV1.getServiceOverrideInfoConfig();
-    NGEnvironmentInfoConfig ngEnvironmentInfoConfig = ngEnvironmentConfig.getNgEnvironmentInfoConfig();
-    final String envRef =
-        IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, ngEnvironmentInfoConfig.getOrgIdentifier(),
-            ngEnvironmentInfoConfig.getProjectIdentifier(), ngEnvironmentInfoConfig.getIdentifier());
-    return NGServiceOverrideConfigV2.builder()
-        .identifier(serviceStepsHelper.generateEnvServiceOverrideV2Identifier(
-            serviceOverrideInfoConfig.getEnvironmentRef(), serviceOverrideInfoConfig.getServiceRef()))
-        .environmentRef(envRef)
-        .type(ENV_SERVICE_OVERRIDE)
-        .spec(ServiceOverridesSpec.builder()
-                  .variables(serviceOverrideInfoConfig.getVariables())
-                  .manifests(serviceOverrideInfoConfig.getManifests())
-                  .configFiles(serviceOverrideInfoConfig.getConfigFiles())
-                  .connectionStrings(serviceOverrideInfoConfig.getConnectionStrings())
-                  .applicationSettings(serviceOverrideInfoConfig.getApplicationSettings())
-                  .build())
-        .build();
   }
 }
