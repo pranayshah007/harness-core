@@ -468,13 +468,16 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     outputVars.put("key1", "val1");
     outputVars.put("key2", "val2");
 
-    ShellScriptStepParameters stepParameters = ShellScriptStepParameters.infoBuilder()
-                                                   .shellType(ShellType.Bash)
-                                                   .onDelegate(ParameterField.createValueField(true))
-                                                   .environmentVariables(inputVars)
-                                                   .outputVariables(outputVars)
-                                                   .secretOutputVariables(new HashSet<>())
-                                                   .build();
+    ShellScriptStepParameters stepParameters =
+        ShellScriptStepParameters.infoBuilder()
+            .shellType(ShellType.Bash)
+            .onDelegate(ParameterField.createValueField(true))
+            .environmentVariables(inputVars)
+            .outputVariables(outputVars)
+            .secretOutputVariables(new HashSet<>())
+            .outputAlias(
+                OutputAlias.builder().key(ParameterField.createValueField("abc")).scope(ExportScope.PIPELINE).build())
+            .build();
     String script = "echo hey";
     DirectK8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     Map<String, String> taskEnvVariables = new LinkedHashMap<>();
@@ -502,6 +505,31 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     assertThat(taskParams.getWorkingDirectory()).isEqualTo("/tmp");
     assertThat(taskParams.getOutputVars()).isEqualTo(taskOutputVars);
     assertThat(taskParams.getEnvironmentVariables()).isEqualTo(taskEnvVariables);
+
+    // negative cases for output alias configuration
+    stepParameters.setOutputAlias(OutputAlias.builder().build());
+    assertThatThrownBy(
+        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty value for key is not allowed in output alias configuration");
+    stepParameters.setOutputAlias(
+        OutputAlias.builder().key(ParameterField.createValueField("")).scope(ExportScope.PIPELINE).build());
+    assertThatThrownBy(
+        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty value for key is not allowed in output alias configuration");
+    stepParameters.setOutputAlias(
+        OutputAlias.builder().key(ParameterField.createValueField("   ")).scope(ExportScope.PIPELINE).build());
+    assertThatThrownBy(
+        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty value for key is not allowed in output alias configuration");
+    stepParameters.setOutputAlias(
+        OutputAlias.builder().key(ParameterField.createValueField("null")).scope(ExportScope.PIPELINE).build());
+    assertThatThrownBy(
+        () -> shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Expression provided for key in output alias configuration was not resolved");
   }
 
   private Ambiance buildAmbiance() {

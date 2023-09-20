@@ -52,4 +52,5 @@ public class ShellScriptBaseStepInfo {
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})
   ParameterField<Boolean> includeInfraSelectors;
+  OutputAlias outputAlias;
 }

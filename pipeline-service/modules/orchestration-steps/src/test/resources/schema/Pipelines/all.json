@@ -2488,7 +2488,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3902,6 +3902,28 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "OutputAlias": {
+      "type": "object",
+      "required": [
+        "key",
+        "scope"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "Pipeline",
+            "Stage",
+            "StepGroup"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "OutputNGVariable": {
       "type": "object",
       "properties": {
@@ -4458,7 +4480,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6988,6 +7010,9 @@
                 }
               ]
             },
+            "outputAlias": {
+              "$ref": "#/definitions/OutputAlias"
+            },
             "outputVariables": {
               "type": "array",
               "items": {
@@ -7167,7 +7192,7 @@
                 }
               ]
             },
-            "spec": {},
+            "spec": { },
             "strategy": {
               "oneOf": [
                 {
