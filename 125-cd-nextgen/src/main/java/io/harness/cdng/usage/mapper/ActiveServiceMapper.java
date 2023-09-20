@@ -40,7 +40,8 @@ public class ActiveServiceMapper {
                    .projectName(activeServiceInfo.getProjectName())
                    .instanceCount(activeServiceInfo.getInstanceCount())
                    .lastDeployed(activeServiceInfo.getLastDeployed())
-                   .licensesConsumed(LicenseUsageUtils.computeLicenseConsumed(activeServiceInfo.getInstanceCount()))
+                   .licensesConsumed(LicenseUsageUtils.computeLicenseConsumedForNG(
+                       activeServiceInfo.getInstanceCount(), activeServiceInfo.getInstanceType()))
                    .module(ModuleType.CD.getDisplayName())
                    .timestamp(currentTS)
                    .build())

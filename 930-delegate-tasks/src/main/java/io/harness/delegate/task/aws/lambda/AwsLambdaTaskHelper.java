@@ -944,6 +944,31 @@ public class AwsLambdaTaskHelper {
     }
   }
 
+  public AwsLambdaFunctionWithActiveVersions getAwsLambdaFunctionWithMostRecentVersionVersions(
+      AwsLambdaFunctionWithActiveVersions awsLambdaFunctionWithActiveVersions) {
+    int maxNum = awsLambdaFunctionWithActiveVersions.getVersions().stream().mapToInt(Integer::parseInt).max().orElse(1);
+    return AwsLambdaFunctionWithActiveVersions.builder()
+        .functionName(awsLambdaFunctionWithActiveVersions.getFunctionName())
+        .functionArn(awsLambdaFunctionWithActiveVersions.getFunctionArn())
+        .runtime(awsLambdaFunctionWithActiveVersions.getRuntime())
+        .role(awsLambdaFunctionWithActiveVersions.getRole())
+        .handler(awsLambdaFunctionWithActiveVersions.getHandler())
+        .aliases(awsLambdaFunctionWithActiveVersions.getAliases())
+        .codeSize(awsLambdaFunctionWithActiveVersions.getCodeSize())
+        .description(awsLambdaFunctionWithActiveVersions.getDescription())
+        .timeout(awsLambdaFunctionWithActiveVersions.getTimeout())
+        .memorySize(awsLambdaFunctionWithActiveVersions.getMemorySize())
+        .lastModified(awsLambdaFunctionWithActiveVersions.getLastModified())
+        .codeSha256(awsLambdaFunctionWithActiveVersions.getCodeSha256())
+        .versions(new ArrayList<>(Arrays.asList(String.valueOf(maxNum))))
+        .kMSKeyArn(awsLambdaFunctionWithActiveVersions.getKMSKeyArn())
+        .masterArn(awsLambdaFunctionWithActiveVersions.getMasterArn())
+        .revisionId(awsLambdaFunctionWithActiveVersions.getRevisionId())
+        .tags(awsLambdaFunctionWithActiveVersions.getTags())
+        .aliases(awsLambdaFunctionWithActiveVersions.getAliases())
+        .build();
+  }
+
   public List<String> getActiveVersions(
       String functionName, AwsLambdaFunctionsInfraConfig awsLambdaFunctionsInfraConfig) {
     List<String> activeVersions = new ArrayList<>();

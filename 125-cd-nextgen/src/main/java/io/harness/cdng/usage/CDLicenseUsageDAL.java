@@ -13,6 +13,8 @@ import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.orgNa
 import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.projectName;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.identifier;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.instanceCount;
+import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.instanceType;
+import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.instancetype;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.lastDeployed;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.orgIdentifier;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.projectIdentifier;
@@ -105,6 +107,7 @@ public class CDLicenseUsageDAL {
       + "       activeServices.serviceIdentifier AS identifier,\n"
       + "       activeServices.lastDeployedServiceTime AS lastDeployed,\n"
       + "       activeServices.totalCount,\n"
+      + "       instancetype AS instanceType,\n"
       + "       COALESCE(percentileInstancesPerServices.instanceCount, 0) AS instanceCount\n"
       + "FROM\n"
       + "-- List services deployed in last 30 days from service_infra_info table. 'Group by' is needed for lastDeployedServiceTime calculation\n"
@@ -124,22 +127,25 @@ public class CDLicenseUsageDAL {
       + "        SELECT PERCENTILE_DISC(?) WITHIN GROUP (ORDER BY instancesPerService.instanceCount) AS instanceCount,\n"
       + "               orgid,\n"
       + "               projectid,\n"
-      + "               serviceid\n"
+      + "               serviceid,\n"
+      + "               instancetype\n"
       + "        FROM\n"
       + "            (\n"
       + "                SELECT DATE_TRUNC('minute', reportedat) AS reportedat,\n"
       + "                       orgid,\n"
       + "                       projectid,\n"
       + "                       serviceid,\n"
+      + "                       instancetype,\n"
       + "                       SUM(instancecount) AS instanceCount\n"
       + "                FROM ng_instance_stats\n"
       + "                WHERE accountid = ? AND reportedat > NOW() - INTERVAL '30 day' :filterOnNgInstanceStats\n"
       + "                GROUP BY orgid,\n"
       + "                         projectid,\n"
       + "                         serviceid,\n"
+      + "                         instancetype,\n"
       + "                         DATE_TRUNC('minute', reportedat)\n"
       + "            ) instancesPerService\n"
-      + "        GROUP BY orgid,projectid,serviceid\n"
+      + "        GROUP BY orgid,projectid,serviceid,instancetype\n"
       + "    ) percentileInstancesPerServices\n"
       + "ON activeServices.orgIdentifier = percentileInstancesPerServices.orgid\n"
       + "    AND activeServices.projectIdentifier = percentileInstancesPerServices.projectid\n"
@@ -498,6 +504,7 @@ public class CDLicenseUsageDAL {
                                     .projectIdentifier(resultSet.getString(projectIdentifier))
                                     .identifier(resultSet.getString(identifier))
                                     .lastDeployed(resultSet.getLong(lastDeployed))
+                                    .instanceType(resultSet.getString(instanceType))
                                     .instanceCount(resultSet.getLong(instanceCount))
                                     .build());
       if (!isCountSet) {

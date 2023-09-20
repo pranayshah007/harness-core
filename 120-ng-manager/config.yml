@@ -277,7 +277,7 @@ pmsGrpcClientConfig:
   target: localhost:12011
   authority: localhost
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
 
 ceAwsSetupConfig:
   accessKey: ce_aws_accessKey_placeholder
@@ -417,12 +417,12 @@ featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
 
-enableDashboardTimescale: false
+enableDashboardTimescale: true
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
-  timescaledbUsername: ""
-  timescaledbPassword: ""
+  timescaledbUsername: "admin"
+  timescaledbPassword: "password"
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false

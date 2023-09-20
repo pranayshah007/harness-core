@@ -30,6 +30,7 @@ public class ActiveServiceBase {
   String projectIdentifier;
   long instanceCount;
   long lastDeployed;
+  String instanceType;
 
   public String toSQlRow() {
     // the order of properties is important because of constant table in query,

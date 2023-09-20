@@ -90,7 +90,10 @@ public class AwsLambdaTaskHelperBase {
     if (awsLambdaFunctionWithActiveVersions != null && awsLambdaFunctionWithActiveVersions.getVersions() != null) {
       awsLambdaFunctionWithActiveVersions.getVersions().remove(latestVersionForAwsLambda);
     }
-    return AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfoList(awsLambdaFunctionWithActiveVersions,
+    AwsLambdaFunctionWithActiveVersions awsLambdaFunctionWithMostRecentVersion =
+        awsLambdaCommandTaskHelper.getAwsLambdaFunctionWithMostRecentVersionVersions(
+            awsLambdaFunctionWithActiveVersions);
+    return AwsLambdaToServerInstanceInfoMapper.toServerInstanceInfoList(awsLambdaFunctionWithMostRecentVersion,
         awsLambdaFunctionsInfraConfig.getRegion(), awsLambdaFunctionsInfraConfig.getInfraStructureKey());
   }
 
