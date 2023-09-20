@@ -568,6 +568,7 @@ public enum FeatureName {
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
       HarnessTeam.PL),
+  PL_RESTRICT_CG_LDAP_SYNC_ON_GROUP_LINK("Restrict LDAP sync when user group is linked in CG", HarnessTeam.PL),
   PL_NEW_PAGE_SIZE(
       "Enables new default page size for several listing pages like pipelines, access control, executions, connectors, etc.",
       HarnessTeam.PL),

@@ -1063,7 +1063,8 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     auditServiceHelper.reportForAuditingUsingAccountId(accountId, group, updatedGroup, Type.LINK_SSO);
 
-    if (ssoType == SSOType.LDAP) {
+    if (ssoType == SSOType.LDAP
+        && !featureFlagService.isEnabled(FeatureName.PL_RESTRICT_CG_LDAP_SYNC_ON_GROUP_LINK, accountId)) {
       LdapSettings ldapSettings = (LdapSettings) ssoSettings;
       ldapGroupScheduledHandler.handle(ldapSettings);
     }
