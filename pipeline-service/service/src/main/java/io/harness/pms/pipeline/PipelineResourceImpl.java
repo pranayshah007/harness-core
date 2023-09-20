@@ -331,12 +331,12 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             PipelineRbacPermissions.PIPELINE_VIEW)) {
       pipelineEntities =
           pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
-
     }
 
     else {
-      pipelineEntities = pmsPipelineService.list(
-          criteria, Pageable.ofSize(50000), accountId, orgId, projectId, getDistinctFromBranches);
+      pipelineEntities = pmsPipelineService.list(criteria,
+          PageUtils.getPageRequest(page, 50000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt)),
+          accountId, orgId, projectId, getDistinctFromBranches);
       List<PipelineEntity> permittedPipelineEntities =
           pmsPipelineService.getPermittedPipelineEntities(pipelineEntities.getContent());
       pipelineEntities = PageUtils.getPage(permittedPipelineEntities, page, size);
