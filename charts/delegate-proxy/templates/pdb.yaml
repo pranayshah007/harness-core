@@ -6,5 +6,5 @@ metadata:
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: delegate-proxy
+    matchLabels:
+      {{- include "delegate-proxy.selectorLabels" . | nindent 6 }}
