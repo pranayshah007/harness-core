@@ -67,9 +67,17 @@ spec:
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
         env:
-          {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 10 }}
+#          {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
+#          {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
+#          {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 10 }}
+          {{- if not .Values.global.database.redis.installed }}
+          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "kubernetesSecretName" .Values.global.database.redis.secretName "kubernetesSecretKey" .Values.global.database.redis.userKey "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets .Values.global.database.redis.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" "local" "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" "global" "secretCtx" .Values.global.database.redis.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
+          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD" "kubernetesSecretName" .Values.global.database.redis.secretName "kubernetesSecretKey" .Values.global.database.redis.passwordKey "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets .Values.global.database.redis.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" "local" "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" "global" "secretCtx" .Values.global.database.redis.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
+          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "LOCK_CONFIG_REDIS_USERNAME" "kubernetesSecretName" .Values.global.database.redis.secretName "kubernetesSecretKey" .Values.global.database.redis.userKey "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets .Values.global.database.redis.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" "local" "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" "global" "secretCtx" .Values.global.database.redis.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
+          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "LOCK_CONFIG_REDIS_PASSWORD" "kubernetesSecretName" .Values.global.database.redis.secretName "kubernetesSecretKey" .Values.global.database.redis.passwordKey "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets .Values.global.database.redis.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" "local" "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" "global" "secretCtx" .Values.global.database.redis.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
+          {{- end }}
+          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "MONGO_USER" "kubernetesSecretName" .Values.global.database.mongo.secretName "kubernetesSecretKey" .Values.global.database.mongo.userKey "defaultKubernetesSecretName" "harness-secrets" "defaultKubernetesSecretKey" "mongodbUsername" "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets .Values.global.database.redis.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" "local" "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" "global" "secretCtx" .Values.global.database.redis.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
+          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "MONGO_PASSWORD" "kubernetesSecretName" .Values.global.database.mongo.secretName "kubernetesSecretKey" .Values.global.database.mongo.passwordKey "defaultKubernetesSecretName" "mongodb-replicaset-chart" "defaultKubernetesSecretKey" "mongodb-root-password" "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets .Values.global.database.redis.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" "local" "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator) (dict "secretCtxIdentifier" "global" "secretCtx" .Values.global.database.redis.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
           - name: MONGO_URI
             value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
           - name: AUDIT_MONGO_URI
@@ -93,12 +101,12 @@ spec:
         - secretRef:
             name: smtp-secret
         {{- end }}
-        {{- if .Values.global.secrets.app.external.enabled }}
-        {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
-        - secretRef:
-            name: platform-service-external-secret
-        {{- end }}
-        {{- end }}
+#        {{- if .Values.global.secrets.app.external.enabled }}
+#        {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
+#        - secretRef:
+#            name: platform-service-external-secret
+#        {{- end }}
+#        {{- end }}
         readinessProbe:
           httpGet:
             path: /api/health
