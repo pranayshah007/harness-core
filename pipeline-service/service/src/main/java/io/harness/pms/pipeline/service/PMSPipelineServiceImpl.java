@@ -964,7 +964,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public List<PipelineEntity> getPermittedPipelineEntities(List<PipelineEntity> pipelineEntities) {
+  public List<PipelineEntity> getPermittedPipelineEntities(
+      String accountId, String orgId, String projectId, List<PipelineEntity> pipelineEntities) {
     if (isEmpty(pipelineEntities)) {
       return Collections.emptyList();
     }
@@ -972,19 +973,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     Map<String, PipelineEntity> identifierToEntityMap =
         pipelineEntities.stream().collect(Collectors.toMap(PipelineEntity::getIdentifier, entity -> entity));
 
-    List<PipelineEntity> permittedPipelineEntity = new ArrayList<>();
-    List<PermissionCheckDTO> permissionChecks =
+    List<String> entityIdentifierList =
         pipelineEntities.stream()
-            .map(entity
-                -> PermissionCheckDTO.builder()
-                       .permission(PipelineRbacPermissions.PIPELINE_VIEW)
-                       .resourceIdentifier(entity.getIdentifier())
-                       .resourceScope(ResourceScope.of(
-                           entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier()))
-                       .resourceType("PIPELINE")
-                       .build())
+            .map(PipelineEntity::getIdentifier) // Assuming "getIdentifier" is the method to retrieve the identifier
             .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    List<PipelineEntity> permittedPipelineEntity = new ArrayList<>();
+    AccessCheckResponseDTO accessCheckResponse =
+        getAccessCheckResponseDTO(accountId, orgId, projectId, entityIdentifierList);
 
     log.info(accessCheckResponse.toString());
     for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
@@ -994,6 +989,36 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
 
     return permittedPipelineEntity;
+  }
+
+  private AccessCheckResponseDTO getAccessCheckResponseDTO(
+      String accountId, String orgId, String projectId, List<String> entityIdentifierList) {
+    List<PermissionCheckDTO> permissionChecks =
+        entityIdentifierList.stream()
+            .map(identifier
+                -> PermissionCheckDTO.builder()
+                       .permission(PipelineRbacPermissions.PIPELINE_VIEW)
+                       .resourceIdentifier(identifier)
+                       .resourceScope(ResourceScope.of(accountId, orgId, projectId))
+                       .resourceType("PIPELINE")
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    return accessCheckResponse;
+  }
+
+  @Override
+  public List<String> getPermittedPipelineIdentifier(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifierList) {
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        getAccessCheckResponseDTO(accountId, orgId, projectId, pipelineIdentifierList);
+    List<String> permittedPipelineIdentifier = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponseDTO.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedPipelineIdentifier.add(accessControlDTO.getResourceIdentifier());
+      }
+    }
+    return permittedPipelineIdentifier;
   }
 
   private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,

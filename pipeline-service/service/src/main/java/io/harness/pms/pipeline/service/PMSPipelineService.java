@@ -150,5 +150,9 @@ public interface PMSPipelineService {
   String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams);
 
-  List<PipelineEntity> getPermittedPipelineEntities(List<PipelineEntity> pipelineEntities);
+  List<PipelineEntity> getPermittedPipelineEntities(
+      String accountId, String orgId, String projectId, List<PipelineEntity> pipelineEntities);
+
+  List<String> getPermittedPipelineIdentifier(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifierList);
 }

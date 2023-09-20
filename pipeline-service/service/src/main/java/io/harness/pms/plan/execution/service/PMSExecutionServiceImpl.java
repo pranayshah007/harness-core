@@ -61,6 +61,7 @@ import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.ResolveInputYamlType;
+import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.plan.execution.ModuleInfoOperators;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
@@ -119,6 +120,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private GitSyncSdkService gitSyncSdkService;
+  @Inject private PMSPipelineService pmsPipelineService;
 
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
@@ -142,7 +144,11 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
     }
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+      List<String> permittedPipelineIdentifier = pmsPipelineService.getPermittedPipelineIdentifier(
+          accountId, projectId, orgId, Collections.singletonList(pipelineIdentifier));
+      if (permittedPipelineIdentifier.size() != 0) {
+        criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+      }
     }
     // To show non-child execution. First or condition is added for older execution which do not have parentStageInfo
     if (EmptyPredicate.isEmpty(pipelineIdentifier)) {
@@ -311,7 +317,11 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
     Criteria pipelineCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
+      List<String> permittedPipelineIdentifier =
+          pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, pipelineIdentifier);
+      if (permittedPipelineIdentifier.size() != 0) {
+        pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(permittedPipelineIdentifier);
+      }
     }
 
     Criteria filterCriteria = new Criteria();
