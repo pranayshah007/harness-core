@@ -11,32 +11,44 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.notification.entities.NotificationChannel;
+import io.harness.notification.entities.NotificationChannel.NotificationChannelKeys;
 import io.harness.notification.entities.NotificationRule;
+import io.harness.notification.entities.NotificationRule.NotificationRuleKeys;
+import io.harness.notification.repositories.intfc.NotificationChannelRepository;
+import io.harness.notification.repositories.intfc.NotificationRuleRepository;
 import io.harness.notification.service.api.NotificationManagementService;
 
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PL)
 public class NotificationManagementServiceImpl implements NotificationManagementService {
+  private final NotificationRuleRepository notificationRuleRepository;
+  private final NotificationChannelRepository notificationChannelRepository;
+
   @Override
   public NotificationRule create(NotificationRule notificationRule) {
-    return null;
+    NotificationRule rule = notificationRuleRepository.save(notificationRule);
+    return rule;
   }
 
   @Override
   public NotificationRule update(NotificationRule notificationRule) {
-    return null;
+    NotificationRule rule = notificationRuleRepository.save(notificationRule);
+    return rule;
   }
 
   @Override
   public NotificationRule get(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String notificationRuleNameIdentifier) {
-    return null;
+    Criteria criteria = createNotificationRuleFetchCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, notificationRuleNameIdentifier);
+    return notificationRuleRepository.findOne(criteria);
   }
 
   @Override
@@ -51,12 +63,13 @@ public class NotificationManagementServiceImpl implements NotificationManagement
 
   @Override
   public NotificationChannel create(NotificationChannel notificationChannel) {
-    return null;
+    NotificationChannel channel = notificationChannelRepository.save(notificationChannel);
+    return channel;
   }
 
   @Override
   public NotificationChannel update(NotificationChannel notificationChannel) {
-    return null;
+    return notificationChannelRepository.save(notificationChannel);
   }
 
   @Override
@@ -75,5 +88,36 @@ public class NotificationManagementServiceImpl implements NotificationManagement
   public List<NotificationChannel> getNotificationChannelList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return null;
+  }
+
+  private Criteria createNotificationChannelFetchCriteria(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    Criteria criteria = createScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
+    criteria.and(NotificationChannelKeys.name).is(identifier);
+    return criteria;
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(NotificationChannelKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(NotificationChannelKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(NotificationChannelKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
+  }
+
+  private Criteria createNotificationRuleFetchCriteria(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    Criteria criteria = createNotificationRuleScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
+    criteria.and(NotificationRuleKeys.notificationChannel).is(identifier);
+    return criteria;
+  }
+
+  private Criteria createNotificationRuleScopeCriteria(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(NotificationRuleKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(NotificationRuleKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(NotificationRuleKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
   }
 }

@@ -72,6 +72,7 @@ public enum ResourceType {
   END_USER_LICENSE_AGREEMENT(ResourceTypeConstants.EULA),
   WORKSPACE(ResourceTypeConstants.WORKSPACE);
 
+
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {
       throw new IllegalArgumentException(

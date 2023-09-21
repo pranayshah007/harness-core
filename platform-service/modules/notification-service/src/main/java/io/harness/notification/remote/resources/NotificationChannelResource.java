@@ -5,16 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.notification.resource;
+package io.harness.notification.remote.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_NOTIFICATION_SETTINGS_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_NOTIFICATION_SETTINGS_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.NOTIFICATION;
+import static io.harness.notification.NotificationServiceConstants.MANAGE_NOTIFICATION_SETTINGS_PERMISSION;
+import static io.harness.notification.NotificationServiceConstants.NOTIFICATION;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
@@ -26,8 +25,9 @@ import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.notification.entities.NotificationRule;
+import io.harness.notification.entities.NotificationChannel;
 import io.harness.notification.service.api.NotificationManagementService;
+import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -59,12 +59,12 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
-@Api("notification-rule")
-@Path("notification-rule")
-@Produces({"application/json", "application/yaml", "text/plain"})
-@Consumes({"application/json", "application/yaml", "text/plain"})
+@Api("notification-channel")
+@Path("notification-channel")
+@Produces({"application/json", "application/yaml"})
+@Consumes({"application/json", "application/yaml"})
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
-@Tag(name = "Notification-Rule", description = "This contains APIs related to notification rules configured ")
+@Tag(name = "Notification-Channel", description = "This contains APIs related to notification channel configured ")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -84,102 +84,101 @@ import org.hibernate.validator.constraints.NotEmpty;
     })
 @Slf4j
 @OwnedBy(PL)
-public class NotificationRuleResource {
+@NextGenManagerAuth
+public class NotificationChannelResource {
   private final NotificationManagementService notificationManagementService;
 
   @POST
-  @ApiOperation(value = "Create notification rule", nickname = "postNotifictaionRule")
+  @ApiOperation(value = "Create notification channel", nickname = "postNotificationChannel")
   @NGAccessControlCheck(resourceType = NOTIFICATION, permission = MANAGE_NOTIFICATION_SETTINGS_PERMISSION)
-  @Operation(operationId = "postNotificationRule", summary = "Create Notification Rule",
-      description = "Create Notification Rule",
+  @Operation(operationId = "postNotificationChannel", summary = "Create Notification Channel",
+      description = "Create Notification Channel",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns created Notification Rule")
+        ApiResponse(responseCode = "default", description = "Returns created Notification Channel")
       })
-  public ResponseDTO<NotificationRule>
+  public ResponseDTO<NotificationChannel>
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(description = "Organization identifier for the Project.") @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @DefaultValue(DEFAULT_ORG_IDENTIFIER) @OrgIdentifier String orgIdentifier,
       @RequestBody(required = true,
-          description = "Notification Rule details") @NotNull @Valid NotificationRule notificationRule) {
-    return ResponseDTO.newResponse(NotificationRule.builder().build());
+          description = "Notification channel details") @NotNull @Valid NotificationChannel notificationChannel) {
+    notificationManagementService.create(notificationChannel);
+    return ResponseDTO.newResponse(NotificationChannel.builder().build());
   }
 
   @PUT
-  @ApiOperation(value = "Update notification rule", nickname = "putNotificationRule")
+  @ApiOperation(value = "Update notification channel", nickname = "putNotificationChannel")
   @NGAccessControlCheck(resourceType = NOTIFICATION, permission = MANAGE_NOTIFICATION_SETTINGS_PERMISSION)
-  @Operation(operationId = "putNotificationRule", description = "Update notification rule",
-      summary = "Update notification rule",
+  @Operation(operationId = "putNotificationChannel", description = "Update notification channel",
+      summary = "Update notification channel",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Returns the successfully updated notification rule")
+        ApiResponse(description = "Returns the successfully updated notification channel")
       })
-  public ResponseDTO<NotificationRule>
+  public ResponseDTO<NotificationChannel>
   update(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @RequestBody(description = "notification rule with update",
-          required = true) @NotNull @Valid NotificationRule notificationRule) {
-    return ResponseDTO.newResponse(NotificationRule.builder().build());
+      @RequestBody(description = "notification channel with update",
+          required = true) @NotNull @Valid NotificationChannel notificationChannel) {
+    return ResponseDTO.newResponse(NotificationChannel.builder().build());
   }
-
   @GET
-  @Path("{identifier}")
-  @ApiOperation(value = "Get a Notification Rule", nickname = "getNotificationRule")
-  @NGAccessControlCheck(resourceType = NOTIFICATION, permission = VIEW_NOTIFICATION_SETTINGS_PERMISSION)
-  @Operation(operationId = "getNotificationRule", summary = "Get Notification Rule",
-      description = "Get a Notification Rule in an account/org/project",
+  @Path("/{identifier}")
+  @ApiOperation(value = "Get a Notification Channel", nickname = "getNotificationChannel")
+  @NGAccessControlCheck(resourceType = NOTIFICATION, permission = MANAGE_NOTIFICATION_SETTINGS_PERMISSION)
+  @Operation(operationId = "getNotificationChannel", summary = "Get Notification Channel",
+      description = "Get a Notification Channel in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Returns the successfully fetched Notification Rule")
+        ApiResponse(description = "Returns the successfully fetched Notification Channel")
       })
-  public ResponseDTO<NotificationRule>
-  get(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+  public ResponseDTO<NotificationChannel>
+  notificationChannel(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
+                          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "notification rule Identifier", required = true) @NotEmpty @PathParam(
-          NGCommonEntityConstants.IDENTIFIER_KEY) String identifier) {
-    return ResponseDTO.newResponse(NotificationRule.builder().build());
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    return ResponseDTO.newResponse(NotificationChannel.builder().build());
   }
 
   @DELETE
-  @Path("{identifier}")
-  @ApiOperation(value = "Delete notification rule", nickname = "deleteNotificationRule")
+  @Path("{channel-identifier}")
+  @ApiOperation(value = "Delete notification channel", nickname = "deleteNotificationChannel")
   @NGAccessControlCheck(resourceType = NOTIFICATION, permission = MANAGE_NOTIFICATION_SETTINGS_PERMISSION)
-  @Operation(operationId = "deleteNotificationRule", description = "Delete Notification Rule",
-      summary = "Delete notification rule in an account/org/project",
+  @Operation(operationId = "deleteNotificationChannel", description = "Delete Notification Channel",
+      summary = "Delete notification channel in an account/org/project",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns boolean if successfully deleted") })
   public ResponseDTO<Boolean>
-  delete(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+  deleteNotificationChannel(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
+                                NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "Identifier of the notification rule", required = true) @NotEmpty @PathParam(
-          NGCommonEntityConstants.IDENTIFIER_KEY) String identifier) {
-    return ResponseDTO.newResponse();
+      @Parameter(description = "Identifier of the notification channel", required = true) @NotEmpty @PathParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) String channelIdentifier) {
+    return ResponseDTO.newResponse(true);
   }
 
   @GET
-  @ApiOperation(value = "Get Notification Rule List", nickname = "getNotificationRuleList")
-  @NGAccessControlCheck(resourceType = NOTIFICATION, permission = VIEW_NOTIFICATION_SETTINGS_PERMISSION)
-  @Operation(operationId = "getNotificationRuleList", description = "List Notification Rule",
-      summary = "List the Notification Rule in an account/org/project",
+  @ApiOperation(value = "Get Notification channel List", nickname = "getNotificationChannelList")
+  @NGAccessControlCheck(resourceType = NOTIFICATION, permission = MANAGE_NOTIFICATION_SETTINGS_PERMISSION)
+  @Operation(operationId = "getNotificationChannelList", description = "List Notification Channel",
+      summary = "List the Notification Channel in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the paginated list of the Notification rule.")
       })
-  public ResponseDTO<List<NotificationRule>>
+  public ResponseDTO<List<NotificationChannel>>
   list(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -187,8 +186,8 @@ public class NotificationRuleResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "Search filter which matches by rule name/identifier")
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm, @BeanParam PageRequest pageRequest) {
-    List<NotificationRule> page =
-        notificationManagementService.list(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<NotificationChannel> page =
+        notificationManagementService.getNotificationChannelList(accountIdentifier, orgIdentifier, projectIdentifier);
 
     return ResponseDTO.newResponse(page);
   }

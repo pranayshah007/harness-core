@@ -15,6 +15,7 @@ import io.harness.persistence.PersistentEntity;
 import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -25,6 +26,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Entity(value = "notificationChannel")
 @Document("NotificationChannel")
 @TypeAlias("notificationChannel")
+@FieldNameConstants(innerTypeName = "NotificationChannelKeys")
 public class NotificationChannel implements PersistentEntity {
   @Id @dev.morphia.annotations.Id String uuid;
 
@@ -34,7 +36,12 @@ public class NotificationChannel implements PersistentEntity {
   String projectIdentifier;
 
   NotificationChannelType notificationChannelType;
-  Channel channel;
+
+  EmailChannel emailChannel;
+  SlackChannel slackChannel;
+  MicrosoftTeamsChannel microsoftTeamsChannel;
+  PagerDutyChannel pagerDutyChannel;
+  WebhookChannel webhookChannel;
 
   private Status status;
 

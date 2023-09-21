@@ -38,7 +38,4 @@ public class PlatformPermissions {
   public static final String DELETE_SERVICEACCOUNT_PERMISSION = "core_serviceaccount_delete";
   public static final String MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION = "core_serviceaccount_manageapikey";
   public static final String VIEW_ACCOUNT_PERMISSION = "core_account_view";
-  public static final String VIEW_NOTIFICATION_SETTINGS_PERMISSION = "core_notification_settings_create";
-  public static final String MANAGE_NOTIFICATION_SETTINGS_PERMISSION = "core_notification_settings_create";
-
 }
