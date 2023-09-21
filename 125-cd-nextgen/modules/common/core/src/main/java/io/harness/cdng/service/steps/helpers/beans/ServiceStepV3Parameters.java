@@ -49,14 +49,9 @@ public class ServiceStepV3Parameters implements StepParameters {
   private ServiceDefinitionType deploymentType;
   @SkipAutoEvaluation private EnvironmentGroupYaml environmentGroupYaml;
   @SkipAutoEvaluation private EnvironmentsYaml environmentsYaml;
-
   @Override
   public String toViewJson() {
-    if (ParameterField.isNotNull(serviceRef)) {
-      return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));
-    } else {
-      return null;
-    }
+    return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));
   }
 
   @Override

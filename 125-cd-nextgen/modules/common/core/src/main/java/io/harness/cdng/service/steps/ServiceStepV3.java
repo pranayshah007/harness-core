@@ -46,10 +46,10 @@ import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
+import io.harness.cdng.service.steps.ServiceStepV3Helper.ServicePartResponse;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceOverrideUtilityFacade;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
-import io.harness.cdng.service.steps.helpers.ServiceStepsHelper.ServicePartResponse;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
@@ -167,6 +167,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   @Inject private ServiceOverrideUtilityFacade serviceOverrideUtilityFacade;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Inject private ServiceStepV3Helper serviceStepV3Helper;
 
   private static final Pattern serviceVariablePattern = Pattern.compile(SERVICE_VARIABLES_PATTERN_REGEX);
   private static final Pattern envVariablePattern = Pattern.compile(ENV_VARIABLES_PATTERN_REGEX);
@@ -186,13 +187,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       final NGLogCallback overrideLogCallback =
           serviceStepsHelper.getServiceLogCallback(ambiance, true, OVERRIDES_COMMAND_UNIT);
 
-      serviceStepsHelper.saveExecutionLog(serviceStepLogCallback, "Starting service step...");
+      serviceStepV3Helper.saveExecutionLog(serviceStepLogCallback, "Starting service step...");
 
       Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters, entityMap);
 
-      serviceStepsHelper.saveExecutionLog(serviceStepLogCallback,
+      serviceStepV3Helper.saveExecutionLog(serviceStepLogCallback,
           "Service Name: " + servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig().getName()
               + " , Identifier: "
               + servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig().getIdentifier());
@@ -344,16 +345,16 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       NGEnvironmentConfig ngEnvironmentConfig;
       // handle old environments
       if (isEmpty(environment.getYaml())) {
-        serviceStepsHelper.setYamlInEnvironment(environment);
+        serviceStepV3Helper.setYamlInEnvironment(environment);
       }
       try {
         if (isNotEmpty(parameters.getEnvToEnvInputs())) {
           ngEnvironmentConfig =
-              serviceStepsHelper.mergeEnvironmentInputs(accountId, environment.getIdentifier(), environment.getYaml(),
+              serviceStepV3Helper.mergeEnvironmentInputs(accountId, environment.getIdentifier(), environment.getYaml(),
                   parameters.getEnvToEnvInputs().get(
                       getEnvRefOrId(environment.fetchRef(), parameters.getEnvGroupRef(), environment.getIdentifier())));
         } else {
-          ngEnvironmentConfig = serviceStepsHelper.mergeEnvironmentInputs(
+          ngEnvironmentConfig = serviceStepV3Helper.mergeEnvironmentInputs(
               accountId, environment.getIdentifier(), environment.getYaml(), null);
         }
       } catch (IOException ex) {
@@ -391,13 +392,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
 
-    serviceStepsHelper.resolve(ambiance, envToEnvVariables, envToSvcVariables);
+    serviceStepV3Helper.resolve(ambiance, envToEnvVariables, envToSvcVariables);
 
     GitOpsEnvOutCome gitOpsEnvOutCome = new GitOpsEnvOutCome(envToEnvVariables, envToSvcVariables);
 
     sweepingOutputService.consume(ambiance, GITOPS_ENV_OUTCOME, gitOpsEnvOutCome, StepCategory.STAGE.name());
 
-    serviceStepsHelper.processServiceAndEnvironmentVariables(
+    serviceStepV3Helper.processServiceAndEnvironmentVariables(
         ambiance, servicePartResponse, serviceStepLogCallback, null, false, new HashMap<>());
 
     serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
@@ -465,7 +466,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
 
     if (envRef.isExpression()) {
-      serviceStepsHelper.resolve(ambiance, envRef);
+      serviceStepV3Helper.resolve(ambiance, envRef);
     }
 
     log.info("Starting execution for Environment Step [{}]", envRef.getValue());
@@ -487,7 +488,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       if (isOverridesV2enabled) {
         if (!ParameterField.isNull(parameters.getInfraId()) && parameters.getInfraId().isExpression()) {
-          serviceStepsHelper.resolve(ambiance, parameters.getInfraId());
+          serviceStepV3Helper.resolve(ambiance, parameters.getInfraId());
         }
         mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
             accountId, orgIdentifier, projectIdentifier, parameters, environment.get(), overrideLogCallback);
@@ -495,11 +496,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       // handle old environments
       if (isEmpty(environment.get().getYaml())) {
-        serviceStepsHelper.setYamlInEnvironment(environment.get());
+        serviceStepV3Helper.setYamlInEnvironment(environment.get());
       }
 
       NGEnvironmentConfig ngEnvironmentConfig =
-          serviceStepsHelper.getNgEnvironmentConfig(ambiance, parameters, accountId, environment);
+          serviceStepV3Helper.getNgEnvironmentConfig(ambiance, parameters, accountId, environment);
 
       final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
           serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), orgIdentifier, projectIdentifier,
@@ -510,9 +511,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(), parameters.getServiceOverrideInputs());
       }
 
-      serviceStepsHelper.resolve(ambiance, ngEnvironmentConfig, ngServiceOverrides);
+      serviceStepV3Helper.resolve(ambiance, ngEnvironmentConfig, ngServiceOverrides);
 
-      serviceStepsHelper.handleSecretVariables(
+      serviceStepV3Helper.handleSecretVariables(
           ngEnvironmentConfig, ngServiceOverrides, mergedOverrideV2Configs, ambiance, isOverridesV2enabled);
 
       entityMap.put(FreezeEntityType.ENVIRONMENT,
@@ -534,7 +535,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       sweepingOutputService.consume(
           ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());
 
-      serviceStepsHelper.processServiceAndEnvironmentVariables(ambiance, servicePartResponse, serviceStepLogCallback,
+      serviceStepV3Helper.processServiceAndEnvironmentVariables(ambiance, servicePartResponse, serviceStepLogCallback,
           environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
 
       if (isOverridesV2enabled) {
@@ -627,8 +628,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     final NGLogCallback logCallback =
         serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     if (StatusUtils.brokeStatuses().contains(stepResponse.getStatus())) {
-      serviceStepsHelper.saveExecutionLog(logCallback, LogHelper.color("Failed to complete service step", LogColor.Red),
-          LogLevel.INFO, CommandExecutionStatus.FAILURE);
+      serviceStepV3Helper.saveExecutionLog(logCallback,
+          LogHelper.color("Failed to complete service step", LogColor.Red), LogLevel.INFO,
+          CommandExecutionStatus.FAILURE);
       serviceStepUnitProgress = UnitProgress.newBuilder()
                                     .setStatus(UnitStatus.FAILURE)
                                     .setUnitName(SERVICE_STEP_COMMAND_UNIT)
@@ -636,7 +638,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                                     .setEndTime(System.currentTimeMillis())
                                     .build();
     } else {
-      serviceStepsHelper.saveExecutionLog(
+      serviceStepV3Helper.saveExecutionLog(
           logCallback, "Completed service step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       serviceStepUnitProgress = UnitProgress.newBuilder()
                                     .setStatus(UnitStatus.SUCCESS)
