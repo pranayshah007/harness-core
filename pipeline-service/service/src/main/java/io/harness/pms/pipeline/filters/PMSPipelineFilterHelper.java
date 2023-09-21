@@ -39,19 +39,19 @@ public class PMSPipelineFilterHelper {
         update.set(PipelineEntityKeys.name, pipelineEntity.getName());
       }
       if (fieldsToUpdate.containsKey("description")) {
-        update.set(PipelineEntityKeys.description, pipelineEntity.getName());
+        update.set(PipelineEntityKeys.description, pipelineEntity.getDescription());
       }
       if (fieldsToUpdate.containsKey("tags")) {
-        update.set(PipelineEntityKeys.tags, pipelineEntity.getName());
+        update.set(PipelineEntityKeys.tags, pipelineEntity.getTags());
       }
       if (fieldsToUpdate.containsKey("filters")) {
-        update.set(PipelineEntityKeys.filters, pipelineEntity.getName());
+        update.set(PipelineEntityKeys.filters, pipelineEntity.getFilters());
       }
       if (fieldsToUpdate.containsKey("stageCount")) {
-        update.set(PipelineEntityKeys.stageCount, pipelineEntity.getName());
+        update.set(PipelineEntityKeys.stageCount, pipelineEntity.getStageCount());
       }
       if (fieldsToUpdate.containsKey("stageNames")) {
-        update.set(PipelineEntityKeys.stageNames, pipelineEntity.getName());
+        update.set(PipelineEntityKeys.stageNames, pipelineEntity.getStageNames());
       }
     }
     update.set(PipelineEntityKeys.harnessVersion, pipelineEntity.getHarnessVersion());

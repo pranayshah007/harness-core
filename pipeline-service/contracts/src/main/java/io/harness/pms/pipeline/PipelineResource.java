@@ -317,8 +317,8 @@ public interface PipelineResource {
       @Parameter(description = PipelineResourceConstants.PIPELINE_DRAFT_PARAM_MESSAGE, required = false, hidden = true)
       @QueryParam(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
       @RequestBody(required = true, description = "Pipeline YAML to be updated", content = {
-        @Content(mediaType = "application/yaml",
-            examples = @ExampleObject(name = "Update", summary = "Sample Update Pipeline YAML",
+        @Content(mediaType = "application/json",
+            examples = @ExampleObject(name = "Update", summary = "Sample Update Pipeline Request Body",
                 value = PipelineAPIConstants.CREATE_PIPELINE_API,
                 description = "Sample Pipeline YAML with One Build Stage and One Deploy Stage"))
       }) @NotNull PipelineUpdateRequestBody requestBody, @QueryParam("public") @DefaultValue("false") boolean isPublic);

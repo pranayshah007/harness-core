@@ -331,7 +331,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(accountId, orgId, projectId,
-        pipelineId, pipelineName, requestBody.getYaml(), ifMatch, isDraft, pipelineVersion);
+        pipelineId, requestBody.getYaml(), ifMatch, isDraft, pipelineVersion, requestBody.getFieldsToUpdate());
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndUpdatePipeline(
         withVersion, ChangeType.MODIFY, true, pipelineVersion, requestBody.getFieldsToUpdate());
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
@@ -348,7 +348,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
     PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(accountId, orgId, projectId,
-        pipelineId, pipelineName, requestBody.getYaml(), ifMatch, isDraft, pipelineVersion);
+        pipelineId, requestBody.getYaml(), ifMatch, isDraft, pipelineVersion, requestBody.getFieldsToUpdate());
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndUpdatePipeline(
         withVersion, ChangeType.MODIFY, false, pipelineVersion, requestBody.getFieldsToUpdate());
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();

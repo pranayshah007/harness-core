@@ -214,11 +214,12 @@ public class PMSPipelineDtoMapper {
   }
 
   public PipelineEntity toPipelineEntityWithPipelineId(String accountId, String orgId, String projectId,
-      String pipelineId, String pipelineName, String yaml, Boolean isDraft, String pipelineVersion) {
+      String pipelineId, String yaml, Boolean isDraft, String pipelineVersion, Map<String, Object> fieldsToUpdate) {
     PipelineEntity pipelineEntity;
     // Use pipelineId for V1 yaml only since we can't change it if name gets changed
     if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
-      pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, pipelineId, pipelineName, yaml);
+      pipelineEntity =
+          toSimplifiedPipelineEntityForUpdate(accountId, orgId, projectId, pipelineId, fieldsToUpdate, yaml);
     } else {
       pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
     }
@@ -312,9 +313,9 @@ public class PMSPipelineDtoMapper {
   }
 
   public PipelineEntity toPipelineEntityWithVersion(String accountId, String orgId, String projectId, String pipelineId,
-      String pipelineName, String yaml, String ifMatch, Boolean isDraft, String pipelineVersion) {
+      String yaml, String ifMatch, Boolean isDraft, String pipelineVersion, Map<String, Object> fieldsToUpdate) {
     PipelineEntity pipelineEntity = toPipelineEntityWithPipelineId(
-        accountId, orgId, projectId, pipelineId, pipelineName, yaml, isDraft, pipelineVersion);
+        accountId, orgId, projectId, pipelineId, yaml, isDraft, pipelineVersion, fieldsToUpdate);
     PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     if (!Objects.equals(pipelineId, withVersion.getIdentifier())) {
       throw new InvalidRequestException(String.format(
