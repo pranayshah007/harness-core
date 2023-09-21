@@ -4871,7 +4871,7 @@ plain_artifacts = [
     "com.nimbusds:oauth2-oidc-sdk:7.4",
     "org.asynchttpclient:async-http-client:2.12.3",
     "com.novemberain:quartz-mongodb:2.2.0-rc2",
-    "com.offbytwo.jenkins:jenkins-client:0.3.9",
+    "com.offbytwo.jenkins:jenkins-client:0.3.10",
     "com.openpojo:openpojo:0.8.3",
     "com.palominolabs.metrics:metrics-guice:3.2.0",
     "com.papertrail:profiler:1.0.2",
