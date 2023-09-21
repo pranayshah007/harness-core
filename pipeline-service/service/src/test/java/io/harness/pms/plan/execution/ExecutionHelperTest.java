@@ -773,39 +773,6 @@ public class ExecutionHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = UTKARSH_CHOUBEY)
-  @Category(UnitTests.class)
-  public void testGetPipelineYamlAndValidateWhenOPAFFisOff() throws IOException {
-    String yamlWithTempRef = "pipeline:\n"
-        + "  name: ww\n"
-        + "  template:\n"
-        + "    templateRef: new_pipeline_template_name\n"
-        + "    versionLabel: v1\n"
-        + "  tags: {}\n";
-    PipelineEntity pipelineEntity = PipelineEntity.builder()
-                                        .accountId(accountId)
-                                        .orgIdentifier(orgId)
-                                        .projectIdentifier(projectId)
-                                        .identifier(pipelineId)
-                                        .yaml(yamlWithTempRef)
-                                        .build();
-    when(featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE))
-        .thenReturn(false);
-    TemplateMergeResponseDTO templateMergeResponse =
-        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yamlWithTempRef).build();
-
-    doReturn(templateMergeResponse)
-        .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
-            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), yamlWithTempRef, true, false,
-            BOOLEAN_FALSE_VALUE);
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(null, pipelineEntity);
-    assertThat(templateMergeResponseDTO.getMergedPipelineYaml())
-        .isEqualTo(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
-  }
-
-  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testStartExecution() throws IOException {

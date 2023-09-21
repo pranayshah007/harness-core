@@ -638,20 +638,6 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = SANDESH_SALUNKHE)
   @Category(UnitTests.class)
-  public void testFetchExpandedPipelineJSONWithDisabledFeatureFlag() {
-    Optional<PipelineEntity> pipelineEntityOptional = Optional.of(pipelineEntity);
-    doReturn(pipelineEntityOptional)
-        .when(pmsPipelineServiceMock)
-        .getPipeline(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(any(), eq(FeatureName.OPA_PIPELINE_GOVERNANCE));
-    String result = pmsPipelineServiceMock.fetchExpandedPipelineJSON(
-        accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
-    assertThat(result).isNull();
-  }
-
-  @Test
-  @Owner(developers = SANDESH_SALUNKHE)
-  @Category(UnitTests.class)
   public void testFetchExpandedPipelineJSONWithPipelineNotFound() {
     when(pmsPipelineServiceMock.getPipeline(
              accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false))
@@ -901,7 +887,6 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), any());
     doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity, false);
     doReturn(PIPELINE_YAML).when(pipelineCloneHelper).updatePipelineMetadataInSourceYaml(any(), any(), any());
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
@@ -930,7 +915,6 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
     doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity, false);
     doReturn(PIPELINE_YAML).when(pipelineCloneHelper).updatePipelineMetadataInSourceYaml(any(), any(), any());
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
         .when(pmsPipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean(), anyBoolean());
@@ -1072,7 +1056,6 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), any());
     doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity, false);
     doReturn(PIPELINE_YAML_V1).when(pipelineCloneHelper).updatePipelineMetadataInSourceYamlV1(any(), any());
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean());

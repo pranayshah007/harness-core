@@ -103,9 +103,6 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
 
   private String getExpandedPipelineJSONFromYaml(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineYaml, String branch, PipelineEntity pipelineEntity, String action) {
-    if (!pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
-      return null;
-    }
     switch (PipelineYamlHelper.getVersion(pipelineYaml)) {
       case HarnessYamlVersion.V1:
         return null;

@@ -67,19 +67,7 @@ public class GovernanceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testEvaluateGovernancePoliciesWithFlagOff() {
-    doReturn(false).when(featureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    GovernanceMetadata flagOffMetadata =
-        governanceService.evaluateGovernancePolicies(null, accountId, null, null, null, null, HarnessYamlVersion.V0);
-    assertThat(flagOffMetadata.getDeny()).isFalse();
-    assertThat(flagOffMetadata.getMessage()).isEqualTo("FF: [OPA_PIPELINE_GOVERNANCE] is disabled for account: [acc]");
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
   public void testEvaluateGovernancePoliciesWithInvalidYAML() throws IOException {
-    doReturn(true).when(featureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     MockedStatic<GovernanceServiceHelper> mockSettings = Mockito.mockStatic(GovernanceServiceHelper.class);
     when(GovernanceServiceHelper.createEvaluationContext("expandedJSON:")).thenThrow(new IOException());
     GovernanceMetadata governanceMetadata = governanceService.evaluateGovernancePolicies(
@@ -95,7 +83,6 @@ public class GovernanceServiceImplTest extends CategoryTest {
     String expandedJSON = "pipeline:\n"
         + "  identifier: myPipe\n"
         + "  name: my pipe";
-    doReturn(true).when(featureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
 
     MockedStatic<GovernanceServiceHelper> mockSettings = Mockito.mockStatic(GovernanceServiceHelper.class);
 
@@ -137,7 +124,6 @@ public class GovernanceServiceImplTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testEvaluateGovernancePoliciesForV1Yaml() {
-    doReturn(true).when(featureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     GovernanceMetadata governanceMetadata =
         governanceService.evaluateGovernancePolicies(null, accountId, null, null, null, null, HarnessYamlVersion.V1);
     assertThat(governanceMetadata.getDeny()).isFalse();

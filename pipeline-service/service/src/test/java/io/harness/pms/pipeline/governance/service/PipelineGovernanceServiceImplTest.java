@@ -67,7 +67,6 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testFetchExpandedPipelineJSONFromYaml() {
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     String dummyYaml = "\"don't really need a proper yaml cuz only testing the flow\"";
     ByteString randomByteString = ByteString.copyFromUtf8("sss");
     ExpansionRequestMetadata expansionRequestMetadata = ExpansionRequestMetadata.newBuilder()
@@ -93,14 +92,6 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
             OpaConstants.OPA_EVALUATION_TYPE_PIPELINE, OpaConstants.OPA_EVALUATION_ACTION_SAVE);
     pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, OpaConstants.OPA_EVALUATION_ACTION_SAVE);
-    verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
-    verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
-    verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
-
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, OpaConstants.OPA_EVALUATION_ACTION_SAVE);
-    assertNull(noExp);
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
     verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
     verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
@@ -174,7 +165,6 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
                                         .repo("repo")
                                         .storeType(StoreType.REMOTE)
                                         .build();
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
     doReturn(true)
         .when(opaPolicyEvaluationHelper)
         .shouldEvaluatePolicy(accountIdentifier, orgIdentifier, projectIdentifier,

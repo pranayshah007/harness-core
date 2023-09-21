@@ -395,11 +395,9 @@ public class PMSPipelineServiceHelper {
       case HarnessYamlVersion.V1:
         return GovernanceMetadata.newBuilder().setDeny(false).build();
       case HarnessYamlVersion.V0:
-        boolean getMergedTemplateWithTemplateReferences =
-            pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
         // Apply all the templateRefs(if any) then check for schema validation.
-        TemplateMergeResponseDTO templateMergeResponseDTO = pipelineTemplateHelper.resolveTemplateRefsInPipeline(
-            pipelineEntity, getMergedTemplateWithTemplateReferences, loadFromCache);
+        TemplateMergeResponseDTO templateMergeResponseDTO =
+            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, loadFromCache);
         // Add Template Module Info temporarily to Pipeline Entity
         pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponseDTO));
         return validateYaml(pipelineEntity, templateMergeResponseDTO, throwExceptionIfGovernanceRulesFails)

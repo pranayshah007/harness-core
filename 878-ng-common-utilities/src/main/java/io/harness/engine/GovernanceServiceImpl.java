@@ -54,13 +54,6 @@ public class GovernanceServiceImpl implements GovernanceService {
     }
     long startTs = System.currentTimeMillis();
     try {
-      if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
-        return GovernanceMetadata.newBuilder()
-            .setDeny(false)
-            .setMessage(
-                String.format("FF: [%s] is disabled for account: [%s]", FeatureName.OPA_PIPELINE_GOVERNANCE, accountId))
-            .build();
-      }
       if (isEmpty(expandedJson)) {
         return GovernanceMetadata.newBuilder().setDeny(false).build();
       }

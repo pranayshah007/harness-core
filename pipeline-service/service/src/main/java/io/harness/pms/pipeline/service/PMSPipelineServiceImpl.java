@@ -886,10 +886,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
 
-    if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
-      return null;
-    }
-
     String branch = GitAwareContextHelper.getBranchInRequestOrFromSCMGitMetadata();
     return pipelineGovernanceService.getExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier,
         pipelineEntityOptional.get().getYaml(), branch, pipelineEntityOptional.get());
