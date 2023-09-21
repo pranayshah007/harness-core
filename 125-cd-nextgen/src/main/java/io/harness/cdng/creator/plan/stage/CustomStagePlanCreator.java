@@ -12,12 +12,17 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
+import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.helper.beans.CustomStageEnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.pipeline.beans.CustomStageSpecParams;
 import io.harness.cdng.pipeline.steps.CustomStageStep;
+import io.harness.cdng.steps.EmptyStepParameters;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
@@ -31,6 +36,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
@@ -202,13 +208,52 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     } else if (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinition())) {
       infraRef = finalEnvironmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
     }
+    List<String> childrenNodeIds = new ArrayList<>();
+
+    // Add manifests node
+    final PlanNode manifestsNode =
+        PlanNode.builder()
+            .uuid("manifests-" + UUIDGenerator.generateUuid())
+            .stepType(ManifestsStepV2.STEP_TYPE)
+            .name(PlanCreatorConstants.MANIFESTS_NODE_NAME)
+            .identifier(YamlTypes.MANIFEST_LIST_CONFIG)
+            .stepParameters(new EmptyStepParameters())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
+                    .build())
+            .skipExpressionChain(true)
+            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+    childrenNodeIds.add(manifestsNode.getUuid());
+    planCreationResponseMap.put(
+        manifestsNode.getUuid(), PlanCreationResponse.builder().planNode(manifestsNode).build());
+
+    // Add configFiles node
+    final PlanNode configFilesNode =
+        PlanNode.builder()
+            .uuid("configFiles-" + UUIDGenerator.generateUuid())
+            .stepType(ConfigFilesStepV2.STEP_TYPE)
+            .name(PlanCreatorConstants.CONFIG_FILES_NODE_NAME)
+            .identifier(YamlTypes.CONFIG_FILES)
+            .stepParameters(new EmptyStepParameters())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
+                    .build())
+            .skipExpressionChain(true)
+            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+    childrenNodeIds.add(configFilesNode.getUuid());
+    planCreationResponseMap.put(
+        configFilesNode.getUuid(), PlanCreationResponse.builder().planNode(configFilesNode).build());
 
     final CustomStageEnvironmentStepParameters stepParameters =
         CustomStageEnvironmentStepParameters.builder()
             .envRef(finalEnvironmentYamlV2.getEnvironmentRef())
             .envInputs(finalEnvironmentYamlV2.getEnvironmentInputs())
             .infraId(infraRef)
-            .childrenNodeIds(new ArrayList<>())
+            .childrenNodeIds(childrenNodeIds)
             .build();
 
     final PlanNode envNode =
@@ -257,46 +302,4 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
   public Set<String> getSupportedYamlVersions() {
     return Set.of(HarnessYamlVersion.V0);
   }
-
-  /*
-
-      // Add manifests node
-    final PlanNode manifestsNode =
-        PlanNode.builder()
-            .uuid("manifests-" + UUIDGenerator.generateUuid())
-            .stepType(ManifestsStepV2.STEP_TYPE)
-            .name(PlanCreatorConstants.MANIFESTS_NODE_NAME)
-            .identifier(YamlTypes.MANIFEST_LIST_CONFIG)
-            .stepParameters(new EmptyStepParameters())
-            .facilitatorObtainment(
-                FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
-                    .build())
-            .skipExpressionChain(true)
-            .skipGraphType(SkipType.SKIP_TREE)
-            .build();
-    nodeIds.add(manifestsNode.getUuid());
-    planCreationResponseMap.put(
-        manifestsNode.getUuid(), PlanCreationResponse.builder().planNode(manifestsNode).build());
-
-    // Add configFiles node
-    final PlanNode configFilesNode =
-        PlanNode.builder()
-            .uuid("configFiles-" + UUIDGenerator.generateUuid())
-            .stepType(ConfigFilesStepV2.STEP_TYPE)
-            .name(PlanCreatorConstants.CONFIG_FILES_NODE_NAME)
-            .identifier(YamlTypes.CONFIG_FILES)
-            .stepParameters(new EmptyStepParameters())
-            .facilitatorObtainment(
-                FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
-                    .build())
-            .skipExpressionChain(true)
-            .skipGraphType(SkipType.SKIP_TREE)
-            .build();
-    nodeIds.add(configFilesNode.getUuid());
-    planCreationResponseMap.put(
-        configFilesNode.getUuid(), PlanCreationResponse.builder().planNode(configFilesNode).build());
-
-   */
 }
