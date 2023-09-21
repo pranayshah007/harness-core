@@ -150,8 +150,8 @@ public class PipelineResourceTest extends CategoryTest {
     MockitoAnnotations.openMocks(this);
     pipelineResource = new PipelineResourceImpl(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
         nodeExecutionToExecutioNodeMapper, pipelineTemplateHelper, featureFlagHelper, variableCreatorMergeService,
-        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService, accessControlClient);
-        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService, publicAccessClient);
+        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService, accessControlClient,
+        publicAccessClient);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "failure-strategy.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
