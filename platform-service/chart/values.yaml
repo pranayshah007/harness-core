@@ -5,6 +5,8 @@ global:
   commonAnnotations: {}
   commonLabels: {}
   kubeVersion: ""
+  opa:
+    enabled: false
   secrets:
     app:
       external:
