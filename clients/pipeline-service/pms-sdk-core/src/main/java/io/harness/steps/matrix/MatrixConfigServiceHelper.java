@@ -168,6 +168,7 @@ public class MatrixConfigServiceHelper {
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(t -> t.getValue().replace(".", ""))
+                .map(t -> t.replaceAll(AmbianceUtils.SPECIAL_CHARACTER_REGEX, "_"))
                 .collect(Collectors.toList()));
         jsonNodes.add(resolvedJsonNode);
         currentIteration++;

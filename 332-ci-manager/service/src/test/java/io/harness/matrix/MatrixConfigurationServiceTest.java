@@ -214,6 +214,76 @@ public class MatrixConfigurationServiceTest {
     assertThat(expectedStepIdentifiers.equals(stepIdentifiers)).isEqualTo(true);
   }
 
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testExpandJsonNodeFromClassTenth() throws IOException {
+    List<String> expectedIdentifiers = Arrays.asList(
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d______azsd____kaq___lale___nc______dca____wdpr___sder___ks____wqd",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d____fsw___dca____wdpr___sder___ks____wqd",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d______azsd____kaq___lale___nc____dkw_wqd",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d____fsw_dkw_wqd",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d______azsd____kaq___lale___nc______spl____s___blahvalue____wqd",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d____fsw___spl____s___blahvalue____wqd",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d______azsd____kaq___lale___nc______dca____wdpr___sder___ks____wple",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d____fsw___dca____wdpr___sder___ks____wple",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d______azsd____kaq___lale___nc____dkw_wple",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d____fsw_dkw_wple",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d______azsd____kaq___lale___nc______spl____s___blahvalue____wple",
+        "Run_1___name____bla___abcd___ef____kdkq____kql___d____fsw___spl____s___blahvalue____wple");
+    testExpandJsonNodeFromClassCommon("matrix-loop-pipeline-4.yaml", 0, 12, expectedIdentifiers);
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testExpandJsonNodeFromClassEleventh() throws IOException {
+    List<String> expectedStepIdentifiers = Arrays.asList("Run_3___dfe____w___alp______qqd____q___qt____sx",
+        "Run_3___dfe____w___alp______qqd____q___qt____olzq", "Run_3___dfe____w___alp______qqd____q___qt____wf",
+        "Run_3_wpla___qqd____q___qt____sx", "Run_3_wpla___qqd____q___qt____olzq", "Run_3_wpla___qqd____q___qt____wf",
+        "Run_3___dfe____w___alp____w_sx", "Run_3___dfe____w___alp____w_olzq", "Run_3___dfe____w___alp____w_wf",
+        "Run_3_wpla_w_sx", "Run_3_wpla_w_olzq", "Run_3_wpla_w_wf");
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("matrix-loop-pipeline-4.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+    YamlField stageYamlField = stageYamlNodes.get(0).getField("stage");
+    YamlField specYamlField = stageYamlField.getNode().getField("spec");
+    YamlField executionField = specYamlField.getNode().getField("execution");
+    YamlField stepsField = executionField.getNode().getField("steps");
+
+    List<YamlNode> stepYamlNodes = stepsField.getNode().asArray();
+    YamlField stepGroupYamlField = stepYamlNodes.get(1).getField("stepGroup");
+    YamlField stepsYamlField = stepGroupYamlField.getNode().getField("steps");
+    List<YamlNode> stepsYamlNode = stepsYamlField.getNode().asArray();
+    YamlField parallelStepsYamlField = stepsYamlNode.get(0).getField("parallel");
+    List<YamlNode> parallelStepYamlNode = parallelStepsYamlField.getNode().asArray();
+
+    YamlField parallelStepYamlField = parallelStepYamlNode.get(1).getField("step");
+    YamlField strategyField = parallelStepYamlField.getNode().getField("strategy");
+    StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
+
+    Ambiance ambiance = getAmbianceForTesting();
+    Optional<Integer> maxExpansion = Optional.of(10000);
+    StrategyInfo strategyInfo = matrixConfigService.expandJsonNodeFromClass(strategyConfig,
+        parallelStepYamlField.getNode().getCurrJsonNode(), maxExpansion, false, RunStepNode.class, ambiance);
+    assertThat(strategyInfo).isNotNull();
+    assertThat(strategyInfo.getExpandedJsonNodes().size()).isEqualTo(12);
+    List<String> stepIdentifiers = strategyInfo.getExpandedJsonNodes()
+                                       .stream()
+                                       .map(jsonField -> jsonField.get("identifier"))
+                                       .map(JsonNode::asText)
+                                       .collect(Collectors.toList());
+    assertThat(expectedStepIdentifiers.equals(stepIdentifiers)).isEqualTo(true);
+  }
   private void testExpandJsonNodeFromClassCommon(String yamlFile, int stepYamlNodeIndex, int sizeForAssertionCheck,
       List<String> expectedStepIdentifiers) throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();

@@ -1,0 +1,125 @@
+pipeline:
+  identifier: dwf
+  name: dwf
+  projectIdentifier: Test
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        identifier: ci
+        type: CI
+        name: ci
+        description: ""
+        spec:
+          cloneCodebase: false
+          execution:
+            steps:
+              - step:
+                  identifier: Run_1
+                  type: Run
+                  name: Run_1
+                  spec:
+                    connectorRef: account.harnessImage
+                    image: alpine
+                    shell: Sh
+                    command: |-
+                      plaq="sdt"
+                      echo $plaq
+                  strategy:
+                    matrix:
+                      entries:
+                        - name:
+                            - bla
+                            - abcd
+                            - ef
+                          kdkq:
+                            - kql
+                            - d
+                      wafs:
+                        - wqd
+                        - wple
+                      ojdw:
+                        - azsd:
+                            - kaq
+                            - lale
+                            - nc
+                        - fsw
+                      sfes:
+                        - dca:
+                            - wdpr
+                            - sder
+                            - ks
+                        - dkw
+                        - spl:
+                            - s
+                            - blahvalue
+              - stepGroup:
+                  identifier: Shobhit_Group
+                  name: Shobhit_Group
+                  steps:
+                    - parallel:
+                        - step:
+                            identifier: Run_2
+                            type: Run
+                            name: Run_2
+                            spec:
+                              connectorRef: account.harnessImage
+                              image: alpine
+                              shell: Sh
+                              command: echo hello
+                            strategy:
+                              matrix:
+                                var1:
+                                  - a
+                                  - f
+                                  - s
+                                var2:
+                                  - var:
+                                      - sa
+                                      - lx
+                                      - tt
+                                var3:
+                                  - az
+                                  - q
+                        - step:
+                            identifier: Run_3
+                            type: Run
+                            name: Run_3
+                            spec:
+                              connectorRef: account.harnessImage
+                              image: alpine
+                              shell: Sh
+                              command: echo hello
+                            strategy:
+                              matrix:
+                                qqaz:
+                                  - sx
+                                  - olzq
+                                  - wf
+                                qakq:
+                                  - qqd:
+                                      - q
+                                      - qt
+                                  - w
+                                lpop:
+                                  - dfe:
+                                      - w
+                                      - alp
+                                  - wpla
+                  strategy:
+                    matrix:
+                      qpl:
+                        - qaz
+                        - uhr
+                      dw:
+                        - plq
+                      az:
+                        - lma
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: ShobhitK8
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
