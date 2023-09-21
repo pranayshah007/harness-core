@@ -584,6 +584,7 @@ public class ServiceStepOverrideHelper {
 
   private boolean hasWebAppSpec(NGServiceV2InfoConfig serviceV2Config) {
     return serviceV2Config != null && serviceV2Config.getServiceDefinition() != null
+        && serviceV2Config.getServiceDefinition().getServiceSpec() != null
         && WebAppSpec.class.isAssignableFrom(serviceV2Config.getServiceDefinition().getServiceSpec().getClass());
   }
 
@@ -622,7 +623,9 @@ public class ServiceStepOverrideHelper {
   }
 
   private static Map<String, ConfigFileWrapper> getSvcConfigFiles(NGServiceV2InfoConfig serviceV2Config) {
-    if (isNotEmpty(serviceV2Config.getServiceDefinition().getServiceSpec().getConfigFiles())) {
+    if (serviceV2Config != null && serviceV2Config.getServiceDefinition() != null
+        && serviceV2Config.getServiceDefinition().getServiceSpec() != null
+        && isNotEmpty(serviceV2Config.getServiceDefinition().getServiceSpec().getConfigFiles())) {
       return serviceV2Config.getServiceDefinition().getServiceSpec().getConfigFiles().stream().collect(Collectors.toMap(
           configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
     }

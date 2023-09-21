@@ -12,7 +12,6 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_G
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_REF;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_VARIABLES_PATTERN_REGEX;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDES_COMMAND_UNIT;
-import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_CONFIGURATION_NOT_FOUND;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_VARIABLES_PATTERN_REGEX;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -538,40 +537,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       serviceStepV3Helper.processServiceAndEnvironmentVariables(ambiance, servicePartResponse, serviceStepLogCallback,
           environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
 
-      if (isOverridesV2enabled) {
-        NGServiceV2InfoConfig ngServiceV2InfoConfig =
-            servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig();
-        if (ngServiceV2InfoConfig == null) {
-          throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
-        }
-        final String scopedEnvironmentRef =
-            IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, environment.get().getOrgIdentifier(),
-                environment.get().getProjectIdentifier(), environment.get().getIdentifier());
-        serviceStepOverrideHelper.saveFinalManifestsToSweepingOutputV2(ngServiceV2InfoConfig, ambiance,
-            ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT, mergedOverrideV2Configs, scopedEnvironmentRef);
-        serviceStepOverrideHelper.saveFinalConfigFilesToSweepingOutputV2(ngServiceV2InfoConfig, mergedOverrideV2Configs,
-            scopedEnvironmentRef, ambiance, ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
-        serviceStepOverrideHelper.saveFinalAppSettingsToSweepingOutputV2(ngServiceV2InfoConfig, mergedOverrideV2Configs,
-            ambiance, ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
-        serviceStepOverrideHelper.saveFinalConnectionStringsToSweepingOutputV2(ngServiceV2InfoConfig,
-            mergedOverrideV2Configs, ambiance, ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
-      } else {
-        serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
-            servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
-            ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT);
-
-        serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
-            servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
-            ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
-
-        serviceStepOverrideHelper.prepareAndSaveFinalAppServiceMetadataToSweepingOutput(
-            servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
-            ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
-
-        serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
-            servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
-            ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
-      }
+      serviceStepsHelper.handleServiceChildrens(isOverridesV2enabled, accountId, environment, ambiance,
+          mergedOverrideV2Configs, ngServiceOverrides, ngEnvironmentConfig, servicePartResponse);
 
       serviceStepOverrideHelper.prepareAndSaveFinalServiceHooksMetadataToSweepingOutput(
           servicePartResponse.getNgServiceConfig(), ambiance, ServiceStepV3Constants.SERVICE_HOOKS_SWEEPING_OUTPUT);
