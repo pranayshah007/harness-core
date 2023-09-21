@@ -23,6 +23,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.template.utils.PipelineTemplateUtils;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.template.remote.TemplateResourceClient;
 
 import com.google.inject.Inject;
@@ -44,8 +45,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     RefreshResponseDTO refreshResponseDTO = pmsPipelineTemplateHelper.getRefreshedYaml(
         accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity, loadFromCache);
     if (refreshResponseDTO != null) {
-      pmsPipelineService.validateAndUpdatePipeline(
-          pipelineEntity.withYaml(refreshResponseDTO.getRefreshedYaml()), ChangeType.MODIFY, true);
+      pmsPipelineService.validateAndUpdatePipeline(pipelineEntity.withYaml(refreshResponseDTO.getRefreshedYaml()),
+          ChangeType.MODIFY, true, HarnessYamlVersion.V0, null);
     }
     return true;
   }
@@ -100,8 +101,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     YamlFullRefreshResponseDTO refreshResponse = pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
         accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity, loadFromCache);
     if (refreshResponse != null && refreshResponse.isShouldRefreshYaml()) {
-      pmsPipelineService.validateAndUpdatePipeline(
-          pipelineEntity.withYaml(refreshResponse.getRefreshedYaml()), ChangeType.MODIFY, true);
+      pmsPipelineService.validateAndUpdatePipeline(pipelineEntity.withYaml(refreshResponse.getRefreshedYaml()),
+          ChangeType.MODIFY, true, HarnessYamlVersion.V0, null);
     }
     return true;
   }

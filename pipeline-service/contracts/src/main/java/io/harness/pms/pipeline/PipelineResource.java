@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -35,6 +36,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
+import io.harness.pms.PipelineUpdateRequestBody;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableMergeServiceResponse;
@@ -283,7 +285,8 @@ public interface PipelineResource {
           hidden = true) @QueryParam(NGCommonEntityConstants.DESCRIPTION_KEY) String pipelineDescription,
       @Parameter(description = PipelineResourceConstants.PIPELINE_DRAFT_PARAM_MESSAGE, required = false, hidden = true)
       @QueryParam(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
-      @RequestBody(required = true, description = "Pipeline YAML to be updated") @NotNull String yaml);
+      @RequestBody(
+          required = true, description = "Pipeline YAML to be updated") @NotNull PipelineUpdateRequestBody requestBody);
 
   @PUT
   @Path("/v2/{pipelineIdentifier}")
@@ -318,7 +321,7 @@ public interface PipelineResource {
             examples = @ExampleObject(name = "Update", summary = "Sample Update Pipeline YAML",
                 value = PipelineAPIConstants.CREATE_PIPELINE_API,
                 description = "Sample Pipeline YAML with One Build Stage and One Deploy Stage"))
-      }) @NotNull String yaml, @QueryParam("public") @DefaultValue("false") boolean isPublic);
+      }) @NotNull PipelineUpdateRequestBody requestBody, @QueryParam("public") @DefaultValue("false") boolean isPublic);
 
   @DELETE
   @Path("/{pipelineIdentifier}")

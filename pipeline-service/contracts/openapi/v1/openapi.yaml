@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: z64ll16l8jku9
+  id: nb5oo23alv0wd
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -1672,6 +1672,13 @@ components:
             type: string
           maxProperties: 128
           description: Pipeline tags
+        fields_to_update:
+          type: object
+          additionalProperties:
+            type: object
+          description: |-
+            Map of Key value pair representing field name and value to be updated in pipeline metadata
+            For Eg: {name, newPipeline}
         git_details:
           $ref: '#/components/schemas/GitUpdateDetails'
       required:

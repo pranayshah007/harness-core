@@ -15,6 +15,7 @@ import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,7 +57,8 @@ public interface PMSPipelineRepositoryCustom {
    * this method is to be used for new git experience, and for all pipelines that are not git synced in both old and new
    * flows
    */
-  PipelineEntity updatePipelineYaml(PipelineEntity pipelineToUpdate);
+  PipelineEntity updatePipelineYaml(
+      PipelineEntity pipelineToUpdate, String pipelineVersion, Map<String, Object> fieldsToUpdate);
 
   PipelineEntity updatePipelineMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);

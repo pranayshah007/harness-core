@@ -23,6 +23,7 @@ import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -103,8 +104,8 @@ public interface PMSPipelineService {
    * @param throwExceptionIfGovernanceFails
    * @return
    */
-  PipelineCRUDResult validateAndUpdatePipeline(
-      PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails);
+  PipelineCRUDResult validateAndUpdatePipeline(PipelineEntity pipelineEntity, ChangeType changeType,
+      boolean throwExceptionIfGovernanceFails, String pipelineVersion, Map<String, Object> fieldsToUpdate);
 
   PipelineEntity syncPipelineEntityWithGit(EntityDetailProtoDTO entityDetail);
 

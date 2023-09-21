@@ -458,10 +458,13 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .updatePipelineInfo(pipelineToUpdate, HarnessYamlVersion.V0);
 
     PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
-    doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
+    doReturn(pipelineEntityUpdated)
+        .when(pipelineRepository)
+        .updatePipelineYaml(pipelineToSaveWithUpdatedInfo, HarnessYamlVersion.V0, null);
 
     PipelineEntity pipelineEntity =
-        pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true).getPipelineEntity();
+        pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true, HarnessYamlVersion.V0, null)
+            .getPipelineEntity();
     assertThat(pipelineEntity).isEqualTo(pipelineEntityUpdated);
     verify(pipelineServiceHelper, times(1))
         .sendPipelineSaveTelemetryEvent(pipelineEntityUpdated, "updating existing pipeline");
@@ -492,10 +495,13 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         .updatePipelineInfo(pipelineToUpdate, HarnessYamlVersion.V0);
 
     PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
-    doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
+    doReturn(pipelineEntityUpdated)
+        .when(pipelineRepository)
+        .updatePipelineYaml(pipelineToSaveWithUpdatedInfo, HarnessYamlVersion.V0, null);
 
     PipelineEntity pipelineEntity =
-        pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true).getPipelineEntity();
+        pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true, HarnessYamlVersion.V0, null)
+            .getPipelineEntity();
     assertThat(pipelineEntity).isEqualTo(pipelineEntityUpdated);
     verify(pipelineServiceHelper, times(1))
         .sendPipelineSaveTelemetryEvent(pipelineEntityUpdated, "updating existing pipeline");
@@ -518,11 +524,12 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
         .when(pipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(eq(pipelineToUpdate), anyBoolean(), anyBoolean());
-    PipelineCRUDResult pipelineCRUDResult = pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true);
+    PipelineCRUDResult pipelineCRUDResult =
+        pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true, HarnessYamlVersion.V0, null);
     assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
     assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
     verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
-    verify(pipelineRepository, times(0)).updatePipelineYaml(any());
+    verify(pipelineRepository, times(0)).updatePipelineYaml(any(), anyString(), any());
     verify(pipelineRepository, times(0)).updatePipelineYamlForOldGitSync(any(), any(), any());
   }
 
@@ -540,7 +547,8 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     doThrow(new InvalidYamlException("msg", null, pipelineYaml))
         .when(pipelineServiceHelper)
         .resolveTemplatesAndValidatePipeline(eq(pipelineToUpdate), anyBoolean(), anyBoolean());
-    assertThatThrownBy(() -> pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true))
+    assertThatThrownBy(
+        () -> pipelineService.validateAndUpdatePipeline(pipelineToUpdate, null, true, HarnessYamlVersion.V0, null))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("msg");
   }

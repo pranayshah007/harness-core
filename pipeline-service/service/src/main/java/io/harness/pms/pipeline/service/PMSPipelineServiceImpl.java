@@ -493,12 +493,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public PipelineCRUDResult validateAndUpdatePipeline(
-      PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails) {
+  public PipelineCRUDResult validateAndUpdatePipeline(PipelineEntity pipelineEntity, ChangeType changeType,
+      boolean throwExceptionIfGovernanceFails, String pipelineVersion, Map<String, Object> fieldsToUpdate) {
     try {
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
         log.info("Updating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
-        PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+        PipelineEntity updatedEntity =
+            updatePipelineWithoutValidation(pipelineEntity, changeType, pipelineVersion, fieldsToUpdate);
         GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
         return PipelineCRUDResult.builder()
             .governanceMetadata(governanceMetadata)
@@ -511,7 +512,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
-      PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+      PipelineEntity updatedEntity =
+          updatePipelineWithoutValidation(pipelineEntity, changeType, pipelineVersion, fieldsToUpdate);
       computeReferencesIfRemotePipeline(updatedEntity);
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
@@ -527,22 +529,24 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
   }
 
-  private PipelineEntity updatePipelineWithoutValidation(PipelineEntity pipelineEntity, ChangeType changeType) {
+  private PipelineEntity updatePipelineWithoutValidation(PipelineEntity pipelineEntity, ChangeType changeType,
+      String pipelineVersion, Map<String, Object> fieldsToUpdate) {
     PipelineEntity updatedEntity;
     if (gitSyncSdkService.isGitSyncEnabled(
             pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier())) {
-      updatedEntity = updatePipelineForOldGitSync(pipelineEntity, changeType);
+      updatedEntity = updatePipelineForOldGitSync(pipelineEntity, changeType, pipelineVersion, fieldsToUpdate);
     } else {
-      updatedEntity = makePipelineUpdateCall(pipelineEntity, null, changeType, false);
+      updatedEntity = makePipelineUpdateCall(pipelineEntity, null, changeType, false, pipelineVersion, fieldsToUpdate);
     }
     return updatedEntity;
   }
 
-  private PipelineEntity updatePipelineForOldGitSync(PipelineEntity pipelineEntity, ChangeType changeType) {
+  private PipelineEntity updatePipelineForOldGitSync(PipelineEntity pipelineEntity, ChangeType changeType,
+      String pipelineVersion, Map<String, Object> fieldsToUpdate) {
     if (GitContextHelper.getGitEntityInfo() != null && GitContextHelper.getGitEntityInfo().isNewBranch()) {
       // sending old entity as null here because a new mongo entity will be created. If audit trail needs to be added
       // to git synced projects, a get call needs to be added here to the base branch of this pipeline update
-      return makePipelineUpdateCall(pipelineEntity, null, changeType, true);
+      return makePipelineUpdateCall(pipelineEntity, null, changeType, true, pipelineVersion, fieldsToUpdate);
     }
     Optional<PipelineEntity> optionalOriginalEntity =
         pmsPipelineRepository.findForOldGitSync(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
@@ -559,7 +563,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
                                     .withIsEntityInvalid(false)
                                     .withAllowStageExecutions(pipelineEntity.getAllowStageExecutions());
 
-    return makePipelineUpdateCall(tempEntity, entityToUpdate, changeType, true);
+    return makePipelineUpdateCall(tempEntity, entityToUpdate, changeType, true, pipelineVersion, fieldsToUpdate);
   }
 
   @Override
@@ -581,12 +585,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     // Non Git synced Pipelines are being marked as INLINE. Marking storeType as null here so that pipelines in old git
     // sync don't have any value for storeType.
-    return makePipelineUpdateCall(
-        optionalPipelineEntity.get().withStoreType(null), optionalPipelineEntity.get(), ChangeType.ADD, true);
+    return makePipelineUpdateCall(optionalPipelineEntity.get().withStoreType(null), optionalPipelineEntity.get(),
+        ChangeType.ADD, true, HarnessYamlVersion.V0, null);
   }
 
-  private PipelineEntity makePipelineUpdateCall(
-      PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
+  private PipelineEntity makePipelineUpdateCall(PipelineEntity pipelineEntity, PipelineEntity oldEntity,
+      ChangeType changeType, boolean isOldFlow, String pipelineVersion, Map<String, Object> fieldsToUpdate) {
     try {
       PipelineEntity entityWithUpdatedInfo;
       if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
@@ -600,7 +604,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         updatedResult =
             pmsPipelineRepository.updatePipelineYamlForOldGitSync(entityWithUpdatedInfo, oldEntity, changeType);
       } else {
-        updatedResult = pmsPipelineRepository.updatePipelineYaml(entityWithUpdatedInfo);
+        updatedResult =
+            pmsPipelineRepository.updatePipelineYaml(entityWithUpdatedInfo, pipelineVersion, fieldsToUpdate);
       }
 
       if (updatedResult == null) {

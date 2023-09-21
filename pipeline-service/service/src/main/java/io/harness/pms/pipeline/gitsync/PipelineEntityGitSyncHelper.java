@@ -40,6 +40,7 @@ import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineFullGitSyncHandler;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -96,7 +97,8 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public PipelineConfig update(String accountIdentifier, String yaml, ChangeType changeType) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndUpdatePipeline(entity, changeType, true);
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.validateAndUpdatePipeline(entity, changeType, true, HarnessYamlVersion.V0, null);
     PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }

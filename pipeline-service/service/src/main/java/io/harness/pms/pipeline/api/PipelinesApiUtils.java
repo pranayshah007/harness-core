@@ -449,6 +449,7 @@ public class PipelinesApiUtils {
         .yaml(updateRequestBody.getPipelineYaml())
         .description(updateRequestBody.getDescription())
         .tags(updateRequestBody.getTags())
+        .fieldsToUpdate(updateRequestBody.getFieldsToUpdate())
         .build();
   }
 

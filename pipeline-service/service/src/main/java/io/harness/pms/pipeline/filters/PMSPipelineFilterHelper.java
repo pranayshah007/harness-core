@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.filters;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.CodePulse;
@@ -18,6 +19,7 @@ import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
@@ -26,6 +28,36 @@ import org.springframework.data.mongodb.core.query.Update;
     components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 public class PMSPipelineFilterHelper {
+  public Update getUpdateOperationsForV1(
+      PipelineEntity pipelineEntity, long timestamp, Map<String, Object> fieldsToUpdate) {
+    Update update = new Update();
+    update.set(PipelineEntityKeys.yaml, pipelineEntity.getYaml());
+    update.set(PipelineEntityKeys.lastUpdatedAt, timestamp);
+    update.set(PipelineEntityKeys.deleted, false);
+    if (fieldsToUpdate != null) {
+      if (fieldsToUpdate.containsKey("name")) {
+        update.set(PipelineEntityKeys.name, pipelineEntity.getName());
+      }
+      if (fieldsToUpdate.containsKey("description")) {
+        update.set(PipelineEntityKeys.description, pipelineEntity.getName());
+      }
+      if (fieldsToUpdate.containsKey("tags")) {
+        update.set(PipelineEntityKeys.tags, pipelineEntity.getName());
+      }
+      if (fieldsToUpdate.containsKey("filters")) {
+        update.set(PipelineEntityKeys.filters, pipelineEntity.getName());
+      }
+      if (fieldsToUpdate.containsKey("stageCount")) {
+        update.set(PipelineEntityKeys.stageCount, pipelineEntity.getName());
+      }
+      if (fieldsToUpdate.containsKey("stageNames")) {
+        update.set(PipelineEntityKeys.stageNames, pipelineEntity.getName());
+      }
+    }
+    update.set(PipelineEntityKeys.harnessVersion, pipelineEntity.getHarnessVersion());
+    return update;
+  }
+
   public Update getUpdateOperations(PipelineEntity pipelineEntity, long timestamp) {
     Update update = new Update();
     update.set(PipelineEntityKeys.yaml, pipelineEntity.getYaml());
@@ -40,6 +72,35 @@ public class PMSPipelineFilterHelper {
     update.set(PipelineEntityKeys.allowStageExecutions, pipelineEntity.getAllowStageExecutions());
     update.set(PipelineEntityKeys.harnessVersion, pipelineEntity.getHarnessVersion());
     return update;
+  }
+
+  public PipelineEntity updateFieldsInDBEntryForV1(PipelineEntity entityFromDB, PipelineEntity newPipelineEntity,
+      long timeOfUpdate, Map<String, Object> fieldsToUpdate) {
+    PipelineEntity pipelineEntity =
+        entityFromDB.withYaml(newPipelineEntity.getYaml())
+            .withLastUpdatedAt(timeOfUpdate)
+            .withVersion(entityFromDB.getVersion() == null ? 1 : entityFromDB.getVersion() + 1);
+    if (fieldsToUpdate != null) {
+      if (fieldsToUpdate.containsKey("name")) {
+        pipelineEntity = pipelineEntity.withName(newPipelineEntity.getName());
+      }
+      if (fieldsToUpdate.containsKey("description")) {
+        pipelineEntity = pipelineEntity.withDescription(newPipelineEntity.getDescription());
+      }
+      if (fieldsToUpdate.containsKey("tags")) {
+        pipelineEntity = pipelineEntity.withTags(newPipelineEntity.getTags());
+      }
+      if (fieldsToUpdate.containsKey("filters")) {
+        pipelineEntity = pipelineEntity.withFilters(newPipelineEntity.getFilters());
+      }
+      if (fieldsToUpdate.containsKey("stageCount")) {
+        pipelineEntity = pipelineEntity.withStageCount(newPipelineEntity.getStageCount());
+      }
+      if (fieldsToUpdate.containsKey("stageNames")) {
+        pipelineEntity = pipelineEntity.withStageNames(newPipelineEntity.getStageNames());
+      }
+    }
+    return pipelineEntity;
   }
 
   public PipelineEntity updateFieldsInDBEntry(

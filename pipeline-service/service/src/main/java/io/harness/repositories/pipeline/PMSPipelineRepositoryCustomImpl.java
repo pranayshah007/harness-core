@@ -42,6 +42,7 @@ import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.pipeline.service.PipelineEntityReadHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
 import io.harness.utils.PipelineExceptionsHelper;
@@ -51,6 +52,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -301,16 +303,24 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
-  public PipelineEntity updatePipelineYaml(PipelineEntity pipelineToUpdate) {
+  public PipelineEntity updatePipelineYaml(
+      PipelineEntity pipelineToUpdate, String pipelineVersion, Map<String, Object> fieldsToUpdate) {
     Criteria criteria =
         PMSPipelineFilterHelper.getCriteriaForFind(pipelineToUpdate.getAccountId(), pipelineToUpdate.getOrgIdentifier(),
             pipelineToUpdate.getProjectIdentifier(), pipelineToUpdate.getIdentifier(), true);
     Query query = new Query(criteria);
     long timeOfUpdate = System.currentTimeMillis();
-    Update updateOperations = PMSPipelineFilterHelper.getUpdateOperations(pipelineToUpdate, timeOfUpdate);
-
-    PipelineEntity updatedPipelineEntity = transactionHelper.performTransaction(
-        () -> updatePipelineEntityInDB(query, updateOperations, pipelineToUpdate, timeOfUpdate));
+    Update updateOperations;
+    if (pipelineVersion.equals(HarnessYamlVersion.V0)) {
+      updateOperations = PMSPipelineFilterHelper.getUpdateOperations(pipelineToUpdate, timeOfUpdate);
+    } else {
+      updateOperations =
+          PMSPipelineFilterHelper.getUpdateOperationsForV1(pipelineToUpdate, timeOfUpdate, fieldsToUpdate);
+    }
+    PipelineEntity updatedPipelineEntity =
+        transactionHelper.performTransaction(()
+                                                 -> updatePipelineEntityInDB(query, updateOperations, pipelineToUpdate,
+                                                     timeOfUpdate, pipelineVersion, fieldsToUpdate));
 
     if (updatedPipelineEntity == null) {
       return null;
@@ -330,15 +340,21 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     return updatedPipelineEntity;
   }
 
-  PipelineEntity updatePipelineEntityInDB(
-      Query query, Update updateOperations, PipelineEntity pipelineToUpdate, long timeOfUpdate) {
+  PipelineEntity updatePipelineEntityInDB(Query query, Update updateOperations, PipelineEntity pipelineToUpdate,
+      long timeOfUpdate, String pipelineVersion, Map<String, Object> fieldsToUpdate) {
     PipelineEntity oldEntityFromDB = mongoTemplate.findAndModify(
         query, updateOperations, new FindAndModifyOptions().returnNew(false), PipelineEntity.class);
     if (oldEntityFromDB == null) {
       return null;
     }
-    PipelineEntity pipelineEntityAfterUpdate =
-        PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);
+    PipelineEntity pipelineEntityAfterUpdate;
+    if (pipelineVersion.equals(HarnessYamlVersion.V0)) {
+      pipelineEntityAfterUpdate =
+          PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);
+    } else {
+      pipelineEntityAfterUpdate = PMSPipelineFilterHelper.updateFieldsInDBEntryForV1(
+          oldEntityFromDB, pipelineToUpdate, timeOfUpdate, fieldsToUpdate);
+    }
     outboxService.save(
         new PipelineUpdateEvent(pipelineToUpdate.getAccountIdentifier(), pipelineToUpdate.getOrgIdentifier(),
             pipelineToUpdate.getProjectIdentifier(), pipelineEntityAfterUpdate, oldEntityFromDB));

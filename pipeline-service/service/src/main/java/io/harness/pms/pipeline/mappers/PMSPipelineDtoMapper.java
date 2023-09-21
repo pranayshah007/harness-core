@@ -39,6 +39,7 @@ import io.harness.pms.pipeline.ExecutorInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.PipelineEntity.PipelineEntityBuilder;
 import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.PipelineValidationResponseDTO;
 import io.harness.pms.pipeline.RecentExecutionInfo;
@@ -60,6 +61,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.bson.Document;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
@@ -131,6 +133,44 @@ public class PMSPipelineDtoMapper {
     }
   }
 
+  public PipelineEntity toSimplifiedPipelineEntityForUpdate(String accountId, String orgId, String projectId,
+      String pipelineId, Map<String, Object> fieldsToUpdate, String yaml) {
+    if (isEmpty(pipelineId)) {
+      throw new InvalidRequestException("Pipeline identifier cannot be empty");
+    }
+    if (NGExpressionUtils.matchesInputSetPattern(pipelineId)) {
+      throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
+    }
+    PipelineEntityBuilder pipelineEntityBuilder = PipelineEntity.builder()
+                                                      .yaml(yaml)
+                                                      .accountId(accountId)
+                                                      .orgIdentifier(orgId)
+                                                      .projectIdentifier(projectId)
+                                                      .identifier(pipelineId)
+                                                      .harnessVersion(HarnessYamlVersion.V1);
+    if (fieldsToUpdate != null) {
+      if (fieldsToUpdate.containsKey("name")) {
+        pipelineEntityBuilder.name((String) fieldsToUpdate.get("name"));
+      }
+      if (fieldsToUpdate.containsKey("tags")) {
+        pipelineEntityBuilder.tags(TagMapper.convertToList((Map<String, String>) fieldsToUpdate.get("tags")));
+      }
+      if (fieldsToUpdate.containsKey("description")) {
+        pipelineEntityBuilder.description((String) fieldsToUpdate.get("description"));
+      }
+      if (fieldsToUpdate.containsKey("filters")) {
+        pipelineEntityBuilder.filters((Map<String, Document>) fieldsToUpdate.get("filters"));
+      }
+      if (fieldsToUpdate.containsKey("stageCount")) {
+        pipelineEntityBuilder.stageCount((Integer) fieldsToUpdate.get("stageCount"));
+      }
+      if (fieldsToUpdate.containsKey("stageNames")) {
+        pipelineEntityBuilder.stageNames((List<String>) fieldsToUpdate.get("stageNames"));
+      }
+    }
+    return pipelineEntityBuilder.build();
+  }
+
   public PipelineEntity toSimplifiedPipelineEntity(
       String accountId, String orgId, String projectId, String pipelineId, String pipelineName, String yaml) {
     if (isEmpty(pipelineId)) {
@@ -191,13 +231,17 @@ public class PMSPipelineDtoMapper {
   }
 
   public PipelineEntity toPipelineEntity(PipelineRequestInfoDTO requestInfoDTO, String accountId, String orgId,
-      String projectId, Boolean isDraft, String pipelineVersion) {
+      String projectId, Boolean isDraft, String pipelineVersion, boolean isUpdate) {
     try {
       if (NGExpressionUtils.matchesInputSetPattern(requestInfoDTO.getIdentifier())) {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
       }
       BasicPipeline basicPipeline = null;
       if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
+        if (isUpdate) {
+          return toSimplifiedPipelineEntityForUpdate(accountId, orgId, projectId, requestInfoDTO.getIdentifier(),
+              requestInfoDTO.getFieldsToUpdate(), requestInfoDTO.getYaml());
+        }
         return toSimplifiedPipelineEntity(accountId, orgId, projectId, requestInfoDTO.getIdentifier(),
             requestInfoDTO.getName(), requestInfoDTO.getYaml());
       } else {
