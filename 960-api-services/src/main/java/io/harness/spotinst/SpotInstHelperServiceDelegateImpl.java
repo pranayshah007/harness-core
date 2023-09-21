@@ -85,9 +85,12 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
         try (ResponseBody responseBody = response.errorBody()) {
           if (null != responseBody) {
             error = responseBody.string();
+            if(deployLogCallback != null) {
+              deployLogCallback.saveExecutionLog(error);
+            }
           }
         }
-        throw SpotInstErrorHandler.generateException(error, deployLogCallback);
+        throw SpotInstErrorHandler.generateException(error);
       }
       return response.body();
     } catch (FailsafeException | IOException ex) {

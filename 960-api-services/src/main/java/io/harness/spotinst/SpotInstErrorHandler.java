@@ -35,10 +35,7 @@ public class SpotInstErrorHandler {
     }
   }
 
-  public WingsException generateException(String error, LogCallback deployLogCallback) {
-    if (deployLogCallback != null) {
-      deployLogCallback.saveExecutionLog(error);
-    }
+  public WingsException generateException(String error) {
     JsonNode jsonNode = parseToJson(error);
     if (jsonNode == null) {
       return getDefaultException(error);
