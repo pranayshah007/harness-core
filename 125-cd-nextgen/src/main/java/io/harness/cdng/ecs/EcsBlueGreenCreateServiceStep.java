@@ -57,6 +57,7 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -105,6 +106,9 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
           executionPassThroughData, ecsLoadBalancerConfig);
     }
 
+    boolean enableAutoscalingInSwapStep = ParameterFieldHelper.getBooleanParameterFieldValue(
+        ecsBlueGreenCreateServiceStepParameters.getEnableAutoScalingInSwapStep());
+
     EcsBlueGreenCreateServiceRequest ecsBlueGreenCreateServiceRequest =
         EcsBlueGreenCreateServiceRequest.builder()
             .accountId(accountId)
@@ -115,8 +119,12 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .ecsTaskDefinitionManifestContent(ecsStepExecutorParams.getEcsTaskDefinitionManifestContent())
             .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
-            .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
-            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
+            .ecsScalableTargetManifestContentList(enableAutoscalingInSwapStep
+                    ? Lists.newArrayList()
+                    : ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
+            .ecsScalingPolicyManifestContentList(enableAutoscalingInSwapStep
+                    ? Lists.newArrayList()
+                    : ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
             .removeAutoScalingFromBlueService(ecsStepExecutorParams.getProdTargetGroupArn() != null
@@ -248,6 +256,8 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
         (EcsBlueGreenCreateServiceStepParameters) stepElementParameters.getSpec();
+    boolean enableAutoscalingInSwapStep = ParameterFieldHelper.getBooleanParameterFieldValue(
+        ecsBlueGreenCreateServiceStepParameters.getEnableAutoScalingInSwapStep());
     EcsTaskArnBlueGreenCreateServiceRequest ecsTaskArnBlueGreenCreateServiceRequest =
         EcsTaskArnBlueGreenCreateServiceRequest.builder()
             .accountId(accountId)
@@ -258,8 +268,12 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .ecsTaskDefinitionArn(ecsStepCommonHelper.getTaskDefinitionArn(ambiance))
             .ecsServiceDefinitionManifestContent(ecsStepExecutorParams.getEcsServiceDefinitionManifestContent())
-            .ecsScalableTargetManifestContentList(ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
-            .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
+            .ecsScalableTargetManifestContentList(enableAutoscalingInSwapStep
+                    ? Lists.newArrayList()
+                    : ecsStepExecutorParams.getEcsScalableTargetManifestContentList())
+            .ecsScalingPolicyManifestContentList(enableAutoscalingInSwapStep
+                    ? Lists.newArrayList()
+                    : ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
             .removeAutoScalingFromBlueService(ecsStepExecutorParams.getProdTargetGroupArn() != null

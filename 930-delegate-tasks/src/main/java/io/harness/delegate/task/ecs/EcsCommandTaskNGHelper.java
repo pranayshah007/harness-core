@@ -812,6 +812,16 @@ public class EcsCommandTaskNGHelper {
       blueServiceOptional.ifPresent(service -> createServiceRequestBuilder.desiredCount(service.desiredCount()));
     }
 
+    if (removeAutoScalingFromBlueService) {
+      // fetch blue service
+      Optional<Service> blueServiceOptional =
+          fetchBGService(trim(createServiceRequest.serviceName() + DELIMITER), ecsInfraConfig, BG_BLUE);
+
+      // remove auto scaling from blue service
+      blueServiceOptional.ifPresent(
+          service -> deleteBGServiceAutoScaling(logCallback, "blue", service.serviceName(), ecsInfraConfig));
+    }
+
     // update service name, cluster and task definition
     createServiceRequest = createServiceRequestBuilder.serviceName(stageServiceName)
                                .cluster(ecsInfraConfig.getCluster())
@@ -823,15 +833,6 @@ public class EcsCommandTaskNGHelper {
                                      createServiceRequest.desiredCount()),
         LogLevel.INFO);
 
-    if (removeAutoScalingFromBlueService) {
-      // fetch blue service
-      Optional<Service> blueServiceOptional =
-          fetchBGService(trim(createServiceRequest.serviceName() + DELIMITER), ecsInfraConfig, BG_BLUE);
-
-      // remove auto scaling from blue service
-      blueServiceOptional.ifPresent(
-          service -> deleteBGServiceAutoScaling(logCallback, "blue", service.serviceName(), ecsInfraConfig));
-    }
     CreateServiceResponse createServiceResponse =
         createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 

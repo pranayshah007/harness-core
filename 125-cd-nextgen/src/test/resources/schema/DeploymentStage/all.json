@@ -7008,17 +7008,8 @@
                 }
               ]
             },
-            "enableAutoscalingInSwapStep": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+            "enableAutoScalingInSwapStep": {
+              "type": "boolean"
             },
             "loadBalancer": {
               "type": "string"
@@ -7030,16 +7021,7 @@
               "type": "string"
             },
             "sameAsAlreadyRunningInstances": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "boolean"
             },
             "stageListener": {
               "type": "string"

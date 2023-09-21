@@ -934,6 +934,12 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                                   .taskRequest(TaskRequest.newBuilder().build())
                                                   .passThroughData(ecsPrepareRollbackDataPassThroughData)
                                                   .build();
+    EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
+        EcsBlueGreenCreateServiceStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(ecsBlueGreenCreateServiceStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
 
     doReturn("sakdj").when(executionSweepingOutputService).consume(any(), any(), any(), any());
 

@@ -35,9 +35,9 @@ public class EcsBlueGreenCreateServiceStepParameters
       ParameterField<String> loadBalancer, ParameterField<String> prodListener,
       ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
       ParameterField<String> stageListenerRuleArn, ParameterField<Boolean> sameAsAlreadyRunningInstances,
-      ParameterField<Boolean> enableAutoscalingInSwapStep) {
+      ParameterField<Boolean> enableAutoScalingInSwapStep) {
     super(delegateSelectors, loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn,
-        sameAsAlreadyRunningInstances, enableAutoscalingInSwapStep);
+        sameAsAlreadyRunningInstances, enableAutoScalingInSwapStep);
   }
 
   public List<String> getCommandUnits() {

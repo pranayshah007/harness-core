@@ -80,7 +80,7 @@ public class EcsBlueGreenCreateServiceStepInfo
         .prodListenerRuleArn(this.getProdListenerRuleArn())
         .stageListenerRuleArn(this.getStageListenerRuleArn())
         .sameAsAlreadyRunningInstances(this.getSameAsAlreadyRunningInstances())
-        .enableAutoscalingInSwapStep(this.getEnableAutoscalingInSwapStep())
+        .enableAutoScalingInSwapStep(this.getEnableAutoScalingInSwapStep())
         .build();
   }
 
