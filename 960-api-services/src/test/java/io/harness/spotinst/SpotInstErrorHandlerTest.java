@@ -40,7 +40,7 @@ public class SpotInstErrorHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGenerateException_instancehealthiness() throws IOException {
     String error = loadContent(instancehealthiness_error_file_path);
-    WingsException exception = SpotInstErrorHandler.generateException(error);
+    WingsException exception = SpotInstErrorHandler.generateException(error, null);
     assertThat(exception.getMessage()).contains("An error occurred when calling InstanceHealthiness API");
   }
 
@@ -48,7 +48,7 @@ public class SpotInstErrorHandlerTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGenerateException_not_json() {
-    WingsException exception = SpotInstErrorHandler.generateException(random_error);
+    WingsException exception = SpotInstErrorHandler.generateException(random_error, null);
     assertThat(exception.getMessage()).isEqualTo(random_error);
   }
 
@@ -57,7 +57,7 @@ public class SpotInstErrorHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGenerateException_instancehealthiness_invalid_req() throws IOException {
     String error = loadContent(instanceHealthiness_error_invalid_req_file_path);
-    WingsException exception = SpotInstErrorHandler.generateException(error);
+    WingsException exception = SpotInstErrorHandler.generateException(error, null);
     assertThat(exception.getMessage()).isEqualTo(error);
   }
 
@@ -66,7 +66,7 @@ public class SpotInstErrorHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGenerateException_instancehealthiness_invalid_res() throws IOException {
     String error = loadContent(instanceHealthiness_error_invalid_res_file_path);
-    WingsException exception = SpotInstErrorHandler.generateException(error);
+    WingsException exception = SpotInstErrorHandler.generateException(error, null);
     assertThat(exception.getMessage()).isEqualTo(error);
   }
 

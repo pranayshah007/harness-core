@@ -101,8 +101,8 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskHa
 
       deployLogCallback.saveExecutionLog(
           format("Sending request to create Elastigroup with name: [%s]", newElastiGroupName));
-      ElastiGroup elastigroup =
-          spotInstHelperServiceDelegate.createElastiGroup(spotInstApiToken, spotInstAccountId, finalJson);
+      ElastiGroup elastigroup = spotInstHelperServiceDelegate.createElastiGroup(
+          spotInstApiToken, spotInstAccountId, finalJson, deployLogCallback);
       deployLogCallback.saveExecutionLog(format("Created Elastigroup %s", getElastigroupString(elastigroup)));
 
       /**
@@ -175,7 +175,6 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskHa
 
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      deployLogCallback.saveExecutionLog(sanitizedException.getMessage());
       deployLogCallback.saveExecutionLog(
           color("Deployment Failed.", LogColor.Red, LogWeight.Bold), LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new ElastigroupNGException(sanitizedException);

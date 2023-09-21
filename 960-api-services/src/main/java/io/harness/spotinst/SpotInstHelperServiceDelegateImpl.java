@@ -22,6 +22,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.exception.WingsException;
+import io.harness.logging.LogCallback;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.SpotInstConstants;
@@ -65,6 +66,10 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
   }
 
   public static <T> T executeRestCall(Call<T> restRequest) {
+    return executeRestCall(restRequest, null);
+  }
+
+  public static <T> T executeRestCall(Call<T> restRequest, LogCallback deployLogCallback) {
     RetryPolicy<Response<T>> retryPolicy =
         new RetryPolicy<Response<T>>()
             .withBackoff(1, 20, ChronoUnit.SECONDS)
@@ -82,7 +87,7 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
             error = responseBody.string();
           }
         }
-        throw SpotInstErrorHandler.generateException(error);
+        throw SpotInstErrorHandler.generateException(error, deployLogCallback);
       }
       return response.body();
     } catch (FailsafeException | IOException ex) {
@@ -196,9 +201,16 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
   @Override
   public ElastiGroup createElastiGroup(String spotInstToken, String spotInstAccountId, String jsonPayload)
       throws Exception {
+    return createElastiGroup(spotInstToken, spotInstAccountId, jsonPayload, null);
+  }
+
+  @Override
+  public ElastiGroup createElastiGroup(String spotInstToken, String spotInstAccountId, String jsonPayload,
+      LogCallback deployLogCallback) throws Exception {
     String auth = getAuthToken(spotInstToken);
     SpotInstListElastiGroupsResponse spotInstListElastiGroupsResponse = executeRestCall(
-        getSpotInstRestClient().createElastiGroup(auth, spotInstAccountId, convertRawJsonToMap(jsonPayload)));
+        getSpotInstRestClient().createElastiGroup(auth, spotInstAccountId, convertRawJsonToMap(jsonPayload)),
+        deployLogCallback);
     return spotInstListElastiGroupsResponse.getResponse().getItems().get(0);
   }
 

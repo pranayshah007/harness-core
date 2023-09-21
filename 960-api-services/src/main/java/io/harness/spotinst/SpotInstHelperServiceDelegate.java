@@ -7,6 +7,7 @@
 
 package io.harness.spotinst;
 
+import io.harness.logging.LogCallback;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 
@@ -23,6 +24,8 @@ public interface SpotInstHelperServiceDelegate {
   Optional<ElastiGroup> getElastiGroupById(String spotInstToken, String spotInstAccountId, String elastiGroupId)
       throws Exception;
   ElastiGroup createElastiGroup(String spotInstToken, String spotInstAccountId, String jsonPayload) throws Exception;
+  ElastiGroup createElastiGroup(String spotInstToken, String spotInstAccountId, String jsonPayload,
+      LogCallback deployLogCallback) throws Exception;
   void updateElastiGroup(String spotInstToken, String spotInstAccountId, String elastiGroupId, String jsonPayload)
       throws Exception;
   void updateElastiGroup(String spotInstToken, String spotInstAccountId, String elastiGroupId, Object group)

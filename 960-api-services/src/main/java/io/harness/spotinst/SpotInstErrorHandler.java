@@ -8,7 +8,9 @@ package io.harness.spotinst;
 
 import static java.lang.String.format;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.WingsException;
+import io.harness.logging.LogCallback;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,7 +35,10 @@ public class SpotInstErrorHandler {
     }
   }
 
-  public WingsException generateException(String error) {
+  public WingsException generateException(String error, LogCallback deployLogCallback) {
+    if (deployLogCallback != null) {
+      deployLogCallback.saveExecutionLog(error);
+    }
     JsonNode jsonNode = parseToJson(error);
     if (jsonNode == null) {
       return getDefaultException(error);
@@ -47,13 +52,24 @@ public class SpotInstErrorHandler {
       }
 
       // put here other Spot related API errors
+
+      StringBuilder errorMessage = new StringBuilder();
+      JsonNode responseErrorMessages = jsonNode.at("/response/errors");
+      if (responseErrorMessages.isArray()) {
+        for (JsonNode jsonNodeError : responseErrorMessages) {
+          errorMessage.append(jsonNodeError.at("/message").asText()).append("\n");
+        }
+      }
+      if (EmptyPredicate.isNotEmpty(errorMessage.toString())) {
+        return getDefaultException(errorMessage.toString());
+      }
     }
 
     return getDefaultException(error);
   }
 
   private WingsException getDefaultException(String error) {
-    return new WingsException(error, EnumSet.of(WingsException.ReportTarget.UNIVERSAL));
+    return new WingsException(error, WingsException.USER);
   }
 
   private boolean isInstanceHealthinessError(JsonNode jsonNode) {
