@@ -2818,3 +2818,4 @@ b2976fdd7b10a71a7d81bdc915e725ea9d862b83:332-ci-manager/service/src/test/java/io
 7fc3e462d33e2efc2f9ee0e848839d42940a3f2c:idp-service/config/config.yml:generic-api-key:123
 9559f75ee24a6a5091de57f642f34d9566f370f5:idp-service/config/config.yml:generic-api-key:126
 83ab703b87abcc657a1e84a08b9104b53ca3281c:idp-service/config/config.yml:generic-api-key:246
+2d47b9ee972946040d565323b2886e04aa93f916:platform-service/chart/templates/config.yaml:generic-api-key:30
