@@ -7,7 +7,7 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://api.github.com/graphql",
+      "url": "https://{API_BASE_URL}/graphql",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "{BEARER_AUTH}"
@@ -30,7 +30,7 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://api.github.com/graphql",
+      "url": "https://{API_BASE_URL}/graphql",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "{BEARER_AUTH}"
@@ -46,7 +46,7 @@
     "type": "DirectHttp",
     "apiRequestDetails": {
       "method": "POST",
-      "url": "https://api.github.com/graphql",
+      "url": "https://{API_BASE_URL}/graphql",
       "headers": {
         "Content-Type": "application/json",
         "Authorization": "{BEARER_AUTH}"

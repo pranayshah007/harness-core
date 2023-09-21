@@ -39,7 +39,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
@@ -107,7 +107,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
                          .identifier(PIPELINE_IDENTIFIER)
                          .name(PIPELINE_IDENTIFIER)
                          .yaml(yaml)
-                         .harnessVersion(PipelineVersion.V0)
+                         .harnessVersion(HarnessYamlVersion.V0)
                          .stageCount(1)
                          .stageName("qaStage")
                          .version(null)
@@ -129,7 +129,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelperMocked)
-        .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineEntity, HarnessYamlVersion.V0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelperMocked)
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean(), anyBoolean());
@@ -172,7 +172,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelperMocked)
-        .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineEntity, HarnessYamlVersion.V0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelperMocked)
         .resolveTemplatesAndValidatePipeline(any(), anyBoolean(), anyBoolean());

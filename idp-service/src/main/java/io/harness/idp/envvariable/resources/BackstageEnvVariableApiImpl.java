@@ -126,6 +126,12 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   }
 
   @Override
+  public Response reloadBackstageEnvVariables(String namespace, String harnessAccount) {
+    backstageEnvVariableService.reloadSecrets(harnessAccount, namespace);
+    return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  @Override
   public Response resolveBackstageEnvVariables(String harnessAccount, String namespace) {
     ResolvedEnvVariableResponse resolvedEnvVariableResponse =
         backstageEnvVariableService.resolveSecrets(harnessAccount, namespace);

@@ -178,6 +178,24 @@ paths:
         - $ref: '#/components/parameters/Namespace'
       security:
         - x-api-key: []
+  '/v1/backstage-env-variables/reload/{namespace}':
+    put:
+      summary: Reload backstage env variables
+      operationId: reload-backstage-env-variables
+      responses:
+        '204':
+          description: No Content
+      x-stoplight:
+        id: ct454yf4n2qb9
+      description: Reload backstage env variables
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - BackstageEnvVariable
+    parameters:
+      - $ref: '#/components/parameters/NamespacePathParam'
   /v1/backstage-permissions:
     get:
       summary: Get Backstage Permissions
@@ -3305,6 +3323,13 @@ components:
       schema:
         type: string
       description: This is used to filter backstage catalog entity facets by kind
+    NamespacePathParam:
+      name: namespace
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Namespace from where the request is being made
   requestBodies:
     BackstageEnvVariableRequest:
       content:

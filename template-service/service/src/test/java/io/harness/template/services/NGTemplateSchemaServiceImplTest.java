@@ -39,6 +39,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pipeline.yamlschema.PipelineYamlSchemaServiceClient;
 import io.harness.pms.yaml.YamlSchemaResponse;
+import io.harness.pms.yaml.individualschema.TemplateSchemaParserFactory;
 import io.harness.pms.yaml.individualschema.TemplateSchemaParserV0;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
@@ -90,6 +91,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
   @Mock TemplateSchemaFetcher templateSchemaFetcher;
 
   @Mock TemplateSchemaParserV0 templateSchemaParserV0;
+  @Mock TemplateSchemaParserFactory templateSchemaParserFactory;
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -413,6 +415,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testValidateWithIndividualStaticSchema() throws Exception {
+    when(templateSchemaParserFactory.getTemplateSchemaParser("v0")).thenReturn(templateSchemaParserV0);
     when(yamlSchemaValidator.validate(anyString(), anyString(), anyBoolean(), anyInt(), anyString()))
         .thenReturn(Collections.emptySet());
     TemplateEntity templateEntity = TemplateEntity.builder()
@@ -445,6 +448,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testGetStaticSchemaForAllEntities() {
+    when(templateSchemaParserFactory.getTemplateSchemaParser("v0")).thenReturn(templateSchemaParserV0);
     when(templateSchemaParserV0.getIndividualSchema(any()))
         .thenReturn((ObjectNode) readJsonFile("template-schema.json"));
     ObjectNode schema = ngTemplateSchemaService.getIndividualStaticSchema("stage", "Deployment", "v0");

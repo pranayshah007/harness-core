@@ -90,7 +90,7 @@ public class MorphiaPersistenceWrapper implements PersistenceWrapper {
     try (HIterator<NotifyResponse> notifyResponses = new HIterator(query.fetch())) {
       for (NotifyResponse notifyResponse : notifyResponses) {
         if (notifyResponse.isError()) {
-          log.info("Failed notification response {}", notifyResponse.getUuid());
+          log.debug("Failed notification response {}", notifyResponse.getUuid());
           isError = true;
         }
         if (notifyResponse.getResponseData() != null) {

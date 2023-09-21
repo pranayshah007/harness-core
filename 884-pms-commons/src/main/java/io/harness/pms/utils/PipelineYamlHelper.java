@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidYamlException;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -27,12 +27,12 @@ public class PipelineYamlHelper {
   private static final String VERSION_FIELD_NAME = "version";
 
   public String getVersion(String yaml, boolean yamlSimplification) {
-    return yamlSimplification ? getVersion(yaml) : PipelineVersion.V0;
+    return yamlSimplification ? getVersion(yaml) : HarnessYamlVersion.V0;
   }
 
   public String getVersion(String yaml) {
     if (isEmpty(yaml)) {
-      return PipelineVersion.V0;
+      return HarnessYamlVersion.V0;
     }
     String version;
     try {
@@ -43,6 +43,6 @@ public class PipelineYamlHelper {
       throw new InvalidYamlException(
           String.format("Invalid yaml passed. Error due to - %s", ioException.getMessage()), ioException);
     }
-    return isEmpty(version) ? PipelineVersion.V0 : version;
+    return isEmpty(version) ? HarnessYamlVersion.V0 : version;
   }
 }

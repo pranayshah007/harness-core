@@ -40,4 +40,6 @@ public class EcsTaskArnBlueGreenCreateServiceRequest
   @NonFinal @Expression(ALLOW_SECRETS) String ecsServiceDefinitionManifestContent;
   String targetGroupArnKey;
   @NonFinal @Expression(ALLOW_SECRETS) List<String> ecsScalableTargetManifestContentList;
+  @NonFinal @Expression(ALLOW_SECRETS) boolean sameAsAlreadyRunningInstances;
+  boolean removeAutoScalingFromBlueService;
 }

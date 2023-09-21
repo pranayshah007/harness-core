@@ -75,6 +75,7 @@ public class AwsCdkSynthStepTest extends CategoryTest {
   @Mock ContainerPortHelper containerPortHelper;
   @Mock Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock AwsCdkHelper awsCdkStepHelper;
 
   @Mock PluginUtils pluginUtils;
   @InjectMocks AwsCdkSynthStep awsCdkSynthStep;

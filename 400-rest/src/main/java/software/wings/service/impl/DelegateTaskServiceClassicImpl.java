@@ -623,7 +623,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         saveDelegateTask(task, task.getAccountId());
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
         // delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
-        log.info("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
+        log.debug("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {
@@ -699,7 +699,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         saveDelegateTask(task, task.getAccountId());
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
         delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
-        log.info("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
+        log.debug("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {

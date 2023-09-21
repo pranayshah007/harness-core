@@ -721,34 +721,6 @@ public class NGVaultServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
-  public void testRenewAppRoleClientToken_willUpdateCorrespondingPPT() throws IOException {
-    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildAppRoleVaultConnector());
-    vaultConnectorDTO.setRenewAppRoleToken(true);
-    VaultConnector vaultConnector = vaultDTOToEntity.toConnectorEntity(vaultConnectorDTO);
-    VaultConfigDTO vaultConfigDTO = (VaultConfigDTO) getVaultConfigDTOWithAppRoleAuth();
-    vaultConfigDTO.setEncryptionType(VAULT);
-    Call<RestResponse<Boolean>> request = mock(Call.class);
-    doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
-    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
-    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
-        .thenReturn(vaultConfigDTO);
-    when(delegateService.executeSyncTaskV2(any()))
-        .thenReturn(
-            NGVaultRenewalAppRoleTaskResponse.builder()
-                .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
-                .build());
-    when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
-    when(connectorRepository.save(vaultConnector, ChangeType.NONE)).thenReturn(vaultConnector);
-    ngVaultService.renewAppRoleClientToken(vaultConnector);
-    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
-    verify(ngConnectorSecretManagerService, times(1)).getPerpetualTaskId(any(), any(), any(), argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue()).isEqualTo(vaultConnector.getIdentifier());
-    verify(ngConnectorSecretManagerService, times(1)).resetHeartBeatTask(any(), any());
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
   public void testRenewVaultToken_willUpdateCorrespondingPPT() throws IOException {
     VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildTokenBasedConnector());
     vaultConnectorDTO.setRenewAppRoleToken(true);

@@ -130,7 +130,8 @@ public class EcsDeploymentHelper {
       EcsCommandRequest ecsCommandRequest, List<String> ecsScalableTargetManifestContentList,
       List<String> ecsScalingPolicyManifestContentList, String ecsTaskDefinitionManifestContent,
       String ecsServiceDefinitionManifestContent, String ecsTaskDefinitionArn,
-      EcsLoadBalancerConfig ecsLoadBalancerConfig, String targetGroupArnKey) {
+      EcsLoadBalancerConfig ecsLoadBalancerConfig, String targetGroupArnKey, boolean isSameAsAlreadyRunningInstances,
+      boolean removeAutoScalingFromBlueService) {
     EcsInfraConfig ecsInfraConfig = ecsCommandRequest.getEcsInfraConfig();
     long timeoutInMillis = ecsCommandRequest.getTimeoutIntervalInMin() * TIMEOUT_MULTIPLIER_IN_SECONDS;
     deployLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
@@ -151,7 +152,8 @@ public class EcsDeploymentHelper {
 
     String serviceName = ecsCommandTaskHelper.createStageService(ecsServiceDefinitionManifestContent,
         ecsScalableTargetManifestContentList, ecsScalingPolicyManifestContentList, ecsInfraConfig, deployLogCallback,
-        timeoutInMillis, targetGroupArnKey, finalEcsTaskDefinitionArn, targetGroupArn);
+        timeoutInMillis, targetGroupArnKey, finalEcsTaskDefinitionArn, targetGroupArn, isSameAsAlreadyRunningInstances,
+        removeAutoScalingFromBlueService);
 
     EcsBlueGreenCreateServiceResult ecsBlueGreenCreateServiceResult =
         EcsBlueGreenCreateServiceResult.builder()

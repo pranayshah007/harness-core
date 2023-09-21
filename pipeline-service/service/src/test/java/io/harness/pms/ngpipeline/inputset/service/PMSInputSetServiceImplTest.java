@@ -69,7 +69,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.repositories.inputset.PMSInputSetRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
@@ -209,7 +209,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                            .projectIdentifier(PROJ_IDENTIFIER)
                            .pipelineIdentifier(PIPELINE_IDENTIFIER)
                            .storeType(StoreType.INLINE)
-                           .harnessVersion(PipelineVersion.V1)
+                           .harnessVersion(HarnessYamlVersion.V1)
                            .build();
 
     String pipelineYamlFileName = "failure-strategy.yaml";
@@ -436,7 +436,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     String name = "this name";
     String description = "this has a description too";
     String pipelineIdentifier = "Test_Pipline11";
-    when(inputSetsApiUtils.inputSetVersion(ACCOUNT_ID, YAML)).thenReturn(PipelineVersion.V0);
+    when(inputSetsApiUtils.inputSetVersion(ACCOUNT_ID, YAML)).thenReturn(HarnessYamlVersion.V0);
     doReturn(YAML).when(gitAwareEntityHelper).fetchYAMLFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, true);
     InputSetEntity inBetweenEntity = PMSInputSetElementMapper.toInputSetEntity(ACCOUNT_ID, YAML);
     InputSetImportRequestDTO inputSetImportRequest =
@@ -847,7 +847,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     InputSetEntity inputSetEntity = pmsInputSetServiceMock.create(inputSetEntityV1, false);
     assertThat(inputSetEntity).isNotNull();
     assertThat(inputSetEntityV1.getYaml()).isEqualTo(YAMLV1);
-    assertThat(inputSetEntityV1.getHarnessVersion()).isEqualTo(PipelineVersion.V1);
+    assertThat(inputSetEntityV1.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V1);
     mockSettings.close();
   }
 
@@ -860,7 +860,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     InputSetEntity inputSetEntity = pmsInputSetServiceMock.update(ChangeType.MODIFY, inputSetEntityV1, false);
     assertThat(inputSetEntity).isNotNull();
     assertThat(inputSetEntityV1.getYaml()).isEqualTo(YAMLV1);
-    assertThat(inputSetEntityV1.getHarnessVersion()).isEqualTo(PipelineVersion.V1);
+    assertThat(inputSetEntityV1.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V1);
   }
 
   @Test
@@ -877,7 +877,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     assertThat(optionalInputSetEntity.isPresent()).isTrue();
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
     assertThat(inputSetEntity.getYaml()).isEqualTo(YAMLV1);
-    assertThat(inputSetEntity.getHarnessVersion()).isEqualTo(PipelineVersion.V1);
+    assertThat(inputSetEntity.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V1);
   }
 
   @Test
@@ -900,7 +900,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     String identifier = "set1";
     String name = "set1";
     String description = "this has a description too";
-    when(inputSetsApiUtils.inputSetVersion(ACCOUNT_ID, YAMLV1)).thenReturn(PipelineVersion.V1);
+    when(inputSetsApiUtils.inputSetVersion(ACCOUNT_ID, YAMLV1)).thenReturn(HarnessYamlVersion.V1);
     doReturn(YAMLV1).when(gitAwareEntityHelper).fetchYAMLFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, true);
     InputSetEntity inBetweenEntity = PMSInputSetElementMapper.toInputSetEntityV1(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, YAMLV1, InputSetEntityType.INPUT_SET);

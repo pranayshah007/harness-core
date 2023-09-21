@@ -220,7 +220,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
 
   @VisibleForTesting
   void addResolvedStepInputs(String planExecutionId, String nodeExecutionId, PmsStepParameters resolvedStepInputs) {
-    pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, resolvedStepInputs);
+    pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, resolvedStepInputs, planExecutionId);
     log.info("Added Resolved step Inputs");
   }
 

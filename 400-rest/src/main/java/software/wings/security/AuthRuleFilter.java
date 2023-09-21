@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.NOT_WHITELISTED_IP;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.security.AuthenticationFilter.API_KEY_HEADER;
+import static software.wings.utils.JerseyFilterUtils.isNextGenManagerRequest;
 
 import static java.util.Arrays.asList;
 import static javax.ws.rs.HttpMethod.OPTIONS;
@@ -33,11 +34,9 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.security.annotations.DelegateAuth;
 import io.harness.security.annotations.HarnessApiKeyAuth;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.LearningEngineAuth;
-import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.security.annotations.PublicApiWithWhitelist;
 import io.harness.security.annotations.ScimAPI;
@@ -69,8 +68,8 @@ import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.HarnessUserGroupService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.WhitelistService;
+import software.wings.utils.JerseyFilterUtils;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.lang.reflect.Method;
@@ -241,8 +240,8 @@ public class AuthRuleFilter implements ContainerRequestFilter {
     }
 
     if (isDelegateRequest(requestContext) || isLearningEngineServiceRequest(requestContext)
-        || isIdentityServiceRequest(requestContext) || isAdminPortalRequest(requestContext) || isNextGenManagerRequest()
-        || isInternalAPI()) {
+        || isIdentityServiceRequest(requestContext) || isAdminPortalRequest(requestContext)
+        || isNextGenManagerRequest(resourceInfo) || isInternalAPI()) {
       return;
     }
 
@@ -600,7 +599,7 @@ public class AuthRuleFilter implements ContainerRequestFilter {
   }
 
   private boolean isDelegateRequest(ContainerRequestContext requestContext) {
-    return delegateAPI() && startsWith(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate ");
+    return JerseyFilterUtils.isDelegateRequest(requestContext, resourceInfo);
   }
 
   private boolean isLearningEngineServiceRequest(ContainerRequestContext requestContext) {
@@ -618,11 +617,6 @@ public class AuthRuleFilter implements ContainerRequestFilter {
     return adminPortalAPI()
         && startsWith(
             requestContext.getHeaderString(HttpHeaders.AUTHORIZATION), AuthenticationFilter.ADMIN_PORTAL_PREFIX);
-  }
-
-  @VisibleForTesting
-  boolean isNextGenManagerRequest() {
-    return isNextGenManagerAPI();
   }
 
   private boolean authorizationExemptedRequest(ContainerRequestContext requestContext) {
@@ -657,13 +651,6 @@ public class AuthRuleFilter implements ContainerRequestFilter {
         || resourceClass.getAnnotation(AdminPortalAuth.class) != null;
   }
 
-  private boolean isNextGenManagerAPI() {
-    Class<?> resourceClass = resourceInfo.getResourceClass();
-    Method resourceMethod = resourceInfo.getResourceMethod();
-    return resourceMethod.getAnnotation(NextGenManagerAuth.class) != null
-        || resourceClass.getAnnotation(NextGenManagerAuth.class) != null;
-  }
-
   private boolean publicAPI() {
     Class<?> resourceClass = resourceInfo.getResourceClass();
     Method resourceMethod = resourceInfo.getResourceMethod();
@@ -694,16 +681,6 @@ public class AuthRuleFilter implements ContainerRequestFilter {
 
     return resourceMethod.getAnnotation(ApiKeyAuthorized.class) != null
         || resourceClass.getAnnotation(ApiKeyAuthorized.class) != null;
-  }
-
-  private boolean delegateAPI() {
-    Class<?> resourceClass = resourceInfo.getResourceClass();
-    Method resourceMethod = resourceInfo.getResourceMethod();
-
-    return resourceMethod.getAnnotation(DelegateAuth.class) != null
-        || resourceClass.getAnnotation(DelegateAuth.class) != null
-        || resourceMethod.getAnnotation(io.harness.security.annotations.DelegateAuth2.class) != null
-        || resourceClass.getAnnotation(io.harness.security.annotations.DelegateAuth2.class) != null;
   }
 
   private boolean learningEngineServiceAPI() {

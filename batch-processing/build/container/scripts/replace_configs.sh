@@ -92,6 +92,10 @@ if [[ "" != "$BILLING_DATA_QUERY_BATCH_SIZE" ]]; then
   export BILLING_DATA_QUERY_BATCH_SIZE; yq -i '.batchQueryConfig.billingDataQueryBatchSize=env(BILLING_DATA_QUERY_BATCH_SIZE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DISABLE_BATCH_JOBS_IN_CG" ]]; then
+  export DISABLE_BATCH_JOBS_IN_CG; yq -i '.batchQueryConfig.disableBatchJobsInCG=env(DISABLE_BATCH_JOBS_IN_CG)' $CONFIG_FILE
+fi
+
 if [[ "" != "$BULK_OPERATION_QUERY_BATCH_SIZE" ]]; then
   export BULK_OPERATION_QUERY_BATCH_SIZE; yq -i '.bulkOperationBatchQueryConfig.queryBatchSize=env(BULK_OPERATION_QUERY_BATCH_SIZE)' $CONFIG_FILE
 fi

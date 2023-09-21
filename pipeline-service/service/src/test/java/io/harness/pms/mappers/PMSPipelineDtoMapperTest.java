@@ -56,7 +56,7 @@ import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 
 import java.time.LocalDate;
@@ -764,6 +764,6 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineEntity.getAccountIdentifier()).isEqualTo(accountId);
     assertThat(pipelineEntity.getOrgIdentifier()).isEqualTo(orgId);
     assertThat(pipelineEntity.getProjectIdentifier()).isEqualTo(projectId);
-    assertThat(pipelineEntity.getHarnessVersion()).isEqualTo(PipelineVersion.V1);
+    assertThat(pipelineEntity.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V1);
   }
 }

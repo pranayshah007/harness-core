@@ -3924,6 +3924,28 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "OutputAlias": {
+      "type": "object",
+      "required": [
+        "key",
+        "scope"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "Pipeline",
+            "Stage",
+            "StepGroup"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "OutputNGVariable": {
       "type": "object",
       "properties": {
@@ -7025,6 +7047,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "outputAlias": {
+              "$ref": "#/definitions/OutputAlias"
             },
             "outputVariables": {
               "type": "array",

@@ -19,7 +19,6 @@ import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.helper.CustomSecretManagerHelper;
@@ -130,9 +129,7 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
               }
             } else {
               VaultConfig vaultConfig = (VaultConfig) encryptionConfig;
-              if (APP_ROLE.equals(vaultConfig.getAccessType())
-                  && (ngFeatureFlagHelperService.isEnabled(
-                      accountIdentifier, FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
+              if (APP_ROLE.equals(vaultConfig.getAccessType())) {
                 vaultConfig.setRenewAppRoleToken(false);
               }
               if (!vaultConfig.isReadOnly()) {

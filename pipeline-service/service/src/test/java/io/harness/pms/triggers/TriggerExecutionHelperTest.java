@@ -93,7 +93,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.ExecutionHelper;
 import io.harness.pms.plan.execution.beans.ExecArgs;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
@@ -190,7 +190,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                            .identifier(pipelineId)
                            .yaml(simplifiedYaml)
                            .runSequence(394)
-                           .harnessVersion(PipelineVersion.V1)
+                           .harnessVersion(HarnessYamlVersion.V1)
                            .build();
   }
 
@@ -679,7 +679,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     String triggerYaml = readFile("trigger-without-inputs.yml");
     NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);
@@ -717,7 +717,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     String triggerYaml = readFile("trigger-without-inputs.yml");
     NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);
@@ -753,7 +753,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     String triggerYaml = readFile("trigger-without-inputs.yml");
     NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);
@@ -796,7 +796,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     String triggerYaml = readFile("trigger-without-inputs.yml");
     NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);

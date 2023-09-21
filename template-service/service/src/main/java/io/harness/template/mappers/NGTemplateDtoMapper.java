@@ -469,6 +469,44 @@ public class NGTemplateDtoMapper {
         .build();
   }
 
+  public GlobalTemplateEntity toGlobalTemplateEntity(
+      String accountId, String templateYaml, String readMe, String filePath) {
+    try {
+      NGTemplateConfig templateConfig = getTemplateConfigOrThrow(templateYaml);
+      return toGlobalTemplateEntityResponse(accountId, templateConfig, templateYaml, readMe, filePath);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
+    }
+  }
+
+  public GlobalTemplateEntity toGlobalTemplateEntityResponse(
+      String accountId, NGTemplateConfig templateConfig, String yaml, String readMe, String filePath) {
+    validateTemplateYaml(templateConfig, null, null);
+    NGTemplateReference templateReference = NGTemplateReference.builder()
+                                                .accountIdentifier(accountId)
+                                                .identifier(templateConfig.getTemplateInfoConfig().getIdentifier())
+                                                .versionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel())
+                                                .build();
+    String description = (String) templateConfig.getTemplateInfoConfig().getDescription().fetchFinalValue();
+    description = description == null ? "" : description;
+    return GlobalTemplateEntity.builder()
+        .yaml(yaml)
+        .identifier(templateConfig.getTemplateInfoConfig().getIdentifier())
+        .versionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel())
+        .accountId(accountId)
+        .name(templateConfig.getTemplateInfoConfig().getName())
+        .description(description)
+        .tags(TagMapper.convertToList(templateConfig.getTemplateInfoConfig().getTags()))
+        .icon(templateConfig.getTemplateInfoConfig().getIcon())
+        .templateEntityType(templateConfig.getTemplateInfoConfig().getType())
+        .templateScope(getScopeFromTemplateDto(templateConfig.getTemplateInfoConfig()))
+        .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
+        .childType(templateConfig.getTemplateInfoConfig().fetchChildType())
+        .readMe(readMe)
+        .filePath(filePath)
+        .build();
+  }
+
   public EntityGitDetails getEntityGitDetails(GlobalTemplateEntity globalTemplateEntity) {
     return globalTemplateEntity.getStoreType() == null
         ? EntityGitDetailsMapper.mapEntityGitDetails(globalTemplateEntity)

@@ -74,8 +74,8 @@ import io.harness.ssca.execution.provenance.ProvenanceStepGenerator;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
 import io.harness.yaml.core.failurestrategy.OnFailureConfig;
-import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.OnRetryFailureConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig;
@@ -189,20 +189,21 @@ public class CIStepGroupUtils {
         && featureFlagService.isEnabled(CI_DLITE_DISTRIBUTED, accountId)) {
       failureStrategy = ParameterField.createValueField(List.of(
           FailureStrategyConfig.builder()
-              .onFailure(OnFailureConfig.builder()
-                             .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
-                             .action(RetryFailureActionConfig.builder()
-                                         .specConfig(
-                                             RetryFailureSpecConfig.builder()
-                                                 .retryCount(ParameterField.createValueField(INITIALISE_RETRY_COUNT))
-                                                 .retryIntervals(ParameterField.createValueField(
-                                                     List.of(Timeout.fromString(INITIALISE_RETRY_WAITTIME))))
-                                                 .onRetryFailure(OnRetryFailureConfig.builder()
-                                                                     .action(AbortFailureActionConfig.builder().build())
-                                                                     .build())
-                                                 .build())
-                                         .build())
-                             .build())
+              .onFailure(
+                  OnFailureConfig.builder()
+                      .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
+                      .action(RetryFailureActionConfig.builder()
+                                  .specConfig(
+                                      RetryFailureSpecConfig.builder()
+                                          .retryCount(ParameterField.createValueField(INITIALISE_RETRY_COUNT))
+                                          .retryIntervals(ParameterField.createValueField(
+                                              List.of(Timeout.fromString(INITIALISE_RETRY_WAITTIME))))
+                                          .onRetryFailure(OnRetryFailureConfig.builder()
+                                                              .action(MarkAsFailFailureActionConfig.builder().build())
+                                                              .build())
+                                          .build())
+                                  .build())
+                      .build())
               .build()));
     }
 

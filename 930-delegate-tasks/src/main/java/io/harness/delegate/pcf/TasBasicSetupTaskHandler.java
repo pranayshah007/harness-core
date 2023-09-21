@@ -221,6 +221,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
 
       return CfBasicSetupResponseNG.builder()
           .currentProdInfo(currentProdInfo)
+          .newApplicationInfo(currentProdInfo)
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(ExceptionUtils.getMessage(sanitizedException))
           .build();

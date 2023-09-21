@@ -46,6 +46,7 @@ batchQueryConfig:
   billingDataQueryBatchSize: 4000
   instanceDataBatchSize: 5000
   syncJobDisabled: false
+  disableBatchJobsInCG: true
 
 bulkOperationBatchQueryConfig:
   queryBatchSize: 400

@@ -34,6 +34,7 @@ import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.repositories.DataPointsRepository;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProvider;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProviderFactory;
+import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.idp.scorecard.scorecardchecks.beans.ScorecardAndChecks;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecardchecks.entity.ScorecardEntity;
@@ -97,6 +98,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
   @Mock ScoreRepository scoreRepository;
   @Mock DataPointsRepository datapointRepository;
   @Mock DataSourceProvider dataSourceProvider;
+  @Mock ConfigReader configReader;
   @InjectMocks ScoreComputerServiceImpl scoreComputerService;
   private Call<Object> call;
   AutoCloseable openMocks;
@@ -130,11 +132,12 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
         .thenReturn(List.of(scorecardAndChecks1, scorecardAndChecks2));
     when(call.execute()).thenReturn(response);
     when(backstageResourceClient.getCatalogEntities(anyString())).thenReturn(call);
+    when(configReader.fetchAllConfigs(ACCOUNT_ID)).thenReturn(null);
     when(executorService.submit(runnableCaptor.capture())).then(executeRunnable(runnableCaptor));
     when(datapointRepository.findByIdentifierIn(Set.of(DATA_POINT_IDENTIFIER1, DATA_POINT_IDENTIFIER2)))
         .thenReturn(List.of(datapoint1, datapoint2));
     when(dataSourceProviderFactory.getProvider(DATA_SOURCE_IDENTIFIER)).thenReturn(dataSourceProvider);
-    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyMap()))
+    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyMap(), any()))
         .thenReturn(data1)
         .thenReturn(data2);
 
@@ -205,11 +208,12 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
         .thenReturn(Collections.singletonList(scorecardAndChecks));
     when(call.execute()).thenReturn(response);
     when(backstageResourceClient.getCatalogEntities(anyString())).thenReturn(call);
+    when(configReader.fetchAllConfigs(ACCOUNT_ID)).thenReturn(null);
     when(executorService.submit(runnableCaptor.capture())).then(executeRunnable(runnableCaptor));
     when(datapointRepository.findByIdentifierIn(Set.of(DATA_POINT_IDENTIFIER1, DATA_POINT_IDENTIFIER2)))
         .thenReturn(List.of(datapoint1, datapoint2));
     when(dataSourceProviderFactory.getProvider(DATA_SOURCE_IDENTIFIER)).thenReturn(dataSourceProvider);
-    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyMap()))
+    when(dataSourceProvider.fetchData(eq(ACCOUNT_ID), any(BackstageCatalogComponentEntity.class), anyMap(), any()))
         .thenReturn(data);
 
     scoreComputerService.computeScores(ACCOUNT_ID, scorecardIdentifiers, entityIdentifiers);

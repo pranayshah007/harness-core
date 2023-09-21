@@ -40,7 +40,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.yaml.core.NGLabel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -330,7 +330,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   public String getPipelineVersion() {
     if (null == pipelineVersion || pipelineVersion.equals("0")) {
-      return PipelineVersion.V0;
+      return HarnessYamlVersion.V0;
     }
     return pipelineVersion;
   }

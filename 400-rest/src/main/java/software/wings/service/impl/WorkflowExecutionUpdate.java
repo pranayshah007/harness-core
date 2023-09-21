@@ -867,11 +867,11 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
 
     // TODO: this is temporary. this should be part of its own callback and with more precise filter
     try {
-      log.info("Update Active Resource constraints");
+      log.debug("Update Active Resource constraints");
       final Set<String> constraintIds =
           resourceConstraintService.updateActiveConstraints(context.getAppId(), workflowExecutionId);
 
-      log.info("Update Blocked Resource constraints");
+      log.debug("Update Blocked Resource constraints");
       if (featureFlagService.isEnabled(
               FeatureName.CDS_RESOURCE_CONSTRAINT_INSTANCE_OPTIMIZATION, context.getAccountId())) {
         resourceConstraintService.updateBlockedConstraintsV2(constraintIds, false);

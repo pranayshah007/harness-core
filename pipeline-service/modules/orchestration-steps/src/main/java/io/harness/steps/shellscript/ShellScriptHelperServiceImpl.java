@@ -16,6 +16,7 @@ import static io.harness.steps.shellscript.ShellScriptBaseSource.INLINE;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -93,6 +94,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   static final String FILE_STORE_SCRIPT_ERROR_MSG = "Script from Harness File Store cannot be empty, file: %s";
+  static final String NULL_STRING = "null";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretManagerClient;
@@ -337,12 +339,26 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
     ParameterField<String> workingDirectory = (shellScriptStepParameters.getExecutionTarget() != null)
         ? shellScriptStepParameters.getExecutionTarget().getWorkingDirectory()
         : ParameterField.ofNull();
-
+    validateExportVariables(shellScriptStepParameters.getOutputAlias());
     if (ScriptType.BASH.equals(scriptType)) {
       return buildBashTaskParametersNG(ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory);
     } else {
       return getWinRmTaskParametersNG(
           ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory, sessionTimeout);
+    }
+  }
+
+  private void validateExportVariables(OutputAlias exportVariables) {
+    if (isNull(exportVariables)) {
+      return;
+    }
+
+    ParameterField<String> alias = exportVariables.getKey();
+    if (ParameterField.isBlank(alias)) {
+      throw new InvalidRequestException("Empty value for key is not allowed in output alias configuration");
+    }
+    if (NULL_STRING.equals(alias.fetchFinalValue())) {
+      throw new InvalidRequestException("Expression provided for key in output alias configuration was not resolved");
     }
   }
 

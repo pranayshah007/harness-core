@@ -40,4 +40,6 @@ public class EcsBlueGreenCreateServiceRequest
   @Expression(ALLOW_SECRETS) List<String> ecsScalingPolicyManifestContentList;
   @NonFinal @Expression(ALLOW_SECRETS) EcsLoadBalancerConfig ecsLoadBalancerConfig;
   String targetGroupArnKey;
+  @NonFinal @Expression(ALLOW_SECRETS) boolean sameAsAlreadyRunningInstances;
+  boolean removeAutoScalingFromBlueService;
 }

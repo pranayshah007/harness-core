@@ -90,7 +90,7 @@ import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.PipelineYamlHelper;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -230,7 +230,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
                          .name(PIPELINE_IDENTIFIER)
                          .yaml(yaml)
                          .storeType(StoreType.INLINE)
-                         .harnessVersion(PipelineVersion.V0)
+                         .harnessVersion(HarnessYamlVersion.V0)
                          .stageCount(1)
                          .stageName("qaStage")
                          .version(null)
@@ -249,7 +249,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
                                .uuid("validationUUID")
                                .branch("branchName")
                                .storeType(StoreType.REMOTE)
-                               .harnessVersion(PipelineVersion.V0)
+                               .harnessVersion(HarnessYamlVersion.V0)
                                .stageCount(1)
                                .stageName("qaStage")
                                .version(null)
@@ -268,7 +268,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
                           .name(PIPELINE_IDENTIFIER)
                           .yaml(yaml)
                           .storeType(StoreType.REMOTE)
-                          .harnessVersion(PipelineVersion.V0)
+                          .harnessVersion(HarnessYamlVersion.V0)
                           .stageCount(1)
                           .stageName("qaStage")
                           .version(null)
@@ -423,7 +423,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
-        .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineEntity, HarnessYamlVersion.V0);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
@@ -441,14 +441,14 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
-        .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineEntity, HarnessYamlVersion.V0);
     assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
         .isInstanceOf(InvalidRequestException.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
     pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
   }
 
@@ -927,7 +927,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
     doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity, false);
     doReturn(PIPELINE_YAML).when(pipelineCloneHelper).updatePipelineMetadataInSourceYaml(any(), any(), any());
     doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
@@ -966,7 +966,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   public void testUpdateDraft() throws IOException {
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     pipelineEntity.setIsDraft(true);
-    doReturn(pipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+    doReturn(pipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
     pmsPipelineRepository.save(pipelineEntity);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
@@ -985,14 +985,14 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
-        .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineEntity, HarnessYamlVersion.V0);
     assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
         .isInstanceOf(InvalidRequestException.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
-    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
+    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
     pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
   }
 
@@ -1064,7 +1064,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testClonePipelineV1() throws IOException {
     ClonePipelineDTO clonePipelineDTO = buildCloneDTO();
-    pipelineEntity.setHarnessVersion(PipelineVersion.V1);
+    pipelineEntity.setHarnessVersion(HarnessYamlVersion.V1);
 
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
@@ -1099,7 +1099,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
-        .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
+        .updatePipelineInfo(pipelineEntity, HarnessYamlVersion.V0);
     aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenThrow(InvalidRequestException.class);
     final Throwable ex = catchThrowable(() -> pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true));

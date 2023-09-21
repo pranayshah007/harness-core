@@ -240,9 +240,9 @@ public class ArtifactResourceUtils {
     }
   }
 
-  private CDYamlExpressionEvaluator getYamlExpressionEvaluator(String accountId, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String runtimeInputYaml, String fqnPath,
-      GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId) {
+  CDYamlExpressionEvaluator getYamlExpressionEvaluator(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String runtimeInputYaml, String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo,
+      String serviceId) {
     String mergedCompleteYaml = getMergedCompleteYaml(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
     if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
@@ -1040,13 +1040,13 @@ public class ArtifactResourceUtils {
     if (isEmpty(versionPath) || versionPath.equalsIgnoreCase("<+input>")) {
       throw new io.harness.exception.HintException("Version path can not be empty");
     }
+    ResolvedFieldValueWithYamlExpressionEvaluator resolvedFieldValueWithYamlExpressionEvaluator = null;
     if (isNotEmpty(customScriptInfo.getRuntimeInputYaml())) {
       script = getResolvedExpression(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
           customScriptInfo.getRuntimeInputYaml(), script, fqnPath, gitEntityBasicInfo, serviceRef, secretFunctor);
-      ResolvedFieldValueWithYamlExpressionEvaluator resolvedFieldValueWithYamlExpressionEvaluator =
-          getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
-              pipelineIdentifier, customScriptInfo.getRuntimeInputYaml(), arrayPath, fqnPath, gitEntityBasicInfo,
-              serviceRef, null);
+      resolvedFieldValueWithYamlExpressionEvaluator = getResolvedFieldValueWithYamlExpressionEvaluator(accountId,
+          orgIdentifier, projectIdentifier, pipelineIdentifier, customScriptInfo.getRuntimeInputYaml(), arrayPath,
+          fqnPath, gitEntityBasicInfo, serviceRef, null);
       arrayPath = resolvedFieldValueWithYamlExpressionEvaluator.getValue();
       resolvedFieldValueWithYamlExpressionEvaluator =
           getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
@@ -1054,9 +1054,19 @@ public class ArtifactResourceUtils {
               serviceRef, resolvedFieldValueWithYamlExpressionEvaluator.getYamlExpressionEvaluator());
       versionPath = resolvedFieldValueWithYamlExpressionEvaluator.getValue();
     }
-    return customResourceService.getBuilds(script, versionPath, arrayPath,
-        NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor,
-        delegateSelector);
+    Map<String, String> inputVariables = NGVariablesUtils.getStringMapVariables(inputs, 0L);
+
+    for (Map.Entry<String, String> entry : inputVariables.entrySet()) {
+      resolvedFieldValueWithYamlExpressionEvaluator = getResolvedFieldValueWithYamlExpressionEvaluator(accountId,
+          orgIdentifier, projectIdentifier, pipelineIdentifier, customScriptInfo.getRuntimeInputYaml(),
+          entry.getValue(), fqnPath, gitEntityBasicInfo, serviceRef,
+          resolvedFieldValueWithYamlExpressionEvaluator != null
+              ? resolvedFieldValueWithYamlExpressionEvaluator.getYamlExpressionEvaluator()
+              : null);
+      inputVariables.put(entry.getKey(), resolvedFieldValueWithYamlExpressionEvaluator.getValue());
+    }
+    return customResourceService.getBuilds(script, versionPath, arrayPath, inputVariables, accountId, orgIdentifier,
+        projectIdentifier, secretFunctor, delegateSelector);
   }
 
   public DockerBuildDetailsDTO getLastSuccessfulBuildV2Docker(String imagePath, String dockerConnectorIdentifier,

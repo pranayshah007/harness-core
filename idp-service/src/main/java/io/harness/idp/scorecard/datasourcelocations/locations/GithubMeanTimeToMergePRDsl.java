@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY_ESCAPED;
+import static io.harness.idp.common.Constants.MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
@@ -51,6 +52,7 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
       Map<String, String> possibleReplaceableUrlPairs) {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
+    apiRequestDetails.setUrl(replaceUrlsPlaceholdersIfAny(apiRequestDetails.getUrl(), possibleReplaceableUrlPairs));
     Map<String, Object> data = new HashMap<>();
 
     Optional<Map.Entry<DataPointEntity, Set<String>>> dataPointAndInputValuesOpt =
@@ -87,8 +89,11 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
       if (response.getStatus() == 200) {
         inputValueData.put(
             DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
-      } else {
+      } else if (response.getStatus() == 500) {
         inputValueData.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
+      } else {
+        inputValueData.put(DSL_RESPONSE,
+            GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
       }
       data.put(inputValue, inputValueData);
     }

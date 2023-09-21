@@ -49,7 +49,7 @@ public class PerpetualTaskRecordDao {
 
   public void appointDelegate(String taskId, String delegateId, long lastContextUpdated) {
     try (DelegateLogContext ignore = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      log.info("Appoint perpetual task: {}", taskId);
+      log.debug("Appoint perpetual task: {}", taskId);
       Query<PerpetualTaskRecord> query =
           persistence.createQuery(PerpetualTaskRecord.class).filter(PerpetualTaskRecordKeys.uuid, taskId);
       UpdateOperations<PerpetualTaskRecord> updateOperations =

@@ -27,7 +27,7 @@ public interface NodeExecutionInfoService {
   // TODO: Make this better this should be called from no where else
   void saveNodeExecutionInfo(String nodeExecutionId, String planExecutionId, StrategyMetadata metadata);
 
-  void addStepInputs(String nodeExecutionId, PmsStepParameters resolvedInputs);
+  void addStepInputs(String nodeExecutionId, PmsStepParameters resolvedInputs, String planExecutionId);
 
   PmsStepParameters getStepInputs(String planExecutionId, String nodeExecutionId);
 

@@ -9,6 +9,7 @@ package io.harness.idp.scorecard.datasources.providers;
 
 import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.GITHUB_TOKEN;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.API_BASE_URL;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.AUTHORIZATION_HEADER;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_BRANCH;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
@@ -25,10 +26,9 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,19 +40,23 @@ public class GithubProvider extends DataSourceProvider {
   private static final String SOURCE_LOCATION_ANNOTATION = "backstage.io/source-location";
   protected GithubProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
-      BackstageEnvVariableRepository backstageEnvVariableRepository, SecretManagerClientService ngSecretService) {
+      BackstageEnvVariableRepository backstageEnvVariableRepository, SecretManagerClientService ngSecretService,
+      ConfigReader configReader) {
     super(GITHUB_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
         dataPointParserFactory);
     this.backstageEnvVariableRepository = backstageEnvVariableRepository;
     this.ngSecretService = ngSecretService;
+    this.configReader = configReader;
   }
 
   final BackstageEnvVariableRepository backstageEnvVariableRepository;
   final SecretManagerClientService ngSecretService;
+  final ConfigReader configReader;
+  private static final String TARGET_URL_EXPRESSION_KEY = "appConfig.integrations.github.0.apiBaseUrl";
 
   @Override
-  public Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
+  public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
+      Map<String, Set<String>> dataPointsAndInputValues, String configs) {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, null);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
 
@@ -63,11 +67,11 @@ public class GithubProvider extends DataSourceProvider {
     }
 
     return processOut(accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders,
-        possibleReplaceableRequestBodyPairs, Collections.emptyMap());
+        possibleReplaceableRequestBodyPairs, prepareUrlReplaceablePairs(configs, accountIdentifier));
   }
 
   @Override
-  public Map<String, String> getAuthHeaders(String accountIdentifier, MergedPluginConfigs mergedPluginConfigs) {
+  public Map<String, String> getAuthHeaders(String accountIdentifier, String configs) {
     BackstageEnvSecretVariableEntity backstageEnvSecretVariableEntity =
         (BackstageEnvSecretVariableEntity) backstageEnvVariableRepository
             .findByEnvNameAndAccountIdentifier(GITHUB_TOKEN, accountIdentifier)
@@ -94,5 +98,10 @@ public class GithubProvider extends DataSourceProvider {
     }
 
     return possibleReplaceableRequestBodyPairs;
+  }
+
+  private Map<String, String> prepareUrlReplaceablePairs(String configs, String accountIdentifier) {
+    String apiBaseUrl = (String) configReader.getConfigValues(accountIdentifier, configs, TARGET_URL_EXPRESSION_KEY);
+    return Map.of(API_BASE_URL, apiBaseUrl);
   }
 }

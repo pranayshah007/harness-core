@@ -1492,7 +1492,7 @@ public class AuthHandler {
     if (environments != null) {
       Set<String> envIds = getEnvIdsByFilter(environments, envFilter);
       if (CollectionUtils.isEmpty(envIds)) {
-        log.info("No environments matched the filter for app {}. Returning empty set of deployments", appId);
+        log.debug("No environments matched the filter for app {}. Returning empty set of deployments", appId);
         return new HashSet<>();
       }
     }

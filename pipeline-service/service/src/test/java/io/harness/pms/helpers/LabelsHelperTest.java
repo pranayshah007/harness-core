@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.yaml.core.NGLabel;
@@ -36,7 +36,7 @@ public class LabelsHelperTest extends CategoryTest {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline-v1.yaml");
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
-    List<NGLabel> ngLabelList = LabelsHelper.getLabels(yamlContent, PipelineVersion.V1);
+    List<NGLabel> ngLabelList = LabelsHelper.getLabels(yamlContent, HarnessYamlVersion.V1);
     assertThat(ngLabelList.size()).isNotZero();
     assertThat(ngLabelList.equals(expectedNgLabelList)).isTrue();
   }
@@ -46,7 +46,7 @@ public class LabelsHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetLabelsV0Yaml() throws IOException {
     String yaml = "DUMMY";
-    List<NGLabel> ngLabelList = LabelsHelper.getLabels(yaml, PipelineVersion.V0);
+    List<NGLabel> ngLabelList = LabelsHelper.getLabels(yaml, HarnessYamlVersion.V0);
     assertThat(ngLabelList.size()).isZero();
   }
 }

@@ -5,11 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.core.artifacts.resources;
+package io.harness.ng.core.artifacts.resources.util;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VINICIUS;
@@ -20,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -27,6 +29,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -76,11 +79,11 @@ import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
+import io.harness.evaluators.CDYamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
-import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
-import io.harness.ng.core.artifacts.resources.util.ResolvedFieldValueWithYamlExpressionEvaluator;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -98,6 +101,8 @@ import io.harness.pms.yaml.YamlNodeUtils;
 import io.harness.rule.Owner;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
@@ -107,7 +112,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import junitparams.JUnitParamsRunner;
@@ -138,6 +145,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Mock ArtifactoryResourceService artifactoryResourceService;
   @Mock AccessControlClient accessControlClient;
   @Mock CustomResourceService customResourceService;
+  @Mock CDYamlExpressionEvaluator cdYamlExpressionEvaluator;
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
@@ -831,6 +839,79 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     List<BuildDetails> buildDetails = spyartifactResourceUtils.getCustomGetBuildDetails("path", "version",
         CustomScriptInfo.builder().build(), "test", "accountId", "orgId", "projectId", null, null, null);
     assertThat(buildDetails).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsV2CustomWithInputAsExpression() {
+    // spy for ArtifactResourceUtils
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    List<TaskSelectorYaml> delegateSelectorsValue = new ArrayList<>();
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("abc");
+    delegateSelectorsValue.add(taskSelectorYaml);
+
+    CustomArtifactConfig customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .version(ParameterField.createValueField("build-x"))
+            .delegateSelectors(ParameterField.<List<TaskSelectorYaml>>builder().value(delegateSelectorsValue).build())
+            .build();
+
+    List<NGVariable> inputs = new ArrayList<>();
+    inputs.add(StringNGVariable.builder()
+                   .name("var1")
+                   .value(ParameterField.<String>builder()
+                              .expressionValue("<+pipeline.variables.filename>")
+                              .expression(true)
+                              .value(null)
+                              .build())
+                   .build());
+    inputs.add(StringNGVariable.builder()
+                   .name("var2")
+                   .value(ParameterField.<String>builder().value("test").expression(false).build())
+                   .build());
+    inputs.add(StringNGVariable.builder()
+                   .name("var3")
+                   .value(ParameterField.<String>builder()
+                              .expressionValue("<+pipeline.variables.path>")
+                              .expression(true)
+                              .value(null)
+                              .build())
+                   .build());
+    Map<String, String> inputVariables = new HashMap<>();
+    inputVariables.put("var1", "<+pipeline.variables.filename>");
+    inputVariables.put("var2", "test");
+    inputVariables.put("var3", "<+pipeline.variables.path>");
+    Map<String, String> resolvedInputVariables = new HashMap<>();
+    resolvedInputVariables.put("var1", "json-payload");
+    resolvedInputVariables.put("var2", "test");
+    resolvedInputVariables.put("var3", "/Users/Desktop/json-payload");
+    doReturn(cdYamlExpressionEvaluator)
+        .when(spyartifactResourceUtils)
+        .getYamlExpressionEvaluator(
+            eq("accountId"), eq("orgId"), eq("projectId"), eq(null), eq(null), eq(null), eq(null), eq("test"));
+    when(cdYamlExpressionEvaluator.renderExpression(
+             "<+pipeline.variables.filename>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .thenReturn("json-payload");
+    when(cdYamlExpressionEvaluator.renderExpression(
+             "<+pipeline.variables.path>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .thenReturn("/Users/Desktop/json-payload");
+    doReturn(customArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any());
+    doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withArtifactPath("Test").build()))
+        .when(customResourceService)
+        .getBuilds(eq("cat $var1 > $HARNESS_ARTIFACT_RESULT_PATH"), eq("version"), eq("path"),
+            eq(resolvedInputVariables), eq("accountId"), eq("orgId"), eq("projectId"), anyInt(), eq(null));
+    List<BuildDetails> buildDetails = spyartifactResourceUtils.getCustomGetBuildDetails("path", "version",
+        CustomScriptInfo.builder().script("cat $var1 > $HARNESS_ARTIFACT_RESULT_PATH").inputs(inputs).build(), "test",
+        "accountId", "orgId", "projectId", null, null, null);
+    assertThat(buildDetails.size()).isEqualTo(1);
+    verify(spyartifactResourceUtils, times(1))
+        .getYamlExpressionEvaluator(any(), any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test

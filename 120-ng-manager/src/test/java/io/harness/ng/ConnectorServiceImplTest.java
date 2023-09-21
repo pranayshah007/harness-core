@@ -132,26 +132,6 @@ public class ConnectorServiceImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void createConnector_appRoleWithFFDisabled() {
-    ConnectorDTO connectorDTO = getRequestDTO_vaultAppRole();
-    String accountIdentifier = randomAlphabetic(10);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
-    when(harnessManagedConnectorHelper.isHarnessManagedSecretManager(any())).thenReturn(true);
-    when(gitSyncSdkService.isDefaultBranch(any(), any(), any())).thenReturn(false);
-    ArgumentCaptor<ConnectorDTO> argumentCaptor = ArgumentCaptor.forClass(ConnectorDTO.class);
-    when(secretManagerConnectorService.create(argumentCaptor.capture(), any(), any()))
-        .thenReturn(ConnectorResponseDTO.builder().build());
-    when(instrumentationHelper.sendConnectorCreateEvent(any(), any())).thenReturn(null);
-
-    connectorService.create(connectorDTO, accountIdentifier, ChangeType.ADD);
-    VaultConnectorDTO vaultConnectorDTO =
-        (VaultConnectorDTO) argumentCaptor.getValue().getConnectorInfo().getConnectorConfig();
-    assertThat(vaultConnectorDTO.isRenewAppRoleToken()).isEqualTo(true);
-  }
-
-  @Test
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void createUpdateSNowConnector_refreshTokenAuthWithFFDisabled() {

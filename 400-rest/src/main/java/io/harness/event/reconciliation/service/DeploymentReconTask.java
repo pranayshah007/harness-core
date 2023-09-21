@@ -111,7 +111,7 @@ public class DeploymentReconTask implements Runnable {
                          DATA_MIGRATION_CRON_LOCK_PREFIX + account.getUuid(),
                          Duration.ofSeconds(DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS))) {
                   if (lock == null) {
-                    log.error("Unable to fetch lock for running deployment data migration for account : {}",
+                    log.debug("Unable to fetch lock for running deployment data migration for account : {}",
                         account.getUuid());
                     return;
                   }

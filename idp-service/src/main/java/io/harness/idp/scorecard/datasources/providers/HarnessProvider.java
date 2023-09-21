@@ -19,22 +19,16 @@ import static io.harness.idp.common.Constants.QA_HOST;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
-import io.harness.idp.common.YamlUtils;
 import io.harness.idp.proxy.services.IdpAuthInterceptor;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
-import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -55,8 +49,8 @@ public class HarnessProvider extends DataSourceProvider {
   String env;
 
   @Override
-  public Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
+  public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
+      Map<String, Set<String>> dataPointsAndInputValues, String configs) {
     Map<String, String> replaceableHeaders = new HashMap<>();
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, null);
     replaceableHeaders.put(HARNESS_ACCOUNT, accountIdentifier);
@@ -71,7 +65,7 @@ public class HarnessProvider extends DataSourceProvider {
   }
 
   @Override
-  public Map<String, String> getAuthHeaders(String accountIdentifier, MergedPluginConfigs mergedPluginConfigs) {
+  public Map<String, String> getAuthHeaders(String accountIdentifier, String configs) {
     return idpAuthInterceptor.getAuthHeaders();
   }
 

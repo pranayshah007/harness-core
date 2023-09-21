@@ -161,7 +161,7 @@ public interface PipelineResource {
             examples = @ExampleObject(name = "Create", summary = "Sample Create Pipeline YAML",
                 value = PipelineAPIConstants.CREATE_PIPELINE_API,
                 description = "Sample Pipeline YAML with One Build Stage and One Deploy Stage"))
-      }) @NotNull String yaml);
+      }) @NotNull String yaml, @QueryParam("public") @DefaultValue("false") boolean isPublic);
 
   @POST
   @Path("/clone")
@@ -318,7 +318,7 @@ public interface PipelineResource {
             examples = @ExampleObject(name = "Update", summary = "Sample Update Pipeline YAML",
                 value = PipelineAPIConstants.CREATE_PIPELINE_API,
                 description = "Sample Pipeline YAML with One Build Stage and One Deploy Stage"))
-      }) @NotNull String yaml);
+      }) @NotNull String yaml, @QueryParam("public") @DefaultValue("false") boolean isPublic);
 
   @DELETE
   @Path("/{pipelineIdentifier}")

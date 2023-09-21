@@ -251,6 +251,7 @@ public enum FeatureName {
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_NEW_ENVIRONMENTS_PAGE("Enable New Environments page in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_SANDBOX_ENVIRONMENT("Enable sandbox environment in CHAOS", HarnessTeam.CHAOS),
   CHAOS_SECURITY_GOVERNANCE("Enable security governance routes, validation and navigation in CHAOS", HarnessTeam.CHAOS),
   CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
   CIE_HOSTED_VMS(
@@ -361,9 +362,6 @@ public enum FeatureName {
       "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
       HarnessTeam.CDP),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
-  DO_NOT_RENEW_APPROLE_TOKEN(
-      "CAUTION: USE THIS ONLY WHEN THE CUSTOMER DELEGATE IS IN VERSION HIGHER OR EQUAL TO 764xx. Used for disabling appRole token renewal and fetching token on the fly before CRUD",
-      HarnessTeam.PL),
   DYNATRACE_MULTI_SERVICE,
   ECS_AUTOSCALAR_REDESIGN,
   ECS_BG_DOWNSIZE,
@@ -870,8 +868,6 @@ public enum FeatureName {
       "When enabled RunPipelineForm component will be used for Retry From (Failed) Stage", HarnessTeam.CDP),
   CDS_SUPPORT_SERVICE_INPUTS_AS_EXECUTION_INPUTS(
       "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC),
-  CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME(
-      "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP),
   CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL("For removing usage of retry interval field for ", HarnessTeam.CDC),
   CDS_DISABLE_EVALUATE_EXPORT_VARIABLES("For exporting variables without evaluating in command step", HarnessTeam.CDC),
   CDS_NG_UPDATE_MULTIPLE_SNOW_CHANGE_REQUEST("Enable update multiple tasks in service now", HarnessTeam.CDC),
@@ -908,7 +904,8 @@ public enum FeatureName {
   CDS_SCOPE_INFRA_TO_SERVICES("This flag enables the scoping of Infrastructure to specific Services.", HarnessTeam.CDP),
   PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE),
   CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS(
-      "This flag disables WinRm special character escaping for environment variables usage", HarnessTeam.CDP);
+      "This flag disables WinRm special character escaping for environment variables usage", HarnessTeam.CDP),
+  CDS_SHELL_VARIABLES_EXPORT("Export shell script output variables to different scopes", HarnessTeam.CDC);
 
   // keep-sorted end
 

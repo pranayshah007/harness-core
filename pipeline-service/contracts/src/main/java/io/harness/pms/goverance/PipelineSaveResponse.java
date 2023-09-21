@@ -7,6 +7,7 @@
 
 package io.harness.pms.governance;
 
+import io.harness.accesscontrol.publicaccess.dto.PublicAccessResponse;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.governance.GovernanceMetadata;
@@ -22,4 +23,6 @@ import lombok.Value;
 public class PipelineSaveResponse {
   String identifier;
   GovernanceMetadata governanceMetadata;
+
+  PublicAccessResponse publicAccessResponse;
 }

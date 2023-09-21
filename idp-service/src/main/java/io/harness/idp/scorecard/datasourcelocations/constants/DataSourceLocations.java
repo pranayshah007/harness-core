@@ -20,6 +20,7 @@ public class DataSourceLocations {
   public static final String GITHUB_IS_BRANCH_PROTECTION_SET = "github_is_branch_protection_set";
   public static final String GITHUB_FILE_EXISTS = "github_is_file_exists";
 
+  public static final String API_BASE_URL = "{API_BASE_URL}";
   public static final String REPO_SCM = "{REPO_SCM}";
   public static final String REPOSITORY_OWNER = "{REPOSITORY_OWNER}";
   public static final String REPOSITORY_NAME = "{REPOSITORY_NAME}";

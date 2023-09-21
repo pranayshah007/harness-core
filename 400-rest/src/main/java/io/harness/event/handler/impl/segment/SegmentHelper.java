@@ -139,7 +139,7 @@ public class SegmentHelper {
   public void enqueue(TrackMessage.Builder track) {
     if (analytics != null) {
       analytics.enqueue(track);
-      log.info("Sent Track event to segment");
+      log.debug("Sent Track event to segment");
     } else {
       log.info("Skipping sending track event to segment");
     }

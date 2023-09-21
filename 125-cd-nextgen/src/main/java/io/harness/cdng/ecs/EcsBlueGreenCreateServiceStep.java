@@ -25,6 +25,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -118,8 +119,11 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
             .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
+            .removeAutoScalingFromBlueService(ecsStepExecutorParams.getProdTargetGroupArn() != null
+                && ecsStepExecutorParams.getProdTargetGroupArn().equals(ecsStepExecutorParams.getStageTargetGroupArn()))
+            .sameAsAlreadyRunningInstances(ParameterFieldHelper.getBooleanParameterFieldValue(
+                ecsBlueGreenCreateServiceStepParameters.getSameAsAlreadyRunningInstances()))
             .build();
-
     return ecsStepCommonHelper.queueEcsTask(stepParameters, ecsBlueGreenCreateServiceRequest, ambiance,
         executionPassThroughData, true, TaskType.ECS_COMMAND_TASK_NG);
   }
@@ -242,6 +246,8 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
       EcsExecutionPassThroughData executionPassThroughData, EcsLoadBalancerConfig ecsLoadBalancerConfig) {
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
+    EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
+        (EcsBlueGreenCreateServiceStepParameters) stepElementParameters.getSpec();
     EcsTaskArnBlueGreenCreateServiceRequest ecsTaskArnBlueGreenCreateServiceRequest =
         EcsTaskArnBlueGreenCreateServiceRequest.builder()
             .accountId(accountId)
@@ -256,6 +262,10 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
             .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
+            .removeAutoScalingFromBlueService(ecsStepExecutorParams.getProdTargetGroupArn() != null
+                && ecsStepExecutorParams.getProdTargetGroupArn().equals(ecsStepExecutorParams.getStageTargetGroupArn()))
+            .sameAsAlreadyRunningInstances(ParameterFieldHelper.getBooleanParameterFieldValue(
+                ecsBlueGreenCreateServiceStepParameters.getSameAsAlreadyRunningInstances()))
             .build();
 
     return ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsTaskArnBlueGreenCreateServiceRequest, ambiance,

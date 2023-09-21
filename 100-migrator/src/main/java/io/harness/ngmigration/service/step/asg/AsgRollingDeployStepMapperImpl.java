@@ -18,8 +18,10 @@ import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.CaseFormat;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.GraphNode;
 import software.wings.sm.State;
@@ -28,6 +30,17 @@ import software.wings.sm.states.AwsAmiServiceSetup;
 import java.util.Map;
 
 public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
+  @Override
+  public ParameterField<Timeout> getTimeout(State state) {
+    Integer timeoutMillis = null;
+    if (state instanceof AwsAmiServiceSetup) {
+      AwsAmiServiceSetup asgState = (AwsAmiServiceSetup) state;
+      if (asgState.getAutoScalingSteadyStateTimeout() > 0) {
+        timeoutMillis = asgState.getAutoScalingSteadyStateTimeout();
+      }
+    }
+    return MigratorUtility.getTimeout(timeoutMillis);
+  }
   @Override
   public String getStepType(GraphNode stepYaml) {
     AwsAmiServiceSetup state = (AwsAmiServiceSetup) getState(stepYaml);

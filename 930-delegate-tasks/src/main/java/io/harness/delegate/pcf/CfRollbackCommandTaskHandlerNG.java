@@ -135,6 +135,9 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       cfCommandTaskHelperNG.downSizeListOfInstancesAndUnmapRoutes(executionLogCallback, cfRequestConfig,
           cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRollbackCommandRequestNG, autoscalarRequestData);
       cfRollbackCommandResult.setCfInstanceElements(oldAppInstances);
+      cfRollbackCommandResult.setCurrentProdInfo(cfRollbackCommandRequestNG.getNewApplicationDetails());
+      cfRollbackCommandResult.setNewApplicationInfo(cfRollbackCommandRequestNG.getActiveApplicationDetails());
+      cfRollbackCommandResult.setCfInstanceElements(oldAppInstances);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
 
       if (isRollbackCompleted(cfRollbackCommandRequestNG, cfRequestConfig)) {

@@ -48,7 +48,7 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.rule.Owner;
 
@@ -403,7 +403,7 @@ public class AmbianceUtilsTest extends CategoryTest {
   public void getGetVersionWhenNotPresent() {
     Ambiance ambiance = Ambiance.newBuilder().build();
     String version = AmbianceUtils.getPipelineVersion(ambiance);
-    assertThat(version).isEqualTo(PipelineVersion.V0);
+    assertThat(version).isEqualTo(HarnessYamlVersion.V0);
   }
 
   @Test
@@ -413,7 +413,7 @@ public class AmbianceUtilsTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().setHarnessVersion("1").build()).build();
     String version = AmbianceUtils.getPipelineVersion(ambiance);
-    assertThat(version).isEqualTo(PipelineVersion.V1);
+    assertThat(version).isEqualTo(HarnessYamlVersion.V1);
   }
 
   @Test
@@ -711,8 +711,11 @@ public class AmbianceUtilsTest extends CategoryTest {
     List<String> enabledFeatureFlags = new ArrayList<>();
     enabledFeatureFlags.add("flag1");
     enabledFeatureFlags.add("flag3");
-
-    assertThat(enabledFeatureFlags).isEqualTo(AmbianceUtils.getEnabledFeatureFlags(ambiance));
+    List<String> ffListResponseFromAmbiance = AmbianceUtils.getEnabledFeatureFlags(ambiance);
+    assertThat(ffListResponseFromAmbiance.size()).isEqualTo(enabledFeatureFlags.size());
+    for (String ff : enabledFeatureFlags) {
+      assertThat(ffListResponseFromAmbiance.contains(ff)).isTrue();
+    }
   }
 
   @Test
