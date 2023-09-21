@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 59
+version: 60
 roles:
     - identifier: _project_admin
       name: Project Admin

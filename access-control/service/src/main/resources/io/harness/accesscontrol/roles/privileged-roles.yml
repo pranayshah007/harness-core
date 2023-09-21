@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 23
+version: 24
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
