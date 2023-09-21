@@ -1485,7 +1485,7 @@ public class BuilderFactory {
                        .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
-                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTO()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
                   .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
@@ -1516,7 +1516,7 @@ public class BuilderFactory {
                                  .build())
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
-                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTO()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
                   .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
@@ -1627,7 +1627,7 @@ public class BuilderFactory {
     return UserJourneyDTO.builder().identifier("userJourney").name("userJourney").build();
   }
 
-  public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTOBuilder() {
+  public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTO() {
     return ServiceLevelIndicatorDTO.builder()
         .type(SLIEvaluationType.WINDOW)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()
