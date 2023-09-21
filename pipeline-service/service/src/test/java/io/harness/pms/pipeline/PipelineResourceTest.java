@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionNode;
 import io.harness.beans.FeatureName;
@@ -118,6 +119,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Mock PipelineMetadataService pipelineMetadataService;
   @Mock PipelineAsyncValidationService pipelineAsyncValidationService;
   @Mock PipelineRefreshService pipelineRefreshService;
+  @Mock AccessControlClient accessControlClient;
   @InjectMocks PipelineRefreshResource pipelineRefreshResource;
 
   private final String ACCOUNT_ID = "account_id";
@@ -146,7 +148,7 @@ public class PipelineResourceTest extends CategoryTest {
     MockitoAnnotations.openMocks(this);
     pipelineResource = new PipelineResourceImpl(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
         nodeExecutionToExecutioNodeMapper, pipelineTemplateHelper, featureFlagHelper, variableCreatorMergeService,
-        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService);
+        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService, accessControlClient);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "failure-strategy.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
@@ -647,6 +649,7 @@ public class PipelineResourceTest extends CategoryTest {
         .when(pipelineMetadataService)
         .getMetadataForGivenPipelineIds(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, Collections.singletonList(PIPELINE_IDENTIFIER));
+    doReturn(true).when(accessControlClient).hasAccess(any(), any(), any());
     List<PMSPipelineSummaryResponseDTO> content = pipelineResource
                                                       .getListOfPipelines(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                                           0, 25, null, null, null, null, null, null, null)

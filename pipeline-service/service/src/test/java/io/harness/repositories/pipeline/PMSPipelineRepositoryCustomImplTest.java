@@ -25,7 +25,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
-import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
@@ -74,7 +73,6 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Mock OutboxService outboxService;
   @Mock GitSyncSdkService gitSyncSdkService;
   @Mock PipelineEntityReadHelper pipelineEntityReadHelper;
-  @Mock AccessControlClient accessControlClient;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -112,8 +110,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     pipelineRepository = new PMSPipelineRepositoryCustomImpl(mongoTemplate, gitAwarePersistence, transactionHelper,
-        pipelineMetadataService, gitAwareEntityHelper, outboxService, gitSyncSdkService, pipelineEntityReadHelper,
-        accessControlClient);
+        pipelineMetadataService, gitAwareEntityHelper, outboxService, gitSyncSdkService, pipelineEntityReadHelper);
     doReturn(true)
         .when(gitSyncSdkService)
         .isGitSimplificationEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
