@@ -58,6 +58,8 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
 
   Status calculateStatus(String planExecutionId);
 
+  Status calculateStatus(String planExecutionId, boolean shouldSkipIdentityNodes);
+
   PlanExecution updateCalculatedStatus(String planExecutionId);
 
   /**

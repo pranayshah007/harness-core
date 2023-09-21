@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.datasources.utils;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -18,18 +20,13 @@ import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
-import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import org.yaml.snakeyaml.Yaml;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
@@ -39,8 +36,12 @@ public class ConfigReader {
   @Inject BackstageEnvVariableService backstageEnvVariableService;
   @Inject ConfigManagerService configManagerService;
 
-  public MergedPluginConfigs fetchPluginsConfig(String accountIdentifier) {
-    return configManagerService.mergeEnabledPluginConfigsForAccount(accountIdentifier);
+  public String fetchAllConfigs(String accountIdentifier) {
+    try {
+      return configManagerService.mergeAllAppConfigsForAccount(accountIdentifier);
+    } catch (Exception e) {
+      throw new InvalidRequestException(format("Could not fetch app-config for account Id - %s", accountIdentifier), e);
+    }
   }
 
   public Object getConfigValues(String accountIdentifier, String yaml, String keyExpression) {
@@ -72,7 +73,7 @@ public class ConfigReader {
       String decryptedValue = backstageEnvVariableService.getDecryptedValue(
           envName, secret.getHarnessSecretIdentifier(), accountIdentifier);
       if (decryptedValue.isEmpty()) {
-        throw new UnexpectedException(String.format("Could not get the decrypted value for secret: %s, used "
+        throw new UnexpectedException(format("Could not get the decrypted value for secret: %s, used "
                 + "by env: %s, in account: %s",
             secret.getHarnessSecretIdentifier(), envName, accountIdentifier));
       }

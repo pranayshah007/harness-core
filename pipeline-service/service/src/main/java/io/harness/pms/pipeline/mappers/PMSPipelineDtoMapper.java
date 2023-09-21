@@ -46,7 +46,7 @@ import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.scope.ScopeHelper;
 
@@ -151,7 +151,7 @@ public class PMSPipelineDtoMapper {
         .name(pipelineName)
         .identifier(pipelineId)
         .tags(TagMapper.convertToList(null))
-        .harnessVersion(PipelineVersion.V1)
+        .harnessVersion(HarnessYamlVersion.V1)
         .build();
   }
 
@@ -159,7 +159,7 @@ public class PMSPipelineDtoMapper {
       String pipelineName, String yaml, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity;
     // Use the pipeline name from api request only for V1 yaml
-    if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+    if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
       // PipelineId is passed as null since it gets created using pipelineName
       pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, pipelineIdentifier, pipelineName, yaml);
     } else {
@@ -177,7 +177,7 @@ public class PMSPipelineDtoMapper {
       String pipelineId, String pipelineName, String yaml, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity;
     // Use pipelineId for V1 yaml only since we can't change it if name gets changed
-    if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+    if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
       pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, pipelineId, pipelineName, yaml);
     } else {
       pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
@@ -197,7 +197,7 @@ public class PMSPipelineDtoMapper {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
       }
       BasicPipeline basicPipeline = null;
-      if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+      if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
         return toSimplifiedPipelineEntity(accountId, orgId, projectId, requestInfoDTO.getIdentifier(),
             requestInfoDTO.getName(), requestInfoDTO.getYaml());
       } else {

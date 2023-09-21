@@ -69,7 +69,7 @@ import io.harness.pms.pipeline.references.PipelineSetupUsageCreationHelper;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -177,9 +177,9 @@ public class PMSPipelineServiceHelper {
 
   public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity, String pipelineVersion) throws IOException {
     switch (pipelineVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return pipelineEntity;
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         return updatePipelineInfoInternal(pipelineEntity);
       default:
         throw new IllegalStateException("version not supported");
@@ -392,9 +392,9 @@ public class PMSPipelineServiceHelper {
   GovernanceMetadata resolveTemplatesAndValidatePipelineYaml(
       PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails, boolean loadFromCache) {
     switch (pipelineEntity.getHarnessVersion()) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return GovernanceMetadata.newBuilder().setDeny(false).build();
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         boolean getMergedTemplateWithTemplateReferences =
             pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
         // Apply all the templateRefs(if any) then check for schema validation.
@@ -577,7 +577,7 @@ public class PMSPipelineServiceHelper {
     }
     // TODO (prashant) : Check with the team
     switch (pipelineVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return;
       default:
         checkAndThrowMismatchInImportedPipelineMetadataInternal(

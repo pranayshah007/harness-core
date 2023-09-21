@@ -25,4 +25,6 @@ public interface ArtifactService {
       String accountId, String orgIdentifier, String projectIdentifier, String artifactId, Sort sort);
 
   String generateArtifactId(String registryUrl, String name);
+
+  void saveArtifactAndInvalidateOldArtifact(ArtifactEntity artifact);
 }

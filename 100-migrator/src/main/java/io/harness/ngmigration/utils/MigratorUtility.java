@@ -236,9 +236,7 @@ public class MigratorUtility {
     if (timeoutInMillis == null) {
       return ParameterField.createValueField(Timeout.builder().timeoutString("10m").build());
     }
-    long t = timeoutInMillis / 1000;
-    String timeoutString = Math.max(60, t) + "s";
-    return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
+    return ParameterField.createValueField(Timeout.builder().timeoutString(toTimeoutString(timeoutInMillis)).build());
   }
 
   public static ParameterField<String> getParameterField(String value) {

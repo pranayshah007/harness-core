@@ -317,6 +317,7 @@ import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
@@ -535,6 +536,12 @@ public class NextGenModule extends AbstractModule {
   @Singleton
   CEProxyConfig ceProxyConfig() {
     return this.appConfig.getCeProxyConfig();
+  }
+
+  @Provides
+  @Singleton
+  CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig() {
+    return this.appConfig.getCeAwsServiceEndpointConfig();
   }
 
   @Provides

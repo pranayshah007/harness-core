@@ -33,5 +33,6 @@ public enum HarnessModuleComponent {
   CDS_TRADITIONAL,
   CDS_TRIGGERS,
   CI_PLG_LICENSING,
-  CDS_GIT_CLIENTS
+  CDS_GIT_CLIENTS,
+  CDS_AZURE_WEBAPP,
 }

@@ -102,7 +102,7 @@ public class ScoreServiceImpl implements ScoreService {
     for (Map.Entry<String, ScorecardEntity> entry : scorecardIdentifierEntityMapping.entrySet()) {
       if (scoreComputerService.isFilterMatchingWithAnEntity(entry.getValue().getFilter(), entity)) {
         returnData.add(ScorecardSummaryInfoMapper.toDTO(lastComputedScoresForScorecards.get(entry.getKey()),
-            entry.getValue().getName(), entry.getValue().getDescription()));
+            entry.getValue().getName(), entry.getValue().getDescription(), entry.getValue().getIdentifier()));
       }
     }
     return returnData;
@@ -171,8 +171,8 @@ public class ScoreServiceImpl implements ScoreService {
         latestComputedScoreForScorecard = scoreRepository.getLatestComputedScoreForEntityAndScorecard(
             accountIdentifier, entityIdentifier, scorecardIdentifier);
       }
-      return ScorecardSummaryInfoMapper.toDTO(
-          latestComputedScoreForScorecard, scorecardDetails.getName(), scorecardDetails.getDescription());
+      return ScorecardSummaryInfoMapper.toDTO(latestComputedScoreForScorecard, scorecardDetails.getName(),
+          scorecardDetails.getDescription(), scorecardIdentifier);
     }
     return null;
   }

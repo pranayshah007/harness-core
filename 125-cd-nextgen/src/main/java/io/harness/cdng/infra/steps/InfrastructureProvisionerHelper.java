@@ -141,6 +141,7 @@ public class InfrastructureProvisionerHelper {
       case InfrastructureKind.ASG:
         AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
         expressionEvaluator.resolve(asgInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+        expressionEvaluator.resolve(asgInfrastructure.getBaseAsgName(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
         break;
 
       case InfrastructureKind.CUSTOM_DEPLOYMENT:

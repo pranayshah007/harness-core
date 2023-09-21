@@ -67,6 +67,7 @@ public class Constants {
   public static final String DSL_RESPONSE = "dsl_response";
   public static final String DATA_POINT_VALUE_KEY = "value";
   public static final String ERROR_MESSAGE_KEY = "error_messages";
+  public static final String MESSAGE_KEY = "message";
 
   public static final String QA_HOST = "qa.harness.io";
   public static final String PRE_QA_HOST = "stress.harness.io";

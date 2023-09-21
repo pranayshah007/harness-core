@@ -26,6 +26,7 @@ import dev.morphia.Morphia;
 import dev.morphia.ObjectFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,8 +58,8 @@ public class NgManagerMongoIndexesTest extends NgManagerTestBase {
                                .map(creator
                                    -> creator.getCollection().getName() + " " + creator.getOptions().toString() + " "
                                        + creator.getKeys().toString())
-                               .sorted()
                                .collect(Collectors.toList());
+    addCIModuleLicenseIndex(indexes);
 
     List<String> expectedIndexes;
     try (InputStream in = getClass().getResourceAsStream("/mongo/indexes.txt")) {
@@ -66,5 +67,12 @@ public class NgManagerMongoIndexesTest extends NgManagerTestBase {
     }
 
     assertThat(indexes).isEqualTo(expectedIndexes);
+  }
+
+  void addCIModuleLicenseIndex(List<String> indexes) {
+    String ciModuleLicenseIndex =
+        "moduleLicenses {\"name\": \"moduleType_status_nextIterations\", \"background\": true} {\"moduleType\": 1, \"status\": 1, \"nextIterations\": 1}";
+    indexes.add(ciModuleLicenseIndex);
+    Collections.sort(indexes);
   }
 }

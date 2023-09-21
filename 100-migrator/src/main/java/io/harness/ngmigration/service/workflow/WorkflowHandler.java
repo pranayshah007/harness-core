@@ -6,6 +6,9 @@
  */
 
 package io.harness.ngmigration.service.workflow;
+
+import static io.harness.cdng.service.beans.ServiceDefinitionType.ASG;
+import static io.harness.cdng.service.beans.ServiceDefinitionType.ELASTIGROUP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.ELASTIC_GROUP_ACCOUNT_IDS;
@@ -619,20 +622,23 @@ public abstract class WorkflowHandler {
     DeploymentType deploymentType = getDeploymentTypeFromPhase(context.getWorkflow());
     if (deploymentType != null) {
       ServiceDefinitionType serviceDefinitionType = ServiceV2Factory.mapDeploymentTypeToServiceDefType(deploymentType);
-      if (serviceDefinitionType != null) {
-        if (ELASTIC_GROUP_ACCOUNT_IDS.contains(context.getWorkflow().getAccountId())) {
-          if (isNotEmpty(steps)) {
-            for (GraphNode step : steps) {
-              if (ServiceV2Factory.checkForASG(step.getType())) {
-                return ServiceDefinitionType.ASG;
-              }
+
+      // Override for Elastigroup / ASG services for specific account ids
+      if (ELASTIC_GROUP_ACCOUNT_IDS.contains(context.getWorkflow().getAccountId())
+          && (ELASTIGROUP.equals(serviceDefinitionType) || ASG.equals(serviceDefinitionType))) {
+        if (isNotEmpty(steps)) {
+          for (GraphNode step : steps) {
+            if (ServiceV2Factory.checkForASG(step.getType())) {
+              return ASG;
             }
           }
-          return ServiceDefinitionType.ELASTIGROUP;
         }
-        return serviceDefinitionType;
+        return ELASTIGROUP;
       }
+
+      return serviceDefinitionType;
     }
+
     ServiceDefinitionType defaultType = workflowType.equals(OrchestrationWorkflowType.BASIC)
         ? ServiceDefinitionType.SSH
         : ServiceDefinitionType.KUBERNETES;

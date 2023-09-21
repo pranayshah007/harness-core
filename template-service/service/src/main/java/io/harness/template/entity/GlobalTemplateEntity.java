@@ -30,6 +30,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -115,6 +116,8 @@ public class GlobalTemplateEntity
 
   // icon support for templates
   @Wither @Setter @NonFinal String icon;
+  // to maintain yaml version
+  @Setter @NonFinal String harnessVersion;
 
   @Override
   public String getAccountIdentifier() {
@@ -155,5 +158,12 @@ public class GlobalTemplateEntity
   @Override
   public void setData(String yaml) {
     this.yaml = yaml;
+  }
+
+  public String getHarnessVersion() {
+    if (harnessVersion == null || harnessVersion.equals("V0")) {
+      return HarnessYamlVersion.V0;
+    }
+    return harnessVersion;
   }
 }

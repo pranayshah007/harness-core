@@ -475,6 +475,21 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return "";
   }
 
+  @Override
+  public void reloadSecrets(String harnessAccount, String namespace) {
+    NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(harnessAccount);
+    if (!namespaceInfo.getNamespace().equals(namespace)) {
+      throw new InvalidRequestException(
+          String.format("The request namespace [%s] does not match with the account namespace [%s] for account [%s]",
+              namespace, namespaceInfo.getNamespace(), harnessAccount));
+    }
+    Map<String, byte[]> secretData = new HashMap<>();
+    secretData.put(LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES, String.valueOf(System.currentTimeMillis()).getBytes());
+    k8sClient.updateSecretData(namespace, BACKSTAGE_SECRET, secretData, false);
+    log.info("Successfully updated LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES in secret {} in the namespace {}",
+        BACKSTAGE_SECRET, namespace);
+  }
+
   private String formatPrivateKey(String privateKey) {
     privateKey = privateKey.replace(PRIVATE_KEY_START + " ", "");
     privateKey = privateKey.replace(PRIVATE_KEY_END, "");

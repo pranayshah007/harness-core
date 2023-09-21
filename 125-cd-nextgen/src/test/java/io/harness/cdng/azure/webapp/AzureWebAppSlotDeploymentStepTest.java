@@ -34,6 +34,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
@@ -46,6 +47,7 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails.AzureWebAppsStageExecutionDetailsKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
@@ -92,6 +94,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -114,6 +117,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private StageExecutionInfoService stageExecutionInfoService;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @InjectMocks private AzureWebAppSlotDeploymentStep slotDeploymentStep;
 
@@ -387,51 +391,13 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
         .isEqualTo(prevExecutionDetails.getUserAddedConnStringNames());
     assertThat(slotDeploymentRequest.isPrevExecUserChangedStartupCommand())
         .isEqualTo(prevExecutionDetails.getUserChangedStartupCommand());
+    assertThat(slotDeploymentRequest.isCleanDeployment()).isFalse();
   }
 
   private AzureWebAppSlotDeploymentRequest testExecuteNextLinkWithFetchPreDeploymentDataResponse(
       AzureWebAppsStageExecutionDetails prevExecutionDetails) throws Exception {
     final StepElementParameters stepElementParameters = createTestStepElementParameters();
-    final AzureSlotDeploymentPassThroughData passThroughData = AzureSlotDeploymentPassThroughData.builder()
-                                                                   .configs(emptyMap())
-                                                                   .unprocessedConfigs(emptyMap())
-                                                                   .infrastructure(infrastructure)
-                                                                   .primaryArtifactOutcome(primaryArtifactOutcome)
-                                                                   .build();
-    final AzureAppServicePreDeploymentData preDeploymentData = AzureAppServicePreDeploymentData.builder().build();
-    final AzureWebAppTaskResponse azureWebAppTaskResponse =
-        AzureWebAppTaskResponse.builder()
-            .requestResponse(
-                AzureWebAppFetchPreDeploymentDataResponse.builder().preDeploymentData(preDeploymentData).build())
-            .build();
-    final ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
-    final ArgumentCaptor<AzureWebAppPreDeploymentDataOutput> preDeploymentDataOutputArgumentCaptor =
-        ArgumentCaptor.forClass(AzureWebAppPreDeploymentDataOutput.class);
-
-    doReturn(prevExecutionDetails)
-        .when(azureWebAppStepHelper)
-        .findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
-
-    TaskChainResponse taskChainResponse = slotDeploymentStep.executeNextLinkWithSecurityContext(
-        ambiance, stepElementParameters, stepInputPackage, passThroughData, () -> azureWebAppTaskResponse);
-
-    verify(azureWebAppStepHelper)
-        .prepareTaskRequest(eq(stepElementParameters), eq(ambiance), taskParametersArgumentCaptor.capture(),
-            eq(TaskType.AZURE_WEB_APP_TASK_NG), anyList());
-    verify(executionSweepingOutputService)
-        .consume(eq(ambiance), eq(AzureWebAppPreDeploymentDataOutput.OUTPUT_NAME),
-            preDeploymentDataOutputArgumentCaptor.capture(), eq(StepCategory.STEP.name()));
-
-    assertThat(taskChainResponse.isChainEnd()).isTrue();
-    assertThat(taskChainResponse.getTaskRequest()).isSameAs(taskRequest);
-    assertThat(taskParametersArgumentCaptor.getValue()).isInstanceOf(AzureWebAppSlotDeploymentRequest.class);
-    AzureWebAppSlotDeploymentRequest slotDeploymentRequest =
-        (AzureWebAppSlotDeploymentRequest) taskParametersArgumentCaptor.getValue();
-    assertThat(slotDeploymentRequest.getPreDeploymentData()).isSameAs(preDeploymentData);
-    assertThat(slotDeploymentRequest.getArtifact()).isSameAs(azureArtifactConfig);
-    assertThat(slotDeploymentRequest.getInfrastructure()).isSameAs(infraDelegateConfig);
-
-    return slotDeploymentRequest;
+    return runExecuteNextLinkToQueueDeploymentTask(prevExecutionDetails, stepElementParameters);
   }
 
   @Test
@@ -541,11 +507,109 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     assertThat(slotDeploymentDataOutput.getDeploymentProgressMarker()).isEqualTo(deploymentProgressMarker);
   }
 
+  @Test
+  @SneakyThrows
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testQueueSlotDeploymentWithCleanOptionFFDisabled() {
+    StepElementParameters stepElementParameters = createTestStepElementParameters(true);
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_WEBAPP_ENABLE_CLEAN_OPTION));
+    AzureWebAppSlotDeploymentRequest queuedRequest =
+        runExecuteNextLinkToQueueDeploymentTask(null, stepElementParameters);
+    assertThat(queuedRequest.isCleanDeployment()).isFalse();
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testQueueSlotDeploymentWithCleanOptionDisabledAndFFDisabled() {
+    StepElementParameters stepElementParameters = createTestStepElementParameters(false);
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_WEBAPP_ENABLE_CLEAN_OPTION));
+    AzureWebAppSlotDeploymentRequest queuedRequest =
+        runExecuteNextLinkToQueueDeploymentTask(null, stepElementParameters);
+    assertThat(queuedRequest.isCleanDeployment()).isFalse();
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testQueueSlotDeploymentWithCleanOptionFFEnabled() {
+    StepElementParameters stepElementParameters = createTestStepElementParameters(true);
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_WEBAPP_ENABLE_CLEAN_OPTION));
+    AzureWebAppSlotDeploymentRequest queuedRequest =
+        runExecuteNextLinkToQueueDeploymentTask(null, stepElementParameters);
+    assertThat(queuedRequest.isCleanDeployment()).isTrue();
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testQueueSlotDeploymentWithCleanOptionDisabledAndFFEnabled() {
+    StepElementParameters stepElementParameters = createTestStepElementParameters(false);
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), eq(FeatureName.CDS_WEBAPP_ENABLE_CLEAN_OPTION));
+    AzureWebAppSlotDeploymentRequest queuedRequest =
+        runExecuteNextLinkToQueueDeploymentTask(null, stepElementParameters);
+    assertThat(queuedRequest.isCleanDeployment()).isFalse();
+  }
+
+  private AzureWebAppSlotDeploymentRequest runExecuteNextLinkToQueueDeploymentTask(
+      AzureWebAppsStageExecutionDetails prevExecutionDetails, StepElementParameters stepElementParameters)
+      throws Exception {
+    final AzureSlotDeploymentPassThroughData passThroughData = AzureSlotDeploymentPassThroughData.builder()
+                                                                   .configs(emptyMap())
+                                                                   .unprocessedConfigs(emptyMap())
+                                                                   .infrastructure(infrastructure)
+                                                                   .primaryArtifactOutcome(primaryArtifactOutcome)
+                                                                   .build();
+    final AzureAppServicePreDeploymentData preDeploymentData = AzureAppServicePreDeploymentData.builder().build();
+    final AzureWebAppTaskResponse azureWebAppTaskResponse =
+        AzureWebAppTaskResponse.builder()
+            .requestResponse(
+                AzureWebAppFetchPreDeploymentDataResponse.builder().preDeploymentData(preDeploymentData).build())
+            .build();
+    final ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
+    final ArgumentCaptor<AzureWebAppPreDeploymentDataOutput> preDeploymentDataOutputArgumentCaptor =
+        ArgumentCaptor.forClass(AzureWebAppPreDeploymentDataOutput.class);
+
+    doReturn(prevExecutionDetails)
+        .when(azureWebAppStepHelper)
+        .findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
+
+    TaskChainResponse taskChainResponse = slotDeploymentStep.executeNextLinkWithSecurityContext(
+        ambiance, stepElementParameters, stepInputPackage, passThroughData, () -> azureWebAppTaskResponse);
+
+    verify(azureWebAppStepHelper)
+        .prepareTaskRequest(eq(stepElementParameters), eq(ambiance), taskParametersArgumentCaptor.capture(),
+            eq(TaskType.AZURE_WEB_APP_TASK_NG), anyList());
+    verify(executionSweepingOutputService)
+        .consume(eq(ambiance), eq(AzureWebAppPreDeploymentDataOutput.OUTPUT_NAME),
+            preDeploymentDataOutputArgumentCaptor.capture(), eq(StepCategory.STEP.name()));
+
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+    assertThat(taskChainResponse.getTaskRequest()).isSameAs(taskRequest);
+    assertThat(taskParametersArgumentCaptor.getValue()).isInstanceOf(AzureWebAppSlotDeploymentRequest.class);
+    AzureWebAppSlotDeploymentRequest slotDeploymentRequest =
+        (AzureWebAppSlotDeploymentRequest) taskParametersArgumentCaptor.getValue();
+    assertThat(slotDeploymentRequest.getPreDeploymentData()).isSameAs(preDeploymentData);
+    assertThat(slotDeploymentRequest.getArtifact()).isSameAs(azureArtifactConfig);
+    assertThat(slotDeploymentRequest.getInfrastructure()).isSameAs(infraDelegateConfig);
+
+    return slotDeploymentRequest;
+  }
+
   private StepElementParameters createTestStepElementParameters() {
+    return createTestStepElementParameters(null);
+  }
+
+  private StepElementParameters createTestStepElementParameters(Boolean clean) {
     return StepElementParameters.builder()
         .spec(AzureWebAppSlotDeploymentStepParameters.infoBuilder()
                   .webApp(ParameterField.createValueField(WEB_APP))
                   .deploymentSlot(ParameterField.createValueField(DEPLOYMENT_SLOT))
+                  .clean(clean != null ? ParameterField.createValueField(clean) : null)
                   .build())
         .timeout(ParameterField.createValueField("10m"))
         .build();

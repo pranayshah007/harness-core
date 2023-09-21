@@ -78,7 +78,7 @@ import io.harness.service.intfc.DelegateRingService;
 import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountPreferences;
+import software.wings.beans.account.AccountPreferences;
 import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
 import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;

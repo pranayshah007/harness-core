@@ -37,7 +37,7 @@ import io.harness.pms.contracts.triggers.SourceType;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.plan.creation.validator.PlanCreationValidator;
 import io.harness.pms.sdk.PmsSdkHelper;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -165,7 +165,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateInitialPlanCreationContextForV1Yaml() {
     ExecutionMetadata executionMetadataLocal =
-        executionMetadata.toBuilder().setHarnessVersion(PipelineVersion.V1).build();
+        executionMetadata.toBuilder().setHarnessVersion(HarnessYamlVersion.V1).build();
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().processedYaml(pipelineYamlV1).build();
     PlanCreatorMergeService planCreatorMergeService = new PlanCreatorMergeService(
         null, null, null, null, Executors.newSingleThreadExecutor(), 20, pmsFeatureFlagService, kryoSerializer);
@@ -212,7 +212,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateInitialPlanCreationContextForV1YamlWithStaticReference() {
     ExecutionMetadata executionMetadataLocal =
-        executionMetadata.toBuilder().setHarnessVersion(PipelineVersion.V1).build();
+        executionMetadata.toBuilder().setHarnessVersion(HarnessYamlVersion.V1).build();
     String pipelineYaml = readFile("pipeline-v1-with-static-reference.yaml");
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().processedYaml(pipelineYaml).build();
     PlanCreatorMergeService planCreatorMergeService = new PlanCreatorMergeService(
@@ -283,7 +283,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
         .createPlanForDependenciesRecursive(any(), any(), any(), any(), any(), any(), any());
     doNothing().when(planCreationValidator).validate(any(), any());
     planCreatorMergeServiceMock.createPlanVersioned(
-        accountId, orgId, projId, PipelineVersion.V1, executionMetadata, planExecutionMetadata);
+        accountId, orgId, projId, HarnessYamlVersion.V1, executionMetadata, planExecutionMetadata);
     verify(planCreationValidator, times(1)).validate(any(), any());
     verify(planCreatorMergeServiceMock, times(1))
         .createPlanForDependenciesRecursive(any(), any(), any(), any(), any(), any(), any());
@@ -309,8 +309,8 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     doReturn(services).when(pmsSdkHelper).getServices();
     doReturn(true).when(pmsFeatureFlagServiceMock).isEnabled(any(), (FeatureName) any());
     assertThatThrownBy(()
-                           -> planCreatorMergeServiceMock.createPlanVersioned(
-                               accountId, orgId, projId, PipelineVersion.V1, executionMetadata, planExecutionMetadata))
+                           -> planCreatorMergeServiceMock.createPlanVersioned(accountId, orgId, projId,
+                               HarnessYamlVersion.V1, executionMetadata, planExecutionMetadata))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Following yaml paths could not be parsed: ");
   }

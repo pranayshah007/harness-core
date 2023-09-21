@@ -64,6 +64,7 @@ import io.harness.springdata.PersistenceModule;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
@@ -225,10 +226,15 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId) {
-    // Uses - planExecutionId_mode_status_oldRetry_idx
+  public List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(
+      String planExecutionId, boolean ignoreIdentityNodes) {
+    // Both Query Uses - planExecutionId_mode_status_oldRetry_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    if (ignoreIdentityNodes) {
+      query =
+          query.addCriteria(where(NodeExecutionKeys.nodeType).in(Lists.newArrayList(null, NodeType.PLAN_NODE.name())));
+    }
     // Exclude so that it can use Projection covered from index without scanning documents.
     query.fields().exclude(NodeExecutionKeys.id).include(NodeExecutionKeys.status);
     List<NodeExecution> nodeExecutions = new LinkedList<>();

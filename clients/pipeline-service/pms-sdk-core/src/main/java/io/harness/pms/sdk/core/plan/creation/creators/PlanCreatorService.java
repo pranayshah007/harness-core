@@ -50,7 +50,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.variables.VariableCreatorService;
 import io.harness.pms.utils.CompletableFutures;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -290,7 +290,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         Class<?> cls = planCreator.getFieldClass();
         String executionInputTemplate = "";
         // ExecutionInput is supported for V0 YAML only. Not supported with YAML simplification.
-        if (PipelineVersion.V0.equals(ctx.getYamlVersion())) {
+        if (HarnessYamlVersion.V0.equals(ctx.getYamlVersion())) {
           executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
         }
         Object obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);
@@ -329,7 +329,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
   private String getYamlVersion(PlanCreationContext ctx, Dependency dependency) {
     String yamlVersion = ctx.getYamlVersion();
     // If the yamlVersion is V0 then do v0 only.
-    if (!PipelineVersion.V0.equals(yamlVersion)) {
+    if (!HarnessYamlVersion.V0.equals(yamlVersion)) {
       if (dependency != null && dependency.getParentInfo().getDataMap().containsKey(YAML_VERSION)) {
         yamlVersion = dependency.getParentInfo().getDataMap().get(YAML_VERSION).getStringValue();
       }

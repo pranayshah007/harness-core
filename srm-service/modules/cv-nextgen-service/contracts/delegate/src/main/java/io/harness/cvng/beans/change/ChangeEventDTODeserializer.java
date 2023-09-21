@@ -27,6 +27,7 @@ public class ChangeEventDTODeserializer extends JsonDeserializer<ChangeEventDTO>
     deserializationMapper.put(ChangeSourceType.PAGER_DUTY, PagerDutyEventMetaData.class);
     deserializationMapper.put(ChangeSourceType.KUBERNETES, KubernetesChangeEventMetadata.class);
     deserializationMapper.put(ChangeSourceType.HARNESS_FF, InternalChangeEventMetaData.class);
+    deserializationMapper.put(ChangeSourceType.HARNESS_CE, InternalChangeEventMetaData.class);
     deserializationMapper.put(ChangeSourceType.CUSTOM_DEPLOY, CustomChangeEventMetadata.class);
     deserializationMapper.put(ChangeSourceType.CUSTOM_INFRA, CustomChangeEventMetadata.class);
     deserializationMapper.put(ChangeSourceType.CUSTOM_INCIDENT, CustomChangeEventMetadata.class);

@@ -420,6 +420,7 @@ io.harness.steps.SectionStepSweepingOutput
 io.harness.spotinst.model.ElastiGroup
 io.harness.delegate.cdng.execution.StepExecutionInstanceInfo
 io.harness.delegate.cdng.execution.K8sStepInstanceInfo
+io.harness.delegate.cdng.execution.TasStepInstanceInfo
 io.harness.ci.config.GitnessConfig
 io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO
 io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO

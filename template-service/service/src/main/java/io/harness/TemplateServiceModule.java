@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -88,12 +89,16 @@ import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.health.HealthResource;
 import io.harness.template.health.HealthResourceImpl;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
+import io.harness.template.resources.NGGlobalTemplateResource;
+import io.harness.template.resources.NGGlobalTemplateResourceImpl;
 import io.harness.template.resources.NGTemplateRefreshResource;
 import io.harness.template.resources.NGTemplateRefreshResourceImpl;
 import io.harness.template.resources.NGTemplateResource;
 import io.harness.template.resources.NGTemplateResourceImpl;
 import io.harness.template.resources.NGTemplateSchemaResource;
 import io.harness.template.resources.NGTemplateSchemaResourceImpl;
+import io.harness.template.services.NGGlobalTemplateService;
+import io.harness.template.services.NGGlobalTemplateServiceImpl;
 import io.harness.template.services.NGTemplateSchemaService;
 import io.harness.template.services.NGTemplateSchemaServiceImpl;
 import io.harness.template.services.NGTemplateService;
@@ -253,6 +258,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(NGTemplateSchemaService.class).to(NGTemplateSchemaServiceImpl.class);
     bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
     bind(NGTemplateResource.class).to(NGTemplateResourceImpl.class);
+    bind(NGGlobalTemplateResource.class).to(NGGlobalTemplateResourceImpl.class);
     bind(NGTemplateRefreshResource.class).to(NGTemplateRefreshResourceImpl.class);
     bind(NGTemplateSchemaResource.class).to(NGTemplateSchemaResourceImpl.class);
     bind(HealthResource.class).to(HealthResourceImpl.class);
@@ -261,6 +267,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
     bind(TemplateAsyncSetupUsageService.class).to(TemplateAsyncSetupUsageServiceImpl.class);
+    bind(NGGlobalTemplateService.class).to(NGGlobalTemplateServiceImpl.class);
     install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),

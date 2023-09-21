@@ -27,7 +27,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -82,7 +82,7 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testSupportedYamlVersions() {
-    assertThat(planCreator.getSupportedYamlVersions()).isEqualTo(Set.of(PipelineVersion.V1));
+    assertThat(planCreator.getSupportedYamlVersions()).isEqualTo(Set.of(HarnessYamlVersion.V1));
   }
 
   @Test

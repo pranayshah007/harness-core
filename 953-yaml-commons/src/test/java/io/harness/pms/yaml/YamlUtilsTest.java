@@ -832,7 +832,7 @@ public class YamlUtilsTest extends CategoryTest {
     YamlNode stepsNode =
         stage1Node.getField("spec").getNode().getField("execution").getNode().getField("steps").getNode();
     YamlNode step1Node = stepsNode.asArray().get(0).getField("step").getNode();
-    assertThat(YamlUtils.getStageFqnPath(step1Node, PipelineVersion.V0)).isEqualTo("pipeline.stages.qaStage");
+    assertThat(YamlUtils.getStageFqnPath(step1Node, HarnessYamlVersion.V0)).isEqualTo("pipeline.stages.qaStage");
   }
 
   @Test
@@ -849,7 +849,7 @@ public class YamlUtilsTest extends CategoryTest {
     YamlNode stage1Node = stagesNode.getNode().asArray().get(0);
     YamlNode stepsNode = stage1Node.getField("spec").getNode().getField("steps").getNode();
     YamlNode step1Node = stepsNode.asArray().get(0);
-    assertThat(YamlUtils.getStageFqnPath(step1Node, PipelineVersion.V1)).isEqualTo("stages.stage1");
+    assertThat(YamlUtils.getStageFqnPath(step1Node, HarnessYamlVersion.V1)).isEqualTo("stages.stage1");
   }
 
   @Test

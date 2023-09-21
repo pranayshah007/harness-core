@@ -127,6 +127,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -661,8 +662,7 @@ public class ServiceResourceV2 {
       @QueryParam("versionLabel") String versionLabel,
       @QueryParam("deploymentMetadataYaml") String deploymentMetaDataYaml,
       @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
-          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope,
-      @QueryParam("envInfraMapping") Map<String, List<String>> envRefInfraRefsMapping) {
+          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope) {
     accessControlClient.checkForAccessOrThrow(List.of(scopeAccessHelper.getPermissionCheckDtoForViewAccessForScope(
                                                   Scope.of(accountId, orgIdentifier, projectIdentifier))),
         "Unauthorized to list services");
@@ -695,6 +695,7 @@ public class ServiceResourceV2 {
                         .collect(Collectors.toList());
     }
     if (featureFlagService.isEnabled(accountId, FeatureName.CDS_SCOPE_INFRA_TO_SERVICES)) {
+      Map<String, List<String>> envRefInfraRefsMapping = new HashMap<>();
       serviceList = filterByScopedInfrastructures(
           accountId, orgIdentifier, projectIdentifier, serviceList, envRefInfraRefsMapping);
     }

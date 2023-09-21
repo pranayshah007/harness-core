@@ -78,6 +78,7 @@ public class AwsCdkSynthStep extends AbstractContainerStepV2<StepElementParamete
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    awsCdkStepHelper.handleBinaryResponseData(responseDataMap);
     StepStatusTaskResponseData stepStatusTaskResponseData =
         containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
     if (stepStatusTaskResponseData != null

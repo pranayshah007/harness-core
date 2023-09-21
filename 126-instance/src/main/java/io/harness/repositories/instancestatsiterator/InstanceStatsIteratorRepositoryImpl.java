@@ -11,9 +11,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.models.InstanceStatsIterator;
 import io.harness.timescaledb.DBUtils;
@@ -37,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class InstanceStatsIteratorRepositoryImpl implements InstanceStatsIteratorRepository {
   private TimeScaleDBService timeScaleDBService;
-  private CDFeatureFlagHelper cdFeatureFlagHelper;
   private static final int MAX_RETRY_COUNT = 3;
   private static final int BASE_DELAY_MILLIS = 1000;
 
@@ -70,28 +67,26 @@ public class InstanceStatsIteratorRepositoryImpl implements InstanceStatsIterato
 
   public void updateTimestampForIterator(
       String accountId, String orgId, String projectId, String serviceId, long timestamp) {
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME)) {
-      boolean successfulOperation = false;
-      int totalTries = 0;
-      while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
-        try (Connection dbConnection = timeScaleDBService.getDBConnection();
-             PreparedStatement statement =
-                 getScopedStatementForUpdate(dbConnection, accountId, orgId, projectId, serviceId, timestamp)) {
-          statement.execute();
-          successfulOperation = true;
-        } catch (SQLException ex) {
-          if (totalTries == MAX_RETRY_COUNT) {
-            log.error("Error while updating timestamp for instance stats iterator after all retries");
-          }
-          log.warn("Could not update timestamp for instance stats iterator. Retrying again. Retry number: {}",
-              totalTries, ex);
-          sleep(totalTries);
-          totalTries++;
-        } catch (Exception ex) {
-          log.error("Error while updating timestamp for instance stats iterator", ex);
-          sleep(totalTries);
-          totalTries++;
+    boolean successfulOperation = false;
+    int totalTries = 0;
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      try (Connection dbConnection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement =
+               getScopedStatementForUpdate(dbConnection, accountId, orgId, projectId, serviceId, timestamp)) {
+        statement.execute();
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        if (totalTries == MAX_RETRY_COUNT) {
+          log.error("Error while updating timestamp for instance stats iterator after all retries");
         }
+        log.warn(
+            "Could not update timestamp for instance stats iterator. Retrying again. Retry number: {}", totalTries, ex);
+        sleep(totalTries);
+        totalTries++;
+      } catch (Exception ex) {
+        log.error("Error while updating timestamp for instance stats iterator", ex);
+        sleep(totalTries);
+        totalTries++;
       }
     }
   }

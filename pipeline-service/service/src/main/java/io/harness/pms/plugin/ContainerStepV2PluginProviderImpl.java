@@ -254,6 +254,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
       }
       updatedResponseList.addResponse(PluginCreationResponseWrapper.newBuilder()
                                           .setStepInfo(responseV2.getStepInfo())
+                                          .setShouldSkip(responseV2.getShouldSkip())
                                           .setResponse(pluginInfo)
                                           .build());
       usedPorts.addAll(pluginInfo.getPluginDetails().getTotalPortUsedDetails().getUsedPortsList());

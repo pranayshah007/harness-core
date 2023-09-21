@@ -46,7 +46,11 @@ import io.harness.cdng.gitops.steps.EnvClusterRefs;
 import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
+import io.harness.cdng.k8s.HarnessRelease;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.service.ServiceSpec;
+import io.harness.cdng.service.beans.KubernetesServiceSpec;
+import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceOverrideUtilityFacade;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
@@ -748,10 +752,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
     stepOutcomes.add(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.SERVICE)
-                         .outcome(ServiceStepOutcome.fromServiceStepV2(serviceRef, ngServiceV2InfoConfig.getName(),
-                             ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
-                             ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
-                             ngServiceV2InfoConfig.getGitOpsEnabled()))
+                         .outcome(getServiceStepOutcome(serviceRef, ngServiceV2InfoConfig))
                          .group(StepCategory.STAGE.name())
                          .build());
 
@@ -806,6 +807,33 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                                      .build();
 
     return stepResponse.toBuilder().unitProgressList(List.of(overridesUnit, serviceStepUnitProgress)).build();
+  }
+
+  private ServiceStepOutcome getServiceStepOutcome(String serviceRef, NGServiceV2InfoConfig ngServiceV2InfoConfig) {
+    Optional<HarnessRelease> harnessReleaseOptional =
+        getHarnessReleaseOptional(ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec());
+    if (harnessReleaseOptional.isPresent()) {
+      HarnessRelease harnessRelease = harnessReleaseOptional.get();
+      return ServiceStepOutcome.fromServiceStepV2(serviceRef, ngServiceV2InfoConfig.getName(),
+          ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(), ngServiceV2InfoConfig.getDescription(),
+          ngServiceV2InfoConfig.getTags(), ngServiceV2InfoConfig.getGitOpsEnabled(), harnessRelease);
+    }
+
+    return ServiceStepOutcome.fromServiceStepV2(serviceRef, ngServiceV2InfoConfig.getName(),
+        ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(), ngServiceV2InfoConfig.getDescription(),
+        ngServiceV2InfoConfig.getTags(), ngServiceV2InfoConfig.getGitOpsEnabled());
+  }
+
+  private Optional<HarnessRelease> getHarnessReleaseOptional(ServiceSpec serviceSpec) {
+    if (serviceSpec instanceof KubernetesServiceSpec) {
+      KubernetesServiceSpec spec = (KubernetesServiceSpec) serviceSpec;
+      return Optional.ofNullable(spec.getRelease());
+    }
+    if (serviceSpec instanceof NativeHelmServiceSpec) {
+      NativeHelmServiceSpec spec = (NativeHelmServiceSpec) serviceSpec;
+      return Optional.ofNullable(spec.getRelease());
+    }
+    return Optional.empty();
   }
 
   private ServicePartResponse executeServicePart(

@@ -41,7 +41,7 @@ public class SettingIdentifiers {
   public static String WEBHOOK_NOTIFICATION_SETTINGS_GROUP_IDENTIFIER = "webhook_notification_settings";
   public static String PAGERDUTY_NOTIFICATION_SETTINGS_GROUP_IDENTIFIER = "pagerduty_notification_settings";
   public static String ENABLE_SLACK_NOTIFICATION_IDENTIFIER = "enable_slack_notification";
-  public static String ENABLE_MSTEAM_NOTIFICATION_IDENTIFIER = "enable_msTeam_notification";
+  public static String ENABLE_MSTEAM_NOTIFICATION_IDENTIFIER = "enable_msTeams_notification";
   public static String ENABLE_WEBHOOK_NOTIFICATION_IDENTIFIER = "enable_webhook_notification";
   public static String ENABLE_PAGERDUTY_NOTIFICATION_IDENTIFIER = "enable_pagerduty_notification";
   public static String TRIGGER_FOR_ALL_ARTIFACTS_OR_MANIFESTS = "trigger_for_all_artifacts_or_manifests";

@@ -22,6 +22,7 @@ import io.harness.ssca.services.EnforcementResultService;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Query;
 
@@ -37,6 +38,9 @@ public class MongoDenyListExecutor implements IRuleExecutor<DenyList> {
   public List<EnforcementResultEntity> execute(Engine<DenyList> engine) {
     DenyList denyList = engine.getRules();
     List<EnforcementResultEntity> result = new ArrayList<>();
+    if (Objects.isNull(denyList.getDenyListItems())) {
+      return result;
+    }
 
     for (DenyListItem denyListItem : denyList.getDenyListItems()) {
       Query query = mongoInterpreter.interpretRules(denyListItem, engine.getArtifact().getOrchestrationId(), null);

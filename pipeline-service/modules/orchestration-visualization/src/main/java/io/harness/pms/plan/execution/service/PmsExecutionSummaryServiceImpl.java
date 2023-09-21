@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.AbortInfoHelper;
 import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -22,6 +23,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecution;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
@@ -60,6 +62,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   @Inject NodeExecutionService nodeExecutionService;
   @Inject PlanService planService;
   @Inject private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
+  @Inject AbortInfoHelper abortInfoHelper;
   @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
 
   /**
@@ -319,6 +322,23 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Update ops = new Update();
     ops.set(PlanExecutionSummaryKeys.validUntil, ttlDate);
     pmsExecutionSummaryRepository.multiUpdate(query, ops);
+  }
+
+  @Override
+  public Update updateStatusOps(PlanExecution planExecution, Update summaryEntityUpdate) {
+    ExecutionStatus status = ExecutionStatus.getExecutionStatus(planExecution.getStatus());
+
+    summaryEntityUpdate.set(
+        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.internalStatus, planExecution.getStatus());
+    summaryEntityUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.status, status);
+    if (status == ExecutionStatus.ABORTED) {
+      summaryEntityUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.abortedBy,
+          abortInfoHelper.fetchAbortedByInfoFromInterrupts(planExecution.getUuid()));
+    }
+    if (StatusUtils.isFinalStatus(status.getEngineStatus())) {
+      summaryEntityUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.endTs, planExecution.getEndTs());
+    }
+    return summaryEntityUpdate;
   }
 
   /**

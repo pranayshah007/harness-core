@@ -1211,6 +1211,28 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ChangeTaskUpdateMultipleSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/UpdateMultipleSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "changeRequestNumber"
+          ],
+          "properties": {
+            "changeRequestNumber": {
+              "type": "string"
+            },
+            "changeTaskType": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Clause": {
       "type": "object",
       "required": [
@@ -2488,7 +2510,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4458,7 +4480,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6627,7 +6649,6 @@
           "type": "object",
           "required": [
             "connectorRef",
-            "ticketNumber",
             "ticketType",
             "useServiceNowTemplate"
           ],
@@ -6665,10 +6686,27 @@
             "ticketType": {
               "type": "string"
             },
+            "updateMultiple": {
+              "$ref": "#/definitions/UpdateMultipleTaskNode"
+            },
             "useServiceNowTemplate": {
               "type": "boolean"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "ticketNumber"
+              ]
+            },
+            {
+              "required": [
+                "updateMultiple"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7167,7 +7205,7 @@
                 }
               ]
             },
-            "spec": {},
+            "spec": { },
             "strategy": {
               "oneOf": [
                 {
@@ -8747,6 +8785,45 @@
     "UnitTestReportSpec": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "UpdateMultipleSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "UpdateMultipleTaskNode": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "CHANGE_TASK"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CHANGE_TASK"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ChangeTaskUpdateMultipleSpec"
+              }
+            }
+          }
+        }
+      ]
     },
     "UpdateRuleYaml": {
       "allOf": [

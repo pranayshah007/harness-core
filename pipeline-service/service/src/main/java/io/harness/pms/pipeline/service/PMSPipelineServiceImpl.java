@@ -94,7 +94,7 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.PipelineYamlHelper;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -268,7 +268,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String pipelineId = null;
     String sourcePipelineVersion = sourcePipelineEntity.getHarnessVersion();
     switch (sourcePipelineVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, sourcePipelineEntityYaml);
         pipelineName = clonePipelineDTO.getDestinationConfig().getPipelineName();
         pipelineId = clonePipelineDTO.getDestinationConfig().getPipelineIdentifier();

@@ -20,6 +20,7 @@ import io.harness.ccm.setup.service.support.intfc.AwsEKSHelperService;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEProxyConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
@@ -32,6 +33,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.costandusagereport.AWSCostAndUsageReport;
 import com.amazonaws.services.costandusagereport.AWSCostAndUsageReportClientBuilder;
 import com.amazonaws.services.costandusagereport.model.DescribeReportDefinitionsRequest;
@@ -84,7 +86,7 @@ public class AWSCEConfigValidationServiceImpl implements AWSCEConfigValidationSe
     AWSCredentialsProvider credentialsProvider = getCredentialProvider(awsCrossAccountAttributes);
     AWSCostAndUsageReportClientBuilder awsCostAndUsageReportClientBuilder =
         AWSCostAndUsageReportClientBuilder.standard().withRegion(ceAWSRegion).withCredentials(credentialsProvider);
-    if (awsCredentialHelper.getCeProxyConfig().isEnabled()) {
+    if (awsCredentialHelper.getCeProxyConfig() != null && awsCredentialHelper.getCeProxyConfig().isEnabled()) {
       log.info("awsCostAndUsageReportClientBuilder initializing with proxy config");
       awsCostAndUsageReportClientBuilder.withClientConfiguration(
           getClientConfiguration(awsCredentialHelper.getCeProxyConfig()));
@@ -133,10 +135,17 @@ public class AWSCEConfigValidationServiceImpl implements AWSCEConfigValidationSe
   }
 
   protected AmazonS3Client getAmazonS3Client(AWSCredentialsProvider credentialsProvider) {
-    AmazonS3ClientBuilder builder =
-        AmazonS3ClientBuilder.standard().withRegion(ceAWSRegion).withForceGlobalBucketAccessEnabled(Boolean.TRUE);
-    builder.withCredentials(credentialsProvider);
-    return (AmazonS3Client) builder.build();
+    CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig = awsCredentialHelper.getCeAwsServiceEndpointConfig();
+    AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
+                                        .withForceGlobalBucketAccessEnabled(Boolean.TRUE)
+                                        .withCredentials(credentialsProvider);
+    if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
+      return (AmazonS3Client) builder
+          .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+              ceAwsServiceEndpointConfig.getStsEndPointUrl(), ceAwsServiceEndpointConfig.getEndPointRegion()))
+          .build();
+    }
+    return (AmazonS3Client) builder.withRegion(ceAWSRegion).build();
   }
 
   private AwsS3BucketDetails validateReportAndGetS3Region(ReportDefinition report, CEAwsConfig awsConfig) {
@@ -231,7 +240,7 @@ public class AWSCEConfigValidationServiceImpl implements AWSCEConfigValidationSe
   boolean validateOrganisationReadOnlyAccess(AWSCredentialsProvider credentialsProvider) {
     AWSOrganizationsClientBuilder builder = AWSOrganizationsClientBuilder.standard().withRegion(ceAWSRegion);
     builder.withCredentials(credentialsProvider);
-    if (awsCredentialHelper.getCeProxyConfig().isEnabled()) {
+    if (awsCredentialHelper.getCeProxyConfig() != null && awsCredentialHelper.getCeProxyConfig().isEnabled()) {
       log.info("AWSOrganizationsClientBuilder initializing with proxy config");
       builder.withClientConfiguration(getClientConfiguration(awsCredentialHelper.getCeProxyConfig()));
     }
@@ -242,10 +251,7 @@ public class AWSCEConfigValidationServiceImpl implements AWSCEConfigValidationSe
 
   @VisibleForTesting
   boolean validateIfBucketIsPresent(AWSCredentialsProvider credentialsProvider, AwsS3BucketDetails s3BucketDetails) {
-    AmazonS3ClientBuilder builder =
-        AmazonS3ClientBuilder.standard().withRegion(ceAWSRegion).withForceGlobalBucketAccessEnabled(Boolean.TRUE);
-    builder.withCredentials(credentialsProvider);
-    AmazonS3Client amazonS3Client = (AmazonS3Client) builder.build();
+    AmazonS3Client amazonS3Client = getAmazonS3Client(credentialsProvider);
     List<S3ObjectSummary> objectSummaries =
         amazonS3Client.listObjects(s3BucketDetails.getS3BucketName()).getObjectSummaries();
     return objectSummaries != null;

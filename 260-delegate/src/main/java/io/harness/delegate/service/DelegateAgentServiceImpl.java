@@ -2033,6 +2033,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
     Optional.ofNullable(currentlyExecutingFutures.get(delegateTaskEvent.getDelegateTaskId()).getTaskFuture())
         .ifPresent(future -> future.cancel(true));
+    boolean isRemoved = currentlyAcquiringTasks.remove(delegateTaskEvent.getDelegateTaskId());
+    if (isRemoved) {
+      currentlyAcquiringTasksCount.getAndDecrement();
+    }
+
     currentlyExecutingTasks.remove(delegateTaskEvent.getDelegateTaskId());
     if (currentlyExecutingFutures.remove(delegateTaskEvent.getDelegateTaskId()) != null) {
       log.info("Removed from executing futures on abort");
@@ -2163,8 +2168,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       } catch (Exception e) {
         log.error("Unable to get task for validation", e);
       } finally {
-        currentlyAcquiringTasks.remove(delegateTaskId);
-        if (incrementedCurrentlyAcquiredTaskCounter) {
+        boolean isRemoved = currentlyAcquiringTasks.remove(delegateTaskId);
+        if (incrementedCurrentlyAcquiredTaskCounter && isRemoved) {
           currentlyAcquiringTasksCount.getAndDecrement();
         }
         currentlyExecutingFutures.remove(delegateTaskId);

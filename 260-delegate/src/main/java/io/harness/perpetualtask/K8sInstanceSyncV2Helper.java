@@ -48,7 +48,6 @@ import io.harness.perpetualtask.instancesync.k8s.KubernetesCloudClusterConfig;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -150,8 +149,9 @@ public class K8sInstanceSyncV2Helper {
     long timeoutMillis =
         K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT);
 
-    List<ContainerInfo> containerInfoList = k8sTaskHelperBase.getContainerInfos(requestData.getKubernetesConfig(),
-        requestData.getReleaseName(), requestData.getNamespace(), Collections.emptyMap(), timeoutMillis);
+    List<ContainerInfo> containerInfoList =
+        k8sTaskHelperBase.getContainerInfos(requestData.getKubernetesConfig(), requestData.getReleaseName(),
+            requestData.getNamespace(), requestData.getWorkloadLabelSelectors(), timeoutMillis);
     return K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
         containerInfoList, requestData.getHelmChartInfo(), HelmVersion.valueOf(requestData.getHelmVersion()));
   }

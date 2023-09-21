@@ -132,6 +132,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .releaseName("release")
             .environment(environment)
             .infrastructureKey("11f6673d11711af46238bf33972cb99a4a869244")
+            .infrastructureKeyShort("11f667")
             .build();
 
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
@@ -160,6 +161,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .releaseName("release")
             .environment(environment)
             .infrastructureKey("11f6673d11711af46238bf33972cb99a4a869244")
+            .infrastructureKeyShort("11f667")
             .build();
 
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
@@ -187,6 +189,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .cluster("cluster")
             .environment(environment)
             .infrastructureKey("54874007d7082ff0ab54cd51865954f5e78c5c88")
+            .infrastructureKeyShort("548740")
             .build();
 
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
@@ -367,6 +370,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .cluster("cluster")
             .environment(environment)
             .infrastructureKey("8f62fc4abbc11a8400589ccac4b76f32ba0f7df2")
+            .infrastructureKeyShort("8f62fc")
             .useClusterAdminCredentials(true)
             .build();
 
@@ -393,6 +397,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                         .cluster("cluster")
                                         .environment(environment)
                                         .infrastructureKey("8f62fc4abbc11a8400589ccac4b76f32ba0f7df2")
+                                        .infrastructureKeyShort("8f62fc")
                                         .useClusterAdminCredentials(false)
                                         .build();
 
@@ -527,6 +532,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .cluster("cluster")
             .environment(environment)
             .infrastructureKey("54874007d7082ff0ab54cd51865954f5e78c5c88")
+            .infrastructureKeyShort("548740")
             .build();
 
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
@@ -590,6 +596,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .cluster("cluster")
             .environment(environment)
             .infrastructureKey("54874007d7082ff0ab54cd51865954f5e78c5c88")
+            .infrastructureKeyShort("548740")
             .build();
 
     k8sGcpInfrastructureOutcome.setTags(tags);

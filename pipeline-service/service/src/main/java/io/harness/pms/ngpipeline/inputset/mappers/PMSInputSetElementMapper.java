@@ -38,7 +38,7 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponse
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.CacheResponseMetadataDTO;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -167,7 +167,7 @@ public class PMSInputSetElementMapper {
         .name(name)
         .inputSetEntityType(inputSetEntityType)
         .yaml(yaml)
-        .harnessVersion(PipelineVersion.V1)
+        .harnessVersion(HarnessYamlVersion.V1)
         .build();
   }
 
@@ -192,7 +192,7 @@ public class PMSInputSetElementMapper {
         .tags(TagMapper.convertToList(requestInfoDTO.getTags()))
         .inputSetEntityType(InputSetEntityType.INPUT_SET)
         .yaml(requestInfoDTO.getYaml())
-        .harnessVersion(PipelineVersion.V1)
+        .harnessVersion(HarnessYamlVersion.V1)
         .build();
   }
 
@@ -344,10 +344,10 @@ public class PMSInputSetElementMapper {
   public InputSetEntity toInputSetEntityFromVersion(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String inputSetYaml, String inputSetVersion, InputSetEntityType inputSetEntityType) {
     switch (inputSetVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return toInputSetEntityV1(
             accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetYaml, inputSetEntityType);
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         return toInputSetEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetYaml);
       default:
         throw new IllegalStateException("version not supported");
@@ -357,9 +357,9 @@ public class PMSInputSetElementMapper {
   public InputSetEntity toInputSetEntityFromVersion(InputSetRequestInfoDTO requestInfoDTO, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String inputSetVersion) {
     switch (inputSetVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return toInputSetEntityV1(requestInfoDTO, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         return toInputSetEntity(
             requestInfoDTO, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, requestInfoDTO.getYaml());
       default:

@@ -208,6 +208,7 @@ import software.wings.exception.JsonProcessingExceptionMapper;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.filter.AuditRequestFilter;
 import software.wings.filter.AuditResponseFilter;
+import software.wings.filter.DisableFirstGenFilter;
 import software.wings.jersey.JsonViews;
 import software.wings.jersey.KryoFeature;
 import software.wings.licensing.LicenseService;
@@ -703,6 +704,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
     registerRequestContextFilter(environment);
+    registerDisableFirstGenFilter(environment, injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -1257,6 +1259,12 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   private void registerRequestContextFilter(Environment environment) {
     environment.jersey().register(new RequestContextFilter());
+  }
+
+  private void registerDisableFirstGenFilter(Environment environment, Injector injector) {
+    if (isManager()) {
+      environment.jersey().register(injector.getInstance(DisableFirstGenFilter.class));
+    }
   }
 
   private void registerQueueListeners(MainConfiguration configuration, Injector injector) {

@@ -95,10 +95,12 @@ public interface NodeExecutionService {
   /**
    * Fetches all statuses for nodeExecutions for give planExecutionId and oldRetry false
    * Uses - planExecutionId_mode_status_oldRetry_idx index
+   *
    * @param planExecutionId
+   * @param ignoreIdentityNodes
    * @return
    */
-  List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId);
+  List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId, boolean ignoreIdentityNodes);
 
   /**
    * Fetches all non-final-statuses for nodeExecutions for given planExecutionId and oldRetry false

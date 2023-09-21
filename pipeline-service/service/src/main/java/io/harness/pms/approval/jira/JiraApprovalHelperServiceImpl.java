@@ -10,7 +10,6 @@ package io.harness.pms.approval.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.steps.approval.ApprovalUtils.JIRA_DELEGATE_TASK_NAME;
-import static io.harness.steps.approval.ApprovalUtils.sendTaskIdProgressUpdate;
 import static io.harness.steps.approval.ApprovalUtils.updateTaskId;
 import static io.harness.steps.approval.step.entities.ApprovalInstance.ASYNC_DELEGATE_TIMEOUT;
 
@@ -181,7 +180,6 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
       String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters, JIRA_DELEGATE_TASK_NAME,
           TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors()));
 
-      sendTaskIdProgressUpdate(taskId, JIRA_DELEGATE_TASK_NAME, instanceId, waitNotifyEngine);
       updateTaskId(instanceId, taskId, approvalInstanceService);
 
       log.info("Jira Approval Instance queued task with taskId - {}", taskId);

@@ -16,7 +16,7 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.PlanCreationServiceGrpc;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -73,8 +73,8 @@ public class PmsSdkHelper {
     return dependencies.getDependenciesMap()
         .entrySet()
         .stream()
-        .filter(
-            entry -> containsSupportedSingleDependencyByYamlPath(serviceInfo, fullYamlField, entry, PipelineVersion.V0))
+        .filter(entry
+            -> containsSupportedSingleDependencyByYamlPath(serviceInfo, fullYamlField, entry, HarnessYamlVersion.V0))
         .map(Map.Entry::getKey)
         .findFirst()
         .isPresent();

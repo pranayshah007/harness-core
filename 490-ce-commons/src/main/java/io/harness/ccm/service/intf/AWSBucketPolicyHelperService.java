@@ -9,8 +9,10 @@ package io.harness.ccm.service.intf;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.remote.CEProxyConfig;
 
 @OwnedBy(HarnessTeam.CE)
 public interface AWSBucketPolicyHelperService {
-  boolean updateBucketPolicy(String crossAccountRoleArn, String awsS3Bucket, String awsAccessKey, String awsSecretKey);
+  boolean updateBucketPolicy(String crossAccountRoleArn, String awsS3Bucket, String awsAccessKey, String awsSecretKey,
+      CEProxyConfig ceProxyConfig);
 }

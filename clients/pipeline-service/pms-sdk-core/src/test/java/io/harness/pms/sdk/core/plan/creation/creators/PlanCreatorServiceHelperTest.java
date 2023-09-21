@@ -28,7 +28,7 @@ import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -59,7 +59,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
     Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
-        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V0);
+        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, HarnessYamlVersion.V0);
     assertThat(partialPlanCreatorOptional.isPresent()).isTrue();
     assertThat(partialPlanCreatorOptional.get().getClass()).isEqualTo(DummyChildrenPlanCreator.class);
   }
@@ -155,7 +155,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
     Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
-        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V1);
+        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, HarnessYamlVersion.V1);
     assertThat(partialPlanCreatorOptional.isPresent()).isFalse();
   }
 
@@ -240,7 +240,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
         Dependency.newBuilder()
             .setParentInfo(HarnessStruct.newBuilder()
                                .putData(PlanCreatorConstants.YAML_VERSION,
-                                   HarnessValue.newBuilder().setStringValue(PipelineVersion.V0).build())
+                                   HarnessValue.newBuilder().setStringValue(HarnessYamlVersion.V0).build())
                                .build())
             .build();
     PlanCreationResponse planCreationResponse = PlanCreationResponse.builder().build();
@@ -260,7 +260,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
             PlanCreatorConstants.YAML_VERSION))
-        .isEqualTo(HarnessValue.newBuilder().setStringValue(PipelineVersion.V0).build());
+        .isEqualTo(HarnessValue.newBuilder().setStringValue(HarnessYamlVersion.V0).build());
 
     newDependencies =
         newDependencies.toBuilder()
@@ -269,7 +269,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
                 Dependency.newBuilder()
                     .setParentInfo(HarnessStruct.newBuilder()
                                        .putData(PlanCreatorConstants.YAML_VERSION,
-                                           HarnessValue.newBuilder().setStringValue(PipelineVersion.V1).build())
+                                           HarnessValue.newBuilder().setStringValue(HarnessYamlVersion.V1).build())
                                        .build())
                     .build())
             .build();
@@ -280,6 +280,6 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
             PlanCreatorConstants.YAML_VERSION))
-        .isEqualTo(HarnessValue.newBuilder().setStringValue(PipelineVersion.V1).build());
+        .isEqualTo(HarnessValue.newBuilder().setStringValue(HarnessYamlVersion.V1).build());
   }
 }

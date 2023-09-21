@@ -722,7 +722,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("GitOps Revert PR")
             .setType(StepSpecTypeConstants.GITOPS_REVERT_PR)
-            .setFeatureFlag(FeatureName.GITOPS_REVERT_PR.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 

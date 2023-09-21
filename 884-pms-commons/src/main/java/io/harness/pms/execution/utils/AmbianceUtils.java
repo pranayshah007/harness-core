@@ -33,7 +33,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.strategy.StrategyValidationUtils;
@@ -422,7 +422,7 @@ public class AmbianceUtils {
   public static String getPipelineVersion(Ambiance ambiance) {
     ExecutionMetadata metadata = ambiance.getMetadata();
     if (EmptyPredicate.isEmpty(metadata.getHarnessVersion())) {
-      return PipelineVersion.V0;
+      return HarnessYamlVersion.V0;
     }
     return metadata.getHarnessVersion();
   }
@@ -447,7 +447,7 @@ public class AmbianceUtils {
   }
 
   public String getPipelineExecutionIdentifier(Ambiance ambiance) {
-    if (ambiance.getPlanExecutionId() != null) {
+    if (EmptyPredicate.isNotEmpty(ambiance.getPlanExecutionId())) {
       return ambiance.getPlanExecutionId();
     } else if (ambiance.getMetadata() != null) {
       return ambiance.getMetadata().getExecutionUuid();

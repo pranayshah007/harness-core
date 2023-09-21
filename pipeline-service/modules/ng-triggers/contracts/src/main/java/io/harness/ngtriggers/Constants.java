@@ -85,6 +85,7 @@ public interface Constants {
   String PR_TITLE = "prTitle";
   String SOURCE = "source";
   String CONNECTOR_REF = "connectorRef";
+  String TRIGGER_PAYLOAD = "triggerPayload";
   String IMAGE_PATH = "imagePath";
   String SOURCE_TYPE = "sourceType";
   String ARTIFACT_EXPR = "artifact";

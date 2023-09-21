@@ -17,6 +17,7 @@ import static io.harness.connector.SecretSpecBuilder.getSecretName;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.k8s.PodStatus.Status.RUNNING;
+import static io.harness.delegate.beans.ci.pod.CICommonConstants.HARNESS_LE_DELEGATE_LOG_URL;
 import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.LITE_ENGINE;
 import static io.harness.govern.Switch.unhandled;
@@ -621,5 +622,6 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     }
     String secret = String.join(",", allSecrets);
     secretEnvVars.put(HARNESS_SECRETS_LIST, secret);
+    secretEnvVars.put(HARNESS_LE_DELEGATE_LOG_URL, System.getenv().get("LOG_STREAMING_SERVICE_URL"));
   }
 }

@@ -20,7 +20,6 @@ import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
-import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,17 +44,15 @@ public class PagerDutyProvider extends DataSourceProvider {
   final ConfigReader configReader;
 
   @Override
-  public Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    MergedPluginConfigs pluginsConfig = configReader.fetchPluginsConfig(accountIdentifier);
-    Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, pluginsConfig);
+  public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
+      Map<String, Set<String>> dataPointsAndInputValues, String configs) {
+    Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, configs);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
 
     String pagerDutyServiceId = entity.getMetadata().getAnnotations().get(PAGERDUTY_ANNOTATION);
     log.info("Pager Duty Service Id fetched from catalog - {}", pagerDutyServiceId);
 
-    String targetUrl =
-        (String) configReader.getConfigValues(accountIdentifier, pluginsConfig.getConfig(), TARGET_URL_EXPRESSION_KEY);
+    String targetUrl = (String) configReader.getConfigValues(accountIdentifier, configs, TARGET_URL_EXPRESSION_KEY);
 
     if (targetUrl == null) {
       log.info(
@@ -69,9 +66,8 @@ public class PagerDutyProvider extends DataSourceProvider {
   }
 
   @Override
-  public Map<String, String> getAuthHeaders(String accountIdentifier, MergedPluginConfigs mergedPluginConfigs) {
-    String authToken = (String) configReader.getConfigValues(
-        accountIdentifier, mergedPluginConfigs.getConfig(), AUTH_TOKEN_EXPRESSION_KEY);
+  public Map<String, String> getAuthHeaders(String accountIdentifier, String configs) {
+    String authToken = (String) configReader.getConfigValues(accountIdentifier, configs, AUTH_TOKEN_EXPRESSION_KEY);
 
     if (authToken == null) {
       log.info(

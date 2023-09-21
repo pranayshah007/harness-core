@@ -27,14 +27,12 @@ import io.harness.jira.JiraConstantsNG;
 import io.harness.jira.JiraIssueNG;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.steps.approval.step.ApprovalInstanceService;
-import io.harness.steps.approval.step.ApprovalProgressData;
 import io.harness.steps.approval.step.beans.CriteriaSpecType;
 import io.harness.steps.approval.step.beans.KeyValuesCriteriaSpecDTO;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.steps.shellscript.ShellType;
-import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.base.Joiner;
 import java.util.Arrays;
@@ -58,20 +56,6 @@ public class ApprovalUtils {
   private static final String EMPTY_STRING = "";
   public static final List<String> JIRA_APPROVAL_STATIC_FIELDS =
       Arrays.asList(JiraConstantsNG.PROJECT_KEY, JiraConstantsNG.ISSUE_TYPE_KEY, JiraConstantsNG.STATUS_KEY);
-
-  public static void sendTaskIdProgressUpdate(
-      String taskId, String taskName, String instanceId, WaitNotifyEngine waitNotifyEngine) {
-    if (isNotBlank(taskId)) {
-      try {
-        // Sends approval progress update to update task id to latest delegate task id
-        waitNotifyEngine.progressOn(
-            instanceId, ApprovalProgressData.builder().latestDelegateTaskId(taskId).taskName(taskName).build());
-      } catch (Exception ex) {
-        // log and ignore the error occurred while progress update
-        log.warn("Error sending progress update for taskId {} while polling", taskId, ex);
-      }
-    }
-  }
 
   public static void updateTaskId(String instanceId, String taskId, ApprovalInstanceService approvalInstanceService) {
     if (isNotBlank(taskId) && !isNull(approvalInstanceService)) {

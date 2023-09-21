@@ -3474,6 +3474,7 @@ public class DelegateServiceImpl implements DelegateService {
                                     .project(DelegateKeys.status, true)
                                     .project(DelegateKeys.delegateProfileId, true)
                                     .project(DelegateKeys.description, true)
+                                    .project(DelegateKeys.lastHeartBeat, true)
                                     .get();
 
     if (existingDelegate != null) {

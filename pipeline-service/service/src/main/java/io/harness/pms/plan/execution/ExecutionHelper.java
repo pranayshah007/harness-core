@@ -97,7 +97,7 @@ import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -301,12 +301,12 @@ public class ExecutionHelper {
     String pipelineYamlWithTemplateRef;
     BasicPipeline basicPipeline = null;
     switch (pipelineEntity.getHarnessVersion()) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
             mergedRuntimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineEntity.getYaml()));
         pipelineYamlWithTemplateRef = pipelineYaml;
         break;
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         TemplateMergeResponseDTO templateMergeResponseDTO;
         templateMergeResponseDTO =
             getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputJsonNode, pipelineEntity);
@@ -362,7 +362,7 @@ public class ExecutionHelper {
     give an error in schema validation. That's why we need a value that doesn't have this validator appended.
      */
     // We don't have schema validation for V1 yaml as of now.
-    if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
+    if (HarnessYamlVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
       JsonNode jsonNodeForValidatingSchema =
           getPipelineYamlWithUnResolvedTemplates(mergedRuntimeInputJsonNode, pipelineEntity);
       pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
@@ -491,10 +491,10 @@ public class ExecutionHelper {
     String currentProcessedYaml;
     try {
       switch (version) {
-        case PipelineVersion.V1:
+        case HarnessYamlVersion.V1:
           currentProcessedYaml = YamlUtils.injectUuidWithType(pipelineYaml, YAMLFieldNameConstants.PIPELINE);
           break;
-        case PipelineVersion.V0:
+        case HarnessYamlVersion.V0:
           currentProcessedYaml = YamlUtils.injectUuid(pipelineYaml);
           break;
         default:

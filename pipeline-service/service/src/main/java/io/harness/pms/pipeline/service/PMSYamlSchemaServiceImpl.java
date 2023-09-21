@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.service;
+
 import static io.harness.beans.FeatureName.PIE_STATIC_YAML_SCHEMA;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.APPROVAL_NAMESPACE;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA;
@@ -50,8 +51,9 @@ import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
 import io.harness.pms.yaml.individualschema.PipelineSchemaMetadata;
-import io.harness.pms.yaml.individualschema.PipelineSchemaParserV0;
+import io.harness.pms.yaml.individualschema.PipelineSchemaParserFactory;
 import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.schema.YamlSchemaProvider;
@@ -115,7 +117,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private ExecutorService yamlSchemaExecutor;
 
   @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
-  @Inject PipelineSchemaParserV0 pipelineSchemaParserV0;
+  @Inject PipelineSchemaParserFactory pipelineSchemaParserFactory;
   Integer allowedParallelStages;
 
   private final String PIPELINE_JSON = "pipeline.json";
@@ -529,12 +531,14 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         jsonNode = schemaFetcher.fetchTriggerStaticYamlSchema();
         return (ObjectNode) jsonNode;
       default:
-        return getIndividualSchema(nodeGroup, nodeType, nodeGroupDifferentiator);
+        return getIndividualSchema(nodeGroup, nodeType, nodeGroupDifferentiator, version);
     }
   }
 
-  private ObjectNode getIndividualSchema(String nodeGroup, String nodeType, String nodeGroupDifferentiator) {
-    return pipelineSchemaParserV0.getIndividualSchema(
+  private ObjectNode getIndividualSchema(
+      String nodeGroup, String nodeType, String nodeGroupDifferentiator, String version) {
+    AbstractStaticSchemaParser pipelineSchemaParser = pipelineSchemaParserFactory.getPipelineSchemaParser(version);
+    return pipelineSchemaParser.getIndividualSchema(
         PipelineSchemaRequest.builder()
             .individualSchemaMetadata(PipelineSchemaMetadata.builder()
                                           .nodeGroup(nodeGroup)

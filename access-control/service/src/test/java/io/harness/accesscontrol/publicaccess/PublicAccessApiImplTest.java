@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PL)
@@ -73,12 +74,13 @@ public class PublicAccessApiImplTest extends AccessControlTestBase {
   @Category(UnitTests.class)
   public void testEnablePublicAccess_publicAccessOnAccountNotEnabled() {
     PublicAccessRequest publicAccessRequest = getPublicAccessRequest();
-    mockStatic(CGRestUtils.class);
+    final MockedStatic<CGRestUtils> mockStatic = mockStatic(CGRestUtils.class);
     when(CGRestUtils.getResponse(accountClient.getAccountDTO(ACCOUNT_IDENTIFIER)))
         .thenReturn(AccountDTO.builder().publicAccessEnabled(false).build());
     exceptionRule.expect(InvalidRequestException.class);
     exceptionRule.expectMessage("Public Access is not enabled for this account");
     Response result = publicAccessApi.enablePublicAccess(publicAccessRequest, ACCOUNT_IDENTIFIER);
+    mockStatic.close();
   }
 
   @Test
@@ -87,7 +89,7 @@ public class PublicAccessApiImplTest extends AccessControlTestBase {
   public void testEnablePublicAccess_resourceTypeIsNotAllowedForPublicAccess() {
     PublicAccessRequest publicAccessRequest = getPublicAccessRequest();
     publicAccessRequest.setResourceType("CONNECTOR");
-    mockStatic(CGRestUtils.class);
+    final MockedStatic<CGRestUtils> mockStatic = mockStatic(CGRestUtils.class);
     when(CGRestUtils.getResponse(accountClient.getAccountDTO(ACCOUNT_IDENTIFIER)))
         .thenReturn(AccountDTO.builder().publicAccessEnabled(true).build());
     when(resourceTypeService.get("CONNECTOR"))
@@ -95,6 +97,7 @@ public class PublicAccessApiImplTest extends AccessControlTestBase {
     exceptionRule.expect(InvalidRequestException.class);
     exceptionRule.expectMessage("Resource type does not support public access");
     Response result = publicAccessApi.enablePublicAccess(publicAccessRequest, ACCOUNT_IDENTIFIER);
+    mockStatic.close();
   }
 
   private PublicAccessRequest getPublicAccessRequest() {

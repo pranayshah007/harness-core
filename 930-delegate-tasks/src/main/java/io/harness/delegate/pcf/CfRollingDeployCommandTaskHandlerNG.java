@@ -231,7 +231,8 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
           CommandExecutionStatus.FAILURE);
 
       Misc.logAllMessages(sanitizedException, logCallback);
-      return cfRollingDeployResponseNGBuilder.commandExecutionStatus(CommandExecutionStatus.FAILURE)
+      return cfRollingDeployResponseNGBuilder.newApplicationInfo(currentProdInfo)
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(ExceptionUtils.getMessage(sanitizedException))
           .build();
     } finally {

@@ -50,7 +50,7 @@ public class DataSourceProviderFactory {
       case GITHUB_IDENTIFIER:
         return new GithubProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(GITHUB_IDENTIFIER),
-            backstageEnvVariableRepository, ngSecretService);
+            backstageEnvVariableRepository, ngSecretService, configReader);
       case HARNESS_IDENTIFIER:
         return new HarnessProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(HARNESS_IDENTIFIER), idpAuthInterceptor, env);

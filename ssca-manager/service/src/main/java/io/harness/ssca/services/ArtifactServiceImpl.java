@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 public class ArtifactServiceImpl implements ArtifactService {
@@ -74,5 +75,13 @@ public class ArtifactServiceImpl implements ArtifactService {
   @Override
   public String generateArtifactId(String registryUrl, String name) {
     return UUID.nameUUIDFromBytes((registryUrl + ":" + name).getBytes()).toString();
+  }
+
+  @Override
+  @Transactional
+  public void saveArtifactAndInvalidateOldArtifact(ArtifactEntity artifact) {
+    artifactRepository.invalidateOldArtifact(artifact);
+    artifact.setLastUpdatedAt(artifact.getCreatedOn().toEpochMilli());
+    artifactRepository.save(artifact);
   }
 }

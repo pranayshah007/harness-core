@@ -13,8 +13,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.HostAttributesFilter;
 import io.harness.cdng.infra.beans.host.HostFilter;
@@ -44,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 public class PdcProvisionedInfrastructureMapper {
   @Inject private ProvisionerExpressionEvaluatorProvider provisionerExpressionEvaluatorProvider;
   @Inject private InputSetValidatorFactory inputSetValidatorFactory;
@@ -66,8 +71,8 @@ public class PdcProvisionedInfrastructureMapper {
             .hosts(hosts)
             .hostFilter(toHostFilterDTO(pdcInfrastructure.getHostFilter()))
             .environment(environmentOutcome)
-            .infrastructureKey(
-                InfrastructureKey.generate(service, environmentOutcome, pdcInfrastructure.getInfrastructureKeyValues()))
+            .infrastructureKey(InfrastructureKeyGenerator.createFullInfraKey(
+                service, environmentOutcome, pdcInfrastructure.getInfrastructureKeyValues()))
             .hostsAttributes(evaluatedHostObjectsAttrs)
             .dynamicallyProvisioned(true)
             .build();

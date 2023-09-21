@@ -364,6 +364,7 @@ components:
           example: 'https://console.google.com/storage'
       required:
         - name
+        - data
         - format
     Attestation:
       title: Attestation
@@ -425,6 +426,14 @@ components:
           type: string
           description: StepExecutionId
           example: betatest1
+      required:
+        - format
+        - tool
+        - pipeline_execution_id
+        - pipeline_identifier
+        - stage_identifier
+        - step_identifier
+        - step_execution_id
     SbomProcessRequestBody:
       title: SbomProcessRequestBody
       x-stoplight:
@@ -474,6 +483,10 @@ components:
           $ref: '#/components/schemas/Artifact'
         policy_file_id:
           type: string
+      required:
+        - enforcement_id
+        - artifact
+        - policy_file_id
     TokenIssueResponseBody:
       title: TokenIssueResponseBody
       x-stoplight:
@@ -893,6 +906,7 @@ components:
         type: integer
         default: 30
         maximum: 1000
+        minimum: 1
       description: Number of items to return per page.
     Order:
       name: order
@@ -912,6 +926,7 @@ components:
       schema:
         type: integer
         default: 0
+        minimum: 0
       description: "Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page\t"
     Sort:
       name: sort

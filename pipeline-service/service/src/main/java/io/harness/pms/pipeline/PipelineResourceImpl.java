@@ -17,6 +17,9 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.publicaccess.PublicAccessClient;
+import io.harness.accesscontrol.publicaccess.dto.PublicAccessResponse;
+import io.harness.accesscontrol.publicaccess.utils.PublicAccessClientUtils;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -63,6 +66,7 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
+import io.harness.spec.server.accesscontrol.v1.model.PublicAccessRequest;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
@@ -89,6 +93,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
+import retrofit2.Response;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
@@ -106,6 +111,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
+  private final PublicAccessClient publicAccessClient;
+  private final String PIPELINE = "PIPELINE";
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Deprecated
@@ -128,7 +135,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<PipelineSaveResponse> createPipelineV2(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId, String pipelineIdentifier,
       String pipelineName, String pipelineDescription, Boolean isDraft, GitEntityCreateInfoDTO gitEntityCreateInfo,
-      @NotNull String yaml) {
+      @NotNull String yaml, boolean isPublic) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
         accountId, orgId, projectId, pipelineIdentifier, pipelineName, yaml, isDraft, pipelineVersion);
@@ -141,11 +148,49 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
     }
     PipelineEntity createdEntity = pipelineCRUDResult.getPipelineEntity();
+
     return ResponseDTO.newResponse(createdEntity.getVersion().toString(),
         PipelineSaveResponse.builder()
             .governanceMetadata(governanceMetadata)
             .identifier(createdEntity.getIdentifier())
+            .publicAccessResponse(
+                markPipelinePublic(accountId, orgId, projectId, pipelineEntity.getIdentifier(), isPublic))
             .build());
+  }
+
+  private PublicAccessResponse markPipelinePublic(
+      String accountId, String orgId, String projectId, String pipelineIdentifier, boolean isPublic) {
+    PublicAccessResponse existingPublicStatus =
+        getPublicContextResponse(accountId, orgId, projectId, pipelineIdentifier);
+    if (isPublic == existingPublicStatus.isPublic()) {
+      return createPublicAccessResponse(isPublic, "");
+    }
+
+    PublicAccessRequest publicAccessRequest =
+        PublicAccessClientUtils.getPublicAccessRequest(accountId, orgId, projectId, PIPELINE, pipelineIdentifier);
+    try {
+      Response<Boolean> isPublicResponse;
+      if (isPublic) {
+        isPublicResponse = publicAccessClient.enable(publicAccessRequest, accountId).execute();
+      } else {
+        isPublicResponse =
+            publicAccessClient.disable(accountId, orgId, projectId, PIPELINE, pipelineIdentifier, accountId).execute();
+      }
+      if (isPublicResponse.body() == null) {
+        return createPublicAccessResponse(existingPublicStatus.isPublic(),
+            isPublicResponse.errorBody() != null ? isPublicResponse.errorBody().toString() : "");
+      } else {
+        return createPublicAccessResponse(isPublic ? isPublicResponse.body() : !isPublicResponse.body(), null);
+      }
+    } catch (Exception e) {
+      log.error("There was an error while marking resource type [{}] with resource identifier [{}] as public.",
+          PIPELINE, pipelineIdentifier, e);
+      return createPublicAccessResponse(false, e.getMessage());
+    }
+  }
+
+  private PublicAccessResponse createPublicAccessResponse(boolean isPublic, String error) {
+    return PublicAccessResponse.builder().isPublic(isPublic).errorMessage(error).build();
   }
 
   @Hidden
@@ -241,6 +286,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             -> new EntityNotFoundException(
                 String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId))));
 
+    pipeline.setPublicAccessResponse(getPublicContextResponse(accountId, orgId, projectId, pipelineId));
+
     if (getTemplatesResolvedPipeline) {
       try {
         String templateResolvedPipelineYaml = "";
@@ -256,6 +303,21 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       pipeline.setValidationUuid(validationUUID);
     }
     return ResponseDTO.newResponse(version, pipeline);
+  }
+
+  private PublicAccessResponse getPublicContextResponse(
+      String accountId, String orgId, String projectId, String pipelineId) {
+    PublicAccessRequest publicAccessRequest =
+        PublicAccessClientUtils.getPublicAccessRequest(accountId, orgId, projectId, PIPELINE, pipelineId);
+    try {
+      Response<Boolean> isPublic = publicAccessClient.isResourcePublic(publicAccessRequest, accountId).execute();
+      return createPublicAccessResponse(
+          Boolean.TRUE.equals(isPublic.body()), isPublic.errorBody() != null ? isPublic.errorBody().toString() : "");
+    } catch (Exception e) {
+      log.error("There was an error while marking resource type [{}] with resource identifier [{}] as public.",
+          PIPELINE, pipelineId, e);
+      return createPublicAccessResponse(false, e.getMessage());
+    }
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
@@ -279,7 +341,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<PipelineSaveResponse> updatePipelineV2(String ifMatch,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, @ResourceIdentifier String pipelineId, String pipelineName,
-      String pipelineDescription, Boolean isDraft, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
+      String pipelineDescription, Boolean isDraft, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml,
+      boolean isPublic) {
     String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
@@ -292,10 +355,12 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
     }
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
+
     return ResponseDTO.newResponse(updatedEntity.getVersion().toString(),
         PipelineSaveResponse.builder()
             .identifier(updatedEntity.getIdentifier())
             .governanceMetadata(governanceMetadata)
+            .publicAccessResponse(markPipelinePublic(accountId, orgId, projectId, pipelineId, isPublic))
             .build());
   }
 

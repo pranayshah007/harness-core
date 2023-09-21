@@ -8,6 +8,7 @@
 package io.harness.notification.channeldetails;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -34,16 +35,18 @@ public class WebhookChannel extends NotificationChannel {
   String orgIdentifier;
   String projectIdentifier;
   long expressionFunctorToken;
+  Map<String, String> headers;
 
   @Builder
   public WebhookChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
       Map<String, String> templateData, Team team, List<String> webhookUrls, String orgIdentifier,
-      String projectIdentifier, long expressionFunctorToken) {
+      String projectIdentifier, long expressionFunctorToken, Map<String, String> headers) {
     super(accountId, userGroups, templateId, templateData, team);
     this.webhookUrls = webhookUrls;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.expressionFunctorToken = expressionFunctorToken;
+    this.headers = headers;
   }
 
   @Override
@@ -69,6 +72,9 @@ public class WebhookChannel extends NotificationChannel {
     }
     if (projectIdentifier != null) {
       webhookBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    if (isNotEmpty(headers)) {
+      webhookBuilder.putAllHeaders(headers);
     }
     webhookBuilder.setExpressionFunctorToken(expressionFunctorToken);
     return webhookBuilder.build();

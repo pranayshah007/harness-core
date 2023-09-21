@@ -214,7 +214,6 @@ import software.wings.beans.ApprovalAuthorization;
 import software.wings.beans.ApprovalDetails;
 import software.wings.beans.ArtifactStreamMetadata;
 import software.wings.beans.ArtifactVariable;
-import software.wings.beans.AwsLambdaExecutionSummary;
 import software.wings.beans.BuildExecutionSummary;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.CanaryWorkflowExecutionAdvisor;
@@ -252,7 +251,6 @@ import software.wings.beans.ResourceConstraintInstance;
 import software.wings.beans.RuntimeInputsConfig;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceInstance;
-import software.wings.beans.StateExecutionElement;
 import software.wings.beans.StateExecutionInterrupt;
 import software.wings.beans.User;
 import software.wings.beans.Variable;
@@ -270,6 +268,7 @@ import software.wings.beans.approval.ApprovalInfo;
 import software.wings.beans.approval.PreviousApprovalDetails;
 import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactStream;
+import software.wings.beans.aws.AwsLambdaExecutionSummary;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.baseline.WorkflowExecutionBaseline.WorkflowExecutionBaselineKeys;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
@@ -278,6 +277,7 @@ import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.beans.execution.RollbackType;
 import software.wings.beans.execution.RollbackWorkflowExecutionInfo;
+import software.wings.beans.execution.StateExecutionElement;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.execution.WorkflowExecutionInfo.WorkflowExecutionInfoBuilder;
 import software.wings.beans.trigger.Trigger;
@@ -374,6 +374,9 @@ import software.wings.sm.status.WorkflowStatusPropagator;
 import software.wings.sm.status.WorkflowStatusPropagatorFactory;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -412,6 +415,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -500,6 +504,17 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   private static final long SIXTY_DAYS_IN_MILLIS = 60 * 24 * 60 * 60 * 1000L;
 
   @Inject private EventService eventService;
+
+  LoadingCache<String, Integer> countCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(1)
+          .expireAfterWrite(2, TimeUnit.MINUTES)
+          .build(new CacheLoader<String, Integer>() {
+            @Override
+            public Integer load(String key) throws Exception {
+              return (int) wingsPersistence.getCollection(WorkflowExecution.class).count();
+            }
+          });
 
   @Override
   public HIterator<WorkflowExecution> executions(
@@ -6952,6 +6967,16 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       workflowExecution.setRejectedByFreezeWindowNames(ex.getDeploymentFreezeNamesList());
       wingsPersistence.save(workflowExecution);
       throw ex;
+    }
+  }
+
+  @Override
+  public Integer getDeploymentCount() {
+    try {
+      return countCache.get("count");
+    } catch (ExecutionException e) {
+      log.warn("Failed to get count from cache, returning from db");
+      return (int) wingsPersistence.getCollection(WorkflowExecution.class).count();
     }
   }
 }

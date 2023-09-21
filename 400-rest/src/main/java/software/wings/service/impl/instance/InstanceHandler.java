@@ -348,7 +348,7 @@ public abstract class InstanceHandler {
 
     if (isNotEmpty(instanceIdsToBeDeleted)) {
       instanceService.delete(instanceIdsToBeDeleted);
-      log.info("Instances to be deleted {}", instanceIdsToBeDeleted.size());
+      log.debug("Instances to be deleted {}", instanceIdsToBeDeleted.size());
     }
   }
 

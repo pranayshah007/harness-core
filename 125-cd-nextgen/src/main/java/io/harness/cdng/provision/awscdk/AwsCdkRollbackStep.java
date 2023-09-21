@@ -86,6 +86,7 @@ public class AwsCdkRollbackStep extends AbstractContainerStepV2<StepElementParam
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
 
+    awsCdkStepHelper.handleBinaryResponseData(responseDataMap);
     StepStatusTaskResponseData stepStatusTaskResponseData =
         containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
     if (stepStatusTaskResponseData != null

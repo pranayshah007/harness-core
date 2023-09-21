@@ -7,6 +7,7 @@
 
 package io.harness.ssca.services;
 
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.ssca.beans.AllowList;
 import io.harness.ssca.beans.DenyList;
 import io.harness.ssca.beans.RuleDTO;
@@ -15,7 +16,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -38,9 +38,9 @@ public class RuleEngineServiceImpl implements RuleEngineService {
     try {
       JSONObject jsonObject = new JSONObject(response.body().string());
       data = jsonObject.getString("data");
-    } catch (IOException e) {
-      log.error(String.format("Failed to read allow list"));
-      throw new RuntimeException("Failed Deserialization.");
+    } catch (Exception e) {
+      log.error(String.format("Policy File Response Doesn't have data"));
+      throw new InvalidArgumentsException(String.format("Policy file [%s] is Empty/Null", policyFileId));
     }
 
     AllowList allowList;
@@ -48,16 +48,18 @@ public class RuleEngineServiceImpl implements RuleEngineService {
 
     try {
       allowList = objectMapper.readValue(data.getBytes(StandardCharsets.UTF_8), AllowList.class);
-    } catch (IOException e) {
+    } catch (Exception e) {
       log.error(String.format("Failed to read allow list"));
-      throw new RuntimeException("Failed Deserialization.");
+      throw new InvalidArgumentsException(
+          String.format("Invalid allow list policy format in Policy file [%s]", policyFileId));
     }
 
     try {
       denyList = objectMapper.readValue(data.getBytes(StandardCharsets.UTF_8), DenyList.class);
-    } catch (IOException e) {
+    } catch (Exception e) {
       log.error(String.format("Failed to read deny list, Exception: %s", e));
-      throw new RuntimeException("Failed Deserialization.");
+      throw new InvalidArgumentsException(
+          String.format("Invalid deny list policy format in Policy file [%s]", policyFileId));
     }
 
     return RuleDTO.builder().allowList(allowList).denyList(denyList).build();
@@ -72,30 +74,6 @@ public class RuleEngineServiceImpl implements RuleEngineService {
       throw new RuntimeException();
     }
 
-    /*String[] splitFileId = policyFileId.split(":");
-    String actualFileName;
-    Scope scope;
-    if (splitFileId.length == 1) {
-      scope = Scope.PROJECT;
-      actualFileName = splitFileId[0];
-    } else {
-      scope = Scope.getScope(splitFileId[0]);
-      actualFileName = splitFileId[1];
-    }
-
-    if (scope == Scope.ACCOUNT) {
-      return String.format(
-          "file-store/files%s/download?routingId=%s&accountIdentifier=%s", actualFileName, accountId, accountId);
-    }
-    if (scope == Scope.ORG) {
-      return String.format("file-store/files%s/download?routingId=%s&accountIdentifier=%s&orgIdentifier=%s",
-          actualFileName, accountId, accountId, orgIdentifier);
-    }
-    if (scope == Scope.PROJECT) {
-      return String.format(
-          "file-store/files%s/download?routingId=%s&accountIdentifier=%s&orgIdentifier=%s&projectIdentifier=%s",
-          actualFileName, accountId, accountId, orgIdentifier, projectIdentifier);
-    }*/
     return String.format(
         "file-store/files/%s/content?routingId=%s&accountIdentifier=%s&orgIdentifier=%s&projectIdentifier=%s",
         encodedQueryFileId, accountId, accountId, orgIdentifier, projectIdentifier);

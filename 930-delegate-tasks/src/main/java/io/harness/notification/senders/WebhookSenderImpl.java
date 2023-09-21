@@ -7,11 +7,17 @@
 
 package io.harness.notification.senders;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.delegate.beans.NotificationProcessingResponse;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -23,6 +29,9 @@ public class WebhookSenderImpl {
   public static final MediaType APPLICATION_JSON = MediaType.parse("application/json; charset=utf-8");
   private final OkHttpClient client;
 
+  public static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
+  public static final String ACCEPT_HEADER_KEY = "Accept";
+
   public WebhookSenderImpl(OkHttpClient client) {
     this.client = client;
   }
@@ -31,24 +40,21 @@ public class WebhookSenderImpl {
     client = new OkHttpClient();
   }
 
-  public NotificationProcessingResponse send(List<String> webhookUrls, String message, String notificationId) {
+  public NotificationProcessingResponse send(
+      List<String> webhookUrls, String message, String notificationId, Map<String, String> headers) {
     List<Boolean> results = new ArrayList<>();
     for (String webhookUrl : webhookUrls) {
-      boolean ret = sendJSONMessage(message, webhookUrl);
+      boolean ret = sendJSONMessage(message, webhookUrl, headers);
       results.add(ret);
     }
     return NotificationProcessingResponse.builder().result(results).build();
   }
 
-  private boolean sendJSONMessage(String message, String webhookWebhook) {
+  private boolean sendJSONMessage(String message, String webhookWebhook, Map<String, String> headers) {
     try {
       RequestBody body = RequestBody.create(APPLICATION_JSON, message);
-      Request request = new Request.Builder()
-                            .url(webhookWebhook)
-                            .post(body)
-                            .addHeader("Content-Type", "application/json")
-                            .addHeader("Accept", "*/*")
-                            .build();
+      headers = addBasicHeadersIfNotProvided(headers);
+      Request request = new Request.Builder().url(webhookWebhook).post(body).headers(Headers.of(headers)).build();
 
       try (Response response = client.newCall(request).execute()) {
         if (!response.isSuccessful()) {
@@ -62,5 +68,16 @@ public class WebhookSenderImpl {
       log.error("Error sending post data", e);
     }
     return false;
+  }
+
+  @VisibleForTesting
+  public Map<String, String> addBasicHeadersIfNotProvided(Map<String, String> headers) {
+    Map<String, String> newHeaders = new HashMap<>();
+    if (isNotEmpty(headers)) {
+      newHeaders.putAll(headers);
+    }
+    newHeaders.putIfAbsent(CONTENT_TYPE_HEADER_KEY, "application/json");
+    newHeaders.putIfAbsent(ACCEPT_HEADER_KEY, "*/*");
+    return newHeaders;
   }
 }

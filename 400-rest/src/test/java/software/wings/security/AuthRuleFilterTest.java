@@ -14,7 +14,6 @@ import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 import static io.harness.rule.OwnerRule.UJJAWAL;
-import static io.harness.rule.OwnerRule.VIKAS;
 
 import static software.wings.security.AuthenticationFilter.API_KEY_HEADER;
 import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
@@ -72,7 +71,6 @@ import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.Event;
 import software.wings.beans.User;
 import software.wings.resources.AccountResource;
-import software.wings.resources.UserResourceNG;
 import software.wings.resources.graphql.GraphQLUtils;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
@@ -102,7 +100,6 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
@@ -363,22 +360,6 @@ public class AuthRuleFilterTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = VIKAS)
-  @Category(UnitTests.class)
-  public void testFilter_For_NextGenRequest() {
-    Class clazz = UserResourceNG.class;
-    when(resourceInfo.getResourceClass()).thenReturn(clazz);
-    when(resourceInfo.getResourceMethod()).thenReturn(getNgMockResourceMethod());
-    boolean isNextGenRequest = authRuleFilter.isNextGenManagerRequest();
-    assertThat(isNextGenRequest).isTrue();
-
-    when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION))
-        .thenReturn(AuthenticationFilter.NEXT_GEN_MANAGER_PREFIX);
-    isNextGenRequest = authRuleFilter.isNextGenManagerRequest();
-    assertThat(isNextGenRequest).isTrue();
-  }
-
-  @Test
   @Owner(developers = RAMA)
   @Category(UnitTests.class)
   public void testWhitelistForGraphqlInAuthRuleFilter() {
@@ -511,15 +492,6 @@ public class AuthRuleFilterTest extends WingsBaseTest {
     Class mockClass = DummyTestResource.class;
     try {
       return mockClass.getMethod("testApiKeyAuthorizationAnnotation");
-    } catch (NoSuchMethodException e) {
-      return null;
-    }
-  }
-
-  private Method getNgMockResourceMethod() {
-    Class mockClass = UserResourceNG.class;
-    try {
-      return mockClass.getMethod("getUser", String.class);
     } catch (NoSuchMethodException e) {
       return null;
     }

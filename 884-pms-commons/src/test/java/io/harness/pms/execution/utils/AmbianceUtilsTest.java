@@ -8,6 +8,12 @@
 package io.harness.pms.execution.utils;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.pms.contracts.execution.events.SdkResponseEventType.HANDLE_STEP_RESPONSE;
+import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.pms.contracts.steps.StepCategory.PIPELINE;
+import static io.harness.pms.contracts.steps.StepCategory.STAGE;
+import static io.harness.pms.contracts.steps.StepCategory.STEP;
+import static io.harness.pms.contracts.steps.StepCategory.STEP_GROUP;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.NAMAN;
@@ -26,7 +32,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -39,7 +47,9 @@ import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
+import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
@@ -195,24 +205,22 @@ public class AmbianceUtilsTest extends CategoryTest {
             .setIdentifier("i1")
             .setStepType(StepType.newBuilder().setType("PHASE").setStepCategory(StepCategory.STEP).build())
             .build();
-    Level sectionLevel =
-        Level.newBuilder()
-            .setRuntimeId(SECTION_RUNTIME_ID)
-            .setSetupId(SECTION_SETUP_ID)
-            .setGroup("SECTION")
-            .setStartTs(2)
-            .setIdentifier("i2")
-            .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
-            .build();
-    Level stageLevel =
-        Level.newBuilder()
-            .setRuntimeId(SECTION_RUNTIME_ID)
-            .setSetupId(SECTION_SETUP_ID)
-            .setGroup("STAGE")
-            .setStartTs(3)
-            .setIdentifier("i3")
-            .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
-            .build();
+    Level sectionLevel = Level.newBuilder()
+                             .setRuntimeId(SECTION_RUNTIME_ID)
+                             .setSetupId(SECTION_SETUP_ID)
+                             .setGroup("SECTION")
+                             .setStartTs(2)
+                             .setIdentifier("i2")
+                             .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(STAGE).build())
+                             .build();
+    Level stageLevel = Level.newBuilder()
+                           .setRuntimeId(SECTION_RUNTIME_ID)
+                           .setSetupId(SECTION_SETUP_ID)
+                           .setGroup("STAGE")
+                           .setStartTs(3)
+                           .setIdentifier("i3")
+                           .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(STAGE).build())
+                           .build();
     Level stepLevel =
         Level.newBuilder()
             .setRuntimeId(SECTION_RUNTIME_ID)
@@ -245,15 +253,14 @@ public class AmbianceUtilsTest extends CategoryTest {
             .setIdentifier("i1")
             .setStepType(StepType.newBuilder().setType("PHASE").setStepCategory(StepCategory.STEP).build())
             .build();
-    Level sectionLevel =
-        Level.newBuilder()
-            .setRuntimeId(SECTION_RUNTIME_ID)
-            .setSetupId(SECTION_SETUP_ID)
-            .setGroup("SECTION")
-            .setStartTs(2)
-            .setIdentifier("i2")
-            .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
-            .build();
+    Level sectionLevel = Level.newBuilder()
+                             .setRuntimeId(SECTION_RUNTIME_ID)
+                             .setSetupId(SECTION_SETUP_ID)
+                             .setGroup("SECTION")
+                             .setStartTs(2)
+                             .setIdentifier("i2")
+                             .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(STAGE).build())
+                             .build();
     Level strategyLevel =
         Level.newBuilder()
             .setRuntimeId("STRATEGY_RUNTIME_ID")
@@ -270,7 +277,7 @@ public class AmbianceUtilsTest extends CategoryTest {
             .setGroup("STAGE")
             .setStartTs(3)
             .setIdentifier("i3")
-            .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
+            .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(STAGE).build())
             .setStrategyMetadata(StrategyMetadata.newBuilder()
                                      .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(1).build())
                                      .build())
@@ -297,15 +304,14 @@ public class AmbianceUtilsTest extends CategoryTest {
     Optional<Level> stage = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
     assertThat(stage.isPresent()).isTrue();
     assertThat(stage.get())
-        .isEqualTo(
-            Level.newBuilder()
-                .setRuntimeId(SECTION_RUNTIME_ID)
-                .setSetupId(SECTION_SETUP_ID)
-                .setGroup("STAGE")
-                .setStartTs(3)
-                .setIdentifier("i3")
-                .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
-                .build());
+        .isEqualTo(Level.newBuilder()
+                       .setRuntimeId(SECTION_RUNTIME_ID)
+                       .setSetupId(SECTION_SETUP_ID)
+                       .setGroup("STAGE")
+                       .setStartTs(3)
+                       .setIdentifier("i3")
+                       .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(STAGE).build())
+                       .build());
   }
 
   @Test
@@ -354,13 +360,13 @@ public class AmbianceUtilsTest extends CategoryTest {
                    .build();
     assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
 
-    ambiance = Ambiance.newBuilder()
-                   .addLevels(Level.newBuilder().setGroup("STAGES").buildPartial())
-                   .addLevels(Level.newBuilder()
-                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
-                                  .buildPartial())
-                   .addLevels(Level.newBuilder().buildPartial())
-                   .build();
+    ambiance =
+        Ambiance.newBuilder()
+            .addLevels(Level.newBuilder().setGroup("STAGES").buildPartial())
+            .addLevels(
+                Level.newBuilder().setStepType(StepType.newBuilder().setStepCategory(STAGE).build()).buildPartial())
+            .addLevels(Level.newBuilder().buildPartial())
+            .build();
     assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
 
     ambiance = Ambiance.newBuilder()
@@ -397,7 +403,7 @@ public class AmbianceUtilsTest extends CategoryTest {
   public void getGetVersionWhenNotPresent() {
     Ambiance ambiance = Ambiance.newBuilder().build();
     String version = AmbianceUtils.getPipelineVersion(ambiance);
-    assertThat(version).isEqualTo(PipelineVersion.V0);
+    assertThat(version).isEqualTo(HarnessYamlVersion.V0);
   }
 
   @Test
@@ -407,7 +413,7 @@ public class AmbianceUtilsTest extends CategoryTest {
     Ambiance ambiance =
         Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().setHarnessVersion("1").build()).build();
     String version = AmbianceUtils.getPipelineVersion(ambiance);
-    assertThat(version).isEqualTo(PipelineVersion.V1);
+    assertThat(version).isEqualTo(HarnessYamlVersion.V1);
   }
 
   @Test
@@ -419,7 +425,7 @@ public class AmbianceUtilsTest extends CategoryTest {
 
     ambiance = Ambiance.newBuilder()
                    .addLevels(Level.newBuilder()
-                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.PIPELINE).build())
+                                  .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).build())
                                   .setIdentifier("pipeline")
                                   .build())
                    .build();
@@ -427,7 +433,7 @@ public class AmbianceUtilsTest extends CategoryTest {
 
     ambiance = Ambiance.newBuilder()
                    .addLevels(Level.newBuilder()
-                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.PIPELINE).build())
+                                  .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).build())
                                   .setIdentifier("pipeline")
                                   .build())
                    .addLevels(Level.newBuilder()
@@ -439,7 +445,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                   .setIdentifier("parallel")
                                   .build())
                    .addLevels(Level.newBuilder()
-                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                  .setStepType(StepType.newBuilder().setStepCategory(STAGE).build())
                                   .setIdentifier("stage1")
                                   .build())
                    .addLevels(Level.newBuilder()
@@ -460,7 +466,7 @@ public class AmbianceUtilsTest extends CategoryTest {
 
     ambiance = Ambiance.newBuilder()
                    .addLevels(Level.newBuilder()
-                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.PIPELINE).build())
+                                  .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).build())
                                   .setIdentifier("pipeline")
                                   .build())
                    .addLevels(Level.newBuilder()
@@ -473,7 +479,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                   .setIdentifier("stage1")
                                   .build())
                    .addLevels(Level.newBuilder()
-                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                  .setStepType(StepType.newBuilder().setStepCategory(STAGE).build())
                                   .setIdentifier("stage1_1")
                                   .build())
                    .addLevels(Level.newBuilder()
@@ -689,5 +695,860 @@ public class AmbianceUtilsTest extends CategoryTest {
     Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
     String identifier = AmbianceUtils.getStrategyPostfix(level, false);
     assertThat(identifier).isEqualTo("_a_0");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetEnabledFeatureFlags() {
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .putAllFeatureFlagToValueMap(Map.of("flag1", true, "flag2", false, "flag3", true))
+                             .build())
+            .build();
+
+    List<String> enabledFeatureFlags = new ArrayList<>();
+    enabledFeatureFlags.add("flag1");
+    enabledFeatureFlags.add("flag3");
+    List<String> ffListResponseFromAmbiance = AmbianceUtils.getEnabledFeatureFlags(ambiance);
+    assertThat(ffListResponseFromAmbiance.size()).isEqualTo(enabledFeatureFlags.size());
+    for (String ff : enabledFeatureFlags) {
+      assertThat(ffListResponseFromAmbiance.contains(ff)).isTrue();
+    }
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetSettingValue() {
+    Map<String, String> settingValueMap = new HashMap<>();
+    settingValueMap.put("id1", "v1");
+    settingValueMap.put("id2", "v2");
+    settingValueMap.put("id3", "v3");
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder().putAllSettingToValueMap(settingValueMap).build())
+            .build();
+
+    assertThat("v2").isEqualTo(AmbianceUtils.getSettingValue(ambiance, "id2"));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testShouldUseMatrixFieldName() {
+    Map<String, String> settingValueMap = new HashMap<>();
+    settingValueMap.put(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "true");
+    settingValueMap.put(NGPipelineSettingsConstant.ENABLE_NODE_EXECUTION_AUDIT_EVENTS.getName(), "false");
+    settingValueMap.put(NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true");
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder().putAllSettingToValueMap(settingValueMap).build())
+            .build();
+
+    assertThat(true).isEqualTo(AmbianceUtils.shouldUseMatrixFieldName(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsNodeExecutionAuditsEnabled() {
+    Map<String, String> settingValueMap = new HashMap<>();
+    settingValueMap.put(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "true");
+    settingValueMap.put(NGPipelineSettingsConstant.ENABLE_NODE_EXECUTION_AUDIT_EVENTS.getName(), "false");
+    settingValueMap.put(NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true");
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder().putAllSettingToValueMap(settingValueMap).build())
+            .build();
+
+    assertThat(false).isEqualTo(AmbianceUtils.isNodeExecutionAuditsEnabled(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testShouldUseExpressionEngineV2() {
+    Map<String, String> settingValueMap = new HashMap<>();
+    settingValueMap.put(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName(), "true");
+    settingValueMap.put(NGPipelineSettingsConstant.ENABLE_NODE_EXECUTION_AUDIT_EVENTS.getName(), "false");
+    settingValueMap.put(NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true");
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder().putAllSettingToValueMap(settingValueMap).build())
+            .build();
+
+    assertThat(true).isEqualTo(AmbianceUtils.shouldUseExpressionEngineV2(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsUnderRollbackSteps() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder().setIdentifier("i1").build();
+
+    Level l2 = Level.newBuilder().setIdentifier(YAMLFieldNameConstants.ROLLBACK_STEPS).build();
+
+    Level l3 = Level.newBuilder().setIdentifier("i3").build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(true).isEqualTo(AmbianceUtils.isUnderRollbackSteps(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testAutoLogContext() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("t1"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("t2"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("t3"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanId("planId")
+                            .addAllLevels(levels)
+                            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("p1").build())
+                            .build();
+
+    AutoLogContext autoLogContext = AmbianceUtils.autoLogContext(ambiance, HANDLE_STEP_RESPONSE);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsCurrentLevelChildOfStep() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanId("planId")
+                            .addAllLevels(levels)
+                            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("p1").build())
+                            .build();
+
+    assertThat(true).isEqualTo(AmbianceUtils.isCurrentLevelChildOfStep(ambiance, "stepType"));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsCurrentLevelChildOfStepWithDifferentStepType() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanId("planId")
+                            .addAllLevels(levels)
+                            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("p1").build())
+                            .build();
+
+    assertThat(false).isEqualTo(AmbianceUtils.isCurrentLevelChildOfStep(ambiance, "diffStepType"));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsCurrentLevelChildOfStepWithEmptyLevels() {
+    List<Level> levels = new ArrayList<>();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanId("planId")
+                            .addAllLevels(levels)
+                            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("p1").build())
+                            .build();
+
+    assertThat(false).isEqualTo(AmbianceUtils.isCurrentLevelChildOfStep(ambiance, "stepType"));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetPipelineExecutionIdentifier() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId("executionId")
+                            .setMetadata(ExecutionMetadata.newBuilder().setExecutionUuid("executionId").build())
+                            .build();
+
+    assertThat("executionId").isEqualTo(AmbianceUtils.getPipelineExecutionIdentifier(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetPipelineExecutionIdentifier_2() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setMetadata(ExecutionMetadata.newBuilder().setExecutionUuid("executionId").build())
+                            .build();
+
+    assertThat("executionId").isEqualTo(AmbianceUtils.getPipelineExecutionIdentifier(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetPipelineExecutionIdentifier_3() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+
+    assertThat(true).isEqualTo(EmptyPredicate.isEmpty(AmbianceUtils.getPipelineExecutionIdentifier(ambiance)));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetTriggerBy() {
+    TriggeredBy triggeredBy =
+        TriggeredBy.newBuilder().setIdentifier("i1").setTriggerName("n1").setTriggerIdentifier("t1").build();
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .setTriggerInfo(
+                        ExecutionTriggerInfo.newBuilder().setTriggerType(MANUAL).setTriggeredBy(triggeredBy).build())
+                    .build())
+            .build();
+
+    assertThat(triggeredBy).isEqualTo(AmbianceUtils.getTriggerBy(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetTriggerType() {
+    TriggeredBy triggeredBy =
+        TriggeredBy.newBuilder().setIdentifier("i1").setTriggerName("n1").setTriggerIdentifier("t1").build();
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .setTriggerInfo(
+                        ExecutionTriggerInfo.newBuilder().setTriggerType(MANUAL).setTriggeredBy(triggeredBy).build())
+                    .build())
+            .build();
+
+    assertThat(MANUAL).isEqualTo(AmbianceUtils.getTriggerType(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetTriggerIdentifier() {
+    TriggeredBy triggeredBy =
+        TriggeredBy.newBuilder().setIdentifier("i1").setTriggerName("n1").setTriggerIdentifier("t1").build();
+
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .setTriggerInfo(
+                        ExecutionTriggerInfo.newBuilder().setTriggerType(MANUAL).setTriggeredBy(triggeredBy).build())
+                    .build())
+            .build();
+
+    assertThat("i1").isEqualTo(AmbianceUtils.getTriggerIdentifier(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetPipelineIdentifier() {
+    Ambiance ambiance =
+        Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("p1").build()).build();
+
+    assertThat("p1").isEqualTo(AmbianceUtils.getPipelineIdentifier(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetPipelineIdentifier_2() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+
+    assertThat(true).isEqualTo(EmptyPredicate.isEmpty(AmbianceUtils.getPipelineIdentifier(ambiance)));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsCurrentLevelInsideStage() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("stepType"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanId("planId")
+                            .addAllLevels(levels)
+                            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("p1").build())
+                            .build();
+
+    assertThat(true).isEqualTo(AmbianceUtils.isCurrentLevelInsideStage(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsCurrentLevelInsideStage_2() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanId("planId")
+                            .addAllLevels(levels)
+                            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("p1").build())
+                            .build();
+
+    assertThat(false).isEqualTo(AmbianceUtils.isCurrentLevelInsideStage(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsCurrentLevelAtStep() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STEP).setType("stepType"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(true).isEqualTo(AmbianceUtils.isCurrentLevelAtStep(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsCurrentLevelAtStepWithEmptyLevels() {
+    List<Level> levels = new ArrayList<>();
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(false).isEqualTo(AmbianceUtils.isCurrentLevelAtStep(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsCurrentNodeUnderStageStrategy() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l3 =
+        Level.newBuilder()
+            .setIdentifier("i3")
+            .setRuntimeId("r3")
+            .setSetupId("s3")
+            .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("stepType"))
+            .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                     .setMatrixMetadata(MatrixMetadata.newBuilder().setNodeName("nodename").build())
+                                     .build())
+            .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(true).isEqualTo(AmbianceUtils.isCurrentNodeUnderStageStrategy(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsCurrentNodeUnderStageStrategyWithoutStrategy() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("stepType"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(false).isEqualTo(AmbianceUtils.isCurrentNodeUnderStageStrategy(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testObtainParentRuntimeIdWithSingleLevel() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .build();
+
+    levels.add(l1);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(true).isEqualTo(EmptyPredicate.isEmpty(AmbianceUtils.obtainParentRuntimeId(ambiance)));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsRetry() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("stepType"))
+                   .setRetryIndex(2)
+                   .build();
+
+    levels.add(l1);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(true).isEqualTo(AmbianceUtils.isRetry(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetStepGroupLevelFromAmbiance() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("PIPELINE"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("STAGE"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STEP_GROUP).setType("STEP_GROUP"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(Optional.of(l3)).isEqualTo(AmbianceUtils.getStepGroupLevelFromAmbiance(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetStageRuntimeIdAmbiance() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("PIPELINE"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("STAGE"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STEP_GROUP).setType("STEP_GROUP"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat("r2").isEqualTo(AmbianceUtils.getStageRuntimeIdAmbiance(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetStageRuntimeIdAmbianceWithoutStageLevel() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("PIPELINE"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("PIPELINE"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STEP_GROUP).setType("STEP_GROUP"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThatThrownBy(() -> AmbianceUtils.getStageRuntimeIdAmbiance(ambiance))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Stage not present");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetParentStepType() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("PIPELINE"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("STAGE"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STEP_GROUP).setType("STEP_GROUP"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(StepType.newBuilder().setStepCategory(STAGE).setType("STAGE").build())
+        .isEqualTo(AmbianceUtils.getParentStepType(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testObtainStepGroupIdentifier() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("PIPELINE"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("STAGE"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STEP_GROUP).setType("STEP_GROUP"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat("i3").isEqualTo(AmbianceUtils.obtainStepGroupIdentifier(ambiance));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testObtainStepGroupIdentifierWithoutStepGroupLevel() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("PIPELINE"))
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("STAGE"))
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("STAGE"))
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat(true).isEqualTo(EmptyPredicate.isEmpty(AmbianceUtils.obtainStepGroupIdentifier(ambiance)));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testObtainNodeType() {
+    List<Level> levels = new ArrayList<>();
+
+    Level l1 = Level.newBuilder()
+                   .setIdentifier("i1")
+                   .setRuntimeId("r1")
+                   .setSetupId("s1")
+                   .setStepType(StepType.newBuilder().setStepCategory(PIPELINE).setType("PIPELINE"))
+                   .setNodeType("PIPELINE")
+                   .build();
+
+    Level l2 = Level.newBuilder()
+                   .setIdentifier("i2")
+                   .setRuntimeId("r2")
+                   .setSetupId("s2")
+                   .setStepType(StepType.newBuilder().setStepCategory(STAGE).setType("STAGE"))
+                   .setNodeType("STAGE")
+                   .build();
+
+    Level l3 = Level.newBuilder()
+                   .setIdentifier("i3")
+                   .setRuntimeId("r3")
+                   .setSetupId("s3")
+                   .setStepType(StepType.newBuilder().setStepCategory(STEP).setType("STEP"))
+                   .setNodeType("STEP")
+                   .build();
+
+    levels.add(l1);
+    levels.add(l2);
+    levels.add(l3);
+
+    Ambiance ambiance = Ambiance.newBuilder().addAllLevels(levels).build();
+
+    assertThat("STEP").isEqualTo(AmbianceUtils.obtainNodeType(ambiance));
   }
 }

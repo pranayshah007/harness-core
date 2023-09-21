@@ -18,10 +18,9 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class CfRollbackCommandResult {
-  private List<CfServiceData> instanceDataUpdated;
   private List<CfInternalInstanceElement> cfInstanceElements;
-  private CfInBuiltVariablesUpdateValues updatedValues;
-  private List<String> inActiveAppAttachedRoutes;
   private List<String> activeAppAttachedRoutes;
   private List<CfInternalInstanceElement> newAppInstances;
+  private TasApplicationInfo currentProdInfo; // prod info before this rollback
+  private TasApplicationInfo newApplicationInfo; // prod info after this rollback
 }

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -227,36 +228,30 @@ public class StringReplacer {
       return false;
     }
 
+    // https://commons.apache.org/proper/commons-jexl/reference/syntax.html
+    Set<String> jexlKeywordOperators = Set.of("or", "eq", "ne", "and", "not", "size", "empty");
+
+    int minLength = 2;
+    int maxLength = 5;
+
     if (leftSubString) {
-      if ((currentPos - 2 < 0) || (currentPos + 1 >= s.length())) {
-        return false;
+      for (int i = minLength; i <= maxLength; i++) {
+        if (currentPos - i + 1 >= 0 && currentPos + 1 < s.length()) {
+          String substring = s.substring(currentPos - i + 1, currentPos + 1).trim();
+          if (jexlKeywordOperators.contains(substring)) {
+            return true;
+          }
+        }
       }
-
-      // check for and / not operator - https://commons.apache.org/proper/commons-jexl/reference/syntax.html
-      String substring = s.substring(currentPos - 2, currentPos + 1).trim();
-      if (substring.equals("and") || substring.equals("not")) {
-        return true;
-      }
-      // check for or operator
-      String orSubString = s.substring(currentPos - 1, currentPos + 1);
-      if (orSubString.equals("or")) {
-        return true;
-      }
-      return false;
     }
 
-    if (currentPos + 3 >= s.length()) {
-      return false;
-    }
-    // check for and / not operator - https://commons.apache.org/proper/commons-jexl/reference/syntax.html
-    String substring = s.substring(currentPos, currentPos + 3).trim();
-    if (substring.equals("and") || substring.equals("not")) {
-      return true;
-    }
-    // check for or operator
-    String orSubString = s.substring(currentPos, currentPos + 2);
-    if (orSubString.equals("or")) {
-      return true;
+    for (int i = minLength; i <= maxLength; i++) {
+      if (currentPos >= 0 && currentPos + i < s.length()) {
+        String substring = s.substring(currentPos, currentPos + i).trim();
+        if (jexlKeywordOperators.contains(substring)) {
+          return true;
+        }
+      }
     }
     return false;
   }
