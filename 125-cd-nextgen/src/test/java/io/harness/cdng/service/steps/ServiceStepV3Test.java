@@ -7,6 +7,9 @@
 
 package io.harness.cdng.service.steps;
 
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDES_COMMAND_UNIT;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
@@ -123,6 +126,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -150,6 +154,7 @@ public class ServiceStepV3Test extends CategoryTest {
   @Mock private NGSettingsClient ngSettingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Spy @InjectMocks ServiceStepV3Helper serviceStepV3Helper;
 
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
@@ -1059,7 +1064,10 @@ public class ServiceStepV3Test extends CategoryTest {
         .thenReturn(false);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
-    ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
+    List<String> logCommandUnits = List.of(SERVICE_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT);
+
+    ChildrenExecutableResponse childrenExecutableResponse =
+        serviceStepV3Helper.executeFreezePart(buildAmbiance(), entityMap, logCommandUnits);
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -1089,8 +1097,9 @@ public class ServiceStepV3Test extends CategoryTest {
         accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
         .thenReturn(false);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
-
-    ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
+    List<String> logCommandUnits = List.of(SERVICE_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT);
+    ChildrenExecutableResponse childrenExecutableResponse =
+        serviceStepV3Helper.executeFreezePart(buildAmbiance(), entityMap, logCommandUnits);
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -1112,8 +1121,9 @@ public class ServiceStepV3Test extends CategoryTest {
         accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
         .thenReturn(true);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
-
-    ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
+    List<String> logCommandUnits = List.of(SERVICE_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT);
+    ChildrenExecutableResponse childrenExecutableResponse =
+        serviceStepV3Helper.executeFreezePart(buildAmbiance(), entityMap, logCommandUnits);
     assertThat(childrenExecutableResponse).isEqualTo(null);
   }
 
@@ -1126,8 +1136,8 @@ public class ServiceStepV3Test extends CategoryTest {
         .when(freezeEvaluateService)
         .anyGlobalFreezeActive(anyString(), anyString(), anyString());
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
-
-    step.executeFreezePart(buildAmbiance(), entityMap);
+    List<String> logCommandUnits = List.of(SERVICE_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT);
+    serviceStepV3Helper.executeFreezePart(buildAmbiance(), entityMap, logCommandUnits);
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
 
