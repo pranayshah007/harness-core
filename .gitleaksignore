@@ -2752,3 +2752,4 @@ de0f157f2e8f2b9cc17bfcb0c1dd2ff03b820fc8:idp-service/config/config.yml:generic-a
 020d4837a2e17fe608e30cf9a83c222db7dddfb8:idp-service/config/config.yml:generic-api-key:125
 54e01c566f9c3cf19665804d8665203ef297cd52:idp-service/config/config.yml:generic-api-key:219
 716993dc3220c2cfef6b07828efc82432c3cdbfe:310-iacm-manager/config/iacm-manager-config.yml:generic-api-key:97
+2d47b9ee972946040d565323b2886e04aa93f916:platform-service/chart/templates/config.yaml:generic-api-key:30
