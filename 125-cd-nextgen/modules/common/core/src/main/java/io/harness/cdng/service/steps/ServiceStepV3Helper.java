@@ -21,6 +21,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.service.beans.ServiceDefinition;
+import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.visitor.YamlTypes;
@@ -81,6 +83,7 @@ public class ServiceStepV3Helper {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
   @Inject private CDExpressionResolver expressionResolver;
+  @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
   @Inject private ServiceStepsHelper serviceStepsHelper;
 
   public void processServiceAndEnvironmentVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
@@ -371,6 +374,53 @@ public class ServiceStepV3Helper {
       }
     }
     serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
+  }
+
+  public void handleServiceChildrens(boolean isOverridesV2enabled, String accountId, Optional<Environment> environment,
+      Ambiance ambiance, EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs,
+      NGServiceOverrideConfig ngServiceOverrides, NGEnvironmentConfig ngEnvironmentConfig,
+      ServicePartResponse servicePartResponse) {
+    if (isOverridesV2enabled) {
+      NGServiceV2InfoConfig ngServiceV2InfoConfig =
+          NGServiceV2InfoConfig.builder().serviceDefinition(ServiceDefinition.builder().build()).build();
+      if (servicePartResponse != null) {
+        ngServiceV2InfoConfig = servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig();
+      }
+      final String scopedEnvironmentRef =
+          IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, environment.get().getOrgIdentifier(),
+              environment.get().getProjectIdentifier(), environment.get().getIdentifier());
+      serviceStepOverrideHelper.saveFinalManifestsToSweepingOutputV2(ngServiceV2InfoConfig, ambiance,
+          ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT, mergedOverrideV2Configs, scopedEnvironmentRef);
+      serviceStepOverrideHelper.saveFinalConfigFilesToSweepingOutputV2(ngServiceV2InfoConfig, mergedOverrideV2Configs,
+          scopedEnvironmentRef, ambiance, ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+      serviceStepOverrideHelper.saveFinalAppSettingsToSweepingOutputV2(ngServiceV2InfoConfig, mergedOverrideV2Configs,
+          ambiance, ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
+      serviceStepOverrideHelper.saveFinalConnectionStringsToSweepingOutputV2(ngServiceV2InfoConfig,
+          mergedOverrideV2Configs, ambiance, ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
+    } else {
+      NGServiceConfig ngServiceConfig =
+          NGServiceConfig.builder()
+              .ngServiceV2InfoConfig(
+                  NGServiceV2InfoConfig.builder().serviceDefinition(ServiceDefinition.builder().build()).build())
+              .build();
+      if (servicePartResponse != null) {
+        ngServiceConfig = servicePartResponse.getNgServiceConfig();
+      }
+      serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(ngServiceConfig, ngServiceOverrides,
+          ngEnvironmentConfig, ambiance, ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT);
+
+      serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(ngServiceConfig,
+          ngServiceOverrides, ngEnvironmentConfig, ambiance,
+          ServiceStepV3Constants.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+
+      serviceStepOverrideHelper.prepareAndSaveFinalAppServiceMetadataToSweepingOutput(ngServiceConfig,
+          ngServiceOverrides, ngEnvironmentConfig, ambiance,
+          ServiceStepV3Constants.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
+
+      serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(ngServiceConfig,
+          ngServiceOverrides, ngEnvironmentConfig, ambiance,
+          ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
+    }
   }
 
   @Data

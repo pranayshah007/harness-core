@@ -537,7 +537,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       serviceStepV3Helper.processServiceAndEnvironmentVariables(ambiance, servicePartResponse, serviceStepLogCallback,
           environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
 
-      serviceStepsHelper.handleServiceChildrens(isOverridesV2enabled, accountId, environment, ambiance,
+      serviceStepV3Helper.handleServiceChildrens(isOverridesV2enabled, accountId, environment, ambiance,
           mergedOverrideV2Configs, ngServiceOverrides, ngEnvironmentConfig, servicePartResponse);
 
       serviceStepOverrideHelper.prepareAndSaveFinalServiceHooksMetadataToSweepingOutput(

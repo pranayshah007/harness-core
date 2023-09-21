@@ -145,7 +145,7 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       serviceStepV3Helper.processServiceAndEnvironmentVariables(
           ambiance, null, logCallback, environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
 
-      serviceStepsHelper.handleServiceChildrens(isOverridesV2enabled, accountId, environment, ambiance,
+      serviceStepV3Helper.handleServiceChildrens(isOverridesV2enabled, accountId, environment, ambiance,
           mergedOverrideV2Configs, ngServiceOverrides, ngEnvironmentConfig, null);
 
       return ChildrenExecutableResponse.newBuilder()
