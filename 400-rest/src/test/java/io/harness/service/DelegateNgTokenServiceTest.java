@@ -289,7 +289,6 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
     assertThat(result1).hasSize(1);
     List<DelegateTokenDetails> result2 =
         delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, owner, DelegateTokenStatus.ACTIVE, false);
-    assertThat(result1).hasSize(1);
     assertThat(result2).hasSize(1);
     assertThat(result1.get(0).getName()).isEqualTo(tokenName);
     assertThat(result2.get(0).getName()).isEqualTo(tokenName + "_" + ownerIdentifier);
