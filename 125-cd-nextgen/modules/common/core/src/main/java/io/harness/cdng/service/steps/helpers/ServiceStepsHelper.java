@@ -25,6 +25,7 @@ import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.service.steps.ServiceStepOverrideHelper;
 import io.harness.cdng.service.steps.constants.ServiceConfigStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
@@ -79,6 +80,7 @@ public class ServiceStepsHelper {
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
+  @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
 
   public void checkForVariablesAccessOrThrow(Ambiance ambiance, NGServiceConfig serviceConfig, String serviceRef) {
     final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();

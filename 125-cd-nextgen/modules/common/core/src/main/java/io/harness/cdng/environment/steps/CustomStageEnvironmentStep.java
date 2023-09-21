@@ -16,9 +16,11 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.environment.helper.EnvironmentMapper;
 import io.harness.cdng.environment.helper.EnvironmentStepsUtils;
 import io.harness.cdng.environment.helper.beans.CustomStageEnvironmentStepParameters;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.service.steps.ServiceStepV3Helper;
 import io.harness.cdng.service.steps.helpers.ServiceOverrideUtilityFacade;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
@@ -46,6 +48,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
@@ -142,6 +145,9 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       serviceStepV3Helper.processServiceAndEnvironmentVariables(
           ambiance, null, logCallback, environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
 
+      serviceStepsHelper.handleServiceChildrens(isOverridesV2enabled, accountId, environment, ambiance,
+          mergedOverrideV2Configs, ngServiceOverrides, ngEnvironmentConfig, null);
+
       return ChildrenExecutableResponse.newBuilder()
           .addAllLogKeys(emptyIfNull(StepUtils.generateLogKeys(
               StepUtils.generateLogAbstractions(ambiance), List.of(ENVIRONMENT_COMMAND_UNIT))))
@@ -200,6 +206,26 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
                          .outcome(environmentOutcome)
                          .group(StepCategory.STAGE.name())
                          .build());
+
+    final OptionalSweepingOutput manifestsOutput = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.MANIFESTS));
+    if (manifestsOutput.isFound()) {
+      stepOutcomes.add(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.MANIFESTS)
+                           .outcome((ManifestsOutcome) manifestsOutput.getOutput())
+                           .group(StepCategory.STAGE.name())
+                           .build());
+    }
+
+    final OptionalSweepingOutput configFilesOutput = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.CONFIG_FILES));
+    if (configFilesOutput.isFound()) {
+      stepOutcomes.add(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.CONFIG_FILES)
+                           .outcome((ConfigFilesOutcome) configFilesOutput.getOutput())
+                           .group(StepCategory.STAGE.name())
+                           .build());
+    }
 
     stepResponse = stepResponse.withStepOutcomes(stepOutcomes);
     serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
