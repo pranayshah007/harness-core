@@ -1,0 +1,1 @@
+{{ include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.redis.protocol" ".Values.redis.protocol")) }}

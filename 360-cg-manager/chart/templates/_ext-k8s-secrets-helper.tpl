@@ -1,49 +1,49 @@
 {{/*
 {{ include "harnesscommon.secrets.hasExtKubernetesSecret" (dict "variableName" "MY_VARIABLE" "extKubernetesSecretCtxs" (list .Values.secrets)) }}
 */}}
-{{- define "harnesscommon.secrets.hasExtKubernetesSecret" -}}
-{{- $hasExtKubernetesSecret := "false" -}}
-{{- if .variableName -}}
-  {{- range .extKubernetesSecretCtxs -}}
-    {{- range . -}}
-      {{- if and . .secretName .keys -}}
-        {{- if and (hasKey .keys $.variableName) (get .keys $.variableName) -}}
-          {{- $hasExtKubernetesSecret = "true" -}}
-        {{- end -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- print $hasExtKubernetesSecret -}}
-{{- end -}}
+{{- define "harnesscommon.secrets.hasExtKubernetesSecret" }}
+{{- $hasExtKubernetesSecret := "false" }}
+{{- if .variableName }}
+  {{- range .extKubernetesSecretCtxs }}
+    {{- range . }}
+      {{- if and . .secretName .keys }}
+        {{- if and (hasKey .keys $.variableName) (get .keys $.variableName) }}
+          {{- $hasExtKubernetesSecret = "true" }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- print $hasExtKubernetesSecret }}
+{{- end }}
 
 {{/*
 {{ include "harnesscommon.secrets.manageExtKubernetesSecretEnv" (dict "variableName" "MY_VARIABLE" "extKubernetesSecretCtxs" (list .Values.secrets)) }}
 */}}
-{{- define "harnesscommon.secrets.manageExtKubernetesSecretEnv" -}}
-{{- $secretName := "" -}}
-{{- $secretKey := "" -}}
-{{- if .variableName -}}
-  {{- range .extKubernetesSecretCtxs -}}
-    {{- range . -}}
-      {{- if and . .secretName .keys -}}
-        {{- $currSecretKey := (get .keys $.variableName) -}}
-        {{- if and (hasKey .keys $.variableName) $currSecretKey -}}
-          {{- $secretName = .secretName -}}
-          {{- $secretKey = $currSecretKey -}}
-        {{- end -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-  {{- if and $secretName $secretKey -}}
+{{- define "harnesscommon.secrets.manageExtKubernetesSecretEnv" }}
+{{- $secretName := "" }}
+{{- $secretKey := "" }}
+{{- if .variableName }}
+  {{- range .extKubernetesSecretCtxs }}
+    {{- range . }}
+      {{- if and . .secretName .keys }}
+        {{- $currSecretKey := (get .keys $.variableName) }}
+        {{- if and (hasKey .keys $.variableName) $currSecretKey }}
+          {{- $secretName = .secretName }}
+          {{- $secretKey = $currSecretKey }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if and $secretName $secretKey }}
 - name: {{ print .variableName }}
   valueFrom:
     secretKeyRef:
       name: {{ printf "%s" $secretName }}
       key: {{ printf "%s" $secretKey }}
-  {{- end -}}
-{{- end -}}
-{{- end -}}
+  {{- end }}
+{{- end }}
+{{- end }}
 
 {{/*
 {{ include "harnesscommon.secrets.getExternalKubernetesSecretName" (dict "secretsCtx" .Values.secrets.kubernetesSecrets "globalSecretsCtx" .Values.Global "secret" "MONGO_USER") }}
