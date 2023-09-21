@@ -260,7 +260,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   private void setPipelineIdentifier(
       String accountId, String orgId, String projectId, String pipelineIdentifier, Criteria criteria) {
     List<String> permittedPipelineIdentifier = pmsPipelineService.getPermittedPipelineIdentifier(
-        accountId, projectId, orgId, Collections.singletonList(pipelineIdentifier));
+        accountId, orgId, projectId, Collections.singletonList(pipelineIdentifier));
 
     addPipelineIdentifierListInCriteria(criteria, permittedPipelineIdentifier);
   }
