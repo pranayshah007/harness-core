@@ -908,6 +908,9 @@ public enum FeatureName {
   PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE),
   CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS(
       "This flag disables WinRm special character escaping for environment variables usage", HarnessTeam.CDP),
+  CDS_NG_K8S_SERVICE_RELEASE_NAME(
+      "This flag enables the usage of release name in service configuration for K8s & Helm service types.",
+      HarnessTeam.CDP),
   CDS_SHELL_VARIABLES_EXPORT("Export shell script output variables to different scopes", HarnessTeam.CDC);
 
   // keep-sorted end
