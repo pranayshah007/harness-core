@@ -2,10 +2,76 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+global:
+  commonAnnotations: {}
+  commonLabels: {}
+  kubeVersion: ""
+  loadbalancerURL: ""
+  ha: true
+  stackDriverLoggingEnabled: false
+  database:
+    mongo:
+      installed: true
+      protocol: mongodb
+      # --  provide default values if mongo.installed is set to false
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+    timescaledb:
+      installed: true
+      protocol: "jdbc:postgresql"
+      # --  provide default values if mongo.installed is set to false
+      hosts:
+        - timescaledb-single-chart:5432
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+  monitoring:
+    enabled: false
+    port: 8889
+    path: /metrics
+
+  ingress:
+    # -- create ingress objects
+    enabled: false
+    # -- set ingress object classname
+    className: harness
+    # -- set host of ingressObjects
+    hosts:
+      - my-host.example.org
+    # -- set tls for ingress objects
+    tls:
+      enabled: true
+      secretName: ''
+    # -- add annotations to ingress objects
+    objects:
+      annotations: {}
+  istio:
+    # -- create virtualServices objects
+    enabled: false
+    # -- create gateway and use in virtualservice
+    gateway:
+      create: false
+    # -- if gateway not created, use specified gateway and host
+    virtualService:
+      gateways:
+      hosts:
+  imagePullSecrets: []
+
 replicaCount: 1
 
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%
+
 image:
-  repository: nginx
+  repository: docker.io
+  repository: harness/ssca-manager
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -14,19 +80,57 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+waitForInitContainer:
+  ## image version
+  ## ref: https://hub.docker.com/r/harness/helm-init-container/tags
+  # --image.registry ; image registry
+  # --image.repository ; image repository
+  # --image.tag ; image tag (immutable tags are recommended)
+  # --image.digest ; image digest in the way sha256:aa.... Please note this parameter, if set, will override the tag
+  # --image.pullPolicy Image pull policy
+  # --image.imagePullSecrets Specify docker-registry secret names as an array
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+    imagePullSecrets: []
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      cpu: 128m
+      memory: 128Mi
+  containerSecurityContext:
+    runAsUser: 65534
+    runAsNonRoot: true
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
 serviceAccount:
   # Specifies whether a service account should be created
-  create: true
+  create: false
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: "harness-default"
 
 podAnnotations: {}
 
 podSecurityContext: {}
   # fsGroup: 2000
+
+containerSecurityContext:
+  runAsUser: 65534
+  runAsNonRoot: true
 
 securityContext: {}
   # capabilities:
@@ -37,8 +141,9 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
+  annotations: {}
   type: ClusterIP
-  port: 80
+  port: 8188
 
 ingress:
   enabled: false
@@ -56,7 +161,12 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
+resources:
+  limits:
+    memory: 8192Mi
+  requests:
+    cpu: 1
+    memory: 712Mi
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -72,11 +182,35 @@ autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 
 tolerations: []
 
 affinity: {}
+
+config:
+  SERVER_PORT: 8188
+  LOGGING_LEVEL: INFO
+  STACK_DRIVER_LOGGING_ENABLED: true
+  LOGGERS: envSpecific
+  MONGO_INDEX_MANAGER_MODE: AUTO
+  NG_MANAGER_BASE_URL: envSpecific
+  S3_ENDPOINT: envSpecific
+  S3_BUCKET: envSpecific
+  S3_POLICY_BUCKET: envSpecific
+  S3_REGION: envSpecific
+  DEPLOY_MODE: KUBERNETES
+  ENABLE_APPDYNAMICS: true
+java:
+  memory: 512m
+secrets:
+  S3_ACCESS_KEY_ID: envSpecific
+  S3_ACCESS_SECRET_KEY: envSpecific
+  MONGO_URI: envSpecific
+  NG_MANAGER_SERVICE_SECRET: envSpecific
+  SSCA_MANAGER_SERVICE_SECRET: envSpecific
+  JWT_AUTH_SECRET: envSpecific
+  JWT_IDENTITY_SERVICE_SECRET: envSpecific

@@ -1,61 +1,69 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "ssca-manager.fullname" . }}
-  labels:
-    {{- include "ssca-manager.labels" . | nindent 4 }}
+  name: ssca-manager
+  namespace: {{ .Values.namespace.name }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
-      {{- include "ssca-manager.selectorLabels" . | nindent 6 }}
+      app: ssca-manager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.maxSurge }}
+      maxUnavailable: {{ .Values.maxUnavailable }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       labels:
-        {{- include "ssca-manager.selectorLabels" . | nindent 8 }}
+        app: ssca-manager
+        harness-team: SSCA
+        harness-module: SSCA
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- if .Values.dockercfg }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+        - name: {{ .Values.name }}-dockercfg
       {{- end }}
-      serviceAccountName: {{ include "ssca-manager.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - ssca-manager
+              topologyKey: kubernetes.io/hostname
       containers:
-        - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: ssca-manager
+          image: {{ .Values.image }}
+          imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.containerPort }}
               protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.name }}
+            - secretRef:
+                name: {{ .Values.name }}
           livenessProbe:
             httpGet:
-              path: /
+              path: /health
               port: http
+            initialDelaySeconds: 300
+            timeoutSeconds: 5
+            periodSeconds: 60
+            failureThreshold: 2
           readinessProbe:
             httpGet:
-              path: /
+              path: /health
               port: http
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            periodSeconds: 5
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+            limits:
+              memory: {{ .Values.podMemory }}
+            requests:
+              memory: {{ .Values.podMemory }}
+              cpu: {{ .Values.cpu | quote }}
