@@ -13,6 +13,7 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import javax.ws.rs.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -22,7 +23,11 @@ public class MonitoringSourcePerpetualTaskHandler implements Handler<MonitoringS
   @Override
   public void handle(MonitoringSourcePerpetualTask entity) {
     log.info("Enqueuing monitoring source {}", entity.getUuid());
-    monitoringSourcePerpetualTaskService.createPerpetualTask(entity);
+    try {
+      monitoringSourcePerpetualTaskService.createPerpetualTask(entity);
+    } catch (BadRequestException ex) {
+      log.warn(ex.getMessage());
+    }
     log.info("Done enqueuing monitoring source {}", entity.getUuid());
   }
 }
