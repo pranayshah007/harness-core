@@ -37,6 +37,7 @@ import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -125,11 +126,16 @@ public class StageCleanupUtility {
 
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, clusterConnectorRef);
 
-    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
+
     String liteEngineIp = null;
-    if (liteEnginePodDetailsOutcome != null) {
-      liteEngineIp = liteEnginePodDetailsOutcome.getIpAddress();
+    if (optionalOutcome.isFound()) {
+      LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome =
+          (LiteEnginePodDetailsOutcome) optionalOutcome.getOutcome();
+      if (liteEnginePodDetailsOutcome != null) {
+        liteEngineIp = liteEnginePodDetailsOutcome.getIpAddress();
+      }
     }
 
     return CIK8CleanupTaskParams.builder()
