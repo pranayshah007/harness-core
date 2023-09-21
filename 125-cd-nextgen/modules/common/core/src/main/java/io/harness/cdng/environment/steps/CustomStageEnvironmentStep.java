@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.environment.helper.EnvironmentMapper;
 import io.harness.cdng.environment.helper.EnvironmentStepsUtils;
+import io.harness.cdng.environment.helper.beans.CustomStageEnvironmentStepParameters;
 import io.harness.cdng.service.steps.helpers.ServiceOverrideUtilityFacade;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
@@ -69,12 +70,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
-public class CustomStageEnvironmentStep implements ChildrenExecutable<ServiceStepV3Parameters> {
+public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStageEnvironmentStepParameters> {
   @Inject private EnvironmentService environmentService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
@@ -91,62 +93,38 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<ServiceSte
   private static final String ENVIRONMENT_COMMAND_UNIT = "Environment Step";
 
   @Override
-  public Class<ServiceStepV3Parameters> getStepParametersClass() {
-    return ServiceStepV3Parameters.class;
+  public Class<CustomStageEnvironmentStepParameters> getStepParametersClass() {
+    return CustomStageEnvironmentStepParameters.class;
   }
 
   public ChildrenExecutableResponse obtainChildren(
-      Ambiance ambiance, ServiceStepV3Parameters parameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, CustomStageEnvironmentStepParameters parameters, StepInputPackage inputPackage) {
     try {
-      final ParameterField<String> envRef = parameters.getEnvRef();
-      if (ParameterField.isNull(envRef)) {
-        throw new InvalidRequestException("Environment ref not found in stage yaml");
-      }
-
-      EnvironmentStepsUtils.checkForEnvAccessOrThrow(accessControlClient, ambiance, envRef);
-
-      String finalEnvRef = (String) envRef.fetchFinalValue();
-
-      log.info("Starting execution for Environment Step [{}]", finalEnvRef);
-
       final String accountId = AmbianceUtils.getAccountId(ambiance);
       final String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
       final String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
       Optional<Environment> environment =
-          environmentService.get(accountId, orgIdentifier, projectIdentifier, finalEnvRef, false);
-      if (environment.isEmpty()) {
-        throw new InvalidRequestException(String.format("Environment with ref: [%s] not found", finalEnvRef));
-      }
+          getEnvironment(ambiance, parameters, accountId, orgIdentifier, projectIdentifier);
 
-      // handle old environments
-      if (isEmpty(environment.get().getYaml())) {
-        serviceStepsHelper.setYamlInEnvironment(environment.get());
+      if (!ParameterField.isNull(parameters.getInfraId()) && parameters.getInfraId().isExpression()) {
+        serviceStepsHelper.resolve(ambiance, parameters.getInfraId());
       }
 
       final NGLogCallback logCallback =
           new NGLogCallback(logStreamingStepClientFactory, ambiance, ENVIRONMENT_COMMAND_UNIT, true);
 
-      EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
-          new EnumMap<>(ServiceOverridesType.class);
-
       boolean isOverridesV2enabled =
           overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
 
-      if (isOverridesV2enabled) {
-        if (!ParameterField.isNull(parameters.getInfraId()) && parameters.getInfraId().isExpression()) {
-          serviceStepsHelper.resolve(ambiance, parameters.getInfraId());
-        }
-        try {
-          mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigsForCustomStage(
-              accountId, orgIdentifier, projectIdentifier, parameters, environment.get(), logCallback);
-        } catch (IOException e) {
-          throw new InvalidRequestException("An error occurred while resolving overrides", e);
-        }
-      }
+      ServiceStepV3Parameters serviceStepV3Parameters = toServiceStepV3Parameters(parameters);
+
+      EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
+          getMergedOverrideV2Configs(accountId, orgIdentifier, projectIdentifier, environment, logCallback,
+              isOverridesV2enabled, serviceStepV3Parameters);
 
       NGEnvironmentConfig ngEnvironmentConfig =
-          serviceStepsHelper.getNgEnvironmentConfig(ambiance, parameters, accountId, environment);
+          serviceStepsHelper.getNgEnvironmentConfig(ambiance, serviceStepV3Parameters, accountId, environment);
 
       NGServiceOverrideConfig ngServiceOverrides = NGServiceOverrideConfig.builder().build();
 
@@ -180,8 +158,8 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<ServiceSte
   }
 
   @Override
-  public StepResponse handleChildrenResponse(
-      Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
+  public StepResponse handleChildrenResponse(Ambiance ambiance, CustomStageEnvironmentStepParameters stepParameters,
+      Map<String, ResponseData> responseDataMap) {
     long environmentStepStartTs = AmbianceUtils.getCurrentLevelStartTs(ambiance);
     final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
 
@@ -224,5 +202,60 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<ServiceSte
     stepResponse = stepResponse.withStepOutcomes(stepOutcomes);
     serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
     return stepResponse.toBuilder().unitProgressList(List.of(environmentStepUnitProgress)).build();
+  }
+
+  private EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedOverrideV2Configs(String accountId,
+      String orgIdentifier, String projectIdentifier, Optional<Environment> environment, NGLogCallback logCallback,
+      boolean isOverridesV2enabled, ServiceStepV3Parameters serviceStepV3Parameters) {
+    EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
+        new EnumMap<>(ServiceOverridesType.class);
+
+    if (isOverridesV2enabled) {
+      try {
+        mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigsForCustomStage(
+            accountId, orgIdentifier, projectIdentifier, serviceStepV3Parameters, environment.get(), logCallback);
+      } catch (IOException e) {
+        throw new InvalidRequestException("An error occurred while resolving overrides", e);
+      }
+    }
+    return mergedOverrideV2Configs;
+  }
+
+  @NotNull
+  private Optional<Environment> getEnvironment(Ambiance ambiance, CustomStageEnvironmentStepParameters parameters,
+      String accountId, String orgIdentifier, String projectIdentifier) {
+    final ParameterField<String> envRef = parameters.getEnvRef();
+    if (ParameterField.isNull(envRef)) {
+      throw new InvalidRequestException("Environment ref not found in stage yaml");
+    }
+
+    String finalEnvRef = (String) envRef.fetchFinalValue();
+    log.info("Starting execution for Environment Step [{}]", finalEnvRef);
+
+    EnvironmentStepsUtils.checkForEnvAccessOrThrow(accessControlClient, ambiance, envRef);
+
+    Optional<Environment> environment =
+        environmentService.get(accountId, orgIdentifier, projectIdentifier, finalEnvRef, false);
+    if (environment.isEmpty()) {
+      throw new InvalidRequestException(String.format("Environment with ref: [%s] not found", finalEnvRef));
+    }
+
+    // handle old environments
+    if (isEmpty(environment.get().getYaml())) {
+      serviceStepsHelper.setYamlInEnvironment(environment.get());
+    }
+    return environment;
+  }
+
+  private ServiceStepV3Parameters toServiceStepV3Parameters(CustomStageEnvironmentStepParameters parameters) {
+    if (parameters == null) {
+      return null;
+    }
+    return ServiceStepV3Parameters.builder()
+        .envRef(parameters.getEnvRef())
+        .infraId(parameters.getInfraId())
+        .childrenNodeIds(parameters.getChildrenNodeIds())
+        .envInputs(parameters.getEnvInputs())
+        .build();
   }
 }

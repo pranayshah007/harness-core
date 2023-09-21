@@ -464,8 +464,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       throw new InvalidRequestException("Environment ref not found in stage yaml");
     }
 
-    final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
-
     if (envRef.isExpression()) {
       serviceStepsHelper.resolve(ambiance, envRef);
     }
