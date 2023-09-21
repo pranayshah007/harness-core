@@ -155,10 +155,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       setPipelineIdentifier(accountId, orgId, projectId, pipelineIdentifier, criteria);
     } else {
       // If the user does not have permission for all pipelines then add the criteria for only view permission pipeline
-      if (!accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), Resource.of("PIPELINE", null),
-              PipelineRbacPermissions.PIPELINE_VIEW)) {
-        setPermittedPipelineIdentifier(accountId, orgId, projectId, criteria);
-      }
+      setPermittedPipelineIdentifier(accountId, orgId, projectId, criteria);
     }
     // To show non-child execution. First or condition is added for older execution which do not have parentStageInfo
     if (EmptyPredicate.isEmpty(pipelineIdentifier)) {

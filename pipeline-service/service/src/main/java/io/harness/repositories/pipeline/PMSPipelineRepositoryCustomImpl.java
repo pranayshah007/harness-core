@@ -104,7 +104,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
                             .is(accountId)
                             .and(PipelineEntityKeys.orgIdentifier)
                             .is(orgIdentifier)
-                            .and(PipelineEntityKeys.projectIdentifier);
+                            .and(PipelineEntityKeys.projectIdentifier)
+                            .is(projectIdentifier);
     Query query = new Query(criteria);
 
     query.fields().include(PipelineEntityKeys.identifier);
