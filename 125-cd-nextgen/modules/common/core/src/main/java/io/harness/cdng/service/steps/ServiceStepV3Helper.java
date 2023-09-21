@@ -8,6 +8,7 @@
 package io.harness.cdng.service.steps;
 
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDE_IN_REVERSE_PRIORITY;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_CONFIGURATION_NOT_FOUND;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
@@ -380,11 +381,15 @@ public class ServiceStepV3Helper {
       Ambiance ambiance, EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs,
       NGServiceOverrideConfig ngServiceOverrides, NGEnvironmentConfig ngEnvironmentConfig,
       ServicePartResponse servicePartResponse) {
+    NGServiceV2InfoConfig ngServiceV2InfoConfig =
+        NGServiceV2InfoConfig.builder().serviceDefinition(ServiceDefinition.builder().build()).build();
+    NGServiceConfig ngServiceConfig = NGServiceConfig.builder().ngServiceV2InfoConfig(ngServiceV2InfoConfig).build();
     if (isOverridesV2enabled) {
-      NGServiceV2InfoConfig ngServiceV2InfoConfig =
-          NGServiceV2InfoConfig.builder().serviceDefinition(ServiceDefinition.builder().build()).build();
       if (servicePartResponse != null) {
         ngServiceV2InfoConfig = servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig();
+        if (ngServiceV2InfoConfig == null) {
+          throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+        }
       }
       final String scopedEnvironmentRef =
           IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, environment.get().getOrgIdentifier(),
@@ -398,11 +403,6 @@ public class ServiceStepV3Helper {
       serviceStepOverrideHelper.saveFinalConnectionStringsToSweepingOutputV2(ngServiceV2InfoConfig,
           mergedOverrideV2Configs, ambiance, ServiceStepV3Constants.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
     } else {
-      NGServiceConfig ngServiceConfig =
-          NGServiceConfig.builder()
-              .ngServiceV2InfoConfig(
-                  NGServiceV2InfoConfig.builder().serviceDefinition(ServiceDefinition.builder().build()).build())
-              .build();
       if (servicePartResponse != null) {
         ngServiceConfig = servicePartResponse.getNgServiceConfig();
       }
