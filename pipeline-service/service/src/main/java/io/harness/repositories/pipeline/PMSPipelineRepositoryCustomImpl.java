@@ -52,6 +52,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -98,12 +99,21 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
-  public List<PipelineEntity> findAllWithProjections(Criteria criteria, List<String> projections) {
+  public List<String> findAllPipelineIdentifiers(String accountId, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = Criteria.where(PipelineEntityKeys.accountId)
+                            .is(accountId)
+                            .and(PipelineEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(PipelineEntityKeys.projectIdentifier);
     Query query = new Query(criteria);
-    for (String key : projections) {
-      query.fields().include(key);
-    }
-    return mongoTemplate.find(query, PipelineEntity.class);
+
+    query.fields().include(PipelineEntityKeys.identifier);
+
+    List<PipelineEntity> pipelineEntities = mongoTemplate.find(query, PipelineEntity.class);
+
+    return pipelineEntities.stream()
+        .map(PipelineEntity::getIdentifier) // Assuming "getIdentifier" is the method to retrieve the identifier
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -484,6 +494,23 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
         .get(()
                  -> mongoTemplate.findAndModify(
                      query, update, new FindAndModifyOptions().returnNew(true), PipelineEntity.class));
+  }
+
+  @Override
+  public Page<String> findAllPipelineIdentifiers(Criteria criteria, Pageable pageable, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
+    List<PipelineEntity> pipelineEntities = gitAwarePersistence.find(
+        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class, true);
+
+    List<String> pipelineIdentifiers =
+        pipelineEntities.stream()
+            .map(PipelineEntity::getIdentifier) // Assuming "getIdentifier" is the method to retrieve the identifier
+            .collect(Collectors.toList());
+
+    return PageableExecutionUtils.getPage(pipelineIdentifiers, pageable,
+        ()
+            -> gitAwarePersistence.count(
+                criteria, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class));
   }
 
   @VisibleForTesting

@@ -17,8 +17,6 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.publicaccess.PublicAccessClient;
 import io.harness.accesscontrol.publicaccess.dto.PublicAccessResponse;
@@ -391,21 +389,11 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         accountId, orgId, projectId, filterIdentifier, filterProperties, false, module, searchTerm);
     Pageable pageRequest =
         PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
-    Page<PipelineEntity> pipelineEntities;
-    if (accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), Resource.of("PIPELINE", null),
-            PipelineRbacPermissions.PIPELINE_VIEW)) {
-      pipelineEntities =
-          pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
-    }
 
-    else {
-      pipelineEntities = pmsPipelineService.list(criteria,
-          PageUtils.getPageRequest(0, 50000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt)),
-          accountId, orgId, projectId, getDistinctFromBranches);
-      List<PipelineEntity> permittedPipelineEntities =
-          pmsPipelineService.getPermittedPipelineEntities(accountId, orgId, projectId, pipelineEntities.getContent());
-      pipelineEntities = PageUtils.getPage(permittedPipelineEntities, page, size);
-    }
+    validateAndSetPermittedPipelines(accountId, orgId, projectId, sort, getDistinctFromBranches, criteria);
+
+    Page<PipelineEntity> pipelineEntities =
+        pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
 
     List<String> pipelineIdentifiers =
         pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());
@@ -417,6 +405,20 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
 
     return ResponseDTO.newResponse(pipelines);
+  }
+
+  private void validateAndSetPermittedPipelines(String accountId, String orgId, String projectId, List<String> sort,
+      Boolean getDistinctFromBranches, Criteria criteria) {
+    if (!pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
+      Page<String> allPipelineIdentifiers = pmsPipelineService.listAllIdentifiers(criteria,
+          PageUtils.getPageRequest(0, 10000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt)),
+          accountId, orgId, projectId, getDistinctFromBranches);
+
+      List<String> permittedPipelineIdentifiers = pmsPipelineService.getPermittedPipelineIdentifier(
+          accountId, orgId, projectId, allPipelineIdentifiers.toList());
+
+      criteria.and(PipelineEntityKeys.identifier).in(permittedPipelineIdentifiers);
+    }
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)

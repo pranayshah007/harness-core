@@ -22,10 +22,7 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineSettingsService;
-import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
-import io.harness.accesscontrol.acl.api.AccessControlDTO;
-import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
-import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.acl.api.*;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.CodePulse;
@@ -764,8 +761,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public List<PipelineEntity> listWithProjection(Criteria criteria, List<String> projections) {
-    return pmsPipelineRepository.findAllWithProjections(criteria, projections);
+  public List<String> getAllPipelineIdentifiers(String accountId, String orgIdentifier, String projectIdentifier) {
+    return pmsPipelineRepository.findAllPipelineIdentifiers(accountId, orgIdentifier, projectIdentifier);
   }
 
   @Override
@@ -968,34 +965,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     return pipelineAfterUpdate.getIdentifier();
   }
 
-  @Override
-  public List<PipelineEntity> getPermittedPipelineEntities(
-      String accountId, String orgId, String projectId, List<PipelineEntity> pipelineEntities) {
-    if (isEmpty(pipelineEntities)) {
-      return Collections.emptyList();
-    }
-
-    Map<String, PipelineEntity> identifierToEntityMap =
-        pipelineEntities.stream().collect(Collectors.toMap(PipelineEntity::getIdentifier, entity -> entity));
-
-    List<String> entityIdentifierList =
-        pipelineEntities.stream()
-            .map(PipelineEntity::getIdentifier) // Assuming "getIdentifier" is the method to retrieve the identifier
-            .collect(Collectors.toList());
-    List<PipelineEntity> permittedPipelineEntity = new ArrayList<>();
-    AccessCheckResponseDTO accessCheckResponse =
-        getAccessCheckResponseDTO(accountId, orgId, projectId, entityIdentifierList);
-
-    log.info(accessCheckResponse.toString());
-    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
-      if (accessControlDTO.isPermitted()) {
-        permittedPipelineEntity.add(identifierToEntityMap.get(accessControlDTO.getResourceIdentifier()));
-      }
-    }
-
-    return permittedPipelineEntity;
-  }
-
   private AccessCheckResponseDTO getAccessCheckResponseDTO(
       String accountId, String orgId, String projectId, List<String> entityIdentifierList) {
     List<PermissionCheckDTO> permissionChecks =
@@ -1024,6 +993,25 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       }
     }
     return permittedPipelineIdentifier;
+  }
+
+  @Override
+  public Page<String> listAllIdentifiers(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
+      String projectIdentifier, Boolean getDistinctFromBranches) {
+    checkProjectExists(accountId, orgIdentifier, projectIdentifier);
+    if (Boolean.TRUE.equals(getDistinctFromBranches)
+        && gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
+      return pmsPipelineRepository.findAllPipelineIdentifiers(
+          criteria, pageable, accountId, orgIdentifier, projectIdentifier, true);
+    }
+    return pmsPipelineRepository.findAllPipelineIdentifiers(
+        criteria, pageable, accountId, orgIdentifier, projectIdentifier, false);
+  }
+
+  @Override
+  public Boolean validateViewPermission(String accountId, String orgId, String projectId) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), Resource.of("PIPELINE", null),
+        PipelineRbacPermissions.PIPELINE_VIEW);
   }
 
   private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,

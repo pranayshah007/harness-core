@@ -26,7 +26,7 @@ public interface PMSPipelineRepositoryCustom {
   Page<PipelineEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, boolean getDistinctFromBranches);
 
-  List<PipelineEntity> findAllWithProjections(Criteria criteria, List<String> projections);
+  List<String> findAllPipelineIdentifiers(String accountId, String orgIdentifier, String projectIdentifier);
 
   Long countAllPipelines(Criteria criteria);
 
@@ -83,4 +83,7 @@ public interface PMSPipelineRepositoryCustom {
       Update metadataUpdate, Criteria metadataCriteria, MoveConfigOperationType moveConfigOperationType);
 
   PipelineEntity updateEntity(Criteria criteria, Update update);
+
+  Page<String> findAllPipelineIdentifiers(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
+      String projectIdentifier, boolean b);
 }
