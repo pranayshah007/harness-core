@@ -84,7 +84,9 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
       String accountId, DelegateEntityOwner owner, String tokenName, Long revokeAfter) {
     String token = encodeBase64(Misc.generateSecretKey());
     String tokenIdentifier = tokenName;
+    String updatedTokenNameWithScopeSuffix = tokenName.trim();
     if (owner != null) {
+      updatedTokenNameWithScopeSuffix = tokenName.trim() + "_" + owner.getIdentifier();
       String orgId = DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(owner.getIdentifier());
       String projectId = DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(owner.getIdentifier());
       tokenIdentifier = String.format("%s_%s_%s", tokenName, orgId, projectId);
@@ -93,7 +95,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
         DelegateToken.builder()
             .accountId(accountId)
             .owner(owner)
-            .name(tokenName.trim())
+            .name(updatedTokenNameWithScopeSuffix)
             .isNg(true)
             .status(DelegateTokenStatus.ACTIVE)
             .value(token)
@@ -108,7 +110,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
       persistence.save(delegateToken);
     } catch (DuplicateKeyException e) {
       throw new InvalidRequestException(
-          format("Token with given name %s already exists for given account.", tokenName));
+          format("Token with given name %s already exists for given Scope. Please use a different name.", tokenName));
     }
 
     publishCreateTokenAuditEvent(delegateToken);
@@ -291,6 +293,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   private DelegateTokenDetails getDelegateTokenDetails(DelegateToken delegateToken, boolean includeTokenValue) {
     DelegateTokenDetailsBuilder delegateTokenDetailsBuilder = DelegateTokenDetails.builder()
+                                                                  .uuid(delegateToken.getUuid())
                                                                   .accountId(delegateToken.getAccountId())
                                                                   .name(delegateToken.getName())
                                                                   .createdAt(delegateToken.getCreatedAt())

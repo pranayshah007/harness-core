@@ -11,6 +11,7 @@ import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -257,5 +258,40 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
         delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, owner, DelegateTokenStatus.ACTIVE, false);
     assertThat(result).hasSize(2);
     result.forEach(tokenDetail -> assertThat(tokenDetail.getValue()).isNull());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateToken_inProjectScopeShouldSuffixTheOrgIdAndProjectIdInTheName() {
+    String tokenName = "token";
+    String ownerIdentifier = "orgId/projectId";
+    DelegateEntityOwner owner = DelegateEntityOwner.builder().identifier(ownerIdentifier).build();
+    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, owner, tokenName, null);
+    List<DelegateTokenDetails> result =
+        delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, owner, DelegateTokenStatus.ACTIVE, false);
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo(tokenName + "_" + ownerIdentifier);
+    result.forEach(tokenDetail -> assertThat(tokenDetail.getValue()).isNull());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateTokenInProjectScopeWithSameNameInAccount_shouldBeSuccessful() {
+    String tokenName = "token";
+    String ownerIdentifier = "orgId/projectId";
+    DelegateEntityOwner owner = DelegateEntityOwner.builder().identifier(ownerIdentifier).build();
+    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName, null);
+    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, owner, tokenName, null);
+    List<DelegateTokenDetails> result1 =
+        delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false);
+    assertThat(result1).hasSize(1);
+    List<DelegateTokenDetails> result2 =
+        delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, owner, DelegateTokenStatus.ACTIVE, false);
+    assertThat(result1).hasSize(1);
+    assertThat(result2).hasSize(1);
+    assertThat(result1.get(0).getName()).isEqualTo(tokenName);
+    assertThat(result2.get(0).getName()).isEqualTo(tokenName + "_" + ownerIdentifier);
   }
 }
