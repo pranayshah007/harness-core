@@ -30,7 +30,6 @@ import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.UnsupportedOperationException;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
@@ -171,7 +170,8 @@ public class ServiceStepsHelper {
         return AmbianceUtils.clone(ambiance, i + 1);
       }
     }
-    throw new UnsupportedOperationException("Not inside service step or one of it's children");
+    return ambiance;
+    // throw new UnsupportedOperationException("Not inside service step or one of it's children");
   }
 
   public List<Outcome> getChildrenOutcomes(Map<String, ResponseData> responseDataMap) {

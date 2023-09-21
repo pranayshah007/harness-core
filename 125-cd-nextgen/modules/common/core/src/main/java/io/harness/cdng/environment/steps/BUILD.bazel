@@ -19,7 +19,8 @@ java_library(
     deps = [
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/helper:module",
-         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/helper/beans:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/constants:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/helpers:module",
         "//127-cd-nextgen-entities:module",

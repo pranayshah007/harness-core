@@ -7,6 +7,7 @@
 
 package io.harness.cdng.environment.steps;
 
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -95,8 +96,6 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  private static final String ENVIRONMENT_COMMAND_UNIT = "Environment Step";
-
   @Override
   public Class<CustomStageEnvironmentStepParameters> getStepParametersClass() {
     return CustomStageEnvironmentStepParameters.class;
@@ -117,7 +116,7 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       }
 
       final NGLogCallback logCallback =
-          new NGLogCallback(logStreamingStepClientFactory, ambiance, ENVIRONMENT_COMMAND_UNIT, true);
+          serviceStepsHelper.getServiceLogCallback(ambiance, true, SERVICE_STEP_COMMAND_UNIT);
 
       boolean isOverridesV2enabled =
           overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
@@ -150,8 +149,8 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
 
       return ChildrenExecutableResponse.newBuilder()
           .addAllLogKeys(emptyIfNull(StepUtils.generateLogKeys(
-              StepUtils.generateLogAbstractions(ambiance), List.of(ENVIRONMENT_COMMAND_UNIT))))
-          .addAllUnits(List.of(ENVIRONMENT_COMMAND_UNIT))
+              StepUtils.generateLogAbstractions(ambiance), List.of(SERVICE_STEP_COMMAND_UNIT))))
+          .addAllUnits(List.of(SERVICE_STEP_COMMAND_UNIT))
           .addAllChildren(parameters.getChildrenNodeIds()
                               .stream()
                               .map(id -> ChildrenExecutableResponse.Child.newBuilder().setChildNodeId(id).build())
@@ -174,7 +173,7 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
     StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
 
     final NGLogCallback logCallback =
-        new NGLogCallback(logStreamingStepClientFactory, ambiance, ENVIRONMENT_COMMAND_UNIT, false);
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     UnitProgress environmentStepUnitProgress = null;
 
     if (StatusUtils.brokeStatuses().contains(stepResponse.getStatus())) {
@@ -183,7 +182,7 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
           CommandExecutionStatus.FAILURE);
       environmentStepUnitProgress = UnitProgress.newBuilder()
                                         .setStatus(UnitStatus.FAILURE)
-                                        .setUnitName(ENVIRONMENT_COMMAND_UNIT)
+                                        .setUnitName(SERVICE_STEP_COMMAND_UNIT)
                                         .setStartTime(environmentStepStartTs)
                                         .setEndTime(System.currentTimeMillis())
                                         .build();
@@ -192,7 +191,7 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
           logCallback, "Completed environment step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       environmentStepUnitProgress = UnitProgress.newBuilder()
                                         .setStatus(UnitStatus.SUCCESS)
-                                        .setUnitName(ENVIRONMENT_COMMAND_UNIT)
+                                        .setUnitName(SERVICE_STEP_COMMAND_UNIT)
                                         .setStartTime(environmentStepStartTs)
                                         .setEndTime(System.currentTimeMillis())
                                         .build();
