@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.batch.processing.ccm.BatchJobType;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.service.intfc.BatchJobScheduledDataService;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.category.element.UnitTests;
@@ -36,6 +37,7 @@ public class BatchJobRunnerTest extends CategoryTest {
   @InjectMocks private BatchJobRunner batchJobRunner;
   @Mock private BatchJobScheduledDataService batchJobScheduledDataService;
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
+  @Mock private BatchMainConfig batchMainConfig;
 
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final Instant NOW = Instant.now();
@@ -180,6 +182,7 @@ public class BatchJobRunnerTest extends CategoryTest {
   public void shouldReturnFalseIfOutOfClusterDependentJobsNotFinished() {
     when(customBillingMetaDataService.checkPipelineJobFinished(ACCOUNT_ID, START_TIME, END_TIME))
         .thenReturn(Boolean.FALSE);
+    when(batchMainConfig.isClickHouseEnabled()).thenReturn(Boolean.FALSE);
     BatchJobType batchJobType = BatchJobType.INSTANCE_BILLING;
     boolean jobFinished = batchJobRunner.checkOutOfClusterDependentJobs(ACCOUNT_ID, START_TIME, END_TIME, batchJobType);
     assertThat(jobFinished).isFalse();
@@ -191,6 +194,7 @@ public class BatchJobRunnerTest extends CategoryTest {
   public void shouldReturnTrueIfOutOfClusterDependentJobFinished() {
     when(customBillingMetaDataService.checkPipelineJobFinished(ACCOUNT_ID, START_TIME, END_TIME))
         .thenReturn(Boolean.TRUE);
+    when(batchMainConfig.isClickHouseEnabled()).thenReturn(Boolean.FALSE);
     BatchJobType batchJobType = BatchJobType.INSTANCE_BILLING;
     boolean jobFinished = batchJobRunner.checkOutOfClusterDependentJobs(ACCOUNT_ID, START_TIME, END_TIME, batchJobType);
     assertThat(jobFinished).isTrue();
@@ -200,6 +204,7 @@ public class BatchJobRunnerTest extends CategoryTest {
   @Owner(developers = HITESH)
   @Category(UnitTests.class)
   public void shouldReturnTrueIfOutOfClusterDependentJobsIsNotApplicable() {
+    when(batchMainConfig.isClickHouseEnabled()).thenReturn(Boolean.FALSE);
     BatchJobType batchJobType = BatchJobType.K8S_EVENT;
     boolean jobFinished = batchJobRunner.checkOutOfClusterDependentJobs(ACCOUNT_ID, START_TIME, END_TIME, batchJobType);
     assertThat(jobFinished).isTrue();

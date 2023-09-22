@@ -8,6 +8,7 @@
 package io.harness.aws;
 
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEProxyConfig;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -39,11 +40,12 @@ public interface AwsClient {
 
   String getAmazonEcrAuthToken(AwsConfig awsConfig, String account, String region);
 
-  AWSCredentialsProvider getAssumedCredentialsProvider(
-      AWSCredentialsProvider credentialsProvider, String crossAccountRoleArn, @Nullable String externalId);
+  AWSCredentialsProvider getAssumedCredentialsProvider(AWSCredentialsProvider credentialsProvider,
+      String crossAccountRoleArn, @Nullable String externalId, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
 
   AWSCredentialsProvider getAssumedCredentialsProviderWithRegion(AWSCredentialsProvider credentialsProvider,
-      String crossAccountRoleArn, @Nullable String externalId, @NotNull String region);
+      String crossAccountRoleArn, @Nullable String externalId, @NotNull String region,
+      CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
 
   Optional<ReportDefinition> getReportDefinition(
       AWSCredentialsProvider credentialsProvider, String curReportName, CEProxyConfig ceProxyConfig);
@@ -58,13 +60,14 @@ public interface AwsClient {
 
   Policy getRolePolicy(AWSCredentialsProvider credentialsProvider, String roleName, String policyName);
 
-  ObjectListing getBucket(AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix);
+  ObjectListing getBucket(
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix, CEProxyConfig ceProxyConfig);
 
   S3Objects getIterableS3ObjectSummaries(
-      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix);
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix, CEProxyConfig ceProxyConfig);
 
   AWSOrganizationsClient getAWSOrganizationsClient(String crossAccountRoleArn, String externalId, String awsAccessKey,
-      String awsSecretKey, CEProxyConfig ceProxyConfig);
+      String awsSecretKey, CEProxyConfig ceProxyConfig, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
 
   Map<String, String> listIAMRoles(AwsInternalConfig awsInternalConfig);
 
