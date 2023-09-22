@@ -38,4 +38,5 @@ public class ArtifactoryGenericArtifactDelegateRequest implements ArtifactoryBas
   ArtifactoryConnectorDTO artifactoryConnectorDTO;
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
+  String artifactFilter;
 }
