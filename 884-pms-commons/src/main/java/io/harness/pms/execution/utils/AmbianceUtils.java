@@ -373,7 +373,8 @@ public class AmbianceUtils {
     }
 
     // Making sure that identifier postfix is added at the last while forming the identifier for the matrix stage
-    if (strategyMetadata.getMatrixMetadata().getMatrixValuesMap().containsKey(
+    if ((EmptyPredicate.isNotEmpty(nodeName) || useMatrixFieldName)
+        && strategyMetadata.getMatrixMetadata().getMatrixValuesMap().containsKey(
             MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES)) {
       levelIdentifier = levelIdentifier + "_"
           + strategyMetadata.getMatrixMetadata().getMatrixValuesMap().get(MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES);

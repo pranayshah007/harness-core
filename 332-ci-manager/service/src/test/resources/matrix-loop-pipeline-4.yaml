@@ -9,7 +9,6 @@ pipeline:
         identifier: ci
         type: CI
         name: ci
-        description: ""
         spec:
           cloneCodebase: false
           execution:
@@ -28,11 +27,11 @@ pipeline:
                   strategy:
                     matrix:
                       entries:
-                        - name:
+                        - names:
                             - bla
                             - abcd
                             - ef
-                          kdkq:
+                        - kdkq:
                             - kql
                             - d
                       wafs:
@@ -53,73 +52,139 @@ pipeline:
                         - spl:
                             - s
                             - blahvalue
-              - stepGroup:
-                  identifier: Shobhit_Group
-                  name: Shobhit_Group
-                  steps:
-                    - parallel:
-                        - step:
-                            identifier: Run_2
-                            type: Run
-                            name: Run_2
-                            spec:
-                              connectorRef: account.harnessImage
-                              image: alpine
-                              shell: Sh
-                              command: echo hello
-                            strategy:
-                              matrix:
-                                var1:
-                                  - a
-                                  - f
-                                  - s
-                                var2:
-                                  - var:
-                                      - sa
-                                      - lx
-                                      - tt
-                                var3:
-                                  - az
-                                  - q
-                        - step:
-                            identifier: Run_3
-                            type: Run
-                            name: Run_3
-                            spec:
-                              connectorRef: account.harnessImage
-                              image: alpine
-                              shell: Sh
-                              command: echo hello
-                            strategy:
-                              matrix:
-                                qqaz:
-                                  - sx
-                                  - olzq
-                                  - wf
-                                qakq:
-                                  - qqd:
-                                      - q
-                                      - qt
-                                  - w
-                                lpop:
-                                  - dfe:
-                                      - w
-                                      - alp
-                                  - wpla
+              - step:
+                  identifier: Run_5
+                  type: Run
+                  name: Run_5
+                  spec:
+                    connectorRef: account.harnessImage
+                    image: alpine
+                    shell: Sh
+                    command: echo hello
                   strategy:
                     matrix:
-                      qpl:
-                        - qaz
-                        - uhr
-                      dw:
-                        - plq
                       az:
-                        - lma
+                        - aba
+                        - abc
+                        - abc
+                      bz:
+                        - abd
+                        - abc
+                        - abc
+              - parallel:
+                  - step:
+                      identifier: Run_2
+                      type: Run
+                      name: Run_2
+                      spec:
+                        connectorRef: account.harnessImage
+                        image: alpine
+                        shell: Sh
+                        command: echo hello
+                      strategy:
+                        matrix:
+                          java:
+                            - key: a
+                            - key: b
+                            - key: c
+                          go:
+                            - ved
+                            - sahil
+                          nodeName: abcd
+                  - step:
+                      identifier: Run_3
+                      type: Run
+                      name: Run_3
+                      spec:
+                        connectorRef: account.harnessImage
+                        image: alpine
+                        shell: Sh
+                        command: echo hello
+                      strategy:
+                        matrix:
+                          qaz:
+                            - qlo:
+                                - s
+                                - q
+                            - qs:
+                                - q
+                                - r
+                            - wsq
+                          ldpr:
+                            - abc
+                            - abca
+                            - abcb
+              - parallel:
+                  - step:
+                      identifier: Run_4
+                      type: Run
+                      name: Run_4
+                      spec:
+                        connectorRef: account.harnessImage
+                        image: alpine
+                        shell: Sh
+                        command: echo hello
+                      strategy:
+                        matrix:
+                          java:
+                            - key: a
+                            - key: b
+                            - key: c
+                          kotlin:
+                            - qad:
+                                - ger
+                                - plw
+                                - qat
+                            - eaq
+                          golang:
+                            - azc
+                            - lpe
+                            - esa
+                          python:
+                            - ed
+                            - gf
+                          nodeName: <+matrix.java.key>_<+matrix.python>
+                  - step:
+                      identifier: Run_6
+                      type: Run
+                      name: Run_6
+                      spec:
+                        connectorRef: account.harnessImage
+                        image: alpine
+                        shell: Sh
+                        command: echo hello
+                      strategy:
+                        matrix:
+                          person:
+                            - hello
+                            - name:
+                                - shobhit
+                                - dev
+                                - sahil
+                                - ved
+                            - age:
+                                - 23
+                                - 26
+                                - 28
+                                - 25
+                            - gender:
+                                - male
+                                - female
+                          company:
+                            - harness
+                            - google
+                            - amazon
           infrastructure:
             type: KubernetesDirect
             spec:
               connectorRef: ShobhitK8
-              namespace: harness-delegate-ng
+              namespace: harness-qa-delegate
               automountServiceAccountToken: true
               nodeSelector: {}
               os: Linux
+  variables:
+    - name: blah
+      type: String
+      description: ""
+      required: false
+      value: blahvalue

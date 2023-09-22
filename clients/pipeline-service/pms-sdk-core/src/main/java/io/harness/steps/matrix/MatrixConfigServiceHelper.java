@@ -37,6 +37,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -138,7 +139,7 @@ public class MatrixConfigServiceHelper {
   public StrategyInfo expandJsonNodeFromClass(List<String> keys, Map<String, AxisConfig> axes,
       Map<String, ExpressionAxisConfig> expressionAxes, ParameterField<List<ExcludeConfig>> exclude,
       ParameterField<Integer> maxConcurrencyParameterField, JsonNode jsonNode, Optional<Integer> maxExpansionLimit,
-      boolean isStepGroup, Class cls, Ambiance ambiance) {
+      boolean isStepGroup, Class cls, Ambiance ambiance, String nodeName) {
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
     fetchCombinations(new LinkedHashMap<>(), axes, expressionAxes, combinations,
@@ -157,19 +158,48 @@ public class MatrixConfigServiceHelper {
 
     List<JsonNode> jsonNodes = new ArrayList<>();
     int currentIteration = 0;
-
     boolean enableMatrixLabelsByName = AmbianceUtils.shouldUseMatrixFieldName(ambiance);
-    if (enableMatrixLabelsByName) {
+    Map<String, Integer> combinationStringMap = new HashMap<>();
+
+    if (EmptyPredicate.isNotEmpty(nodeName)) {
       for (Map<String, String> combination : combinations) {
+        String resolvedNodeName = getResolvedNodeName(nodeName, combination, currentIteration, totalCount);
+        handleDuplicateStepCombinations(combinationStringMap, resolvedNodeName, combination);
         JsonNode resolvedJsonNode =
             getresolvedJsonNode(isStepGroup, currentIteration, totalCount, jsonNode, cls, combinations);
-        StrategyUtils.modifyJsonNode(resolvedJsonNode,
+
+        List<String> step = Arrays.asList(resolvedNodeName);
+        List<String> stepCombinations = step.stream()
+                                            .map(s -> s.replaceAll(AmbianceUtils.SPECIAL_CHARACTER_REGEX, "_"))
+                                            .collect(Collectors.toList());
+
+        if (combination.containsKey(MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES)) {
+          stepCombinations.add(combination.get(MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES));
+        }
+        StrategyUtils.modifyJsonNode(resolvedJsonNode, stepCombinations);
+        jsonNodes.add(resolvedJsonNode);
+        currentIteration++;
+      }
+    } else if (enableMatrixLabelsByName) {
+      for (Map<String, String> combination : combinations) {
+        String resolvedNodeName = getResolvedNodeName(nodeName, combination, currentIteration, totalCount);
+        handleDuplicateStepCombinations(combinationStringMap, resolvedNodeName, combination);
+        JsonNode resolvedJsonNode =
+            getresolvedJsonNode(isStepGroup, currentIteration, totalCount, jsonNode, cls, combinations);
+
+        List<String> stepCombinations =
             combination.entrySet()
                 .stream()
+                .filter(entry -> !MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES.equals(entry.getKey()))
                 .sorted(Map.Entry.comparingByKey())
                 .map(t -> t.getValue().replace(".", ""))
                 .map(t -> t.replaceAll(AmbianceUtils.SPECIAL_CHARACTER_REGEX, "_"))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+
+        if (combination.containsKey(MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES)) {
+          stepCombinations.add(combination.get(MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES));
+        }
+        StrategyUtils.modifyJsonNode(resolvedJsonNode, stepCombinations);
         jsonNodes.add(resolvedJsonNode);
         currentIteration++;
       }
@@ -210,6 +240,26 @@ public class MatrixConfigServiceHelper {
       resolvedJsonNode = JsonPipelineUtils.asTree(o);
     }
     return resolvedJsonNode;
+  }
+
+  private String getResolvedNodeName(
+      String nodeName, Map<String, String> combination, int currentIteration, int totalCount) {
+    String variableNodeName = "";
+    try {
+      variableNodeName = resolveNodeName(nodeName, combination.entrySet(), combination, currentIteration, totalCount);
+    } catch (Exception e) {
+      throw new InvalidRequestException("Failed to resolve the expression for the nodeName: " + nodeName);
+    }
+    return variableNodeName;
+  }
+  private void handleDuplicateStepCombinations(
+      Map<String, Integer> combinationStringMap, String resolvedNodeName, Map<String, String> combination) {
+    if (combinationStringMap.containsKey(resolvedNodeName)) {
+      Integer cnt = combinationStringMap.getOrDefault(resolvedNodeName, 0);
+      combination.put(MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES, cnt.toString());
+      combinationStringMap.put(resolvedNodeName, cnt + 1);
+    }
+    combinationStringMap.computeIfAbsent(resolvedNodeName, k -> 0);
   }
 
   // This is used by CI during the CIInitStep. CI expands the steps YAML having strategy and the expanded YAML is then
