@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "nextgen-ce.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default "ce-nextgen" .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
