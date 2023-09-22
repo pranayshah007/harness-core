@@ -10,7 +10,11 @@ package io.harness.cdng.creator.variables;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.stage.CustomStageNode;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
@@ -19,13 +23,21 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 
+import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
+@Slf4j
 
 public class CustomStageVariableCreator extends AbstractStageVariableCreator<CustomStageNode> {
+  @Inject private StageVariableCreatorHelper stageVariableCreatorHelper;
+
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
       VariableCreationContext ctx, YamlField config) {
@@ -62,8 +74,27 @@ public class CustomStageVariableCreator extends AbstractStageVariableCreator<Cus
 
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesV2(
+      VariableCreationContext ctx, CustomStageNode customStageNode) {
+    LinkedHashMap<String, VariableCreationResponse> responseMap =
+        createVariablesForChildrenNodesPipelineV2Yaml(ctx, customStageNode);
+
+    responseMap.putAll(createVariablesForChildrenNodes(ctx, ctx.getCurrentField()));
+    return responseMap;
+  }
+
+  private LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesPipelineV2Yaml(
       VariableCreationContext ctx, CustomStageNode config) {
-    return createVariablesForChildrenNodes(ctx, ctx.getCurrentField());
+    LinkedHashMap<String, VariableCreationResponse> responseMap = new LinkedHashMap<>();
+    try {
+      final EnvironmentYamlV2 environment = config.getCustomStageConfig().getEnvironment();
+
+      if (environment != null) {
+        stageVariableCreatorHelper.createVariablesForEnvironment(ctx, responseMap, null, environment);
+      }
+    } catch (Exception ex) {
+      log.error("Exception during Custom Stage Node variable creation", ex);
+    }
+    return responseMap;
   }
 
   @Override
