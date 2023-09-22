@@ -49,10 +49,10 @@ global:
               remoteKeys:
                 MONGO_USER:
                   name: ""
-                  key: ""
+                  property: ""
                 MONGO_PASSWORD":
                   name: ""
-                  key: ""
+                  property: ""
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
@@ -76,13 +76,13 @@ global:
               remoteKeys:
                 TIMESCALEDB_USERNAME:
                   name: ""
-                  key: ""
+                  property: ""
                 TIMESCALEDB_PASSWORD:
                   name: ""
-                  key: ""
+                  property: ""
                 TIMESCALEDB_SSL_ROOT_CERT:
                   name: ""
-                  key: ""
+                  property: ""
       secretName: ""
       userKey: ""
       passwordKey: ""
@@ -90,7 +90,7 @@ global:
       certName: ""
       certKey: ""
     redis:
-      installed: true
+      installed: false
       protocol: "redis"
       # --  provide default values if redis.installed is set to false
       hosts:
@@ -113,10 +113,10 @@ global:
               remoteKeys:
                 REDIS_USERNAME:
                   name: ""
-                  key: ""
+                  property: ""
                 REDIS_PASSWORD":
                   name: ""
-                  key: ""
+                  property: ""
   mongoSSL: false
   license:
     cg: ''
@@ -205,10 +205,10 @@ redis:
           remoteKeys:
             REDIS_USERNAME:
               name: ""
-              key: ""
+              property: ""
             REDIS_PASSWORD":
               name: ""
-              key: ""
+              property: ""
 
 timescaledb:
   # -- TimescaleDB host names
@@ -226,18 +226,18 @@ timescaledb:
     secretManagement: 
       externalSecretsOperator:
         - secretStore:
-            name: "a"
-            kind: "a"
+            name: ""
+            kind: ""
           remoteKeys:
             TIMESCALEDB_USERNAME:
-              name: "a"
-              key: ""
+              name: ""
+              property: ""
             TIMESCALEDB_PASSWORD:
               name: ""
-              key: ""
+              property: ""
             TIMESCALEDB_SSL_ROOT_CERT:
               name: ""
-              key: ""
+              property: ""
 mongo:
   protocol: "redis"
   hosts: []
@@ -259,10 +259,10 @@ mongo:
           remoteKeys:
             MONGO_USER:
               name: ""
-              key: ""
+              property: ""
             MONGO_PASSWORD":
               name: ""
-              key: ""
+              property: ""
 
 replicaCount: 1
 maxSurge: 1
@@ -473,17 +473,20 @@ secrets:
   kubernetesSecrets:
   - secretName: ""
     keys:
-      REDIS_USERNAME: ""
-      REDIS_PASSWORD: ""
+      LOG_STREAMING_SERVICE_TOKEN: ""
   secretManagement: 
     externalSecretsOperator:
     - secretStore:
-        name: "a"
-        kind: "a"
+        name: ""
+        kind: ""
       remoteKeys:
-        REDIS_USERNAME:
-          name: "a"
-          key: ""
-        REDIS_PASSWORD:
+        LOG_STREAMING_SERVICE_TOKEN:
           name: ""
-          key: ""
+          property: ""
+    - secretStore:
+        name: ""
+        kind: ""
+      remoteKeys:
+        LOG_STREAMING_SERVICE_TOKEN:
+          name: ""
+          property: ""

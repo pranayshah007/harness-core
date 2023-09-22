@@ -47,7 +47,6 @@ data:
   SERVER_PORT: "9090"
   SERVICE_ACC: /opt/harness/svc/service_acc.json
   VERSION: {{ .Values.version }}
-  LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'

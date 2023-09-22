@@ -21,6 +21,26 @@ Example:
 {{- end }}
 
 {{/*
+Generate ESO Local Secret Context Identifier
+
+Generates Identifier following the format: <chart-name>-<additional-ctx-identifier>-ext-secret
+
+Example:
+{{ include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $  "additionalCtxIdentifier" "timescaledb") }}
+*/}}
+{{- define "harnesscommon.secrets.localESOSecretCtxIdentifier" }}
+  {{- $ := .ctx }}
+  {{- $additionalCtxIdentifier := .additionalCtxIdentifier }}
+  {{- $localESOSecretIdentifier := "" }}
+  {{- if $additionalCtxIdentifier }}
+    {{- $localESOSecretIdentifier = (printf "%s-%s-ext-secret" $.Chart.Name $additionalCtxIdentifier) }}
+  {{- else }}
+    {{- $localESOSecretIdentifier = (printf "%s-ext-secret" $.Chart.Name) }}
+  {{- end }}
+  {{- printf "%s" $localESOSecretIdentifier }}
+{{- end }}
+
+{{/*
 Check validity of ESO Secret in the externalSecretsOperator secret context
 
 Returns:
@@ -161,7 +181,7 @@ metadata:
   name: {{ $esoSecretName }}
 spec:
   secretStoreRef:
-    name:  {{ $esoSecret.secretStore.name }}
+    name: {{ $esoSecret.secretStore.name }}
     kind: {{ $esoSecret.secretStore.kind }}
   target:
     name: {{ $esoSecretName }}
@@ -180,6 +200,9 @@ spec:
   - secretKey: {{ lower $remoteKeyName }}
     remoteRef:
       key: {{ $remoteKey.name }}
+      {{- if not (empty $remoteKey.property) }}
+      property: {{ $remoteKey.property }}
+      {{- end }}
     {{- end }}
   {{- end }}
           {{- end }}

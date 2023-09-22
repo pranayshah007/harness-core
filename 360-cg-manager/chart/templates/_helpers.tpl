@@ -144,3 +144,22 @@ Create the name of the delegate upgrader image to use
 {{- define "harness-manager.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
 {{- end -}}
+
+{{/*
+Manage Harness Manager Secrets
+
+USAGE:
+{{- "harness-manager.generateSecrets" (dict "ctx" $)}}
+*/}}
+{{- define "harness-manager.generateSecrets" }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}
