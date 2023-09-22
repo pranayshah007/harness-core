@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.ingress.name }}
-  namespace: {{ .Values.namespace.name }}
+  name: ssca-manager-v1-apis
+  namespace: {{ .Release.Namespace }}
   annotations:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "900"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
@@ -11,22 +11,23 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
-  ingressClassName: {{ .Values.ingress.ingressClass130 }}
+  ingressClassName: {{ .Values.global.ingress.className | quote }}
   rules:
     - http:
         paths:
-          - path: {{ .Values.ingress.pathPrefix }}/ssca-manager(/|$)(.*)
+          - path: /ssca-manager(/|$)(.*)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ .Values.ingress.name }}-{{ .Values.ingress.ENV }}-v1-apis-130
+  name: ssca-manager-v1-apis
+  namespace: {{ .Release.Namespace }}
   annotations:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "900"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
@@ -34,76 +35,76 @@ metadata:
     nginx.ingress.kubernetes.io/client-max-body-size: 1024m
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
-    {{- if .Values.ingress.serviceUpstream }}
+    {{- if .Values.global.ingress.serviceUpstream }}
     nginx.ingress.kubernetes.io/service-upstream: "true"
-    nginx.ingress.kubernetes.io/upstream-vhost: {{ .Values.service.name }}.{{ .Values.namespace.name }}.svc.cluster.local
+    nginx.ingress.kubernetes.io/upstream-vhost: ssca-manager.{{ .Release.Namespace }}.svc.cluster.local
     {{- end }}
 spec:
-  ingressClassName: {{ .Values.ingress.ingressClass130 }}
+  ingressClassName: {{ .Values.global.ingress.className | quote }}
   tls:
   rules:
     - http:
         paths:
-          - path: {{ .Values.ingress.pathPrefix }}/(v1/org/.+/project/.+/sbom/process)
+          - path: /(v1/org/.+/project/.+/sbom/process)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
-          - path: {{ .Values.ingress.pathPrefix }}/(v1/org/.+/project/.+/sbom/enforcement)
+          - path: /(v1/org/.+/project/.+/sbom/enforcement)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
-          - path: {{ .Values.ingress.pathPrefix }}/(v1/org/.+/project/.+/orchestration/.+/sbom-download)
+          - path: /(v1/org/.+/project/.+/orchestration/.+/sbom-download)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
-          - path: {{ .Values.ingress.pathPrefix }}/(v1/org/.+/project/.+/orchestration/.+/summary)
+          - path: /(v1/org/.+/project/.+/orchestration/.+/summary)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
-          - path: {{ .Values.ingress.pathPrefix }}/(v1/org/.+/project/.+/enforcement/.+/summary)
+          - path: /(v1/org/.+/project/.+/enforcement/.+/summary)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
-          - path: {{ .Values.ingress.pathPrefix }}/(v1/org/.+/project/.+/enforcement/.+/policy-violations)
+          - path: /(v1/org/.+/project/.+/enforcement/.+/policy-violations)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
-          - path: {{ .Values.ingress.pathPrefix }}/(v1/org/.+/project/.+/enforcement-result)
+          - path: /(v1/org/.+/project/.+/enforcement-result)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
-          - path: {{ .Values.ingress.pathPrefix }}/(v1/org/.+/project/.+/enforcement-summary)
+          - path: /(v1/org/.+/project/.+/enforcement-summary)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
-          - path: {{ .Values.ingress.pathPrefix }}/(v1/org/.+/project/.+/normalised-sbom-component)
+          - path: /(v1/org/.+/project/.+/normalised-sbom-component)
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.service.name }}
+                name: ssca-manager
                 port:
                   name: http
