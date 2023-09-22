@@ -3429,6 +3429,11 @@ public class DelegateServiceTest extends WingsBaseTest {
                                             .identifier("_delegateGroupId1")
                                             .description("desc")
                                             .delegateType(DelegateType.DOCKER)
+                                            .k8sConfigDetails(K8sConfigDetails.builder()
+                                                                  .k8sPermissionType(K8sPermissionType.CLUSTER_VIEWER)
+                                                                  .namespace("harness")
+                                                                  .build())
+                                            .size(DelegateSize.SMALL)
                                             .tokenName(TOKEN_NAME)
                                             .build();
 

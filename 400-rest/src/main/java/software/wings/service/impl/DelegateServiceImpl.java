@@ -2615,6 +2615,11 @@ public class DelegateServiceImpl implements DelegateService {
             .projectIdentifier(projectIdentifier)
             .description(delegateParams.getDescription())
             .delegateType(delegateParams.getDelegateType())
+            .size(DelegateSize.SMALL)
+            .k8sConfigDetails(K8sConfigDetails.builder()
+                                  .k8sPermissionType(K8sPermissionType.CLUSTER_VIEWER)
+                                  .namespace("harness")
+                                  .build())
             .tags(isNotEmpty(delegateParams.getTags()) ? new HashSet<>(delegateParams.getTags()) : null)
             .tokenName(delegateTokenName.orElse(null))
             .build();

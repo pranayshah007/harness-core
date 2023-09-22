@@ -30,7 +30,7 @@ public class DelegateSetupDetails implements YamlDTO {
   private String projectIdentifier;
   @NotNull private String name;
   private String description;
-  @NotNull @Builder.Default private DelegateSize size = DelegateSize.SMALL;
+  @NotNull private DelegateSize size;
   private String hostName;
   // TODO: Remove delegateCongigId once we drop this from UI.
   private String delegateConfigurationId;
@@ -38,17 +38,10 @@ public class DelegateSetupDetails implements YamlDTO {
   // Custom limit for delegate-name as 63 characters because kubernetes component name can be at most 63 characters.
   @EntityIdentifier(allowBlank = true, maxLength = 63) private String identifier;
 
-  @Builder.Default
-  @NotNull
-  private K8sConfigDetails k8sConfigDetails =
-      K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.CLUSTER_VIEWER).namespace("").build();
-
+  @NotNull private K8sConfigDetails k8sConfigDetails;
   private Set<String> tags;
 
-  @Schema(description = "Currently KUBERNETES and HELM_DELEGATE are supported.")
-  @Builder.Default
-  @NotNull
-  private String delegateType = "";
+  @Schema(description = "Currently KUBERNETES and HELM_DELEGATE are supported.") @NotNull private String delegateType;
   private String tokenName;
   private Boolean runAsRoot;
 }

@@ -1333,12 +1333,18 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     String identifier = "_123";
     String delegateGroupName = "groupName";
 
-    DelegateSetupDetails delegateSetupDetails1 = DelegateSetupDetails.builder()
-                                                     .identifier(identifier)
-                                                     .name(delegateGroupName)
-                                                     .delegateType(DelegateType.KUBERNETES)
-                                                     .tags(Set.of("tag1", "tag2"))
-                                                     .build();
+    DelegateSetupDetails delegateSetupDetails1 =
+        DelegateSetupDetails.builder()
+            .identifier(identifier)
+            .name(delegateGroupName)
+            .delegateType(DelegateType.KUBERNETES)
+            .size(DelegateSize.SMALL)
+            .k8sConfigDetails(K8sConfigDetails.builder()
+                                  .k8sPermissionType(K8sPermissionType.CLUSTER_VIEWER)
+                                  .namespace("harness")
+                                  .build())
+            .tags(Set.of("tag1", "tag2"))
+            .build();
     DelegateSetupDetails delegateSetupDetails2 =
         createDelegateSetupDetails().orgIdentifier(ORG_IDENTIFIER).projectIdentifier(PROJECT_IDENTIFIER).build();
 
@@ -1882,6 +1888,10 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         .name(TEST_DELEGATE_GROUP_NAME)
         .size(DelegateSize.LAPTOP)
         .delegateConfigurationId("configId")
-        .delegateType(DelegateType.KUBERNETES);
+        .delegateType(DelegateType.KUBERNETES)
+        .k8sConfigDetails(K8sConfigDetails.builder()
+                              .k8sPermissionType(K8sPermissionType.CLUSTER_VIEWER)
+                              .namespace("harness")
+                              .build());
   }
 }
