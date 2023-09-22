@@ -77,7 +77,8 @@ public enum FeatureName {
   CCM_WORKLOAD_LABELS_OPTIMISATION("Use workload labels from instance data instead of k8sworkload", HarnessTeam.CE),
   CCM_COST_CATEGORIES_DASHBOARD(
       "Cost Categories will reflect in bigQuery and eventually in Looker Dashboards", HarnessTeam.CE),
-  CDB_AIDA_WIDGET("FF for enabling the AIDA integration within Custom Dashboards for generating Dashboard widgets", HarnessTeam.CDB),
+  CDB_AIDA_WIDGET("FF for enabling the AIDA integration within Custom Dashboards for generating Dashboard widgets",
+      HarnessTeam.CDB),
   CDB_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CDB UI", HarnessTeam.CDB),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   CDP_AWS_SAM("FF for enabling AWS SAM deployments", HarnessTeam.CDP),
@@ -869,6 +870,7 @@ public enum FeatureName {
       "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP),
   CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL("For removing usage of retry interval field for ", HarnessTeam.CDC),
   CDS_DISABLE_EVALUATE_EXPORT_VARIABLES("For exporting variables without evaluating in command step", HarnessTeam.CDC),
+  CDS_NG_UPDATE_MULTIPLE_SNOW_CHANGE_REQUEST("Enable update multiple tasks in service now", HarnessTeam.CDC),
   CDS_NG_FETCH_FILES_REFACTOR(
       "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP),
   CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE),
