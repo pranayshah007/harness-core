@@ -675,7 +675,7 @@ public class AmbianceUtilsTest extends CategoryTest {
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
     Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
     String identifier = AmbianceUtils.getStrategyPostfix(level, false);
-    assertThat(identifier).isEqualTo("_0_0");
+    assertThat(identifier).isEqualTo("_0");
   }
 
   @Test
