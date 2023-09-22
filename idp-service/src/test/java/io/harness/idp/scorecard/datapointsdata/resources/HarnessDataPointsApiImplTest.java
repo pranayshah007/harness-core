@@ -19,7 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
-import io.harness.idp.scorecard.datapointsdata.resource.DataPointDataApiImpl;
+import io.harness.idp.scorecard.datapointsdata.resource.HarnessDataPointsApiImpl;
 import io.harness.idp.scorecard.datapointsdata.service.DataPointDataValueService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.DataPointInputValues;
@@ -42,18 +42,18 @@ import org.mockito.MockitoAnnotations;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
-public class DataPointDataApiImplTest extends CategoryTest {
+public class HarnessDataPointsApiImplTest extends CategoryTest {
   AutoCloseable openMocks;
 
   @Mock DataPointDataValueService dataPointDataValueService;
 
-  @InjectMocks DataPointDataApiImpl dataPointDataApiImpl;
+  @InjectMocks HarnessDataPointsApiImpl harnessDataPointsApiImpl;
 
   private static final String TEST_DATA_POINT_IDENTIFIER = "test-data-point-identifier";
   private static final String TEST_DATA_POINT_VALUE = "test-data-point-value";
 
   private static final String TEST_ACCOUNT_IDENTIFIER = "test-account-identifier";
-  private static final String TEST_DATA_SOURCE_IDENTIFIER = "test-data-source-identifier";
+  private static final String TEST_DATA_SOURCE_IDENTIFIER = "harness";
   private static final String DATA_POINT_VALUE = "test-value";
   private static final String DATA_POINT_ERROR_MESSAGE = "test-error_message";
   private static final String ERROR_MESSAGE_FOR_API_CALL = "Error : In Making API Call";
@@ -88,8 +88,8 @@ public class DataPointDataApiImplTest extends CategoryTest {
     when(dataPointDataValueService.getDataPointDataValues(
              TEST_ACCOUNT_IDENTIFIER, TEST_DATA_SOURCE_IDENTIFIER, dataSourceDataPointInfoRequest.getRequest()))
         .thenReturn(returnedObject);
-    Response response = dataPointDataApiImpl.getDataSourceDataPointValues(
-        TEST_DATA_SOURCE_IDENTIFIER, dataSourceDataPointInfoRequest, TEST_ACCOUNT_IDENTIFIER);
+    Response response =
+        harnessDataPointsApiImpl.getHarnessDataPointValues(dataSourceDataPointInfoRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     assertEquals(returnedObject, response.getEntity());
   }
@@ -119,8 +119,8 @@ public class DataPointDataApiImplTest extends CategoryTest {
     when(dataPointDataValueService.getDataPointDataValues(
              TEST_ACCOUNT_IDENTIFIER, TEST_DATA_SOURCE_IDENTIFIER, dataSourceDataPointInfoRequest.getRequest()))
         .thenThrow(new InvalidRequestException(ERROR_MESSAGE_FOR_API_CALL));
-    Response response = dataPointDataApiImpl.getDataSourceDataPointValues(
-        TEST_DATA_SOURCE_IDENTIFIER, dataSourceDataPointInfoRequest, TEST_ACCOUNT_IDENTIFIER);
+    Response response =
+        harnessDataPointsApiImpl.getHarnessDataPointValues(dataSourceDataPointInfoRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
     assertEquals(ERROR_MESSAGE_FOR_API_CALL, ((ResponseMessage) response.getEntity()).getMessage());
   }

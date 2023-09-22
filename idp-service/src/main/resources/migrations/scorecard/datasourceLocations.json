@@ -157,6 +157,24 @@
         "Authorization": "{TOKEN_AUTH}"
       }
     }
+  },
+  {
+    "id": "64fec18f2f002fcdd9031763",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "kubernetes",
+    "dataSourceIdentifier": "kubernetes",
+    "type": "CustomHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "https://{HOST}/v1/data-sources/kubernetes/data-point/values",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{SERVICE_TO_SERVICE_AUTH}",
+        "Harness-Account": "{ACCOUNT_IDENTIFIER}",
+        "X-Source-Principal": "{X_SOURCE_PRINCIPAL}"
+      },
+      "requestBody": "{BODY}"
+    }
   }
 ]
 

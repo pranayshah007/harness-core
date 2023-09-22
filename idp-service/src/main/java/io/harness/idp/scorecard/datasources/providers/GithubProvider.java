@@ -29,6 +29,8 @@ import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocat
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +58,8 @@ public class GithubProvider extends DataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs) {
+      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      throws NoSuchAlgorithmException, KeyManagementException {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, null);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
 

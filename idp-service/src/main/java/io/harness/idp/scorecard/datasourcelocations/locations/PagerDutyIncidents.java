@@ -28,6 +28,8 @@ import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEnt
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
 
 import com.google.inject.Inject;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -50,7 +52,7 @@ public class PagerDutyIncidents implements DataSourceLocation {
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) {
+      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails =
         ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
 

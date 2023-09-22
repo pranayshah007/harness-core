@@ -16,6 +16,8 @@ import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -26,7 +28,7 @@ public interface DataSourceLocation {
   Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs);
+      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException;
 
   String replaceRequestBodyInputValuePlaceholdersIfAny(
       Map<String, String> dataPointIdsAndInputValue, String requestBody);
@@ -73,7 +75,8 @@ public interface DataSourceLocation {
     return url;
   }
 
-  default Response getResponse(ApiRequestDetails apiRequestDetails, DslClient dslClient, String accountIdentifier) {
+  default Response getResponse(ApiRequestDetails apiRequestDetails, DslClient dslClient, String accountIdentifier)
+      throws NoSuchAlgorithmException, KeyManagementException {
     return dslClient.call(accountIdentifier, apiRequestDetails);
   }
 }

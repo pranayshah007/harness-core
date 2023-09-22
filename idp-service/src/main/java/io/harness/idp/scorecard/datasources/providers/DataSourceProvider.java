@@ -10,6 +10,13 @@ package io.harness.idp.scorecard.datasources.providers;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.idp.common.Constants.LOCAL_ENV;
+import static io.harness.idp.common.Constants.LOCAL_HOST;
+import static io.harness.idp.common.Constants.PRE_QA_ENV;
+import static io.harness.idp.common.Constants.PRE_QA_HOST;
+import static io.harness.idp.common.Constants.PROD_HOST;
+import static io.harness.idp.common.Constants.QA_ENV;
+import static io.harness.idp.common.Constants.QA_HOST;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,6 +31,10 @@ import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.UnsupportedEncodingException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public abstract class DataSourceProvider {
+  public static final String HOST = "{HOST}";
   private String identifier;
 
   DataPointService dataPointService;
@@ -54,14 +66,15 @@ public abstract class DataSourceProvider {
   }
 
   public abstract Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs);
+      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      throws UnsupportedEncodingException, JsonProcessingException, NoSuchAlgorithmException, KeyManagementException;
 
   protected abstract Map<String, String> getAuthHeaders(String accountIdentifier, String configs);
 
   protected Map<String, Map<String, Object>> processOut(String accountIdentifier,
       BackstageCatalogEntity backstageCatalogEntity, Map<String, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) {
+      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
     Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
     Map<String, List<DataPointEntity>> dataToFetch = dataPointService.getDslDataPointsInfo(
         accountIdentifier, new ArrayList<>(dataPointIdentifiers), this.getIdentifier());
@@ -124,5 +137,23 @@ public abstract class DataSourceProvider {
     Map<String, Object> providerData = aggregatedData.getOrDefault(getIdentifier(), new HashMap<>());
     providerData.putAll(dataPointValues);
     aggregatedData.put(getIdentifier(), providerData);
+  }
+
+  public Map<String, String> prepareUrlReplaceablePairs(String env) {
+    Map<String, String> possibleReplaceableUrlPairs = new HashMap<>();
+    switch (env) {
+      case QA_ENV:
+        possibleReplaceableUrlPairs.put(HOST, QA_HOST);
+        break;
+      case PRE_QA_ENV:
+        possibleReplaceableUrlPairs.put(HOST, PRE_QA_HOST);
+        break;
+      case LOCAL_ENV:
+        possibleReplaceableUrlPairs.put(HOST, LOCAL_HOST);
+        break;
+      default:
+        possibleReplaceableUrlPairs.put(HOST, PROD_HOST);
+    }
+    return possibleReplaceableUrlPairs;
   }
 }

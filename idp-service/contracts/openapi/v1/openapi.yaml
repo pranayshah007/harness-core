@@ -1177,16 +1177,11 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CatalogKind'
-  '/v1/data-sources/{data-source}/data-point/values':
-    parameters:
-      - schema:
-          type: string
-        name: data-source
-        in: path
-        required: true
+  /v1/data-sources/harness/data-point/values:
+    parameters: []
     post:
-      summary: Get data points data for data source
-      operationId: get-data-source-data-point-values
+      summary: Get data points data for harness data source
+      operationId: get-harness-data-point-values
       responses:
         '200':
           $ref: '#/components/responses/DataSourceDataPointInfoResponse'
@@ -1200,7 +1195,7 @@ paths:
         $ref: '#/components/requestBodies/DataSourceDataPointInfoRequest'
       x-internal: true
       tags:
-        - DataPointsData
+        - HarnessDataPoints
   /v1/data-sources/data-points/map:
     get:
       summary: Get Data Sources and Data Points Map for Account
@@ -1218,6 +1213,23 @@ paths:
         - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+  /v1/data-sources/kubernetes/data-point/values:
+    post:
+      summary: Get data points data for kubernetes data source
+      operationId: get-k8s-data-point-values
+      tags:
+        - KubernetesDataPoints
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointInfoResponse'
+      x-stoplight:
+        id: f0rc1xrznx50m
+      requestBody:
+        $ref: '#/components/requestBodies/KubernetesConfigRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
 components:
   schemas:
     BackstageEnvVariable:
@@ -3143,6 +3155,52 @@ components:
       required:
         - data_source_data_points_map
       description: Response for getting the data sources and data points map
+    ClusterConfig:
+      title: ClusterConfig
+      x-stoplight:
+        id: asldfduyxp7oi
+      type: object
+      properties:
+        url:
+          type: string
+          x-stoplight:
+            id: gnsyvhr4u7n2w
+        token:
+          type: string
+          x-stoplight:
+            id: lii9n8ndjl0ht
+        name:
+          type: string
+          x-stoplight:
+            id: lii9n8ndjl0ht
+      description: Kubernetes Cluster configuration
+    KubernetesConfig:
+      title: KubernetesConfig
+      x-stoplight:
+        id: qebdcxf927gbc
+      type: object
+      description: Kubernetes data source config
+      properties:
+        clusters:
+          type: array
+          x-stoplight:
+            id: 8i8cz761rzbtt
+          items:
+            $ref: '#/components/schemas/ClusterConfig'
+        label_selector:
+          type: string
+          x-stoplight:
+            id: m85m9r1063ok6
+        data_source_location:
+          $ref: '#/components/schemas/DataSourceLocationInfo'
+    KubernetesRequest:
+      title: KubernetesRequest
+      x-stoplight:
+        id: iyh3bwdf95m32
+      type: object
+      properties:
+        request:
+          $ref: '#/components/schemas/KubernetesConfig'
     ScorecardRecalibrateIdentifiers:
       title: ScorecardRecalibrateIdentifiers
       x-stoplight:
@@ -3481,6 +3539,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/ScorecardRecalibrateRequest'
+    KubernetesConfigRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/KubernetesRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/KubernetesRequest'
+      description: Kubernetes Configuration
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -3885,6 +3952,10 @@ tags:
     description: DataPointData Information
   - name: DataSource
     description: DataSource Information
+  - name: HarnessDataPoints
+    description: Harness DataPoints Information
+  - name: KubernetesDataPoints
+    description: Kubernetes DataPoints Information
   - name: LayoutProxy
     description: Layout Proxy
   - name: MergedPluginsConfig

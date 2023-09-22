@@ -11,6 +11,7 @@ import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
 import static io.harness.idp.common.Constants.CUSTOM_IDENTIFIER;
 import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.HARNESS_IDENTIFIER;
+import static io.harness.idp.common.Constants.KUBERNETES_IDENTIFIER;
 import static io.harness.idp.common.Constants.PAGERDUTY_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -60,6 +61,10 @@ public class DataSourceProviderFactory {
       case PAGERDUTY_IDENTIFIER:
         return new PagerDutyProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(PAGERDUTY_IDENTIFIER), configReader);
+      case KUBERNETES_IDENTIFIER:
+        return new KubernetesProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataSourceDataPointParserFactory.getDataPointParserFactory(KUBERNETES_IDENTIFIER), configReader,
+            idpAuthInterceptor, env);
       default:
         throw new IllegalArgumentException("DataSource provider " + dataSource + " is not supported yet");
     }

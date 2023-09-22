@@ -62,6 +62,7 @@ public class Constants {
   public static final String HARNESS_IDENTIFIER = "harness";
   public static final String GITHUB_IDENTIFIER = "github";
   public static final String CATALOG_IDENTIFIER = "catalog";
+  public static final String KUBERNETES_IDENTIFIER = "kubernetes";
   public static final String CUSTOM_IDENTIFIER = "custom";
   public static final String PAGERDUTY_IDENTIFIER = "pagerduty";
   public static final String DSL_RESPONSE = "dsl_response";
@@ -92,4 +93,6 @@ public class Constants {
 
   public static final String PAGERDUTY_SERVICE_DIRECTORY = "pagerduty_service_directory";
   public static final String PAGERDUTY_INCIDENTS = "pagerduty_incidents";
+  public static final String KUBERNETES = "kubernetes";
+  public static final String HARNESS_ACCOUNT = "Harness-Account";
 }

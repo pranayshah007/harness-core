@@ -5,18 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.scorecard.datasourcelocations.client;
+package io.harness.idp.scorecard.datapointsdata.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
+import io.harness.spec.server.idp.v1.model.KubernetesConfig;
 
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import javax.ws.rs.core.Response;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.IDP)
-public interface DslClient {
-  Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails)
-      throws NoSuchAlgorithmException, KeyManagementException;
+public interface KubernetesDataPointsService {
+  Map<String, Object> getDataPointDataValues(String accountIdentifier, KubernetesConfig dataSourceDataPointInfo);
 }

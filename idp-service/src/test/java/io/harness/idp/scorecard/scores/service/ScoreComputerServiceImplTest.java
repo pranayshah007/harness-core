@@ -50,6 +50,8 @@ import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -114,7 +116,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void testComputeScores() throws IOException {
+  public void testComputeScores() throws IOException, NoSuchAlgorithmException, KeyManagementException {
     List<String> scorecardIdentifiers = Collections.emptyList();
     List<String> entityIdentifiers = Collections.emptyList();
     ScorecardAndChecks scorecardAndChecks1 =
@@ -193,7 +195,7 @@ public class ScoreComputerServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void testComputeScoresForAnEntity() throws IOException {
+  public void testComputeScoresForAnEntity() throws IOException, NoSuchAlgorithmException, KeyManagementException {
     List<String> scorecardIdentifiers = Collections.emptyList();
     List<String> entityIdentifiers = Collections.singletonList(ENTITY_UID1);
     ScorecardAndChecks scorecardAndChecks =
