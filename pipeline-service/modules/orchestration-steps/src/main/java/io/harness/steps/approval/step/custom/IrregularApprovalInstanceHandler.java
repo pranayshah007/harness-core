@@ -9,6 +9,8 @@ package io.harness.steps.approval.step.custom;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.steps.approval.step.beans.ApprovalType.CUSTOM_APPROVAL;
+import static io.harness.steps.approval.step.beans.ApprovalType.JIRA_APPROVAL;
+import static io.harness.steps.approval.step.beans.ApprovalType.SERVICENOW_APPROVAL;
 
 import static java.time.Duration.ofSeconds;
 
@@ -91,7 +93,7 @@ public class IrregularApprovalInstanceHandler implements MongoPersistenceIterato
                 -> query.addCriteria(Criteria.where(ApprovalInstanceKeys.status)
                                          .is(ApprovalStatus.WAITING)
                                          .and(ApprovalInstanceKeys.type)
-                                         .in(CUSTOM_APPROVAL)))
+                                         .in(CUSTOM_APPROVAL, JIRA_APPROVAL, SERVICENOW_APPROVAL)))
             .schedulingType(SchedulingType.IRREGULAR)
             .persistenceProvider(new SpringPersistenceRequiredProvider<>(mongoTemplate))
             .redistribute(true));
