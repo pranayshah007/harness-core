@@ -45,7 +45,6 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
-import io.harness.pms.PipelineUpdateRequestBody;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
@@ -326,14 +325,14 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<String> updatePipeline(String ifMatch, @NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId, String pipelineName, String pipelineDescription, Boolean isDraft,
-      GitEntityUpdateInfoDTO gitEntityInfo, @NotNull PipelineUpdateRequestBody requestBody) {
-    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, requestBody.getYaml());
+      GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) {
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
-    PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(accountId, orgId, projectId,
-        pipelineId, requestBody.getYaml(), ifMatch, isDraft, pipelineVersion, requestBody.getFieldsToUpdate());
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndUpdatePipeline(
-        withVersion, ChangeType.MODIFY, true, pipelineVersion, requestBody.getFieldsToUpdate());
+    PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
+        accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion, null);
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, true, pipelineVersion, null);
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(updatedEntity.getVersion().toString(), updatedEntity.getIdentifier());
   }
@@ -342,15 +341,15 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<PipelineSaveResponse> updatePipelineV2(String ifMatch,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, @ResourceIdentifier String pipelineId, String pipelineName,
-      String pipelineDescription, Boolean isDraft, GitEntityUpdateInfoDTO gitEntityInfo,
-      @NotNull PipelineUpdateRequestBody requestBody, boolean isPublic) {
-    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, requestBody.getYaml());
+      String pipelineDescription, Boolean isDraft, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml,
+      boolean isPublic) {
+    String pipelineVersion = pmsPipelineService.pipelineVersion(accountId, yaml);
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
-    PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(accountId, orgId, projectId,
-        pipelineId, requestBody.getYaml(), ifMatch, isDraft, pipelineVersion, requestBody.getFieldsToUpdate());
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndUpdatePipeline(
-        withVersion, ChangeType.MODIFY, false, pipelineVersion, requestBody.getFieldsToUpdate());
+    PipelineEntity withVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(
+        accountId, orgId, projectId, pipelineId, yaml, ifMatch, isDraft, pipelineVersion, null);
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.validateAndUpdatePipeline(withVersion, ChangeType.MODIFY, false, pipelineVersion, null);
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
