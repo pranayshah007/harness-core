@@ -672,10 +672,9 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testQueueAnalysis_forSLIVerificationTask_WithExecuteFailed() throws IllegalAccessException {
     createMonitoredService();
-    List<String> serviceLevelIndicatorIdentifiers =
-        serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-            Collections.singletonList(builderFactory.getServiceLevelIndicatorDTOBuilder()), generateUuid(),
-            builderFactory.getContext().getMonitoredServiceIdentifier(), generateUuid());
+    List<String> serviceLevelIndicatorIdentifiers = serviceLevelIndicatorService.create(
+        builderFactory.getProjectParams(), Collections.singletonList(builderFactory.getServiceLevelIndicatorDTO()),
+        generateUuid(), builderFactory.getContext().getMonitoredServiceIdentifier(), generateUuid());
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
         builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0));
     serviceLevelIndicator.setSliMissingDataType(null);

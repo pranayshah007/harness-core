@@ -261,6 +261,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -583,10 +584,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void registerUpdateProgressScheduler(Injector injector) {
     // This is need for wait notify update progress for CVNG step.
-    ScheduledThreadPoolExecutor waitNotifyUpdateProgressExecutor =
-        new ScheduledThreadPoolExecutor(2, new ThreadFactoryBuilder().setNameFormat("wait-notify-update").build());
-    waitNotifyUpdateProgressExecutor.scheduleWithFixedDelay(
-        injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
   private void registerQueueListeners(Injector injector) {
