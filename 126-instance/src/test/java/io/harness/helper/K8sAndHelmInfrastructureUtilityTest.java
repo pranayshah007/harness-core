@@ -34,6 +34,8 @@ import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 import io.harness.rule.Owner;
 
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -83,6 +85,7 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
   public void testGetNativeHelmDeploymentReleaseDetails() {
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add(NAMESPACE);
+    Map<String, List<String>> workloadLabelSelectors = Map.of("workload1", List.of("label1=value1", "label2=value2"));
     NativeHelmDeploymentInfoDTO deploymentInfoDTO =
         NativeHelmDeploymentInfoDTO.builder()
             .releaseName(RELEASE_NAME)
@@ -95,6 +98,7 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
                                      .resourceGroup("resourceGroup")
                                      .useClusterAdminCredentials(true)
                                      .build())
+            .workloadLabelSelectors(workloadLabelSelectors)
             .build();
 
     NativeHelmDeploymentReleaseDetails helmDeploymentReleaseDetails =
@@ -108,6 +112,7 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
     assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().isUseClusterAdminCredentials()).isTrue();
     assertThat(helmDeploymentReleaseDetails.getHelmVersion()).isEqualTo(deploymentInfoDTO.getHelmVersion().toString());
     assertThat(helmDeploymentReleaseDetails.getHelmChartInfo()).isEqualTo(deploymentInfoDTO.getHelmChartInfo());
+    assertThat(helmDeploymentReleaseDetails.getWorkloadLabelSelectors()).isEqualTo(workloadLabelSelectors);
   }
 
   @Test

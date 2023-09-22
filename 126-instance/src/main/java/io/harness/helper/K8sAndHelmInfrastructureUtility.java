@@ -99,6 +99,7 @@ public class K8sAndHelmInfrastructureUtility {
                                    .build())
         .helmVersion(nativeHelmDeploymentInfoDTO.getHelmVersion().toString())
         .helmChartInfo(nativeHelmDeploymentInfoDTO.getHelmChartInfo())
+        .workloadLabelSelectors(nativeHelmDeploymentInfoDTO.getWorkloadLabelSelectors())
         .build();
   }
 
