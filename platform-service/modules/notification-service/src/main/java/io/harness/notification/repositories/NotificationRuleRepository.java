@@ -5,11 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.notification.repositories.intfc;
+package io.harness.notification.repositories;
 
-import io.harness.notification.entities.NotificationChannel;
+import io.harness.annotation.HarnessRepo;
+import io.harness.notification.entities.NotificationRule;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
-
-public interface NotificationChannelRepository
-    extends PagingAndSortingRepository<NotificationChannel, String>, NotificationChannelRepositoryCustom {}
+@HarnessRepo
+public interface NotificationRuleRepository
+    extends PagingAndSortingRepository<NotificationRule, String>, NotificationRuleRepositoryCustom {}

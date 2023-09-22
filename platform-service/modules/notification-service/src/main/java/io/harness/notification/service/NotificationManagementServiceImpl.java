@@ -14,8 +14,8 @@ import io.harness.notification.entities.NotificationChannel;
 import io.harness.notification.entities.NotificationChannel.NotificationChannelKeys;
 import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.entities.NotificationRule.NotificationRuleKeys;
-import io.harness.notification.repositories.intfc.NotificationChannelRepository;
-import io.harness.notification.repositories.intfc.NotificationRuleRepository;
+import io.harness.notification.repositories.NotificationChannelRepository;
+import io.harness.notification.repositories.NotificationRuleRepository;
 import io.harness.notification.service.api.NotificationManagementService;
 
 import com.google.inject.Inject;

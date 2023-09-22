@@ -7,14 +7,21 @@
 
 package io.harness.notification.entities;
 
+import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.iterator.PersistentRegularIterable;
+import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.notification.NotificationChannelType;
 import io.harness.persistence.PersistentEntity;
 
 import dev.morphia.annotations.Entity;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -22,12 +29,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@FieldNameConstants(innerTypeName = "NotificationChannelKeys")
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @StoreIn(DbAliases.NOTIFICATION)
-@Entity(value = "notificationChannel")
+@Entity(value = "notificationChannel",noClassnameStored = true)
 @Document("NotificationChannel")
 @TypeAlias("notificationChannel")
-@FieldNameConstants(innerTypeName = "NotificationChannelKeys")
-public class NotificationChannel implements PersistentEntity {
+@HarnessEntity(exportable = true)
+@OwnedBy(HarnessTeam.PL)
+public class NotificationChannel implements PersistentEntity, PersistentRegularIterable {
   @Id @dev.morphia.annotations.Id String uuid;
 
   String name;
@@ -44,6 +54,23 @@ public class NotificationChannel implements PersistentEntity {
   WebhookChannel webhookChannel;
 
   private Status status;
+  @FdIndex
+  private long nextIteration;
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    return nextIteration;
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+   this.nextIteration = nextIteration;
+  }
+
+  @Override
+  public String logKeyForId() {
+    return PersistentRegularIterable.super.logKeyForId();
+  }
 
   public enum Status {
     ENABLED,
