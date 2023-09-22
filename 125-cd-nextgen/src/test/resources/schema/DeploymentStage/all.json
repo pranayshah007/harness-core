@@ -8047,6 +8047,9 @@
             }
           ]
         },
+        "gitBranch": {
+          "type": "string"
+        },
         "gitOpsClusters": {
           "oneOf": [
             {
@@ -17681,6 +17684,9 @@
     "ServiceYamlV2": {
       "type": "object",
       "properties": {
+        "gitBranch": {
+          "type": "string"
+        },
         "serviceInputs": {
           "oneOf": [
             {
