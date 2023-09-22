@@ -594,7 +594,8 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 			return "", err
 		}
 	case "ruby":
-		tiPreCmd += fmt.Sprintf("export TI_OUTPUT_PATH=%s\n", r.tmpFilePath, agentArg)
+		// Ruby does not have config file for now, but pass arguments by env variables
+		tiPreCmd += fmt.Sprintf("export TI_OUTPUT_PATH=%s\n", filepath.Join(r.tmpFilePath, cgDir))
 	}
 
 	// Test splitting: only when parallelism is enabled
