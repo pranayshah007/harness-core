@@ -601,20 +601,33 @@ public class CDStepHelperTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testInvalidReleaseNamesInService() {
-    doReturn(ServiceStepOutcome.builder().release(HarnessRelease.builder().name("").build()).build())
-        .when(outcomeService)
-        .resolve(any(Ambiance.class), any(RefObject.class));
-    assertThatThrownBy(() -> cdStepHelper.getReleaseName(ambiance, infrastructureOutcome))
-        .isInstanceOf(InvalidArgumentsException.class);
-
-    List<String> invalidReleaseNames = List.of("NameWithUpperCase", "-starting.with.non.alphanumeric",
-        ".starting.with.non.alphanumeric", "containing)invalid.characters+");
-    for (String invalidReleaseName : invalidReleaseNames) {
-      doReturn(ServiceStepOutcome.builder().release(HarnessRelease.builder().name(invalidReleaseName).build()).build())
+    List<String> invalidReleaseNames = List.of("", "!@#", "7", "  ", "%");
+    for (String releaseName : invalidReleaseNames) {
+      doReturn(ServiceStepOutcome.builder().release(HarnessRelease.builder().name(releaseName).build()).build())
           .when(outcomeService)
           .resolve(any(Ambiance.class), any(RefObject.class));
       assertThatThrownBy(() -> cdStepHelper.getReleaseName(ambiance, infrastructureOutcome))
           .isInstanceOf(InvalidRequestException.class);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testAutocorrectedReleaseNamesInService() {
+    Map<String, String> correctedReleaseNamesMap = new HashMap<>();
+    correctedReleaseNamesMap.put("NameWithUpperCase", "namewithuppercase");
+    correctedReleaseNamesMap.put("-starting.with.non.alphanumeric", "starting-with-non-alphanumeric");
+    correctedReleaseNamesMap.put("containing)invalid.characters+", "containing-invalid-characters");
+    correctedReleaseNamesMap.put(".starting.with.non.alphanumeric", "starting-with-non-alphanumeric");
+    correctedReleaseNamesMap.put(
+        "!@#starts^^and^^ends^^with^^invalid^^chars&*()", "r-starts-and-ends-with-invalid-chars");
+
+    for (Map.Entry<String, String> kv : correctedReleaseNamesMap.entrySet()) {
+      doReturn(ServiceStepOutcome.builder().release(HarnessRelease.builder().name(kv.getKey()).build()).build())
+          .when(outcomeService)
+          .resolve(any(Ambiance.class), any(RefObject.class));
+      assertThat(cdStepHelper.getReleaseName(ambiance, infrastructureOutcome)).isEqualTo(kv.getValue());
     }
   }
 
