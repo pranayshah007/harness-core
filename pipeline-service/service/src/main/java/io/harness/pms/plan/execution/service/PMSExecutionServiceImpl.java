@@ -365,7 +365,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     List<String> permittedPipelineIdentifier =
         pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, pipelineIdentifier);
     if (permittedPipelineIdentifier.size() != 0) {
-      pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+      pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
     } else {
       throw new AccessDeniedException(
           String.format("Missing permission %s on %s", PipelineRbacPermissions.PIPELINE_VIEW, "pipeline"),
