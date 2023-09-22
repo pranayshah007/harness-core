@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.FeatureName.PIE_EXPRESSION_CONCATENATION;
 import static io.harness.beans.FeatureName.PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT;
@@ -92,6 +93,8 @@ import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
+import io.harness.pms.plan.execution.preprocess.PipelinePreprocessor;
+import io.harness.pms.plan.execution.preprocess.PipelinePreprocessorFactory;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -102,11 +105,13 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
+import io.harness.serializer.JsonUtils;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -161,7 +166,7 @@ public class ExecutionHelper {
   NodeExecutionService nodeExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
-
+  PipelinePreprocessorFactory pipelinePreprocessorFactory;
   // Add all FFs to this list that we want to use during pipeline execution
   public final List<FeatureName> featureNames =
       List.of(PIE_EXPRESSION_CONCATENATION, PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT);
@@ -300,14 +305,21 @@ public class ExecutionHelper {
     String pipelineYaml;
     String pipelineYamlWithTemplateRef;
     BasicPipeline basicPipeline = null;
+    TemplateMergeResponseDTO templateMergeResponseDTO;
     switch (pipelineEntity.getHarnessVersion()) {
       case HarnessYamlVersion.V1:
         pipelineYaml = InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(
             mergedRuntimeInputJsonNode, YamlUtils.readAsJsonNode(pipelineEntity.getYaml()));
+        PipelinePreprocessor preprocessor = pipelinePreprocessorFactory.getProcessorInstance(HarnessYamlVersion.V1);
+        if (preprocessor != null) {
+          pipelineYaml = preprocessor.preProcess(pipelineYaml);
+        }
         pipelineYamlWithTemplateRef = pipelineYaml;
+        templateMergeResponseDTO = getPipelineYamlAndValidateStaticallyReferredEntities(
+            getStagesNodeWrapperFromPipelineYaml(pipelineYaml), pipelineEntity, System.currentTimeMillis());
+        pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
         break;
       case HarnessYamlVersion.V0:
-        TemplateMergeResponseDTO templateMergeResponseDTO;
         templateMergeResponseDTO =
             getPipelineYamlAndValidateStaticallyReferredEntities(mergedRuntimeInputJsonNode, pipelineEntity);
         pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
@@ -322,6 +334,12 @@ public class ExecutionHelper {
         .basicPipeline(basicPipeline)
         .pipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
         .build();
+  }
+
+  private JsonNode getStagesNodeWrapperFromPipelineYaml(String pipelineYaml) {
+    JsonNode jsonNode = YamlUtils.readAsJsonNode(pipelineYaml);
+    return ((ObjectNode) JsonUtils.readTree("{}"))
+        .set(YAMLFieldNameConstants.SPEC, jsonNode.get(YAMLFieldNameConstants.SPEC));
   }
 
   private PlanExecutionMetadata buildPlanExecutionMetadata(PipelineEntity pipelineEntity, String mergedRuntimeInputYaml,
