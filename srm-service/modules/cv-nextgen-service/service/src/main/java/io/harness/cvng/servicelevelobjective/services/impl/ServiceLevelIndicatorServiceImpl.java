@@ -128,7 +128,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(baseCVConfig.getType())
                                                 .toDataCollectionInfo(cvConfigs, serviceLevelIndicator);
 
-    if(Objects.isNull(dataCollectionInfo)){
+    if (Objects.isNull(dataCollectionInfo)) {
       throw new IllegalStateException("No SLI Enabled CV Configs found");
     }
     Instant endTime = clock.instant().truncatedTo(ChronoUnit.MINUTES);

@@ -115,9 +115,9 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
       if (isManualQuery) {
         int startingIndex = query.indexOf('{');
         int closingIndex = query.indexOf('}');
-        if(startingIndex>-1 && closingIndex >-1) {
+        if (startingIndex > -1 && closingIndex > -1) {
           return query.substring(startingIndex + 1, closingIndex);
-        }else{
+        } else {
           throw new IllegalArgumentException("Query for the prometheus config is incorrect");
         }
       }

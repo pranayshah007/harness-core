@@ -14,9 +14,8 @@ import io.harness.cvng.core.services.api.DataCollectionTaskManagementService;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
@@ -30,10 +29,10 @@ public class ServiceGuardDataCollectionTaskCreateNextTaskHandler
   public void handle(CVConfig entity) {
     Preconditions.checkArgument(
         dataCollectionTaskManagementServiceMapBinder.containsKey(DataCollectionTask.Type.SERVICE_GUARD));
-    try{
-    dataCollectionTaskManagementServiceMapBinder.get(DataCollectionTask.Type.SERVICE_GUARD)
-        .handleCreateNextTask(entity);
-    } catch(IllegalArgumentException ex){
+    try {
+      dataCollectionTaskManagementServiceMapBinder.get(DataCollectionTask.Type.SERVICE_GUARD)
+          .handleCreateNextTask(entity);
+    } catch (IllegalArgumentException ex) {
       log.warn("[ERROR]: IllegalArgumentException for CVConfig {}", entity.getUuid(), ex.fillInStackTrace());
     }
   }

@@ -24,7 +24,7 @@ public class ActivityStatusJob implements MongoPersistenceIterator.Handler<Activ
   public void handle(Activity entity) {
     try {
       activityService.updateActivityStatus(entity);
-    } catch(NullPointerException ex){
+    } catch (NullPointerException ex) {
       log.warn("Null Pointer exception for activity {}", entity.getUuid(), ex.fillInStackTrace());
     }
   }

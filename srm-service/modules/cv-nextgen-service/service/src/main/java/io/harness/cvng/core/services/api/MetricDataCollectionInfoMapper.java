@@ -19,7 +19,6 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -34,19 +33,17 @@ public abstract class MetricDataCollectionInfoMapper<R extends TimeSeriesDataCol
   }
 
   public R toDataCollectionInfo(List<T> cvConfigs, ServiceLevelIndicator serviceLevelIndicator) {
-    Optional<T> baseCvConfig = cvConfigs.stream()
-                         .filter(CVConfig::isSLIEnabled)
-                         .findAny();
+    Optional<T> baseCvConfig = cvConfigs.stream().filter(CVConfig::isSLIEnabled).findAny();
     List<AnalysisInfo> analysisInfos = new ArrayList<>();
     cvConfigs.stream()
         .flatMap(cvConfig -> CollectionUtils.emptyIfNull(cvConfig.getMetricInfos()).stream())
         .filter(analysisInfo
             -> serviceLevelIndicator.getMetricNames().contains(((AnalysisInfo) analysisInfo).getIdentifier()))
         .forEach(analysisInfo -> analysisInfos.add((AnalysisInfo) analysisInfo));
-    if(baseCvConfig.isPresent()) {
+    if (baseCvConfig.isPresent()) {
       baseCvConfig.get().setMetricInfos(analysisInfos);
       return toDataCollectionInfo(baseCvConfig.get());
-    }else{
+    } else {
       log.warn("No SLI is enabled for SLI uuid {}", serviceLevelIndicator.getUuid());
       return null;
     }

@@ -559,9 +559,9 @@ public class CVServiceModule extends AbstractModule {
                 .setUncaughtExceptionHandler((t, e) -> log.error("error while processing task", e))
                 .build()));
     install(PrimaryVersionManagerModule.getInstance());
-      bind(ScheduledExecutorService.class)
-              .annotatedWith(Names.named("taskPollExecutor"))
-              .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("taskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
     install(new TemplateResourceClientModule(verificationConfiguration.getTemplateServiceClientConfig(),
         verificationConfiguration.getTemplateServiceSecret(), AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId()));
     install(new AccountClientModule(getManagerClientConfig(verificationConfiguration.getManagerClientConfig()),
