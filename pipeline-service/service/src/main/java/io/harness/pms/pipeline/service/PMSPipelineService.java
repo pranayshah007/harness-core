@@ -124,8 +124,6 @@ public interface PMSPipelineService {
   Page<PipelineEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches);
 
-  List<String> getAllPipelineIdentifiers(String accountId, String orgIdentifier, String projectIdentifier);
-
   PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport);
 
@@ -155,7 +153,7 @@ public interface PMSPipelineService {
   List<String> getPermittedPipelineIdentifier(
       String accountId, String orgId, String projectId, List<String> pipelineIdentifierList);
 
-  Page<String> listAllIdentifiers(Criteria criteria, Pageable pageRequest, String accountId, String orgId,
+  List<String> listAllIdentifiers(Criteria criteria, Pageable pageRequest, String accountId, String orgId,
       String projectId, Boolean getDistinctFromBranches);
 
   Boolean validateViewPermission(String accountId, String orgId, String projectId);

@@ -761,11 +761,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public List<String> getAllPipelineIdentifiers(String accountId, String orgIdentifier, String projectIdentifier) {
-    return pmsPipelineRepository.findAllPipelineIdentifiers(accountId, orgIdentifier, projectIdentifier);
-  }
-
-  @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
@@ -996,7 +991,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public Page<String> listAllIdentifiers(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
+  public List<String> listAllIdentifiers(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches) {
     checkProjectExists(accountId, orgIdentifier, projectIdentifier);
     if (Boolean.TRUE.equals(getDistinctFromBranches)

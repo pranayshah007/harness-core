@@ -77,6 +77,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.utils.PageUtils;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -97,6 +98,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -117,6 +120,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
+  @Inject private final PMSPipelineService pmsPipelineService;
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
 
   public static String PIPELINE_SAVE = "pipeline_save";
@@ -686,5 +690,19 @@ public class PMSPipelineServiceHelper {
                                            .isGitDefaultBranch(true)
                                            .build())
             .build());
+  }
+
+  public void setPermittedPipelines(String accountId, String orgId, String projectId, List<String> sort,
+      Boolean getDistinctFromBranches, Criteria criteria) {
+    if (!pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
+      List<String> allPipelineIdentifiers = pmsPipelineService.listAllIdentifiers(criteria,
+          PageUtils.getPageRequest(0, 10000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt)),
+          accountId, orgId, projectId, getDistinctFromBranches);
+
+      List<String> permittedPipelineIdentifiers =
+          pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, allPipelineIdentifiers);
+
+      criteria.and(PipelineEntityKeys.identifier).in(permittedPipelineIdentifiers);
+    }
   }
 }

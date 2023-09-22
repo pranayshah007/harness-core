@@ -390,7 +390,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     Pageable pageRequest =
         PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
 
-    validateAndSetPermittedPipelines(accountId, orgId, projectId, sort, getDistinctFromBranches, criteria);
+    pipelineServiceHelper.setPermittedPipelines(accountId, orgId, projectId, sort, getDistinctFromBranches, criteria);
 
     Page<PipelineEntity> pipelineEntities =
         pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
@@ -405,20 +405,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
 
     return ResponseDTO.newResponse(pipelines);
-  }
-
-  private void validateAndSetPermittedPipelines(String accountId, String orgId, String projectId, List<String> sort,
-      Boolean getDistinctFromBranches, Criteria criteria) {
-    if (!pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
-      Page<String> allPipelineIdentifiers = pmsPipelineService.listAllIdentifiers(criteria,
-          PageUtils.getPageRequest(0, 10000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt)),
-          accountId, orgId, projectId, getDistinctFromBranches);
-
-      List<String> permittedPipelineIdentifiers = pmsPipelineService.getPermittedPipelineIdentifier(
-          accountId, orgId, projectId, allPipelineIdentifiers.toList());
-
-      criteria.and(PipelineEntityKeys.identifier).in(permittedPipelineIdentifiers);
-    }
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)

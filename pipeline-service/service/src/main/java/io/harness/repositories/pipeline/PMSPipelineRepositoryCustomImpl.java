@@ -99,25 +99,6 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
-  public List<String> findAllPipelineIdentifiers(String accountId, String orgIdentifier, String projectIdentifier) {
-    Criteria criteria = Criteria.where(PipelineEntityKeys.accountId)
-                            .is(accountId)
-                            .and(PipelineEntityKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(PipelineEntityKeys.projectIdentifier)
-                            .is(projectIdentifier);
-    Query query = new Query(criteria);
-
-    query.fields().include(PipelineEntityKeys.identifier);
-
-    List<PipelineEntity> pipelineEntities = mongoTemplate.find(query, PipelineEntity.class);
-
-    return pipelineEntities.stream()
-        .map(PipelineEntity::getIdentifier) // Assuming "getIdentifier" is the method to retrieve the identifier
-        .collect(Collectors.toList());
-  }
-
-  @Override
   public Long countAllPipelines(Criteria criteria) {
     Query query = new Query(criteria);
     return pipelineEntityReadHelper.findCount(query);
@@ -498,20 +479,12 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
-  public Page<String> findAllPipelineIdentifiers(Criteria criteria, Pageable pageable, String accountIdentifier,
+  public List<String> findAllPipelineIdentifiers(Criteria criteria, Pageable pageable, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
     List<PipelineEntity> pipelineEntities = gitAwarePersistence.find(
         criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class, true);
 
-    List<String> pipelineIdentifiers =
-        pipelineEntities.stream()
-            .map(PipelineEntity::getIdentifier) // Assuming "getIdentifier" is the method to retrieve the identifier
-            .collect(Collectors.toList());
-
-    return PageableExecutionUtils.getPage(pipelineIdentifiers, pageable,
-        ()
-            -> gitAwarePersistence.count(
-                criteria, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class));
+    return pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());
   }
 
   @VisibleForTesting

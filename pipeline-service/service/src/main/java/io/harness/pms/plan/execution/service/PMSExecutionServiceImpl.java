@@ -20,8 +20,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -128,6 +126,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private PMSPipelineService pmsPipelineService;
+  @Inject private PMSPipelineServiceHelper pmsPipelineServiceHelper;
   @Inject private AccessControlClient accessControlClient;
 
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
@@ -152,10 +151,11 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
     }
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      setPipelineIdentifier(accountId, orgId, projectId, pipelineIdentifier, criteria);
+      addCriteriaForPermittedPipeline(
+          accountId, orgId, projectId, Collections.singletonList(pipelineIdentifier), criteria);
     } else {
       // If the user does not have permission for all pipelines then add the criteria for only view permission pipeline
-      setPermittedPipelineIdentifier(accountId, orgId, projectId, criteria);
+      pmsPipelineServiceHelper.setPermittedPipelines(accountId, orgId, projectId, new ArrayList<>(), false, criteria);
     }
     // To show non-child execution. First or condition is added for older execution which do not have parentStageInfo
     if (EmptyPredicate.isEmpty(pipelineIdentifier)) {
@@ -257,35 +257,6 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     return criteria;
   }
 
-  private void setPipelineIdentifier(
-      String accountId, String orgId, String projectId, String pipelineIdentifier, Criteria criteria) {
-    List<String> permittedPipelineIdentifier = pmsPipelineService.getPermittedPipelineIdentifier(
-        accountId, orgId, projectId, Collections.singletonList(pipelineIdentifier));
-
-    addPipelineIdentifierListInCriteria(criteria, permittedPipelineIdentifier);
-  }
-
-  private static void addPipelineIdentifierListInCriteria(Criteria criteria, List<String> permittedPipelineIdentifier) {
-    if (permittedPipelineIdentifier.size() != 0) {
-      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(permittedPipelineIdentifier);
-    } else {
-      throw new AccessDeniedException(
-          String.format("Missing permission %s on %s", PipelineRbacPermissions.PIPELINE_VIEW, "pipeline"),
-          ErrorCode.NG_ACCESS_DENIED, USER);
-    }
-  }
-
-  private void setPermittedPipelineIdentifier(String accountId, String orgId, String projectId, Criteria criteria) {
-    // If view permission is not for all Pipelines then add permitted pipeline condition
-    if (!pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
-      List<String> identifiers = pmsPipelineService.getAllPipelineIdentifiers(accountId, orgId, projectId);
-
-      List<String> permittedPipelineIdentifier =
-          pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, identifiers);
-      addPipelineIdentifierListInCriteria(criteria, permittedPipelineIdentifier);
-    }
-  }
-
   @Override
   public Criteria formCriteriaForRepoAndBranchListing(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String repoName) {
@@ -353,17 +324,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
     Criteria pipelineCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      List<String> permittedPipelineIdentifier =
-          pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, pipelineIdentifier);
-      if (permittedPipelineIdentifier.size() != 0) {
-        pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
-      } else {
-        throw new AccessDeniedException(
-            String.format("Missing permission %s on %s", PipelineRbacPermissions.PIPELINE_VIEW, "pipeline"),
-            ErrorCode.NG_ACCESS_DENIED, USER);
-      }
+      addCriteriaForPermittedPipeline(accountId, orgId, projectId, pipelineIdentifier, pipelineCriteria);
     } else {
-      setPermittedPipelineIdentifier(accountId, orgId, projectId, criteria);
+      pmsPipelineServiceHelper.setPermittedPipelines(accountId, orgId, projectId, new ArrayList<>(), false, criteria);
     }
 
     Criteria filterCriteria = new Criteria();
@@ -395,6 +358,19 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
 
     return criteria.orOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
+  }
+
+  private void addCriteriaForPermittedPipeline(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifier, Criteria pipelineCriteria) {
+    List<String> permittedPipelineIdentifier =
+        pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, pipelineIdentifier);
+    if (permittedPipelineIdentifier.size() != 0) {
+      pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+    } else {
+      throw new AccessDeniedException(
+          String.format("Missing permission %s on %s", PipelineRbacPermissions.PIPELINE_VIEW, "pipeline"),
+          ErrorCode.NG_ACCESS_DENIED, USER);
+    }
   }
 
   private void populatePipelineFilterUsingIdentifierANDOperator(Criteria criteria, String accountIdentifier,
