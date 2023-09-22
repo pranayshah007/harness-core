@@ -1,11 +1,17 @@
-{{/* Manages precedence of values
+{{/* 
+Manages precedence of values
+
+USAGE:
 {{ include "harnesscommon.precedence.manage" (list .Values.global.database.timescaledb.sslEnabled .Values.timescaledb.sslEnabled ) }}
 */}}
 {{- define "harnesscommon.precedence.manage" }}
 {{- $value := "" -}}
 {{- end }}
 
-{{/* Checks if the provided value keys have valid value
+{{/* 
+Checks if the provided value keys have valid value
+
+USAGE:
 {{ include "harnesscommon.precedence.hasValidKey" (dict "ctx" $ "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled")) }}
 */}}
 {{- define "harnesscommon.precedence.hasValidKey" }}
@@ -35,7 +41,10 @@
     {{- printf "%v" $hasValidValue }}
 {{- end }}
 
-{{/* Checks if the provided value keys have valid value
+{{/*
+Checks if the provided value keys have valid value
+
+USAGE:
 {{ include "harnesscommon.precedence.getValueFromKey" (dict "ctx" $ "keys" (list ".Values.global.database.timescaledb.sslEnabled" ".Values.timescaledb.sslEnabled") "valueType" "string") }}
 */}}
 {{- define "harnesscommon.precedence.getValueFromKey" }}

@@ -1,4 +1,7 @@
 {{/*
+Checks if Provided Secret Values are valid
+
+USAGE:
 {{ include "harnesscommon.secrets.hasprovidedSecretValues" (dict "ctx" $ "providedSecretValues" (list "values.secret1" "values.secret2")) }}
 */}}
 {{- define "harnesscommon.secrets.hasprovidedSecretValues" -}}
@@ -18,6 +21,9 @@
 {{- end -}}
 
 {{/*
+Generates env object with variableName from Provided Secret Values
+
+USAGE:
 {{ include "harnesscommon.secrets.manageProvidedSecretValuesEnv" (dict "ctx" $ "variableName" "MY_VARIABLE" "providedSecretValues" (list "values.secret1" "values.secret2")) }}
 */}}
 {{- define "harnesscommon.secrets.manageProvidedSecretValuesEnv" -}}

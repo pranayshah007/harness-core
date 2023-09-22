@@ -91,7 +91,9 @@ Returns:
 {{- end -}}
 
 {{/*
-Generates secretRef objects for ESO Secrets
+Generates ESO SecretName based on the following:
+1. secretContextIdentifier
+2. secretIdentifier
 
 Example:
 {{ include "harnesscommon.secrets.esoSecretName" (dict "ctx" . "secretContextIdentifier" "local" "secretIdentifier" "1") }}
@@ -103,30 +105,14 @@ Example:
 {{- if and .ctx $secretContextIdentifier $secretIdentifier -}}
   {{- printf "%s-%s" $secretContextIdentifier $secretIdentifier  -}}
 {{- else -}}
-  {{- print (and (not (empty .ctx)) $secretContextIdentifier $secretIdentifier) -}}
+  {{- fail "Failed: invalid input" -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Generates secretRef objects for ESO Secrets
+Generates env object with variableName for ESO Secrets
 
-Example:
-{{ include "harnesscommon.secrets.externalSecretRefs" (dict "secretsCtx" .Values.secrets "secretNamePrefix" "my-secret") }}
-*/}}
-{{- define "harnesscommon.secrets.externalSecretRefs" -}}
-  {{- $externalSecretIdx := 0 -}}
-  {{- if and .secretsCtx .secretsCtx.secretManagement .secretsCtx.secretManagement.externalSecretsOperator -}}
-    {{- range .secretsCtx.secretManagement.externalSecretsOperator -}}
-      {{- if eq (include "harnesscommon.secrets.hasValidESOSecret" (dict "esoSecretCtx" .)) "true" -}}
-      {{- $externalSecretIdx = add1 $externalSecretIdx }}
-  - secretRef:
-      name: {{ printf "%s-external-secret-%d" $.secretNamePrefix $externalSecretIdx }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
-{{- end }}
-
-{{/*
+USAGE:
 {{ include "harnesscommon.secrets.manageESOSecretEnv" (dict "ctx" . "variableName" "MY_VARIABLE" "esoSecretCtxs" (list .Values.secrets.secretManagement.externalSecretsOperator)) }}
 */}}
 {{- define "harnesscommon.secrets.manageESOSecretEnv" }}
@@ -161,7 +147,7 @@ Example:
 {{/*
 Generates ESO External Secret CRD
 
-Example:
+USAGE:
 {{ include "harnesscommon.secrets.generateExternalSecret" (dict "ctx" . "secretsCtx" .Values.secrets "secretIdentifier" "local") }}
 */}}
 {{- define "harnesscommon.secrets.generateExternalSecret" }}

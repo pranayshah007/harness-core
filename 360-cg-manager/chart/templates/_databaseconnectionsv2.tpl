@@ -1,4 +1,7 @@
-{{/* Generates TimescaleDB environment variables
+{{/*
+Generates TimescaleDB environment variables
+
+USAGE:
 {{ include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" . "localTimescaleDBCtx" .Values.timescaledb "globalTimescaleDBCtx" .Values.global.database.timescaledb) | indent 12 }}
 */}}
 {{- define "harnesscommon.dbconnectionv2.timescaleEnv" }}
@@ -70,8 +73,11 @@
     {{- end }}
 {{- end }}
 
-{{/* Generates Timescale Connection string
-{{ include "harnesscommon.dbconnection.timescaleConnection" (dict "database" "foo" "args" "bar" "context" $) }}
+{{/*
+Generates Timescale Connection string
+
+USAGE:
+{{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "database" "foo" "args" "bar" "context" $) }}
 */}}
 {{- define "harnesscommon.dbconnectionv2.timescaleConnection" }}
     {{- $host := include "harnesscommon.dbconnectionv2.timescaleHost" (dict "context" .context ) }}
@@ -92,7 +98,10 @@
     {{- printf "%s" $connectionString -}}
 {{- end }}
 
-{{/* Generates Redis environment variables
+{{/*
+Generates Redis environment variables
+
+USAGE:
 {{ include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 12 }}
 */}}
 {{- define "harnesscommon.dbconnectionv2.redisEnv" }}
@@ -117,10 +126,11 @@
     {{- end }}
 {{- end }}
 
-{{/* Generates Redis Connection string. 
+{{/*
+Generates Redis Connection string. 
 If userVariableName or passwordVariableName are not provided, a connection string is generated without creds
 
-Usage:
+USAGE:
 {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" $ "userVariableName" "REDIS_USER" "passwordVariableName" "REDIS_PASSWORD" )}}
 */}}
 {{- define "harnesscommon.dbconnectionv2.redisConnection" }}
@@ -147,7 +157,10 @@ Usage:
     {{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs "userVariableName" .userVariableName "passwordVariableName" .passwordVariableName "connectionType" "list") }}
 {{- end }}
 
-{{/* Generates MongoDB environment variables
+{{/*
+Generates MongoDB environment variables
+
+USAGE:
 {{ include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" . "localDBCtx" .Values.mongo "globalDBCtx" .Values.global.database.mongo) | indent 12 }}
 */}}
 {{- define "harnesscommon.dbconnectionv2.mongoEnv" }}
@@ -173,7 +186,10 @@ Usage:
     {{- end }}
 {{- end }}
 
-{{/* Generates Mongo Connection string
+{{/*
+Generates Mongo Connection string
+
+USAGE:
 {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "foo") }}
 */}}
 {{- define "harnesscommon.dbconnectionv2.mongoConnection" }}

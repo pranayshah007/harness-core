@@ -1,4 +1,7 @@
 {{/*
+Generates env objects for Default Kubernetes Secrets
+
+USAGE:
 {{ include "harnesscommon.secrets.manageDefaultKubernetesSecretEnv" (dict "variableName" "MY_VARIABLE" "defaultKubernetesSecretName" "MY_GENERATED_SECRET" "defaultKubernetesSecretKey" "GENERATED_SECRET_KEY") }}
 */}}
 {{- define "harnesscommon.secrets.manageDefaultKubernetesSecretEnv" }}
