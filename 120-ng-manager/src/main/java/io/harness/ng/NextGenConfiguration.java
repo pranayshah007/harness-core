@@ -37,6 +37,7 @@ import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
+import io.harness.ng.support.client.CannyConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.outbox.OutboxPollConfiguration;
@@ -160,6 +161,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String LDAP_PACKAGE = "io.harness.ldap.resource";
   public static final String CHAOS_PACKAGE = "io.harness.ng.chaos";
   public static final String SERVICE_DISCOVERY_PACKAGE = "io.harness.ng.servicediscovery";
+  public static final String SUPPORT_PACKAGE = "io.harness.ng.support.resource";
 
   public static final String IP_ALLOWLIST_PACKAGE = "io.harness.ipallowlist.resource";
   public static final String FAVORITES_PACKAGE = "io.harness.favorites.remote";
@@ -226,6 +228,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("logStreamingServiceConfig")
   @ConfigSecret
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
+  @JsonProperty("cannyApiConfig") private CannyConfig cannyConfig;
   private OpaServiceConfiguration opaServerConfig;
   private String policyManagerSecret;
   private ServiceHttpClientConfig opaClientConfig;
@@ -346,8 +349,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE, NextGenConfiguration.TERRAFORM_RESOURCE_PACKAGE,
                 NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE,
                 NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE,
-                NextGenConfiguration.EULA_PACKAGE, NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE,
-                NextGenConfiguration.GITX_WEBHOOKS_PACKAGE))
+                NextGenConfiguration.SUPPORT_PACKAGE, NextGenConfiguration.EULA_PACKAGE,
+                NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE, NextGenConfiguration.GITX_WEBHOOKS_PACKAGE))
         .collect(Collectors.toSet());
   }
 

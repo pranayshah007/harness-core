@@ -280,6 +280,7 @@ import io.harness.ng.scim.NGScimUserServiceImpl;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.ng.serviceaccounts.service.impl.ServiceAccountServiceImpl;
 import io.harness.ng.servicediscovery.AbstractServiceDiscoveryModule;
+import io.harness.ng.support.client.CannyConfig;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.userprofile.entities.AwsCodeCommitSCM.AwsCodeCommitSCMMapper;
 import io.harness.ng.userprofile.entities.AzureRepoSCM.AzureRepoSCMMapper;
@@ -456,6 +457,13 @@ public class NextGenModule extends AbstractModule {
   @Singleton
   LogStreamingServiceConfiguration getLogStreamingServiceConfiguration() {
     return appConfig.getLogStreamingServiceConfig();
+  }
+
+  @Provides
+  @Named("cannyApiConfiguration")
+  @Singleton
+  CannyConfig getCannyConfig() {
+    return appConfig.getCannyConfig();
   }
 
   @Provides

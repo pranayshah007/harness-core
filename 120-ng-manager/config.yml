@@ -339,6 +339,9 @@ logStreamingServiceConfig:
     idleTime: ${LOG_STREAMING_CLIENT_POOL_IDLE_TIME:-30}
     timeUnit: ${LOG_STREAMING_CLIENT_POOL_TIME_UNIT:-SECONDS}
 
+cannyApiConfig:
+  token: dummyToken
+
 outboxPollConfig:
   initialDelayInSeconds: 5
   pollingIntervalInSeconds: 5

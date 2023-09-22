@@ -291,6 +291,10 @@ if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
   export LOG_STREAMING_SERVICE_TOKEN; yq -i '.logStreamingServiceConfig.serviceToken=env(LOG_STREAMING_SERVICE_TOKEN)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CANNY_TOKEN" ]]; then
+  export CANNY_TOKEN; yq -i '.cannyApiConfig.token=env(CANNY_TOKEN)' $CONFIG_FILE
+fi
+
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
   yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE
