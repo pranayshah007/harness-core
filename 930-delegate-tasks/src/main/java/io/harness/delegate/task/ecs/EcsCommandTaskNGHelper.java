@@ -758,7 +758,8 @@ public class EcsCommandTaskNGHelper {
   public String createStageService(String ecsServiceDefinitionManifestContent,
       List<String> ecsScalableTargetManifestContentList, List<String> ecsScalingPolicyManifestContentList,
       EcsInfraConfig ecsInfraConfig, LogCallback logCallback, long timeoutInMillis, String targetGroupArnKey,
-      String taskDefinitionArn, String targetGroupArn) {
+      String taskDefinitionArn, String targetGroupArn, boolean isSameAsAlreadyRunningInstances,
+      boolean removeAutoScalingFromBlueService) {
     // render target group arn value in its expression in ecs service definition yaml
     ecsServiceDefinitionManifestContent =
         updateTargetGroupArn(ecsServiceDefinitionManifestContent, targetGroupArn, targetGroupArnKey);
@@ -803,6 +804,24 @@ public class EcsCommandTaskNGHelper {
     CreateServiceRequest.Builder createServiceRequestBuilder =
         addTagInCreateServiceRequest(createServiceRequest, BG_GREEN);
 
+    if (isSameAsAlreadyRunningInstances) {
+      // fetch blue service
+      Optional<Service> blueServiceOptional =
+          fetchBGService(trim(createServiceRequest.serviceName() + DELIMITER), ecsInfraConfig, BG_BLUE);
+      // fetch desired count of blue service and set in green service
+      blueServiceOptional.ifPresent(service -> createServiceRequestBuilder.desiredCount(service.desiredCount()));
+    }
+
+    if (removeAutoScalingFromBlueService) {
+      // fetch blue service
+      Optional<Service> blueServiceOptional =
+          fetchBGService(trim(createServiceRequest.serviceName() + DELIMITER), ecsInfraConfig, BG_BLUE);
+
+      // remove auto scaling from blue service
+      blueServiceOptional.ifPresent(
+          service -> deleteBGServiceAutoScaling(logCallback, "blue", service.serviceName(), ecsInfraConfig));
+    }
+
     // update service name, cluster and task definition
     createServiceRequest = createServiceRequestBuilder.serviceName(stageServiceName)
                                .cluster(ecsInfraConfig.getCluster())
@@ -813,6 +832,7 @@ public class EcsCommandTaskNGHelper {
                                      createServiceRequest.serviceName(), createServiceRequest.taskDefinition(),
                                      createServiceRequest.desiredCount()),
         LogLevel.INFO);
+
     CreateServiceResponse createServiceResponse =
         createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
@@ -841,6 +861,19 @@ public class EcsCommandTaskNGHelper {
         createServiceResponse.service().serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
         logCallback);
     return createServiceResponse.service().serviceName();
+  }
+
+  private void deleteBGServiceAutoScaling(
+      LogCallback logCallback, String version, String serviceName, EcsInfraConfig ecsInfraConfig) {
+    logCallback.saveExecutionLog(format("Removing %s service:  %s scaling policies", version, serviceName));
+    // deleting scaling policies for service
+    deleteScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(), serviceName, ecsInfraConfig.getCluster(),
+        ecsInfraConfig.getRegion(), logCallback);
+
+    logCallback.saveExecutionLog(format("Removing %s service:  %s scalable targets", version, serviceName));
+    // de-registering scalable target for service
+    deregisterScalableTargets(ecsInfraConfig.getAwsConnectorDTO(), serviceName, ecsInfraConfig.getCluster(),
+        ecsInfraConfig.getRegion(), logCallback);
   }
 
   public void updateOldService(EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest,
@@ -1071,6 +1104,19 @@ public class EcsCommandTaskNGHelper {
     return Optional.empty();
   }
 
+  public Optional<Service> fetchBGService(String servicePrefix, EcsInfraConfig ecsInfraConfig, String tag) {
+    // check service with suffix 1 is active and has given tag attached
+    String firstVersionService = servicePrefix + 1;
+
+    Optional<Service> serviceOptional = fetchBGServiceWithTag(firstVersionService, ecsInfraConfig, tag);
+    if (serviceOptional.isPresent()) {
+      return serviceOptional;
+    }
+    // check service with suffix 2 is active and has given tag attached
+    String secondVersionService = servicePrefix + 2;
+    return fetchBGServiceWithTag(secondVersionService, ecsInfraConfig, tag);
+  }
+
   private boolean isBlueService(String serviceName, EcsInfraConfig ecsInfraConfig) {
     DescribeServicesRequest describeServicesRequest = DescribeServicesRequest.builder()
                                                           .services(serviceName)
@@ -1087,6 +1133,24 @@ public class EcsCommandTaskNGHelper {
       }
     }
     return false;
+  }
+
+  private Optional<Service> fetchBGServiceWithTag(String serviceName, EcsInfraConfig ecsInfraConfig, String tag) {
+    DescribeServicesRequest describeServicesRequest = DescribeServicesRequest.builder()
+                                                          .services(serviceName)
+                                                          .cluster(ecsInfraConfig.getCluster())
+                                                          .include(ServiceField.TAGS)
+                                                          .build();
+    DescribeServicesResponse describeServicesResponse =
+        ecsV2Client.describeServices(awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO()),
+            describeServicesRequest, ecsInfraConfig.getRegion());
+    if (CollectionUtils.isNotEmpty(describeServicesResponse.services())) {
+      Service service = describeServicesResponse.services().get(0);
+      if (isServiceActive(service) && isServiceBGVersion(service.tags(), tag)) {
+        return Optional.ofNullable(service);
+      }
+    }
+    return Optional.empty();
   }
 
   public String getNonBlueVersionServiceName(String servicePrefix, EcsInfraConfig ecsInfraConfig) {
