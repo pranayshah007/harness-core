@@ -7,6 +7,4 @@
 
 package io.harness.cvng.core.beans.dependency;
 
-public enum DependencyMetadataType {
-  KUBERNETES;
-}
+public enum DependencyMetadataType { KUBERNETES; }
