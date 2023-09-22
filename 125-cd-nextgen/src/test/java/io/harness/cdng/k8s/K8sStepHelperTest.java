@@ -103,6 +103,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.KustomizePatchesManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -2324,6 +2325,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
                     .spec(OciHelmChartStoreGenericConfig.builder()
                               .connectorRef(ParameterField.createValueField("oci-helm-connector"))
                               .build())
+                    .type(OciHelmChartStoreConfigType.GENERIC)
                     .build()))
             .build();
 

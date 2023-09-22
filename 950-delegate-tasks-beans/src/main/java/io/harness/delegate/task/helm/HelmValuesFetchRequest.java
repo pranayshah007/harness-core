@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.helm;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 
 import io.harness.annotations.dev.CodePulse;
@@ -13,7 +14,9 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -91,17 +94,26 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
 
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
-        if (ociHelmStoreConfig.getOciHelmConnector().getHelmRepoUrl() != null) {
-          OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
+        ConnectorConfigDTO connectorConfigDTO = ociHelmStoreConfig.getConnectorConfigDTO();
+        String criteria = null;
+        if (connectorConfigDTO instanceof AwsConnectorDTO) {
+          criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
+          capabilities.addAll(
+              AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
+        } else if (connectorConfigDTO instanceof OciHelmConnectorDTO) {
+          criteria = ociHelmStoreConfig.getRepoUrl();
+          OciHelmConnectorDTO ociHelmConnector = (OciHelmConnectorDTO) connectorConfigDTO;
+          populateDelegateSelectorCapability(capabilities, ociHelmConnector.getDelegateSelectors());
+        }
+        if (isNotEmpty(criteria)) {
           capabilities.add(HelmInstallationCapability.builder()
                                .version(HelmVersion.V380)
-                               .criteria("OCI_HELM_REPO: " + ociHelmConnector.getHelmRepoUrl())
+                               .criteria("OCI_HELM_REPO: " + criteria)
                                .build());
         }
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
-        populateDelegateSelectorCapability(
-            capabilities, ociHelmStoreConfig.getOciHelmConnector().getDelegateSelectors());
+
         break;
 
       case S3_HELM:

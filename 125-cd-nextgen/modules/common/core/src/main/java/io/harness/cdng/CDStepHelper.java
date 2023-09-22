@@ -71,6 +71,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
@@ -801,13 +802,6 @@ public class CDStepHelper {
               format("Invalid connector selected in %s. Select Http Helm connector", message));
         }
         break;
-      case ManifestStoreType.OCI:
-        if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
-          throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Oci Helm connector", message));
-        }
-        break;
-
       case ManifestStoreType.S3:
         if (!((connectorInfoDTO.getConnectorConfig()) instanceof AwsConnectorDTO)) {
           throw new InvalidRequestException(
@@ -832,6 +826,26 @@ public class CDStepHelper {
         break;
       default:
         throw new UnsupportedOperationException(format("Unknown manifest store type: [%s]", manifestStoreType));
+    }
+  }
+
+  public void validateOciManifest(
+      OciHelmChartStoreConfigType ociStoreConfigType, ConnectorInfoDTO connectorInfoDTO, String message) {
+    switch (ociStoreConfigType) {
+      case GENERIC:
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
+          throw new InvalidRequestException(
+              format("Invalid connector selected in %s. Select Oci Helm connector", message));
+        }
+        break;
+      case ECR:
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
+          throw new InvalidRequestException(
+              format("Invalid connector selected in %s. Select Amazon Web Services connector", message));
+        }
+        break;
+      default:
+        throw new UnsupportedOperationException(format("Unknown manifest store type: [%s]", ociStoreConfigType));
     }
   }
 
