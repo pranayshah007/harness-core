@@ -83,5 +83,5 @@ public interface PMSPipelineRepositoryCustom {
   PipelineEntity updateEntity(Criteria criteria, Update update);
 
   List<String> findAllPipelineIdentifiers(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
-      String projectIdentifier, boolean b);
+      String projectIdentifier, boolean getDistinctFromBranches);
 }
