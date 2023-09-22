@@ -442,14 +442,16 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, HarnessYamlVersion.V0);
-    assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
+    assertThatThrownBy(()
+                           -> pmsPipelineService.validateAndUpdatePipeline(
+                               pipelineEntity, ChangeType.ADD, true, HarnessYamlVersion.V0, null))
         .isInstanceOf(InvalidRequestException.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
-    pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
+    pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true, HarnessYamlVersion.V0, null);
   }
 
   @Test
@@ -956,7 +958,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   public void testUpdatePipelineYamlDraftException() {
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     pipelineEntity.setIsDraft(true);
-    assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
+    assertThatThrownBy(()
+                           -> pmsPipelineService.validateAndUpdatePipeline(
+                               pipelineEntity, ChangeType.ADD, true, HarnessYamlVersion.V0, null))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -972,7 +976,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     PipelineCRUDResult pipelineCRUDResult =
-        pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
+        pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true, HarnessYamlVersion.V0, null);
     assertThat(pipelineCRUDResult.getPipelineEntity().getIdentifier()).isEqualTo(pipelineEntity.getIdentifier());
   }
 
@@ -986,14 +990,16 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, HarnessYamlVersion.V0);
-    assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
+    assertThatThrownBy(()
+                           -> pmsPipelineService.validateAndUpdatePipeline(
+                               pipelineEntity, ChangeType.ADD, true, HarnessYamlVersion.V0, null))
         .isInstanceOf(InvalidRequestException.class);
     Call<ResponseDTO<Optional<ProjectResponse>>> projDTOCall = mock(Call.class);
     aStatic.when(() -> NGRestUtils.getResponse(eq(projectClient.getProject(any(), any(), any())), any()))
         .thenReturn(projDTOCall);
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(HarnessYamlVersion.V0));
-    pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
+    pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true, HarnessYamlVersion.V0, null);
   }
 
   @Test

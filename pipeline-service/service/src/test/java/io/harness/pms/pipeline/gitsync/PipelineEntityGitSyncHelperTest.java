@@ -160,9 +160,11 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
     PipelineCRUDResult pipelineCRUDResult =
         PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(pipelineEntity).build();
-    doReturn(pipelineCRUDResult).when(pipelineService).validateAndUpdatePipeline(any(), any(), eq(true));
+    doReturn(pipelineCRUDResult)
+        .when(pipelineService)
+        .validateAndUpdatePipeline(any(), any(), eq(true), anyString(), any());
     PipelineConfig pipelineConfig = pipelineEntityGitSyncHelper.update(accountId, pipelineYaml, ChangeType.NONE);
-    verify(pipelineService, times(1)).validateAndUpdatePipeline(any(), any(), eq(true));
+    verify(pipelineService, times(1)).validateAndUpdatePipeline(any(), any(), eq(true), anyString(), any());
     assertEquals(pipelineConfig, YamlUtils.read(pipelineYaml, PipelineConfig.class));
   }
 

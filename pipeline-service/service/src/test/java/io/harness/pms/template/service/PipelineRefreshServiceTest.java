@@ -39,6 +39,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 
 import java.util.Optional;
@@ -126,7 +127,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     when(pmsPipelineTemplateHelper.getRefreshedYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID,
              pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates, "false"))
         .thenReturn(RefreshResponseDTO.builder().refreshedYaml(refreshedYaml).build());
-    when(pmsPipelineService.validateAndUpdatePipeline(any(), any(), eq(true)))
+    when(pmsPipelineService.validateAndUpdatePipeline(any(), any(), eq(true), anyString(), any()))
         .thenReturn(PipelineCRUDResult.builder()
                         .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                         .build());
@@ -139,7 +140,8 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
         .getRefreshedYaml(anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class), anyString());
 
     ArgumentCaptor<PipelineEntity> argumentCaptor = ArgumentCaptor.forClass(PipelineEntity.class);
-    verify(pmsPipelineService).validateAndUpdatePipeline(argumentCaptor.capture(), eq(ChangeType.MODIFY), eq(true));
+    verify(pmsPipelineService)
+        .validateAndUpdatePipeline(argumentCaptor.capture(), eq(ChangeType.MODIFY), eq(true), anyString(), any());
     PipelineEntity updatedPipeline = argumentCaptor.getValue();
     assertThat(updatedPipeline).isNotNull();
     assertThat(updatedPipeline.getYaml()).isEqualTo(refreshedYaml);
@@ -153,7 +155,8 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     when(pmsPipelineTemplateHelper.getRefreshedYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID,
              pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates, "false"))
         .thenReturn(RefreshResponseDTO.builder().refreshedYaml(pipelineEntityWithTemplates.getYaml()).build());
-    when(pmsPipelineService.validateAndUpdatePipeline(pipelineEntityWithTemplates, ChangeType.MODIFY, true))
+    when(pmsPipelineService.validateAndUpdatePipeline(
+             pipelineEntityWithTemplates, ChangeType.MODIFY, true, HarnessYamlVersion.V0, null))
         .thenThrow(
             new InvalidRequestException("Pipeline does not follow the Policies in these Policy Sets: [policy1]"));
 
@@ -264,7 +267,7 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     when(pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID,
              pipelineEntityWithTemplates.getYaml(), pipelineEntityWithTemplates, "false"))
         .thenReturn(YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(true).refreshedYaml(refreshedYaml).build());
-    when(pmsPipelineService.validateAndUpdatePipeline(any(), any(), eq(true)))
+    when(pmsPipelineService.validateAndUpdatePipeline(any(), any(), eq(true), anyString(), any()))
         .thenReturn(PipelineCRUDResult.builder()
                         .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                         .build());
@@ -278,7 +281,8 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
             anyString(), anyString(), anyString(), anyString(), any(PipelineEntity.class), anyString());
 
     ArgumentCaptor<PipelineEntity> argumentCaptor = ArgumentCaptor.forClass(PipelineEntity.class);
-    verify(pmsPipelineService).validateAndUpdatePipeline(argumentCaptor.capture(), eq(ChangeType.MODIFY), eq(true));
+    verify(pmsPipelineService)
+        .validateAndUpdatePipeline(argumentCaptor.capture(), eq(ChangeType.MODIFY), eq(true), anyString(), any());
     PipelineEntity updatedPipeline = argumentCaptor.getValue();
     assertThat(updatedPipeline).isNotNull();
     assertThat(updatedPipeline.getYaml()).isEqualTo(refreshedYaml);
