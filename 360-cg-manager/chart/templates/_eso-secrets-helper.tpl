@@ -41,6 +41,26 @@ Example:
 {{- end }}
 
 {{/*
+Generate ESO global Secret Context Identifier
+
+Generates Identifier following the format: <ctx-identifier>-ext-secret
+
+Example:
+{{ include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "timescaledb") }}
+*/}}
+{{- define "harnesscommon.secrets.globalESOSecretCtxIdentifier" }}
+  {{- $ := .ctx }}
+  {{- $ctxIdentifier := .ctxIdentifier }}
+  {{- $globalESOSecretIdentifier := "" }}
+  {{- if $ctxIdentifier }}
+    {{- $globalESOSecretIdentifier = (printf "%s-ext-secret" $ctxIdentifier) }}
+  {{- else }}
+    {{- fail "Failed: invalid inputs"}}
+  {{- end }}
+  {{- printf "%s" $globalESOSecretIdentifier }}
+{{- end }}
+
+{{/*
 Check validity of ESO Secret in the externalSecretsOperator secret context
 
 Returns:
