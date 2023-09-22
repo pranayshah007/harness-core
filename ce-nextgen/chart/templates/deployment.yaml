@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nextgen-ce
+  name: ce-nextgen
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "nextgen-ce.labels" . | nindent 4 }}
