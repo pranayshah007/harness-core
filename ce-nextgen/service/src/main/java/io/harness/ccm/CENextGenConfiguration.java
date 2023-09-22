@@ -31,6 +31,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.outbox.OutboxPollConfiguration;
 import io.harness.redis.RedisConfig;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
 import io.harness.remote.CEProxyConfig;
@@ -151,6 +152,7 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty("aiEngineConfig") private AiEngineConfig aiEngineConfig;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
   @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
+  @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerConf = new SwaggerBundleConfiguration();

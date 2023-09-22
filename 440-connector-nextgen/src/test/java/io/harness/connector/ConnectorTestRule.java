@@ -51,6 +51,7 @@ import io.harness.ng.validator.service.api.NGHostValidationService;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
@@ -249,6 +250,12 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
       @Singleton
       CEProxyConfig ceProxyConfig() {
         return CEProxyConfig.builder().build();
+      }
+
+      @Provides
+      @Singleton
+      CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig() {
+        return CEAwsServiceEndpointConfig.builder().build();
       }
 
       @Provides

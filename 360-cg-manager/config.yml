@@ -811,3 +811,10 @@ proxy:
   username: ""
   password: ""
   protocol: http
+
+awsServiceEndpointUrls:
+  enabled: false
+  endPointRegion: us-east-1
+  stsEndPointUrl: https://sts.us-east-1.amazonaws.com
+  ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
+  cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com

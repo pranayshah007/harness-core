@@ -1,6 +1,6 @@
 # ng-manager
 
-![Version: 0.8.3](https://img.shields.io/badge/Version-0.8.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80218](https://img.shields.io/badge/AppVersion-0.0.80218-informational?style=flat-square)
+![Version: 0.8.5](https://img.shields.io/badge/Version-0.8.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80218](https://img.shields.io/badge/AppVersion-0.0.80218-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -36,6 +36,11 @@ A Helm chart for Kubernetes
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
+| global.awsServiceEndpointUrls.cloudwatchEndPointUrl | string | `"https://monitoring.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.ecsEndPointUrl | string | `"https://ecs.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.enabled | bool | `false` |  |
+| global.awsServiceEndpointUrls.endPointRegion | string | `"us-east-2"` |  |
+| global.awsServiceEndpointUrls.stsEndPointUrl | string | `"https://sts.us-east-2.amazonaws.com"` |  |
 | global.ccm.enabled | bool | `false` |  |
 | global.cg.enabled | bool | `false` |  |
 | global.chaos.enabled | bool | `false` |  |
@@ -82,6 +87,12 @@ A Helm chart for Kubernetes
 | global.license.ng | string | `""` |  |
 | global.loadbalancerURL | string | `""` |  |
 | global.opa.enabled | bool | `false` |  |
+| global.proxy.enabled | bool | `false` |  |
+| global.proxy.host | string | `"localhost"` |  |
+| global.proxy.password | string | `""` |  |
+| global.proxy.port | int | `80` |  |
+| global.proxy.protocol | string | `"http"` |  |
+| global.proxy.username | string | `""` |  |
 | global.secrets.app.external.enabled | bool | `false` |  |
 | global.secrets.app.external.kind.csiSecretDriver | bool | `false` |  |
 | global.secrets.app.external.kind.externalSecrets | bool | `false` |  |
@@ -95,7 +106,7 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/ng-manager-signed"` |  |
-| image.tag | string | `"80218"` |  |
+| image.tag | string | `"80219"` |  |
 | imagePullSecrets | object | `{}` |  |
 | initContainer.image.digest | string | `""` |  |
 | initContainer.image.imagePullSecrets | list | `[]` |  |
@@ -128,12 +139,6 @@ A Helm chart for Kubernetes
 | probes.startupProbe.httpGet.port | string | `"http-ng-manager"` |  |
 | probes.startupProbe.periodSeconds | int | `10` |  |
 | probes.startupProbe.timeoutSeconds | int | `2` |  |
-| proxy.enabled | bool | `false` |  |
-| proxy.host | string | `"localhost"` |  |
-| proxy.password | string | `""` |  |
-| proxy.port | int | `80` |  |
-| proxy.protocol | string | `"http"` |  |
-| proxy.username | string | `""` |  |
 | replicaCount | int | `1` |  |
 | resources.limits.memory | string | `"8192Mi"` |  |
 | resources.requests.cpu | int | `2` |  |

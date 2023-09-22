@@ -121,6 +121,19 @@ global:
     virtualService:
       gateways:
       hosts:
+  proxy:
+    enabled: false
+    host: localhost
+    port: 80
+    username: ""
+    password: ""
+    protocol: http
+  awsServiceEndpointUrls:
+    enabled: false
+    endPointRegion: us-east-2
+    stsEndPointUrl: https://sts.us-east-2.amazonaws.com
+    ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
+    cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
 
 replicaCount: 1
 maxSurge: 1
@@ -133,7 +146,7 @@ image:
   repository: harness/manager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80218"
+  tag: "80219"
   digest: ""
   imagePullSecrets: []
 
@@ -226,14 +239,6 @@ service:
   type: ClusterIP
   port: 9090
   grpcport: 9879
-
-proxy:
-  enabled: false
-  host: localhost
-  port: 80
-  username: ""
-  password: ""
-  protocol: http
 
 resources:
   limits:
