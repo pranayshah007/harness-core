@@ -47,6 +47,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,30 +77,30 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
     } else {
       DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary =
           getDeploymentVerificationJobInstanceSummary(entity);
-      ActivityStatusDTO activityStatusDTO =
-          ActivityStatusDTO.builder()
-              .durationMs(deploymentVerificationJobInstanceSummary.getDurationMs())
-              .remainingTimeMs(deploymentVerificationJobInstanceSummary.getRemainingTimeMs())
-              .progressPercentage(deploymentVerificationJobInstanceSummary.getProgressPercentage())
-              .activityId(entity.getCallbackId())
-              .status(deploymentVerificationJobInstanceSummary.getStatus())
-              .build();
-      // send final progress even if the status is a final status.
-      waitNotifyEngine.progressOn(entity.getCallbackId(),
-          CVNGResponseData.builder()
-              .activityId(entity.getCallbackId())
-              .verifyStepExecutionId(entity.getCallbackId())
-              .activityStatusDTO(activityStatusDTO)
-              .build());
-      if (ActivityVerificationStatus.getFinalStates().contains(activityStatusDTO.getStatus())) {
-        waitNotifyEngine.doneWith(entity.getCallbackId(),
-            CVNGResponseData.builder()
-                .activityId(entity.getCallbackId())
-                .verifyStepExecutionId(entity.getCallbackId())
-                .activityStatusDTO(activityStatusDTO)
-                .build());
-        markDone(entity.getUuid());
-      }
+        ActivityStatusDTO activityStatusDTO =
+                ActivityStatusDTO.builder()
+                        .durationMs(deploymentVerificationJobInstanceSummary.getDurationMs())
+                        .remainingTimeMs(deploymentVerificationJobInstanceSummary.getRemainingTimeMs())
+                        .progressPercentage(deploymentVerificationJobInstanceSummary.getProgressPercentage())
+                        .activityId(entity.getCallbackId())
+                        .status(deploymentVerificationJobInstanceSummary.getStatus())
+                        .build();
+        // send final progress even if the status is a final status.
+        waitNotifyEngine.progressOn(entity.getCallbackId(),
+                CVNGResponseData.builder()
+                        .activityId(entity.getCallbackId())
+                        .verifyStepExecutionId(entity.getCallbackId())
+                        .activityStatusDTO(activityStatusDTO)
+                        .build());
+        if (ActivityVerificationStatus.getFinalStates().contains(activityStatusDTO.getStatus())) {
+          waitNotifyEngine.doneWith(entity.getCallbackId(),
+                  CVNGResponseData.builder()
+                          .activityId(entity.getCallbackId())
+                          .verifyStepExecutionId(entity.getCallbackId())
+                          .activityStatusDTO(activityStatusDTO)
+                          .build());
+          markDone(entity.getUuid());
+        }
     }
   }
 

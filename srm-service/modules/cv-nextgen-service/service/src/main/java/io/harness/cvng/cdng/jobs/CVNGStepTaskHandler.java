@@ -21,8 +21,11 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.Duration;
 @Singleton
+@Slf4j
 public class CVNGStepTaskHandler implements MongoPersistenceIterator.Handler<CVNGStepTask> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<CVNGStepTask> persistenceProvider;
@@ -49,6 +52,10 @@ public class CVNGStepTaskHandler implements MongoPersistenceIterator.Handler<CVN
   }
   @Override
   public void handle(CVNGStepTask entity) {
-    cvngStepTaskService.notifyCVNGStep(entity);
+    try{
+      cvngStepTaskService.notifyCVNGStep(entity);
+    } catch(NullPointerException ex){
+      log.warn("Null Pointer exception for CVNGStepTask {}", entity.getUuid(), ex.fillInStackTrace());
+    }
   }
 }

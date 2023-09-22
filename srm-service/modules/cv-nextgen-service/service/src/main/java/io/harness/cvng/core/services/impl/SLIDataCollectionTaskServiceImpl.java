@@ -35,6 +35,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 
 @Slf4j
 public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManagementService<ServiceLevelIndicator> {
@@ -150,29 +151,32 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
 
   private DataCollectionTask getDataCollectionTaskForSLI(List<CVConfig> cvConfigList,
       ServiceLevelIndicator serviceLevelIndicator, boolean isRestore, Instant startTime, Instant endTime) {
-    CVConfig cvConfigForVerificationTask = cvConfigList.get(0);
-    String dataCollectionWorkerId =
-        monitoringSourcePerpetualTaskService.getLiveMonitoringWorkerId(cvConfigForVerificationTask.getAccountId(),
-            cvConfigForVerificationTask.getOrgIdentifier(), cvConfigForVerificationTask.getProjectIdentifier(),
-            cvConfigForVerificationTask.getConnectorIdentifier(), cvConfigForVerificationTask.getIdentifier());
-    DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfigList.get(0).getType())
-            .toDataCollectionInfo(cvConfigList, serviceLevelIndicator);
-    if(dataCollectionInfo!=null) {
-      return SLIDataCollectionTask.builder()
-              .accountId(serviceLevelIndicator.getAccountId())
-              .type(SLI)
-              .dataCollectionWorkerId(dataCollectionWorkerId)
-              .status(DataCollectionExecutionStatus.QUEUED)
-              .startTime(startTime)
-              .endTime(endTime)
-              .isRestore(isRestore)
-              .queueAnalysis(!isRestore)
-              .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
-                      cvConfigForVerificationTask.getAccountId(), serviceLevelIndicator.getUuid()))
-              .dataCollectionInfo(dataCollectionInfo)
-              .build();
-    }else{
-      return null;
+    if(CollectionUtils.isEmpty(cvConfigList)){
+      log.warn("[ERROR]: CVConfig list is empty for serviceLevelIndicator {}", serviceLevelIndicator.getUuid());
+    } else {
+      CVConfig cvConfigForVerificationTask = cvConfigList.get(0);
+      String dataCollectionWorkerId =
+              monitoringSourcePerpetualTaskService.getLiveMonitoringWorkerId(cvConfigForVerificationTask.getAccountId(),
+                      cvConfigForVerificationTask.getOrgIdentifier(), cvConfigForVerificationTask.getProjectIdentifier(),
+                      cvConfigForVerificationTask.getConnectorIdentifier(), cvConfigForVerificationTask.getIdentifier());
+      DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfigList.get(0).getType())
+              .toDataCollectionInfo(cvConfigList, serviceLevelIndicator);
+      if (dataCollectionInfo != null) {
+        return SLIDataCollectionTask.builder()
+                .accountId(serviceLevelIndicator.getAccountId())
+                .type(SLI)
+                .dataCollectionWorkerId(dataCollectionWorkerId)
+                .status(DataCollectionExecutionStatus.QUEUED)
+                .startTime(startTime)
+                .endTime(endTime)
+                .isRestore(isRestore)
+                .queueAnalysis(!isRestore)
+                .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
+                        cvConfigForVerificationTask.getAccountId(), serviceLevelIndicator.getUuid()))
+                .dataCollectionInfo(dataCollectionInfo)
+                .build();
+      }
     }
+    return null;
   }
 }
