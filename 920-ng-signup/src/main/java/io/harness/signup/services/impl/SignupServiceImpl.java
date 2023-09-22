@@ -498,6 +498,7 @@ public class SignupServiceImpl implements SignupService {
       throw e;
     }
 
+    dto.setEmail(dto.getEmail().toLowerCase());
     SignupDTO signupDTO = SignupDTO.builder().email(dto.getEmail()).utmInfo(dto.getUtmInfo()).build();
     AccountDTO account = createAccount(signupDTO);
     UserInfo oAuthUser = createOAuthUser(dto, account);
