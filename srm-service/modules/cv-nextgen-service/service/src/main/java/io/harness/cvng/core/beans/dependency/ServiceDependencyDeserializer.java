@@ -9,6 +9,7 @@ package io.harness.cvng.core.beans.dependency;
 
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDependencyDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDependencyDTO.ServiceDependencyDTOKeys;
+import io.harness.cvng.utils.JsonNodeUtils;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -36,14 +37,14 @@ public class ServiceDependencyDeserializer extends JsonDeserializer<ServiceDepen
         : null;
     JsonNode dependencyMetadataNode = tree.get(ServiceDependencyDTOKeys.dependencyMetadata);
 
-    if (type == null && !dependencyMetadataNode.isNull()) {
+    if (type == null && JsonNodeUtils.isNotNull(dependencyMetadataNode)) {
       type = JsonUtils.treeToValue(
           dependencyMetadataNode.get(ServiceDependencyDTOKeys.type), DependencyMetadataType.class);
     }
 
     Class<?> deserializationClass = deserializationMapper.get(type);
     ServiceDependencyMetadata serviceDependencyMetadata = null;
-    if (!dependencyMetadataNode.isNull()) {
+    if (JsonNodeUtils.isNotNull(dependencyMetadataNode)) {
       serviceDependencyMetadata =
           (ServiceDependencyMetadata) JsonUtils.treeToValue(dependencyMetadataNode, deserializationClass);
     }
