@@ -8,6 +8,7 @@
 package io.harness.steps.resourcerestraint;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.distribution.constraint.Consumer;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.observers.OrchestrationEndObserver;
@@ -64,7 +65,9 @@ public class ResourceRestraintObserver
       if (EmptyPredicate.isNotEmpty(restraintInstances)) {
         for (ResourceRestraintInstance ri : restraintInstances) {
           transactionHelper.performTransaction(() -> {
-            restraintService.finishInstance(ri.getUuid(), ri.getResourceUnit());
+            if (ri.getState() == Consumer.State.BLOCKED || ri.getState() == Consumer.State.ACTIVE) {
+              restraintService.finishInstance(ri.getUuid(), ri.getResourceUnit());
+            }
             restraintService.updateBlockedConstraints(ImmutableSet.of(ri.getResourceRestraintId()));
             return null;
           });

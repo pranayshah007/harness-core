@@ -79,10 +79,11 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
           pmsExecutionSummaryRepository.update(query, update);
       for (String module : executedModules) {
         if (!module.equalsIgnoreCase(ModuleType.PMS.name())) {
-          eventEmitter.emitEvent(
-              buildEndEvent(ambiance, module, pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus(),
-                  pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module),
-                  pipelineExecutionSummaryUpdatedEntity.getEndTs()));
+          //          eventEmitter.emitEvent(
+          //              buildEndEvent(ambiance, module,
+          //              pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus(),
+          //                  pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module),
+          //                  pipelineExecutionSummaryUpdatedEntity.getEndTs()));
         }
       }
     }

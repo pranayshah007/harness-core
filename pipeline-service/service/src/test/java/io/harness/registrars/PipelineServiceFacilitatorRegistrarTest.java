@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,7 +20,6 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.sdk.core.execution.events.node.facilitate.Facilitator;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.ApprovalFacilitator;
-import io.harness.steps.resourcerestraint.ResourceRestraintFacilitator;
 
 import java.util.Map;
 import org.junit.Test;
@@ -34,7 +34,6 @@ public class PipelineServiceFacilitatorRegistrarTest extends CategoryTest {
     Map<FacilitatorType, Class<? extends Facilitator>> facilitatorTypeClassMap =
         PipelineServiceFacilitatorRegistrar.getEngineFacilitators();
     assertEquals(2L, facilitatorTypeClassMap.size());
-    assertEquals(true, facilitatorTypeClassMap.containsValue(ResourceRestraintFacilitator.class));
-    assertEquals(true, facilitatorTypeClassMap.containsValue(ApprovalFacilitator.class));
+    assertTrue(facilitatorTypeClassMap.containsValue(ApprovalFacilitator.class));
   }
 }

@@ -18,8 +18,6 @@ import io.harness.steps.barriers.service.BarrierServiceImpl;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceServiceImpl;
-import io.harness.steps.resourcerestraint.service.ResourceRestraintRegistry;
-import io.harness.steps.resourcerestraint.service.ResourceRestraintRegistryImpl;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintService;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintServiceImpl;
 
@@ -49,7 +47,6 @@ public class OrchestrationStepsModule extends AbstractModule {
     bind(BarrierService.class).to(BarrierServiceImpl.class);
     bind(ResourceRestraintService.class).to(ResourceRestraintServiceImpl.class);
     bind(ResourceRestraintInstanceService.class).to(ResourceRestraintInstanceServiceImpl.class);
-    bind(ResourceRestraintRegistry.class).to(ResourceRestraintRegistryImpl.class);
     bind(ApprovalInstanceService.class).to(ApprovalInstanceServiceImpl.class);
   }
 

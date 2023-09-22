@@ -17,7 +17,8 @@ import lombok.Data;
 @Builder
 public class ConcurrentChildInstance {
   private List<String> childrenNodeExecutionIds;
-  private int cursor; // the pointer to which node we should start from childrenNodeExecutionIds
-  private List<Status>
-      childStatuses; // This stores the status of children which will help us in knowing if we should continue or not.
+  // the pointer to which node we should start from childrenNodeExecutionIds
+  private int cursor;
+  // This stores the status of children which will help us in knowing if we should continue or not.
+  private List<Status> childStatuses;
 }

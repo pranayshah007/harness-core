@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.constraint.Constraint;
+import io.harness.distribution.constraint.ConstraintRegistry;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 @OwnedBy(PIPELINE)
-public interface ResourceRestraintInstanceService {
+public interface ResourceRestraintInstanceService extends ConstraintRegistry {
   ResourceRestraintInstance save(ResourceRestraintInstance resourceRestraintInstance);
 
   /**
@@ -50,4 +51,6 @@ public interface ResourceRestraintInstanceService {
   List<ResourceRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId);
 
   void processRestraint(ResourceRestraintInstance instance);
+
+  ConstraintRegistry getRegistry();
 }

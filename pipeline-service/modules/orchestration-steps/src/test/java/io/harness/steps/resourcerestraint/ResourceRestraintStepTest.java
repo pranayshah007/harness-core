@@ -26,7 +26,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintId;
-import io.harness.distribution.constraint.Consumer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -34,7 +33,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
-import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -90,80 +88,6 @@ public class ResourceRestraintStepTest extends CategoryTest {
         .when(resourceRestraintInstanceService)
         .createAbstraction(any());
     doReturn(ResourceRestraintInstance.builder().build()).when(resourceRestraintInstanceService).save(any());
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestExecuteAsync() {
-    String uuid = generateUuid();
-    String planNodeId = generateUuid();
-    String consumerId = generateUuid();
-    String planExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
-                            .build();
-    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
-    ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
-                                                         .resourceUnit(RESOURCE_UNIT)
-                                                         .acquireMode(AcquireMode.ACCUMULATE)
-                                                         .holdingScope(HoldingScope.PIPELINE)
-                                                         .permits(1)
-                                                         .build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();
-
-    doReturn(Collections.singletonList(ResourceRestraintInstance.builder()
-                                           .state(Consumer.State.ACTIVE)
-                                           .permits(1)
-                                           .releaseEntityType(HoldingScope.PIPELINE.name())
-                                           .releaseEntityId(planExecutionId)
-                                           .build()))
-        .when(resourceRestraintInstanceService)
-        .getAllByRestraintIdAndResourceUnitAndStates(any(), any(), any());
-    AsyncExecutableResponse asyncExecutableResponse =
-        resourceRestraintStep.executeAsync(ambiance, stepElementParameters, stepInputPackage,
-            ResourceRestraintPassThroughData.builder().consumerId(consumerId).build());
-
-    assertThat(asyncExecutableResponse).isNotNull();
-    assertThat(asyncExecutableResponse.getCallbackIdsCount()).isEqualTo(1);
-    assertThat(asyncExecutableResponse.getCallbackIdsList().get(0)).isEqualTo(consumerId);
-  }
-
-  @Test
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
-  public void shouldTestExecuteSync() {
-    String uuid = generateUuid();
-    String planNodeId = generateUuid();
-    String planExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
-                            .build();
-    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
-    ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
-                                                         .resourceUnit(RESOURCE_UNIT)
-                                                         .acquireMode(AcquireMode.ACCUMULATE)
-                                                         .holdingScope(HoldingScope.PIPELINE)
-                                                         .permits(1)
-                                                         .build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();
-    ResourceRestraintPassThroughData passThroughData = ResourceRestraintPassThroughData.builder()
-                                                           .name(specParameters.getName())
-                                                           .resourceRestraintId(generateUuid())
-                                                           .resourceUnit(RESOURCE_UNIT.getValue())
-                                                           .capacity(100)
-                                                           .releaseEntityType(specParameters.getHoldingScope().name())
-                                                           .releaseEntityId(planExecutionId)
-                                                           .build();
-    StepResponse stepResponse =
-        resourceRestraintStep.executeSync(ambiance, stepElementParameters, stepInputPackage, passThroughData);
-
-    assertThat(stepResponse).isNotNull();
-    assertThat(stepResponse.getStatus()).isEqualTo(SUCCEEDED);
   }
 
   @Test

@@ -17,6 +17,7 @@ import static io.harness.execution.NodeExecution.NodeExecutionKeys;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -25,10 +26,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintId;
+import io.harness.distribution.constraint.ConstraintRegistry;
 import io.harness.distribution.constraint.ConstraintUnit;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.distribution.constraint.ConsumerId;
 import io.harness.distribution.constraint.RunnableConsumers;
+import io.harness.distribution.constraint.UnableToLoadConstraintException;
+import io.harness.distribution.constraint.UnableToSaveConstraintException;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
@@ -37,25 +41,33 @@ import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.utils.PmsConstants;
 import io.harness.repositories.ResourceRestraintInstanceRepository;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.ResourceRestraintInstanceKeys;
+import io.harness.steps.resourcerestraint.beans.ResourceRestraintResponseData;
+import io.harness.tasks.ResponseData;
+import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -67,9 +79,10 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
   @Inject private ResourceRestraintInstanceRepository restraintInstanceRepository;
   @Inject private MongoTemplate mongoTemplate;
   @Inject private PlanExecutionService planExecutionService;
-  @Inject private ResourceRestraintRegistry resourceRestraintRegistry;
   @Inject private ResourceRestraintService resourceRestraintService;
   @Inject private NodeExecutionService nodeExecutionService;
+
+  @Inject private WaitNotifyEngine waitNotifyEngine;
 
   @Override
   public ResourceRestraintInstance save(ResourceRestraintInstance resourceRestraintInstance) {
@@ -156,7 +169,7 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
       return false;
     }
 
-    return resourceRestraintRegistry.consumerFinished(new ConstraintId(instance.getResourceRestraintId()),
+    return consumerFinished(new ConstraintId(instance.getResourceRestraintId()),
         new ConstraintUnit(instance.getResourceUnit()), new ConsumerId(instance.getUuid()), ImmutableMap.of());
   }
 
@@ -173,10 +186,9 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
       log.info("Resource constraint {} has running units {}", restraint.getUuid(), Joiner.on(", ").join(units));
 
       units.forEach(unit -> {
-        final RunnableConsumers runnableConsumers =
-            constraint.runnableConsumers(unit, resourceRestraintRegistry, false);
+        final RunnableConsumers runnableConsumers = constraint.runnableConsumers(unit, getRegistry(), false);
         for (ConsumerId consumerId : runnableConsumers.getConsumerIds()) {
-          if (!constraint.consumerUnblocked(unit, consumerId, null, resourceRestraintRegistry)) {
+          if (!constraint.consumerUnblocked(unit, consumerId, null, getRegistry())) {
             break;
           }
         }
@@ -273,5 +285,130 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
     }
 
     return units.stream().map(ConstraintUnit::new).collect(toList());
+  }
+
+  public ConstraintRegistry getRegistry() {
+    return this;
+  }
+
+  @Override
+  public void save(ConstraintId id, Constraint.Spec spec) throws UnableToSaveConstraintException {
+    // to be implemented
+  }
+
+  @Override
+  public Constraint load(ConstraintId id) throws UnableToLoadConstraintException {
+    final ResourceRestraint resourceRestraint = resourceRestraintService.get(id.getValue());
+    return createAbstraction(resourceRestraint);
+  }
+
+  @Override
+  public List<Consumer> loadConsumers(ConstraintId id, ConstraintUnit unit, boolean hitSecondaryNode) {
+    List<Consumer> consumers = new ArrayList<>();
+
+    List<ResourceRestraintInstance> instances = getAllByRestraintIdAndResourceUnitAndStates(
+        id.getValue(), unit.getValue(), new ArrayList<>(Arrays.asList(ACTIVE, BLOCKED)));
+
+    instances.forEach(instance
+        -> consumers.add(
+            Consumer.builder()
+                .id(new ConsumerId(instance.getUuid()))
+                .state(instance.getState())
+                .permits(instance.getPermits())
+                .context(ImmutableMap.of(ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityType,
+                    instance.getReleaseEntityType(),
+                    ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityId,
+                    instance.getReleaseEntityId()))
+                .build()));
+    return consumers;
+  }
+
+  @Override
+  public boolean registerConsumer(ConstraintId id, ConstraintUnit unit, Consumer consumer, int currentlyRunning) {
+    ResourceRestraint resourceRestraint = resourceRestraintService.get(id.getValue());
+    if (resourceRestraint == null) {
+      throw new InvalidRequestException(format("There is no resource constraint with id: %s", id.getValue()));
+    }
+
+    final ResourceRestraintInstance.ResourceRestraintInstanceBuilder builder =
+        ResourceRestraintInstance.builder()
+            .uuid(consumer.getId().getValue())
+            .resourceRestraintId(id.getValue())
+            .resourceUnit(unit.getValue())
+            .releaseEntityType((String) consumer.getContext().get(
+                ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityType))
+            .releaseEntityId((String) consumer.getContext().get(
+                ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityId))
+            .permits(consumer.getPermits())
+            .state(consumer.getState())
+            .order((int) consumer.getContext().get(ResourceRestraintInstance.ResourceRestraintInstanceKeys.order));
+
+    if (ACTIVE == consumer.getState()) {
+      builder.acquireAt(System.currentTimeMillis());
+    }
+
+    try {
+      save(builder.build());
+    } catch (DuplicateKeyException e) {
+      log.error("Failed to add ResourceRestraintInstance", e);
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public boolean adjustRegisterConsumerContext(ConstraintId id, Map<String, Object> context) {
+    final int order = getMaxOrder(id.getValue()) + 1;
+    if (order == (int) context.get(ResourceRestraintInstance.ResourceRestraintInstanceKeys.order)) {
+      return false;
+    }
+    context.put(ResourceRestraintInstance.ResourceRestraintInstanceKeys.order, order);
+    return true;
+  }
+
+  @Override
+  public boolean consumerUnblocked(
+      ConstraintId id, ConstraintUnit unit, ConsumerId consumerId, Map<String, Object> context) {
+    activateBlockedInstance(consumerId.getValue(), unit.getValue());
+    ResponseData responseData = ResourceRestraintResponseData.builder()
+                                    .resourceRestraintId(id.getValue())
+                                    .resourceUnit(unit.getValue())
+                                    .build();
+    waitNotifyEngine.doneWith(consumerId.getValue(), responseData);
+    return true;
+  }
+
+  @Override
+  public boolean consumerFinished(
+      ConstraintId id, ConstraintUnit unit, ConsumerId consumerId, Map<String, Object> context) {
+    try {
+      finishInstance(consumerId.getValue(), unit.getValue());
+    } catch (InvalidRequestException e) {
+      log.error("The attempt to finish Constraint with id {} failed for resource unit {} with Resource restraint id {}",
+          id.getValue(), unit.getValue(), consumerId.getValue(), e);
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public boolean overlappingScope(Consumer consumer, Consumer blockedConsumer) {
+    String releaseScope =
+        (String) consumer.getContext().get(ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityType);
+    String blockedReleaseScope = (String) blockedConsumer.getContext().get(
+        ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityType);
+
+    if (!PmsConstants.RELEASE_ENTITY_TYPE_PLAN.equals(releaseScope)
+        || !PmsConstants.RELEASE_ENTITY_TYPE_PLAN.equals(blockedReleaseScope)) {
+      return false;
+    }
+
+    String planExecutionId =
+        (String) consumer.getContext().get(ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityId);
+    String blockedPlanExecutionId = (String) blockedConsumer.getContext().get(
+        ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityId);
+
+    return planExecutionId.equals(blockedPlanExecutionId);
   }
 }

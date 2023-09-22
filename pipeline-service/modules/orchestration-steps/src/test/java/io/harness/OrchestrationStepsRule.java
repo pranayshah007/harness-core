@@ -35,10 +35,8 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.logstreaming.LogStreamingClient;
-import io.harness.logstreaming.LogStreamingClientFactory;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
-import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
@@ -281,9 +279,8 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {
-        bind(LogStreamingServiceRestClient.class)
-            .toProvider(NGLogStreamingClientFactory.builder().logStreamingServiceBaseUrl(logStreamingBaseURL).build());
-        bind(LogStreamingClient.class).toProvider(new LogStreamingClientFactory(logStreamingBaseURL, "", "", false));
+        bind(LogStreamingServiceRestClient.class).toInstance(mock(LogStreamingServiceRestClient.class));
+        bind(LogStreamingClient.class).toInstance(Mockito.mock(LogStreamingClient.class));
       }
     });
     modules.add(OrchestrationStepsModule.getInstance(null));

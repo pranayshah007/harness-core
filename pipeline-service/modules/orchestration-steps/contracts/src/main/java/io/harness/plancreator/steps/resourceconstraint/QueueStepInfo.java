@@ -14,6 +14,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
@@ -57,7 +58,7 @@ public class QueueStepInfo implements PMSStepInfo {
   @JsonIgnore
   @Override
   public String getFacilitatorType() {
-    return StepSpecTypeConstants.RESOURCE_RESTRAINT_FACILITATOR_TYPE;
+    return OrchestrationFacilitatorType.ASYNC;
   }
 
   @Override
