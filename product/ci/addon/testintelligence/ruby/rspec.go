@@ -64,13 +64,13 @@ func (b *rspecRunner) ReadPackages(files []types.File) []types.File {
 
 func (b *rspecRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	testCmd := ""
-	tiFlag := "TI=1"
+	tiFlag := "TI=1 TI_OUTPUT_PATH=/usr/src/myapp/cg/"
 	repoPath := filepath.Join(b.agentPath, "harness", "ruby-agent")
 	if !ignoreInstr {
-	    err := WriteGemFile(repoPath)
-	}
-	if err != nil {
-		return testCmd, err
+		err := WriteGemFile(repoPath)
+		if err != nil {
+			return testCmd, err
+		}
 	}
 	// Run all the tests
 	if runAll {
