@@ -65,7 +65,7 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
             .withExternalId(awsCrossAccountAttributes.getExternalId())
             .withStsClient(awsSecurityTokenService)
             .build();
-    if (ceProxyConfig.isEnabled()) {
+    if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
       builder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
     }
     builder.withCredentials(credentialsProvider);

@@ -1,6 +1,6 @@
 # ce-nextgen
 
-![Version: 0.10.1](https://img.shields.io/badge/Version-0.10.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80803](https://img.shields.io/badge/AppVersion-0.0.80803-informational?style=flat-square)
+![Version: 0.10.2](https://img.shields.io/badge/Version-0.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80803](https://img.shields.io/badge/AppVersion-0.0.80803-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -39,6 +39,11 @@ A Helm chart for Kubernetes
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
+| global.awsServiceEndpointUrls.cloudwatchEndPointUrl | string | `"https://monitoring.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.ecsEndPointUrl | string | `"https://ecs.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.enabled | bool | `false` |  |
+| global.awsServiceEndpointUrls.endPointRegion | string | `"us-east-2"` |  |
+| global.awsServiceEndpointUrls.stsEndPointUrl | string | `"https://sts.us-east-2.amazonaws.com"` |  |
 | global.ccm.gcpProjectId | string | `"placeHolder"` |  |
 | global.commonAnnotations | object | `{}` |  |
 | global.commonLabels | object | `{}` |  |
@@ -85,19 +90,25 @@ A Helm chart for Kubernetes
 | global.istio.virtualService.gateways | string | `nil` |  |
 | global.istio.virtualService.hosts | string | `nil` |  |
 | global.loadbalancerURL | string | `"https://test"` |  |
+| global.proxy.enabled | bool | `false` |  |
+| global.proxy.host | string | `"localhost"` |  |
+| global.proxy.password | string | `""` |  |
+| global.proxy.port | int | `80` |  |
+| global.proxy.protocol | string | `"http"` |  |
+| global.proxy.username | string | `""` |  |
 | global.stackDriverLoggingEnabled | bool | `false` |  |
 | image.digest | string | `""` |  |
 | image.imagePullSecrets | list | `[]` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/ce-nextgen-signed"` |  |
-| image.tag | string | `"80803-000"` |  |
+| image.tag | string | `"80805-000"` |  |
 | imageClickhouseEnabled.digest | string | `""` |  |
 | imageClickhouseEnabled.imagePullSecrets | list | `[]` |  |
 | imageClickhouseEnabled.pullPolicy | string | `"Always"` |  |
 | imageClickhouseEnabled.registry | string | `"docker.io"` |  |
 | imageClickhouseEnabled.repository | string | `"harness/ce-nextgen-signed"` |  |
-| imageClickhouseEnabled.tag | string | `"80803-000"` |  |
+| imageClickhouseEnabled.tag | string | `"80805-000"` |  |
 | ingress.annotations | object | `{}` |  |
 | ingress.className | string | `"nginx"` |  |
 | java.memory | string | `"4096m"` |  |
@@ -114,12 +125,6 @@ A Helm chart for Kubernetes
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext | object | `{}` |  |
-| proxy.enabled | bool | `false` |  |
-| proxy.host | string | `"localhost"` |  |
-| proxy.password | string | `""` |  |
-| proxy.port | int | `80` |  |
-| proxy.protocol | string | `"http"` |  |
-| proxy.username | string | `""` |  |
 | replicaCount | int | `2` |  |
 | resources.limits.memory | string | `"4Gi"` |  |
 | resources.requests.cpu | int | `1` |  |
