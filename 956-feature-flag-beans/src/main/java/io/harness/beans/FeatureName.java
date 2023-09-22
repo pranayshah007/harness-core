@@ -863,6 +863,8 @@ public enum FeatureName {
   CDS_ASG_V2("FF for enabling ASG V2 features like userData, instances, loadBalancers, baseAsg", HarnessTeam.CDP),
   CDS_ENABLE_SHELL_SCRITPT_FILE_REFERENCE(
       "Used for ShellScript step in order to support scripts from Harness File Store", PIPELINE),
+
+  CDS_CG_FORCE_UPSERTYAML_RETURN_ENTITY("Used for update change context when had entity", SPG),
   CDS_QUEUE_SERVICE_FOR_TRIGGERS(
       "When this flag is enabled, triggers will be processed using queue service instead of mongo iterators", PIPELINE),
   CDS_MERGED_RUN_AND_RETRY_PIPELINE_COMPONENT(

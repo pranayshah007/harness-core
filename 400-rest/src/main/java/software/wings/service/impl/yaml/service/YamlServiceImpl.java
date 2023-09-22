@@ -8,6 +8,7 @@
 package software.wings.service.impl.yaml.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_CG_FORCE_UPSERTYAML_RETURN_ENTITY;
 import static io.harness.beans.FeatureName.SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL;
 import static io.harness.beans.FeatureName.SPG_TRIPLE_TIMEOUT_FOR_ZIP_YAML_UPSERT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -982,7 +983,13 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
     try {
       checkThatEntityIdInChangeAndInYamlIsSame(yamlSyncHandler, accountId, change.getFilePath(), changeContext);
-      yamlSyncHandler.upsertFromYaml(changeContext, changeContextList);
+
+      if (featureFlagService.isEnabled(CDS_CG_FORCE_UPSERTYAML_RETURN_ENTITY, accountId)) {
+        PersistentEntity entity = (PersistentEntity) yamlSyncHandler.upsertFromYaml(changeContext, changeContextList);
+        changeContext.setEntity(entity);
+      } else {
+        yamlSyncHandler.upsertFromYaml(changeContext, changeContextList);
+      }
 
       // Handling for tags
       harnessTagYamlHelper.upsertTagLinksIfRequired(changeContext);
