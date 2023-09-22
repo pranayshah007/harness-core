@@ -204,6 +204,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("lightwingClientConfig") private ServiceHttpClientConfig lightwingClientConfig;
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
   @JsonProperty("chaosServiceClientConfig") private ServiceHttpClientConfig chaosServiceClientConfig;
+  @JsonProperty("seiServiceClientConfig") private ServiceHttpClientConfig seiServiceClientConfig;
   @JsonProperty("serviceDiscoveryServiceClientConfig")
   private ServiceHttpClientConfig serviceDiscoveryServiceClientConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
