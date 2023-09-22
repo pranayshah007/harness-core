@@ -43,9 +43,19 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: {{ .Values.name }}
+                name: ssca-manager
             - secretRef:
-                name: {{ .Values.name }}
+                name: {{ include "ssca-manager.name" . }}
+          env:
+            { { - include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 } }
+              { { - include "harnesscommon.dbconnection.mongoEnv" . | indent 12 } }
+
+              - name: MONGO_URI
+                value: { { include "harnesscommon.dbconnection.mongoConnection" (dict "database" "ssca" "context" $) } }
+
+              { { - if .Values.extraEnvVars } }
+              { { - include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 } }
+              { { - end } }
           livenessProbe:
             httpGet:
               path: /health
