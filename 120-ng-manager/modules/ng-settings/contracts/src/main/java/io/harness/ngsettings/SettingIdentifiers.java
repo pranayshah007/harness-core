@@ -36,6 +36,7 @@ public class SettingIdentifiers {
   public static String INCLUDE_GCP_TAXES_IDENTIFIER = "include_gcp_taxes";
   public static String SERVICE_OVERRIDE_V2_IDENTIFIER = "service_override_v2";
   public static String EXPORT_SERVICE_VARS_AS_ENV_VARS = "export_service_variables_as_env_variables";
+  public static String EMAIL_NOTIFICATION_SETTINGS_GROUP_IDENTIFIER = "email_notification_settings";
   public static String SLACK_NOTIFICATION_SETTINGS_GROUP_IDENTIFIER = "slack_notification_settings";
   public static String MSTEAM_NOTIFICATION_SETTINGS_GROUP_IDENTIFIER = "msTeam_notification_settings";
   public static String WEBHOOK_NOTIFICATION_SETTINGS_GROUP_IDENTIFIER = "webhook_notification_settings";
@@ -48,5 +49,11 @@ public class SettingIdentifiers {
   public static String TICKETING_PREFERENCES_GROUP_IDENTIFIER = "ticketing_preferences";
   public static String TICKETING_TOOL_IDENTIFIER = "ticketing_tool";
   public static String TICKETING_TOOL_CONNECTOR_IDENTIFIER = "ticketing_tool_connector";
+  public static String EMAIL_NOTIFICATION_DOMAIN_ALLOWLIST = "email_notification_domain_allowlist";
+  public static String MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST = "msTeam_notification_endpoints_allowlist";
+  public static String SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST = "slack_notification_endpoints_allowlist";
+  public static String WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST = "webhook_notification_endpoints_allowlist";
+  public static String PAGERDUTY_NOTIFICATION_INTEGRATION_KEYS_ALLOWLIST =
+      "pagerduty_notification_integration_keys_allowlist";
   public static String AIDA = "aida";
 }

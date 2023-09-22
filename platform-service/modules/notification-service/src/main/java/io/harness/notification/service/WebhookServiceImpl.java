@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.WebhookTaskParams;
+import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
@@ -32,6 +33,7 @@ import io.harness.notification.senders.WebhookSenderImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;
@@ -43,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -59,6 +60,7 @@ public class WebhookServiceImpl implements ChannelService {
   private final NotificationTemplateService notificationTemplateService;
   private final WebhookSenderImpl webhookSender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private final NotificationSettingsHelper notificationSettingsHelper;
 
   @Override
   public NotificationProcessingResponse send(NotificationRequest notificationRequest) {
@@ -102,6 +104,8 @@ public class WebhookServiceImpl implements ChannelService {
           "Malformed webhook Url encountered while processing Test Connection request " + webhookUrl,
           DEFAULT_ERROR_CODE, USER);
     }
+    notificationSettingsHelper.validateRecipient(
+        webhookUrl, notificationSettingDTO.getAccountId(), SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     NotificationProcessingResponse processingResponse = send(Collections.singletonList(webhookUrl),
         TEST_WEBHOOK_TEMPLATE, Collections.emptyMap(), webhookSettingDTO.getNotificationId(), null,
         notificationSettingDTO.getAccountId(), 0, Collections.emptyMap(), Collections.emptyMap());
@@ -162,6 +166,7 @@ public class WebhookServiceImpl implements ChannelService {
           notificationRequest.getWebhook().getExpressionFunctorToken());
       recipients.addAll(resolvedRecipients);
     }
-    return recipients.stream().distinct().filter(str -> !str.isEmpty()).collect(Collectors.toList());
+    return notificationSettingsHelper.getRecipientsWithValidDomain(
+        recipients, notificationRequest.getAccountId(), SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
   }
 }
