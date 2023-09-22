@@ -11,4 +11,4 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(PIPELINE) public enum GitXWebhookEventStatus { QUEUED, RUNNING, FAILED, SUCCESSFUL, SKIPPED }
+@OwnedBy(PIPELINE) public enum GitXWebhookEventStatus { QUEUED, PROCESSING, FAILED, SUCCESSFUL, SKIPPED }
