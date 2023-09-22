@@ -48,7 +48,6 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
-import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
@@ -73,6 +72,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -196,7 +196,7 @@ public class PipelinesApiImplTest extends CategoryTest {
         PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityModified).build();
     doReturn(pipelineCRUDResult)
         .when(pmsPipelineService)
-        .validateAndUpdatePipeline(entity, ChangeType.MODIFY, false, HarnessYamlVersion.V0, null);
+        .validateAndUpdatePipeline(entity, ChangeType.MODIFY, false, null, new HashMap<>());
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
@@ -220,7 +220,7 @@ public class PipelinesApiImplTest extends CategoryTest {
         PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityModified).build();
     doReturn(pipelineCRUDResult)
         .when(pmsPipelineService)
-        .validateAndUpdatePipeline(entity, ChangeType.MODIFY, false, HarnessYamlVersion.V0, null);
+        .validateAndUpdatePipeline(entity, ChangeType.MODIFY, false, null, new HashMap<>());
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
