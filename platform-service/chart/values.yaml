@@ -27,7 +27,7 @@ global:
   useExternalSecrets: false
   loadbalancerURL: "http://test/abc"
   imagePullSecrets: []
-  stackDriverLoggingEnabled: false
+  stackDriverLoggingEnabled: true
   smtpCreateSecret:
     enabled: false
     SMTP_PASSWORD: ""

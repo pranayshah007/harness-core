@@ -93,7 +93,7 @@ public class PolicySetResourceImpl implements Resource {
     if (resourceIds.isEmpty()) {
       return Collections.emptyList();
     }
-    log.error("Validating policySet resources with resource IDs: {}", resourceIds);
+    log.info("Validating policySet resources with resource IDs: {}", resourceIds);
     try {
       List<PolicySetData> opaPolicySetListResponseResponse =
           SafeHttpCall.executeWithExceptions(opaServiceClient.listOpaPolicySets(
