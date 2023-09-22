@@ -173,6 +173,13 @@ public class OrchestrationVisualizationRule implements MethodRule, InjectorRuleM
       public Boolean getUseNewNodeEntityConfiguration() {
         return true;
       }
+
+      @Provides
+      @Singleton
+      @Named("publishAdviserEventForCustomAdvisers")
+      public Boolean getPublishAdviserEventForCustomAdvisers() {
+        return true;
+      }
     });
 
     modules.add(mongoTypeModule(annotations));

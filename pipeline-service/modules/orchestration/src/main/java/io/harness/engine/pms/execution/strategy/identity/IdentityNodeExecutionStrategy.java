@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.execution.strategy.identity;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
@@ -19,7 +20,6 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
-import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
 import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
@@ -79,7 +79,6 @@ public class IdentityNodeExecutionStrategy
   @Inject private IdentityNodeResumeHelper identityNodeResumeHelper;
   @Inject private TransactionHelper transactionHelper;
   @Inject private IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
-  @Inject private NodeAdviseHelper nodeAdviseHelper;
   @Inject private PlanService planService;
   @Inject private ExceptionManager exceptionManager;
   @Inject private EndNodeExecutionHelper endNodeExecutionHelper;
@@ -247,7 +246,7 @@ public class IdentityNodeExecutionStrategy
           nodeExecutionId, stepResponse.getStatus(), null, EnumSet.noneOf(Status.class));
       IdentityPlanNode idPlanNode = planService.fetchNode(ambiance.getPlanId(), newNodeExecution.getNodeId());
       if (idPlanNode.getUseAdviserObtainments()) {
-        nodeAdviseHelper.queueAdvisingEvent(newNodeExecution, idPlanNode, newNodeExecution.getStatus());
+        processOrQueueAdvisingEvent(newNodeExecution, idPlanNode, newNodeExecution.getStatus());
       } else {
         processAdviserResponse(ambiance, newNodeExecution.getAdviserResponse());
       }

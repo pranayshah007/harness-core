@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -577,6 +578,46 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     String nodeExecutionId = generateUuid();
     String planId = generateUuid();
     String planNodeId = generateUuid();
+    PlanNode planNode = PlanNode.builder()
+                            .name("Test Node")
+                            .uuid(planNodeId)
+                            .identifier("test")
+                            .stepType(TEST_STEP_TYPE)
+                            .adviserObtainment(AdviserObtainment.newBuilder()
+                                                   .setType(AdviserType.newBuilder().setType("ROLLBACK_CUSTOM").build())
+                                                   .build())
+                            .serviceName("CD")
+                            .build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .setPlanId(planId)
+                            .putAllSetupAbstractions(prepareInputArgs())
+                            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode))
+                            .build();
+
+    NodeExecutionBuilder nodeExecutionBuilder = NodeExecution.builder()
+                                                    .uuid(nodeExecutionId)
+                                                    .ambiance(ambiance)
+                                                    .status(Status.INTERVENTION_WAITING)
+                                                    .mode(ExecutionMode.ASYNC);
+    when(planService.fetchNode(eq(planId), eq(planNodeId))).thenReturn(planNode);
+    NodeExecution updated = nodeExecutionBuilder.status(Status.FAILED).endTs(System.currentTimeMillis()).build();
+    when(nodeExecutionService.updateStatusWithOps(eq(nodeExecutionId), eq(Status.FAILED), any(), any()))
+        .thenReturn(updated);
+
+    executionStrategy.concludeExecution(
+        ambiance, Status.FAILED, Status.INTERVENTION_WAITING, EnumSet.noneOf(Status.class));
+    verify(adviseHelper).queueAdvisingEvent(eq(updated), eq(planNode), eq(Status.INTERVENTION_WAITING));
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void shouldTestConcludeNodeExecutionWithoutCustomAdvisers() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    String planId = generateUuid();
+    String planNodeId = generateUuid();
     PlanNode planNode =
         PlanNode.builder()
             .name("Test Node")
@@ -603,10 +644,16 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     NodeExecution updated = nodeExecutionBuilder.status(Status.FAILED).endTs(System.currentTimeMillis()).build();
     when(nodeExecutionService.updateStatusWithOps(eq(nodeExecutionId), eq(Status.FAILED), any(), any()))
         .thenReturn(updated);
+    doReturn(SdkResponseEventProto.newBuilder()
+                 .setSdkResponseEventType(SdkResponseEventType.HANDLE_ADVISER_RESPONSE)
+                 .build())
+        .when(adviseHelper)
+        .getResponseInCaseOfNoCustomAdviser(eq(updated), eq(planNode), eq(Status.INTERVENTION_WAITING));
 
     executionStrategy.concludeExecution(
         ambiance, Status.FAILED, Status.INTERVENTION_WAITING, EnumSet.noneOf(Status.class));
-    verify(adviseHelper).queueAdvisingEvent(eq(updated), eq(planNode), eq(Status.INTERVENTION_WAITING));
+    verify(adviseHelper).getResponseInCaseOfNoCustomAdviser(eq(updated), eq(planNode), eq(Status.INTERVENTION_WAITING));
+    verify(executorService).submit(any(Runnable.class));
   }
 
   @Test
@@ -987,5 +1034,30 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     assertThat(originalStepParams).isNotNull();
     assertThat(originalStepParams.size()).isEqualTo(3);
     assertThat(((Map) originalStepParams.get("c")).containsKey("d")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testProcessOrQueueAdvisingEvent() {
+    NodeExecution nodeExecution = NodeExecution.builder().uuid("uuid").build();
+    PlanNode planNode =
+        PlanNode.builder()
+            .name("Test Node")
+            .uuid("planNodeId")
+            .identifier("test")
+            .stepType(StepType.newBuilder().setType("TEST_STEP_PLAN").setStepCategory(StepCategory.STEP).build())
+            .adviserObtainment(
+                AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
+            .serviceName("CD")
+            .build();
+    doReturn(
+        SdkResponseEventProto.newBuilder().setSdkResponseEventType(SdkResponseEventType.HANDLE_EVENT_ERROR).build())
+        .when(adviseHelper)
+        .getResponseInCaseOfNoCustomAdviser(eq(nodeExecution), eq(planNode), eq(Status.RUNNING));
+    executionStrategy.processOrQueueAdvisingEvent(nodeExecution, planNode, Status.RUNNING);
+    verify(adviseHelper, times(1))
+        .getResponseInCaseOfNoCustomAdviser(eq(nodeExecution), eq(planNode), eq(Status.RUNNING));
+    verify(executorService, times(0)).submit(any(Runnable.class));
   }
 }
