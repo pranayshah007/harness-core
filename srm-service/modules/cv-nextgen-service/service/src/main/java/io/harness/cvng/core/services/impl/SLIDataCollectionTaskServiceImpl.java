@@ -10,6 +10,7 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.cvng.core.entities.DataCollectionTask.Type.SLI;
 
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
+import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
@@ -75,8 +76,10 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     TimeRange dataCollectionRange = serviceLevelIndicator.getFirstTimeDataCollectionTimeRange();
     DataCollectionTask dataCollectionTask = getDataCollectionTaskForSLI(cvConfigList, serviceLevelIndicator, false,
         dataCollectionRange.getStartTime(), dataCollectionRange.getEndTime());
-    dataCollectionTaskService.save(dataCollectionTask);
-    log.info("Enqueued serviceLevelIndicator successfully: {}", serviceLevelIndicator.getUuid());
+    if(dataCollectionTask!=null) {
+      dataCollectionTaskService.save(dataCollectionTask);
+      log.info("Enqueued serviceLevelIndicator successfully: {}", serviceLevelIndicator.getUuid());
+    }
   }
 
   @Override
@@ -101,12 +104,14 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTaskForSLI(
         cvConfigList, serviceLevelIndicator, false, nextTaskStartTime, nextTaskStartTime.plus(5, ChronoUnit.MINUTES));
-    if (prevSLITask.getStatus() != DataCollectionExecutionStatus.SUCCESS) {
-      dataCollectionTask.setValidAfter(dataCollectionTask.getNextValidAfter(clock.instant()));
+    if(dataCollectionTask!=null) {
+      if (prevSLITask.getStatus() != DataCollectionExecutionStatus.SUCCESS) {
+        dataCollectionTask.setValidAfter(dataCollectionTask.getNextValidAfter(clock.instant()));
+      }
+      dataCollectionTaskService.validateIfAlreadyExists(dataCollectionTask);
+      dataCollectionTaskService.save(dataCollectionTask);
+      log.info("Created data collection task {}", dataCollectionTask);
     }
-    dataCollectionTaskService.validateIfAlreadyExists(dataCollectionTask);
-    dataCollectionTaskService.save(dataCollectionTask);
-    log.info("Created data collection task {}", dataCollectionTask);
   }
 
   @Override
@@ -137,8 +142,10 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     cvConfigList.forEach(cvConfig -> dataCollectionTaskService.populateMetricPack(cvConfig));
     DataCollectionTask dataCollectionTask =
         getDataCollectionTaskForSLI(cvConfigList, serviceLevelIndicator, true, startTime, endTime);
-    dataCollectionTaskService.save(dataCollectionTask);
-    log.info("Enqueued Restore Task for serviceLevelIndicator successfully: {}", serviceLevelIndicator.getUuid());
+    if(dataCollectionTask!=null) {
+      dataCollectionTaskService.save(dataCollectionTask);
+      log.info("Enqueued Restore Task for serviceLevelIndicator successfully: {}", serviceLevelIndicator.getUuid());
+    }
   }
 
   private DataCollectionTask getDataCollectionTaskForSLI(List<CVConfig> cvConfigList,
@@ -148,19 +155,24 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
         monitoringSourcePerpetualTaskService.getLiveMonitoringWorkerId(cvConfigForVerificationTask.getAccountId(),
             cvConfigForVerificationTask.getOrgIdentifier(), cvConfigForVerificationTask.getProjectIdentifier(),
             cvConfigForVerificationTask.getConnectorIdentifier(), cvConfigForVerificationTask.getIdentifier());
-    return SLIDataCollectionTask.builder()
-        .accountId(serviceLevelIndicator.getAccountId())
-        .type(SLI)
-        .dataCollectionWorkerId(dataCollectionWorkerId)
-        .status(DataCollectionExecutionStatus.QUEUED)
-        .startTime(startTime)
-        .endTime(endTime)
-        .isRestore(isRestore)
-        .queueAnalysis(!isRestore)
-        .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
-            cvConfigForVerificationTask.getAccountId(), serviceLevelIndicator.getUuid()))
-        .dataCollectionInfo(dataSourceTypeDataCollectionInfoMapperMap.get(cvConfigList.get(0).getType())
-                                .toDataCollectionInfo(cvConfigList, serviceLevelIndicator))
-        .build();
+    DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfigList.get(0).getType())
+            .toDataCollectionInfo(cvConfigList, serviceLevelIndicator);
+    if(dataCollectionInfo!=null) {
+      return SLIDataCollectionTask.builder()
+              .accountId(serviceLevelIndicator.getAccountId())
+              .type(SLI)
+              .dataCollectionWorkerId(dataCollectionWorkerId)
+              .status(DataCollectionExecutionStatus.QUEUED)
+              .startTime(startTime)
+              .endTime(endTime)
+              .isRestore(isRestore)
+              .queueAnalysis(!isRestore)
+              .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
+                      cvConfigForVerificationTask.getAccountId(), serviceLevelIndicator.getUuid()))
+              .dataCollectionInfo(dataCollectionInfo)
+              .build();
+    }else{
+      return null;
+    }
   }
 }

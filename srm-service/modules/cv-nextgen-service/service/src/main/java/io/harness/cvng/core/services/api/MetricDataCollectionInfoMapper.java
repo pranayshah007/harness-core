@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.beans.TimeSeriesDataCollectionInfo;
 import io.harness.cvng.core.entities.AnalysisInfo;
+import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
@@ -17,8 +18,12 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
+@Slf4j
 public abstract class MetricDataCollectionInfoMapper<R extends TimeSeriesDataCollectionInfo, T extends MetricCVConfig>
     implements DataCollectionInfoMapper<R, T>, DataCollectionSLIInfoMapper<R, T> {
   protected abstract R toDataCollectionInfo(T cvConfigWithFilteredMetricInfo);
@@ -29,18 +34,22 @@ public abstract class MetricDataCollectionInfoMapper<R extends TimeSeriesDataCol
   }
 
   public R toDataCollectionInfo(List<T> cvConfigs, ServiceLevelIndicator serviceLevelIndicator) {
-    T baseCvConfig = cvConfigs.stream()
-                         .filter(cvConfig -> cvConfig.isSLIEnabled())
-                         .findAny()
-                         .orElseThrow(() -> new IllegalStateException("No SLI Enabled CV Configs found"));
+    Optional<T> baseCvConfig = cvConfigs.stream()
+                         .filter(CVConfig::isSLIEnabled)
+                         .findAny();
     List<AnalysisInfo> analysisInfos = new ArrayList<>();
     cvConfigs.stream()
         .flatMap(cvConfig -> CollectionUtils.emptyIfNull(cvConfig.getMetricInfos()).stream())
         .filter(analysisInfo
             -> serviceLevelIndicator.getMetricNames().contains(((AnalysisInfo) analysisInfo).getIdentifier()))
         .forEach(analysisInfo -> analysisInfos.add((AnalysisInfo) analysisInfo));
-    baseCvConfig.setMetricInfos(analysisInfos);
-    return toDataCollectionInfo(baseCvConfig);
+    if(baseCvConfig.isPresent()) {
+      baseCvConfig.get().setMetricInfos(analysisInfos);
+      return toDataCollectionInfo(baseCvConfig.get());
+    }else{
+      log.warn("No SLI is enabled for SLI uuid {}", serviceLevelIndicator.getUuid());
+      return null;
+    }
   }
 
   public R toDataCollectionInfo(List<T> cvConfigs, List<String> metricIdentifiers) {
