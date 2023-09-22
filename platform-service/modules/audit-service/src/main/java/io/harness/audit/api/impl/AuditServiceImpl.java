@@ -149,7 +149,8 @@ public class AuditServiceImpl implements AuditService {
                     + savedAuditEvent.getResourceScope().getAccountIdentifier(),
                 savedAuditEvent.getResourceScope().getAccountIdentifier(), properties,
                 Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-
+            log.info("Successfully Sent Active Project sendTrackEvent for Project: {}",
+                savedAuditEvent.getResourceScope().getProjectIdentifier());
             projectAuditMetricsService.recordAuditMetricForActiveProject(
                 savedAuditEvent.getResourceScope().getProjectIdentifier(),
                 savedAuditEvent.getResourceScope().getOrgIdentifier(),
