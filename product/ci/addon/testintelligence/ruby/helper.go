@@ -24,7 +24,7 @@ func WriteGemFile(repoPath string) error {
 		return err
 	}
 	defer f.Close()
-	_, err = f.WriteString(fmt.Sprintf("gem 'harness_ruby_agent', path: '%s'", repoPath))
+	_, err = f.WriteString(fmt.Sprintf("\ngem 'harness_ruby_agent', path: '%s'", repoPath))
 	if err != nil {
 		return err
 	}
