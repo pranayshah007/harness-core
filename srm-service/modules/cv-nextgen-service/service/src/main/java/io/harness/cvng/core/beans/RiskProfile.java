@@ -16,13 +16,15 @@ import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
 
+import javax.validation.constraints.NotEmpty;
+
 @Data
 @Builder
 public class RiskProfile {
   @Deprecated private CVMonitoringCategory category;
   @Deprecated private TimeSeriesMetricType metricType;
   private RiskCategory riskCategory;
-  private List<TimeSeriesThresholdType> thresholdTypes;
+  @NotEmpty  private List<TimeSeriesThresholdType> thresholdTypes;
 
   public CVMonitoringCategory getCategory() {
     if (Objects.nonNull(riskCategory)) {

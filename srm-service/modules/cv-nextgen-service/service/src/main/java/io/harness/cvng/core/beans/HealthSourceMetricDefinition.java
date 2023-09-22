@@ -12,6 +12,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Objects;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +28,7 @@ public class HealthSourceMetricDefinition implements WithIdentifier {
   String identifier;
   @NotNull private String metricName;
   RiskProfile riskProfile;
-  AnalysisDTO analysis;
+  @Valid AnalysisDTO analysis;
   SLIDTO sli;
 
   public String getIdentifier() {
@@ -58,7 +59,7 @@ public class HealthSourceMetricDefinition implements WithIdentifier {
   public static class AnalysisDTO {
     LiveMonitoringDTO liveMonitoring;
     DeploymentVerificationDTO deploymentVerification;
-    RiskProfile riskProfile;
+    @Valid RiskProfile riskProfile;
 
     @Data
     @Builder
