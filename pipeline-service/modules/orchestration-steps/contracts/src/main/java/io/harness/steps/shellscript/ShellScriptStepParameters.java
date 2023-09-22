@@ -58,22 +58,6 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implement
   }
 
   @Override
-  public SpecParameters getViewJsonObject() {
-    // omit secretOutputVars since they should not be visible to users
-    return ShellScriptStepParameters.infoBuilder()
-        .executionTarget(this.executionTarget)
-        .onDelegate(this.onDelegate)
-        .outputVariables(this.outputVariables)
-        .environmentVariables(this.environmentVariables)
-        .shellType(this.shell)
-        .source(this.source.toBuilder().uuid(null).build())
-        .delegateSelectors(this.delegateSelectors)
-        .includeInfraSelectors(this.includeInfraSelectors)
-        .outputAlias(this.outputAlias)
-        .build();
-  }
-
-  @Override
   public List<String> stepInputsKeyExclude() {
     return new LinkedList<>(Arrays.asList("spec.secretOutputVariables"));
   }

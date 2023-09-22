@@ -15,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 
@@ -50,31 +49,6 @@ public class StepElementParametersV1 implements StepBaseParameters {
 
   // Only for rollback failures
   OnFailRollbackParameters rollbackParameters;
-
-  @Override
-  public String toViewJson() {
-    StepElementParametersV1 stepElementParameters = cloneParameters(false, false);
-    if (spec != null) {
-      stepElementParameters.setSpec(spec.getViewJsonObject());
-    }
-    return RecastOrchestrationUtils.toJson(stepElementParameters);
-  }
-
-  public StepElementParametersV1 cloneParameters(boolean includeUuid, boolean includeSpec) {
-    return StepElementParametersV1.builder()
-        .uuid(includeUuid ? this.uuid : null)
-        .type(this.type)
-        .name(this.name)
-        .spec(includeSpec ? this.spec : null)
-        .desc(this.desc)
-        .id(this.id)
-        .timeout(this.timeout)
-        .enforce(this.enforce)
-        .failure(this.failure)
-        .when(this.when)
-        .delegateSelectors(this.delegateSelectors)
-        .build();
-  }
 
   @Override
   public String getIdentifier() {

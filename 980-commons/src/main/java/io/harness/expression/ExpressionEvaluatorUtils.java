@@ -194,9 +194,6 @@ public class ExpressionEvaluatorUtils {
     }
 
     try {
-      if (jexlEngine == null) {
-        jexlEngine = engine;
-      }
       Object retObj = jexlEngine.getProperty(obj, field);
       return Optional.ofNullable(retObj);
     } catch (JexlException ex) {

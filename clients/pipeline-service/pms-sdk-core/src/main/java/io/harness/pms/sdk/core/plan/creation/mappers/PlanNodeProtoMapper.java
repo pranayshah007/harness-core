@@ -9,7 +9,6 @@ package io.harness.pms.sdk.core.plan.creation.mappers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
-import static io.harness.pms.sdk.core.steps.io.PipelineViewObject.DEFAULT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -73,10 +72,6 @@ public class PlanNodeProtoMapper {
     }
     if (node.getGroup() != null) {
       builder.setGroup(node.getGroup());
-    }
-    if (node.getStepParameters() != null && node.getStepParameters().toViewJson() != null
-        && node.getStepParameters().toViewJson() != DEFAULT) {
-      builder.setStepInputs(node.getStepParameters().toViewJson());
     }
 
     if (node.getStepParameters() != null
