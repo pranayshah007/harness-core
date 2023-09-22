@@ -79,7 +79,7 @@ public class PolicyResourceImpl implements Resource {
     if (Objects.isNull(entityChangeDTO)) {
       return null;
     }
-    log.info("Resource Info received for policy {}", entityChangeDTO);
+    log.error("Resource Info received for policy {}", entityChangeDTO);
     return ResourceInfo.builder()
         .accountIdentifier(stripToNull(entityChangeDTO.getAccountIdentifier().getValue()))
         .orgIdentifier(stripToNull(entityChangeDTO.getOrgIdentifier().getValue()))
@@ -94,7 +94,7 @@ public class PolicyResourceImpl implements Resource {
     if (resourceIds.isEmpty()) {
       return Collections.emptyList();
     }
-    log.info("Validating policy resources with resource IDs: {}", resourceIds);
+    log.error("Validating policy resources with resource IDs: {}", resourceIds);
     try {
       List<PolicyData> opaPolicyListResponseResponse =
           SafeHttpCall.executeWithExceptions(opaServiceClient.listOpaPolicies(
