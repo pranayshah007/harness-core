@@ -1646,6 +1646,12 @@ components:
             connector_ref: git_connector
             store_type: REMOTE
             repo_name: example_repository
+          fields_to_update:
+            name: ExamplePipeline
+            description: Pipeline Description
+            tags:
+              example-tag-1: example-tag-1-value
+              example-tag-2: example-tag-2-value
       properties:
         pipeline_yaml:
           type: string
@@ -1678,7 +1684,10 @@ components:
             type: object
           description: |-
             Map of Key value pair representing field name and value to be updated in pipeline metadata
-            For Eg: {name, newPipeline}
+
+            In case of V1 version, only this map will be used to update pipeline metadata
+
+            The keys of map can be name, tags, and description and value for name should be a string, description also a string, and tags should be a map with keys and values as strings
         git_details:
           $ref: '#/components/schemas/GitUpdateDetails'
       required:
