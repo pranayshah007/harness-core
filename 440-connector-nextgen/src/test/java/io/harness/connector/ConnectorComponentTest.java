@@ -34,6 +34,7 @@ public class ConnectorComponentTest extends ConnectorsTestBase {
     for (Map.Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();
       log.info("{} passed", test.getKey());
+      log.info("dummy commit");
     }
   }
 }
