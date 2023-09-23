@@ -1683,6 +1683,11 @@ components:
       x-stoplight:
         id: uf3jfikb6lfrj
       type: object
+      x-examples:
+        example-1:
+          cache_state: VALID_CACHE
+          ttl_left: 9223372036854776000
+          last_updated_at: 9223372036854776000
       properties:
         cache_state:
           type: string
@@ -1699,11 +1704,8 @@ components:
           type: integer
           format: int64
           description: Time when the cache was last updated at.
-      x-examples:
-        example-1:
-          cache_state: VALID_CACHE
-          ttl_left: 9223372036854776000
-          last_updated_at: 9223372036854776000
+        is_sync_enabled:
+          type: boolean
     InputSetCreateRequestBody:
       title: Input Set Create Request Body
       x-stoplight:
