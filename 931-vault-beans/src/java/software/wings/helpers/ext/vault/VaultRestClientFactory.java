@@ -11,11 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.helpers.GlobalSecretManagerUtils.getValueByJsonPath;
 
-import static com.jayway.jsonpath.JsonPath.parse;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
+import io.harness.helpers.GlobalSecretManagerUtils;
 import io.harness.network.Http;
 
 import software.wings.beans.VaultConfig;
@@ -195,7 +195,7 @@ public class VaultRestClientFactory {
       }
       return response == null || response.getData() == null
           ? null
-          : getValueByJsonPath(parse(response.getData()), pathAndKey.keyName);
+          : getValueByJsonPath(GlobalSecretManagerUtils.parse(response.getData()), pathAndKey.keyName);
     }
 
     @Override
@@ -257,7 +257,7 @@ public class VaultRestClientFactory {
         VaultReadResponseV2 response = result.body();
         return response == null || response.getData() == null
             ? null
-            : getValueByJsonPath(parse(response.getData().getData()), pathAndKey.keyName);
+            : getValueByJsonPath(GlobalSecretManagerUtils.parse(response.getData().getData()), pathAndKey.keyName);
       }
       logAndThrowErrorIfRequestFailed(result, "V2Impl-readSecret");
       return null;
