@@ -12,10 +12,17 @@ import io.harness.distribution.constraint.Consumer;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 
 import java.util.List;
+import java.util.Set;
 
 public interface GithubRestraintInstanceService {
   Constraint createAbstraction(String tokenRef);
   List<GithubRestraintInstance> getAllByRestraintIdAndStates(String resourceRestraintId, List<Consumer.State> states);
 
   int getMaxOrder(String resourceRestraintId);
+
+  List<GithubRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId);
+
+  GithubRestraintInstance finishInstance(String uuid, String resourceUnit);
+
+  void updateBlockedConstraints(Set<String> constraints);
 }

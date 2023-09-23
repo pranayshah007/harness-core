@@ -21,6 +21,7 @@ import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintI
 import io.harness.repositories.GithubRestraintInstanceRepository;
 
 import com.google.inject.Inject;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -54,5 +55,11 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
         githubRestraintInstanceRepository.findFirstByResourceRestraintIdOrderByOrderDesc(resourceRestraintId);
 
     return instance.map(GithubRestraintInstance::getOrder).orElse(0);
+  }
+
+  @Override
+  public List<GithubRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId) {
+    return githubRestraintInstanceRepository.findAllByReleaseEntityIdAndStateIn(
+        releaseEntityId, EnumSet.of(ACTIVE, BLOCKED));
   }
 }
