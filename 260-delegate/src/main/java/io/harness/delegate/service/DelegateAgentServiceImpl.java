@@ -2087,7 +2087,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void dispatchDelegateTask(DelegateTaskEvent delegateTaskEvent) {
-    boolean incrementedCurrentlyAcquiredTaskCounter = false;
     try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
       String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
@@ -2113,20 +2112,18 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           return;
         }
 
+        final int processingTaskCount = currentlyAcquiringTasksCount.getAndIncrement();
+        currentlyAcquiringTasks.add(delegateTaskId);
         // So this feature works only if ENV - DELEGATE_TASK_CAPACITY is defined.
         if (delegateTaskCapacity.isPresent()) {
           // Check if current acquiring tasks is below capacity.
           int taskCapacity = delegateTaskCapacity.get();
-          final int processingTaskCount = currentlyAcquiringTasksCount.getAndIncrement();
-          incrementedCurrentlyAcquiredTaskCounter = true;
           if (processingTaskCount >= taskCapacity) {
             log.info("Not acquiring task - currently processing {} tasks count exceeds task capacity {}",
                 processingTaskCount, taskCapacity);
             return;
           }
         }
-
-        currentlyAcquiringTasks.add(delegateTaskId);
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
         Call<DelegateTaskPackage> acquireCall =
@@ -2169,7 +2166,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.error("Unable to get task for validation", e);
       } finally {
         boolean isRemoved = currentlyAcquiringTasks.remove(delegateTaskId);
-        if (incrementedCurrentlyAcquiredTaskCounter && isRemoved) {
+        if (isRemoved) {
           currentlyAcquiringTasksCount.getAndDecrement();
         }
         currentlyExecutingFutures.remove(delegateTaskId);
