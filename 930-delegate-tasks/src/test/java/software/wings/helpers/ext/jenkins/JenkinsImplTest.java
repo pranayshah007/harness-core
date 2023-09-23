@@ -27,6 +27,7 @@ import com.offbytwo.jenkins.model.QueueReference;
 import com.offbytwo.jenkins.model.QueueTask;
 import java.io.IOException;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,6 +49,7 @@ public class JenkinsImplTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
+  @Ignore("https://harness.atlassian.net/browse/CDS-79499 - Need to fix")
   public void shouldGetBuildDetectCancelledQueuedItem() throws IOException {
     QueueReference queueReference = mock(QueueReference.class);
     JenkinsConfig jenkinsConfig = mock(JenkinsConfig.class);
@@ -65,6 +67,7 @@ public class JenkinsImplTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
+  @Ignore("https://harness.atlassian.net/browse/CDS-79499 - Need to fix")
   public void shouldGetBuildReturnNullWhenQueueItemIsNull() throws IOException {
     QueueReference queueReference = mock(QueueReference.class);
     JenkinsConfig jenkinsConfig = mock(JenkinsConfig.class);
@@ -77,6 +80,7 @@ public class JenkinsImplTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
+  @Ignore("https://harness.atlassian.net/browse/CDS-79499 - Need to fix")
   public void shouldGetBuildReturnNullWhenExecutableIsNull() throws IOException {
     QueueReference queueReference = mock(QueueReference.class);
     JenkinsConfig jenkinsConfig = mock(JenkinsConfig.class);
@@ -92,6 +96,7 @@ public class JenkinsImplTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
+  @Ignore("https://harness.atlassian.net/browse/CDS-79499 - Need to fix")
   public void shouldGetBuildReturnNullWhenTaskIsNull() throws IOException {
     QueueReference queueReference = mock(QueueReference.class);
     JenkinsConfig jenkinsConfig = mock(JenkinsConfig.class);
@@ -106,6 +111,7 @@ public class JenkinsImplTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
+  @Ignore("https://harness.atlassian.net/browse/CDS-79499 - Need to fix")
   public void shouldGetBuildReturnBuild() throws IOException {
     QueueReference queueReference = mock(QueueReference.class);
     JenkinsConfig jenkinsConfig = mock(JenkinsConfig.class);

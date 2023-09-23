@@ -133,5 +133,27 @@
     "type": "NUMBER",
     "dataSourceIdentifier": "pagerduty",
     "dataSourceLocationIdentifier": "pagerduty_incidents"
+  },
+  {
+    "id": "64fec3d52d2a3d15f97b75a6",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "replicas",
+    "name": "Replicas Count",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "kubernetes",
+    "dataSourceLocationIdentifier": "kubernetes",
+    "outcomeExpression":  "kubernetes.workload.spec.replicas",
+    "isConditional": false
+  },
+  {
+    "id": "65082c922e570ea8a97f4fec",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "daysSinceLastDeployed",
+    "name": "Days passed since the application was last deployed",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "kubernetes",
+    "dataSourceLocationIdentifier": "kubernetes",
+    "outcomeExpression":  "kubernetes.workload.status.conditions",
+    "isConditional": false
   }
 ]

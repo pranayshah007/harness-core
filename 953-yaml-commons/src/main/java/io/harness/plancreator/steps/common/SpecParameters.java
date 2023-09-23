@@ -18,11 +18,6 @@ import java.util.List;
 @OwnedBy(PIPELINE)
 public interface SpecParameters {
   @JsonIgnore
-  default SpecParameters getViewJsonObject() {
-    return this;
-  }
-
-  @JsonIgnore
   default List<String> stepInputsKeyExclude() {
     return new LinkedList<>();
   }

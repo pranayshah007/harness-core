@@ -15,6 +15,8 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class DataSourceLocations {
+  public static final String BODY = "{BODY}";
+
   // Github
   public static final String GITHUB_MEAN_TIME_TO_MERGE_PR = "github_mean_time_to_merge_pr";
   public static final String GITHUB_IS_BRANCH_PROTECTION_SET = "github_is_branch_protection_set";
@@ -42,4 +44,7 @@ public class DataSourceLocations {
   public static final String PAGERDUTY_PLUGIN_INVALID_URL_ERROR_MESSAGE =
       "Unable to get the PagerDuty data, probably target url provided in plugin is invalid";
   public static final String PAGERDUTY_UNABLE_TO_FETCH_DATA_ERROR_MESSAGE = "Unable to fetch the data from PagerDuty";
+
+  // Kubernetes
+  public static final String KUBERNETES = "kubernetes";
 }

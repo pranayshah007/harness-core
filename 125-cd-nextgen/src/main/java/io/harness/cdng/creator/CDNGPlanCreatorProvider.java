@@ -395,6 +395,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   @Inject InjectorUtils injectorUtils;
   @Inject DeploymentStageVariableCreator deploymentStageVariableCreator;
+  @Inject CustomStageVariableCreator customStageVariableCreator;
 
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
@@ -704,7 +705,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AwsCdkDestroyVariableCreator());
     variableCreators.add(new AwsCdkRollbackVariableCreator());
 
-    variableCreators.add(new CustomStageVariableCreator());
+    variableCreators.add(customStageVariableCreator);
 
     return variableCreators;
   }

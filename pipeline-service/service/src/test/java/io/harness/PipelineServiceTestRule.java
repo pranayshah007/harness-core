@@ -185,6 +185,13 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
       public Boolean getUseNewNodeEntityConfiguration() {
         return true;
       }
+
+      @Provides
+      @Singleton
+      @Named("publishAdviserEventForCustomAdvisers")
+      public Boolean getPublishAdviserEventForCustomAdvisers() {
+        return true;
+      }
     });
 
     modules.add(new AbstractModule() {

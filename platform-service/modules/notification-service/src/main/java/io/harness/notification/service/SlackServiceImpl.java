@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.SlackTaskParams;
+import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
@@ -32,6 +33,7 @@ import io.harness.notification.senders.SlackSenderImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;
@@ -42,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -58,6 +59,7 @@ public class SlackServiceImpl implements ChannelService {
   private final NotificationTemplateService notificationTemplateService;
   private final SlackSenderImpl slackSender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private final NotificationSettingsHelper notificationSettingsHelper;
 
   @Override
   public NotificationProcessingResponse send(NotificationRequest notificationRequest) {
@@ -100,6 +102,8 @@ public class SlackServiceImpl implements ChannelService {
           "Malformed webhook Url encountered while processing Test Connection request " + webhookUrl,
           DEFAULT_ERROR_CODE, USER);
     }
+    notificationSettingsHelper.validateRecipient(
+        webhookUrl, notificationSettingDTO.getAccountId(), SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     NotificationProcessingResponse processingResponse = send(Collections.singletonList(webhookUrl), TEST_SLACK_TEMPLATE,
         Collections.emptyMap(), slackSettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId(), 0,
         Collections.emptyMap());
@@ -158,6 +162,7 @@ public class SlackServiceImpl implements ChannelService {
           notificationRequest.getSlack().getExpressionFunctorToken());
       recipients.addAll(resolvedRecipients);
     }
-    return recipients.stream().distinct().filter(str -> !str.isEmpty()).collect(Collectors.toList());
+    return notificationSettingsHelper.getRecipientsWithValidDomain(
+        recipients, notificationRequest.getAccountId(), SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
   }
 }

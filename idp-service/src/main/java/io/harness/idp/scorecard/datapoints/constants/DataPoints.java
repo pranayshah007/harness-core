@@ -44,4 +44,8 @@ public class DataPoints {
   public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
   public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";
   public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
+
+  // Kubernetes
+  public static final String REPLICAS = "replicas";
+  public static final String DAYS_SINCE_LAST_DEPLOYED = "daysSinceLastDeployed";
 }

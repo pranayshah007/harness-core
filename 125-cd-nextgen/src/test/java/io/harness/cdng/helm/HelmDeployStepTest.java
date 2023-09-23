@@ -129,7 +129,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
                                   .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
                                   .outcome(DeploymentInfoOutcome.builder().build())
                                   .build();
-    doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
+    doReturn(stepOutcome).when(instanceInfoService).saveDeploymentInfoOutcomeIntoSweepingOutput(any(), any());
     ReleaseHelmChartOutcome releaseHelmChartOutcome =
         ReleaseHelmChartOutcome.builder().name(helmChartInfo.getName()).version(helmChartInfo.getVersion()).build();
     doReturn(releaseHelmChartOutcome).when(nativeHelmStepHelper).getHelmChartOutcome(eq(helmChartInfo));

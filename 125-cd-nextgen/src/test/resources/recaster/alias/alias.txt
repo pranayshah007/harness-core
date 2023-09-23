@@ -1280,6 +1280,7 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcome
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOutcomeDTO
 io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
 io.harness.cdng.pipeline.beans.CustomStageSpecParams
 io.harness.cdng.creator.plan.stage.CustomStageNode
 io.harness.cdng.environment.steps.CustomStageEnvironmentStepParameters

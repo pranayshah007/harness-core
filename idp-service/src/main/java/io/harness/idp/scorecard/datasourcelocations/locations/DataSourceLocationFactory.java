@@ -16,6 +16,7 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_MERGE_PR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.KUBERNETES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,6 +34,7 @@ public class DataSourceLocationFactory {
   private NoOpDsl noOpDsl;
   private PagerDutyServiceDirectory pagerDutyServiceDirectory;
   private PagerDutyIncidents pagerDutyIncidents;
+  private KubernetesProxyThroughDsl kubernetesProxyThroughDsl;
 
   public DataSourceLocation getDataSourceLocation(String identifier) {
     switch (identifier) {
@@ -60,6 +62,10 @@ public class DataSourceLocationFactory {
         return pagerDutyServiceDirectory;
       case PAGERDUTY_INCIDENTS:
         return pagerDutyIncidents;
+
+      // Kubernetes
+      case KUBERNETES:
+        return kubernetesProxyThroughDsl;
 
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataSource Location for %s", identifier));

@@ -12,9 +12,11 @@ import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @com.google.inject.Inject }))
 public class GitXWebhookEventsRepositoryCustomImpl implements GitXWebhookEventsRepositoryCustom {
@@ -29,5 +31,11 @@ public class GitXWebhookEventsRepositoryCustomImpl implements GitXWebhookEventsR
   public List<GitXWebhookEvent> list(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.find(query, GitXWebhookEvent.class);
+  }
+
+  @Override
+  public GitXWebhookEvent update(Query query, Update update) {
+    return mongoTemplate.findAndModify(
+        query, update, new FindAndModifyOptions().returnNew(true).upsert(true), GitXWebhookEvent.class);
   }
 }

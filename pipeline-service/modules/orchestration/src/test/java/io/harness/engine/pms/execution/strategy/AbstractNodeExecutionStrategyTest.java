@@ -9,8 +9,10 @@ package io.harness.engine.pms.execution.strategy;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -23,16 +25,22 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
 import io.harness.event.handlers.HandleStepResponseRequestProcessor;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.plan.Plan;
 import io.harness.plan.PlanNode;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SdkResponseEventType;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
 
 import java.util.concurrent.ExecutorService;
@@ -52,6 +60,7 @@ public class AbstractNodeExecutionStrategyTest {
   @Mock SdkResponseProcessorFactory sdkResponseProcessorFactory;
   AbstractNodeExecutionStrategy abstractNodeExecutionStrategy;
   @Mock OrchestrationEngine orchestrationEngine;
+  @Mock NodeAdviseHelper nodeAdviseHelper;
   Ambiance ambiance;
   String accountId = generateUuid();
   Plan node;
@@ -76,6 +85,7 @@ public class AbstractNodeExecutionStrategyTest {
         abstractNodeExecutionStrategy, "sdkResponseProcessorFactory", sdkResponseProcessorFactory, true);
     FieldUtils.writeField(abstractNodeExecutionStrategy, "orchestrationEngine", orchestrationEngine, true);
     FieldUtils.writeField(abstractNodeExecutionStrategy, "executorService", executorService, true);
+    FieldUtils.writeField(abstractNodeExecutionStrategy, "nodeAdviseHelper", nodeAdviseHelper, true);
   }
 
   @Test
@@ -138,5 +148,24 @@ public class AbstractNodeExecutionStrategyTest {
         SdkResponseEventProto.newBuilder().setSdkResponseEventType(SdkResponseEventType.HANDLE_STEP_RESPONSE).build();
     abstractNodeExecutionStrategy.handleSdkResponseEvent(event);
     verify(handleStepResponseRequestProcessor, times(1)).handleEvent(event);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testProcessOrQueueAdvisingEvent() {
+    NodeExecution nodeExecution = NodeExecution.builder().uuid("uuid").build();
+    PlanNode planNode =
+        PlanNode.builder()
+            .name("Test Node")
+            .uuid("planNodeId")
+            .identifier("test")
+            .stepType(StepType.newBuilder().setType("TEST_STEP_PLAN").setStepCategory(StepCategory.STEP).build())
+            .adviserObtainment(
+                AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
+            .serviceName("CD")
+            .build();
+    abstractNodeExecutionStrategy.processOrQueueAdvisingEvent(nodeExecution, planNode, Status.RUNNING);
+    verify(nodeAdviseHelper, times(1)).queueAdvisingEvent(eq(nodeExecution), eq(planNode), eq(Status.RUNNING));
   }
 }

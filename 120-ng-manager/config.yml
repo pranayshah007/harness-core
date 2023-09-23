@@ -182,6 +182,11 @@ chaosServiceClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+seiServiceClientConfig:
+  baseUrl: ${SEI_SERVICE_BASE_URL:-http://localhost:8991}
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 serviceDiscoveryServiceClientConfig:
   baseUrl: ${SERVICE_DISCOVERY_SERVICE_BASE_URL:-http://localhost:8080/}
   connectTimeOutSeconds: 15
@@ -333,6 +338,9 @@ logStreamingServiceConfig:
     maxPoolSize: ${LOG_STREAMING_CLIENT_POOL_MAX_SIZE:-50}
     idleTime: ${LOG_STREAMING_CLIENT_POOL_IDLE_TIME:-30}
     timeUnit: ${LOG_STREAMING_CLIENT_POOL_TIME_UNIT:-SECONDS}
+
+cannyApiConfig:
+  token: dummyToken
 
 outboxPollConfig:
   initialDelayInSeconds: 5

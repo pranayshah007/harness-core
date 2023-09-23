@@ -16,7 +16,6 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -31,11 +30,13 @@ import lombok.experimental.UtilityClass;
 public class FQNHelper {
   List<String> possibleUUIDs = Arrays.asList(YAMLFieldNameConstants.IDENTIFIER, YAMLFieldNameConstants.NAME,
       YAMLFieldNameConstants.KEY, YAMLFieldNameConstants.COMMAND_TYPE, YAMLFieldNameConstants.SERVICE_REF,
-      YAMLFieldNameConstants.ENVIRONMENT_REF);
+      YAMLFieldNameConstants.ENVIRONMENT_REF, YAMLFieldNameConstants.ID);
   // TODO: come-up with better approach. Take values from Services in
   // SDK.(https://harness.atlassian.net/browse/PIE-5305)
-  List<String> UUIDsToIdentityElementInList = Arrays.asList(
-      YAMLFieldNameConstants.IDENTIFIER, YAMLFieldNameConstants.SERVICE_REF, YAMLFieldNameConstants.ENVIRONMENT_REF);
+  List<String> UUIDsToIdentityElementInList = Arrays.asList(YAMLFieldNameConstants.IDENTIFIER,
+      YAMLFieldNameConstants.SERVICE_REF, YAMLFieldNameConstants.ENVIRONMENT_REF, YAMLFieldNameConstants.ID);
+
+  List<String> identifiersKeysList = Arrays.asList(YAMLFieldNameConstants.IDENTIFIER, YAMLFieldNameConstants.ID);
   public void validateUniqueFqn(FQN fqn, Object value, Map<FQN, Object> res, HashSet<String> expressions) {
     String expressionFqn = fqn.displayWithoutParallel();
     if (expressions.contains(expressionFqn)) {
@@ -48,22 +49,25 @@ public class FQNHelper {
     res.put(fqn, value);
   }
 
-  public boolean checkIfListHasNoIdentifier(ArrayNode list) {
-    JsonNode firstNode = list.get(0);
+  public String getIdentifierKeyIfPresent(JsonNode jsonNode) {
     Set<String> fieldNames = new LinkedHashSet<>();
-    firstNode.fieldNames().forEachRemaining(fieldNames::add);
+    jsonNode.fieldNames().forEachRemaining(fieldNames::add);
     String topKey = fieldNames.iterator().next();
     if (topKey.equals(YAMLFieldNameConstants.PARALLEL)) {
-      return false;
+      return YAMLFieldNameConstants.PARALLEL;
     }
-    JsonNode innerMap = firstNode.get(topKey);
-    return !innerMap.has(YAMLFieldNameConstants.IDENTIFIER);
+    JsonNode innerMap = jsonNode.get(topKey);
+    for (String id : identifiersKeysList) {
+      if (innerMap.has(id)) {
+        return id;
+      }
+    }
+    return null;
   }
 
-  public String getUuidKey(ArrayNode list) {
-    JsonNode element = list.get(0);
+  public String getUuidKey(JsonNode jsonNode) {
     for (String uuidKey : possibleUUIDs) {
-      if (element.has(uuidKey)) {
+      if (jsonNode.has(uuidKey)) {
         return uuidKey;
       }
     }

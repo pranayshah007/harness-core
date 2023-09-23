@@ -10,6 +10,7 @@ import static io.harness.idp.common.Constants.*;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.datapoints.parser.kubernetes.KubernetesDataPointParserFactory;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ public class DataSourceDataPointParserFactory {
   GithubDataPointParserFactory githubDataPointParserFactory;
   HarnessDataPointParserFactory harnessDataPointParserFactory;
   CatalogDataPointParserFactory catalogDataPointParserFactory;
+  KubernetesDataPointParserFactory kubernetesDataPointParserFactory;
   CustomDataPointParserFactory customDataPointParserFactory;
   PagerDutyDataPointParserFactory pagerDutyDataPointParserFactory;
 
@@ -31,6 +33,8 @@ public class DataSourceDataPointParserFactory {
         return githubDataPointParserFactory;
       case CATALOG_IDENTIFIER:
         return catalogDataPointParserFactory;
+      case KUBERNETES_IDENTIFIER:
+        return kubernetesDataPointParserFactory;
       case CUSTOM_IDENTIFIER:
         return customDataPointParserFactory;
       case PAGERDUTY_IDENTIFIER:

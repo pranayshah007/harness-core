@@ -202,6 +202,13 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
       public Boolean getUseNewNodeEntityConfiguration() {
         return true;
       }
+
+      @Provides
+      @Singleton
+      @Named("publishAdviserEventForCustomAdvisers")
+      public Boolean getPublishAdviserEventForCustomAdvisers() {
+        return true;
+      }
     });
     modules.add(new ProviderModule() {
       @Provides

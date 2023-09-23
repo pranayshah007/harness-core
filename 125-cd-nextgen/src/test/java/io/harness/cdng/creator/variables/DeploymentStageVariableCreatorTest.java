@@ -80,6 +80,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -95,6 +96,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
   @Mock ServiceOverridesServiceV2 serviceOverridesServiceV2;
   @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   InfrastructureMapper infrastructureMapper = new InfrastructureMapper();
+  @Spy @InjectMocks StageVariableCreatorHelper stageVariableCreatorHelper;
   @InjectMocks private DeploymentStageVariableCreator deploymentStageVariableCreator;
 
   private final String ACCOUNT_ID = "account_id";
@@ -107,7 +109,7 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
-    Reflect.on(deploymentStageVariableCreator).set("infrastructureMapper", infrastructureMapper);
+    Reflect.on(stageVariableCreatorHelper).set("infrastructureMapper", infrastructureMapper);
     Reflect.on(infrastructureMapper).set("connectorService", Mockito.mock(ConnectorService.class));
   }
 

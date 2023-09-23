@@ -17,10 +17,13 @@ import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
+import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.pipeline.observer.OrchestrationObserverUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -63,6 +66,9 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
   @Override
   public void onEnd(Ambiance ambiance, Status endStatus) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
+    PlanExecution planExecution = planExecutionService.getWithFieldsIncluded(
+        ambiance.getPlanExecutionId(), Set.of(PlanExecutionKeys.endTs, PlanExecutionKeys.status));
+    // todo: remove executedModules from summary.
     Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntity =
         pmsExecutionSummaryRepository
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(accountId,
@@ -79,11 +85,9 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
           pmsExecutionSummaryRepository.update(query, update);
       for (String module : executedModules) {
         if (!module.equalsIgnoreCase(ModuleType.PMS.name())) {
-          //          eventEmitter.emitEvent(
-          //              buildEndEvent(ambiance, module,
-          //              pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus(),
-          //                  pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module),
-          //                  pipelineExecutionSummaryUpdatedEntity.getEndTs()));
+          eventEmitter.emitEvent(buildEndEvent(ambiance, module,
+              ExecutionStatus.getExecutionStatus(planExecution.getStatus()).getEngineStatus(),
+              pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module), planExecution.getEndTs()));
         }
       }
     }

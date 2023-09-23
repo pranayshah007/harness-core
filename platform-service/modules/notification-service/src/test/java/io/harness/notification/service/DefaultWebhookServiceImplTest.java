@@ -14,6 +14,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +32,7 @@ import io.harness.notification.remote.dto.WebhookSettingDTO;
 import io.harness.notification.senders.WebhookSenderImpl;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.rule.Owner;
 import io.harness.service.DelegateGrpcClientWrapper;
 
@@ -49,6 +52,7 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private WebhookSenderImpl webhookSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private WebhookServiceImpl webhookService;
   private String accountId = "accountId";
   private String webhookTemplateName = "webhook_test";
@@ -59,8 +63,8 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    webhookService = new WebhookServiceImpl(
-        notificationSettingsService, notificationTemplateService, webhookSender, delegateGrpcClientWrapper);
+    webhookService = new WebhookServiceImpl(notificationSettingsService, notificationTemplateService, webhookSender,
+        delegateGrpcClientWrapper, notificationSettingsHelper);
   }
 
   @Test
@@ -136,6 +140,8 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(webhookurl));
     when(webhookSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
@@ -190,6 +196,8 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(webhookurl));
     when(webhookSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
@@ -238,6 +246,8 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(webhookurl));
     when(webhookSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);

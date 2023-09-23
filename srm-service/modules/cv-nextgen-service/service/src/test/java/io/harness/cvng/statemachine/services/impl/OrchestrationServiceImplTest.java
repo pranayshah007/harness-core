@@ -670,6 +670,71 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testQueueAnalysis_forSLIVerificationTask_WithExecuteFailed() throws IllegalAccessException {
+    createMonitoredService();
+    List<String> serviceLevelIndicatorIdentifiers = serviceLevelIndicatorService.create(
+        builderFactory.getProjectParams(), Collections.singletonList(builderFactory.getServiceLevelIndicatorDTO()),
+        generateUuid(), builderFactory.getContext().getMonitoredServiceIdentifier(), generateUuid());
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0));
+    serviceLevelIndicator.setSliMissingDataType(null);
+    hPersistence.save(serviceLevelIndicator);
+    String sliId = serviceLevelIndicator.getUuid();
+
+    AnalysisOrchestrator orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                                            .filter(AnalysisOrchestratorKeys.verificationTaskId, sliId)
+                                            .get();
+
+    assertThat(orchestrator).isNull();
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(sliId)
+                                           .startTime(clock.instant())
+                                           .endTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                                           .build());
+
+    orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                       .filter(AnalysisOrchestratorKeys.verificationTaskId, sliId)
+                       .get();
+
+    assertThat(orchestrator).isNotNull();
+    assertThat(orchestrator.getUuid()).isNotNull();
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(orchestrator.getAnalysisStateMachineQueue().get(0).getCurrentState().getType())
+        .isEqualTo(AnalysisState.StateType.SLI_METRIC_ANALYSIS);
+    orchestrationService.orchestrate(orchestrator);
+    stateTypeAnalysisStateExecutorMap.put(AnalysisState.StateType.SLI_METRIC_ANALYSIS, analysisStateExecutorMock);
+    doCallRealMethod().when(analysisStateExecutorMock).getExecutionStatus(any());
+    doCallRealMethod().when(analysisStateExecutorMock).execute(any());
+    FieldUtils.writeField(
+        analysisStateMachineService, "stateTypeAnalysisStateExecutorMap", stateTypeAnalysisStateExecutorMap, true);
+    FieldUtils.writeField(orchestrationService, "stateMachineService", analysisStateMachineService, true);
+    orchestrationService.orchestrate(orchestrator);
+    orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                       .filter(AnalysisOrchestratorKeys.verificationTaskId, sliId)
+                       .get();
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisOrchestratorStatus.RUNNING.name());
+    AnalysisStateMachine stateMachine = hPersistence.createQuery(AnalysisStateMachine.class)
+                                            .filter(AnalysisStateMachineKeys.verificationTaskId, sliId)
+                                            .get();
+    orchestrationService.orchestrate(orchestrator);
+    orchestrationService.orchestrate(orchestrator);
+    orchestrationService.orchestrate(orchestrator);
+    stateMachine = hPersistence.createQuery(AnalysisStateMachine.class)
+                       .filter(AnalysisStateMachineKeys.verificationTaskId, sliId)
+                       .get();
+    assertThat(stateMachine.getStatus().name()).isEqualTo(AnalysisStatus.IGNORED.name());
+    assertThat(stateMachine.getCurrentState().getRetryCount()).isEqualTo(2);
+    orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                       .filter(AnalysisOrchestratorKeys.verificationTaskId, sliId)
+                       .get();
+    assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisOrchestratorStatus.RUNNING.name());
+    orchestrationService.orchestrate(orchestrator);
+    orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class).get();
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testQueueAnalysisWithRestore_forSLIVerificationTask() throws IllegalAccessException {
     createMonitoredService();
     ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =

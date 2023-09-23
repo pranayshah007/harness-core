@@ -57,16 +57,6 @@ public class TerragruntApplyStepParameters extends TerragruntApplyBaseStepInfo i
   }
 
   @Override
-  public SpecParameters getViewJsonObject() {
-    TerragruntApplyStepParameters terragruntApplyStepParameters = this;
-    // this TerragruntModuleConfig we are settle to null so that it will not show in the input of Apply step execution
-    if (terragruntApplyStepParameters.getConfiguration().getSpec() != null) {
-      terragruntApplyStepParameters.getConfiguration().getSpec().setTerragruntModuleConfig(null);
-    }
-    return terragruntApplyStepParameters;
-  }
-
-  @Override
   public List<String> stepInputsKeyExclude() {
     return new LinkedList<>(Arrays.asList("spec.configuration.spec.terragruntModuleConfig"));
   }

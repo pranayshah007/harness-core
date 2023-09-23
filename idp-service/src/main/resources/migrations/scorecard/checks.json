@@ -281,5 +281,45 @@
     "tags": ["DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Average acknowledgement time for last 10 incidents is more than 30 minutes."
+  },
+  {
+    "id": "64fec4369a5dcde88b2137c7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__ce1ea812-868e-457e-a547-00638dbcafb2",
+    "name": "Replicas count greater than 1",
+    "description": "Replicas count greater than 1",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "kubernetes",
+        "data_point_identifier": "replicas",
+        "operator": ">",
+        "value": 1
+      }
+    ],
+    "expression": "kubernetes.replicas > 1",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Make sure you have minimum 2 replicas configured for the application to be considered minimally available"
+  },
+  {
+    "id": "65083295bd13c114730fe02c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__43957df0-d59b-4799-a2ed-14ecbd32fe3f",
+    "name": "Deployed within last 7 days",
+    "description": "Checks if the most recent deployment was done within the past 7 days.",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "kubernetes",
+        "data_point_identifier": "daysSinceLastDeployed",
+        "operator": "<=",
+        "value": 7
+      }
+    ],
+    "expression": "kubernetes.daysSinceLastDeployed <= 7",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Application should be deployed within a week"
   }
 ]

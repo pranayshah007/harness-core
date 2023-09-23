@@ -17,6 +17,8 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
@@ -41,6 +43,7 @@ import io.harness.notification.senders.MailSenderImpl;
 import io.harness.notification.service.MailServiceImpl.EmailTemplate;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.YamlUtils;
@@ -76,6 +79,7 @@ public class MailServiceImplTest extends CategoryTest {
   @Mock private UserNGClient userNGClient;
   @Mock private Call<ResponseDTO<Boolean>> responseTrue;
   @Mock private Call<ResponseDTO<Boolean>> responseFalse;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private MockedStatic<NGRestUtils> restUtilsMockedStatic;
   private MailServiceImpl mailService;
   private String accountId = "accountId";
@@ -94,7 +98,7 @@ public class MailServiceImplTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     mailService = new MailServiceImpl(notificationSettingsService, notificationTemplateService, yamlUtils,
-        smtpConfigDefault, mailSender, delegateGrpcClientWrapper, userNGClient);
+        smtpConfigDefault, mailSender, delegateGrpcClientWrapper, notificationSettingsHelper, userNGClient);
     emailTemplate.setBody("this is test mail");
     emailTemplate.setSubject("test notification");
     restUtilsMockedStatic = mockStatic(NGRestUtils.class);
@@ -185,6 +189,8 @@ public class MailServiceImplTest extends CategoryTest {
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(emailAdress));
 
     NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
@@ -230,6 +236,8 @@ public class MailServiceImplTest extends CategoryTest {
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(emailAdress));
 
     NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);

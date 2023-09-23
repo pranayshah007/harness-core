@@ -573,6 +573,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Config file
 	var iniFilePath, agentArg string
+	tiPreCmd := "set -xe\n"
 	switch r.language {
 	case "java", "scala", "kotlin":
 		// Create the java agent config file
@@ -581,20 +582,20 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 			return "", err
 		}
 		agentArg = fmt.Sprintf(javaAgentArg, iniFilePath)
+		tiPreCmd += fmt.Sprintf("export TMPDIR=%s\nexport HARNESS_JAVA_AGENT=%s\n", r.tmpFilePath, agentArg)
 	case "csharp":
-		{
-			iniFilePath, err = r.createDotNetConfigFile()
-			if err != nil {
-				return "", err
-			}
+		iniFilePath, err = r.createDotNetConfigFile()
+		if err != nil {
+			return "", err
 		}
 	case "python":
-		{
-			iniFilePath, err = r.createPythonConfigFile()
-			if err != nil {
-				return "", err
-			}
+		iniFilePath, err = r.createPythonConfigFile()
+		if err != nil {
+			return "", err
 		}
+	case "ruby":
+		// Ruby does not have config file for now, but pass arguments by env variables
+		tiPreCmd += fmt.Sprintf("export TI_OUTPUT_PATH=%s\n", filepath.Join(r.tmpFilePath, cgDir))
 	}
 
 	// Test splitting: only when parallelism is enabled
@@ -611,7 +612,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// TMPDIR needs to be set for some build tools like bazel
 	// TODO: (Vistaar) These commands need to be handled for Windows as well. We should move this out to the tool
 	// implementations and check for OS there.
-	command := fmt.Sprintf("set -xe\nexport TMPDIR=%s\nexport HARNESS_JAVA_AGENT=%s\n%s\n%s\n%s%s", r.tmpFilePath, agentArg, r.preCommand, testCmd, r.postCommand, outputVarCmd)
+	command := fmt.Sprintf("%s\n%s\n%s\n%s%s", tiPreCmd, r.preCommand, testCmd, r.postCommand, outputVarCmd)
 	resolvedCmd, err := resolveExprInCmd(command)
 	if err != nil {
 		return "", err
