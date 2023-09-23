@@ -62,6 +62,8 @@ import io.harness.cdng.execution.service.StageExecutionInstanceInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceServiceImpl;
+import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintObserver;
+import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintObserverImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.info.InstanceInfoServiceImpl;
@@ -236,6 +238,7 @@ public class NGModule extends AbstractModule {
     bind(CDLicenseUsageReportService.class).to(CDLicenseUsageReportServiceImpl.class);
     bind(ManifestTaskService.class).to(ManifestTaskServiceImpl.class);
     bind(GithubRestraintInstanceService.class).to(GithubRestraintInstanceServiceImpl.class);
+    bind(GithubRestraintObserver.class).to(GithubRestraintObserverImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

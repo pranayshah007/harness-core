@@ -22,9 +22,7 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(CDC)
 @HarnessRepo
 public interface GithubRestraintInstanceRepository extends CrudRepository<GithubRestraintInstance, String> {
-  Optional<GithubRestraintInstance> findFirstByResourceRestraintIdOrderByOrderDesc(String resourceRestraintId);
-  List<GithubRestraintInstance> findByReleaseEntityTypeAndReleaseEntityIdAndResourceUnitAndState(
-      String releaseEntityType, String releaseEntityId, String resourceUnit, Consumer.State state);
+  Optional<GithubRestraintInstance> findFirstByResourceUnitOrderByOrderDesc(String resourceUnit);
   Optional<GithubRestraintInstance> findByUuidAndResourceUnitAndStateIn(
       String uuid, String resourceUnit, List<Consumer.State> states);
 

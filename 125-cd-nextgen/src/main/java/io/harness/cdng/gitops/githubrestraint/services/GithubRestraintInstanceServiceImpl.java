@@ -18,12 +18,14 @@ import io.harness.distribution.constraint.ConstraintId;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
+import io.harness.persistence.HPersistence;
 import io.harness.repositories.GithubRestraintInstanceRepository;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -50,9 +52,9 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   }
 
   @Override
-  public int getMaxOrder(String resourceRestraintId) {
+  public int getMaxOrder(String resourceUnit) {
     Optional<GithubRestraintInstance> instance =
-        githubRestraintInstanceRepository.findFirstByResourceRestraintIdOrderByOrderDesc(resourceRestraintId);
+        githubRestraintInstanceRepository.findFirstByResourceUnitOrderByOrderDesc(resourceUnit);
 
     return instance.map(GithubRestraintInstance::getOrder).orElse(0);
   }
@@ -61,5 +63,18 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   public List<GithubRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId) {
     return githubRestraintInstanceRepository.findAllByReleaseEntityIdAndStateIn(
         releaseEntityId, EnumSet.of(ACTIVE, BLOCKED));
+  }
+
+  @Override
+  public GithubRestraintInstance finishInstance(String uuid, String resourceUnit) {
+    return null;
+  }
+
+  @Override
+  public void updateBlockedConstraints(Set<String> constraints) {}
+
+  @Override
+  public GithubRestraintInstance save(GithubRestraintInstance githubRestraintInstance) {
+    return HPersistence.retry(() -> githubRestraintInstanceRepository.save(githubRestraintInstance));
   }
 }

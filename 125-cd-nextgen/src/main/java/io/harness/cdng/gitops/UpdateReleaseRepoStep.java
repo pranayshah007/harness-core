@@ -12,8 +12,7 @@ import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_O
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
-import static io.harness.distribution.constraint.Consumer.State.REJECTED;
+import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -52,10 +51,10 @@ import io.harness.distribution.constraint.ConsumerId;
 import io.harness.distribution.constraint.InvalidPermitsException;
 import io.harness.distribution.constraint.PermanentlyBlockedConsumerException;
 import io.harness.distribution.constraint.UnableToRegisterConsumerException;
-import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -81,7 +80,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
-import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
@@ -293,27 +291,26 @@ public class UpdateReleaseRepoStep implements AsyncExecutable<StepBaseParameters
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepBaseParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     /*
-TODO:
- 2. Handle the case when PR already exists
- Delegate side: (NgGitOpsCommandTask.java)
- */
+    TODO:
+     2. Handle the case when PR already exists
+     Delegate side: (NgGitOpsCommandTask.java)
+    */
     UpdateReleaseRepoStepParams gitOpsSpecParams = (UpdateReleaseRepoStepParams) stepParameters.getSpec();
 
     try {
       Constraint constraint = githubRestraintInstanceService.createAbstraction("accountId"
           + "someSecret");
-      String releaseEntityId = "accountId";
+      String releaseEntityId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
       String consumerId = generateUuid();
       ConstraintUnit constraintUnit = new ConstraintUnit("accountId"
           + "someSecret");
 
-      Consumer.State state =
-          constraint.registerConsumer(constraintUnit, new ConsumerId(consumerId), 1, null, githubRestraintRegistry);
-      if (state == ACTIVE) {
-        // This is again sync mode
-        return AsyncExecutableResponse.newBuilder().addAllLogKeys(null).build();
-      } else if (REJECTED == state) {
-        throw new GeneralException("Found already running resourceConstrains, marking this execution as failed");
+      Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
+
+      Consumer.State state = constraint.registerConsumer(
+          constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintRegistry);
+      if (state == BLOCKED) {
+        return AsyncExecutableResponse.newBuilder().addAllCallbackIds(Collections.singleton(consumerId)).build();
       }
 
     } catch (InvalidPermitsException | UnableToRegisterConsumerException | PermanentlyBlockedConsumerException e) {
@@ -357,6 +354,15 @@ TODO:
       throw new InvalidRequestException(
           String.format("Failed to execute Update Release Repo step. %s", e.getMessage()));
     }
+  }
+
+  private Map<String, Object> populateConstraintContext(ConstraintUnit constraintUnit, String releaseEntityId) {
+    Map<String, Object> constraintContext = new HashMap<>();
+    constraintContext.put(GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    constraintContext.put(
+        GithubRestraintInstanceKeys.order, githubRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
+
+    return constraintContext;
   }
 
   private String queueTask(Ambiance ambiance, TaskData taskData) {

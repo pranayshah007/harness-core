@@ -49,14 +49,13 @@ public class GithubRestraintInstance implements PersistentEntity, UuidAccess, Pe
   String claimant;
 
   String resourceRestraintId;
-  String resourceUnit;
+  @FdIndex String resourceUnit;
   int order;
 
   Consumer.State state;
   int permits;
 
   String releaseEntityId;
-  String releaseEntityType;
 
   long acquireAt;
 

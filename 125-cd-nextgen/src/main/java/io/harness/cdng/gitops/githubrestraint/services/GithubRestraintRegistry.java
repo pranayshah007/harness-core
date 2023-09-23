@@ -17,9 +17,9 @@ import io.harness.distribution.constraint.ConstraintUnit;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.distribution.constraint.ConsumerId;
 import io.harness.distribution.constraint.UnableToLoadConstraintException;
-import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.distribution.constraint.UnableToSaveConstraintException;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
+import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceBuilder;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 
 import com.google.common.collect.ImmutableMap;
@@ -28,7 +28,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 
+@Slf4j
 public class GithubRestraintRegistry implements ConstraintRegistry {
   @Inject GithubRestraintInstanceService githubRestraintInstanceService;
   @Override
@@ -58,9 +61,28 @@ public class GithubRestraintRegistry implements ConstraintRegistry {
   }
 
   @Override
-  public boolean registerConsumer(ConstraintId id, ConstraintUnit unit, Consumer consumer, int currentlyRunning)
-      throws UnableToRegisterConsumerException {
-    return false;
+  public boolean registerConsumer(ConstraintId id, ConstraintUnit unit, Consumer consumer, int currentlyRunning) {
+    final GithubRestraintInstanceBuilder builder =
+        GithubRestraintInstance.builder()
+            .uuid(consumer.getId().getValue())
+            .resourceUnit(unit.getValue())
+            .releaseEntityId((String) consumer.getContext().get(GithubRestraintInstanceKeys.releaseEntityId))
+            .permits(consumer.getPermits())
+            .state(consumer.getState())
+            .order((int) consumer.getContext().get(GithubRestraintInstanceKeys.order));
+
+    if (ACTIVE == consumer.getState()) {
+      builder.acquireAt(System.currentTimeMillis());
+    }
+
+    try {
+      githubRestraintInstanceService.save(builder.build());
+    } catch (DuplicateKeyException e) {
+      log.error("Failed to add GithubRestraintInstance", e);
+      return false;
+    }
+
+    return true;
   }
 
   @Override

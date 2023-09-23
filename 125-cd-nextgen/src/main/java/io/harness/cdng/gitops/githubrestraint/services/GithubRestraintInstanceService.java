@@ -18,11 +18,13 @@ public interface GithubRestraintInstanceService {
   Constraint createAbstraction(String tokenRef);
   List<GithubRestraintInstance> getAllByRestraintIdAndStates(String resourceRestraintId, List<Consumer.State> states);
 
-  int getMaxOrder(String resourceRestraintId);
+  int getMaxOrder(String resourceUnit);
 
   List<GithubRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId);
 
   GithubRestraintInstance finishInstance(String uuid, String resourceUnit);
 
   void updateBlockedConstraints(Set<String> constraints);
+
+  GithubRestraintInstance save(GithubRestraintInstance resourceRestraintInstance);
 }
