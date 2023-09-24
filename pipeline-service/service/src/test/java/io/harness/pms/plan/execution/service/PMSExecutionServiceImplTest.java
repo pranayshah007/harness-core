@@ -174,6 +174,9 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
   public void testFormCriteria() {
     when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(true);
 
+    doReturn(Arrays.asList(PIPELINE_IDENTIFIER))
+        .when(pmsPipelineService)
+        .getPermittedPipelineIdentifier(any(), any(), any(), any());
     Criteria form = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
         null, null, null, null, null, false, !PIPELINE_DELETED, true);
 
@@ -181,7 +184,10 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
     assertThat(form.getCriteriaObject().get("orgIdentifier").toString().contentEquals(ORG_IDENTIFIER)).isEqualTo(true);
     assertThat(form.getCriteriaObject().get("projectIdentifier").toString().contentEquals(PROJ_IDENTIFIER))
         .isEqualTo(true);
-    assertThat(form.getCriteriaObject().get("pipelineIdentifier").toString().contentEquals(PIPELINE_IDENTIFIER))
+    assertThat(form.getCriteriaObject()
+                   .get("pipelineIdentifier")
+                   .toString()
+                   .contentEquals("Document{{$in=[" + PIPELINE_IDENTIFIER + "]}}"))
         .isEqualTo(true);
     assertThat(form.getCriteriaObject().containsKey("status")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("pipelineDeleted")).isNotEqualTo(true);
@@ -198,7 +204,7 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         null, pipelineExecutionFilterPropertiesDTO, null, null, null, false, !PIPELINE_DELETED, true);
     assertThat(form1.getCriteriaObject().toString())
         .isEqualTo(
-            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=basichttpFail, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggeredBy.triggerIdentifier=Document{{$in=[triggerIdentifier]}}}}]}}]}}");
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggeredBy.triggerIdentifier=Document{{$in=[triggerIdentifier]}}}}]}}]}}");
     PipelineExecutionFilterPropertiesDTO pipelineExecutionFilterPropertiesDTO1 =
         PipelineExecutionFilterPropertiesDTO.builder()
             .triggerTypes(Collections.singletonList(TriggerType.WEBHOOK))
@@ -207,7 +213,7 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, true);
     assertThat(form2.getCriteriaObject().toString())
         .isEqualTo(
-            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=basichttpFail, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
   }
 
   @Test

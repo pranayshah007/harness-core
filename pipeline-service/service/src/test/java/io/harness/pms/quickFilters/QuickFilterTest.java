@@ -101,7 +101,11 @@ public class QuickFilterTest extends CategoryTest {
     assertThat(form.getCriteriaObject().containsKey("executionTriggerInfo.triggerType")).isEqualTo(true);
 
     // pipelineIdentifier
-    assertThat(form.getCriteriaObject().get("pipelineIdentifier").toString().contentEquals(pipelineId)).isEqualTo(true);
+    assertThat(form.getCriteriaObject()
+                   .get("pipelineIdentifier")
+                   .toString()
+                   .contentEquals("Document{{$in=[" + pipelineId + "]}}"))
+        .isEqualTo(true);
 
     // pipelineDeleted
     assertThat(form.getCriteriaObject().get("pipelineDeleted")).isNotEqualTo(true);
