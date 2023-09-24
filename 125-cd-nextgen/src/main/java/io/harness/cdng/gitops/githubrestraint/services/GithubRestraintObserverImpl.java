@@ -35,14 +35,15 @@ public class GithubRestraintObserverImpl implements GithubRestraintObserver {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       log.info("Update Active Github Resource constraints");
       final List<GithubRestraintInstance> githubRestraintInstances =
-          githubRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId("FIX_ME");
+          githubRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(
+              AmbianceUtils.obtainCurrentRuntimeId(ambiance));
 
       log.info("Found {} active resource restraint instances", githubRestraintInstances.size());
       if (EmptyPredicate.isNotEmpty(githubRestraintInstances)) {
         for (GithubRestraintInstance ri : githubRestraintInstances) {
           transactionHelper.performTransaction(() -> {
-            githubRestraintInstanceService.finishInstance(ri.getUuid(), ri.getResourceUnit());
-            githubRestraintInstanceService.updateBlockedConstraints(ImmutableSet.of(ri.getResourceRestraintId()));
+            githubRestraintInstanceService.finishInstance(ri.getUuid());
+            githubRestraintInstanceService.updateBlockedConstraints(ri.getResourceUnit());
             return null;
           });
         }

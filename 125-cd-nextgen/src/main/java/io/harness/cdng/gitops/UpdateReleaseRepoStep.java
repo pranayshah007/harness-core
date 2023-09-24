@@ -55,6 +55,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -70,16 +71,14 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
+import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
@@ -100,7 +99,7 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(GITOPS)
 @Slf4j
-public class UpdateReleaseRepoStep implements AsyncExecutable<StepBaseParameters> {
+public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElementParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_UPDATE_RELEASE_REPO.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -238,8 +237,8 @@ public class UpdateReleaseRepoStep implements AsyncExecutable<StepBaseParameters
   }
 
   @Override
-  public Class<StepBaseParameters> getStepParametersClass() {
-    return StepBaseParameters.class;
+  public Class<StepElementParameters> getStepParametersClass() {
+    return StepElementParameters.class;
   }
 
   public GitFetchFilesConfig getGitFetchFilesConfig(
@@ -284,12 +283,15 @@ public class UpdateReleaseRepoStep implements AsyncExecutable<StepBaseParameters
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse) {}
+      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   @SneakyThrows
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepBaseParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     /*
     TODO:
      2. Handle the case when PR already exists
@@ -319,6 +321,7 @@ public class UpdateReleaseRepoStep implements AsyncExecutable<StepBaseParameters
     }
 
     try {
+      Thread.sleep(15000);
       ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
       // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
       Map<String, Map<String, String>> filesToVariablesMap =
@@ -378,7 +381,7 @@ public class UpdateReleaseRepoStep implements AsyncExecutable<StepBaseParameters
 
   @Override
   public StepResponse handleAsyncResponse(
-      Ambiance ambiance, StepBaseParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataMap.values().toArray()[0];
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {

@@ -8,7 +8,6 @@
 package io.harness.cdng.gitops.githubrestraint.services;
 
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
-import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintId;
@@ -21,11 +20,13 @@ import io.harness.distribution.constraint.UnableToSaveConstraintException;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceBuilder;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
+import io.harness.gitopsprovider.entity.GithubRestraintInstanceResponseData;
+import io.harness.tasks.ResponseData;
+import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,8 @@ import org.springframework.dao.DuplicateKeyException;
 @Slf4j
 public class GithubRestraintRegistry implements ConstraintRegistry {
   @Inject GithubRestraintInstanceService githubRestraintInstanceService;
+  @Inject private WaitNotifyEngine waitNotifyEngine;
+
   @Override
   public void save(ConstraintId id, Constraint.Spec spec) throws UnableToSaveConstraintException {}
 
@@ -46,8 +49,8 @@ public class GithubRestraintRegistry implements ConstraintRegistry {
   public List<Consumer> loadConsumers(ConstraintId id, ConstraintUnit unit, boolean hitSecondaryNode) {
     List<Consumer> consumers = new ArrayList<>();
 
-    List<GithubRestraintInstance> instances = githubRestraintInstanceService.getAllByRestraintIdAndStates(
-        id.getValue(), new ArrayList<>(Arrays.asList(ACTIVE, BLOCKED)));
+    List<GithubRestraintInstance> instances =
+        githubRestraintInstanceService.getAllActiveAndBlockedByResourceUnit(unit.getValue());
 
     instances.forEach(instance
         -> consumers.add(
@@ -98,7 +101,10 @@ public class GithubRestraintRegistry implements ConstraintRegistry {
   @Override
   public boolean consumerUnblocked(
       ConstraintId id, ConstraintUnit unit, ConsumerId consumerId, Map<String, Object> context) {
-    return false;
+    githubRestraintInstanceService.activateBlockedInstance(consumerId.getValue(), unit.getValue());
+    ResponseData responseData = GithubRestraintInstanceResponseData.builder().resourceUnit(unit.getValue()).build();
+    waitNotifyEngine.doneWith(consumerId.getValue(), responseData);
+    return true;
   }
 
   @Override

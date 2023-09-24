@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
@@ -70,14 +69,11 @@ public class GithubRestraintInstance implements PersistentEntity, UuidAccess, Pe
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    return null;
+    return nextIteration;
   }
 
   @Override
-  public void updateNextIteration(String fieldName, long nextIteration) {}
-
-  @Override
-  public String getUuid() {
-    return null;
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    this.nextIteration = nextIteration;
   }
 }

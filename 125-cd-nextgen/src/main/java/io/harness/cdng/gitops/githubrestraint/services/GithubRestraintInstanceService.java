@@ -8,23 +8,22 @@
 package io.harness.cdng.gitops.githubrestraint.services;
 
 import io.harness.distribution.constraint.Constraint;
-import io.harness.distribution.constraint.Consumer;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 
 import java.util.List;
-import java.util.Set;
 
 public interface GithubRestraintInstanceService {
   Constraint createAbstraction(String tokenRef);
-  List<GithubRestraintInstance> getAllByRestraintIdAndStates(String resourceRestraintId, List<Consumer.State> states);
+  List<GithubRestraintInstance> getAllActiveAndBlockedByResourceUnit(String resourceUnit);
 
   int getMaxOrder(String resourceUnit);
 
   List<GithubRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId);
 
-  GithubRestraintInstance finishInstance(String uuid, String resourceUnit);
+  GithubRestraintInstance finishInstance(String uuid);
 
-  void updateBlockedConstraints(Set<String> constraints);
+  void updateBlockedConstraints(String constraintUnit);
 
   GithubRestraintInstance save(GithubRestraintInstance resourceRestraintInstance);
+  GithubRestraintInstance activateBlockedInstance(String uuid, String resourceUnit);
 }
