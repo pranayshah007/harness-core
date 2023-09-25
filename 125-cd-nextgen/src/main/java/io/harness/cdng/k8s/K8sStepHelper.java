@@ -27,6 +27,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
@@ -61,6 +62,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.EncryptionHelper;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
@@ -102,6 +104,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -112,6 +115,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -148,6 +152,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   @Inject private EncryptionHelper encryptionHelper;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private AccountClient accountClient;
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
   public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, TaskType taskType) {
@@ -169,6 +174,31 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
         .chainEnd(true)
         .passThroughData(executionPassThroughData)
         .build();
+  }
+
+  public String queueTask(
+      StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest, Ambiance ambiance) {
+    TaskType taskType = getK8sTaskType(k8sDeployRequest, ambiance);
+    TaskData taskData = TaskData.builder()
+                            .parameters(new Object[] {k8sDeployRequest})
+                            .taskType(taskType.name())
+                            .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                            .async(true)
+                            .build();
+
+    K8sSpecParameters k8SSpecParameters = (K8sSpecParameters) stepElementParameters.getSpec();
+    String taskName = taskType.getDisplayName() + " : " + k8sDeployRequest.getCommandName();
+
+    TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+        k8SSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
+    final List<TaskSelector> delegateSelectors =
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors())));
+    DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData,
+        delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()), "", false);
+
+    return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
   }
 
   public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,

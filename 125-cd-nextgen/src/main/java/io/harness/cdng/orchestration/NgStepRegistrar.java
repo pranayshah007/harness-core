@@ -101,6 +101,7 @@ import io.harness.cdng.k8s.K8sCanaryStep;
 import io.harness.cdng.k8s.K8sDeleteStep;
 import io.harness.cdng.k8s.K8sDryRunManifestStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
+import io.harness.cdng.k8s.K8sRollingRollbackStepV2;
 import io.harness.cdng.k8s.K8sRollingStep;
 import io.harness.cdng.k8s.K8sScaleStep;
 import io.harness.cdng.manifest.steps.ManifestStep;
@@ -365,6 +366,9 @@ public class NgStepRegistrar {
 
     engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
     engineSteps.put(CustomStageEnvironmentStep.STEP_TYPE, CustomStageEnvironmentStep.class);
+
+    // K8s ASYNC
+    engineSteps.put(K8sRollingRollbackStepV2.STEP_TYPE, K8sRollingRollbackStepV2.class);
 
     return engineSteps;
   }
