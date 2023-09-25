@@ -18,6 +18,7 @@ import io.harness.credit.utils.CreditStatus;
 import io.harness.repositories.CreditRepository;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,9 +39,24 @@ public class CreditServiceImpl implements CreditService {
   }
 
   private List<CreditDTO> getCreditsByAccountId(String accountIdentifier) {
-    List<Credit> credits = creditRepository.findByAccountIdentifier(accountIdentifier);
-    credits.sort(Comparator.comparingLong(Credit::getExpiryTime));
-    return credits.stream().map(creditObjectConverter::<CreditDTO>toDTO).collect(Collectors.toList());
+    List<Credit> totalCredits = creditRepository.findByAccountIdentifier(accountIdentifier);
+    List<Credit> activeCredits = new ArrayList<>();
+    List<Credit> inactiveCredits = new ArrayList<>();
+
+    totalCredits.forEach(credit -> {
+      if (CreditStatus.ACTIVE.equals(credit.getCreditStatus())) {
+        activeCredits.add(credit);
+      } else {
+        inactiveCredits.add(credit);
+      }
+    });
+    activeCredits.sort(Comparator.comparingLong(Credit::getExpiryTime));
+    inactiveCredits.sort(Comparator.comparingLong(Credit::getExpiryTime));
+
+    totalCredits = activeCredits;
+    totalCredits.addAll(inactiveCredits);
+
+    return totalCredits.stream().map(creditObjectConverter::<CreditDTO>toDTO).collect(Collectors.toList());
   }
 
   @Override
