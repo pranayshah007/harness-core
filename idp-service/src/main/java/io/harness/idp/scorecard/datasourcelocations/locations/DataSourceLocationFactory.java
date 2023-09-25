@@ -11,6 +11,7 @@ import static io.harness.idp.common.Constants.HARNESS_POLICY_EVALUATION_DSL;
 import static io.harness.idp.common.Constants.HARNESS_STO_SCAN_SETUP_DSL;
 import static io.harness.idp.common.Constants.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
 import static io.harness.idp.common.Constants.PAGERDUTY_INCIDENTS;
+import static io.harness.idp.common.Constants.PAGERDUTY_RESOLVED_INCIDENTS;
 import static io.harness.idp.common.Constants.PAGERDUTY_SERVICE_DIRECTORY;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_MEAN_TIME_TO_MERGE_PR;
@@ -71,6 +72,7 @@ public class DataSourceLocationFactory {
       case PAGERDUTY_SERVICE_DIRECTORY:
         return pagerDutyServiceDirectory;
       case PAGERDUTY_INCIDENTS:
+      case PAGERDUTY_RESOLVED_INCIDENTS:
         return pagerDutyIncidents;
 
       // Kubernetes

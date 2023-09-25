@@ -96,4 +96,5 @@ public class Constants {
   public static final String PAGERDUTY_INCIDENTS = "pagerduty_incidents";
   public static final String KUBERNETES = "kubernetes";
   public static final String HARNESS_ACCOUNT = "Harness-Account";
+  public static final String PAGERDUTY_RESOLVED_INCIDENTS = "pagerduty_resolved_incidents";
 }

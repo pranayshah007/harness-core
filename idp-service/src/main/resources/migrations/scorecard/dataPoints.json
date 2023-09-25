@@ -128,11 +128,11 @@
   {
     "id": "6500c08d8ea5a4798502f513",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "avgAcknowledgementTimeForLastTenIncidentsInMinutes",
-    "name": "Average acknowledgement time of the last 10 incidents (in minutes)",
+    "identifier": "avgResolvedTimeForLastTenResolvedIncidentsInMinutes",
+    "name": "Average resolved time of the last 10 resolved incidents (in Minutes)",
     "type": "NUMBER",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_incidents"
+    "dataSourceLocationIdentifier": "pagerduty_resolved_incidents"
   },
   {
     "id": "64fec3d52d2a3d15f97b75a6",

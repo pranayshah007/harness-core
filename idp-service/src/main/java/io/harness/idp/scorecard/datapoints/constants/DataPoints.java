@@ -36,8 +36,8 @@ public class DataPoints {
   public static final String IS_ON_CALL_SET = "isOnCallSet";
   public static final String IS_ESCALATION_POLICY_SET = "isEscalationPolicySet";
   public static final String NO_OF_INCIDENTS_IN_LAST_THIRTY_DAYS = "noOfIncidentsInLastThirtyDays";
-  public static final String AVG_ACKNOWLEDGEMENT_TIME_FOR_LAST_TEN_INCIDENTS_IN_MINUTES =
-      "avgAcknowledgementTimeForLastTenIncidentsInMinutes";
+  public static final String AVG_RESOLVED_TIME_FOR_LAST_TEN_RESOLVED_INCIDENTS_IN_MINUTES =
+      "avgResolvedTimeForLastTenResolvedIncidentsInMinutes";
   public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
   public static final String SOURCE_LOCATION_ANNOTATION_ERROR =
       "Invalid or missing source-location annotation in the catalog info YAML";

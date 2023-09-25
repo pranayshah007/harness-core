@@ -266,21 +266,21 @@
     "id": "6500ce178ea5a4798502f516",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__565c5545-2b7f-4400-95e2-6b8ac470f40e",
-    "name": "Average acknowledgement time for the last 10 incidents is less than 30 minutes",
-    "description": "Checks if the average acknowledgement time for last 10 incidents is less than 30 minutes on PagerDuty",
+    "name": "Average resolved time for the last 10 resolved incidents is less than 50 minutes",
+    "description": "Checks if the average resolved time for last 10 resolved incidents is less than 50 minutes on PagerDuty",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
         "data_source_identifier": "pagerduty",
-        "data_point_identifier": "avgAcknowledgementTimeForLastTenIncidentsInMinutes",
+        "data_point_identifier": "avgResolvedTimeForLastTenResolvedIncidentsInMinutes",
         "operator": "<",
-        "value": "30"
+        "value": "50"
       }
     ],
-    "expression": "pagerduty.avgAcknowledgementTimeForLastTenIncidentsInMinutes < 30",
+    "expression": "pagerduty.avgResolvedTimeForLastTenResolvedIncidentsInMinutes < 50",
     "tags": ["DevOps maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "Average acknowledgement time for last 10 incidents is more than 30 minutes."
+    "failMessage": "Average resolved time for last 10 resolved incidents is more than 50 minutes."
   },
   {
     "id": "64fec4369a5dcde88b2137c7",

@@ -25,12 +25,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
-public class PagerDutyAvgAcknowledgementTimeForLastTenIncidents implements DataPointParser {
+public class PagerDutyAvgResolvedTimeForLastTenResolvedIncidents implements DataPointParser {
   private static final String INCIDENTS_RESPONSE_KEY = "incidents";
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
     log.info(
-        "Parser for AvgAcknowledgementTimeForLastTenIncidents is invoked data - {}, data point - {}, input values - {}",
+        "Parser for AvgResolvedTimeForLastTenResolvedIncidentsInHours is invoked data - {}, data point - {}, input values - {}",
         data, dataPoint, inputValues);
 
     List<LinkedTreeMap> incidents = new ArrayList<>();
@@ -44,34 +44,33 @@ public class PagerDutyAvgAcknowledgementTimeForLastTenIncidents implements DataP
 
     int noOfIncidentsForCalculation = Math.min(incidents.size(), 10);
 
-    long sumOfAckTime = 0;
+    long sumOfResolvedTime = 0;
     for (int i = 0; i < noOfIncidentsForCalculation; i++) {
       String status = incidents.get(i).get("status").toString();
       log.info("Status of incident - {}", status);
 
-      if (status.equals("acknowledged")) {
-        ArrayList<LinkedTreeMap> acknowledgements = (ArrayList) incidents.get(i).get("acknowledgements");
-        sumOfAckTime += getDifferenceBetweenTimeInMinutes(
-            incidents.get(i).get("created_at").toString(), acknowledgements.get(0).get("at").toString());
-      }
+      sumOfResolvedTime += getDifferenceBetweenTimeInHours(
+          incidents.get(i).get("created_at").toString(), incidents.get(i).get("resolved_at").toString());
     }
+
     if (noOfIncidentsForCalculation == 0) {
       return constructDataPointInfoWithoutInputValue(0, null);
     }
+    log.info("AvgResolvedTimeForLastTenResolvedIncidentsInHours - {}", sumOfResolvedTime / noOfIncidentsForCalculation);
 
-    return constructDataPointInfoWithoutInputValue(sumOfAckTime / noOfIncidentsForCalculation, null);
+    return constructDataPointInfoWithoutInputValue(sumOfResolvedTime / noOfIncidentsForCalculation, null);
   }
 
-  private long getDifferenceBetweenTimeInMinutes(String createdAtTime, String acknowledgementTime) {
+  private long getDifferenceBetweenTimeInHours(String createdAtTime, String resolvedTime) {
     Instant createdAtTimeParsed = Instant.parse(createdAtTime);
-    Instant acknowledgementTimeParsed = Instant.parse(acknowledgementTime);
+    Instant resolvedTimeParsed = Instant.parse(resolvedTime);
 
     // Convert Instant objects to ZonedDateTime
     ZonedDateTime createdAtTimeZoned = createdAtTimeParsed.atZone(ZoneId.of("UTC"));
-    ZonedDateTime acknowledgementTimeZoned = acknowledgementTimeParsed.atZone(ZoneId.of("UTC"));
+    ZonedDateTime resolvedTimeParsedZoned = resolvedTimeParsed.atZone(ZoneId.of("UTC"));
 
     // Calculate the difference in hours
-    Duration duration = Duration.between(createdAtTimeZoned, acknowledgementTimeZoned);
+    Duration duration = Duration.between(createdAtTimeZoned, resolvedTimeParsedZoned);
     return duration.toMinutes();
   }
 }
