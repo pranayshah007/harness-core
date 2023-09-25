@@ -97,13 +97,17 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
   }
 
   private K8sDeploymentReleaseData toK8sDeploymentReleaseData(K8sDeploymentRelease k8SDeploymentRelease) {
-    return K8sDeploymentReleaseData.builder()
-        .releaseName(k8SDeploymentRelease.getReleaseName())
-        .namespaces(new LinkedHashSet<>(k8SDeploymentRelease.getNamespacesList()))
-        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializer.asObject(
-            k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
-        .helmChartInfo((HelmChartInfo) kryoSerializer.asObject(k8SDeploymentRelease.getHelmChartInfo().toByteArray()))
-        .build();
+    K8sDeploymentReleaseData.K8sDeploymentReleaseDataBuilder k8sDeploymentReleaseDataBuilder =
+        K8sDeploymentReleaseData.builder()
+            .releaseName(k8SDeploymentRelease.getReleaseName())
+            .namespaces(new LinkedHashSet<>(k8SDeploymentRelease.getNamespacesList()))
+            .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializer.asObject(
+                k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()));
+    if (k8SDeploymentRelease.getHelmChartInfo().toByteArray().length != 0) {
+      k8sDeploymentReleaseDataBuilder.helmChartInfo(
+          (HelmChartInfo) kryoSerializer.asObject(k8SDeploymentRelease.getHelmChartInfo().toByteArray()));
+    }
+    return k8sDeploymentReleaseDataBuilder.build();
   }
 
   private List<K8sDeploymentReleaseData> fixK8sDeploymentReleaseData(
