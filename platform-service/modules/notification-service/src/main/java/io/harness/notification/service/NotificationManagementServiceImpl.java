@@ -20,7 +20,6 @@ import io.harness.notification.service.api.NotificationManagementService;
 
 import com.google.inject.Inject;
 import java.util.List;
-import javax.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
