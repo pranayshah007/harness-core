@@ -479,18 +479,32 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // Functors having concatenation expressions should work
     assertThat(evaluator.resolve("<+secrets.getValue(\"abc\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"abc\\\")>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"abc\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"<+f>\\\")>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"abc\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_<+f>_india\\\")>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_<+f>_india_<+g>\\\")>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_\" + <+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_\\\" + <+f> + \\\"_india_\\\" + <+g>)>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(<+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(<+f> + \\\"_india_\\\" + <+g>)>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"<+f>_india_<+g>\\\")>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"abc_india_def\", 123)}\"");
 
     // Functors having 2nd param as expression shouldn't cause issue in evaluation
     assertThat(evaluator.resolve("<+json.list(\"$\", <+var4>)>", true)).isEqualTo("[\"abc\",\"def\"]");
@@ -645,16 +659,28 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // Functors having concatenation expressions should work
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"<+f>\\\")>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"abc\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_<+f>_india\\\")>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_<+f>_india_<+g>\\\")>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_\" + <+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_\\\" + <+f> + \\\"_india_\\\" + <+g>)>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(<+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(<+f> + \\\"_india_\\\" + <+g>)>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"<+f>_india_<+g>\\\")>\"", true))
+        .isEqualTo("\"${ngSecretManager.obtain(\"abc_india_def\", 123)}\"");
 
     // Functors having 2nd param as expression shouldn't cause issue in evaluation
     assertThat(evaluator.resolve("<+json.list(\"$\", <+var4>)>", true)).isEqualTo("[\"abc\",\"def\"]");
