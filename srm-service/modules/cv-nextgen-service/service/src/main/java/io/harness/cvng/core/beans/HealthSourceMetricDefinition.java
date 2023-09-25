@@ -12,7 +12,6 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Objects;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import io.harness.cvng.core.validators.AnalysisDTOCheck;
