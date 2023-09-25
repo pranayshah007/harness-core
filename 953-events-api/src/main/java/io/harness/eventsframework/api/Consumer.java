@@ -14,6 +14,7 @@ import io.harness.eventsframework.consumer.Message;
 
 import java.time.Duration;
 import java.util.List;
+import org.redisson.api.RSetCache;
 
 @OwnedBy(PL)
 public interface Consumer {
@@ -22,4 +23,6 @@ public interface Consumer {
   void shutdown();
 
   int getBatchSize();
+
+  RSetCache<String> getMessageCache();
 }

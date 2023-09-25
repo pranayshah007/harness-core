@@ -40,6 +40,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.PendingEntry;
+import org.redisson.api.RSetCache;
 import org.redisson.api.RStream;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.StreamGroup;
@@ -279,6 +280,16 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
           getTopicName());
       createConsumerGroup();
     }
+  }
+
+  /**
+   * This cache can be used to avoid duplication of messages that are received via redis sometimes
+   * @return
+   */
+  public RSetCache<String> getMessageCache() {
+    RSetCache<String> setCache = redissonClient.getSetCache("eventsCache");
+    setCache.expire(1, TimeUnit.HOURS);
+    return setCache;
   }
 
   @Override

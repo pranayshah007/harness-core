@@ -16,6 +16,7 @@ import io.harness.eventsframework.consumer.Message;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import org.redisson.api.RSetCache;
 
 @OwnedBy(PL)
 public class NoOpConsumer extends AbstractConsumer {
@@ -41,5 +42,10 @@ public class NoOpConsumer extends AbstractConsumer {
 
   public static NoOpConsumer of(String topicName, String groupName) {
     return new NoOpConsumer(topicName, groupName);
+  }
+
+  @Override
+  public RSetCache<String> getMessageCache() {
+    return null;
   }
 }
