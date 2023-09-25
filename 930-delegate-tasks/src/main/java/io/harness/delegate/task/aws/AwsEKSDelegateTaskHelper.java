@@ -28,6 +28,7 @@ import io.harness.logging.CommandExecutionStatus;
 import software.wings.service.impl.AwsUtils;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
+import com.amazonaws.AbortedException;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.eks.AmazonEKSClient;
 import com.amazonaws.services.eks.model.ListClustersRequest;
@@ -112,6 +113,9 @@ public class AwsEKSDelegateTaskHelper {
         nextToken = extractClusterNamesFromResponse(region, clusterList, nextToken, listClustersResult);
       } while (nextToken != null);
       return AwsEksListClustersResponseDTO.builder().region(region).clusters(clusterList).status(SUCCESS).build();
+    } catch (AbortedException e) {
+      log.warn("AWS EKS list clusters request was aborted.", e);
+      throw e;
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.warn(
