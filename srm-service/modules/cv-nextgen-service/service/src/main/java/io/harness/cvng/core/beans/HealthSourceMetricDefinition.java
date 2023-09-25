@@ -9,12 +9,11 @@ package io.harness.cvng.core.beans;
 
 import io.harness.beans.WithIdentifier;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.core.validators.AnalysisDTOCheck;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
-
-import io.harness.cvng.core.validators.AnalysisDTOCheck;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
