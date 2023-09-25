@@ -38,6 +38,11 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitOpsTaskType;
@@ -298,14 +303,29 @@ public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElemen
      Delegate side: (NgGitOpsCommandTask.java)
     */
     UpdateReleaseRepoStepParams gitOpsSpecParams = (UpdateReleaseRepoStepParams) stepParameters.getSpec();
+    ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
+    ConnectorInfoDTO connectorInfoDTO =
+        cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
 
     try {
-      Constraint constraint = githubRestraintInstanceService.createAbstraction("accountId"
-          + "someSecret");
+      String tokenRefIdentifier = null;
+
+      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
+      GithubCredentialsDTO githubCredentialsDTO = githubConnectorDTO.getAuthentication().getCredentials();
+
+      if (githubCredentialsDTO instanceof GithubHttpCredentialsDTO) {
+        GithubUsernameTokenDTO githubUsernameTokenDTO =
+            (GithubUsernameTokenDTO) ((GithubHttpCredentialsDTO) githubCredentialsDTO).getHttpCredentialsSpec();
+        tokenRefIdentifier = githubUsernameTokenDTO.getTokenRef().getIdentifier();
+      } else if (githubCredentialsDTO instanceof GithubSshCredentialsDTO) {
+        tokenRefIdentifier = ((GithubSshCredentialsDTO) githubCredentialsDTO).getSshKeyRef().getIdentifier();
+      }
+
+      Constraint constraint =
+          githubRestraintInstanceService.createAbstraction(AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier);
       String releaseEntityId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
       String consumerId = generateUuid();
-      ConstraintUnit constraintUnit = new ConstraintUnit("accountId"
-          + "someSecret");
+      ConstraintUnit constraintUnit = new ConstraintUnit(AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier);
 
       Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
 
@@ -321,8 +341,6 @@ public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElemen
     }
 
     try {
-      Thread.sleep(15000);
-      ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
       // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
       Map<String, Map<String, String>> filesToVariablesMap =
           buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance, gitOpsSpecParams.getVariables());
@@ -330,16 +348,14 @@ public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElemen
       List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
       gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome, filesToVariablesMap.keySet()));
 
-      NGGitOpsTaskParams ngGitOpsTaskParams =
-          NGGitOpsTaskParams.builder()
-              .gitOpsTaskType(GitOpsTaskType.UPDATE_RELEASE_REPO)
-              .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
-              .accountId(AmbianceUtils.getAccountId(ambiance))
-              .connectorInfoDTO(
-                  cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
-              .filesToVariablesMap(filesToVariablesMap)
-              .prTitle(gitOpsSpecParams.prTitle.getValue())
-              .build();
+      NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
+                                                  .gitOpsTaskType(GitOpsTaskType.UPDATE_RELEASE_REPO)
+                                                  .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
+                                                  .accountId(AmbianceUtils.getAccountId(ambiance))
+                                                  .connectorInfoDTO(connectorInfoDTO)
+                                                  .filesToVariablesMap(filesToVariablesMap)
+                                                  .prTitle(gitOpsSpecParams.prTitle.getValue())
+                                                  .build();
 
       final TaskData taskData = TaskData.builder()
                                     .async(true)
