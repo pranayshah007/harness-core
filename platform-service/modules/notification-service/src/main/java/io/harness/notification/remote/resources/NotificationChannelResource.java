@@ -20,6 +20,7 @@ import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -105,8 +106,7 @@ public class NotificationChannelResource {
           NGCommonEntityConstants.ORG_KEY) @DefaultValue(DEFAULT_ORG_IDENTIFIER) @OrgIdentifier String orgIdentifier,
       @RequestBody(required = true,
           description = "Notification channel details") @NotNull @Valid NotificationChannel notificationChannel) {
-    notificationManagementService.create(notificationChannel);
-    return ResponseDTO.newResponse(NotificationChannel.builder().build());
+    return ResponseDTO.newResponse(notificationManagementService.create(notificationChannel));
   }
 
   @PUT
@@ -127,7 +127,7 @@ public class NotificationChannelResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @RequestBody(description = "notification channel with update",
           required = true) @NotNull @Valid NotificationChannel notificationChannel) {
-    return ResponseDTO.newResponse(NotificationChannel.builder().build());
+    return ResponseDTO.newResponse(notificationManagementService.update(notificationChannel));
   }
   @GET
   @Path("/{identifier}")
@@ -141,12 +141,14 @@ public class NotificationChannelResource {
         ApiResponse(description = "Returns the successfully fetched Notification Channel")
       })
   public ResponseDTO<NotificationChannel>
-  notificationChannel(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
-                          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+  notificationChannel(@NotNull @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String identifier,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
-    return ResponseDTO.newResponse(NotificationChannel.builder().build());
+    return ResponseDTO.newResponse(notificationManagementService.getNotificationChannel(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier));
   }
 
   @DELETE
@@ -163,9 +165,9 @@ public class NotificationChannelResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "Identifier of the notification channel", required = true) @NotEmpty @PathParam(
-          NGCommonEntityConstants.IDENTIFIER_KEY) String channelIdentifier) {
-    return ResponseDTO.newResponse(true);
+      @RequestBody(description = "notification channel with update",
+          required = true) @NotNull @Valid NotificationChannel notificationChannel) {
+    return ResponseDTO.newResponse(notificationManagementService.delete(notificationChannel));
   }
 
   @GET
@@ -188,7 +190,6 @@ public class NotificationChannelResource {
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm, @BeanParam PageRequest pageRequest) {
     List<NotificationChannel> page =
         notificationManagementService.getNotificationChannelList(accountIdentifier, orgIdentifier, projectIdentifier);
-
     return ResponseDTO.newResponse(page);
   }
 }

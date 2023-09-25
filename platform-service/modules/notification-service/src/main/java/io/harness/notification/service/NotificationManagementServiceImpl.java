@@ -20,6 +20,7 @@ import io.harness.notification.service.api.NotificationManagementService;
 
 import com.google.inject.Inject;
 import java.util.List;
+import javax.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -33,14 +34,12 @@ public class NotificationManagementServiceImpl implements NotificationManagement
 
   @Override
   public NotificationRule create(NotificationRule notificationRule) {
-    NotificationRule rule = notificationRuleRepository.save(notificationRule);
-    return rule;
+    return notificationRuleRepository.save(notificationRule);
   }
 
   @Override
   public NotificationRule update(NotificationRule notificationRule) {
-    NotificationRule rule = notificationRuleRepository.save(notificationRule);
-    return rule;
+    return notificationRuleRepository.save(notificationRule);
   }
 
   @Override
@@ -58,7 +57,8 @@ public class NotificationManagementServiceImpl implements NotificationManagement
 
   @Override
   public boolean delete(NotificationChannel notificationChannel) {
-    return false;
+    notificationChannelRepository.delete(notificationChannel);
+    return true;
   }
 
   @Override
@@ -73,15 +73,17 @@ public class NotificationManagementServiceImpl implements NotificationManagement
   }
 
   @Override
-  public boolean deleteNotificationChannel(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String name) {
-    return false;
+  public NotificationChannel getNotificationChannel(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    Criteria criteria =
+        createNotificationChannelFetchCriteria(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    return notificationChannelRepository.findOne(criteria);
   }
 
   @Override
-  public NotificationChannel notificationChannel(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String name) {
-    return null;
+  public boolean deleteNotificationRule(NotificationRule notificationRule) {
+    notificationRuleRepository.delete(notificationRule);
+    return true;
   }
 
   @Override
@@ -108,7 +110,7 @@ public class NotificationManagementServiceImpl implements NotificationManagement
   private Criteria createNotificationRuleFetchCriteria(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     Criteria criteria = createNotificationRuleScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
-    criteria.and(NotificationRuleKeys.notificationChannel).is(identifier);
+    criteria.and(NotificationRuleKeys.notificationRuleIdentifier).is(identifier);
     return criteria;
   }
 

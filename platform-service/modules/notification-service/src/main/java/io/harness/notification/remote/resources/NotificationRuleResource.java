@@ -103,7 +103,7 @@ public class NotificationRuleResource {
           NGCommonEntityConstants.ORG_KEY) @DefaultValue(DEFAULT_ORG_IDENTIFIER) @OrgIdentifier String orgIdentifier,
       @RequestBody(required = true,
           description = "Notification Rule details") @NotNull @Valid NotificationRule notificationRule) {
-    return ResponseDTO.newResponse(NotificationRule.builder().build());
+    return ResponseDTO.newResponse(notificationManagementService.create(notificationRule));
   }
 
   @PUT
@@ -124,7 +124,7 @@ public class NotificationRuleResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @RequestBody(description = "notification rule with update",
           required = true) @NotNull @Valid NotificationRule notificationRule) {
-    return ResponseDTO.newResponse(NotificationRule.builder().build());
+    return ResponseDTO.newResponse(notificationManagementService.update(notificationRule));
   }
 
   @GET
@@ -146,7 +146,8 @@ public class NotificationRuleResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "notification rule Identifier", required = true) @NotEmpty @PathParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) String identifier) {
-    return ResponseDTO.newResponse(NotificationRule.builder().build());
+    return ResponseDTO.newResponse(
+        notificationManagementService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier));
   }
 
   @DELETE
@@ -163,9 +164,9 @@ public class NotificationRuleResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "Identifier of the notification rule", required = true) @NotEmpty @PathParam(
-          NGCommonEntityConstants.IDENTIFIER_KEY) String identifier) {
-    return ResponseDTO.newResponse();
+      @RequestBody(description = "notification rule with update",
+          required = true) @NotNull @Valid NotificationRule notificationRule) {
+    return ResponseDTO.newResponse(notificationManagementService.deleteNotificationRule(notificationRule));
   }
 
   @GET

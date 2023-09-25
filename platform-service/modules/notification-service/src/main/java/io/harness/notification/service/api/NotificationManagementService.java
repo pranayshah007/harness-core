@@ -23,18 +23,17 @@ public interface NotificationManagementService {
 
   List<NotificationRule> list(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  boolean delete(@Valid NotificationChannel notificationChannel);
+  boolean deleteNotificationRule(@Valid NotificationRule notificationRule);
 
   NotificationChannel create(@Valid NotificationChannel notificationChannel);
 
   NotificationChannel update(@Valid NotificationChannel notificationChannel);
 
-  boolean deleteNotificationChannel(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String name);
-
-  NotificationChannel notificationChannel(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String name);
+  NotificationChannel getNotificationChannel(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String notificationRuleNameIdentifier);
 
   List<NotificationChannel> getNotificationChannelList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  boolean delete(@Valid NotificationChannel notificationChannel);
 }
