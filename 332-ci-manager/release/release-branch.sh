@@ -110,8 +110,8 @@ export PREVIOUS_VERSION=$(( ${VERSION}-1 ))
 export PREVIOUS_RELEASE_BRANCH="release/${PURPOSE}/${PREVIOUS_VERSION}xx"
 export CURRENT_RELEASE_BRANCH="release/${PURPOSE}/${VERSION}xx"
 
-git checkout -b ${PREVIOUS_RELEASE_BRANCH}
-git checkout -b ${CURRENT_RELEASE_BRANCH}
+git checkout ${PREVIOUS_RELEASE_BRANCH}
+git checkout ${CURRENT_RELEASE_BRANCH}
 
 #creating the fix version
 chmod +x 332-ci-manager/release/release-branch-create-cie-version.sh
