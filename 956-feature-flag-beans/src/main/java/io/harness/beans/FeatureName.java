@@ -915,8 +915,9 @@ public enum FeatureName {
       "This flag enables the usage of release name in service configuration for K8s & Helm service types.",
       HarnessTeam.CDP),
   CDS_SHELL_VARIABLES_EXPORT("Export shell script output variables to different scopes", HarnessTeam.CDC),
-  CDS_CUSTOM_STAGE_WITH_ENV_INFRA("Enable optional environment and infrastructure in custom stage", HarnessTeam.CDC);
-
+  CDS_CUSTOM_STAGE_WITH_ENV_INFRA("Enable optional environment and infrastructure in custom stage", HarnessTeam.CDC),
+  CDS_ECS_BASIC_DEPLOYMENT_STRATEGY(
+      "This flag enables the basic deployment strategy in ECS Deployment Swimlane", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated
