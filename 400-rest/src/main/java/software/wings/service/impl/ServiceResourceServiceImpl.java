@@ -225,6 +225,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.ReadPreference;
 import de.danielbechler.diff.ObjectDifferBuilder;
 import de.danielbechler.diff.node.DiffNode;
 import dev.morphia.query.CriteriaContainer;
@@ -404,7 +405,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
   public List<Service> list(String accountId, List<String> projectFields) {
     Query<Service> svcQuery = wingsPersistence.createQuery(Service.class).filter(ServiceKeys.accountId, accountId);
     emptyIfNull(projectFields).forEach(field -> { svcQuery.project(field, true); });
-    return emptyIfNull(svcQuery.asList());
+    return emptyIfNull(svcQuery.asList(createFindOptionsToHitSecondaryNode(accountId)));
   }
 
   private void applyInfraBasedFilters(PageRequest<Service> request) {
@@ -3355,5 +3356,12 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
           break;
       }
     }
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

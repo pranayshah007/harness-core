@@ -1248,7 +1248,8 @@ public class WorkflowServiceImpl implements WorkflowService {
               .withLimit(PageRequest.UNLIMITED)
               .addFilter(PipelineKeys.appId, EQ, appId)
               .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflowId)
-              .build());
+              .build(),
+          false, accountId);
       if (isNotEmpty(pipelinesWithWorkflowLinked)) {
         updateEnvIdInLinkedPipelines(workflow, envId, pipelinesWithWorkflowLinked);
         pipelineService.savePipelines(pipelinesWithWorkflowLinked, true);
@@ -1481,7 +1482,8 @@ public class WorkflowServiceImpl implements WorkflowService {
             .withLimit(PageRequest.UNLIMITED)
             .addFilter(PipelineKeys.appId, EQ, workflow.getAppId())
             .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflow.getUuid())
-            .build());
+            .build(),
+        false, workflow.getAccountId());
 
     if (isNotEmpty(pipelines)) {
       List<String> pipelineNames = pipelines.stream().map(Pipeline::getName).collect(toList());

@@ -2072,7 +2072,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
       pageRequest.setLimit(PageRequest.LIMIT_2K_PAGE_SIZE);
     }
 
-    List<Pipeline> pipelines = pipelineService.listPipelines(pageRequest).getResponse();
+    List<Pipeline> pipelines = pipelineService.listPipelines(pageRequest, false, accountId).getResponse();
 
     if (pipelines != null) {
       // iterate over pipelines

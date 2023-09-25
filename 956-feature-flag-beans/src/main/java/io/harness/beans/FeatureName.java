@@ -155,6 +155,8 @@ public enum FeatureName {
       "With enabling this FF with serviceV2 setup, pipeline in different projects but having the same infra key can be executed parallely",
       HarnessTeam.CDC),
   CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
+  CDS_QUERY_OPTIMIZATION_GLOBAL(
+      "Feature flag to optimize CG Queries when accountId is not present", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
   CDS_RECONFIGURE_JIRA_APPROVAL_TIMEOUT("Reconfigure Jira Approval Timeout to 1 Minute", HarnessTeam.CDC),
   CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP),

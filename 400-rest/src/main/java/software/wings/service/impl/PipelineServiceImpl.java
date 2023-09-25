@@ -195,7 +195,12 @@ public class PipelineServiceImpl implements PipelineService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Pipeline> listPipelines(PageRequest<Pipeline> pageRequest) {
+  public PageResponse<Pipeline> listPipelines(
+      PageRequest<Pipeline> pageRequest, boolean hitSecondary, String accountId) {
+    if (hitSecondary && accountId != null
+        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+      return wingsPersistence.querySecondary(Pipeline.class, pageRequest);
+    }
     return wingsPersistence.query(Pipeline.class, pageRequest);
   }
 
