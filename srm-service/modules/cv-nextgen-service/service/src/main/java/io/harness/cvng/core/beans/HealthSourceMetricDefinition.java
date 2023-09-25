@@ -14,6 +14,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Objects;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
+import io.harness.cvng.core.validators.AnalysisDTOCheck;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,7 +30,7 @@ public class HealthSourceMetricDefinition implements WithIdentifier {
   String identifier;
   @NotNull private String metricName;
   RiskProfile riskProfile;
-  @Valid AnalysisDTO analysis;
+  @AnalysisDTOCheck AnalysisDTO analysis;
   SLIDTO sli;
 
   public String getIdentifier() {
