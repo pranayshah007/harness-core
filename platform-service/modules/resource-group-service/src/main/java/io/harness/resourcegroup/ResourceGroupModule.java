@@ -36,6 +36,7 @@ import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.organization.remote.OrganizationClient;
@@ -191,5 +192,7 @@ public class ResourceGroupModule extends AbstractModule {
     install(new FeatureFlagResourceClientModule(
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
         resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
+    install(new OpaClientModule(resourceClients.getOpaClientConfig(), resourceClients.getPolicyManagerSecret(),
+        RESOUCE_GROUP_SERVICE.getServiceId()));
   }
 }
