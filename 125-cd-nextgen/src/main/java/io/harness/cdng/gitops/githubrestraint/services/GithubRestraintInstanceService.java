@@ -26,4 +26,8 @@ public interface GithubRestraintInstanceService {
 
   GithubRestraintInstance save(GithubRestraintInstance resourceRestraintInstance);
   GithubRestraintInstance activateBlockedInstance(String uuid, String resourceUnit);
+
+  void processRestraint(GithubRestraintInstance instance);
+
+  boolean updateActiveConstraintsForInstance(GithubRestraintInstance instance);
 }

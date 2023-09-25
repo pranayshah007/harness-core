@@ -60,6 +60,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -97,6 +99,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -123,6 +126,7 @@ public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElemen
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
   @Inject private GithubRestraintRegistry githubRestraintRegistry;
+  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @VisibleForTesting
   public Map<String, Map<String, String>> buildFilePathsToVariablesMap(
@@ -306,8 +310,10 @@ public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElemen
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
     ConnectorInfoDTO connectorInfoDTO =
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
+    NGLogCallback logCallback = getLogCallback(ambiance, true);
 
     try {
+      logCallback.saveExecutionLog("Acquiring lock");
       String tokenRefIdentifier = null;
 
       GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
@@ -332,7 +338,19 @@ public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElemen
       Consumer.State state = constraint.registerConsumer(
           constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintRegistry);
       if (state == BLOCKED) {
-        return AsyncExecutableResponse.newBuilder().addAllCallbackIds(Collections.singleton(consumerId)).build();
+        logCallback.saveExecutionLog("Execution blocked, waiting for lock to be released.");
+        do {
+          Thread.sleep(Duration.ofSeconds(5).toMillis());
+          List<Consumer> consumers = githubRestraintRegistry.loadConsumers(constraint.getId(), constraintUnit, false);
+          Optional<Consumer> optionalConsumer =
+              consumers.stream()
+                  .filter(fetchedConsumer -> consumerId.equals(fetchedConsumer.getId().getValue()))
+                  .findFirst();
+          if (optionalConsumer.isPresent()) {
+            state = optionalConsumer.get().getState();
+          }
+        } while (state == BLOCKED);
+        log.info("Constraint is active, resuming execution");
       }
 
     } catch (InvalidPermitsException | UnableToRegisterConsumerException | PermanentlyBlockedConsumerException e) {
@@ -426,5 +444,9 @@ public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElemen
         .status(Status.FAILED)
         .failureInfo(FailureInfo.newBuilder().setErrorMessage(ngGitOpsResponse.getErrorMessage()).build())
         .build();
+  }
+
+  public NGLogCallback getLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
+    return new NGLogCallback(logStreamingStepClientFactory, ambiance, null, shouldOpenStream);
   }
 }

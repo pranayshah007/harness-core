@@ -8,11 +8,13 @@
 package io.harness.gitopsprovider.entity;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.logging.AutoLogContext;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
@@ -22,6 +24,8 @@ import io.harness.persistence.UuidAccess;
 import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.With;
@@ -75,5 +79,17 @@ public class GithubRestraintInstance implements PersistentEntity, UuidAccess, Pe
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
     this.nextIteration = nextIteration;
+  }
+
+  public AutoLogContext autoLogContext() {
+    Map<String, String> logContext = new HashMap<>();
+    logContext.put("restraintInstanceId", uuid);
+    logContext.put(GithubRestraintInstanceKeys.resourceRestraintId, resourceRestraintId);
+    logContext.put(GithubRestraintInstanceKeys.resourceUnit, resourceUnit);
+    logContext.put(GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    logContext.put(GithubRestraintInstanceKeys.permits, String.valueOf(permits));
+    logContext.put(GithubRestraintInstanceKeys.order, String.valueOf(order));
+    logContext.put("restraintType", "github");
+    return new AutoLogContext(logContext, OVERRIDE_NESTS);
   }
 }

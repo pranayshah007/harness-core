@@ -7,10 +7,10 @@
 
 package io.harness.cdng.gitops.githubrestraint.services;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.distribution.constraint.Consumer.State.FINISHED;
+import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -20,20 +20,25 @@ import io.harness.distribution.constraint.ConstraintId;
 import io.harness.distribution.constraint.ConstraintUnit;
 import io.harness.distribution.constraint.ConsumerId;
 import io.harness.distribution.constraint.RunnableConsumers;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
+import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.repositories.GithubRestraintInstanceRepository;
 import io.harness.springdata.SpringDataMongoUtils;
 
-import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -45,6 +50,8 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   @Inject private MongoTemplate mongoTemplate;
   @Inject private GithubRestraintInstanceRepository githubRestraintInstanceRepository;
   @Inject private GithubRestraintRegistry githubRestraintRegistry;
+  @Inject private NodeExecutionService nodeExecutionService;
+
   @Override
   public Constraint createAbstraction(String tokenRef) {
     return Constraint.builder()
@@ -119,5 +126,46 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
     instance.setAcquireAt(System.currentTimeMillis());
 
     return save(instance);
+  }
+
+  @Override
+  public void processRestraint(GithubRestraintInstance instance) {
+    String constraintId = instance.getResourceRestraintId();
+    boolean toUnblock = false;
+    try (AutoLogContext ignore = instance.autoLogContext()) {
+      if (BLOCKED == instance.getState()) {
+        // If the restraint is blocked then we try to unblock
+        toUnblock = true;
+      } else if (ACTIVE == instance.getState()) {
+        // If the restraint is active then we try to move this to finished
+        if (updateActiveConstraintsForInstance(instance)) {
+          // If this is finished successfully then we try to unblock the next restraint based in constraint id
+          log.info("The following github resource constraint needs to be unblocked: {}", constraintId);
+          toUnblock = true;
+        }
+      }
+      if (toUnblock) {
+        // unblock the constraints
+        updateBlockedConstraints(constraintId);
+      }
+    }
+  }
+
+  @Override
+  public boolean updateActiveConstraintsForInstance(GithubRestraintInstance instance) {
+    boolean finished;
+    String releaseEntityId = instance.getReleaseEntityId();
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(releaseEntityId, ImmutableSet.of(NodeExecutionKeys.status));
+    finished = nodeExecution != null
+        && (StatusUtils.finalStatuses().contains(nodeExecution.getStatus())
+            || DISCONTINUING == nodeExecution.getStatus());
+
+    if (!finished) {
+      return false;
+    }
+
+    return githubRestraintRegistry.consumerFinished(new ConstraintId(instance.getResourceUnit()),
+        new ConstraintUnit(instance.getResourceUnit()), new ConsumerId(instance.getUuid()), ImmutableMap.of());
   }
 }
