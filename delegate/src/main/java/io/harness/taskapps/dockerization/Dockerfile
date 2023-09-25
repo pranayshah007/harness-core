@@ -37,7 +37,7 @@ ENV JAVA_HOME=/opt/java/openjdk/
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
 COPY ./TaskApp_deploy.jar ./task.jar
-COPY ./taskfile /etc/config/taskfile
+#COPY ./taskfile /etc/config/taskfile
 
 USER 1001
 

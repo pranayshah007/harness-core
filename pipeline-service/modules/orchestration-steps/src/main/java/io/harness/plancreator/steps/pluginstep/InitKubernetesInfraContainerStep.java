@@ -16,6 +16,7 @@ import io.harness.delegate.ExecutionInfrastructure;
 import io.harness.delegate.K8sInfraSpec;
 import io.harness.delegate.LogConfig;
 import io.harness.delegate.TaskSelector;
+import io.harness.delegate.beans.InitializeExecutionInfraResponse;
 import io.harness.encryption.Scope;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -34,7 +35,6 @@ import io.harness.steps.container.utils.ContainerSpecUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.supplier.ThrowingSupplier;
-import io.harness.tasks.SubmitTaskResponseData;
 import io.harness.utils.InitialiseTaskUtils;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.core.timeout.Timeout;
@@ -44,7 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InitKubernetesInfraContainerStep
-    implements TaskExecutableWithRbac<StepElementParameters, SubmitTaskResponseData> {
+    implements TaskExecutableWithRbac<StepElementParameters, InitializeExecutionInfraResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.INIT_KUBERNETES_INFRA_CONTAINER_STEP_TYPE;
 
   @Inject private ContainerStepRbacHelper containerStepRbacHelper;
@@ -59,16 +59,17 @@ public class InitKubernetesInfraContainerStep
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<SubmitTaskResponseData> responseDataSupplier) throws Exception {
-    // SubmitTaskResponseData submitTaskResponseData = responseDataSupplier.get();
+      ThrowingSupplier<InitializeExecutionInfraResponse> responseDataSupplier) throws Exception {
+    InitializeExecutionInfraResponse k8sInfra = responseDataSupplier.get();
     Status succeeded = Status.SUCCEEDED; // TODO need to check how to get status
     return StepResponse.builder()
         .status(succeeded)
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(KUBERNETES_INFRA_OUTCOME)
-                         .outcome(KubernetesInfraOutcome.builder().infraRefId("").build())
-                         .group(StepCategory.STEP_GROUP.name())
-                         .build())
+        .stepOutcome(
+            StepResponse.StepOutcome.builder()
+                .name(KUBERNETES_INFRA_OUTCOME)
+                .outcome(KubernetesInfraOutcome.builder().infraRefId(k8sInfra.getExecutionInfraReferenceId()).build())
+                .group(StepCategory.STEP_GROUP.name())
+                .build())
         .build();
   }
 
@@ -90,7 +91,7 @@ public class InitKubernetesInfraContainerStep
     // get from stepElementParameters >> shell script task params
     String cpu = "100m";
     String memory = "100Mi";
-    String image = "imijailovic/shell-task-ng-linux-amd64:2.0";
+    String image = "imijailovic/shell-task-ng-linux-amd64:3.0";
     // List<Long> ports = List.of(20002L);
 
     // need to check

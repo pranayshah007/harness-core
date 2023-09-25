@@ -187,8 +187,8 @@ public class K8SLiteRunner implements Runner {
 
     final var namespace = config.getNamespace();
 
-    String target = K8SService.buildK8sServiceUrl(taskGroupId, namespace, Integer.toString(RESERVED_LE_PORT));
-    // String target = format("%s:%d", "127.0.0.1", RESERVED_LE_PORT);
+    // String target = K8SService.buildK8sServiceUrl(taskGroupId, namespace, Integer.toString(RESERVED_LE_PORT));
+    String target = format("%s:%d", "127.0.0.1", RESERVED_LE_PORT);
     ManagedChannelBuilder managedChannelBuilder = ManagedChannelBuilder.forTarget(target).usePlaintext();
     ManagedChannel channel = managedChannelBuilder.build();
 

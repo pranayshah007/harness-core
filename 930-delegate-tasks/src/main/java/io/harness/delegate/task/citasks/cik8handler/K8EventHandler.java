@@ -49,13 +49,13 @@ public class K8EventHandler {
     String fieldSelector = String.format("involvedObject.name=%s,involvedObject.kind=Pod", pod);
     try {
       Watch<CoreV1Event> watch = createWatch(kubernetesConfig, namespace, fieldSelector);
-      new Thread(() -> {
-        try {
-          logWatchEvents(watch, logStreamingTaskClient);
-        } catch (IOException e) {
-          log.warn("error in watching pod events", e);
-        }
-      }).start();
+      //      new Thread(() -> {
+      //        try {
+      //          logWatchEvents(watch, logStreamingTaskClient);
+      //        } catch (IOException e) {
+      //          log.warn("error in watching pod events", e);
+      //        }
+      //      }).start();
       return watch;
 
     } catch (ApiException e) {

@@ -1638,7 +1638,7 @@
 21005:io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO
 21006:io.harness.delegate.beans.connector.spotconnector.SpotValidateTaskResponse
 21007:io.harness.delegate.beans.connector.spotconnector.SpotTaskParams
-21008:io.harness.delegate.beans.connector.spotconnector.SpotTaskType
+21008:io.harness.deegate.beans.connector.spotconnector.SpotTaskType
 21009:io.harness.delegate.beans.connector.spotconnector.SpotValidationParams
 21010:io.harness.delegate.beans.connector.spotconnector.SpotDelegateTaskResponse
 21011:io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters
@@ -1657,7 +1657,7 @@
 25002:io.harness.delegate.beans.ci.DockerInfraInfo
 25003:io.harness.delegate.beans.ci.VmInfraInfo
 25004:io.harness.delegate.beans.ci.DliteVmInfraInfo
-25005:io.harness.delegate.beans.scheduler.InitializeExecutionInfraResponse
+25005:io.harness.delegate.beans.InitializeExecutionInfraResponse
 26001:io.harness.connector.ConnectorDTO
 26002:io.harness.connector.ConnectorInfoDTO
 29112:io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO

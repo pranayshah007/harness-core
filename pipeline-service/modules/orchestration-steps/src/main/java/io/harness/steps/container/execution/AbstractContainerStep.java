@@ -10,6 +10,7 @@ package io.harness.steps.container.execution;
 
 import static io.harness.beans.FeatureName.CDS_USE_DELEGATE_BIJOU_API_CONTAINER_STEPS;
 import static io.harness.plancreator.NGCommonUtilPlanCreationConstants.STEP_GROUP;
+import static io.harness.plancreator.steps.pluginstep.KubernetesInfraOutcome.KUBERNETES_INFRA_OUTCOME;
 import static io.harness.steps.TaskRequestsUtils.prepareExecuteTaskRequest;
 
 import static java.util.Collections.singletonList;
@@ -20,17 +21,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
-import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
-import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.encryption.Scope;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
-import io.harness.engine.pms.data.RawOptionalSweepingOutput;
 import io.harness.engine.pms.tasks.TaskExecutor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.CIDelegateTaskExecutor;
@@ -38,18 +37,22 @@ import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.pluginstep.KubernetesInfraOutcome;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.shell.ScriptType;
+import io.harness.steps.StepUtils;
 import io.harness.steps.container.utils.ConnectorUtils;
 import io.harness.steps.container.utils.ContainerSpecUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
@@ -57,10 +60,6 @@ import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.steps.shellscript.ShellScriptHelperService;
-import io.harness.steps.shellscript.ShellScriptInlineSource;
-import io.harness.steps.shellscript.ShellScriptSourceWrapper;
-import io.harness.steps.shellscript.ShellScriptStepParameters;
-import io.harness.steps.shellscript.ShellType;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.PmsFeatureFlagService;
@@ -94,6 +93,7 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   @Inject private Map<TaskCategory, TaskExecutor> taskExecutorMap;
   @Inject private PmsSweepingOutputService pmsSweepingOutputService;
   @Inject private ShellScriptHelperService shellScriptHelperService;
+  @Inject private OutcomeService outcomeService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -134,15 +134,15 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     if (featureFlagService.isEnabled(
             AmbianceUtils.getAccountId(ambiance), CDS_USE_DELEGATE_BIJOU_API_CONTAINER_STEPS)) {
       TaskExecutor taskExecutor = taskExecutorMap.get(TaskCategory.DELEGATE_TASK_V2);
-      RawOptionalSweepingOutput infraRefIdOutput =
-          pmsSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject("infraRefId"));
-      if (!infraRefIdOutput.isFound()) {
+      OptionalOutcome optionalOutcome =
+          outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(KUBERNETES_INFRA_OUTCOME));
+      if (!optionalOutcome.isFound()) {
         throw new InvalidRequestException("Not found k8sInfra infraRefId");
       }
-      String infraRefId = infraRefIdOutput.getOutput();
+      KubernetesInfraOutcome k8sInfra = (KubernetesInfraOutcome) optionalOutcome.getOutcome();
       String queueExecuteTaskId = taskExecutor.queueExecuteTask(
-          prepareExecuteTaskRequest(ambiance, getTaskData(), referenceFalseKryoSerializer, timeout,
-              TaskCategory.DELEGATE_TASK_V2, true, delegateSelectors, Scope.PROJECT, infraRefId),
+          prepareExecuteTaskRequest(ambiance, getTaskData(ambiance), referenceFalseKryoSerializer, timeout,
+              TaskCategory.DELEGATE_TASK_V2, true, delegateSelectors, Scope.PROJECT, k8sInfra.getInfraRefId()),
           Duration.ofSeconds(0));
 
       return AsyncExecutableResponse.newBuilder()
@@ -165,27 +165,18 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
         .build();
   }
 
-  private TaskData getTaskData() {
-    //    Object params =
-    //            referenceFalseKryoSerializer.asInflatedObject(submitTaskRequest.getDetails().getKryoParameters().toByteArray());
-
-    // get from stepElementParameters >> shell script task params
-    ShellScriptStepParameters stepParameters =
-        ShellScriptStepParameters.infoBuilder()
-            .shellType(ShellType.Bash)
-            .onDelegate(ParameterField.createValueField(false))
-            .source(ShellScriptSourceWrapper.builder()
-                        .spec(ShellScriptInlineSource.builder()
-                                  .script(ParameterField.createValueField("echo 'POC FOR BIJOU API'"))
-                                  .build())
-                        .type("Inline")
-                        .build())
-            .uuid("unique_uuid")
-            .build();
+  private TaskData getTaskData(Ambiance ambiance) {
+    ShellScriptTaskParametersNG parametersNG = ShellScriptTaskParametersNG.builder()
+                                                   .accountId(ambiance.getSetupAbstractionsMap().get("accountId"))
+                                                   .executeOnDelegate(false)
+                                                   .script("echo 'POC FOR BIJOU API'")
+                                                   .executionId(ambiance.getPlanExecutionId())
+                                                   .scriptType(ScriptType.BASH)
+                                                   .build();
 
     return TaskData.builder()
         .async(true)
-        .parameters(new Object[] {stepParameters})
+        .parameters(new Object[] {parametersNG})
         .taskType(TaskType.SHELL_SCRIPT_TASK_NG.name())
         .timeout(StepUtils.getTimeoutMillis(null, StepUtils.DEFAULT_STEP_TIMEOUT))
         .build();
