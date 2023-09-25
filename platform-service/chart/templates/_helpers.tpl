@@ -64,3 +64,12 @@ Create the name of the service account to use
 {{- define "platform-service.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
 {{- end -}}
+
+{{/*
+Randomly Creates Secret for access-control unless overwritten.
+*/}}
+{{- define "platform-service.generateSecrets" }}
+{{- if .Values.global.opa.enabled }}
+  OPA_SERVER_SECRET: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "platform-service" "key" "OPA_SERVER_SECRET" "providedValues" (list "secrets.OPA_SERVER_SECRET") "length" 10 "context" $) }}
+{{- end }}
+{{- end }}
