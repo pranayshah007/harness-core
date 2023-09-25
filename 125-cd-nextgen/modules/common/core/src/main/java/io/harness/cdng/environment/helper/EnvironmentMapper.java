@@ -20,6 +20,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.environment.helper.beans.CustomStageEnvironmentStepParameters;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -104,5 +106,17 @@ public class EnvironmentMapper {
       }
     }
     return NGVariablesUtils.getMapOfVariables(new ArrayList<>(finalNGVariables.values()));
+  }
+
+  public ServiceStepV3Parameters toServiceStepV3Parameters(CustomStageEnvironmentStepParameters parameters) {
+    if (parameters == null) {
+      return null;
+    }
+    return ServiceStepV3Parameters.builder()
+        .envRef(parameters.getEnvRef())
+        .infraId(parameters.getInfraId())
+        .childrenNodeIds(parameters.getChildrenNodeIds())
+        .envInputs(parameters.getEnvInputs())
+        .build();
   }
 }

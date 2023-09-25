@@ -111,17 +111,13 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       Optional<Environment> environment =
           getEnvironment(ambiance, parameters, accountId, orgIdentifier, projectIdentifier);
 
-      if (!ParameterField.isNull(parameters.getInfraId()) && parameters.getInfraId().isExpression()) {
-        serviceStepV3Helper.resolve(ambiance, parameters.getInfraId());
-      }
-
       final NGLogCallback logCallback =
           serviceStepsHelper.getServiceLogCallback(ambiance, true, SERVICE_STEP_COMMAND_UNIT);
 
       boolean isOverridesV2enabled =
           overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
 
-      ServiceStepV3Parameters serviceStepV3Parameters = toServiceStepV3Parameters(parameters);
+      ServiceStepV3Parameters serviceStepV3Parameters = EnvironmentMapper.toServiceStepV3Parameters(parameters);
 
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
           getMergedOverrideV2Configs(accountId, orgIdentifier, projectIdentifier, environment, logCallback,
@@ -140,6 +136,10 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
 
       sweepingOutputService.consume(
           ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());
+
+      if (!ParameterField.isNull(parameters.getInfraId()) && parameters.getInfraId().isExpression()) {
+        serviceStepV3Helper.resolve(ambiance, parameters.getInfraId());
+      }
 
       serviceStepV3Helper.processServiceAndEnvironmentVariables(
           ambiance, null, logCallback, environmentOutcome, isOverridesV2enabled, mergedOverrideV2Configs);
@@ -272,17 +272,5 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       serviceStepV3Helper.setYamlInEnvironment(environment.get());
     }
     return environment;
-  }
-
-  private ServiceStepV3Parameters toServiceStepV3Parameters(CustomStageEnvironmentStepParameters parameters) {
-    if (parameters == null) {
-      return null;
-    }
-    return ServiceStepV3Parameters.builder()
-        .envRef(parameters.getEnvRef())
-        .infraId(parameters.getInfraId())
-        .childrenNodeIds(parameters.getChildrenNodeIds())
-        .envInputs(parameters.getEnvInputs())
-        .build();
   }
 }
