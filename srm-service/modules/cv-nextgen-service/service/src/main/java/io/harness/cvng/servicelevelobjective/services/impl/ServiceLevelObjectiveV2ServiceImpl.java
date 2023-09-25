@@ -684,6 +684,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .monitoredServiceIdentifier(sloDashboardApiFilter.getMonitoredServiceIdentifier())
             .targetTypes(sloDashboardApiFilter.getTargetTypes())
             .sliTypes(sloDashboardApiFilter.getSliTypes())
+            .sloType(sloDashboardApiFilter.getType())
+            .envIdentifiers(sloDashboardApiFilter.getEnvIdentifiers())
             .sliEvaluationType(sloDashboardApiFilter.getEvaluationType())
             .searchFilter(sloDashboardApiFilter.getSearchFilter())
             .childResource(sloDashboardApiFilter.isChildResource())

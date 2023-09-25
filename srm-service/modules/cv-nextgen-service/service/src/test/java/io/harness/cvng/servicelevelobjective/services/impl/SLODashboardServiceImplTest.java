@@ -1353,6 +1353,73 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetSloHealthListViewWithCompositeSLOFilterApplied() {
+    MonitoredServiceDTO monitoredServiceDTO2 =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier + '1').build();
+    monitoredServiceDTO2.setServiceRef("new");
+    monitoredServiceDTO2.setEnvironmentRef("one");
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
+
+    ServiceLevelObjectiveV2DTO serviceLevelObjective2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) serviceLevelObjective2.getSpec();
+    spec.setMonitoredServiceRef(monitoredServiceDTO2.getIdentifier());
+    serviceLevelObjective2.setSpec(spec);
+    serviceLevelObjective2.setName("new two");
+    serviceLevelObjective2.setIdentifier("new_two");
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective2);
+
+    ServiceLevelObjectiveV2DTO serviceLevelObjective3 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) serviceLevelObjective3.getSpec();
+    simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier + '1');
+    serviceLevelObjective3.setSpec(simpleServiceLevelObjectiveSpec);
+    serviceLevelObjective3.setName("new three");
+    serviceLevelObjective3.setIdentifier("new_three");
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective3);
+
+    ServiceLevelObjectiveV2DTO compositeSLO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .name("TestCompositeSLO")
+            .identifier("TestCompositeSLO")
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef("new_two")
+                                            .weightagePercentage(75.0)
+                                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                            .accountId(builderFactory.getContext().getAccountId())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef("new_three")
+                                  .weightagePercentage(25.0)
+                                  .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                  .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                  .accountId(builderFactory.getContext().getAccountId())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
+
+    PageResponse<SLOHealthListView> pageResponse =
+        sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
+            SLODashboardApiFilter.builder().type(ServiceLevelObjectiveType.COMPOSITE).build(),
+            PageParams.builder().page(0).size(10).build());
+    assertThat(pageResponse.getPageItemCount()).isEqualTo(1);
+    assertThat(pageResponse.getTotalItems()).isEqualTo(1);
+    List<SLOHealthListView> sloDashboardWidgets = pageResponse.getContent();
+    assertThat(sloDashboardWidgets).hasSize(1);
+    SLOHealthListView sloDashboardWidget = sloDashboardWidgets.get(0);
+    assertThat(sloDashboardWidget.getName()).isEqualTo(compositeSLO.getName());
+    assertThat(sloDashboardWidget.getSloIdentifier()).isEqualTo(compositeSLO.getIdentifier());
+    assertThat(sloDashboardWidget.getSloError().isFailedState()).isEqualTo(false);
+  }
+
+  @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testGetSloHealthListView_DowntimeStatusDetailsWithAllEntitiesRule() {
