@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.managerclient;
+package io.harness.security.delegate;
 
 import static io.harness.network.Localhost.getLocalHostName;
 
