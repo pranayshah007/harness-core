@@ -9,11 +9,6 @@ package io.harness.metrics.beans;
 
 import io.harness.metrics.AutoMetricContext;
 
-import java.text.SimpleDateFormat;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 public class HeartbeatMetricContext extends AutoMetricContext {
   public HeartbeatMetricContext(String time, String accountId, String accountName, String companyName, String ringName,
       String delegateImageTag, String upgraderImageTag, String watcherVersion, String watcherJREVersion,
