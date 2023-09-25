@@ -2033,7 +2033,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
             .addOrder(Workflow.NAME_KEY, SortOrder.OrderType.ASC)
             .addFieldsIncluded(Pipeline.UUID_KEY, Pipeline.NAME_KEY, Pipeline.APP_ID_KEY2)
             .build();
-    List<Workflow> workflows = workflowService.listWorkflowsWithoutOrchestration(pageRequest).getResponse();
+    List<Workflow> workflows = workflowService.listWorkflowsWithoutOrchestration(pageRequest, false).getResponse();
 
     if (workflows != null) {
       // iterate over workflows

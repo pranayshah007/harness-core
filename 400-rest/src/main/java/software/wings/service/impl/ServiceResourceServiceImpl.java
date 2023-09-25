@@ -382,7 +382,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
       }
     }
     PageResponse<Service> pageResponse =
-        resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.SERVICE, withTags, false);
+        resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.SERVICE, withTags, false, false);
 
     List<Service> services = pageResponse.getResponse();
     if (withServiceCommands) {
@@ -1211,7 +1211,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     service.setServiceVariables(
         serviceVariableService.getServiceVariablesForEntity(appId, service.getUuid(), OBTAIN_VALUE));
     service.setServiceCommands(getServiceCommands(appId, service.getUuid()));
-    service.setTagLinks(harnessTagService.getTagLinksWithEntityId(service.getAccountId(), service.getUuid()));
+    service.setTagLinks(harnessTagService.getTagLinksWithEntityId(service.getAccountId(), service.getUuid(), false));
 
     customDeploymentTypeService.putCustomDeploymentTypeNameIfApplicable(service);
   }

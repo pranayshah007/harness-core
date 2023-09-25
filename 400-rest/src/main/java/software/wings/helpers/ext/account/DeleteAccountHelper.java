@@ -7,7 +7,6 @@
 
 package software.wings.helpers.ext.account;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -182,7 +181,7 @@ public class DeleteAccountHelper {
 
   private boolean deleteAppLevelDocuments(String accountId, Class<? extends PersistentEntity> entry) {
     FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
       findOptions.readPreference(ReadPreference.secondaryPreferred());
     }
     try (

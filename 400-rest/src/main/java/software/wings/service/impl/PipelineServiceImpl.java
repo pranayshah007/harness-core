@@ -206,7 +206,7 @@ public class PipelineServiceImpl implements PipelineService {
   public PageResponse<Pipeline> listPipelines(PageRequest<Pipeline> pageRequest, boolean withDetails,
       Integer previousExecutionsCount, boolean withTags, String tagFilter) {
     PageResponse<Pipeline> res =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PIPELINE, withTags, false);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PIPELINE, withTags, false, false);
 
     List<Pipeline> pipelines = res.getResponse();
     if (withDetails) {
@@ -431,7 +431,7 @@ public class PipelineServiceImpl implements PipelineService {
   public Pipeline getPipeline(String appId, String pipelineId) {
     Pipeline pipeline = wingsPersistence.getWithAppId(Pipeline.class, appId, pipelineId);
     if (pipeline != null) {
-      pipeline.setTagLinks(harnessTagService.getTagLinksWithEntityId(pipeline.getAccountId(), pipelineId));
+      pipeline.setTagLinks(harnessTagService.getTagLinksWithEntityId(pipeline.getAccountId(), pipelineId, false));
     }
     return pipeline;
   }

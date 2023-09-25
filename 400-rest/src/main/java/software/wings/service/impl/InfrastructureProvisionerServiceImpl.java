@@ -493,8 +493,8 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
   public PageResponse<InfrastructureProvisionerDetails> listDetails(
       PageRequest<InfrastructureProvisioner> pageRequest, boolean withTags, String tagFilter, @NotEmpty String appId) {
     final long apiStartTime = System.currentTimeMillis();
-    PageResponse<InfrastructureProvisioner> pageResponse =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PROVISIONER, withTags, false);
+    PageResponse<InfrastructureProvisioner> pageResponse = resourceLookupService.listWithTagFilters(
+        pageRequest, tagFilter, EntityType.PROVISIONER, withTags, false, false);
 
     log.info(format("Time taken in fetching listWithTagFilters : [%s] ms", System.currentTimeMillis() - apiStartTime));
     long startTime = System.currentTimeMillis();
