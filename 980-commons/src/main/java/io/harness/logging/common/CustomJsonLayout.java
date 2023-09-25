@@ -11,6 +11,9 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.MdcKeyLogContext;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.pattern.ThrowableHandlingConverter;
@@ -26,9 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import io.harness.logging.AutoLogContext;
-import io.harness.logging.MdcKeyLogContext;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -56,7 +56,7 @@ public class CustomJsonLayout extends JsonLayoutBase<ILoggingEvent> {
     this(null);
   }
 
-  CustomJsonLayout(LoggerContext context) {
+  public CustomJsonLayout(LoggerContext context) {
     this.context = context;
     timestampFormat = "yyyy-MM-dd HH:mm:ss.SSS Z";
     appendLineSeparator = true;

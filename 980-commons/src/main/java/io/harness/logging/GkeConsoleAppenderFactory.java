@@ -7,6 +7,8 @@
 
 package io.harness.logging;
 
+import io.harness.logging.common.CustomJsonLayout;
+
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.contrib.json.classic.JsonLayout;
 import ch.qos.logback.core.Appender;
@@ -20,7 +22,6 @@ import io.dropwizard.logging.ConsoleAppenderFactory;
 import io.dropwizard.logging.async.AsyncAppenderFactory;
 import io.dropwizard.logging.filter.LevelFilterFactory;
 import io.dropwizard.logging.layout.LayoutFactory;
-import io.harness.logging.common.CustomJsonLayout;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
