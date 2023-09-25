@@ -82,6 +82,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
   public static final String SPACE = "space";
   public static final String APP_NAME = "appName";
   public static final String APP_ID = "appName";
+  public static final String APP_ID_OLD = "appGuidOld";
   public static final String APP_NAME_OLD = "appName__0";
   public static final String ACCOUNT = "account_Id";
   public static final String APP_NAME_OLD_1 = "appName__1";
@@ -188,7 +189,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
         .getContainerSettings(any());
 
     when(cfDeploymentManager.getPreviousReleases(any(), any()))
-        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID)));
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID_OLD)));
 
     CfBasicSetupResponseNG cfBasicSetupResponseNG =
         (CfBasicSetupResponseNG) tasBasicSetupTaskHandler.executeTaskInternal(
@@ -201,6 +202,19 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
 
     assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationGuid()).isEqualTo(APP_ID);
     assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationName()).isEqualTo(APP_NAME);
+
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID_OLD);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
   }
 
   @Test
@@ -244,7 +258,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
         .when(tasRegistrySettingsAdapter)
         .getContainerSettings(any());
     when(cfDeploymentManager.getPreviousReleases(any(), any()))
-        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID)));
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID_OLD)));
 
     ArgumentCaptor<CfRenameRequest> cfRenameRequestArgumentCaptor = ArgumentCaptor.forClass(CfRenameRequest.class);
     CfBasicSetupResponseNG cfBasicSetupResponseNG =
@@ -260,6 +274,19 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
     assertThat(cfBasicSetupResponseNG.getNewApplicationInfo().getApplicationName()).isEqualTo(APP_NAME);
     CfRenameRequest cfRenameRequest = cfRenameRequestArgumentCaptor.getValue();
     assertForRenameConfig(cfRenameRequest, APP_NAME, APP_NAME_OLD);
+
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID_OLD);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
   }
 
   @Test
@@ -306,7 +333,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
         .when(tasRegistrySettingsAdapter)
         .getContainerSettings(any());
     when(cfDeploymentManager.getPreviousReleases(any(), any()))
-        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_OLD, APP_ID)));
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_OLD, APP_ID_OLD)));
 
     ArgumentCaptor<CfRenameRequest> cfRenameRequestArgumentCaptor = ArgumentCaptor.forClass(CfRenameRequest.class);
     CfBasicSetupResponseNG cfBasicSetupResponseNG =
@@ -322,6 +349,19 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
 
     CfRenameRequest cfRenameRequest = cfRenameRequestArgumentCaptor.getValue();
     assertForRenameConfig(cfRenameRequest, APP_NAME_OLD, APP_NAME_OLD_1);
+
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID_OLD);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
   }
 
   @Test
@@ -369,7 +409,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
         .when(tasRegistrySettingsAdapter)
         .getContainerSettings(any());
     when(cfDeploymentManager.getPreviousReleases(any(), any()))
-        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_OLD, APP_ID)));
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_OLD, APP_ID_OLD)));
 
     CfBasicSetupResponseNG cfBasicSetupResponseNG =
         (CfBasicSetupResponseNG) tasBasicSetupTaskHandler.executeTaskInternal(
@@ -377,6 +417,16 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
 
     assertThat(cfBasicSetupResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     verify(cfDeploymentManager, times(1)).deleteApplication(any());
+
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID_OLD);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_ID_OLD);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -426,7 +476,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
         .when(tasRegistrySettingsAdapter)
         .getContainerSettings(any());
     when(cfDeploymentManager.getPreviousReleases(any(), any()))
-        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_OLD, APP_ID)));
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID), getApplicationSummary(APP_NAME_OLD, APP_ID_OLD)));
     ArgumentCaptor<CfRenameRequest> cfRenameRequestArgumentCaptor = ArgumentCaptor.forClass(CfRenameRequest.class);
 
     CfBasicSetupResponseNG cfBasicSetupResponseNG =
@@ -442,6 +492,19 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
 
     CfRenameRequest cfRenameRequest = cfRenameRequestArgumentCaptor.getValue();
     assertForRenameConfig(cfRenameRequest, APP_NAME_OLD, APP_NAME_OLD_1);
+
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID_OLD);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
   }
 
   @Test
@@ -467,6 +530,10 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
     assertThat(cfBasicSetupResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     verify(cfDeploymentManager, times(0)).deleteApplication(any());
     verify(cfDeploymentManager, times(0)).renameApplication(any(), any());
+
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isZero();
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -491,7 +558,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
     Mockito.doThrow(PivotalClientApiException.class).when(cfDeploymentManager).createApplication(any(), any());
     when(cfDeploymentManager.getPreviousReleases(any(), any()))
         .thenReturn(Collections.emptyList())
-        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID)));
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID_OLD)));
     doReturn(TasArtifactDownloadResponse.builder().build())
         .when(cfCommandTaskHelperNG)
         .downloadPackageArtifact(any(), any());
@@ -506,6 +573,10 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
 
     CfRequestConfig cfRequestConfig = cfRequestConfigArgumentCaptor.getValue();
     assertForRequestConfig(cfRequestConfig, APP_NAME);
+
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isZero();
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -529,7 +600,7 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
     doNothing().when(cfDeploymentManager).deleteApplication(any());
     Mockito.doThrow(PivotalClientApiException.class).when(cfDeploymentManager).createApplication(any(), any());
     when(cfDeploymentManager.getPreviousReleases(any(), any()))
-        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID)));
+        .thenReturn(List.of(getApplicationSummary(APP_NAME, APP_ID_OLD)));
     doReturn(TasArtifactDownloadResponse.builder().build())
         .when(cfCommandTaskHelperNG)
         .downloadPackageArtifact(any(), any());
@@ -548,6 +619,16 @@ public class TasBasicSetupTaskHandlerTest extends CategoryTest {
 
     assertForRequestConfig(cfRequestConfig, APP_NAME);
     assertForRenameConfig(cfRenameRequest, APP_NAME_OLD, APP_NAME);
+
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID_OLD);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isEqualTo(1);
+    assertThat(
+        cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_ID_OLD);
+    assertThat(cfBasicSetupResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   private void assertForRenameConfig(CfRenameRequest cfRenameRequest, String appName, String appNameOld) {
