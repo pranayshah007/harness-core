@@ -32,5 +32,5 @@ public class CacheResponseMetadataDTO {
   @NotNull CacheState cacheState;
   @NotNull long ttlLeft;
   @NotNull long lastUpdatedAt;
-  @NotNull boolean isSyncEnabled;
+  @NotNull Boolean isSyncEnabled;
 }
