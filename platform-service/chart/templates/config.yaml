@@ -25,10 +25,10 @@ data:
   RESOURCE_GROUP_CLIENT_BASE_URL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
   NG_MANAGER_CLIENT_BASEURL: 'http://ng-manager:7090/'
   PIPELINE_SERVICE_CLIENT_BASEURL: 'http://pipeline-service:12001/api/'
-  { { - if .Values.global.opa.enabled } }
+  {{- if .Values.global.opa.enabled }}
   OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
   OPA_SERVER_SECRET: "dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq"
-  { { - end } }
+  {{- end }}
   TEMPLATE_SERVICE_CLIENT_BASEURL: 'http://template-service:15002/api/'
   AUDIT_CLIENT_BASEURL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
   TEMPLATE_SERVICE_BASE_URL: 'http://template-service:15002/api/'

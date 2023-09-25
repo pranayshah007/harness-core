@@ -315,13 +315,8 @@ replace_key_value ngManagerClientConfig.baseUrl "$NG_MANAGER_CLIENT_BASEURL"
 
 replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
 replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
-if [[ "" != "$OPA_CONNECT_TIMEOUT" ]]; then
-  replace_key_value opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
-fi
-if [[ "" != "$OPA_READ_TIMEOUT" ]]; then
-  replace_key_value opaClientConfig.readTimeOutSeconds "$OPA_READ_TIMEOUT"
-fi
-
+replace_key_value opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
+replace_key_value opaClientConfig.readTimeOutSeconds "$OPA_READ_TIMEOUT"
 replace_key_value resourceGroupServiceConfig.mongo.username "$RESOURCE_GROUP_MONGO_USERNAME"
 replace_key_value resourceGroupServiceConfig.mongo.password "$RESOURCE_GROUP_MONGO_PASSWORD"
 replace_key_value resourceGroupServiceConfig.mongo.schema "$RESOURCE_GROUP_MONGO_SCHEMA"
