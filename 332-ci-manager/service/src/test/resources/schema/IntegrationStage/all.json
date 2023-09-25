@@ -4485,6 +4485,51 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GcrSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProvenanceSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connector",
+            "host",
+            "imageName",
+            "projectID",
+            "tags"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "host": {
+              "type": "string"
+            },
+            "imageName": {
+              "type": "string"
+            },
+            "projectID": {
+              "type": "string"
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GitCloneStepInfo": {
       "allOf": [
         {
@@ -8385,7 +8430,8 @@
         "type": {
           "type": "string",
           "enum": [
-            "docker"
+            "docker",
+            "gcr"
           ]
         }
       },
@@ -8403,6 +8449,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/DockerSourceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "gcr"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GcrSourceSpec"
               }
             }
           }
