@@ -917,7 +917,11 @@ public enum FeatureName {
   CDS_SHELL_VARIABLES_EXPORT("Export shell script output variables to different scopes", HarnessTeam.CDC),
   CDS_CUSTOM_STAGE_WITH_ENV_INFRA("Enable optional environment and infrastructure in custom stage", HarnessTeam.CDC),
   CDS_ECS_BASIC_DEPLOYMENT_STRATEGY(
-      "This flag enables the basic deployment strategy in ECS Deployment Swimlane", HarnessTeam.CDP);
+      "This flag enables the basic deployment strategy in ECS Deployment Swimlane", HarnessTeam.CDP),
+  CDS_TF_TG_SKIP_ERROR_LOGS_COLORING(
+      "Skip coloring execution logs that are coming form standart error output of process executor for terraform and terragrunt steps",
+      HarnessTeam.CDP);
+
   // keep-sorted end
 
   @Deprecated

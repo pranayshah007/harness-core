@@ -80,6 +80,8 @@ public abstract class AbstractTerragruntTaskParameters
   boolean encryptDecryptPlanForHarnessSMOnManager;
   boolean useUniqueDirectoryForBaseDir;
 
+  boolean skipColorLogs;
+
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> executionCapabilities = new ArrayList<>();
