@@ -89,8 +89,8 @@ import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
-import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -699,12 +699,12 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = SANDESH_SALUNKHE)
   @Category(UnitTests.class)
   public void testPipelineVersionCorrectVersion() {
-    mockStatic(PipelineYamlHelper.class);
+    mockStatic(NGYamlHelper.class);
     String expectedVersion = "0";
     String yaml = "key: value";
     boolean yamlSimplification = true;
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING)).thenReturn(yamlSimplification);
-    when(PipelineYamlHelper.getVersion(yaml, yamlSimplification)).thenReturn(expectedVersion);
+    when(NGYamlHelper.getVersion(yaml, yamlSimplification)).thenReturn(expectedVersion);
     String result = pmsPipelineService.pipelineVersion(accountId, yaml);
     assertThat(expectedVersion).isEqualTo(result);
   }
@@ -713,12 +713,12 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = SANDESH_SALUNKHE)
   @Category(UnitTests.class)
   public void testPipelineVersionIncorrectVersion() {
-    mockStatic(PipelineYamlHelper.class);
+    mockStatic(NGYamlHelper.class);
     String expectedVersion = "1";
     String yaml = "key: value";
     boolean yamlSimplification = false;
     when(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING)).thenReturn(yamlSimplification);
-    when(PipelineYamlHelper.getVersion(yaml, yamlSimplification)).thenReturn("0");
+    when(NGYamlHelper.getVersion(yaml, yamlSimplification)).thenReturn("0");
     String result = pmsPipelineService.pipelineVersion(accountId, yaml);
     assertThat(expectedVersion).isNotEqualTo(result);
   }

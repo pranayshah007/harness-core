@@ -1143,6 +1143,30 @@ components:
         template_yaml:
           type: string
           description: Yaml for updating existing Template
+        identifier:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          maxLength: 128
+          description: Template identifier
+        name:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+          maxLength: 128
+          description: Template name
+        label:
+          type: string
+          maxLength: 128
+          description: Template version label
+        description:
+          type: string
+          maxLength: 1024
+          description: Pipeline description
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Template tags
         git_details:
           $ref: '#/components/schemas/GitUpdateDetails'
         comments:
@@ -1196,6 +1220,30 @@ components:
         template_yaml:
           type: string
           description: Yaml for creating new Template
+        identifier:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          maxLength: 128
+          description: Template identifier
+        name:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+          maxLength: 128
+          description: Template name
+        label:
+          type: string
+          maxLength: 128
+          description: Template version label
+        description:
+          type: string
+          maxLength: 1024
+          description: Pipeline description
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Template tags
         git_details:
           $ref: '#/components/schemas/GitCreateDetails'
         is_stable:

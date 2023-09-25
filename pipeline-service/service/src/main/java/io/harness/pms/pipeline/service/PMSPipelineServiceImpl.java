@@ -93,8 +93,8 @@ import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHe
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
-import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -912,7 +912,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public String pipelineVersion(String accountId, String yaml) {
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
-    return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
+    return NGYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
   }
 
   @Override

@@ -25,7 +25,7 @@ import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
-import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.spec.server.pipeline.v1.model.FQNtoError;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
@@ -204,7 +204,7 @@ public class InputSetsApiUtils {
 
   public String inputSetVersion(String accountId, String yaml) {
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
-    return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
+    return NGYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
   }
 
   public boolean isDifferentRepoForPipelineAndInputSetsAccountSettingEnabled(String accountId) {

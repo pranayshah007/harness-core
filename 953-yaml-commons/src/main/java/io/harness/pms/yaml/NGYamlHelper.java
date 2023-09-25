@@ -5,16 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.utils;
+package io.harness.pms.yaml;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidYamlException;
-import io.harness.pms.yaml.HarnessYamlVersion;
-import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlUtils;
 
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
@@ -23,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 @Slf4j
-public class PipelineYamlHelper {
+public class NGYamlHelper {
   private static final String VERSION_FIELD_NAME = "version";
 
   public String getVersion(String yaml, boolean yamlSimplification) {
