@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.logging;
+package io.harness.logging.common;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -26,6 +26,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.MdcKeyLogContext;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -74,7 +77,7 @@ public class CustomJsonLayout extends JsonLayoutBase<ILoggingEvent> {
   }
 
   @Override
-  protected Map<String, Object> toJsonMap(ILoggingEvent event) {
+  public Map<String, Object> toJsonMap(ILoggingEvent event) {
     Map<String, Object> map = new HashMap<>();
 
     final String formattedMessage = truncateLog(event.getFormattedMessage());

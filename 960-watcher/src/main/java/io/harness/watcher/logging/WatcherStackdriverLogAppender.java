@@ -14,7 +14,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import io.harness.concurrent.HTimeLimiter;
-import io.harness.logging.AccessTokenBean;
+import io.harness.logging.common.AccessTokenBean;
 import io.harness.logging.RemoteStackdriverLogAppender;
 import io.harness.managerclient.ManagerClientV2;
 import io.harness.rest.RestResponse;

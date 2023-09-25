@@ -20,6 +20,7 @@ import io.dropwizard.logging.ConsoleAppenderFactory;
 import io.dropwizard.logging.async.AsyncAppenderFactory;
 import io.dropwizard.logging.filter.LevelFilterFactory;
 import io.dropwizard.logging.layout.LayoutFactory;
+import io.harness.logging.common.CustomJsonLayout;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

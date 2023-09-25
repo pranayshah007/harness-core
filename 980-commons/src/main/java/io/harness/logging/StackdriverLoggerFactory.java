@@ -13,6 +13,8 @@ import com.google.cloud.logging.Logging;
 import com.google.cloud.logging.LoggingOptions;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+
+import io.harness.logging.common.AccessTokenBean;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
