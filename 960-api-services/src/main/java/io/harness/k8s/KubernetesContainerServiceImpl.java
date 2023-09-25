@@ -544,7 +544,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   private void persistKubernetesConfigFile(KubernetesConfig config, String dir) throws IOException {
     String configFileContent = getConfigFileContent(config);
     writeUtf8StringToFile(Paths.get(dir, K8sConstants.KUBECONFIG_FILENAME).toString(), configFileContent);
-    modifyConfigFileReadableProperties(dir);
+    modifyKubeConfigReadableProperties(dir);
   }
 
   @VisibleForTesting
@@ -2369,8 +2369,12 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace(OIDC_RERESH_TOKEN, refreshToken)
         .replace(OIDC_AUTH_NAME, authConfigName);
   }
-  public void modifyConfigFileReadableProperties(String workingDirectory) {
-    Path configPath = Path.of(workingDirectory, K8sConstants.KUBECONFIG_FILENAME);
+  public void modifyKubeConfigReadableProperties(String path) {
+    modifyFileReadableProperties(Path.of(path, K8sConstants.KUBECONFIG_FILENAME).toString());
+  }
+
+  public void modifyFileReadableProperties(String path) {
+    Path configPath = Path.of(path);
     try {
       Set<PosixFilePermission> permissions = java.nio.file.Files.getPosixFilePermissions(configPath);
       // Remove group-readable and world-readable properties
@@ -2378,7 +2382,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       permissions.remove(PosixFilePermission.OTHERS_READ);
       java.nio.file.Files.setPosixFilePermissions(configPath, permissions);
     } catch (Exception e) {
-      log.error("Error updating file permissions", ExceptionMessageSanitizer.sanitizeException(e));
+      log.warn("Error updating file permissions", ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 }
