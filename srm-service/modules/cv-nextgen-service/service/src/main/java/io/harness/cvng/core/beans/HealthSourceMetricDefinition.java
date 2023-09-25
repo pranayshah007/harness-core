@@ -61,7 +61,7 @@ public class HealthSourceMetricDefinition implements WithIdentifier {
   public static class AnalysisDTO {
     LiveMonitoringDTO liveMonitoring;
     DeploymentVerificationDTO deploymentVerification;
-    @Valid RiskProfile riskProfile;
+    RiskProfile riskProfile;
 
     @Data
     @Builder

@@ -8,11 +8,8 @@
 package io.harness.cvng.core.validators;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
-import io.harness.cvng.core.beans.RiskProfile;
-import lombok.extern.slf4j.Slf4j;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
-@Slf4j
 public class AnalysisDTOValidator implements ConstraintValidator<AnalysisDTOCheck, Object> {
     @Override
     public void initialize(AnalysisDTOCheck constraintAnnotation) {
