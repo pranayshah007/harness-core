@@ -89,6 +89,8 @@ spec:
         envFrom:
         - configMapRef:
             name: platform-service
+        - secretRef:
+            name: {{ include "platform-service.name" . }}
         {{- if .Values.global.smtpCreateSecret.enabled }}
         - secretRef:
             name: smtp-secret

@@ -154,8 +154,6 @@ public class ResourceGroupServiceModule extends AbstractModule {
 
     install(new TokenClientModule(this.appConfig.getRbacServiceConfig(),
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), RESOUCE_GROUP_SERVICE.getServiceId()));
-    install(new OpaClientModule(this.appConfig.getOpaClientConfig(), this.appConfig.getPolicyManagerSecret(),
-        RESOUCE_GROUP_SERVICE.getServiceId()));
   }
 
   @Provides
