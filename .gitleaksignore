@@ -2762,3 +2762,5 @@ eb6225dbabd5a5fc188ba779f33442185b79483b:332-ci-manager/service/src/test/java/io
 b2976fdd7b10a71a7d81bdc915e725ea9d862b83:332-ci-manager/service/src/test/java/io/harness/ssca/execution/ProvenancePluginHelperTest.java:generic-api-key:173
 7fc3e462d33e2efc2f9ee0e848839d42940a3f2c:idp-service/config/config.yml:generic-api-key:123
 2d47b9ee972946040d565323b2886e04aa93f916:platform-service/chart/templates/config.yaml:generic-api-key:30
+2d47b9ee972946040d565323b2886e04aa93f916:platform-service/chart/templates/config.yaml:generic-api-key:30
+d9b726b1ced9a70715514e11e7979413ddcb6dc9:platform-service/chart/templates/config.yaml:generic-api-key:30
