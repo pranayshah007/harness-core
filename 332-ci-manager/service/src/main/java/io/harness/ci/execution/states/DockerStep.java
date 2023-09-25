@@ -8,7 +8,6 @@
 package io.harness.ci.execution.states;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
-import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -16,24 +15,16 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ProvenanceArtifact;
 import io.harness.beans.execution.PublishedImageArtifact;
-import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.provenance.BuildMetadata;
-import io.harness.beans.provenance.CodeMetadata;
-import io.harness.beans.provenance.ExternalParameters;
 import io.harness.beans.provenance.ProvenanceBuilderData;
 import io.harness.beans.provenance.ProvenanceGenerator;
 import io.harness.beans.provenance.ProvenancePredicate;
-import io.harness.beans.provenance.TriggerMetadata;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.steps.outcome.StepArtifacts.StepArtifactsBuilder;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
-import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
-import io.harness.beans.sweepingoutputs.ContextElement;
-import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.execution.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -44,9 +35,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.ssca.beans.SscaConstants;
 
 import com.google.inject.Inject;
@@ -59,8 +47,6 @@ public class DockerStep extends AbstractStepExecutable {
   @Inject CIExecutionConfigService ciExecutionConfigService;
   @Inject CIFeatureFlagService featureFlagService;
   @Inject ProvenanceGenerator provenanceGenerator;
-
-  @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
 
   @Override
   protected StepArtifacts handleArtifactForVm(
@@ -123,16 +109,7 @@ public class DockerStep extends AbstractStepExecutable {
     if (!featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, accountId)) {
       return;
     }
-
-    CodeMetadata codeMetadata = getCodeMetadata(ambiance);
-    TriggerMetadata triggerMetadata = getTriggerMetadata(ambiance);
     BuildMetadata buildMetadata = getBuildMetadata(dockerStepInfo);
-
-    ExternalParameters externalParameters = ExternalParameters.builder()
-                                                .buildMetadata(buildMetadata)
-                                                .codeMetadata(codeMetadata)
-                                                .triggerMetadata(triggerMetadata)
-                                                .build();
 
     StepImageConfig defaultImageConfig =
         ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.DOCKER, accountId);
@@ -144,39 +121,11 @@ public class DockerStep extends AbstractStepExecutable {
             .pipelineIdentifier(AmbianceUtils.getPipelineIdentifier(ambiance))
             .startTime(ambiance.getStartTs())
             .pluginInfo(defaultImageConfig.getImage())
+            .buildMetadata(buildMetadata)
             .build();
-    ProvenancePredicate predicate = provenanceGenerator.buildProvenancePredicate(provenanceBuilder, externalParameters);
+    ProvenancePredicate predicate = provenanceGenerator.buildProvenancePredicate(provenanceBuilder, ambiance);
     stepArtifactsBuilder.provenanceArtifact(
         ProvenanceArtifact.builder().predicateType(SscaConstants.PREDICATE_TYPE).predicate(predicate).build());
-  }
-
-  private CodeMetadata getCodeMetadata(Ambiance ambiance) {
-    OptionalSweepingOutput optionalSweepingOutput =
-        executionSweepingOutputResolver.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CODEBASE));
-    CodebaseSweepingOutput codebaseSweeping = (CodebaseSweepingOutput) optionalSweepingOutput.getOutput();
-
-    CodeMetadata codeMetadata = new CodeMetadata(codebaseSweeping.getRepoUrl(), codebaseSweeping.getBranch(),
-        codebaseSweeping.getPrNumber(), codebaseSweeping.getTag(), codebaseSweeping.getCommitSha());
-    return codeMetadata;
-  }
-
-  private TriggerMetadata getTriggerMetadata(Ambiance ambiance) {
-    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
-    StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
-    ExecutionSource executionSource = stageDetails.getExecutionSource();
-
-    String triggerEvent = null;
-
-    if (executionSource != null && executionSource.getType() == ExecutionSource.Type.WEBHOOK) {
-      WebhookExecutionSource webhookExecutionSource = (WebhookExecutionSource) executionSource;
-      triggerEvent = String.valueOf(webhookExecutionSource.getWebhookEvent().getType());
-    }
-
-    String triggerBy = AmbianceUtils.getTriggerIdentifier(ambiance);
-    String triggerType = String.valueOf(AmbianceUtils.getTriggerType(ambiance));
-    TriggerMetadata triggerMetadata = new TriggerMetadata(triggerType, triggerBy, triggerEvent);
-    return triggerMetadata;
   }
 
   private BuildMetadata getBuildMetadata(DockerStepInfo dockerStepInfo) {
