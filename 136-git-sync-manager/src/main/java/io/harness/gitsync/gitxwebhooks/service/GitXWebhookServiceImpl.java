@@ -142,11 +142,11 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   @Override
   public Optional<GitXWebhook> getGitXWebhook(String accountIdentifier, String webhookIdentifier, String repoName) {
     List<GitXWebhook> gitXWebhookList;
-    if (isEmpty(webhookIdentifier)) {
+    if (isNotEmpty(webhookIdentifier)) {
       gitXWebhookList =
           gitXWebhookRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, webhookIdentifier);
     } else {
-      gitXWebhookList = gitXWebhookRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, repoName);
+      gitXWebhookList = gitXWebhookRepository.findByAccountIdentifierAndRepoName(accountIdentifier, repoName);
     }
     if (isEmpty(gitXWebhookList)) {
       log.info(String.format(

@@ -24,4 +24,5 @@ public class ScmCacheDetails {
   long cacheExpiryTTL;
   long validUntilTTL;
   long lastUpdatedAt;
+  boolean isSyncEnabled;
 }
