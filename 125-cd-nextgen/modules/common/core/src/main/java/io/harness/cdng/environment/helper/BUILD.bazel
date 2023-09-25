@@ -21,7 +21,6 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/envGroup/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/envGroup/services:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/yaml:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/infra:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/infra/steps:module",
