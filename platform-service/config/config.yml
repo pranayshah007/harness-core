@@ -175,6 +175,11 @@ resourceGroupServiceConfig:
     code:
       baseUrl: http://localhost:3000/
       secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    policyManagerSecret: secret
+    opaClientConfig:
+      baseUrl: http://localhost:3000
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
 
   redis:
     sentinel: false

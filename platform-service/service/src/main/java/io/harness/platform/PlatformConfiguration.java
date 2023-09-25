@@ -15,8 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
-import io.harness.logstreaming.LogStreamingServiceConfiguration;
-import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.platform.audit.AuditServiceConfiguration;
 import io.harness.platform.notification.NotificationServiceConfiguration;
 import io.harness.redis.RedisConfig;
@@ -117,8 +115,8 @@ public class PlatformConfiguration extends Configuration {
   @JsonProperty(value = "accessControlClient")
   @ConfigSecret
   private AccessControlClientConfiguration accessControlClientConfig;
-  @ConfigSecret private String policyManagerSecret;
-  private ServiceHttpClientConfig opaClientConfig;
+  @JsonProperty("policyManagerSecret") @ConfigSecret private String policyManagerSecret;
+  @JsonProperty("opaClientConfig") private ServiceHttpClientConfig opaClientConfig;
   @JsonProperty("enforcementClientConfiguration") private EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
   @JsonProperty("hostname") String hostname = "localhost";

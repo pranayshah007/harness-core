@@ -10,6 +10,7 @@ package io.harness.resourcegroup;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,6 +33,8 @@ public class ResourceClientConfigs {
   @JsonProperty("ce-nextgen") @ConfigSecret ServiceConfig ceNextGen;
 
   @JsonProperty("code") @ConfigSecret ServiceConfig code;
+  @JsonProperty("policyManagerSecret") @ConfigSecret private String policyManagerSecret;
+  @JsonProperty("opaClientConfig") private ServiceHttpClientConfig opaClientConfig;
 
   @Value
   @Builder
