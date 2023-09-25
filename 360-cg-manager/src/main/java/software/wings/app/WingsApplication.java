@@ -150,8 +150,6 @@ import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.queue.RedisConsumerControllerCg;
 import io.harness.queue.TimerScheduledExecutorService;
-import io.harness.queue.consumers.GeneralEventConsumerCg;
-import io.harness.queue.consumers.NotifyEventConsumerCg;
 import io.harness.queue.publishers.CgGeneralEventPublisher;
 import io.harness.queue.publishers.CgNotifyEventPublisher;
 import io.harness.redis.DelegateHeartBeatSyncFromRedis;
@@ -1293,8 +1291,6 @@ public class WingsApplication extends Application<MainConfiguration> {
         listenerConfig.getOrchestrationNotifyEventListenerCount());
 
     RedisConsumerControllerCg controller = injector.getInstance(RedisConsumerControllerCg.class);
-    controller.register(injector.getInstance(NotifyEventConsumerCg.class), listenerConfig.getNotifyConsumerCount());
-    controller.register(injector.getInstance(GeneralEventConsumerCg.class), listenerConfig.getGeneralConsumerCount());
     controller.register(injector.getInstance(ApplicationTimeScaleRedisChangeEventConsumer.class),
         configuration.getDebeziumConsumerConfigs().getApplicationTimescaleStreaming().getThreads());
   }
