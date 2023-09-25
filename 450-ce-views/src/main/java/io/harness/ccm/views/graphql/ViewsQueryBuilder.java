@@ -2035,7 +2035,7 @@ public class ViewsQueryBuilder {
           Condition condition =
               getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier, viewLabelsFlattened);
           if (!condition.isEmpty()) {
-            caseStatement.addWhen(condition, costTarget.getName());
+            caseStatement.addWhen(condition, handleSingleQuotesInName(costTarget.getName()));
           }
         }
       }
@@ -2044,7 +2044,7 @@ public class ViewsQueryBuilder {
           Condition condition =
               getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier, viewLabelsFlattened);
           if (!condition.isEmpty()) {
-            caseStatement.addWhen(condition, costTarget.getName());
+            caseStatement.addWhen(condition, handleSingleQuotesInName(costTarget.getName()));
           }
         }
       }
@@ -2345,5 +2345,9 @@ public class ViewsQueryBuilder {
 
   private double getRoundedDoubleValue(double value) {
     return Math.round(value * 100D) / 100D;
+  }
+
+  private static String handleSingleQuotesInName(String string) {
+    return string.replaceAll("'", "\\\\'");
   }
 }
