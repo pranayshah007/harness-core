@@ -7,6 +7,7 @@
 
 package io.harness.cdng.gitops.updategitopsapp;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -33,29 +34,29 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("UpdateGitOpsAppBaseStepInfo")
 @FieldNameConstants(innerTypeName = "UpdateGitOpsAppBaseStepInfoKeys")
 public class UpdateGitOpsAppBaseStepInfo {
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @NotNull
   @JsonProperty("applicationName")
   ParameterField<String> applicationName;
 
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @NotNull
   @JsonProperty("agentId")
   ParameterField<String> agentId;
 
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @JsonProperty("targetRevision")
   ParameterField<String> targetRevision;
 
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.GITOPS_HELM_VALUES_CLASSPATH)
   @JsonProperty("helm")
   ParameterField<HelmValues> helm;
 
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.GITOPS_KUSTOMIZE_VALUES_CLASSPATH)
   @JsonProperty("kustomize")
   ParameterField<KustomizeValues> kustomize;
