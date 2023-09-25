@@ -28,6 +28,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/rbac:module",
         "//127-cd-nextgen-entities:module",
         "//878-ng-common-utilities:module",
+        "//880-pipeline-cd-commons:module",
         "//884-pms-commons:module",
         "//953-yaml-commons:module",
         "//956-feature-flag-beans:module",

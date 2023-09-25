@@ -6,9 +6,11 @@
  */
 
 package io.harness.execution.stage;
+
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.StoreInMultiple;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -47,7 +49,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ToString
 @FieldNameConstants(innerTypeName = "StageExecutionEntityKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreIn(DbAliases.PMS)
+@StoreInMultiple({ @StoreIn(DbAliases.PMS)
+                   , @StoreIn(DbAliases.NG_MANAGER) })
 @Entity(value = "stageExecutionEntity", noClassnameStored = true)
 @Document("stageExecutionEntity")
 @TypeAlias("stageExecutionEntity")
@@ -59,6 +62,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
     table = "custom_stage_execution", dataStore = "pms-harness", fields = {}, handler = "CustomStageExecutionHandler")
 @ChangeDataCapture(
     table = "execution_tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "PipelineStageTagsInfoNG")
+@ChangeDataCapture(
+    table = "stage_execution", dataStore = "ng-harness", fields = {}, handler = "PipelineStageExecutionHandler")
+@ChangeDataCapture(
+    table = "custom_stage_execution", dataStore = "ng-harness", fields = {}, handler = "CustomStageExecutionHandler")
+@ChangeDataCapture(
+    table = "execution_tags_info_ng", dataStore = "ng-harness", fields = {}, handler = "PipelineStageTagsInfoNG")
 public class StageExecutionEntity implements PersistentEntity, UuidAware {
   // This class is used for saving all kind of stages which run in the pipeline service like Custom/Approval Stage
   @org.springframework.data.annotation.Id @Id String uuid;

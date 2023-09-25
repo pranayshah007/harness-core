@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng;
+
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_CONFIGURATION;
@@ -445,6 +446,17 @@ public class NextGenModule extends AbstractModule {
   public ExecutorService templateRegistrationExecutionServiceThreadPool() {
     return ThreadPool.create(1, 1, 10, TimeUnit.SECONDS,
         new ThreadFactoryBuilder().setNameFormat("FreezeTemplateRegistrationService-%d").build());
+  }
+
+  @Provides
+  @Singleton
+  @Named("DashboardExecutorService")
+  public ExecutorService DashboardExecutorServiceThreadPool() {
+    return ThreadPool.create(appConfig.getDashboardExecutorServiceConfig().getCorePoolSize(),
+        appConfig.getDashboardExecutorServiceConfig().getMaxPoolSize(),
+        appConfig.getDashboardExecutorServiceConfig().getIdleTime(),
+        appConfig.getDashboardExecutorServiceConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("DashboardExecutorService-%d").build());
   }
 
   @Provides

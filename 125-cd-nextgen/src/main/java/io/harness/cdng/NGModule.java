@@ -119,6 +119,8 @@ import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageReportServiceImpl;
 import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.cdng.yaml.CdYamlSchemaServiceImpl;
+import io.harness.engine.executions.stage.StageExecutionEntityService;
+import io.harness.engine.executions.stage.StageExecutionEntityServiceImpl;
 import io.harness.filter.FilterType;
 import io.harness.filter.impl.FilterServiceImpl;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -236,6 +238,7 @@ public class NGModule extends AbstractModule {
     bind(CDLicenseUsageReportService.class).to(CDLicenseUsageReportServiceImpl.class);
     bind(ManifestTaskService.class).to(ManifestTaskServiceImpl.class);
     bind(SecretRuntimeUsageService.class).to(SecretRuntimeUsageServiceImpl.class);
+    bind(StageExecutionEntityService.class).to(StageExecutionEntityServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
