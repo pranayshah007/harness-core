@@ -968,6 +968,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     return pipelineAfterUpdate.getIdentifier();
   }
 
+  /*
+  getAccessCheckResponseDTO return the access response for pipeline view permission on the pipeline identifier list
+   */
   private AccessCheckResponseDTO getAccessCheckResponseDTO(
       String accountId, String orgId, String projectId, List<String> entityIdentifierList) {
     List<PermissionCheckDTO> permissionChecks =

@@ -52,7 +52,6 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -481,10 +480,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   @Override
   public List<String> findAllPipelineIdentifiers(Criteria criteria, Pageable pageable, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
-    List<PipelineEntity> pipelineEntities = gitAwarePersistence.find(
-        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class, true);
-
-    return pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());
+    return pipelineEntityReadHelper.findAllIdentifiers(criteria, pageable);
   }
 
   @VisibleForTesting

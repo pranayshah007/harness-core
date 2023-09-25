@@ -693,6 +693,9 @@ public class PMSPipelineServiceHelper {
 
   public void setPermittedPipelines(String accountId, String orgId, String projectId, List<String> sort,
       Boolean getDistinctFromBranches, Criteria criteria) {
+    /*
+    If user is having all pipeline view permission, we do not need to check for individual pipeline view permission
+     */
     if (!pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
       List<String> allPipelineIdentifiers = pmsPipelineService.listAllIdentifiers(criteria,
           PageUtils.getPageRequest(0, 10000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt)),

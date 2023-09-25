@@ -15,8 +15,12 @@ import io.harness.pms.pipeline.PipelineEntity;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 @Slf4j
@@ -27,5 +31,11 @@ public class PipelineEntityReadHelper {
 
   public long findCount(Query query) {
     return secondaryMongoTemplate.count(Query.of(query).limit(-1).skip(-1), PipelineEntity.class);
+  }
+
+  public List<String> findAllIdentifiers(Criteria criteria, Pageable pageable) {
+    List<PipelineEntity> pipelineEntities =
+        secondaryMongoTemplate.find(new Query(criteria).with(pageable), PipelineEntity.class);
+    return pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());
   }
 }
