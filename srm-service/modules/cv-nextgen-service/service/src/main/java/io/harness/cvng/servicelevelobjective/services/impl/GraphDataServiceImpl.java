@@ -193,9 +193,18 @@ public class GraphDataServiceImpl implements GraphDataService {
     if (evaluationType == SLIEvaluationType.WINDOW) {
       return sloValue.sloPercentage();
     }
-    double sloPercentage =
-        formulaTypeCompositeSLOEvaluatorMap.get(compositeServiceLevelObjective.getCompositeSLOFormulaType())
-            .getSloPercentage(compositeServiceLevelObjective, sloRecord, prevSLORecord);
+    double sloPercentage = 0.0;
+    List<Double> weightageList = new ArrayList<>();
+    List<Double> sliPercentageList = new ArrayList<>();
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
+      weightageList.add(serviceLevelObjectivesDetail.getWeightagePercentage() / 100);
+      SLIValue sliValue = getSLIValue(sloRecord, prevSLORecord, serviceLevelObjectivesDetail);
+      sliPercentageList.add(sliValue.sliPercentage());
+    }
+    sloPercentage = formulaTypeCompositeSLOEvaluatorMap.get(compositeServiceLevelObjective.getCompositeSLOFormulaType())
+                        .getSloPercentage(weightageList, sliPercentageList);
+    //    sloPercentage += weightage * (SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord).sliPercentage());
     return sloPercentage;
   }
 
@@ -206,22 +215,23 @@ public class GraphDataServiceImpl implements GraphDataService {
       return ((totalErrorBudgetMinutes - sloValue.getBadCount()) * 100.0) / totalErrorBudgetMinutes;
     }
     double sloErrorBudgetBurnDown = 0.0;
+    List<Double> weightageList = new ArrayList<>();
+    List<Double> errorBudgetBurnedList = new ArrayList<>();
     for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
         compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
-      Double weightage = serviceLevelObjectivesDetail.getWeightagePercentage() / 100;
-      SLIRecord sliRecord = sloRecord.getScopedIdentifierSLIRecordMap().get(
-          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
-      SLIRecord prevSLIRecord = prevSLORecord.getScopedIdentifierSLIRecordMap().get(
-          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
-      SLIValue sliValue = SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord);
+      weightageList.add(serviceLevelObjectivesDetail.getWeightagePercentage() / 100);
+      SLIValue sliValue = getSLIValue(sloRecord, prevSLORecord, serviceLevelObjectivesDetail);
       double totalErrorBudget =
           (sliValue.getTotal() * (100 - compositeServiceLevelObjective.getSloTargetPercentage())) / 100;
       double errorBudgetBurned = 100.0;
       if (totalErrorBudget != 0.0) {
         errorBudgetBurned = ((totalErrorBudget - sliValue.getBadCount()) * 100) / totalErrorBudget;
       }
-      sloErrorBudgetBurnDown += weightage * errorBudgetBurned;
+      errorBudgetBurnedList.add(errorBudgetBurned);
     }
+    sloErrorBudgetBurnDown =
+        formulaTypeCompositeSLOEvaluatorMap.get(compositeServiceLevelObjective.getCompositeSLOFormulaType())
+            .getSloErrorBudgetBurnDown(weightageList, errorBudgetBurnedList);
     return sloErrorBudgetBurnDown;
   }
 
@@ -540,6 +550,16 @@ public class GraphDataServiceImpl implements GraphDataService {
         .stream()
         .sorted(Comparator.comparing(SLIRecord::getTimestamp))
         .collect(Collectors.toList());
+  }
+
+  private SLIValue getSLIValue(CompositeSLORecord sloRecord, CompositeSLORecord prevSLORecord,
+      CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail) {
+    SLIRecord sliRecord = sloRecord.getScopedIdentifierSLIRecordMap().get(
+        serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+    SLIRecord prevSLIRecord = prevSLORecord.getScopedIdentifierSLIRecordMap().get(
+        serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+    SLIValue sliValue = SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord);
+    return sliValue;
   }
 
   @VisibleForTesting

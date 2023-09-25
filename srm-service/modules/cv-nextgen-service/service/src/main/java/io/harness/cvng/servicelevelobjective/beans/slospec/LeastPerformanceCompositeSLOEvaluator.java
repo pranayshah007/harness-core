@@ -7,10 +7,6 @@
 
 package io.harness.cvng.servicelevelobjective.beans.slospec;
 
-import io.harness.cvng.servicelevelobjective.beans.SLIValue;
-import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
-import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 
 import com.google.inject.Inject;
@@ -31,19 +27,30 @@ public class LeastPerformanceCompositeSLOEvaluator extends CompositeSLOEvaluator
     return Pair.create(1.0 - runningBadCount, runningBadCount);
   }
 
-  public Double getSloPercentage(CompositeServiceLevelObjective compositeServiceLevelObjective,
-      CompositeSLORecord sloRecord, CompositeSLORecord prevSLORecord) {
-    double sloPercentage = 0.0;
-    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
-      Double weightage = serviceLevelObjectivesDetail.getWeightagePercentage() / 100;
-      SLIRecord sliRecord = sloRecord.getScopedIdentifierSLIRecordMap().get(
-          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
-      SLIRecord prevSLIRecord = prevSLORecord.getScopedIdentifierSLIRecordMap().get(
-          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
-      sloPercentage = Math.max(
-          weightage * (SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord).sliPercentage()), sloPercentage);
+  public Double getSloPercentage(List<Double> weightage, List<Double> sloPercentageList) {
+    double sloPercentage = 100.0;
+    double sloPercent = 0.0;
+    for (int i = 0; i < weightage.size(); i++) {
+      double temp = sloPercentageList.get(i) * (1 - weightage.get(i));
+      if (temp < sloPercentage) {
+        sloPercentage = temp;
+        sloPercent = sloPercentageList.get(i);
+      }
     }
-    return sloPercentage;
+    return sloPercent;
+  }
+
+  public Double getSloErrorBudgetBurnDown(List<Double> weightage, List<Double> errorBudgetBurned) {
+    double sloErrorBudgetBurnDown = 100.0;
+    double sloErrorBudget = 0.0;
+    for (int i = 0; i < weightage.size(); i++) {
+      sloErrorBudgetBurnDown = Math.min(weightage.get(i) * errorBudgetBurned.get(i), sloErrorBudgetBurnDown);
+      double temp = errorBudgetBurned.get(i) * (1 - weightage.get(i));
+      if (temp < sloErrorBudgetBurnDown) {
+        sloErrorBudgetBurnDown = temp;
+        sloErrorBudget = errorBudgetBurned.get(i);
+      }
+    }
+    return sloErrorBudget;
   }
 }

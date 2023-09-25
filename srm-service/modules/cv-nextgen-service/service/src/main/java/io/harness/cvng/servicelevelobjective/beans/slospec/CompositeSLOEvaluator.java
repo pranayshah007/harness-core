@@ -18,8 +18,9 @@ public abstract class CompositeSLOEvaluator {
   public abstract Pair<Double, Double> evaluate(
       List<Double> weightage, List<Integer> goodSliValues, List<Integer> badSliValues);
 
-  public abstract Double getSloPercentage(CompositeServiceLevelObjective compositeServiceLevelObjective,
-      CompositeSLORecord sloRecord, CompositeSLORecord prevSLORecord);
+  public abstract Double getSloPercentage(List<Double> weightage, List<Double> sloPercentageList);
+
+  public abstract Double getSloErrorBudgetBurnDown(List<Double> weightage, List<Double> errorBudgetBurned);
 
   List<Double> getSLOValuesOfIndividualSLIs(List<Double> weightage, List<Integer> sliValues) {
     List<Double> sliWithWeightage = new ArrayList<>();

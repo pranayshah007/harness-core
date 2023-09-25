@@ -34,18 +34,20 @@ public class WeightedAverageCompositeSLOEvaluator extends CompositeSLOEvaluator 
   }
 
   @Override
-  public Double getSloPercentage(CompositeServiceLevelObjective compositeServiceLevelObjective,
-      CompositeSLORecord sloRecord, CompositeSLORecord prevSLORecord) {
+  public Double getSloPercentage(List<Double> weightage, List<Double> sloPercentageList) {
     double sloPercentage = 0.0;
-    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
-      Double weightage = serviceLevelObjectivesDetail.getWeightagePercentage() / 100;
-      SLIRecord sliRecord = sloRecord.getScopedIdentifierSLIRecordMap().get(
-          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
-      SLIRecord prevSLIRecord = prevSLORecord.getScopedIdentifierSLIRecordMap().get(
-          serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
-      sloPercentage += weightage * (SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord).sliPercentage());
+    for (int i = 0; i < weightage.size(); i++) {
+      sloPercentage += weightage.get(i) * sloPercentageList.get(i);
     }
     return sloPercentage;
+  }
+
+  @Override
+  public Double getSloErrorBudgetBurnDown(List<Double> weightage, List<Double> errorBudgetBurned) {
+    double sloErrorBudgetBurnDown = 0.0;
+    for (int i = 0; i < weightage.size(); i++) {
+      sloErrorBudgetBurnDown += weightage.get(i) * errorBudgetBurned.get(i);
+    }
+    return sloErrorBudgetBurnDown;
   }
 }
