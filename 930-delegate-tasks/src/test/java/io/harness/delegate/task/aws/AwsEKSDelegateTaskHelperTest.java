@@ -141,7 +141,6 @@ public class AwsEKSDelegateTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
-
   public void testEksListClustersTimeout() {
     List<String> regions = List.of("us-east-1", "ap-south-1", "us-east-2");
     doReturn(regions).when(awsUtils).listAwsRegionsForGivenAccount(any());
@@ -159,7 +158,7 @@ public class AwsEKSDelegateTaskHelperTest extends CategoryTest {
     try {
       awsEKSDelegateTaskHelper.getEKSClustersList(awsTaskParams);
     } catch (Exception e) {
-      assertThat(e).isInstanceOf(AbortedException.class);
+      assertThat(e).isInstanceOf(AwsEKSException.class);
       verify(awsUtils, times(1)).getAmazonEKSClient(eq(Regions.fromName("us-east-1")), any());
       verify(awsUtils, times(0)).getAmazonEKSClient(eq(Regions.fromName("us-east-2")), any());
       verify(awsUtils, times(0)).getAmazonEKSClient(eq(Regions.fromName("ap-south-1")), any());
