@@ -204,7 +204,6 @@ public class GraphDataServiceImpl implements GraphDataService {
     }
     sloPercentage = formulaTypeCompositeSLOEvaluatorMap.get(compositeServiceLevelObjective.getCompositeSLOFormulaType())
                         .getSloPercentage(weightageList, sliPercentageList);
-    //    sloPercentage += weightage * (SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord).sliPercentage());
     return sloPercentage;
   }
 
