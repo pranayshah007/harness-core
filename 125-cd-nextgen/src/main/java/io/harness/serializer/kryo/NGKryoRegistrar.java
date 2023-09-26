@@ -42,6 +42,7 @@ import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepParams;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
+import io.harness.cdng.gitops.resume.GitopsStepFinishCallback;
 import io.harness.cdng.gitops.revertpr.RevertPRStepInfo;
 import io.harness.cdng.gitops.revertpr.RevertPRStepParameters;
 import io.harness.cdng.gitops.syncstep.SyncResponse;
@@ -160,6 +161,7 @@ import com.esotericsoftware.kryo.Kryo;
 public class NGKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(GitopsStepFinishCallback.class, 13007);
     kryo.register(GithubRestraintInstanceResponseData.class, 13008);
     kryo.register(UpdateReleaseRepoStepInfo.class, 13009);
     kryo.register(UpdateReleaseRepoStepParams.class, 13010);

@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInstanceInfo;
+import io.harness.cdng.gitops.resume.GitopsStepFinishCallback;
 import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
@@ -87,5 +88,6 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     h.put("io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetails",
         TerraformApplyExecutionDetails.class);
     h.put("io.harness.cdng.provision.awscdk.beans.AwsCdkConfig", AwsCdkConfig.class);
+    h.put("io.harness.cdng.gitops.resume.GitopsStepFinishCallback", GitopsStepFinishCallback.class);
   }
 }
