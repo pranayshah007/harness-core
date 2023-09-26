@@ -92,13 +92,13 @@ func NewHTTPClient(endpoint, accountID, token string, skipverify bool, additiona
 			// Create TLS config using cert PEM
 			rootPem, err := os.ReadFile(path)
 			if err != nil {
-				fmt.Errorf("could not read certificate file (%s), error: %s", path, err.Error())
+				fmt.Println(fmt.Errorf("could not read certificate file (%s), error: %s", path, err.Error()))
 				continue
 			}
 			// Append certs to the global certs
 			ok := rootCAs.AppendCertsFromPEM(rootPem)
 			if !ok {
-				fmt.Errorf("error adding cert (%s) to pool, please check format of the certs provided", path)
+				fmt.Println(fmt.Errorf("error adding cert (%s) to pool, please check format of the certs provided", path))
 				continue
 			}
 			fmt.Printf("successfully added cert at: %s to root certs", path)
