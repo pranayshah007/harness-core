@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.pipeline.executions;
+
 import static io.harness.executions.steps.StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_APPLY;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_DESTROY;
@@ -26,7 +27,6 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintObserver;
 import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
 import io.harness.cdng.instance.service.InstanceDeploymentInfoService;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
@@ -47,7 +47,6 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.StageStatus;
 
 import com.google.inject.Inject;
@@ -76,8 +75,6 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
   @Inject private AccountService accountService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Inject private InstanceDeploymentInfoService instanceDeploymentInfoService;
-  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
-  @Inject private GithubRestraintObserver githubRestraintObserver;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
@@ -85,12 +82,6 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
       processDeploymentStageEvent(event);
     } else if (isRollbackStepNode(event.getAmbiance())) {
       processRollbackStepEvent(event);
-    }
-
-    final Ambiance ambiance = event.getAmbiance();
-    if (STEP_TYPES_GIT_LOCK.contains(AmbianceUtils.getCurrentStepType(ambiance))
-        && StatusUtils.isFinalStatus(event.getStatus())) {
-      githubRestraintObserver.onEnd(ambiance);
     }
 
     try {

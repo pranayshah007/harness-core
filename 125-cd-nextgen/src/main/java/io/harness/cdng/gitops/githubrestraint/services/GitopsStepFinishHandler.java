@@ -23,7 +23,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class GithubRestraintObserverImpl implements OrchestrationEventHandler {
+public class GitopsStepFinishHandler implements OrchestrationEventHandler {
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
   @Inject private TransactionHelper transactionHelper;
 

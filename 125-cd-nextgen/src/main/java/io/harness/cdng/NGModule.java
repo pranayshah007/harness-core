@@ -62,8 +62,6 @@ import io.harness.cdng.execution.service.StageExecutionInstanceInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceServiceImpl;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintObserver;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintObserverImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.info.InstanceInfoServiceImpl;
