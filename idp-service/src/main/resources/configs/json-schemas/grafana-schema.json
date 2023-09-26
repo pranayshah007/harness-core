@@ -46,7 +46,7 @@
                 "api/proxy/grafana/api/?"
               ],
               "properties": {
-                "api/proxy/grafana/api?": {
+                "api/proxy/grafana/api/?": {
                   "$id": "#root/proxy//grafana/api/pathRewrite/api/proxy/grafana/api/?",
                   "title": "Api/proxy/grafana/api/?",
                   "type": "string",
