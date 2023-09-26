@@ -98,7 +98,7 @@ public class StrategyNodeFunctor extends LateBindingMap {
         // getLevel(index+1).
         if (level.getIdentifier().equals(identifier)) {
           Level tempLevel = ambiance.getLevels(index + 1);
-          childLevel = tempLevel.hasStrategyMetadata() ? tempLevel : null;
+          childLevel = AmbianceUtils.hasStrategyMetadata(tempLevel) ? tempLevel : null;
           break;
         }
       }

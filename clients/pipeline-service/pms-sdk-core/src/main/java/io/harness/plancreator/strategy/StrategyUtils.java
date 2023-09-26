@@ -328,7 +328,7 @@ public class StrategyUtils {
    */
   public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
-    if (level.hasStrategyMetadata()) {
+    if (AmbianceUtils.hasStrategyMetadata(level)) {
       return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
     }
     strategyObjectMap.put(ITERATION, 0);
