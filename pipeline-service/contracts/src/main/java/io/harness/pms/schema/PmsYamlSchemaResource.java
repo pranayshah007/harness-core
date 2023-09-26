@@ -6,11 +6,11 @@
  */
 
 package io.harness.pms.schema;
+
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
-import static io.harness.NGCommonEntityConstants.VERSION_FIELD;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.EntityType;
@@ -31,10 +31,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import io.swagger.v3.oas.annotations.Hidden;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -59,15 +57,6 @@ public interface PmsYamlSchemaResource {
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,
       @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier);
-
-  @GET
-  @Path("/static")
-  @ApiOperation(value = "Get Static Yaml Schema", nickname = "getStaticSchemaYaml")
-  @Hidden
-  ResponseDTO<JsonNode> getStaticYamlSchema(@NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(ORG_KEY) String orgIdentifier, @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @QueryParam(IDENTIFIER_KEY) String identifier, @QueryParam("entityType") @NotNull EntityType entityType,
-      @QueryParam("scope") Scope scope, @QueryParam(VERSION_FIELD) @DefaultValue("v0") String version);
 
   @POST
   @Path("/invalidate-cache")
