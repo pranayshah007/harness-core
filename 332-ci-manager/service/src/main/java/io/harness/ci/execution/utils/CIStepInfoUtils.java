@@ -31,11 +31,13 @@ import io.harness.ci.execution.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.beans.stepinfo.ProvenanceStepInfo;
 import io.harness.sto.config.STOImageConfig;
 import io.harness.sto.config.STOStepConfig;
 import io.harness.sto.utils.STOSettingsUtils;
@@ -200,12 +202,32 @@ public class CIStepInfoUtils {
 
   private static StepImageConfig getK8PluginCustomStepImageConfig(
       PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, String accountId) {
-    CIStepInfoType stepInfoType = step.getNonYamlInfo().getStepInfoType();
+    CIStepInfoType stepInfoType = getStepInfoType(step);
     StepImageConfig defaultImageConfig = ciExecutionConfigService.getPluginVersionForK8(stepInfoType, accountId);
     if (stepInfoType == CIStepInfoType.SECURITY) {
       return getSecurityStepImageConfig(step, ciExecutionConfigService, defaultImageConfig);
     }
     return defaultImageConfig;
+  }
+
+  private static CIStepInfoType getStepInfoType(PluginCompatibleStep step) {
+    CIStepInfoType stepInfoType = step.getNonYamlInfo().getStepInfoType();
+    if (stepInfoType == CIStepInfoType.PROVENANCE) {
+      ProvenanceStepInfo stepInfo = (ProvenanceStepInfo) step;
+      if (stepInfo.getSource() == null) {
+        throw new CIStageExecutionException("Provenance source is not provided to fetch image from.");
+      }
+      switch (stepInfo.getSource().getType()) {
+        case DOCKER:
+          return CIStepInfoType.PROVENANCE;
+        case GCR:
+          return CIStepInfoType.PROVENANCE_GCR;
+        default:
+          throw new CIStageExecutionException(
+              "Initialization not handled for provenance subtype of " + stepInfo.getSource().getType());
+      }
+    }
+    return stepInfoType;
   }
 
   private static String getVmPluginCustomStepImageConfig(

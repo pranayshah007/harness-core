@@ -356,6 +356,10 @@ ciExecutionServiceConfig:
       image: harness/slsa-plugin:latest
       entrypoint:
         - /bin/slsa-plugin
+    provenanceGcrConfig:
+      image: harness/slsa-plugin:latest
+      entrypoint:
+        - /bin/slsa-plugin
     slsaVerificationConfig:
       image: harness/slsa-plugin:latest
       entrypoint:
