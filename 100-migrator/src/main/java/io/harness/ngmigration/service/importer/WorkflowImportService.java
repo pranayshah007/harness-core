@@ -62,6 +62,7 @@ import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.WorkflowPhase;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -459,17 +460,22 @@ public class WorkflowImportService implements ImportService {
   }
 
   private List<NgEntityDetail> getMigratedEntity(SaveSummaryDTO summaryDTO, String entityId) {
-    List<NgEntityDetail> entityNG =
-        summaryDTO.getAlreadyMigratedDetails()
-            .stream()
-            .filter(migratedEntity -> migratedEntity.getCgEntityDetail().getId().equals(entityId))
-            .map(MigratedDetails::getNgEntityDetail)
-            .collect(Collectors.toList());
+    List<NgEntityDetail> entityNG = summaryDTO.getAlreadyMigratedDetails()
+                                        .stream()
+                                        .filter(migratedEntity -> {
+                                          CgBasicInfo cgEntityDetail = migratedEntity.getCgEntityDetail();
+                                          return cgEntityDetail != null && entityId.equals(cgEntityDetail.getId());
+                                        })
+                                        .map(MigratedDetails::getNgEntityDetail)
+                                        .collect(Collectors.toList());
 
     List<NgEntityDetail> successfullyMigratedList =
         summaryDTO.getSuccessfullyMigratedDetails()
             .stream()
-            .filter(migratedEntity -> migratedEntity.getCgEntityDetail().getId().equals(entityId))
+            .filter(migratedEntity -> {
+              CgBasicInfo cgEntityDetail = migratedEntity.getCgEntityDetail();
+              return cgEntityDetail != null && entityId.equals(cgEntityDetail.getId());
+            })
             .map(MigratedDetails::getNgEntityDetail)
             .collect(Collectors.toList());
     entityNG.addAll(successfullyMigratedList);
