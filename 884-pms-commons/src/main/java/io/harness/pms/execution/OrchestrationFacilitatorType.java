@@ -27,7 +27,8 @@ public class OrchestrationFacilitatorType {
   public static final String TASK = "TASK";
   public static final String TASK_CHAIN = "TASK_CHAIN";
   public static final String CHILD_CHAIN = "CHILD_CHAIN";
+  public static final String ASYNC_CHAIN = "ASYNC_CHAIN";
 
   public static final List<String> ALL_FACILITATOR_TYPES =
-      ImmutableList.of(SYNC, ASYNC, CHILD, CHILDREN, CHILD_CHAIN, TASK, TASK_CHAIN, WAIT_STEP);
+      ImmutableList.of(SYNC, ASYNC, CHILD, CHILDREN, CHILD_CHAIN, TASK, TASK_CHAIN, WAIT_STEP, ASYNC_CHAIN);
 }
