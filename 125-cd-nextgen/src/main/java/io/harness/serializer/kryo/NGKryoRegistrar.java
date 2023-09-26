@@ -149,6 +149,7 @@ import io.harness.cdng.tas.TasSwapRoutesStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.gitops.models.Application;
+import io.harness.gitopsprovider.entity.GithubRestraintInstanceResponseData;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
@@ -159,6 +160,7 @@ import com.esotericsoftware.kryo.Kryo;
 public class NGKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(GithubRestraintInstanceResponseData.class, 13008);
     kryo.register(UpdateReleaseRepoStepInfo.class, 13009);
     kryo.register(UpdateReleaseRepoStepParams.class, 13010);
     kryo.register(RevertPRStepInfo.class, 13011);
