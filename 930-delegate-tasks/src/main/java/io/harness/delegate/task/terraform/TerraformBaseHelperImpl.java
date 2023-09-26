@@ -1017,7 +1017,12 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   private void handleExceptionWhileCopyingConfigFiles(LogCallback logCallback, String baseDir, Exception ex) {
     log.error(String.format("Exception in copying files to provisioner specific directory", ex.getMessage()), ex);
-    FileUtils.deleteQuietly(new File(baseDir));
+    try {
+      FileIo.deleteDirectoryAndItsContentIfExists(baseDir);
+    } catch (Exception e) {
+      log.warn(format("Failed to delete files in directory %s", baseDir), e);
+      logCallback.saveExecutionLog("Failed to clean up files", WARN);
+    }
     logCallback.saveExecutionLog(
         "Failed copying files to provisioner specific directory", ERROR, CommandExecutionStatus.RUNNING);
     throw new TerraformCommandExecutionException(
