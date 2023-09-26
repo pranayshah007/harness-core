@@ -31,16 +31,16 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pipeline.yamlschema.PipelineYamlSchemaServiceClient;
 import io.harness.pms.yaml.HarnessYamlVersion;
-import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
-import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
-import io.harness.pms.yaml.individualschema.TemplateSchemaMetadata;
-import io.harness.pms.yaml.individualschema.TemplateSchemaParserFactory;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import io.harness.template.mappers.TemplateChildEntityTypeToEntityTypeMapper;
 import io.harness.template.utils.TemplateSchemaFetcher;
+import io.harness.yaml.individualschema.AbstractStaticSchemaParser;
+import io.harness.yaml.individualschema.PipelineSchemaRequest;
+import io.harness.yaml.individualschema.TemplateSchemaMetadata;
+import io.harness.yaml.individualschema.TemplateSchemaParserFactory;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.client.YamlSchemaClient;
 import io.harness.yaml.utils.JsonPipelineUtils;
@@ -63,7 +63,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @OwnedBy(CDC)
-public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
+public class NGTemplateSchemaServiceImpl implements io.harness.
+template.services.NGTemplateSchemaService {
   private PipelineYamlSchemaServiceClient pipelineYamlSchemaServiceClient;
   @Inject TemplateServiceConfiguration templateServiceConfiguration;
   @Inject TemplateSchemaFetcher templateSchemaFetcher;
