@@ -5,12 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.yaml.individualschema;
+package io.harness.yaml.individualschema;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InternalServerErrorException;
-import io.harness.yaml.individualschema.AbstractStaticSchemaParser;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
