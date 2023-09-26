@@ -105,7 +105,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
 
   public PluginDetails.Builder getPluginDetailsBuilder(
       ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
-    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts);
+    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts, true);
   }
 
   public CdAbstractStepNode getRead(String stepJsonNode) throws IOException {

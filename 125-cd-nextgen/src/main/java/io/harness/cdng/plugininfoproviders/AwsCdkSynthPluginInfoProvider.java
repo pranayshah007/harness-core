@@ -53,7 +53,7 @@ public class AwsCdkSynthPluginInfoProvider extends AbstractPluginInfoProvider {
         awsCdkSynthStepInfo.getImage(), awsCdkSynthStepInfo.getImagePullPolicy());
     PluginDetails pluginDetails =
         getPluginDetails(usedPorts, awsCdkSynthStepInfo.getRunAsUser(), awsCdkSynthStepInfo.getResources(),
-            awsCdkSynthStepInfo.getPrivileged(), getEnvironmentVariables(awsCdkSynthStepInfo), imageDetails);
+            awsCdkSynthStepInfo.getPrivileged(), getEnvironmentVariables(awsCdkSynthStepInfo), imageDetails, false);
     PluginCreationResponse response = PluginCreationResponse.newBuilder().setPluginDetails(pluginDetails).build();
     StepInfoProto stepInfoProto = getStepInfoProto(cdAbstractStepNode);
 

@@ -55,9 +55,10 @@ public class AwsCdkRollbackPluginInfoProvider extends AbstractPluginInfoProvider
         ParameterField.<String>builder().value(awsCdkConfig.getImage()).build(),
         ParameterField.<ImagePullPolicy>builder().value(awsCdkConfig.getImagePullPolicy()).build());
     Map<String, String> envVariables = getEnvironmentVariables(awsCdkConfig, awsCdkRollbackStepInfo);
-    PluginDetails pluginDetails = getPluginDetails(usedPorts,
-        ParameterField.<Integer>builder().value(awsCdkConfig.getRunAsUser()).build(), getResources(awsCdkConfig),
-        ParameterField.<Boolean>builder().value(awsCdkConfig.getPrivileged()).build(), envVariables, imageDetails);
+    PluginDetails pluginDetails =
+        getPluginDetails(usedPorts, ParameterField.<Integer>builder().value(awsCdkConfig.getRunAsUser()).build(),
+            getResources(awsCdkConfig), ParameterField.<Boolean>builder().value(awsCdkConfig.getPrivileged()).build(),
+            envVariables, imageDetails, false);
 
     PluginCreationResponse response = PluginCreationResponse.newBuilder().setPluginDetails(pluginDetails).build();
     StepInfoProto stepInfoProto = getStepInfoProto(cdAbstractStepNode);
