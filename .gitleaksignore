@@ -2753,3 +2753,5 @@ de0f157f2e8f2b9cc17bfcb0c1dd2ff03b820fc8:idp-service/config/config.yml:generic-a
 54e01c566f9c3cf19665804d8665203ef297cd52:idp-service/config/config.yml:generic-api-key:219
 716993dc3220c2cfef6b07828efc82432c3cdbfe:310-iacm-manager/config/iacm-manager-config.yml:generic-api-key:97
 685549d55a00dbf85ce21a3a095b8b616c6604af:idp-service/chart/templates/config.yaml:generic-api-key:64
+eb6225dbabd5a5fc188ba779f33442185b79483b:332-ci-manager/service/src/test/java/io/harness/ssca/execution/ProvenancePluginHelperTest.java:generic-api-key:173
+b2976fdd7b10a71a7d81bdc915e725ea9d862b83:332-ci-manager/service/src/test/java/io/harness/ssca/execution/ProvenancePluginHelperTest.java:generic-api-key:173
