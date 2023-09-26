@@ -12,10 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.SSCA;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
 
-import java.util.Optional;
+import java.util.List;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 
 @OwnedBy(SSCA)
 public interface EnforcementSummaryRepoCustom {
-  Optional<EnforcementSummaryEntity> findByEnforcementId(String enforcementId);
-  ;
+  List<EnforcementSummaryEntity> findAll(Aggregation aggregation);
 }

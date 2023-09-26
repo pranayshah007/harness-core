@@ -7,16 +7,18 @@
 
 package io.harness.ssca.beans;
 
-import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse.ActivityEnum;
+import io.harness.ssca.entities.ArtifactEntity;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
 @Getter
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
-public enum Activity {
-  DEPLOYED(ActivityEnum.DEPLOYED),
-  NON_DEPLOYED(ActivityEnum.GENERATED);
-
-  ActivityEnum activityEnum;
+public class ArtifactDBO {
+  ArtifactEntity document;
 }

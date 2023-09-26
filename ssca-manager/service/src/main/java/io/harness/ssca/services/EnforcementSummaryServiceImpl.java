@@ -17,6 +17,7 @@ import io.harness.ssca.entities.EnforcementSummaryEntity;
 import io.harness.ssca.transformers.EnforcementSummaryTransformer;
 
 import com.google.inject.Inject;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,6 +43,7 @@ public class EnforcementSummaryServiceImpl implements EnforcementSummaryService 
                                            .denyListViolationCount(denyListResult.size())
                                            .allowListViolationCount(allowListResult.size())
                                            .status(status)
+                                           .createdAt(Instant.now().toEpochMilli())
                                            .build();
 
     EnforcementSummaryEntity savedEntity = enforcementSummaryRepo.save(summary);
