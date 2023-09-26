@@ -80,6 +80,10 @@ public class WinRmSession implements AutoCloseable {
   private Path cacheFilePath;
   private final AuthenticationScheme authenticationScheme;
 
+  public void checkConnectivity() {
+    client.createShell();
+  }
+
   public WinRmSession(WinRmSessionConfig config, LogCallback logCallback) throws JSchException {
     Map<String, String> processedEnvironmentMap = new HashMap<>();
     if (config.getEnvironment() != null) {
