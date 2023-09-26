@@ -44,6 +44,10 @@ public class ProvenanceStepGenerator {
   private static final String UNDERSCORE_SEP = "_";
   private static final List<CIStepInfoType> allowedTypesForProvenance = List.of(CIStepInfoType.DOCKER);
 
+  public static List<CIStepInfoType> getAllowedTypesForProvenance() {
+    return allowedTypesForProvenance;
+  }
+
   public void encapsulateBuildAndPushStepsWithStepGroup(
       List<ExecutionWrapperConfig> executionWrapperConfigs, SlsaConfig slsaConfig, Infrastructure.Type infraType) {
     boolean slsaEnabled = slsaConfig != null

@@ -7,6 +7,7 @@
 
 package io.harness.ci.execution.states;
 
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -38,6 +39,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.ssca.beans.SscaConstants;
 
 import com.google.inject.Inject;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CI)
 public class DockerStep extends AbstractStepExecutable {
@@ -70,8 +72,7 @@ public class DockerStep extends AbstractStepExecutable {
 
     populateArtifact(artifactMetadata, stepParameters, stepArtifactsBuilder);
     if (artifactMetadata.getType() == ArtifactMetadataType.DOCKER_ARTIFACT_METADATA) {
-      DockerStepInfo dockerStepInfo = (DockerStepInfo) stepParameters.getSpec();
-      populateProvenanceInStepOutcome(ambiance, stepArtifactsBuilder, dockerStepInfo);
+      populateProvenanceInStepOutcome(ambiance, stepArtifactsBuilder, stepParameters);
     }
     return stepArtifactsBuilder.build();
   }
@@ -104,12 +105,13 @@ public class DockerStep extends AbstractStepExecutable {
   }
 
   private void populateProvenanceInStepOutcome(
-      Ambiance ambiance, StepArtifactsBuilder stepArtifactsBuilder, DockerStepInfo dockerStepInfo) {
+      Ambiance ambiance, StepArtifactsBuilder stepArtifactsBuilder, StepElementParameters stepParameters) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     if (!featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, accountId)) {
       return;
     }
-    BuildMetadata buildMetadata = getBuildMetadata(dockerStepInfo);
+    DockerStepInfo dockerStepInfo = (DockerStepInfo) stepParameters.getSpec();
+    BuildMetadata buildMetadata = getBuildMetadata(dockerStepInfo, stepParameters.getIdentifier());
 
     StepImageConfig defaultImageConfig =
         ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.DOCKER, accountId);
@@ -128,10 +130,17 @@ public class DockerStep extends AbstractStepExecutable {
         ProvenanceArtifact.builder().predicateType(SscaConstants.PREDICATE_TYPE).predicate(predicate).build());
   }
 
-  private BuildMetadata getBuildMetadata(DockerStepInfo dockerStepInfo) {
-    BuildMetadata buildMetadata = new BuildMetadata(dockerStepInfo.getRepo(), dockerStepInfo.getBuildArgs(),
-        dockerStepInfo.getContext(), dockerStepInfo.getDockerfile(), dockerStepInfo.getLabels());
-
-    return buildMetadata;
+  private BuildMetadata getBuildMetadata(DockerStepInfo dockerStepInfo, String identifier) {
+    String repo =
+        resolveStringParameter("repo", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getRepo(), true);
+    Map<String, String> buildArgs = resolveMapParameter(
+        "buildArgs", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getBuildArgs(), false);
+    String context =
+        resolveStringParameter("context", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getContext(), false);
+    String dockerFile = resolveStringParameter(
+        "dockerfile", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getDockerfile(), false);
+    Map<String, String> labels =
+        resolveMapParameter("labels", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getLabels(), false);
+    return new BuildMetadata(repo, buildArgs, context, dockerFile, labels);
   }
 }
