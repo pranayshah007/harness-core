@@ -157,8 +157,7 @@ public interface PMSPipelineService {
   List<String> getPermittedPipelineIdentifier(
       String accountId, String orgId, String projectId, List<String> pipelineIdentifierList);
 
-  List<String> listAllIdentifiers(Criteria criteria, Pageable pageRequest, String accountId, String orgId,
-      String projectId, Boolean getDistinctFromBranches);
+  List<String> listAllIdentifiers(Criteria criteria);
 
-  Boolean validateViewPermission(String accountId, String orgId, String projectId);
+  boolean validateViewPermission(String accountId, String orgId, String projectId);
 }

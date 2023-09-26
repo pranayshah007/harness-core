@@ -77,7 +77,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
-import io.harness.utils.PageUtils;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -98,7 +97,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -696,10 +694,8 @@ public class PMSPipelineServiceHelper {
     /*
     If user is having all pipeline view permission, we do not need to check for individual pipeline view permission
      */
-    if (!pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
-      List<String> allPipelineIdentifiers = pmsPipelineService.listAllIdentifiers(criteria,
-          PageUtils.getPageRequest(0, 10000, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt)),
-          accountId, orgId, projectId, getDistinctFromBranches);
+    if (pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
+      List<String> allPipelineIdentifiers = pmsPipelineService.listAllIdentifiers(criteria);
 
       List<String> permittedPipelineIdentifiers =
           pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, allPipelineIdentifiers);

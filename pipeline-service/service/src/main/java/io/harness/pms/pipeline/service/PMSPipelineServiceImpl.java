@@ -968,9 +968,23 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     return pipelineAfterUpdate.getIdentifier();
   }
 
+  @Override
+  public List<String> getPermittedPipelineIdentifier(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifierList) {
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        getAccessCheckResponseDTO(accountId, orgId, projectId, pipelineIdentifierList);
+    List<String> permittedPipelineIdentifier = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponseDTO.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedPipelineIdentifier.add(accessControlDTO.getResourceIdentifier());
+      }
+    }
+    return permittedPipelineIdentifier;
+  }
+
   /*
-  getAccessCheckResponseDTO return the access response for pipeline view permission on the pipeline identifier list
-   */
+ getAccessCheckResponseDTO return the access response for pipeline view permission on the pipeline identifier list
+  */
   private AccessCheckResponseDTO getAccessCheckResponseDTO(
       String accountId, String orgId, String projectId, List<String> entityIdentifierList) {
     List<PermissionCheckDTO> permissionChecks =
@@ -988,34 +1002,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public List<String> getPermittedPipelineIdentifier(
-      String accountId, String orgId, String projectId, List<String> pipelineIdentifierList) {
-    AccessCheckResponseDTO accessCheckResponseDTO =
-        getAccessCheckResponseDTO(accountId, orgId, projectId, pipelineIdentifierList);
-    List<String> permittedPipelineIdentifier = new ArrayList<>();
-    for (AccessControlDTO accessControlDTO : accessCheckResponseDTO.getAccessControlList()) {
-      if (accessControlDTO.isPermitted()) {
-        permittedPipelineIdentifier.add(accessControlDTO.getResourceIdentifier());
-      }
-    }
-    return permittedPipelineIdentifier;
+  public List<String> listAllIdentifiers(Criteria criteria) {
+    return pmsPipelineRepository.findAllPipelineIdentifiers(criteria);
   }
 
   @Override
-  public List<String> listAllIdentifiers(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
-      String projectIdentifier, Boolean getDistinctFromBranches) {
-    checkProjectExists(accountId, orgIdentifier, projectIdentifier);
-    if (Boolean.TRUE.equals(getDistinctFromBranches)
-        && gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
-      return pmsPipelineRepository.findAllPipelineIdentifiers(
-          criteria, pageable, accountId, orgIdentifier, projectIdentifier, true);
-    }
-    return pmsPipelineRepository.findAllPipelineIdentifiers(
-        criteria, pageable, accountId, orgIdentifier, projectIdentifier, false);
-  }
-
-  @Override
-  public Boolean validateViewPermission(String accountId, String orgId, String projectId) {
+  public boolean validateViewPermission(String accountId, String orgId, String projectId) {
     return accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), Resource.of("PIPELINE", null),
         PipelineRbacPermissions.PIPELINE_VIEW);
   }

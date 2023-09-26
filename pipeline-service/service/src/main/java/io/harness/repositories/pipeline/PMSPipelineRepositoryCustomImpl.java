@@ -478,9 +478,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
-  public List<String> findAllPipelineIdentifiers(Criteria criteria, Pageable pageable, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
-    return pipelineEntityReadHelper.findAllIdentifiers(criteria, pageable);
+  public List<String> findAllPipelineIdentifiers(Criteria criteria) {
+    return pipelineEntityReadHelper.findAllIdentifiers(criteria);
   }
 
   @VisibleForTesting
