@@ -160,14 +160,14 @@ ciExecutionServiceConfig:
     freeBasicUser:
       dailyMaxBuildsCount: 25
     free:
-      defaultTotalExecutionCount: 20
-      defaultMacExecutionCount: 5
+      defaultTotalExecutionCount: 21
+      defaultMacExecutionCount: 1
     team:
-      defaultTotalExecutionCount: 50
-      defaultMacExecutionCount: 10
+      defaultTotalExecutionCount: 45
+      defaultMacExecutionCount: 5
     enterprise:
-      defaultTotalExecutionCount: 100
-      defaultMacExecutionCount: 10
+      defaultTotalExecutionCount: 65
+      defaultMacExecutionCount: 5
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
