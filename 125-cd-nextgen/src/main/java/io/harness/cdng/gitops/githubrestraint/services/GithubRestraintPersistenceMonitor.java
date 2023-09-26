@@ -8,22 +8,12 @@
 package io.harness.cdng.gitops.githubrestraint.services;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
-import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
-import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
-import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
-
-import static java.time.Duration.ofSeconds;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NgIteratorConfig;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
-import io.harness.mongo.iterator.filter.SpringFilterExpander;
-import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -37,25 +27,28 @@ public class GithubRestraintPersistenceMonitor implements Handler<GithubRestrain
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
 
   public void registerIterators(NgIteratorConfig config) {
-    PersistenceIteratorFactory.PumpExecutorOptions executorOptions =
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("GithubRestraintInstance-Monitor")
-            .poolSize(config.getThreadPoolSize())
-            .interval(ofSeconds(config.getTargetIntervalInSeconds()))
-            .build();
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
-        GithubRestraintPersistenceMonitor.class,
-        MongoPersistenceIterator.<GithubRestraintInstance, SpringFilterExpander>builder()
-            .clazz(GithubRestraintInstance.class)
-            .fieldName(GithubRestraintInstanceKeys.nextIteration)
-            .filterExpander(q -> q.addCriteria(where(GithubRestraintInstanceKeys.state).in(ACTIVE, BLOCKED)))
-            .targetInterval(ofSeconds(30))
-            .acceptableNoAlertDelay(ofSeconds(30))
-            .acceptableExecutionTime(ofSeconds(30))
-            .handler(this)
-            .schedulingType(REGULAR)
-            .persistenceProvider(new SpringPersistenceProvider<>(mongoTemplate))
-            .redistribute(true));
+    // TODO: This has no point this is just here as a back up. If at all we need to implement this we can expose an
+    // internal API from PMS for nodeExecution status check lets not do that in first cut
+
+    //    PersistenceIteratorFactory.PumpExecutorOptions executorOptions =
+    //        PersistenceIteratorFactory.PumpExecutorOptions.builder()
+    //            .name("GithubRestraintInstance-Monitor")
+    //            .poolSize(config.getThreadPoolSize())
+    //            .interval(ofSeconds(config.getTargetIntervalInSeconds()))
+    //            .build();
+    //    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+    //        GithubRestraintPersistenceMonitor.class,
+    //        MongoPersistenceIterator.<GithubRestraintInstance, SpringFilterExpander>builder()
+    //            .clazz(GithubRestraintInstance.class)
+    //            .fieldName(GithubRestraintInstanceKeys.nextIteration)
+    //            .filterExpander(q -> q.addCriteria(where(GithubRestraintInstanceKeys.state).in(ACTIVE, BLOCKED)))
+    //            .targetInterval(ofSeconds(30))
+    //            .acceptableNoAlertDelay(ofSeconds(30))
+    //            .acceptableExecutionTime(ofSeconds(30))
+    //            .handler(this)
+    //            .schedulingType(REGULAR)
+    //            .persistenceProvider(new SpringPersistenceProvider<>(mongoTemplate))
+    //            .redistribute(true));
   }
 
   @Override

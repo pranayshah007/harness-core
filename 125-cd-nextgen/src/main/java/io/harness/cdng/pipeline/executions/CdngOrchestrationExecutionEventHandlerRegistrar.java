@@ -12,6 +12,7 @@ import static io.harness.pms.contracts.execution.events.OrchestrationEventType.O
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintObserverImpl;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 
@@ -26,7 +27,8 @@ import lombok.experimental.UtilityClass;
 public class CdngOrchestrationExecutionEventHandlerRegistrar {
   public Map<OrchestrationEventType, Set<Class<? extends OrchestrationEventHandler>>> getEngineEventHandlers() {
     Map<OrchestrationEventType, Set<Class<? extends OrchestrationEventHandler>>> handlerMap = new HashMap<>();
-    handlerMap.put(NODE_EXECUTION_STATUS_UPDATE, Sets.newHashSet(CdngPipelineExecutionUpdateEventHandler.class));
+    handlerMap.put(NODE_EXECUTION_STATUS_UPDATE,
+        Sets.newHashSet(CdngPipelineExecutionUpdateEventHandler.class, GithubRestraintObserverImpl.class));
     handlerMap.put(ORCHESTRATION_END, Sets.newHashSet(CDPipelineEndEventHandler.class));
     return handlerMap;
   }

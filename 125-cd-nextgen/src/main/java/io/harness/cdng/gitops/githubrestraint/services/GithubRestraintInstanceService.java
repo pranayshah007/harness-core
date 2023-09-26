@@ -8,11 +8,12 @@
 package io.harness.cdng.gitops.githubrestraint.services;
 
 import io.harness.distribution.constraint.Constraint;
+import io.harness.distribution.constraint.ConstraintRegistry;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 
 import java.util.List;
 
-public interface GithubRestraintInstanceService {
+public interface GithubRestraintInstanceService extends ConstraintRegistry {
   Constraint createAbstraction(String tokenRef);
   List<GithubRestraintInstance> getAllActiveAndBlockedByResourceUnit(String resourceUnit);
 

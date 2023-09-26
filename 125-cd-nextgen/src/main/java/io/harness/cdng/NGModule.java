@@ -238,7 +238,6 @@ public class NGModule extends AbstractModule {
     bind(CDLicenseUsageReportService.class).to(CDLicenseUsageReportServiceImpl.class);
     bind(ManifestTaskService.class).to(ManifestTaskServiceImpl.class);
     bind(GithubRestraintInstanceService.class).to(GithubRestraintInstanceServiceImpl.class);
-    bind(GithubRestraintObserver.class).to(GithubRestraintObserverImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

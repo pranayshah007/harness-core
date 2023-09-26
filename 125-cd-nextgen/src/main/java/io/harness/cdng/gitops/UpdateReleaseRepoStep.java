@@ -12,7 +12,6 @@ import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_O
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -28,10 +27,8 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintRegistry;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
-import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -56,6 +53,7 @@ import io.harness.distribution.constraint.ConsumerId;
 import io.harness.distribution.constraint.InvalidPermitsException;
 import io.harness.distribution.constraint.PermanentlyBlockedConsumerException;
 import io.harness.distribution.constraint.UnableToRegisterConsumerException;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.common.ExpressionMode;
@@ -64,7 +62,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
@@ -72,7 +70,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -83,9 +80,9 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
-import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
-import io.harness.steps.executable.AsyncExecutableWithRbac;
+import io.harness.steps.executable.AsyncChainExecutableWithRbac;
+import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
@@ -95,11 +92,9 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -107,26 +102,203 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(GITOPS)
 @Slf4j
-public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElementParameters> {
+public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepElementParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_UPDATE_RELEASE_REPO.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private EngineExpressionService engineExpressionService;
-
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private CDStepHelper cdStepHelper;
-  @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+
   @Inject protected OutcomeService outcomeService;
-  @Inject private K8sStepHelper k8sStepHelper;
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
-  @Inject private GithubRestraintRegistry githubRestraintRegistry;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+
+  @Override
+  public Class<StepElementParameters> getStepParametersClass() {
+    return StepElementParameters.class;
+  }
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+
+  private Map<String, Object> populateConstraintContext(ConstraintUnit constraintUnit, String releaseEntityId) {
+    Map<String, Object> constraintContext = new HashMap<>();
+    constraintContext.put(GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    constraintContext.put(
+        GithubRestraintInstanceKeys.order, githubRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
+
+    return constraintContext;
+  }
+
+  public NGLogCallback getLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
+    return new NGLogCallback(logStreamingStepClientFactory, ambiance, null, shouldOpenStream);
+  }
+
+  @Override
+  @SneakyThrows
+  public AsyncChainExecutableResponse startChainLinkAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    UpdateReleaseRepoStepParams gitOpsSpecParams = (UpdateReleaseRepoStepParams) stepParameters.getSpec();
+    ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
+    ConnectorInfoDTO connectorInfoDTO =
+        cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
+    NGLogCallback logCallback = getLogCallback(ambiance, true);
+    logCallback.saveExecutionLog("Acquiring lock");
+    String tokenRefIdentifier = extractToken(connectorInfoDTO);
+
+    Constraint constraint =
+        githubRestraintInstanceService.createAbstraction(AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier);
+    String releaseEntityId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String consumerId = generateUuid();
+    ConstraintUnit constraintUnit = new ConstraintUnit(AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier);
+
+    Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
+
+    try {
+      Consumer.State state = constraint.registerConsumer(
+          constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintInstanceService);
+      switch (state) {
+        case BLOCKED:
+          return AsyncChainExecutableResponse.newBuilder().setCallbackId(consumerId).build();
+        case ACTIVE:
+          try {
+            // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
+            String taskId =
+                queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
+            return AsyncChainExecutableResponse.newBuilder().setCallbackId(taskId).setChainEnd(true).build();
+
+          } catch (Exception e) {
+            log.error("Failed to execute Update Release Repo step", e);
+            throw new InvalidRequestException(
+                String.format("Failed to execute Update Release Repo step. %s", e.getMessage()));
+          }
+        case REJECTED:
+          throw new GeneralException("Found already running resourceConstrains, marking this execution as failed");
+        default:
+          throw new IllegalStateException("This should never happen");
+      }
+
+    } catch (InvalidPermitsException | UnableToRegisterConsumerException | PermanentlyBlockedConsumerException e) {
+      log.error("Exception on ResourceRestraintStep for id [{}]", AmbianceUtils.obtainCurrentRuntimeId(ambiance), e);
+      throw e;
+    }
+  }
+
+  @Override
+  public AsyncChainExecutableResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+      StepElementParameters stepParameters, StepInputPackage inputPackage,
+      ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
+    try {
+      UpdateReleaseRepoStepParams gitOpsSpecParams = (UpdateReleaseRepoStepParams) stepParameters.getSpec();
+      ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
+      ConnectorInfoDTO connectorInfoDTO =
+          cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
+      // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
+      String taskId =
+          queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
+      return AsyncChainExecutableResponse.newBuilder().setCallbackId(taskId).setChainEnd(true).build();
+
+    } catch (Exception e) {
+      log.error("Failed to execute Update Release Repo step", e);
+      throw new InvalidRequestException(
+          String.format("Failed to execute Update Release Repo step. %s", e.getMessage()));
+    }
+  }
+
+  @Override
+  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataSupplier.get();
+
+    if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
+      UpdateReleaseRepoOutcome updateReleaseRepoOutcome = UpdateReleaseRepoOutcome.builder()
+                                                              .prlink(ngGitOpsResponse.getPrLink())
+                                                              .prNumber(ngGitOpsResponse.getPrNumber())
+                                                              .commitId(ngGitOpsResponse.getCommitId())
+                                                              .ref(ngGitOpsResponse.getRef())
+                                                              .build();
+
+      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME,
+          updateReleaseRepoOutcome, StepOutcomeGroup.STAGE.name());
+
+      return StepResponse.builder()
+          .unitProgressList(ngGitOpsResponse.getUnitProgressData().getUnitProgresses())
+          .status(Status.SUCCEEDED)
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME)
+                           .outcome(updateReleaseRepoOutcome)
+                           .build())
+          .build();
+    }
+
+    return StepResponse.builder()
+        .unitProgressList(ngGitOpsResponse.getUnitProgressData().getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder().setErrorMessage(ngGitOpsResponse.getErrorMessage()).build())
+        .build();
+  }
+
+  private String queueDelegateTask(Ambiance ambiance, StepElementParameters stepParameters,
+      ManifestOutcome releaseRepoOutcome, UpdateReleaseRepoStepParams gitOpsSpecParams,
+      ConnectorInfoDTO connectorInfoDTO) {
+    Map<String, Map<String, String>> filesToVariablesMap =
+        buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance, gitOpsSpecParams.getVariables());
+
+    List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
+    gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome, filesToVariablesMap.keySet()));
+
+    NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
+                                                .gitOpsTaskType(GitOpsTaskType.UPDATE_RELEASE_REPO)
+                                                .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
+                                                .accountId(AmbianceUtils.getAccountId(ambiance))
+                                                .connectorInfoDTO(connectorInfoDTO)
+                                                .filesToVariablesMap(filesToVariablesMap)
+                                                .prTitle(gitOpsSpecParams.prTitle.getValue())
+                                                .build();
+
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
+                                  .taskType(TaskType.GITOPS_TASK_NG.name())
+                                  .parameters(new Object[] {ngGitOpsTaskParams})
+                                  .build();
+    TaskRequest taskRequest =
+        TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
+            TaskCategory.DELEGATE_TASK_V2, emptyList(), false, taskData.getTaskType(), emptyList());
+
+    DelegateTaskRequest delegateTaskRequest =
+        cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);
+
+    return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+  }
+
+  @Override
+  public void handleAbort(
+      Ambiance ambiance, StepElementParameters stepParameters, AsyncChainExecutableResponse executableResponse) {
+    // TODO: implement this
+  }
+
+  private String extractToken(ConnectorInfoDTO connectorInfoDTO) {
+    String tokenRefIdentifier = null;
+
+    GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    GithubCredentialsDTO githubCredentialsDTO = githubConnectorDTO.getAuthentication().getCredentials();
+
+    if (githubCredentialsDTO instanceof GithubHttpCredentialsDTO) {
+      GithubUsernameTokenDTO githubUsernameTokenDTO =
+          (GithubUsernameTokenDTO) ((GithubHttpCredentialsDTO) githubCredentialsDTO).getHttpCredentialsSpec();
+      tokenRefIdentifier = githubUsernameTokenDTO.getTokenRef().getIdentifier();
+    } else if (githubCredentialsDTO instanceof GithubSshCredentialsDTO) {
+      tokenRefIdentifier = ((GithubSshCredentialsDTO) githubCredentialsDTO).getSshKeyRef().getIdentifier();
+    }
+    return tokenRefIdentifier;
+  }
 
   @VisibleForTesting
   public Map<String, Map<String, String>> buildFilePathsToVariablesMap(
@@ -245,12 +417,7 @@ public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElemen
         && !"null".equals(String.valueOf(parameter.getValue()));
   }
 
-  @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
-  }
-
-  public GitFetchFilesConfig getGitFetchFilesConfig(
+  private GitFetchFilesConfig getGitFetchFilesConfig(
       Ambiance ambiance, ManifestOutcome manifestOutcome, Set<String> resolvedFilePaths) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) manifestOutcome.getStore();
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
@@ -288,165 +455,5 @@ public class UpdateReleaseRepoStep implements AsyncExecutableWithRbac<StepElemen
         .succeedIfFileNotFound(true)
         .gitStoreDelegateConfig(rebuiltGitStoreDelegateConfig)
         .build();
-  }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
-
-  @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
-
-  @SneakyThrows
-  @Override
-  public AsyncExecutableResponse executeAsyncAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    /*
-    TODO:
-     2. Handle the case when PR already exists
-     Delegate side: (NgGitOpsCommandTask.java)
-    */
-    UpdateReleaseRepoStepParams gitOpsSpecParams = (UpdateReleaseRepoStepParams) stepParameters.getSpec();
-    ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
-    ConnectorInfoDTO connectorInfoDTO =
-        cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
-    NGLogCallback logCallback = getLogCallback(ambiance, true);
-
-    try {
-      logCallback.saveExecutionLog("Acquiring lock");
-      String tokenRefIdentifier = null;
-
-      GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
-      GithubCredentialsDTO githubCredentialsDTO = githubConnectorDTO.getAuthentication().getCredentials();
-
-      if (githubCredentialsDTO instanceof GithubHttpCredentialsDTO) {
-        GithubUsernameTokenDTO githubUsernameTokenDTO =
-            (GithubUsernameTokenDTO) ((GithubHttpCredentialsDTO) githubCredentialsDTO).getHttpCredentialsSpec();
-        tokenRefIdentifier = githubUsernameTokenDTO.getTokenRef().getIdentifier();
-      } else if (githubCredentialsDTO instanceof GithubSshCredentialsDTO) {
-        tokenRefIdentifier = ((GithubSshCredentialsDTO) githubCredentialsDTO).getSshKeyRef().getIdentifier();
-      }
-
-      Constraint constraint =
-          githubRestraintInstanceService.createAbstraction(AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier);
-      String releaseEntityId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-      String consumerId = generateUuid();
-      ConstraintUnit constraintUnit = new ConstraintUnit(AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier);
-
-      Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
-
-      Consumer.State state = constraint.registerConsumer(
-          constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintRegistry);
-      if (state == BLOCKED) {
-        logCallback.saveExecutionLog("Execution blocked, waiting for lock to be released.");
-        do {
-          Thread.sleep(Duration.ofSeconds(5).toMillis());
-          List<Consumer> consumers = githubRestraintRegistry.loadConsumers(constraint.getId(), constraintUnit, false);
-          Optional<Consumer> optionalConsumer =
-              consumers.stream()
-                  .filter(fetchedConsumer -> consumerId.equals(fetchedConsumer.getId().getValue()))
-                  .findFirst();
-          if (optionalConsumer.isPresent()) {
-            state = optionalConsumer.get().getState();
-          }
-        } while (state == BLOCKED);
-        log.info("Constraint is active, resuming execution");
-      }
-
-    } catch (InvalidPermitsException | UnableToRegisterConsumerException | PermanentlyBlockedConsumerException e) {
-      log.error("Exception on ResourceRestraintStep for id [{}]", AmbianceUtils.obtainCurrentRuntimeId(ambiance), e);
-      throw e;
-    }
-
-    try {
-      // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
-      Map<String, Map<String, String>> filesToVariablesMap =
-          buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance, gitOpsSpecParams.getVariables());
-
-      List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
-      gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome, filesToVariablesMap.keySet()));
-
-      NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
-                                                  .gitOpsTaskType(GitOpsTaskType.UPDATE_RELEASE_REPO)
-                                                  .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
-                                                  .accountId(AmbianceUtils.getAccountId(ambiance))
-                                                  .connectorInfoDTO(connectorInfoDTO)
-                                                  .filesToVariablesMap(filesToVariablesMap)
-                                                  .prTitle(gitOpsSpecParams.prTitle.getValue())
-                                                  .build();
-
-      final TaskData taskData = TaskData.builder()
-                                    .async(true)
-                                    .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                                    .taskType(TaskType.GITOPS_TASK_NG.name())
-                                    .parameters(new Object[] {ngGitOpsTaskParams})
-                                    .build();
-
-      String taskId = queueTask(ambiance, taskData);
-
-      return AsyncExecutableResponse.newBuilder().addAllCallbackIds(Collections.singleton(taskId)).build();
-
-    } catch (Exception e) {
-      log.error("Failed to execute Update Release Repo step", e);
-      throw new InvalidRequestException(
-          String.format("Failed to execute Update Release Repo step. %s", e.getMessage()));
-    }
-  }
-
-  private Map<String, Object> populateConstraintContext(ConstraintUnit constraintUnit, String releaseEntityId) {
-    Map<String, Object> constraintContext = new HashMap<>();
-    constraintContext.put(GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
-    constraintContext.put(
-        GithubRestraintInstanceKeys.order, githubRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
-
-    return constraintContext;
-  }
-
-  private String queueTask(Ambiance ambiance, TaskData taskData) {
-    TaskRequest taskRequest =
-        TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-            TaskCategory.DELEGATE_TASK_V2, emptyList(), false, taskData.getTaskType(), emptyList());
-
-    DelegateTaskRequest delegateTaskRequest =
-        cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);
-
-    return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
-  }
-
-  @Override
-  public StepResponse handleAsyncResponse(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataMap.values().toArray()[0];
-
-    if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
-      UpdateReleaseRepoOutcome updateReleaseRepoOutcome = UpdateReleaseRepoOutcome.builder()
-                                                              .prlink(ngGitOpsResponse.getPrLink())
-                                                              .prNumber(ngGitOpsResponse.getPrNumber())
-                                                              .commitId(ngGitOpsResponse.getCommitId())
-                                                              .ref(ngGitOpsResponse.getRef())
-                                                              .build();
-
-      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME,
-          updateReleaseRepoOutcome, StepOutcomeGroup.STAGE.name());
-
-      return StepResponse.builder()
-          .unitProgressList(ngGitOpsResponse.getUnitProgressData().getUnitProgresses())
-          .status(Status.SUCCEEDED)
-          .stepOutcome(StepResponse.StepOutcome.builder()
-                           .name(OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME)
-                           .outcome(updateReleaseRepoOutcome)
-                           .build())
-          .build();
-    }
-
-    return StepResponse.builder()
-        .unitProgressList(ngGitOpsResponse.getUnitProgressData().getUnitProgresses())
-        .status(Status.FAILED)
-        .failureInfo(FailureInfo.newBuilder().setErrorMessage(ngGitOpsResponse.getErrorMessage()).build())
-        .build();
-  }
-
-  public NGLogCallback getLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
-    return new NGLogCallback(logStreamingStepClientFactory, ambiance, null, shouldOpenStream);
   }
 }
