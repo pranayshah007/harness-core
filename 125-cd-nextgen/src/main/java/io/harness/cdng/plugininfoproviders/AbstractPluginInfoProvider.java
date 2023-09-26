@@ -48,9 +48,9 @@ public abstract class AbstractPluginInfoProvider implements CDPluginInfoProvider
 
   protected PluginDetails getPluginDetails(Set<Integer> usedPorts, ParameterField<Integer> runAsUser,
       ContainerResource resources, ParameterField<Boolean> privileged, Map<String, String> envVariables,
-      ImageDetails imageDetails) {
+      ImageDetails imageDetails, boolean isHarnessManaged) {
     PluginDetails.Builder pluginDetailsBuilder =
-        PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts);
+        PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts, isHarnessManaged);
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
     if (getParameterFieldValue(privileged) != null) {
