@@ -169,7 +169,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
   }
 
   @Test
-  @Owner(developers = OwnerRule.IVAN)
+  @Owner(developers = OwnerRule.TARUN_UBA)
   @Category(UnitTests.class)
   public void runOnceWithSameNamespacesNoHelmChartInfo() throws Exception {
     List<String> namespacesRN1 = Arrays.asList("ns1", "ns2");
