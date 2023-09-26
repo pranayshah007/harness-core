@@ -7,7 +7,13 @@
 
 package io.harness.ng.support.resource;
 
-import static io.harness.NGCommonEntityConstants.*;
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.BAD_REQUEST_CODE;
+import static io.harness.NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE;
+import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE;
 
 import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
 import io.harness.annotations.dev.HarnessTeam;

@@ -8,7 +8,8 @@ package io.harness.ng.support;
 
 import static io.harness.rule.OwnerRule.ASHINSABU;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.NgManagerTestBase;
 import io.harness.category.element.UnitTests;
@@ -25,8 +26,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.*;
-
+import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 public class CannyClientTest extends NgManagerTestBase {
   @Spy @InjectMocks private CannyClient cannyClient;
   private AutoCloseable openMocks;
