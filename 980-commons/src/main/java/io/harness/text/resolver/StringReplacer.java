@@ -16,11 +16,13 @@ import io.harness.annotations.dev.ProductModule;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class StringReplacer {
   private static final char ESCAPE_CHAR = '\\';
 
@@ -297,7 +299,8 @@ public class StringReplacer {
     String expression = buf.substring(expressionStartPos, expressionEndPos);
     if (expressionStartPos > 0 && buf.charAt(expressionStartPos - 1) == '\"' && expressionEndPos < buf.length()
         && buf.charAt(expressionEndPos) == '\"') {
-      expression = StringEscapeUtils.unescapeJson(expression);
+      log.info("[String Replacer] expression: {}, unescaped expression: {}", expression,
+          StringEscapeUtils.unescapeJson(expression));
     }
     return expression;
   }
