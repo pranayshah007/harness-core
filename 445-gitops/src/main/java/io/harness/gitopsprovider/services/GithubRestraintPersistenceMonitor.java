@@ -15,12 +15,12 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofSeconds;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+import io.harness.NgIteratorConfig;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
@@ -37,11 +37,11 @@ public class GithubRestraintPersistenceMonitor implements Handler<GithubRestrain
   @Inject private MongoTemplate mongoTemplate;
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
 
-  public void registerIterators(IteratorConfig config) {
+  public void registerIterators(NgIteratorConfig config) {
     PersistenceIteratorFactory.PumpExecutorOptions executorOptions =
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("GithubRestraintInstance-Monitor")
-            .poolSize(config.getThreadPoolCount())
+            .poolSize(config.getThreadPoolSize())
             .interval(ofSeconds(config.getTargetIntervalInSeconds()))
             .build();
     persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,

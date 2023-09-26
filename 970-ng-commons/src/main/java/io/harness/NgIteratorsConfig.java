@@ -22,5 +22,6 @@ public class NgIteratorsConfig {
   NgIteratorConfig webhookEventProcessingServiceIteratorConfig;
   NgIteratorConfig gitFullSyncEntityIteratorConfig;
   NgIteratorConfig oauthTokenRefreshIteratorConfig;
+  NgIteratorConfig githubRestraintIteratorConfig;
   CDLicenseDailyReportIteratorConfig cdLicenseDailyReportIteratorConfig;
 }

@@ -112,6 +112,9 @@ ngIteratorsConfig:
     threadPoolSize: ${GIT_FULLSYNC_ENTITY_ITERATOR_THREAD_POOL_SIZE:-5}
   oauthTokenRefreshIteratorConfig:
     threadPoolSize: ${NG_TOKEN_REFRESH_THREAD_POOL_SIZE:-2}
+  githubRestraintIteratorConfig:
+    threadPoolSize: 2
+    targetIntervalInSeconds: 300
 
 #[secondary-db] : Uncomment the following if you want to connect to another database
 #secondary - mongo:

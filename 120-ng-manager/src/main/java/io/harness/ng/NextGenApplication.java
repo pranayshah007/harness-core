@@ -90,6 +90,7 @@ import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.exception.MongoExecutionTimeoutExceptionMapper;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.freeze.FreezeNotificationTemplateRegistrar;
+import io.harness.gitopsprovider.services.GithubRestraintPersistenceMonitor;
 import io.harness.gitsync.AbstractGitSyncModule;
 import io.harness.gitsync.AbstractGitSyncSdkModule;
 import io.harness.gitsync.GitSdkConfiguration;
@@ -665,6 +666,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(CDLicenseDailyReportIteratorHandler.class)
         .registerIterator(ngIteratorsConfig.getCdLicenseDailyReportIteratorConfig());
+    injector.getInstance(GithubRestraintPersistenceMonitor.class)
+        .registerIterators(ngIteratorsConfig.getGithubRestraintIteratorConfig());
     injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
     injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
   }
