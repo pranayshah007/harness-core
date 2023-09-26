@@ -38,7 +38,6 @@ import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.DuplicateKeyException;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.jexl3.JexlException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -122,7 +122,7 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
         return instance.getUuid();
       });
     } catch (DuplicateKeyException ex) {
-      throw new OutcomeException(format("Outcome with name %s is already saved", name), ex);
+      throw new OutcomeException(format("Outcome with name %s is already saved", name));
     }
   }
 
