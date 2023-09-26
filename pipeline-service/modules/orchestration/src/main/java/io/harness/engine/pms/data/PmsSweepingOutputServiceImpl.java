@@ -34,7 +34,6 @@ import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.DuplicateKeyException;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -47,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.jexl3.JexlException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -258,7 +258,7 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
               .build());
       return instance.getUuid();
     } catch (DuplicateKeyException ex) {
-      throw new SweepingOutputException(format("Sweeping output with name %s is already saved", name), ex);
+      throw new SweepingOutputException(format("Sweeping output with name %s is already saved", name));
     }
   }
 }
