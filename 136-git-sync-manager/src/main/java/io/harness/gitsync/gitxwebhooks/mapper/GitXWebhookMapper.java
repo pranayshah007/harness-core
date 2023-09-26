@@ -128,6 +128,7 @@ public class GitXWebhookMapper {
               gitXWebhookResponse.setConnectorRef(gitXWebhook.getConnectorRef());
               gitXWebhookResponse.setFolderPaths(gitXWebhook.getFolderPaths());
               gitXWebhookResponse.setIsEnabled(gitXWebhook.getIsEnabled());
+              gitXWebhookResponse.setEventTriggerTime(gitXWebhook.getEventTriggerTime());
               return gitXWebhookResponse;
             })
             .collect(Collectors.toList());
@@ -142,6 +143,7 @@ public class GitXWebhookMapper {
     responseBody.setConnectorRef(gitXWebhook.getConnectorRef());
     responseBody.setFolderPaths(gitXWebhook.getFolderPaths());
     responseBody.setIsEnabled(gitXWebhook.isIsEnabled());
+    responseBody.setEventTriggerTime(gitXWebhook.getEventTriggerTime());
     return responseBody;
   }
 
