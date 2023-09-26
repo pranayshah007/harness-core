@@ -22,7 +22,7 @@ public interface GitlabRestClient {
       @Path("sha") String sha, @Query("state") String state, @Query("context") String context,
       @Query("description") String description, @Query("target_url") String target_url);
 
-  @PUT("v4/projects/{project}/merge_requests/{prNumber}/merge")
+  @PUT("api/v4/projects/{project}/merge_requests/{prNumber}/merge")
   Call<Object> mergePR(@Header("PRIVATE-TOKEN") String token, @Path("project") String project,
       @Path("prNumber") String prNumber, @Query("should_remove_source_branch") boolean should_remove_source_branch);
 }
