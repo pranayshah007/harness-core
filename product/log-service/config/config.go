@@ -68,6 +68,10 @@ type Config struct {
 		ConsumerGroup string `envconfig:"LOG_SERVICE_CONSUMER_GROUP" default:"group-one"`
 	}
 
+	Stackdriver struct {
+		ProjectID string `envconfig:"LOG_SERVICE_STACKDRIVER_PROJECT_ID"`
+	}
+
 	// Whether to use secret env variables as they are, or talk to GCP secret
 	// manager to resolve them.
 	SecretResolution struct {

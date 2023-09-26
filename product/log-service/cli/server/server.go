@@ -30,6 +30,7 @@ import (
 	"github.com/harness/harness-core/product/log-service/logger"
 	memoryQueue "github.com/harness/harness-core/product/log-service/queue/memory"
 	"github.com/harness/harness-core/product/log-service/server"
+	"github.com/harness/harness-core/product/log-service/stackdriver"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/store/bolt"
 	"github.com/harness/harness-core/product/log-service/store/s3"
@@ -144,13 +145,28 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 
 	workerPool.Execute(zipwork.Work, queue, cache, store, config)
 
+	stackdriver, err := stackdriver.New(ctx, config.Stackdriver.ProjectID)
+	if err != nil {
+		logrus.WithError(err).Errorln("failed to create stackdriver client")
+	} else {
+		logrus.Infof("stackdriver client created for project %s", config.Stackdriver.ProjectID)
+		defer func() {
+			err := stackdriver.Close()
+			if err != nil {
+				logger.FromContext(context.Background()).WithError(err).Errorln("error closing stackdriver client")
+			} else {
+				logger.FromContext(context.Background()).Infoln("stackdriver client closed")
+			}
+		}()
+	}
+
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
 	// create the http server.
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(queue, cache, stream, store, config, ngClient),
+		Handler: handler.Handler(queue, cache, stream, store, stackdriver, config, ngClient),
 	}
 
 	// trap the os signal to gracefully shutdown the
@@ -177,10 +193,7 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	err = server.ListenAndServe(ctx)
 	if err == context.Canceled {
 		logrus.Infoln("program gracefully terminated")
-		return nil
-	}
-
-	if err != nil {
+	} else if err != nil {
 		logrus.Errorf("program terminated with error: %s", err)
 	}
 

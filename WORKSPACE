@@ -3946,6 +3946,13 @@ go_repository(
     version = "v9.0.3",
 )
 
+go_repository(
+    name = "com_google_cloud_go_logging",
+    importpath = "cloud.google.com/go/logging",
+    sum = "h1:CJYxlNNNNAMkHp9em/YEXcfJg+rPDg7YfwoRpMU+t5I=",
+    version = "v1.7.0",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",

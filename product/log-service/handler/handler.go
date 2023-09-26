@@ -6,6 +6,7 @@
 package handler
 
 import (
+	"github.com/harness/harness-core/product/log-service/stackdriver"
 	"io"
 	"net/http"
 	"net/http/pprof"
@@ -24,7 +25,7 @@ import (
 
 // Handler returns an http.Handler that exposes the
 // service resources.
-func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store store.Store, config config.Config, ngClient *client.HTTPClient) http.Handler {
+func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store store.Store, stackdriver *stackdriver.Stackdriver, config config.Config, ngClient *client.HTTPClient) http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Middleware)
 
@@ -119,6 +120,21 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 
 		return sr
 	}())
+
+	if stackdriver != nil {
+		// Stackdriver endpoints
+		// Format: /stackdriver?accountID=&key=
+		r.Mount("/stackdriver", func() http.Handler {
+			sr := chi.NewRouter()
+			if !config.Auth.DisableAuth {
+				sr.Use(AuthMiddleware(config, ngClient, false))
+			}
+
+			sr.Post("/", HandlePost(stackdriver))
+			sr.Get("/", HandleStackdriverPing(stackdriver))
+			return sr
+		}())
+	}
 
 	// Log intelligence endpoints
 	// Format: /rca?accountID=&key=
