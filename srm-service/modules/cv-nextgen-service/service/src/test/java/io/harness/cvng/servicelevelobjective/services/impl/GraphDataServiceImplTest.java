@@ -16,6 +16,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.SHASHWAT_SACHAN;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +32,8 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
@@ -38,7 +41,9 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsD
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -66,6 +71,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Spy;
 
 public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Inject GraphDataServiceImpl graphDataService;
@@ -75,11 +81,17 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private SLIRecordService sliRecordService;
+
+  @Spy @Inject private CompositeSLORecordServiceImpl sloRecordService;
   private MonitoredService monitoredService;
   private String sliId;
 
   private String sliId2;
   private SimpleServiceLevelObjective simpleServiceLevelObjective1;
+
+  private String requestVerificationTaskId;
+
+  private String leastPerformantVerificationTaskId;
 
   private SimpleServiceLevelObjective simpleRequestServiceLevelObjective;
   @Inject private HPersistence hPersistence;
@@ -90,6 +102,16 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   private ServiceLevelIndicator serviceLevelIndicator;
 
   private ServiceLevelIndicator requestServiceLevelIndicator;
+
+  private ServiceLevelObjectiveV2DTO requestServiceLevelObjectiveV2DTO;
+
+  private CompositeServiceLevelObjective requestCompositeServiceLevelObjective;
+  private ServiceLevelObjectiveV2DTO requestSimpleServiceLevelObjectiveDTO1;
+  private ServiceLevelObjectiveV2DTO requestSimpleServiceLevelObjectiveDTO2;
+  private SimpleServiceLevelObjective requestSimpleServiceLevelObjective1;
+  private SimpleServiceLevelObjective requestSimpleServiceLevelObjective2;
+
+  CompositeServiceLevelObjective leastPerformantCompositeServiceLevelObjective;
 
   @Before
   public void setup() {
@@ -166,11 +188,89 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
 
+    requestSimpleServiceLevelObjectiveDTO1 =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("requestSloIdentifier").build();
+    simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) requestSimpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    requestSimpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), requestSimpleServiceLevelObjectiveDTO1);
+    requestSimpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), requestSimpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    requestSimpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("requestSloIdentifier2").build();
+    simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) requestSimpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO2.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    requestSimpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), requestSimpleServiceLevelObjectiveDTO2);
+    requestSimpleServiceLevelObjective2 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), requestSimpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    requestServiceLevelObjectiveV2DTO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .identifier("requestCompositeSLOIdentifier")
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .evaluationType(SLIEvaluationType.REQUEST)
+                      .serviceLevelObjectivesDetails(Arrays.asList(
+                          ServiceLevelObjectiveDetailsDTO.builder()
+                              .serviceLevelObjectiveRef(requestSimpleServiceLevelObjective1.getIdentifier())
+                              .weightagePercentage(75.0)
+                              .accountId(requestSimpleServiceLevelObjective1.getAccountId())
+                              .orgIdentifier(requestSimpleServiceLevelObjective1.getOrgIdentifier())
+                              .projectIdentifier(requestSimpleServiceLevelObjective1.getProjectIdentifier())
+                              .build(),
+                          ServiceLevelObjectiveDetailsDTO.builder()
+                              .serviceLevelObjectiveRef(requestSimpleServiceLevelObjective2.getIdentifier())
+                              .weightagePercentage(25.0)
+                              .accountId(requestSimpleServiceLevelObjective2.getAccountId())
+                              .orgIdentifier(requestSimpleServiceLevelObjective2.getOrgIdentifier())
+                              .projectIdentifier(requestSimpleServiceLevelObjective2.getProjectIdentifier())
+                              .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), requestServiceLevelObjectiveV2DTO);
+    requestCompositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), requestServiceLevelObjectiveV2DTO.getIdentifier());
+
+    serviceLevelObjectiveV2DTO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .identifier("leastPerformantCompositeServiceLevelObjectiveIdentifier")
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .evaluationType(SLIEvaluationType.REQUEST)
+                      .sloFormulaType(CompositeSLOFormulaType.LEAST_PERFORMANCE)
+                      .serviceLevelObjectivesDetails(Arrays.asList(
+                          ServiceLevelObjectiveDetailsDTO.builder()
+                              .serviceLevelObjectiveRef(requestSimpleServiceLevelObjective1.getIdentifier())
+                              .weightagePercentage(100.0)
+                              .accountId(requestSimpleServiceLevelObjective1.getAccountId())
+                              .orgIdentifier(requestSimpleServiceLevelObjective1.getOrgIdentifier())
+                              .projectIdentifier(requestSimpleServiceLevelObjective1.getProjectIdentifier())
+                              .build(),
+                          ServiceLevelObjectiveDetailsDTO.builder()
+                              .serviceLevelObjectiveRef(requestSimpleServiceLevelObjective2.getIdentifier())
+                              .weightagePercentage(30.0)
+                              .accountId(requestSimpleServiceLevelObjective2.getAccountId())
+                              .orgIdentifier(requestSimpleServiceLevelObjective2.getOrgIdentifier())
+                              .projectIdentifier(requestSimpleServiceLevelObjective2.getProjectIdentifier())
+                              .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    leastPerformantCompositeServiceLevelObjective =
+        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+
     verificationTaskId = compositeServiceLevelObjective.getUuid();
     sliId = createServiceLevelIndicator();
     sliId2 = createRequestServiceLevelIndicator();
     serviceLevelIndicator = getServiceLevelIndicator(sliId);
     requestServiceLevelIndicator = getServiceLevelIndicator(sliId2);
+    requestVerificationTaskId = requestCompositeServiceLevelObjective.getUuid();
+    leastPerformantVerificationTaskId = leastPerformantCompositeServiceLevelObjective.getUuid();
   }
 
   private String createServiceLevelIndicator() {
@@ -460,6 +560,42 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetGraphData_CompositeSLO_weightedAverage() {
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD);
+    List<Long> goodCounts1 = Arrays.asList(100l, 200l, 0l, 0l, 100l);
+    List<Long> badCounts1 = Arrays.asList(10l, 20l, 0l, 0l, 10l);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.BAD);
+    List<Long> goodCounts2 = Arrays.asList(100l, 200l, 300l, 0l, 0l);
+    List<Long> badCounts2 = Arrays.asList(0l, 0l, 10l, 0l, 0l);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 93.18, 92.69, 92.69, 92.69);
+    List<Double> expectedBurndown = Lists.newArrayList(100.0, 65.90, 63.45, 63.45, 63.45);
+    testGraphCalculationCompositeSLO(requestCompositeServiceLevelObjective, requestVerificationTaskId, sliStateList1,
+        sliStateList2, goodCounts1, badCounts1, goodCounts2, badCounts2, expectedSLITrend, expectedBurndown, 0, 0, 0,
+        0);
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetGraphData_CompositeSLO_weightedAverage_allGood() {
+    List<SLIState> sliStateList1 = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
+    List<SLIState> sliStateList2 = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
+    List<Long> goodCounts1 = Arrays.asList(100l, 95l, 80l, 100l);
+    List<Long> badCounts1 = Arrays.asList(0l, 0l, 0l, 0l);
+    List<Long> goodCounts2 = Arrays.asList(100l, 95l, 135l, 90l);
+    List<Long> badCounts2 = Arrays.asList(0l, 0l, 0l, 0l);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
+    List<Double> expectedBurndown = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
+    testGraphCalculationCompositeSLO(requestCompositeServiceLevelObjective, requestVerificationTaskId, sliStateList1,
+        sliStateList2, goodCounts1, badCounts1, goodCounts2, badCounts2, expectedSLITrend, expectedBurndown, 0, 0, 0,
+        0);
+  }
+
+  @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_request_noDataSkipData() {
@@ -565,6 +701,64 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
   }
 
+  private void testGraphCalculationCompositeSLO(CompositeServiceLevelObjective compositeServiceLevelObjective,
+      String verificationTaskId, List<SLIState> sliStateList1, List<SLIState> sliStateList2, List<Long> goodCounts1,
+      List<Long> badCounts1, List<Long> goodCounts2, List<Long> badCounts2, List<Double> expectedSLITrend,
+      List<Double> expectedBurndown, int expectedErrorBudgetRemaining, long customMinutesStart, long customMinutesEnd,
+      long expectedErrorBudget) {
+    Instant startTime =
+        DateTimeUtils.roundDownTo1MinBoundary(clock.instant().minus(Duration.ofMinutes(sliStateList1.size())));
+
+    Instant endTime = startTime.plus(Duration.ofMinutes(sliStateList1.size()));
+
+    String sliId1 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            requestSimpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    String sliId2 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            requestSimpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    createSLIRecords(sliId1, sliStateList1, goodCounts1, badCounts1, startTime, endTime);
+    createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2, startTime, endTime);
+    sloRecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
+
+    List<CompositeSLORecord> sloRecords1 =
+        sloRecordService.getSLORecords(requestVerificationTaskId, startTime, endTime);
+
+    Instant customStartTime = startTime.plus(Duration.ofMinutes(customMinutesStart));
+    Instant customEndTime = startTime.plus(Duration.ofMinutes(sliStateList1.size() - customMinutesEnd + 1));
+
+    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphDataForCompositeSLO(
+        requestCompositeServiceLevelObjective, startTime, startTime.plus(Duration.ofMinutes(sliStateList1.size() + 1)),
+        100, 0, TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(),
+        graphDataService.MAX_NUMBER_OF_POINTS);
+
+    Duration duration = Duration.between(customStartTime, customEndTime);
+    if (customMinutesEnd == 0) {
+      assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) duration.toMinutes() - 1);
+    } else {
+      assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) duration.toMinutes());
+    }
+    List<SLODashboardWidget.Point> sloPerformanceTrend = sloGraphData.getSloPerformanceTrend();
+    List<SLODashboardWidget.Point> errorBudgetBurndown = sloGraphData.getErrorBudgetBurndown();
+
+    for (int i = 0; i < expectedSLITrend.size(); i++) {
+      assertThat(sloPerformanceTrend.get(i).getTimestamp())
+          .isEqualTo(customStartTime.plus(Duration.ofMinutes(i)).toEpochMilli());
+      assertThat(sloPerformanceTrend.get(i).getValue()).isCloseTo(expectedSLITrend.get(i), offset(0.01));
+      assertThat(errorBudgetBurndown.get(i).getTimestamp())
+          .isEqualTo(customStartTime.plus(Duration.ofMinutes(i)).toEpochMilli());
+      assertThat(errorBudgetBurndown.get(i).getValue()).isCloseTo(expectedBurndown.get(i), offset(0.01));
+    }
+
+    assertThat(sloGraphData.getErrorBudgetRemainingPercentage())
+        .isCloseTo(expectedBurndown.get(errorBudgetBurndown.size() - 1), offset(0.01));
+    assertThat(sloGraphData.getErrorBudgetRemaining()).isEqualTo(expectedErrorBudgetRemaining);
+    assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
+    assertThat(sloGraphData.getTotalErrorBudgetFromGraph()).isEqualTo(expectedErrorBudget);
+  }
+
   private void testGraphCalculation_Request(List<SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts,
       SLIMissingDataType sliMissingDataType, List<Double> expectedSLITrend, List<Double> expectedBurndown,
       int expectedErrorBudgetRemaining, long customMinutesStart, long customMinutesEnd, long expectedErrorBudget) {
@@ -664,5 +858,31 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
                               .build());
     }
     return sliRecordParams;
+  }
+
+  private List<SLIRecord> createSLIRecords(String sliId, List<SLIState> states, List<Long> goodCounts,
+      List<Long> badCounts, Instant startTime, Instant endTime) {
+    int index = 0;
+    List<SLIRecord> sliRecords = new ArrayList<>();
+    long runningGoodCount = 0;
+    long runningBadCount = 0;
+    for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
+      runningGoodCount += goodCounts.get(index);
+      runningBadCount += badCounts.get(index);
+      SLIRecord sliRecord = SLIRecord.builder()
+                                .verificationTaskId(sliId)
+                                .sliId(sliId)
+                                .version(0)
+                                .sliState(states.get(index))
+                                .runningBadCount(runningBadCount)
+                                .runningGoodCount(runningGoodCount)
+                                .sliVersion(0)
+                                .timestamp(instant)
+                                .build();
+      sliRecords.add(sliRecord);
+      index++;
+    }
+    hPersistence.saveBatch(sliRecords);
+    return sliRecords;
   }
 }

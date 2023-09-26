@@ -28,29 +28,29 @@ public class LeastPerformanceCompositeSLOEvaluator extends CompositeSLOEvaluator
   }
 
   public Double getSloPercentage(List<Double> weightage, List<Double> sloPercentageList) {
-    double sloPercentage = 100.0;
-    double sloPercent = 0.0;
+    double tempSloPercentage = 100.0;
+    double sloPercentage = 0.0;
     for (int i = 0; i < weightage.size(); i++) {
       double temp = sloPercentageList.get(i) * (1 - weightage.get(i));
-      if (temp < sloPercentage) {
-        sloPercentage = temp;
-        sloPercent = sloPercentageList.get(i);
+      if (temp < tempSloPercentage) {
+        tempSloPercentage = temp;
+        sloPercentage = sloPercentageList.get(i);
       }
     }
-    return sloPercent;
+    return sloPercentage;
   }
 
   public Double getSloErrorBudgetBurnDown(List<Double> weightage, List<Double> errorBudgetBurned) {
     double sloErrorBudgetBurnDown = 100.0;
-    double sloErrorBudget = 0.0;
+    double sloErrorBudgetRemaining = 0.0;
     for (int i = 0; i < weightage.size(); i++) {
       sloErrorBudgetBurnDown = Math.min(weightage.get(i) * errorBudgetBurned.get(i), sloErrorBudgetBurnDown);
       double temp = errorBudgetBurned.get(i) * (1 - weightage.get(i));
       if (temp < sloErrorBudgetBurnDown) {
         sloErrorBudgetBurnDown = temp;
-        sloErrorBudget = errorBudgetBurned.get(i);
+        sloErrorBudgetRemaining = errorBudgetBurned.get(i);
       }
     }
-    return sloErrorBudget;
+    return sloErrorBudgetRemaining;
   }
 }
