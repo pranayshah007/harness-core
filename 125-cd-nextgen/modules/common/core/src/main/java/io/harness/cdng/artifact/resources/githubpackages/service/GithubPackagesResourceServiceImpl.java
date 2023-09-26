@@ -121,10 +121,11 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
   @Override
   public List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String packageType,
       String versionRegex, String org, String accountId, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.PACKAGE_NAME, packageName),
+        MutablePair.of(NGArtifactConstants.PACKAGE_TYPE, packageType));
     if (EmptyPredicate.isEmpty(versionRegex)) {
       return new ArrayList<>();
     }
-
     GithubConnectorDTO githubConnector = getConnector(connectorRef);
 
     BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
