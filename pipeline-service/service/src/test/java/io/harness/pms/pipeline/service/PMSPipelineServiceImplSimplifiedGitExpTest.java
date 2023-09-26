@@ -92,6 +92,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
+  @Mock PMSYamlSchemaService yamlSchemaService;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -102,11 +103,11 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    pipelineService =
-        new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
-            null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient,
-            pipelineAsyncValidationService, pipelineValidationService, projectClient, organizationClient,
-            pmsFeatureFlagService, gitXSettingsHelper, accountClient, settingsClient, gitAwareEntityHelper);
+    pipelineService = new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper,
+        pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, null,
+        new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, pipelineAsyncValidationService,
+        pipelineValidationService, projectClient, organizationClient, pmsFeatureFlagService, gitXSettingsHelper,
+        accountClient, settingsClient, gitAwareEntityHelper, yamlSchemaService);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)

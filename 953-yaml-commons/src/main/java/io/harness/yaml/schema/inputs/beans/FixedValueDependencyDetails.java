@@ -5,8 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.yaml.individualschema;
+package io.harness.yaml.schema.inputs.beans;
 
-public abstract class IndividualSchemaMetadata {
-  abstract String generateSchemaKey();
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class FixedValueDependencyDetails {
+  String propertyName;
+  String propertyType;
+  Object fieldValue;
 }

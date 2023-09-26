@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.yaml.individualschema;
+package io.harness.yaml.individualschema;
 
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_STRING_PREFIX;
@@ -15,10 +15,11 @@ import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.yaml.schema.beans.SchemaConstants;
+import io.harness.yaml.utils.JsonFieldUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.util.HashMap;
@@ -55,9 +56,11 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
   abstract void init();
 
   void initParser() {
-    init();
-    isInitialised = true;
-    lastInitializedTime = System.currentTimeMillis();
+    if (shouldInitParser()) {
+      init();
+      isInitialised = true;
+      lastInitializedTime = System.currentTimeMillis();
+    }
   }
 
   abstract IndividualSchemaGenContext getIndividualSchemaGenContext();
@@ -145,33 +148,17 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
     return currentJsonNode;
   }
 
-  private JsonNode getFieldNode(JsonNode jsonNode, String targetFieldName) {
-    if (jsonNode == null) {
-      return null;
+  JsonNode getFieldNode(String fieldName, IndividualSchemaRequest individualSchemaRequest) {
+    JsonNode parentFieldNode =
+        nodeToResolvedSchemaMap.get(individualSchemaRequest.getIndividualSchemaMetadata().generateSchemaKey());
+    if (parentFieldNode == null) {
+      // return dummy node
+      return new ObjectNode(JsonNodeFactory.instance);
     }
-    Iterator<String> fieldNames = jsonNode.fieldNames();
-    for (Iterator<String> it = fieldNames; it.hasNext();) {
-      String fieldName = it.next();
-      if (fieldName.equals(targetFieldName)) {
-        return jsonNode.get(fieldName);
-      }
-      if (JsonPipelineUtils.isObjectTypeField(jsonNode, fieldName)) {
-        JsonNode resultNode = getFieldNode(jsonNode.get(fieldName), targetFieldName);
-        if (resultNode != null) {
-          return resultNode;
-        }
-      }
-      if (JsonPipelineUtils.isArrayNodeField(jsonNode, fieldName)) {
-        ArrayNode elements = (ArrayNode) jsonNode.get(fieldName);
-        for (int i = 0; i < elements.size(); i++) {
-          JsonNode resultNode = getFieldNode(elements.get(i), targetFieldName);
-          if (resultNode != null) {
-            return resultNode;
-          }
-        }
-      }
-    }
-    return null;
+    JsonNode allOfNode = JsonFieldUtils.getFieldNode(parentFieldNode, "allOf");
+    JsonNode specNode = JsonFieldUtils.getFieldNode(allOfNode, "spec");
+    ObjectNodeWithMetadata resolvedSpecNode = fqnToNodeMap.get(JsonFieldUtils.getFieldNode(specNode, "$ref").asText());
+    return JsonFieldUtils.getFieldNode((JsonNode) resolvedSpecNode.getObjectNode(), fieldName);
   }
 
   /***
@@ -299,7 +286,7 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
     String fieldPath = schemaRequest.getIndividualSchemaMetadata().generateSchemaKey();
     JsonNode targetFieldNode = fqnToNodeMap.get(fieldPath).getObjectNode();
     for (int i = 1; i < fqnParts.length; i++) {
-      targetFieldNode = getFieldNode(targetFieldNode, fqnParts[i]);
+      targetFieldNode = JsonFieldUtils.getFieldNode(targetFieldNode, fqnParts[i]);
       if (targetFieldNode.has(REF_NODE)) {
         String ref = targetFieldNode.get(REF_NODE).asText();
         targetFieldNode = fqnToNodeMap.get(ref).getObjectNode();

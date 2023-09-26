@@ -5,19 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.yaml.individualschema;
+package io.harness.yaml.schema.inputs.beans;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.ToString;
 
 @Data
 @Builder
-@AllArgsConstructor
-@ToString
-public class InputFieldMetadata {
-  String fieldName;
-  String fqnFromParentNode; // eg: stage.spec.xyz, step.spec.connectorRef etc.
-  String parentNodeType; // eg: JiraCreate, custom etc.
+public class YamlInputDetails {
+  InputDetails inputDetails;
+  InputMetadata inputMetadata;
 }

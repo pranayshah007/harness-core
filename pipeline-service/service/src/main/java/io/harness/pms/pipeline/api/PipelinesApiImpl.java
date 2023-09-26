@@ -55,6 +55,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineImportRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineInputSchemaDetailsResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineSaveResponseBody;
@@ -63,6 +64,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
+import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.inject.Inject;
@@ -131,7 +133,11 @@ public class PipelinesApiImpl implements PipelinesApi {
 
   @Override
   public Response getInputsSchemaDetails(String org, String project, String pipeline, String harnessAccount) {
-    return Response.ok().build();
+    List<YamlInputDetails> yamlInputDetails =
+        pmsPipelineService.getInputSchemaDetails(harnessAccount, org, project, pipeline);
+    PipelineInputSchemaDetailsResponseBody responseBody =
+        PipelinesApiUtils.getPipelineInputSchemaDetailsResponseBody(yamlInputDetails);
+    return Response.ok().entity(responseBody).build();
   }
 
   @Override
