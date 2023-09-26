@@ -700,6 +700,9 @@ components:
         connector_ref:
           type: string
           description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+        yaml_version:
+          type: string
+          description: Specifies the yaml version of the template
         stable_template:
           type: boolean
           description: True if this version is stable version of Template
@@ -825,6 +828,9 @@ components:
         connector_ref:
           type: string
           description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+        yaml_version:
+          type: string
+          description: Specifies the yaml version of the template
         stable_template:
           type: boolean
           description: True if this version is stable version of Template
