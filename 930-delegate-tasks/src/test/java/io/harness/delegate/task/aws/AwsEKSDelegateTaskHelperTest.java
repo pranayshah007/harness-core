@@ -20,6 +20,8 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,9 +36,11 @@ import io.harness.rule.Owner;
 
 import software.wings.service.impl.AwsUtils;
 
+import com.amazonaws.AbortedException;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.eks.AmazonEKSClient;
 import com.amazonaws.services.eks.model.AccessDeniedException;
+import com.amazonaws.services.eks.model.ListClustersRequest;
 import com.amazonaws.services.eks.model.ListClustersResult;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -132,5 +136,35 @@ public class AwsEKSDelegateTaskHelperTest extends CategoryTest {
         (AwsListClustersTaskResponse) awsEKSDelegateTaskHelper.getEKSClustersList(awsTaskParams);
     assertThat(response.getClusters().size()).isEqualTo(2);
     assertThat(response.getClusters()).contains("ap-south-1/c1", "ap-south-1/c2");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testEksListClustersTimeout() {
+    List<String> regions = List.of("us-east-1", "ap-south-1", "us-east-2");
+    doReturn(regions).when(awsUtils).listAwsRegionsForGivenAccount(any());
+
+    AmazonEKSClient useast1Client = mock(AmazonEKSClient.class);
+    AmazonEKSClient useast2Client = mock(AmazonEKSClient.class);
+    AmazonEKSClient apsouth1Client = mock(AmazonEKSClient.class);
+
+    doReturn(useast1Client).when(awsUtils).getAmazonEKSClient(eq(Regions.fromName("us-east-1")), any());
+    doReturn(useast2Client).when(awsUtils).getAmazonEKSClient(eq(Regions.fromName("us-east-2")), any());
+    doReturn(apsouth1Client).when(awsUtils).getAmazonEKSClient(eq(Regions.fromName("ap-south-1")), any());
+
+    doThrow(new AbortedException("first list op aborted")).when(useast1Client).listClusters(any());
+
+    try {
+      awsEKSDelegateTaskHelper.getEKSClustersList(awsTaskParams);
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(AwsEKSException.class);
+      verify(awsUtils, times(1)).getAmazonEKSClient(eq(Regions.fromName("us-east-1")), any());
+      verify(awsUtils, times(0)).getAmazonEKSClient(eq(Regions.fromName("us-east-2")), any());
+      verify(awsUtils, times(0)).getAmazonEKSClient(eq(Regions.fromName("ap-south-1")), any());
+      verify(useast1Client, times(1)).listClusters(any(ListClustersRequest.class));
+      verify(useast2Client, times(0)).listClusters(any(ListClustersRequest.class));
+      verify(apsouth1Client, times(0)).listClusters(any(ListClustersRequest.class));
+    }
   }
 }
