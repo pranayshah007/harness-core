@@ -34,18 +34,20 @@ public class AzureWebAppRollbackRequest extends AbstractWebAppTaskRequest {
   private Integer timeoutIntervalInMin;
   private String targetSlot;
   private AzureArtifactType azureArtifactType;
+  private boolean cleanDeployment;
 
   @Builder
   public AzureWebAppRollbackRequest(String accountId, AzureAppServicePreDeploymentData preDeploymentData,
       CommandUnitsProgress commandUnitsProgress, AzureWebAppInfraDelegateConfig infrastructure,
       AzureArtifactConfig artifact, Integer timeoutIntervalInMin, String targetSlot,
-      AzureArtifactType azureArtifactType) {
+      AzureArtifactType azureArtifactType, boolean cleanDeployment) {
     super(accountId, commandUnitsProgress, infrastructure);
     this.preDeploymentData = preDeploymentData;
     this.artifact = artifact;
     this.timeoutIntervalInMin = timeoutIntervalInMin;
     this.targetSlot = targetSlot;
     this.azureArtifactType = azureArtifactType;
+    this.cleanDeployment = cleanDeployment;
   }
 
   @Override
