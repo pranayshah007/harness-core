@@ -15,6 +15,7 @@ import static io.harness.ng.core.activityhistory.NGActivityType.CONNECTIVITY_CHE
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 
 import io.harness.EntityType;
+import io.harness.encryption.Scope;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.activityhistory.NGActivityQueryCriteriaHelper;
 import io.harness.ng.core.activityhistory.NGActivityStatus;
@@ -66,10 +67,10 @@ public class NGActivityServiceImpl implements NGActivityService {
   public Page<NGActivityDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, long start, long end, NGActivityStatus status,
       EntityType referredEntityType, Set<EntityType> referredByEntityTypes, Set<NGActivityType> ngActivityTypes,
-      String searchTerm) {
+      String searchTerm, Set<Scope> scopeFilter) {
     Criteria criteria = createCriteriaForEntityUsageActivity(accountIdentifier, orgIdentifier, projectIdentifier,
         referredEntityIdentifier, status, start, end, referredEntityType, referredByEntityTypes, ngActivityTypes,
-        searchTerm);
+        searchTerm, scopeFilter);
     Pageable pageable =
         PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ActivityHistoryEntityKeys.activityTime));
     List<NGActivity> activities = activityRepository.findAll(criteria, pageable).getContent();
@@ -141,13 +142,15 @@ public class NGActivityServiceImpl implements NGActivityService {
 
   private Criteria createCriteriaForEntityUsageActivity(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, NGActivityStatus status, long startTime, long endTime,
+
       EntityType referredEntityType, Set<EntityType> referredByEntityTypes, Set<NGActivityType> ngActivityTypes,
-      String searchTerm) {
+      String searchTerm, Set<Scope> scopeFilter) {
     Criteria criteria = new Criteria();
     ngActivityQueryCriteriaHelper.populateEntityFQNFilterInCriteria(
         criteria, accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier);
     ngActivityQueryCriteriaHelper.addReferredEntityTypeCriteria(criteria, referredEntityType);
     ngActivityQueryCriteriaHelper.addReferredByEntityTypeCriteria(criteria, referredByEntityTypes);
+    ngActivityQueryCriteriaHelper.addScopeFilter(criteria, scopeFilter);
     populateActivityStatusCriteria(criteria, status);
     ngActivityQueryCriteriaHelper.addTimeFilterInTheCriteria(criteria, startTime, endTime);
     ngActivityQueryCriteriaHelper.addActivityTypeCriteria(criteria, ngActivityTypes);
