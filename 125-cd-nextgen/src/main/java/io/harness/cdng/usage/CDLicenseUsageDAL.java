@@ -14,7 +14,6 @@ import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.proje
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.identifier;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.instanceCount;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.instanceType;
-import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.instancetype;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.lastDeployed;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.orgIdentifier;
 import static io.harness.cdng.usage.pojos.ActiveServiceBase.ActiveServiceBaseField.projectIdentifier;
@@ -155,7 +154,7 @@ public class CDLicenseUsageDAL {
       + "OFFSET (? * ?)";
   private static final String FETCH_ACTIVE_SERVICES_NAME_ORG_AND_PROJECT_NAME_QUERY = ""
       + "SELECT DISTINCT\n"
-      + "    t.orgIdentifier, t.projectIdentifier, t.serviceIdentifier AS identifier, t.lastDeployed, t.instanceCount,\n"
+      + "    t.orgIdentifier, t.projectIdentifier, t.serviceIdentifier AS identifier, t.lastDeployed, t.instanceCount, t.instanceType,\n"
       + "    COALESCE(organizations.name, 'Deleted') AS orgName,\n"
       + "    COALESCE(projects.name, 'Deleted') AS projectName,\n"
       + "    COALESCE(services.name, 'Deleted') AS name\n"
@@ -163,7 +162,7 @@ public class CDLicenseUsageDAL {
       + "    (\n"
       + "        VALUES :constantTable\n"
       + "    )\n"
-      + "    AS t (orgIdentifier, projectIdentifier, serviceIdentifier, lastDeployed, instanceCount)\n"
+      + "    AS t (orgIdentifier, projectIdentifier, serviceIdentifier, lastDeployed, instanceCount, instanceType)\n"
       + "LEFT JOIN services ON\n"
       + "    services.account_id = ?\n"
       + "    AND t.orgidentifier = services.org_identifier\n"
@@ -545,6 +544,7 @@ public class CDLicenseUsageDAL {
                              .orgName(resultSet.getString(orgName))
                              .projectName(resultSet.getString(projectName))
                              .name(resultSet.getString(name))
+                             .instanceType(resultSet.getString(instanceType))
                              .build());
     }
 

@@ -41,6 +41,7 @@ public class ActiveServiceBase {
         .add("'" + this.identifier + "'")
         .add(Long.toString(this.lastDeployed))
         .add(Long.toString(this.instanceCount))
+        .add("'" + this.instanceType + "'")
         .toString();
   }
 }

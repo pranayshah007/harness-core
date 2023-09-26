@@ -55,7 +55,7 @@ public class CDLicenseDailyReportIteratorHandler implements MongoPersistenceIter
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(
       13 * 30); // It needs to be up to (12 + 1) * 30s due to 12 months' report plus report for the current month
   private static final int DEFAULT_THREAD_POOL_SIZE = 5;
-  private static final long DEFAULT_TARGET_INTERVAL_IN_SECONDS = 12L * 60 * 60; // 12 hours
+  private static final long DEFAULT_TARGET_INTERVAL_IN_SECONDS = 30; // 12 hours
   public static int QUERY_ON_NUMBER_OF_DAYS = 30;
   public static int BULK_INSERT_LIMIT = 100;
   private static final CDLicenseDailyReportIteratorConfig DEFAULT_ITERATOR_CONFIG =
