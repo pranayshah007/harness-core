@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
+import io.harness.encryption.Scope;
 import io.harness.ng.core.activityhistory.entity.NGActivity.ActivityHistoryEntityKeys;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
@@ -50,6 +51,12 @@ public class NGActivityQueryCriteriaHelper {
   public void addActivityTypeCriteria(Criteria criteria, Set<NGActivityType> ngActivityTypes) {
     if (!isEmpty(ngActivityTypes)) {
       criteria.and(ActivityHistoryEntityKeys.type).in(ngActivityTypes);
+    }
+  }
+
+  public void addScopeFilter(Criteria criteria, Set<Scope> scopeFilter) {
+    if (!isEmpty(scopeFilter)) {
+      criteria.and(ActivityHistoryEntityKeys.referredByEntityScope).in(scopeFilter);
     }
   }
 
