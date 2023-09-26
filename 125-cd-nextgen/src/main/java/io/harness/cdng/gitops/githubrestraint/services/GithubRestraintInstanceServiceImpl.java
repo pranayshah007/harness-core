@@ -10,7 +10,6 @@ package io.harness.cdng.gitops.githubrestraint.services;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.distribution.constraint.Consumer.State.FINISHED;
-import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -20,20 +19,15 @@ import io.harness.distribution.constraint.ConstraintId;
 import io.harness.distribution.constraint.ConstraintUnit;
 import io.harness.distribution.constraint.ConsumerId;
 import io.harness.distribution.constraint.RunnableConsumers;
-import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
-import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.repositories.GithubRestraintInstanceRepository;
 import io.harness.springdata.SpringDataMongoUtils;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -50,7 +44,6 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   @Inject private MongoTemplate mongoTemplate;
   @Inject private GithubRestraintInstanceRepository githubRestraintInstanceRepository;
   @Inject private GithubRestraintRegistry githubRestraintRegistry;
-  @Inject private NodeExecutionService nodeExecutionService;
 
   @Override
   public Constraint createAbstraction(String tokenRef) {
@@ -153,17 +146,7 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
 
   @Override
   public boolean updateActiveConstraintsForInstance(GithubRestraintInstance instance) {
-    boolean finished;
-    String releaseEntityId = instance.getReleaseEntityId();
-    NodeExecution nodeExecution =
-        nodeExecutionService.getWithFieldsIncluded(releaseEntityId, ImmutableSet.of(NodeExecutionKeys.status));
-    finished = nodeExecution != null
-        && (StatusUtils.finalStatuses().contains(nodeExecution.getStatus())
-            || DISCONTINUING == nodeExecution.getStatus());
-
-    if (!finished) {
-      return false;
-    }
+    // we cant check if nodeExecution finished because we are on ng-manager here.
 
     return githubRestraintRegistry.consumerFinished(new ConstraintId(instance.getResourceUnit()),
         new ConstraintUnit(instance.getResourceUnit()), new ConsumerId(instance.getUuid()), ImmutableMap.of());

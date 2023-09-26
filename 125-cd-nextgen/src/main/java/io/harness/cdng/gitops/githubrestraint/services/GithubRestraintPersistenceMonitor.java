@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitopsprovider.services;
+package io.harness.cdng.gitops.githubrestraint.services;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
@@ -17,7 +17,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NgIteratorConfig;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.iterator.PersistenceIteratorFactory;
