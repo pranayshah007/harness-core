@@ -160,8 +160,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     } finally {
       if (session != null) {
         try {
-          WinRmExecutorHelper.cleanupFiles(
-              session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
+          WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding,
+              config.getCommandParameters(), config, logCallback);
         } catch (Exception e) {
           log.error("Exception while trying to remove file", e);
         } finally {
@@ -272,8 +272,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
         // If we are here, we will run another command to get the output variables. Make sure we delete the previous
         // script
-        WinRmExecutorHelper.cleanupFiles(
-            session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
+        WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding,
+            config.getCommandParameters(), config, logCallback);
         executionDataBuilder.sweepingOutputEnvVariables(
             collectOutputEnvironmentVariables(session, envVariablesOutputFile, secretEnvVariablesToCollect));
       }
@@ -293,8 +293,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     } finally {
       if (session != null) {
         try {
-          WinRmExecutorHelper.cleanupFiles(
-              session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
+          WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding,
+              config.getCommandParameters(), config, logCallback);
         } catch (Exception e) {
           log.error("Exception while trying to remove file", e);
         } finally {
@@ -358,10 +358,10 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     } catch (Exception e) {
       log.error("Exception while trying to collectOutputEnvironmentVariables", e);
     } finally {
-      WinRmExecutorHelper.cleanupFiles(
-          session, envVariablesOutputFile, powershell, disableCommandEncoding, config.getCommandParameters());
-      WinRmExecutorHelper.cleanupFiles(
-          session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
+      WinRmExecutorHelper.cleanupFiles(session, envVariablesOutputFile, powershell, disableCommandEncoding,
+          config.getCommandParameters(), config, logCallback);
+      WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding,
+          config.getCommandParameters(), config, logCallback);
     }
     return envVariablesMap;
   }
@@ -420,8 +420,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       exitCode = session.executeScript(executeScript, outputWriter, errorWriter);
       return exitCode;
     } finally {
-      WinRmExecutorHelper.cleanupFiles(
-          session, executablePSFilePath, powershell, disableCommandEncoding, config.getCommandParameters());
+      WinRmExecutorHelper.cleanupFiles(session, executablePSFilePath, powershell, disableCommandEncoding,
+          config.getCommandParameters(), config, logCallback);
     }
   }
 
