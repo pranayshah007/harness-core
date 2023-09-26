@@ -19,10 +19,10 @@ data:
   MANAGER_AUTHORITY: harness-manager:9879
   NG_MANAGER_TARGET: ng-manager:13002
   NG_MANAGER_AUTHORITY: ng-manager:13002
-  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   GRPC_SERVER_PORT: "9979"
   SHOULD_CONFIGURE_WITH_PMS: "true"
@@ -34,11 +34,10 @@ data:
   PMS_AUTHORITY:  pipeline-service:12011
   MEMORY: '{{ .Values.java.memory }}'
   LOGGING_LEVEL: '{{ .Values.appLogLevel }}'
-  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   LOCK_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
-  LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
   USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
   MOCK_ACCESS_CONTROL_SERVICE: "false"
   ACCESS_CONTROL_ENABLED: "true"
