@@ -61,11 +61,11 @@ openapi_repositories(
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
+    sha256 = "a8e6375bf881ecc33100ccad4574408a80087eff5e238256b5506eeefe9dd9ee",
+    strip_prefix = "rules_go-c8f0fd7735132144dcdf4d51e927a8607af6774c",
     urls = [
-        "https://%s.harness.io/artifactory/rules-go-github/download/v0.39.1/rules_go-v0.39.1.zip" % REPOSITORY,
-        #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
-        #"https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        "https://%s.harness.io/artifactory/rules-go-github/archive/c8f0fd7735132144dcdf4d51e927a8607af6774c.tar.gz" % REPOSITORY,
+        "https://github.com/bazelbuild/rules_go/archive/c8f0fd7735132144dcdf4d51e927a8607af6774c.tar.gz"
     ],
 )
 
@@ -78,6 +78,7 @@ http_archive(
         #"https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
     ],
 )
+
 
 # Load and call the dependencies
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
@@ -4629,7 +4630,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.20.5")
+go_register_toolchains(version = "1.21.0")
 
 gazelle_dependencies()
 
