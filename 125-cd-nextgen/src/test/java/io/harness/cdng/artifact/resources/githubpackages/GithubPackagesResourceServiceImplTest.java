@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.resources.githubpackages;
 
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.GITHUB_PACKAGES;
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -1222,6 +1223,67 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
                            -> githubPackagesResourceService.getVersionsOfPackage(identifierRef, packageName,
                                packageType, versionRegex, org, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(ArtifactServerException.class);
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageName_Null() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, null, PACKAGE_TYPE,
+                               null, null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_NAME_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageName_Empty() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, "", PACKAGE_TYPE, null,
+                               null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_NAME_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageName_Input() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, INPUT, PACKAGE_TYPE,
+                               null, null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_NAME_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageType_Null() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, PACKAGE_NAME, null,
+                               null, null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_TYPE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageType_Empty() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, PACKAGE_NAME, "", null,
+                               null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_TYPE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetVersionOfPackage_PackageType_Input() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getVersionsOfPackage(IDENTIFIER_REF, PACKAGE_NAME, INPUT,
+                               null, null, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_TYPE_MESSAGE);
   }
 
   @Test
