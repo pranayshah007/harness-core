@@ -19,6 +19,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import java.util.LinkedList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -65,7 +66,10 @@ public class StepElementParameters implements StepBaseParameters {
 
   @Override
   public List<String> excludeKeysFromStepInputs() {
-    return spec.stepInputsKeyExclude();
+    if (spec != null) {
+      return spec.stepInputsKeyExclude();
+    }
+    return new LinkedList<>();
   }
 
   public StepElementParameters cloneParameters(boolean includeUuid, boolean includeSpec) {
