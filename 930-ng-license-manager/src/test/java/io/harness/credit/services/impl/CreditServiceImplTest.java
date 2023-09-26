@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
+import io.harness.CreditType;
 import io.harness.category.element.UnitTests;
 import io.harness.credit.beans.credits.CreditDTO;
 import io.harness.credit.entities.Credit;
@@ -54,6 +55,22 @@ public class CreditServiceImplTest extends CategoryTest {
     when(creditObjectConverter.toDTO(any())).thenReturn(DEFAULT_CI_CREDIT_DTO);
 
     List<CreditDTO> creditDTOS = creditService.getCredits(ACCOUNT_IDENTIFIER);
+    assertThat(creditDTOS).isNotNull();
+    assertThat(creditDTOS.size()).isEqualTo(1);
+    assertThat(creditDTOS.get(0).getAccountIdentifier()).isEqualTo(ACCOUNT_IDENTIFIER);
+    assertThat(creditDTOS.get(0).getCreditStatus()).isEqualTo(CreditStatus.EXPIRED);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetLatestFreeAndActiveCredits() {
+    when(creditRepository.findByAccountIdentifierAndCreditTypeAndCreditStatus(
+             ACCOUNT_IDENTIFIER, CreditType.FREE, CreditStatus.ACTIVE))
+        .thenReturn(CREDITS);
+    when(creditObjectConverter.toDTO(any())).thenReturn(DEFAULT_CI_CREDIT_DTO);
+
+    List<CreditDTO> creditDTOS = creditService.getCredits(ACCOUNT_IDENTIFIER, CreditType.FREE, CreditStatus.ACTIVE);
     assertThat(creditDTOS).isNotNull();
     assertThat(creditDTOS.size()).isEqualTo(1);
     assertThat(creditDTOS.get(0).getAccountIdentifier()).isEqualTo(ACCOUNT_IDENTIFIER);
