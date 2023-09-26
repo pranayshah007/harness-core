@@ -43,12 +43,12 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "api/proxy/grafana/?"
+                "api/proxy/grafana/api/?"
               ],
               "properties": {
-                "api/proxy/grafana/?": {
-                  "$id": "#root/proxy//grafana/api/pathRewrite/api/proxy/grafana/?",
-                  "title": "Api/proxy/grafana/?",
+                "api/proxy/grafana/api?": {
+                  "$id": "#root/proxy//grafana/api/pathRewrite/api/proxy/grafana/api/?",
+                  "title": "Api/proxy/grafana/api/?",
                   "type": "string",
                   "default": "",
                   "pattern": "^.*$"
