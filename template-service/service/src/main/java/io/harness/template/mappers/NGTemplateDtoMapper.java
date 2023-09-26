@@ -94,6 +94,7 @@ public class NGTemplateDtoMapper {
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
         .storeType(templateEntity.getStoreType())
+        .yamlVersion(templateEntity.getHarnessVersion())
         .connectorRef(templateEntity.getConnectorRef())
         .cacheResponseMetadata(getCacheResponse(templateEntity))
         .build();
@@ -118,6 +119,7 @@ public class NGTemplateDtoMapper {
         .version(templateEntity.getVersion())
         .gitDetails(templateEntityGetResponse.getEntityGitDetails())
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
+        .yamlVersion(templateEntity.getHarnessVersion())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
@@ -157,6 +159,7 @@ public class NGTemplateDtoMapper {
         .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .icon(templateEntity.getIcon())
+        .yamlVersion(templateEntity.getHarnessVersion())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
@@ -185,6 +188,7 @@ public class NGTemplateDtoMapper {
         .createdAt(templateEntity.getCreatedAt())
         .storeType(templateEntity.getStoreType())
         .connectorRef(templateEntity.getConnectorRef())
+        .yamlVersion(templateEntity.getHarnessVersion())
         .build();
   }
 
