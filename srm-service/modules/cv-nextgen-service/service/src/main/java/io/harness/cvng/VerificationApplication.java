@@ -7,6 +7,8 @@
 
 package io.harness.cvng;
 
+import static io.harness.CVNGPrometheusExporterUtils.registerJVMMetrics;
+import static io.harness.CVNGPrometheusExporterUtils.registerPrometheusExporter;
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
@@ -1433,6 +1435,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void initAutoscalingMetrics() {
     CVConstants.LEARNING_ENGINE_TASKS_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+    registerJVMMetrics(metricRegistry);
+    registerPrometheusExporter("io.harness.cvng.core.resources", "MonitoredServiceResource", metricRegistry);
+    registerPrometheusExporter(
+        "io.harness.cvng.servicelevelobjective.resources", "ServiceLevelObjectiveV2Resource", metricRegistry);
   }
 
   private void registerGaugeMetric(String metricName, String[] labels) {
