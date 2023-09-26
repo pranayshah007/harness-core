@@ -51,6 +51,7 @@ import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.delegate.task.gitops.GitOpsTaskHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.helper.BitbucketHelper;
+import io.harness.git.helper.GitlabHelper;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
@@ -359,7 +360,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
         return azureRepoConnectorDTO.getUrl() + "/pullrequest/" + prNumber;
       case GITLAB:
         GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) scmConnector;
-        return gitlabConnectorDTO.getUrl() + "/merge_requests/" + prNumber;
+        return GitlabHelper.getPRLink(gitlabConnectorDTO, prNumber);
       case BITBUCKET:
         return BitbucketHelper.getBitbucketPRLink((BitbucketConnectorDTO) scmConnector, prNumber);
       default:
