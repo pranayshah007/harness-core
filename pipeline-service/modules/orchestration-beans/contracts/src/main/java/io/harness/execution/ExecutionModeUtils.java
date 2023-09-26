@@ -9,6 +9,7 @@ package io.harness.execution;
 
 import static io.harness.pms.contracts.execution.ExecutionMode.APPROVAL;
 import static io.harness.pms.contracts.execution.ExecutionMode.ASYNC;
+import static io.harness.pms.contracts.execution.ExecutionMode.ASYNC_CHAIN;
 import static io.harness.pms.contracts.execution.ExecutionMode.CHILD;
 import static io.harness.pms.contracts.execution.ExecutionMode.CHILDREN;
 import static io.harness.pms.contracts.execution.ExecutionMode.CHILD_CHAIN;
@@ -36,7 +37,7 @@ public class ExecutionModeUtils {
   private final Set<ExecutionMode> TASK_MODES = EnumSet.of(TASK, TASK_CHAIN);
 
   private final Set<ExecutionMode> LEAF_MODES =
-      EnumSet.of(TASK, TASK_CHAIN, ASYNC, SYNC, APPROVAL, CONSTRAINT, WAIT_STEP);
+      EnumSet.of(TASK, TASK_CHAIN, ASYNC, SYNC, APPROVAL, CONSTRAINT, WAIT_STEP, ASYNC_CHAIN);
 
   public Set<ExecutionMode> chainModes() {
     return CHAIN_MODES;
