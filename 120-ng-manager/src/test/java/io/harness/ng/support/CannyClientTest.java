@@ -76,4 +76,141 @@ public class CannyClientTest extends NgManagerTestBase {
     Assert.assertNotNull(boardsResponse);
     Assert.assertEquals(boardsResponse, expectedResponse);
   }
+
+  @Test
+  @Owner(developers = ASHINSABU)
+  @Category(UnitTests.class)
+  public void testCreatePostUserExists() throws Exception {
+    // this tests the following flow - retrieve user -> user exists -> create post -> retrieve post
+    Request mockUserExistsRequest = new Request.Builder().url("https://canny.io/api/v1/users/retrieve").build();
+    Response userExistsResponse =
+        new Response.Builder()
+            .code(200)
+            .message("OK")
+            .protocol(Protocol.HTTP_2)
+            .request(mockUserExistsRequest)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"id\": \"user123\"}"))
+            .build();
+    doReturn(userExistsResponse).when(cannyClient).retrieveCannyUser(anyString());
+
+    Request mockCreatePostRequest = new Request.Builder().url("https://canny.io/api/v1/posts/create").build();
+    Response createPostResponse =
+        new Response.Builder()
+            .code(200)
+            .message("OK")
+            .protocol(Protocol.HTTP_2)
+            .request(mockCreatePostRequest)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"id\": \"post123\"}"))
+            .build();
+    doReturn(createPostResponse).when(cannyClient).createCannyPost(anyString(), anyString(), anyString(), anyString());
+
+    Request mockRetrievePostRequest = new Request.Builder().url("https://canny.io/api/v1/posts/retrieve").build();
+    Response retrievePostResponse = new Response.Builder()
+                                        .code(200)
+                                        .message("OK")
+                                        .protocol(Protocol.HTTP_2)
+                                        .request(mockRetrievePostRequest)
+                                        .body(ResponseBody.create(MediaType.parse("application/json"),
+                                            "{\"id\": \"post123\", \"url\": \"https://canny.io/post/123\"}"))
+                                        .build();
+    doReturn(retrievePostResponse).when(cannyClient).retrieveCannyPostDetails(anyString());
+
+    CannyPostResponseDTO expectedPostResponseDTO = CannyPostResponseDTO.builder()
+                                                       .postURL("https://canny.io/post/123")
+                                                       .message("Post created successfully")
+                                                       .build();
+
+    CannyPostResponseDTO postResponseDTO =
+        cannyClient.createPost("test@example.com", "Test User", "Test Title", "Test Details", "board123");
+
+    Assert.assertNotNull(postResponseDTO);
+    Assert.assertEquals(expectedPostResponseDTO, postResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = ASHINSABU)
+  @Category(UnitTests.class)
+  public void testCreatePostUserDoesNotExist() throws Exception {
+    // this tests the following flow - retrieve user -> user does not exist -> create user and get id -> create post ->
+    // retrieve post
+    Request mockUserExistsRequest = new Request.Builder().url("https://canny.io/api/v1/users/retrieve").build();
+    Response userDoesNotExistResponse =
+        new Response.Builder()
+            .code(404)
+            .message("Not Found")
+            .protocol(Protocol.HTTP_2)
+            .request(mockUserExistsRequest)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"error\": \"invalid email\"}"))
+            .build();
+
+    doReturn(userDoesNotExistResponse).when(cannyClient).retrieveCannyUser(anyString());
+
+    Request mockCreateUserRequest = new Request.Builder().url("https://canny.io/api/v1/users/create_or_update").build();
+    Response createUserResponse =
+        new Response.Builder()
+            .code(200)
+            .message("OK")
+            .protocol(Protocol.HTTP_2)
+            .request(mockCreateUserRequest)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"id\": \"user123\"}"))
+            .build();
+
+    doReturn(createUserResponse).when(cannyClient).createCannyUser(anyString(), anyString(), anyString());
+
+    Request mockCreatePostRequest = new Request.Builder().url("https://canny.io/api/v1/posts/create").build();
+    Response createPostResponse =
+        new Response.Builder()
+            .code(200)
+            .message("OK")
+            .protocol(Protocol.HTTP_2)
+            .request(mockCreatePostRequest)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"id\": \"post123\"}"))
+            .build();
+
+    doReturn(createPostResponse).when(cannyClient).createCannyPost(anyString(), anyString(), anyString(), anyString());
+
+    Request mockRetrievePostRequest = new Request.Builder().url("https://canny.io/api/v1/posts/retrieve").build();
+    Response retrievePostResponse = new Response.Builder()
+                                        .code(200)
+                                        .message("OK")
+                                        .protocol(Protocol.HTTP_2)
+                                        .request(mockRetrievePostRequest)
+                                        .body(ResponseBody.create(MediaType.parse("application/json"),
+                                            "{\"id\": \"post123\", \"url\": \"https://canny.io/post/123\"}"))
+                                        .build();
+
+    doReturn(retrievePostResponse).when(cannyClient).retrieveCannyPostDetails(anyString());
+
+    CannyPostResponseDTO expectedPostResponseDTO = CannyPostResponseDTO.builder()
+                                                       .postURL("https://canny.io/post/123")
+                                                       .message("Post created successfully")
+                                                       .build();
+
+    CannyPostResponseDTO postResponseDTO =
+        cannyClient.createPost("test@example.com", "Test User", "Test Title", "Test Details", "board123");
+
+    Assert.assertNotNull(postResponseDTO);
+    Assert.assertEquals(expectedPostResponseDTO, postResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = ASHINSABU)
+  @Category(UnitTests.class)
+  public void testGetPostCreationAuthorIdUserExists() throws Exception {
+    Request mockUserExistsRequest = new Request.Builder().url("https://canny.io/api/v1/users/retrieve").build();
+    Response responseSuccess =
+        new Response.Builder()
+            .code(200)
+            .message("OK")
+            .request(mockUserExistsRequest)
+            .protocol(Protocol.HTTP_2)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"id\": \"author123\"}"))
+            .build();
+    doReturn(responseSuccess).when(cannyClient).retrieveCannyUser(anyString());
+
+    String authorId = cannyClient.getPostCreationAuthorId("test@example.com", "Test User");
+
+    Assert.assertNotNull(authorId);
+    Assert.assertEquals("author123", authorId);
+  }
 }
