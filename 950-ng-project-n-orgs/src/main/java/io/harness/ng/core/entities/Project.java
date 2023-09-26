@@ -104,6 +104,8 @@ public class Project implements PersistentEntity, NGAccountAccess {
   }
 
   @Wither @Id @dev.morphia.annotations.Id String id;
+  String uuid;
+  String parentId;
   String accountIdentifier;
   @EntityIdentifier(allowBlank = false) String identifier;
   @EntityIdentifier(allowBlank = false) String orgIdentifier;

@@ -40,6 +40,8 @@ public class ProjectMapper {
         .tags(convertToList(createProjectDTO.getTags()))
         .version(createProjectDTO.getVersion())
         .modules(ModuleType.getModules())
+        .uuid(createProjectDTO.getUuid())
+        .parentId(createProjectDTO.getParentId())
         .build();
   }
 
@@ -51,6 +53,8 @@ public class ProjectMapper {
         .description(project.getDescription())
         .color(project.getColor())
         .tags(convertToMap(project.getTags()))
+        .uuid(project.getUuid())
+        .parentId(project.getParentId())
         .build();
   }
 

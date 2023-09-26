@@ -41,6 +41,8 @@ public class ProjectInstrumentationHelper extends InstrumentationHelper {
     try {
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
         HashMap<String, Object> map = new HashMap<>();
+        map.put("uuid",project.getUuid());
+        map.put("parentId",project.getParentId());
         map.put(ACCOUNT_ID, project.getAccountIdentifier());
         map.put(PROJECT_ID, project.getIdentifier());
         map.put(PROJECT_CREATION_TIME, project.getCreatedAt());

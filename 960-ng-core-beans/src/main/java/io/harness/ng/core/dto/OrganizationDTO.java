@@ -43,6 +43,8 @@ public class OrganizationDTO {
   @EntityIdentifier(allowBlank = false)
   @Schema(description = OrganizationConstants.IDENTIFIER)
   String identifier;
+  String uuid;
+  String parentId;
   @ApiModelProperty(required = true) @NGEntityName @Schema(description = OrganizationConstants.NAME) String name;
   @Size(max = 1024) @Schema(description = "Description of the Organization.") String description;
   @Size(max = 128) @Schema(description = "Tags for the Organization.") Map<String, String> tags;
@@ -50,10 +52,12 @@ public class OrganizationDTO {
   @JsonIgnore boolean harnessManaged;
 
   @Builder
-  public OrganizationDTO(String identifier, String name, String description, Map<String, String> tags) {
+  public OrganizationDTO(String identifier, String name, String description, Map<String, String> tags,String uuid,String parentId) {
     this.identifier = identifier;
     this.name = name;
     this.description = description;
     this.tags = tags;
+    this.uuid = uuid;
+    this.parentId = parentId;
   }
 }

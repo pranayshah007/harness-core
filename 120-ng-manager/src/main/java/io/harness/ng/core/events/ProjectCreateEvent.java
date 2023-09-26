@@ -30,10 +30,13 @@ import lombok.NoArgsConstructor;
 public class ProjectCreateEvent implements Event {
   private ProjectDTO project;
   private String accountIdentifier;
-
+  private String uuid;
+  private String parentId;
   public ProjectCreateEvent(String accountIdentifier, ProjectDTO project) {
     this.project = project;
     this.accountIdentifier = accountIdentifier;
+    this.uuid = project.getUuid();
+    this.parentId = project.getParentId();
   }
 
   @JsonIgnore
@@ -47,6 +50,8 @@ public class ProjectCreateEvent implements Event {
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, project.getName());
+    labels.put("uuid", project.getUuid());
+    labels.put("parentId", project.getParentId());
     return Resource.builder().identifier(project.getIdentifier()).type(PROJECT).labels(labels).build();
   }
 
