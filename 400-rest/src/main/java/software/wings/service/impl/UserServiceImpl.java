@@ -2840,7 +2840,7 @@ public class UserServiceImpl implements UserService {
 
   private void sendResetPasswordEmail(User user, String token, boolean isNGRequest) {
     try {
-      String resetPasswordUrl = getResetPasswordUrl(token, user, isNGRequest);
+      String resetPasswordUrl = getResetPasswordUrl(token, user, true);
       Map<String, String> templateModel = getTemplateModel(user.getName(), resetPasswordUrl);
       List<String> toList = new ArrayList<>();
       toList.add(user.getEmail());
