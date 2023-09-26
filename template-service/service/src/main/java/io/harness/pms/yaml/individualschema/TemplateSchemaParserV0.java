@@ -13,6 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.template.utils.TemplateSchemaFetcher;
+import io.harness.yaml.individualschema.AbstractStaticSchemaParser;
+import io.harness.yaml.individualschema.IndividualSchemaGenContext;
+import io.harness.yaml.individualschema.InputFieldMetadata;
+import io.harness.yaml.individualschema.TemplateSchemaMetadata;
 import io.harness.yaml.schema.beans.SchemaConstants;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -116,5 +120,11 @@ public class TemplateSchemaParserV0 extends AbstractStaticSchemaParser {
         .rootSchemaNode(rootSchemaJsonNode)
         .resolvedFqnSet(new HashSet<>())
         .build();
+  }
+
+  @Override
+  public JsonNode getFieldNode(InputFieldMetadata inputFieldMetadata) {
+    // TODO
+    return null;
   }
 }

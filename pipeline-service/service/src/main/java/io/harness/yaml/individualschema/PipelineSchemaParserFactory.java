@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.yaml.individualschema;
+package io.harness.yaml.individualschema;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,11 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineSchemaParserFactory {
   @Inject PipelineSchemaParserV0 pipelineSchemaParserV0;
-  private final String PIPELINE_VERSION_V0 = "v0";
+  public final String PIPELINE_VERSION_V0 = "v0";
 
-  public AbstractStaticSchemaParser getPipelineSchemaParser(String version) {
+  public SchemaParserInterface getPipelineSchemaParser(String version) {
     switch (version) {
       case PIPELINE_VERSION_V0:
+        pipelineSchemaParserV0.initParser();
         return pipelineSchemaParserV0;
       default:
         throw new InternalServerErrorException("Pipeline schema parser not available for version: " + version);

@@ -5,10 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.yaml.individualschema;
+package io.harness.yaml.individualschema;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-public interface SchemaParserInterface {
-  ObjectNode getIndividualSchema(IndividualSchemaRequest schemaRequest);
+public abstract class IndividualSchemaMetadata {
+  abstract String generateSchemaKey();
 }
