@@ -29,6 +29,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.SRM_SLO_CRUD_L
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeGraphResponse;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
@@ -1408,9 +1409,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     }
     List<AbstractServiceLevelObjective> serviceLevelObjectiveList = sloQuery.asList();
     if (isNotEmpty(filter.getEnvIdentifiers())) {
-      serviceLevelObjectiveList = serviceLevelObjectiveList.stream()
-                                      .filter(slo -> envFilter(slo, filter.getEnvIdentifiers()))
-                                      .collect(Collectors.toList());
+      serviceLevelObjectiveList =
+          getSLOList(projectParams.getAccountIdentifier(), serviceLevelObjectiveList, filter.getEnvIdentifiers());
     }
     if (filter.getNotificationRuleRef() != null) {
       serviceLevelObjectiveList =
@@ -1458,24 +1458,43 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         .collect(Collectors.toList());
   }
 
-  private boolean envFilter(AbstractServiceLevelObjective slo, List<String> envIdentifiers) {
-    Optional<String> msIdentifier = slo.mayBeGetMonitoredServiceIdentifier();
-    if (msIdentifier.isPresent()) {
-      MonitoredServiceResponse monitoredServiceResponse =
-          monitoredServiceService.get(ProjectParams.builder()
-                                          .accountIdentifier(slo.getAccountId())
-                                          .orgIdentifier(slo.getOrgIdentifier())
-                                          .projectIdentifier(slo.getProjectIdentifier())
-                                          .build(),
-              msIdentifier.get());
-      String envIdentifier = monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef();
-      for (String identifier : envIdentifiers) {
-        if (Objects.equals(identifier, envIdentifier)) {
-          return true;
-        }
-      }
-    }
-    return false;
+  private List<AbstractServiceLevelObjective> getSLOList(
+      String accountId, List<AbstractServiceLevelObjective> serviceLevelObjectiveList, List<String> envIdentifiers) {
+    serviceLevelObjectiveList = serviceLevelObjectiveList.stream()
+                                    .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
+                                    .collect(Collectors.toList());
+
+    Set<String> monitoredServiceIdentifiers =
+        serviceLevelObjectiveList.stream()
+            .map(slo -> ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier())
+            .collect(Collectors.toSet());
+
+    Set<String> scopedMonitoredServicesIdentifiers =
+        serviceLevelObjectiveList.stream()
+            .map(slo
+                -> getScopedInformation(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
+                    ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier()))
+            .collect(Collectors.toSet());
+
+    Map<String, String> scopedMonitoredServiceIdentifierToEnvRef =
+        monitoredServiceService.get(accountId, monitoredServiceIdentifiers)
+            .stream()
+            .map(MonitoredServiceResponse::getMonitoredServiceDTO)
+            .filter(monitoredServiceDTO
+                -> scopedMonitoredServicesIdentifiers.contains(
+                    getScopedInformation(accountId, monitoredServiceDTO.getOrgIdentifier(),
+                        monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getIdentifier())))
+            .collect(Collectors.toMap(monitoredServiceDTO
+                -> getScopedInformation(accountId, monitoredServiceDTO.getOrgIdentifier(),
+                    monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getIdentifier()),
+                MonitoredServiceDTO::getEnvironmentRef));
+
+    return serviceLevelObjectiveList.stream()
+        .filter(slo
+            -> envIdentifiers.contains(scopedMonitoredServiceIdentifierToEnvRef.get(
+                getScopedInformation(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
+                    ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier()))))
+        .collect(Collectors.toList());
   }
 
   private PageResponse<AbstractServiceLevelObjective> getResponse(ProjectParams projectParams, Integer offset,
