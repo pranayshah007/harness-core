@@ -7,6 +7,8 @@
 
 package io.harness.idp.gitintegration.processor.impl;
 
+import static io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType.GITHUB_APP;
+import static io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType.USERNAME_AND_TOKEN;
 import static io.harness.idp.common.Constants.SLASH_DELIMITER;
 import static io.harness.idp.common.Constants.SOURCE_FORMAT;
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
@@ -19,6 +21,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.adapter.GithubToGitMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
@@ -38,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -91,13 +95,21 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     GithubHttpCredentialsOutcomeDTO outcome =
         (GithubHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
-    if (!outcome.getType().toString().equals(GitIntegrationConstants.USERNAME_TOKEN_AUTH_TYPE)) {
+    if (!outcome.getType().equals(USERNAME_AND_TOKEN) && !outcome.getType().equals(GITHUB_APP)) {
       throw new InvalidRequestException(String.format(
-          " Authentication is not Username and Token for Github Connector with id - [%s] ", connectorIdentifier));
+          "AuthenticationType should be Username + Token / GithubApp for Github Connector with id - [%s] ",
+          connectorIdentifier));
     }
-    GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
 
-    String tokenSecretIdentifier = spec.getTokenRef().getIdentifier();
+    String tokenSecretIdentifier = "";
+    if (outcome.getType().equals(USERNAME_AND_TOKEN)) {
+      GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
+      tokenSecretIdentifier = spec.getTokenRef().getIdentifier();
+    } else {
+      GithubAppDTO spec = (GithubAppDTO) outcome.getSpec();
+      tokenSecretIdentifier = spec.getPrivateKeyRef().getIdentifier();
+    }
+
     if (tokenSecretIdentifier.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Secret identifier not found for connector: [%s] ", connectorIdentifier));
@@ -141,12 +153,22 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GithubHttpCredentialsOutcomeDTO outcome =
         (GithubHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
-    GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
+
+    String username = "HarnessIdp";
+    if (outcome.getType().equals(USERNAME_AND_TOKEN)) {
+      GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
+      username = StringUtils.isEmpty(spec.getUsername()) ? username : spec.getUsername();
+    } else if (outcome.getType().equals(GITHUB_APP)) {
+      GithubAppDTO spec = (GithubAppDTO) outcome.getSpec();
+      username = StringUtils.isEmpty(spec.getApplicationId()) && StringUtils.isEmpty(spec.getInstallationId())
+          ? username + "-GithubApp"
+          : username + "-GithubApp-" + spec.getApplicationId() + "-" + spec.getInstallationId();
+    }
 
     config.setUrl(catalogConnectorInfo.getRepo());
 
-    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
-        spec.getUsername(), githubConnectorSecret, config, throughGrpc);
+    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush, username,
+        githubConnectorSecret, config, throughGrpc);
   }
 
   @Override
