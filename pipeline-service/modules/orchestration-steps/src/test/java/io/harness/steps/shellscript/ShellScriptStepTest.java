@@ -33,6 +33,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ExecuteCommandResponse;
@@ -100,13 +101,16 @@ public class ShellScriptStepTest extends CategoryTest {
     Ambiance ambiance = buildAmbiance();
     ShellScriptStepParameters stepParameters =
         ShellScriptStepParameters.infoBuilder().shellType(ShellType.Bash).build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("45m")).build();
     ShellScriptTaskParametersNG taskParametersNG = ShellScriptTaskParametersNG.builder().script("echo hello").build();
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
-        .buildShellScriptTaskParametersNG(ambiance, stepParameters);
+        .buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
 
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getExecutionTimeout().getSeconds())
+        .isEqualTo(2700);
     assertThat(taskRequest.getDelegateTaskRequest().getLogKeysList())
         .containsExactly("accountId:accId/orgId:orgId/projectId:projId/pipelineId:/runSequence:0-commandUnit:Execute");
     assertThat(taskRequest).isNotNull();
@@ -124,7 +128,7 @@ public class ShellScriptStepTest extends CategoryTest {
         ShellScriptTaskParametersNG.builder().script("Write-Host hello").build();
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
-        .buildShellScriptTaskParametersNG(ambiance, stepParameters);
+        .buildShellScriptTaskParametersNG(ambiance, stepParameters, null);
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
     assertThat(new HashSet<>(taskRequest.getDelegateTaskRequest().getLogKeysList()))
         .containsExactlyInAnyOrder(

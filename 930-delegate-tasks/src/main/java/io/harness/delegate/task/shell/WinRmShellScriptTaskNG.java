@@ -174,15 +174,17 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
 
   private ShellScriptTaskResponseNG executeInit(WinRmShellScriptTaskParametersNG taskParameters,
       CommandUnitsProgress commandUnitsProgress, ILogStreamingTaskClient logStreamingTaskClient) {
-    WinRmSessionConfigBuilder configBuilder = WinRmSessionConfig.builder()
-                                                  .accountId(taskParameters.getAccountId())
-                                                  .executionId(taskParameters.getExecutionId())
-                                                  .workingDirectory(getWorkingDir(taskParameters.getWorkingDirectory()))
-                                                  .commandUnitName(INIT_UNIT)
-                                                  .environment(taskParameters.getEnvironmentVariables())
-                                                  .hostname(taskParameters.getHost())
-                                                  .timeout(SESSION_TIMEOUT)
-                                                  .commandParameters(getCommandParameters(taskParameters));
+    WinRmSessionConfigBuilder configBuilder =
+        WinRmSessionConfig.builder()
+            .accountId(taskParameters.getAccountId())
+            .executionId(taskParameters.getExecutionId())
+            .workingDirectory(getWorkingDir(taskParameters.getWorkingDirectory()))
+            .commandUnitName(INIT_UNIT)
+            .environment(taskParameters.getEnvironmentVariables())
+            .hostname(taskParameters.getHost())
+            .timeout(taskParameters.getSessionTimeout() != null ? Math.toIntExact(taskParameters.getSessionTimeout())
+                                                                : SESSION_TIMEOUT)
+            .commandParameters(getCommandParameters(taskParameters));
 
     WinRmSessionConfig config =
         winRmConfigAuthEnhancer.configureAuthentication((WinRmCredentialsSpecDTO) taskParameters.getSshKeySpecDTO(),
@@ -209,15 +211,17 @@ public class WinRmShellScriptTaskNG extends AbstractDelegateRunnableTask {
 
   private ShellScriptTaskResponseNG executeCommand(WinRmShellScriptTaskParametersNG taskParameters,
       CommandUnitsProgress commandUnitsProgress, ILogStreamingTaskClient logStreamingTaskClient) {
-    WinRmSessionConfigBuilder configBuilder = WinRmSessionConfig.builder()
-                                                  .accountId(taskParameters.getAccountId())
-                                                  .executionId(taskParameters.getExecutionId())
-                                                  .workingDirectory(getWorkingDir(taskParameters.getWorkingDirectory()))
-                                                  .commandUnitName(COMMAND_UNIT)
-                                                  .environment(taskParameters.getEnvironmentVariables())
-                                                  .hostname(taskParameters.getHost())
-                                                  .timeout(SESSION_TIMEOUT)
-                                                  .commandParameters(getCommandParameters(taskParameters));
+    WinRmSessionConfigBuilder configBuilder =
+        WinRmSessionConfig.builder()
+            .accountId(taskParameters.getAccountId())
+            .executionId(taskParameters.getExecutionId())
+            .workingDirectory(getWorkingDir(taskParameters.getWorkingDirectory()))
+            .commandUnitName(COMMAND_UNIT)
+            .environment(taskParameters.getEnvironmentVariables())
+            .hostname(taskParameters.getHost())
+            .timeout(taskParameters.getSessionTimeout() != null ? Math.toIntExact(taskParameters.getSessionTimeout())
+                                                                : SESSION_TIMEOUT)
+            .commandParameters(getCommandParameters(taskParameters));
 
     WinRmSessionConfig config =
         winRmConfigAuthEnhancer.configureAuthentication((WinRmCredentialsSpecDTO) taskParameters.getSshKeySpecDTO(),
