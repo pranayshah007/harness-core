@@ -12,7 +12,7 @@ config: |-
     '/grafana/api':
       target: https://<grafana-url>/
       pathRewrite:
-        'api/proxy/grafana/?': '/'
+        'api/proxy/grafana/api/?': '/'
       headers:
         Authorization: Bearer ${GRAFANA_TOKEN}
   
