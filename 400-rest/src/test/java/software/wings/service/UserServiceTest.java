@@ -1501,9 +1501,9 @@ public class UserServiceTest extends WingsBaseTest {
     assertThat(emailDataArgumentCaptor.getValue().getTemplateName()).isEqualTo("reset_password");
     assertThat(((Map) emailDataArgumentCaptor.getValue().getTemplateModel()).get("name")).isEqualTo(USER_NAME);
     assertThat(((Map<String, String>) emailDataArgumentCaptor.getValue().getTemplateModel()).get("url"))
-        .startsWith(PORTAL_URL + "/#/reset-password/");
+        .startsWith("/auth/#/reset-password/");
     assertThat(((Map<String, String>) emailDataArgumentCaptor.getValue().getTemplateModel()).get("url").length())
-        .isGreaterThan((PORTAL_URL + "/#/reset-password/").length());
+        .isGreaterThan("/auth/#/reset-password/".length());
   }
 
   @Test
