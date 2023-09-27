@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
@@ -77,6 +78,7 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -94,6 +96,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDP)
 public class InfrastructureMapperTest extends CategoryTest {
   @Mock private ConnectorService connectorService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @InjectMocks private InfrastructureMapper infrastructureMapper;
   private final EnvironmentOutcome environment =
       EnvironmentOutcome.builder().identifier("env").type(EnvironmentType.Production).build();
@@ -321,6 +324,8 @@ public class InfrastructureMapperTest extends CategoryTest {
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void testSshWinRmAzureInfrastructureToOutcome() {
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
+
     SshWinRmAzureInfrastructure infrastructure =
         SshWinRmAzureInfrastructure.builder()
             .connectorRef(ParameterField.createValueField("connector-ref"))
