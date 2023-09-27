@@ -190,6 +190,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
   }
   private boolean handleStageEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
     StageEndEvent stageEndEvent = objectMapper.readValue(outboxEvent.getEventData(), StageEndEvent.class);
+
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapStageEndEventToNodeExecutionEventData(stageEndEvent);
 

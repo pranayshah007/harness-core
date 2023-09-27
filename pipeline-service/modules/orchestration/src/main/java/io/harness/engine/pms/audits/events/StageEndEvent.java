@@ -35,8 +35,8 @@ public class StageEndEvent extends NodeExecutionEvent {
   @Builder
   public StageEndEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, String stageIdentifier, String stageType, Long startTs,
-      String nodeExecutionId, Long endTs, String status, TriggeredInfo triggeredInfo) {
-    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
+      String nodeExecutionId, Long endTs, String status, Integer runSequence, TriggeredInfo triggeredInfo) {
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId, runSequence);
     this.stageIdentifier = stageIdentifier;
     this.stageType = stageType;
     this.startTs = startTs;

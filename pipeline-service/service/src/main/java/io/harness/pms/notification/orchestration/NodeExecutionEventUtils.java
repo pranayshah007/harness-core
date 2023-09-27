@@ -43,6 +43,7 @@ public class NodeExecutionEventUtils {
         .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .planExecutionId(ambiance.getPlanExecutionId())
+        .runSequence(nodeOutboxInfo.getRunSequence())
         .triggeredInfo(buildTriggeredByFromAmbiance(ambiance))
         .startTs(nodeOutboxInfo.getNodeExecution().getStartTs())
         .build();
@@ -55,9 +56,10 @@ public class NodeExecutionEventUtils {
         .orgIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.orgIdentifier))
         .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+        .planExecutionId(ambiance.getPlanExecutionId())
+        .runSequence(nodeOutboxInfo.getRunSequence())
         .stageIdentifier(nodeOutboxInfo.getNodeExecution().getIdentifier())
         .stageType(ambiance.getMetadata().getModuleType())
-        .planExecutionId(ambiance.getPlanExecutionId())
         .nodeExecutionId(nodeOutboxInfo.getNodeExecutionId())
         .triggeredInfo(buildTriggeredByFromAmbiance(ambiance))
         .startTs(nodeOutboxInfo.getNodeExecution().getStartTs())
@@ -71,9 +73,10 @@ public class NodeExecutionEventUtils {
         .orgIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.orgIdentifier))
         .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
+        .planExecutionId(ambiance.getPlanExecutionId())
+        .runSequence(nodeOutboxInfo.getRunSequence())
         .stageIdentifier(nodeOutboxInfo.getNodeExecution().getIdentifier())
         .stageType(ambiance.getMetadata().getModuleType())
-        .planExecutionId(ambiance.getPlanExecutionId())
         .nodeExecutionId(nodeOutboxInfo.getNodeExecutionId())
         .startTs(nodeOutboxInfo.getNodeExecution().getStartTs())
         .triggeredInfo(buildTriggeredByFromAmbiance(ambiance))
@@ -89,6 +92,7 @@ public class NodeExecutionEventUtils {
         .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .planExecutionId(ambiance.getPlanExecutionId())
+        .runSequence(ambiance.getMetadata().getRunSequence())
         .build();
   }
 
@@ -99,6 +103,7 @@ public class NodeExecutionEventUtils {
         .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .planExecutionId(ambiance.getPlanExecutionId())
+        .runSequence(ambiance.getMetadata().getRunSequence())
         .triggeredInfo(getTriggeredInfoFromAbortInfo(ambiance, abortedBy))
         .build();
   }
@@ -111,6 +116,7 @@ public class NodeExecutionEventUtils {
         .projectIdentifier(ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.projectIdentifier))
         .pipelineIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .planExecutionId(ambiance.getPlanExecutionId())
+        .runSequence(nodeOutboxInfo.getRunSequence())
         .startTs(nodeOutboxInfo.getNodeExecution().getStartTs())
         .endTs(nodeOutboxInfo.getUpdatedTs())
         .triggeredInfo(buildTriggeredByFromAmbiance(ambiance))
@@ -143,6 +149,7 @@ public class NodeExecutionEventUtils {
         .projectIdentifier(pipelineStartEvent.getProjectIdentifier())
         .pipelineIdentifier(pipelineStartEvent.getPipelineIdentifier())
         .planExecutionId(pipelineStartEvent.getPlanExecutionId())
+        .runSequence(pipelineStartEvent.getRunSequence())
         .triggeredBy(getTriggeredByInfoAuditDetails(pipelineStartEvent.getTriggeredInfo()))
         .startTs(pipelineStartEvent.getStartTs())
         .build();
@@ -154,6 +161,7 @@ public class NodeExecutionEventUtils {
         .orgIdentifier(stageStartEvent.getOrgIdentifier())
         .projectIdentifier(stageStartEvent.getProjectIdentifier())
         .pipelineIdentifier(stageStartEvent.getPipelineIdentifier())
+        .runSequence(stageStartEvent.getRunSequence())
         .stageIdentifier(stageStartEvent.getStageIdentifier())
         .stageType(stageStartEvent.getStageType())
         .planExecutionId(stageStartEvent.getPlanExecutionId())
@@ -169,6 +177,7 @@ public class NodeExecutionEventUtils {
         .orgIdentifier(stageEndEvent.getOrgIdentifier())
         .projectIdentifier(stageEndEvent.getProjectIdentifier())
         .pipelineIdentifier(stageEndEvent.getPipelineIdentifier())
+        .runSequence(stageEndEvent.getRunSequence())
         .stageIdentifier(stageEndEvent.getStageIdentifier())
         .stageType(stageEndEvent.getStageType())
         .planExecutionId(stageEndEvent.getPlanExecutionId())
@@ -188,6 +197,7 @@ public class NodeExecutionEventUtils {
         .projectIdentifier(pipelineTimeoutEvent.getProjectIdentifier())
         .pipelineIdentifier(pipelineTimeoutEvent.getPipelineIdentifier())
         .planExecutionId(pipelineTimeoutEvent.getPlanExecutionId())
+        .runSequence(pipelineTimeoutEvent.getRunSequence())
         .build();
   }
 
@@ -198,6 +208,7 @@ public class NodeExecutionEventUtils {
         .projectIdentifier(pipelineEndEvent.getProjectIdentifier())
         .pipelineIdentifier(pipelineEndEvent.getPipelineIdentifier())
         .planExecutionId(pipelineEndEvent.getPlanExecutionId())
+        .runSequence(pipelineEndEvent.getRunSequence())
         .status(pipelineEndEvent.getStatus())
         .triggeredBy(getTriggeredByInfoAuditDetails(pipelineEndEvent.getTriggeredInfo()))
         .startTs(pipelineEndEvent.getStartTs())
@@ -213,6 +224,7 @@ public class NodeExecutionEventUtils {
         .projectIdentifier(pipelineAbortEvent.getProjectIdentifier())
         .pipelineIdentifier(pipelineAbortEvent.getPipelineIdentifier())
         .planExecutionId(pipelineAbortEvent.getPlanExecutionId())
+        .runSequence(pipelineAbortEvent.getRunSequence())
         .triggeredBy(getTriggeredByInfoAuditDetails(pipelineAbortEvent.getTriggeredInfo()))
         .build();
   }
