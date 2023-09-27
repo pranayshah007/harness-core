@@ -6,7 +6,9 @@
  */
 
 package io.harness.ng.moduleversioninfo.runnable;
+import static io.harness.ModuleType.*;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.annotations.dev.HarnessTeam.STO;
 
 import static org.springframework.data.mongodb.core.query.Update.update;
 
@@ -55,7 +57,8 @@ import org.springframework.data.mongodb.core.query.Update;
 public class UpdateVersionInfoTask {
   private static final String COMING_SOON = "Coming Soon";
 
-  private static final String JOB_INTERRUPTED = "UpdateVersionInfoTask Sync job was interrupted due to: ";
+  private static final String JOB_INTERRUPTED =
+      "UpdateVersionInfoTask Sync job was interrupted for the moduleName = {}  due to= {}";
   public static final String CHAOS_MANAGER_API = "manager/api/";
   private static final String PLATFORM = "Platform";
   private static final String RESOURCE = "resource";
@@ -99,6 +102,8 @@ public class UpdateVersionInfoTask {
   }
 
   private String getBaseUrl(String moduleName) throws InvalidRequestException {
+    String baseUrlInfoMsg = String.format("Getting baseUrl for moduleName= {}", moduleName);
+    log.info(baseUrlInfoMsg);
     if (PLATFORM.equals(moduleName)) {
       return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
     }
@@ -122,7 +127,7 @@ public class UpdateVersionInfoTask {
       case STO:
         return nextGenConfiguration.getStoCoreClientConfig().getBaseUrl();
       default:
-        String errorMsg = String.format("getBaseUrl() not supported for provided moduleType={}.", moduleType);
+        String errorMsg = String.format("getBaseUrl() not supported for provided moduleType= {}.", moduleType);
         log.error(errorMsg);
         throw new InvalidRequestException(errorMsg);
     }
@@ -181,16 +186,19 @@ public class UpdateVersionInfoTask {
     try {
       response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
     } catch (IOException e) {
-      log.error(JOB_INTERRUPTED, e);
-      throw new IOException(JOB_INTERRUPTED, e);
+      String errorMsg = String.format(JOB_INTERRUPTED, serviceName, e.getMessage());
+      log.error(errorMsg);
+      throw new IOException(errorMsg, e);
     } catch (InterruptedException e) {
-      log.error(JOB_INTERRUPTED, e);
-      throw new InterruptedException(JOB_INTERRUPTED + e);
+      String errorMsg = String.format(JOB_INTERRUPTED, serviceName, e.getMessage());
+      log.error(errorMsg);
+      throw new InterruptedException(errorMsg);
     }
     if (response == null) {
       return "";
     }
-    log.info("Request: {} and Response Body: {}", request, response.body());
+    log.info("Getting version for ModuleName = {} with Request: {} and Response Body: {}", serviceName, request,
+        response.body());
     String responseString = response.body().toString().trim();
     JSONObject jsonObject = new JSONObject(responseString);
 
