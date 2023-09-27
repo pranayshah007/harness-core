@@ -328,6 +328,7 @@ public class ServiceMigrationService extends NgMigrationService {
                                                 .build()))
           .build();
     }
+
     ServiceRequestDTO serviceRequestDTO =
         ServiceRequestDTO.builder()
             .description(null)
@@ -342,6 +343,20 @@ public class ServiceMigrationService extends NgMigrationService {
             .createService(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 JsonUtils.asTree(serviceRequestDTO))
             .execute();
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      serviceRequestDTO = ServiceRequestDTO.builder()
+                              .description(null)
+                              .identifier(yamlFile.getNgEntityDetail().getIdentifier())
+                              .name(((NGServiceConfig) yamlFile.getYaml()).getNgServiceV2InfoConfig().getName())
+                              .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
+                              .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
+                              .yaml(getYamlStringV2(yamlFile))
+                              .build();
+      resp = ngClient
+                 .createService(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     JsonUtils.asTree(serviceRequestDTO))
+                 .execute();
+    }
     log.info("Service creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
