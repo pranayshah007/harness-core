@@ -512,7 +512,9 @@ public enum TaskType {
   AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Swap Service V2"),
   AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Rollback V2"),
   DLITE_CI_VM_EXECUTE_TASK_V2(TaskGroup.CI, true),
-  DLITE_CI_VM_CLEANUP_TASK_V2(TaskGroup.CI, true);
+  DLITE_CI_VM_CLEANUP_TASK_V2(TaskGroup.CI, true),
+  COMMAND_TASK_NG_WITH_GCS_ARTIFACT(
+      TaskGroup.COMMAND_TASK_NG, "Task to handle GCS artifact type with SSH/WinRm deployments");
 
   private final TaskGroup taskGroup;
   private final String displayName;

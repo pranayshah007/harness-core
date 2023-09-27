@@ -15,8 +15,10 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 public class ServiceGuardDataCollectionTaskCreateNextTaskHandler
     implements DataCollectionTaskCreateNextTaskHandler<CVConfig> {
   @Inject
@@ -27,7 +29,11 @@ public class ServiceGuardDataCollectionTaskCreateNextTaskHandler
   public void handle(CVConfig entity) {
     Preconditions.checkArgument(
         dataCollectionTaskManagementServiceMapBinder.containsKey(DataCollectionTask.Type.SERVICE_GUARD));
-    dataCollectionTaskManagementServiceMapBinder.get(DataCollectionTask.Type.SERVICE_GUARD)
-        .handleCreateNextTask(entity);
+    try {
+      dataCollectionTaskManagementServiceMapBinder.get(DataCollectionTask.Type.SERVICE_GUARD)
+          .handleCreateNextTask(entity);
+    } catch (IllegalArgumentException ex) {
+      log.warn("[ERROR]: IllegalArgumentException for CVConfig {}", entity.getUuid(), ex.fillInStackTrace());
+    }
   }
 }

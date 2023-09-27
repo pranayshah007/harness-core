@@ -98,7 +98,8 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     Set<String> excludedFields = new HashSet<>(Arrays.asList(EnvironmentKeys.id, EnvironmentKeys.createdAt,
         EnvironmentKeys.version, EnvironmentKeys.yaml, EnvironmentKeys.branch, EnvironmentKeys.filePath,
         EnvironmentKeys.isFromDefaultBranch, EnvironmentKeys.objectIdOfYaml, EnvironmentKeys.yamlGitConfigRef,
-        EnvironmentKeys.rootFolder, "class", EnvironmentKeys.isMigratedToOverride));
+        EnvironmentKeys.rootFolder, "class", EnvironmentKeys.isMigratedToOverride, EnvironmentKeys.storeType,
+        EnvironmentKeys.repo, EnvironmentKeys.connectorRef, EnvironmentKeys.repoURL, EnvironmentKeys.fallBackBranch));
 
     for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
       boolean shouldExist =

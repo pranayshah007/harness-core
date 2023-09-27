@@ -1052,7 +1052,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = AYUSHI_TIWARI)
   @Category(UnitTests.class)
-  public void testFetchAllWithPlanExecutionId() {
+  public void testFetchAllLeavesWithPlanExecutionId() {
     NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
     Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
     NodeExecution nodeExecutions = NodeExecution.builder().build();
@@ -1066,7 +1066,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     doReturn(iterator).when(nodeExecutionReadHelperMock).fetchNodeExecutionsFromAnalytics(any());
     Set<String> fieldsToBeIncluded = new HashSet<>();
     CloseableIterator<NodeExecution> actualNodeExecution =
-        nodeExecutionService.fetchAllWithPlanExecutionId("placeExecutionID", fieldsToBeIncluded);
+        nodeExecutionService.fetchAllLeavesUsingPlanExecutionId("placeExecutionID", fieldsToBeIncluded);
     verify(nodeExecutionReadHelperMock, times(1)).fetchNodeExecutionsFromAnalytics(any());
     assertThat(actualNodeExecution).isEqualTo(iterator);
   }

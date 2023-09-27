@@ -38,6 +38,13 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DISCON
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION_FAILED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_CONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_DISCONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECEIVED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_REGISTER_EVENT;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RESTART_EVENT;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_UNREGISTER_EVENT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -128,6 +135,7 @@ import io.harness.delegate.events.DelegateDeleteEvent;
 import io.harness.delegate.events.DelegateRegisterEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
 import io.harness.delegate.events.DelegateUpsertEvent;
+import io.harness.delegate.heartbeat.DelegateHeartBeatMetricsHelper;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.DelegateLogContext;
@@ -404,6 +412,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private AgentMtlsEndpointService agentMtlsEndpointService;
   @Inject private DelegateJreVersionHelper jreVersionHelper;
+  @Inject private DelegateHeartBeatMetricsHelper delegateHeartBeatMetricsHelper;
 
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
@@ -991,7 +1000,9 @@ public class DelegateServiceImpl implements DelegateService {
 
   private UpdateOperations<Delegate> getDelegateUpdateOperations(final Delegate delegate) {
     final UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
-    setUnset(updateOperations, DelegateKeys.ip, delegate.getIp());
+    if (delegate.getIp() != null) {
+      setUnset(updateOperations, DelegateKeys.ip, delegate.getIp());
+    }
     if (delegate.getStatus() != null) {
       updateOperations.set(DelegateKeys.status, delegate.getStatus());
     }
@@ -2568,6 +2579,12 @@ public class DelegateServiceImpl implements DelegateService {
       if (isNotEmpty(existingDelegate.getVersion()) && existingDelegate.getVersion().equals(delegateParams.getVersion())
           && !ECS.equals(existingDelegate.getDelegateType())) {
         delegateMetricsService.recordDelegateMetrics(existingDelegate, DELEGATE_RESTARTED);
+        // delegate restarted heartbeat metric
+        delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(clock.millis(), existingDelegate.getAccountId(),
+            delegateParams.getOrgIdentifier(), delegateParams.getProjectIdentifier(),
+            existingDelegate.getDelegateName(), existingDelegate.getUuid(), existingDelegate.getVersion(),
+            HEARTBEAT_RECONNECTED, HEARTBEAT_RESTART_EVENT, existingDelegate.isNg(), existingDelegate.isImmutable(),
+            existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
       }
 
       // if its immutable delegate then mark all the tasks failed
@@ -2688,12 +2705,22 @@ public class DelegateServiceImpl implements DelegateService {
       if (delegateRegisterResponse != null) {
         delegateTelemetryPublisher.sendTelemetryTrackEvents(
             delegate.getAccountId(), ECS, delegate.isNg(), DELEGATE_REGISTERED_EVENT);
+        delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(clock.millis(), delegateParams.getAccountId(),
+            delegateParams.getOrgIdentifier(), delegateParams.getProjectIdentifier(), delegateParams.getDelegateName(),
+            delegateRegisterResponse.getDelegateId(), delegateParams.getVersion(), HEARTBEAT_CONNECTED,
+            HEARTBEAT_REGISTER_EVENT, delegateParams.isNg(), delegate.isImmutable(), delegateParams.getLastHeartBeat(),
+            HEARTBEAT_RECEIVED);
       }
       return delegateRegisterResponse;
     } else {
       Delegate registeredDelegate = upsertDelegateOperation(existingDelegate, delegate, delegateSetupDetails);
       updateDelegateYamlTagsAfterReRegistering(
           registeredDelegate.getAccountId(), registeredDelegate.getUuid(), delegate.getTagsFromYaml());
+      delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(clock.millis(), delegateParams.getAccountId(),
+          delegateParams.getOrgIdentifier(), delegateParams.getProjectIdentifier(), delegateParams.getDelegateName(),
+          registeredDelegate.getUuid(), delegateParams.getVersion(), HEARTBEAT_CONNECTED, HEARTBEAT_REGISTER_EVENT,
+          delegateParams.isNg(), registeredDelegate.isImmutable(), delegateParams.getLastHeartBeat(),
+          HEARTBEAT_RECEIVED);
       return registerResponseFromDelegate(registeredDelegate);
     }
   }
@@ -2741,6 +2768,17 @@ public class DelegateServiceImpl implements DelegateService {
     sendUnregisterDelegateAuditEvent(existingDelegate, accountId);
     delegateDao.delegateDisconnected(accountId, request.getDelegateId());
     onDelegateDisconnected(accountId, delegateId);
+    // delegate de-registered heartbeat event
+    String orgId = (null != existingDelegate.getOwner())
+        ? DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+        : null;
+    String projectId = (null != existingDelegate.getOwner())
+        ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+        : null;
+    delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(clock.millis(), existingDelegate.getAccountId(), orgId,
+        projectId, existingDelegate.getDelegateName(), existingDelegate.getUuid(), existingDelegate.getVersion(),
+        HEARTBEAT_DISCONNECTED, HEARTBEAT_UNREGISTER_EVENT, existingDelegate.isNg(), existingDelegate.isImmutable(),
+        existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
   }
 
   @VisibleForTesting
@@ -3472,6 +3510,7 @@ public class DelegateServiceImpl implements DelegateService {
                                     .project(DelegateKeys.status, true)
                                     .project(DelegateKeys.delegateProfileId, true)
                                     .project(DelegateKeys.description, true)
+                                    .project(DelegateKeys.lastHeartBeat, true)
                                     .get();
 
     if (existingDelegate != null) {

@@ -239,34 +239,50 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public Optional<ServiceEntity> get(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
     // default behavior to not load from cache and fallback branch
-    return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false);
+    return get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false, false);
+  }
+
+  @Override
+  public Optional<ServiceEntity> getMetadata(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
+    // includeMetadataOnly fetches the entity from db so source code params are not needed
+    return get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false, true);
   }
 
   @Override
   public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
-    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
-
-    return getServiceByRef(
-        accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache, loadFromFallbackBranch);
+    return get(
+        accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache, loadFromFallbackBranch, false);
   }
 
-  private Optional<ServiceEntity> getServiceByRef(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+  private Optional<ServiceEntity> get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch,
+      boolean getMetadataOnly) {
+    checkArgument(isNotEmpty(accountIdentifier), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
+
+    return getServiceByRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache,
+        loadFromFallbackBranch, getMetadataOnly);
+  }
+
+  private Optional<ServiceEntity> getServiceByRef(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceRef, boolean deleted, boolean loadFromCache,
+      boolean loadFromFallbackBranch, boolean getMetadataOnly) {
     String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     // converted to service identifier
     if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted, loadFromCache, loadFromFallbackBranch);
+          accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, !deleted, loadFromCache,
+          loadFromFallbackBranch, getMetadataOnly);
     } else {
       IdentifierRef serviceIdentifierRef =
-          IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
+          IdentifierRefHelper.getIdentifierRef(serviceRef, accountIdentifier, orgIdentifier, projectIdentifier);
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
           serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted, loadFromCache,
-          loadFromFallbackBranch);
+          loadFromFallbackBranch, getMetadataOnly);
     }
   }
 
@@ -294,7 +310,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       ServiceEntity serviceToUpdate = oldService.withYaml(requestService.getYaml())
                                           .withDescription(requestService.getDescription())
                                           .withName(requestService.getName())
-                                          .withTags(requestService.getTags());
+                                          .withTags(requestService.getTags())
+                                          .withType(requestService.getType())
+                                          .withGitOpsEnabled(requestService.getGitOpsEnabled());
 
       // create final request service
       ServiceEntityValidator serviceEntityValidator =
@@ -416,7 +434,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       checkThatServiceIsNotReferredByOthers(serviceEntity);
     }
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
-    Optional<ServiceEntity> serviceEntityOptional = get(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
+
+    Optional<ServiceEntity> serviceEntityOptional =
+        getMetadata(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
 
     if (serviceEntityOptional.isPresent()) {
       boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
@@ -1142,7 +1162,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   public RepoListResponseDTO getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       boolean includeAllServicesAccessibleAtScope) {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        accountIdentifier, orgIdentifier, projectIdentifier, null, false, includeAllServicesAccessibleAtScope);
+        accountIdentifier, orgIdentifier, projectIdentifier, null, false, includeAllServicesAccessibleAtScope, null);
 
     List<String> uniqueRepos = serviceRepository.getListOfDistinctRepos(criteria);
     CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());

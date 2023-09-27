@@ -16,6 +16,8 @@ import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -26,10 +28,9 @@ public interface DataSourceLocation {
   Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs);
+      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException;
 
-  String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, String> dataPointIdsAndInputValue, String requestBody);
+  String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValue, String requestBody);
 
   default ApiRequestDetails fetchApiRequestDetails(DataSourceLocationEntity dataSourceLocationEntity) {
     return ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
@@ -40,7 +41,14 @@ public interface DataSourceLocation {
     String requestBody = apiRequestDetails.getRequestBody();
     requestBody = replaceRequestBodyPlaceholdersIfAny(possibleReplaceableRequestBodyPairs, requestBody);
     Map<String, String> dataPointIdAndInputValue = convertDataPointEntityMapToDataPointIdMap(dataPointAndInputValue);
-    return replaceRequestBodyInputValuePlaceholdersIfAny(dataPointIdAndInputValue, requestBody);
+    return replaceInputValuePlaceholdersIfAny(dataPointIdAndInputValue, requestBody);
+  }
+
+  default String constructUrl(
+      String url, Map<String, String> replaceableUrls, Map<DataPointEntity, String> dataPointAndInputValue) {
+    String replacedUrl = replaceUrlsPlaceholdersIfAny(url, replaceableUrls);
+    Map<String, String> dataPointIdAndInputValue = convertDataPointEntityMapToDataPointIdMap(dataPointAndInputValue);
+    return replaceInputValuePlaceholdersIfAny(dataPointIdAndInputValue, replacedUrl);
   }
 
   default void matchAndReplaceHeaders(Map<String, String> headers, Map<String, String> replaceableHeaders) {
@@ -73,7 +81,8 @@ public interface DataSourceLocation {
     return url;
   }
 
-  default Response getResponse(ApiRequestDetails apiRequestDetails, DslClient dslClient, String accountIdentifier) {
+  default Response getResponse(ApiRequestDetails apiRequestDetails, DslClient dslClient, String accountIdentifier)
+      throws NoSuchAlgorithmException, KeyManagementException {
     return dslClient.call(accountIdentifier, apiRequestDetails);
   }
 }

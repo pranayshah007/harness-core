@@ -16,6 +16,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +34,7 @@ import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.senders.MSTeamsSenderImpl;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.rule.Owner;
 import io.harness.service.DelegateGrpcClientWrapper;
 
@@ -51,6 +54,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private MSTeamsSenderImpl msTeamsSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private MSTeamsServiceImpl msTeamService;
   private String accountId = "accountId";
   private String msTeamsTemplateName = "msteams_test";
@@ -61,8 +65,8 @@ public class MSTeamsServiceImplTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    msTeamService = new MSTeamsServiceImpl(
-        notificationSettingsService, notificationTemplateService, msTeamsSender, delegateGrpcClientWrapper);
+    msTeamService = new MSTeamsServiceImpl(notificationSettingsService, notificationTemplateService, msTeamsSender,
+        delegateGrpcClientWrapper, notificationSettingsHelper);
   }
 
   @Test
@@ -135,6 +139,8 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(msTeamsWebhookurl));
 
     NotificationProcessingResponse notificationProcessingResponse = msTeamService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
@@ -186,6 +192,8 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(msTeamsWebhookurl));
 
     NotificationProcessingResponse notificationProcessingResponse = msTeamService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
@@ -240,6 +248,8 @@ public class MSTeamsServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(msTeamsSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(msTeamsWebhookurl));
 
     NotificationProcessingResponse notificationProcessingResponse = msTeamService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);

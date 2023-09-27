@@ -135,6 +135,8 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 					Errorln("consumer execute: cannot create update cache info")
 				continue
 			}
+			logEntryWorker.WithField("key", event.Key).Infoln("cache marked as ERROR")
+			continue
 		}
 
 		info.Status = entity.SUCCESS
@@ -155,12 +157,19 @@ func downloadZipUploadRoutine(ctx context.Context, s store.Store, zipPrefix stri
 	pipeRead, pipeWrite := io.Pipe()
 	zipWriter := zip.NewWriter(pipeWrite)
 
-	gErrGroup := new(errgroup.Group)
+	defer pipeWrite.Close()
+	defer zipWriter.Close()
 
+	gErrGroup, ctx := errgroup.WithContext(ctx) // Create a new context within the errgroup.
+	ctx, cancelFunc := context.WithCancel(ctx)
+	defer cancelFunc()
+
+	var err error
 	// upload
 	gErrGroup.Go(func() error {
-		err := s.Upload(ctx, zipPrefix, pipeRead)
-
+		defer cancelFunc()
+		defer pipeWrite.Close()
+		err = s.Upload(ctx, zipPrefix, pipeRead)
 		if err != nil {
 			return fmt.Errorf("zip upload: cannot upload zip to s3: %w", err)
 		}
@@ -169,39 +178,40 @@ func downloadZipUploadRoutine(ctx context.Context, s store.Store, zipPrefix stri
 
 	// zip
 	gErrGroup.Go(func() error {
+		defer cancelFunc()
+		defer pipeWrite.Close()
+		defer zipWriter.Close()
 		for _, key := range out {
 			// skip download logs.zip in the new zip
 			if strings.Contains(key, "logs.zip") {
 				continue
 			}
-
-			fileDownloaded, err := s.Download(ctx, key)
-			if err != nil {
-				return fmt.Errorf("zipfile: failed to download: %w", err)
+			fileDownloaded, downloadErr := s.Download(ctx, key)
+			if downloadErr != nil {
+				err = fmt.Errorf("zipfile: failed to download: %w", downloadErr)
+				return err
 			}
 
-			zipFile, err := zipWriter.Create(key)
-			if err != nil {
-				return fmt.Errorf("zipfile: failed to zip: %w", err)
+			zipFile, zipErr := zipWriter.Create(key)
+			if zipErr != nil {
+				err = fmt.Errorf("zipfile: failed to zip: %w", zipErr)
+				return err
 			}
-			_, err = io.Copy(zipFile, fileDownloaded)
-			if err != nil {
-				return fmt.Errorf("zipfile: failed to copy: %w", err)
+			_, copyErr := io.Copy(zipFile, fileDownloaded)
+			if copyErr != nil {
+				err = fmt.Errorf("zipfile: failed to copy: %w", copyErr)
+				return err
 			}
 			err = fileDownloaded.Close()
 			if err != nil {
-				return fmt.Errorf("zipfile: failed to close: %w", err)
+				return err
 			}
 		}
-		zipWriter.Close()
-		pipeWrite.Close()
 		return nil
 	})
 
-	err := gErrGroup.Wait()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	// Return the first error encountered or nil if no error
+	<-ctx.Done()
+	err = gErrGroup.Wait()
+	return err
 }

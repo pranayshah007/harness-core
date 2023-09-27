@@ -12,11 +12,7 @@ import static io.harness.CvNextGenTestBase.getSourceResourceFile;
 import static io.harness.rule.OwnerRule.ANSUMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.DataSourceType;
@@ -27,7 +23,6 @@ import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
-import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.impl.PrometheusDataCollectionInfoMapper;
 import io.harness.datacollection.DataCollectionDSLService;
@@ -54,7 +49,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -66,8 +60,6 @@ public class PrometheusDataCollectionDSLV2TestSuiteChild extends DSLHoverflyCVNe
   @Inject private PrometheusDataCollectionInfoMapper dataCollectionInfoMapper;
   private ExecutorService executorService;
 
-  FeatureFlagService featureFlagService;
-
   @Before
   public void setup() throws IOException, IllegalAccessException {
     super.before();
@@ -75,11 +67,6 @@ public class PrometheusDataCollectionDSLV2TestSuiteChild extends DSLHoverflyCVNe
     executorService = Executors.newFixedThreadPool(10);
     metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
-    featureFlagService = mock(FeatureFlagService.class);
-    when(featureFlagService.isFeatureFlagEnabled(eq(builderFactory.getContext().getAccountId()),
-             eq(FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())))
-        .thenReturn(true);
-    FieldUtils.writeField(dataCollectionInfoMapper, "featureFlagService", featureFlagService, true);
   }
 
   @Test

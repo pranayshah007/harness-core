@@ -61,7 +61,7 @@ public class HarnessTagYamlHelper {
 
     String accountId = getAccountId(entity, appId);
     String entityId = ((UuidAware) entity).getUuid();
-    List<HarnessTagLink> tagLinks = harnessTagService.getTagLinksWithEntityId(accountId, entityId);
+    List<HarnessTagLink> tagLinks = harnessTagService.getTagLinksWithEntityId(accountId, entityId, false);
 
     Map<String, String> harnessTags = new LinkedHashMap<>();
     tagLinks.forEach(harnessTagLink -> harnessTags.put(harnessTagLink.getKey(), harnessTagLink.getValue()));
@@ -99,7 +99,7 @@ public class HarnessTagYamlHelper {
     }
 
     String entityId = ((UuidAware) entity).getUuid();
-    List<HarnessTagLink> tagLinks = harnessTagService.getTagLinksWithEntityId(accountId, entityId);
+    List<HarnessTagLink> tagLinks = harnessTagService.getTagLinksWithEntityId(accountId, entityId, false);
 
     Map<String, String> tagsFromDB = new HashMap<>();
     tagLinks.forEach(harnessTagLink -> tagsFromDB.put(harnessTagLink.getKey(), harnessTagLink.getValue()));

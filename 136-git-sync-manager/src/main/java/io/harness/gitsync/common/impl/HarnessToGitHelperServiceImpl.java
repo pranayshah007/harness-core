@@ -842,6 +842,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         .setCacheState(getCacheState(cacheDetails.getScmCacheState()))
         .setLastUpdateAt(cacheDetails.getLastUpdatedAt())
         .setTtlLeft(cacheDetails.getCacheExpiryTTL())
+        .setIsSyncEnabled(cacheDetails.isSyncEnabled())
         .build();
   }
 

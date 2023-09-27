@@ -13,6 +13,10 @@ import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME;
 import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DESTROYED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_CONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_EVENT;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECEIVED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECONNECTED;
 
 import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.delegate.beans.Delegate;
@@ -20,6 +24,7 @@ import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateNotRegisteredException;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.DuplicateDelegateException;
+import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.WingsException;
 import io.harness.logging.Misc;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -64,6 +69,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
   @Inject private BroadcasterFactory broadcasterFactory;
 
   @Inject private DelegateSetupService delegateSetupService;
+  @Inject private DelegateHeartBeatMetricsHelper delegateHeartBeatMetricsHelper;
 
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
@@ -132,10 +138,34 @@ public abstract class DelegateHeartbeatService<T extends Object> {
       final T response =
           precheck(existingDelegate, params).orElseGet(() -> processHeartbeatRequest(existingDelegate, params));
       finish(response, params);
+      long currentTime = clock.millis();
+      String orgId = (null != existingDelegate.getOwner())
+          ? DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+          : null;
+      String projectId = (null != existingDelegate.getOwner())
+          ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+          : null;
       boolean isDelegateReconnectingAfterLongPause =
-          clock.millis() > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
+          currentTime > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
       if (isDelegateReconnectingAfterLongPause) {
         subject.fireInform(DelegateObserver::onReconnected, existingDelegate);
+        try {
+          delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(currentTime, existingDelegate.getAccountId(), orgId,
+              projectId, existingDelegate.getDelegateName(), existingDelegate.getUuid(), existingDelegate.getVersion(),
+              HEARTBEAT_RECONNECTED, HEARTBEAT_EVENT, existingDelegate.isNg(), existingDelegate.isImmutable(),
+              existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
+        } catch (Exception ex) {
+          log.error("Exception occurred while recording heartBeat metric", ex);
+        }
+      } else {
+        try {
+          delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(currentTime, existingDelegate.getAccountId(), orgId,
+              projectId, existingDelegate.getDelegateName(), existingDelegate.getUuid(), existingDelegate.getVersion(),
+              HEARTBEAT_CONNECTED, HEARTBEAT_EVENT, existingDelegate.isNg(), existingDelegate.isImmutable(),
+              existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
+        } catch (Exception ex) {
+          log.error("Exception occurred while recording heartBeat metric", ex);
+        }
       }
       return response;
     } catch (WingsException e) {

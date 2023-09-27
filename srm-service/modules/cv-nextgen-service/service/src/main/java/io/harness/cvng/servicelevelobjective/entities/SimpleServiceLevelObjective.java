@@ -13,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
@@ -27,9 +29,9 @@ public class SimpleServiceLevelObjective extends AbstractServiceLevelObjective {
   public SimpleServiceLevelObjective() {
     super.setType(ServiceLevelObjectiveType.SIMPLE);
   }
-  String healthSourceIdentifier;
-  String monitoredServiceIdentifier;
-  List<String> serviceLevelIndicators;
+  @NotNull String healthSourceIdentifier;
+  @NotNull String monitoredServiceIdentifier;
+  @NotNull @Size(min = 1) List<String> serviceLevelIndicators;
   ServiceLevelIndicatorType serviceLevelIndicatorType;
 
   @Override

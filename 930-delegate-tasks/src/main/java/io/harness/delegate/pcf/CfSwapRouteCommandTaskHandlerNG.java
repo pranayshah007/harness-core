@@ -86,7 +86,6 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     if (!(cfCommandRequestNG instanceof CfSwapRoutesRequestNG)) {
       throw new InvalidArgumentsException(Pair.of("cfCommandRequest", "Must be instance of CfSwapRoutesRequestNG"));
     }
-    CfInBuiltVariablesUpdateValues updateValues = null;
     LogCallback executionLogCallback = tasTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, CfCommandUnitConstants.SwapRoutesForNewApplication, true, commandUnitsProgress);
     CfSwapRouteCommandResult cfSwapRouteCommandResult = CfSwapRouteCommandResult.builder().build();
@@ -203,17 +202,17 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       executionLogCallback = tasTaskHelperBase.getLogCallback(
           iLogStreamingTaskClient, CfCommandUnitConstants.Downsize, true, commandUnitsProgress);
       // if deploy and downsizeOld is true
-      updateValues = downsizeOldAppDuringDeployAndRenameApps(executionLogCallback, cfSwapRoutesRequestNG,
-          cfRequestConfig, pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath(), iLogStreamingTaskClient,
-          commandUnitsProgress);
+      downsizeOldAppDuringDeployAndRenameApps(executionLogCallback, cfSwapRoutesRequestNG, cfRequestConfig,
+          pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath(), iLogStreamingTaskClient, commandUnitsProgress);
 
       getInstancesForNewApplication(
           cfSwapRoutesRequestNG.getReleaseNamePrefix(), cfSwapRouteCommandResult, cfRequestConfig);
 
-      cfSwapRouteCommandResult.setUpdatedValues(updateValues);
       cfSwapRouteCommandResponseNG.setErrorMessage(StringUtils.EMPTY);
       cfSwapRouteCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
       cfSwapRouteCommandResponseNG.setNewApplicationName(cfSwapRoutesRequestNG.getReleaseNamePrefix());
+      cfSwapRouteCommandResult.setNewApplicationInfo(cfSwapRoutesRequestNG.getNewApplicationDetails());
+      cfSwapRouteCommandResult.setActiveApplicationInfo(cfSwapRoutesRequestNG.getActiveApplicationDetails());
       cfSwapRouteCommandResponseNG.setCfSwapRouteCommandResult(cfSwapRouteCommandResult);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);

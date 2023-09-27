@@ -19,6 +19,7 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.statusupdate.NodeStatusUpdateHandlerFactory;
 import io.harness.engine.observers.NodeStatusUpdateHandler;
@@ -132,6 +133,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     if (StatusUtils.isFinalStatus(status)) {
       waitNotifyEngine.doneWith(
           String.format(ENFORCEMENT_CALLBACK_ID, planExecutionId), StringNotifyResponseData.builder().build());
+      waitNotifyEngine.doneWith(planExecutionId, PipelineStageResponseData.builder().status(status).build());
     }
     return updated;
   }
@@ -229,7 +231,13 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
 
   @Override
   public Status calculateStatus(String planExecutionId) {
-    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
+    return calculateStatus(planExecutionId, false);
+  }
+
+  @Override
+  public Status calculateStatus(String planExecutionId, boolean shouldSkipIdentityNodes) {
+    List<Status> statuses =
+        nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId, shouldSkipIdentityNodes);
     return OrchestrationUtils.calculateStatusForPlanExecution(statuses, planExecutionId);
   }
 

@@ -65,4 +65,6 @@ public class AsgRollingDeployBaseStepInfo {
   ParameterField<Integer> minimumHealthyPercentage;
 
   @ApiModelProperty(dataType = SwaggerConstants.ASG_INSTANCES_CLASSPATH) AsgInstances instances;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> asgName;
 }

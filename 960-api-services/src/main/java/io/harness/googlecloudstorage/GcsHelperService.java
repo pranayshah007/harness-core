@@ -56,7 +56,7 @@ public class GcsHelperService {
 
   @Inject private GcpHttpTransportHelperService gcpHttpTransportHelperService;
   @Inject private GcpCredentialsHelper gcpCredentialsHelper;
-  private static final String INVALID_BUCKET_PROJECT__ERROR =
+  private static final String INVALID_BUCKET_PROJECT_ERROR =
       "Unable to checkout bucket: %s in Google Cloud Storage. Please "
       + "ensure that provided project and bucket exists in GCP";
 
@@ -97,7 +97,7 @@ public class GcsHelperService {
         gcsInternalConfig.isUseDelegate(), gcsInternalConfig.getProject());
     Bucket bucket = storage.get(gcsInternalConfig.getBucket());
     if (bucket == null) {
-      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT__ERROR, gcsInternalConfig.getBucket()));
+      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT_ERROR, gcsInternalConfig.getBucket()));
     }
     if (bucket.versioningEnabled() != null) {
       isVersioningEnabled = bucket.versioningEnabled();
@@ -165,10 +165,22 @@ public class GcsHelperService {
         gcsInternalConfig.isUseDelegate(), gcsInternalConfig.getProject());
     Bucket bucket = storage.get(gcsInternalConfig.getBucket());
     if (bucket == null) {
-      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT__ERROR, gcsInternalConfig.getBucket()));
+      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT_ERROR, gcsInternalConfig.getBucket()));
     }
 
     Blob blob = storage.get(BlobId.of(gcsInternalConfig.getBucket(), fileName));
     return new ByteArrayInputStream(blob.getContent());
+  }
+
+  public Long getObjectSize(GcsInternalConfig gcsInternalConfig, String fileName) throws Exception {
+    Storage storage = getGcsStorageService(gcsInternalConfig.getServiceAccountKeyFileContent(),
+        gcsInternalConfig.isUseDelegate(), gcsInternalConfig.getProject());
+    Bucket bucket = storage.get(gcsInternalConfig.getBucket());
+    if (bucket == null) {
+      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT_ERROR, gcsInternalConfig.getBucket()));
+    }
+
+    Blob blob = storage.get(BlobId.of(gcsInternalConfig.getBucket(), fileName));
+    return blob.getSize();
   }
 }

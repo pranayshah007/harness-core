@@ -3947,7 +3947,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
             .build();
     OciHelmStoreDelegateConfig ociHelmStoreDelegateConfig =
         OciHelmStoreDelegateConfig.builder()
-            .ociHelmConnector(OciHelmConnectorDTO.builder().helmRepoUrl(repoUrl).build())
+            .connectorConfigDTO(OciHelmConnectorDTO.builder().helmRepoUrl(repoUrl).build())
+            .repoUrl(repoUrl)
             .build();
 
     CustomRemoteStoreDelegateConfig customRemoteStoreDelegateConfig =

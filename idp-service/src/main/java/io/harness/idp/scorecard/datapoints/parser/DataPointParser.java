@@ -8,9 +8,9 @@
 package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
+import static io.harness.idp.common.Constants.DEFAULT_BRANCH_KEY;
+import static io.harness.idp.common.Constants.DEFAULT_BRANCH_KEY_ESCAPED;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
-import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY;
-import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY_ESCAPED;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,8 +28,8 @@ public interface DataPointParser {
     Map<String, Object> data = new HashMap<>();
     data.put(DATA_POINT_VALUE_KEY, value);
     data.put(ERROR_MESSAGE_KEY, errorMessage);
-    if (inputValue.equals(GITHUB_DEFAULT_BRANCH_KEY_ESCAPED)) {
-      return Map.of(GITHUB_DEFAULT_BRANCH_KEY, data);
+    if (inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
+      return Map.of(DEFAULT_BRANCH_KEY, data);
     } else {
       return Map.of(inputValue, data);
     }

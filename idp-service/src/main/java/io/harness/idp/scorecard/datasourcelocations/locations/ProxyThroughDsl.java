@@ -19,6 +19,8 @@ import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEnt
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
 
 import com.google.inject.Inject;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.core.Response;
@@ -34,7 +36,7 @@ public class ProxyThroughDsl implements DataSourceLocation {
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) {
+      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails =
         ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
     String apiUrl = apiRequestDetails.getUrl();
@@ -59,8 +61,7 @@ public class ProxyThroughDsl implements DataSourceLocation {
   }
 
   @Override
-  public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, String> dataPointIdsAndInputValues, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValues, String requestBody) {
     return null;
   }
 }

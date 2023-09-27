@@ -186,9 +186,11 @@ public class InfrastructureStepHelper {
           if (infrastructureOutcome.getEnvironment() != null) {
             infraExecutionSummaryDetailsBuilder.identifier(infrastructureOutcome.getEnvironment().getIdentifier())
                 .name(infrastructureOutcome.getEnvironment().getName())
-                .type(infrastructureOutcome.getEnvironment().getType().name())
                 .envGroupId(infrastructureOutcome.getEnvironment().getEnvGroupRef())
                 .envGroupName(infrastructureOutcome.getEnvironment().getEnvGroupName());
+            if (infrastructureOutcome.getEnvironment().getType() != null) {
+              infraExecutionSummaryDetailsBuilder.type(infrastructureOutcome.getEnvironment().getType().name());
+            }
           }
           return infraExecutionSummaryDetailsBuilder.build();
         }

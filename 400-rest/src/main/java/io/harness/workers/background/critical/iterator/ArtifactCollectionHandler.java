@@ -19,6 +19,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionLogger;
+import io.harness.exception.FunctorException;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
 import io.harness.iterator.IteratorPumpAndRedisModeHandler;
@@ -116,7 +117,6 @@ public class ArtifactCollectionHandler extends IteratorPumpAndRedisModeHandler i
   public void handle(ArtifactStream artifactStream) {
     try (AutoLogContext ignore2 = new ArtifactStreamLogContext(
              artifactStream.getUuid(), artifactStream.getArtifactStreamType(), OVERRIDE_ERROR)) {
-      // log.info("Received the artifact collection for ArtifactStream");
       executeInternal(artifactStream);
     }
   }
@@ -143,6 +143,8 @@ public class ArtifactCollectionHandler extends IteratorPumpAndRedisModeHandler i
             artifactStream.getFailedCronAttempts(), TimeUnit.MILLISECONDS.toMinutes(leaseDuration));
         artifactCollectionServiceAsync.collectNewArtifactsAsync(artifactStream, permitId);
       }
+    } catch (FunctorException exception) {
+      log.warn("Failed to collect artifacts for artifact stream. Reason {}", exception.getMessage());
     } catch (WingsException exception) {
       log.warn("Failed to collect artifacts for artifact stream. Reason {}", exception.getMessage());
       if (artifactStream.getAccountId() != null) {

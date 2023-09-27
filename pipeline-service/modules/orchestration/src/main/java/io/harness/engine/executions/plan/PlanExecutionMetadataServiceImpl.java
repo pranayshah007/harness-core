@@ -75,13 +75,13 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
   }
 
   public String getNotesForExecution(String planExecutionId) {
-    PlanExecutionMetadata planExecutionMetadata =
-        planExecutionMetadataRepository.getWithFieldsIncluded(planExecutionId, Set.of(PlanExecutionMetadataKeys.notes));
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataRepository.getWithFieldsIncludedFromSecondary(
+        planExecutionId, Set.of(PlanExecutionMetadataKeys.notes));
     return getNotesOrEmptyString(planExecutionMetadata);
   }
 
   public RetryStagesMetadata getRetryStagesMetadata(String planExecutionId) {
-    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataRepository.getWithFieldsIncluded(
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataRepository.getWithFieldsIncludedFromSecondary(
         planExecutionId, Set.of(PlanExecutionMetadataKeys.retryStagesMetadata));
     return planExecutionMetadata.getRetryStagesMetadata();
   }
@@ -105,5 +105,10 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
       return "";
     }
     return planExecutionMetadata.getNotes();
+  }
+
+  @Override
+  public PlanExecutionMetadata getWithFieldsIncludedFromSecondary(String planExecutionId, Set<String> fieldsToInclude) {
+    return planExecutionMetadataRepository.getWithFieldsIncludedFromSecondary(planExecutionId, fieldsToInclude);
   }
 }

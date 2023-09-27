@@ -866,7 +866,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
           err = String.format(STEP_EXPIRY_QUEUED_STATE_MSG, eligibleDelegateNames);
           break;
         }
-        // default message used for other states like "Parked"
+        // default message used for other states like "Parked" and "aborted"
         err = EXPIRED_DEFAULT;
         break;
       case DELEGATE_DISCONNECTED:

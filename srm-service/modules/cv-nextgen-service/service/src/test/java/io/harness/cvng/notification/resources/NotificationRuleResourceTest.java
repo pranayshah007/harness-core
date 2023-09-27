@@ -21,8 +21,10 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
@@ -241,6 +244,26 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
         .contains(
             "\"message\":\"java.lang.IllegalArgumentException: Deleting notification rule is used in Monitored Services, "
             + "Please delete the notification rule inside Monitored Services before deleting notification rule. Monitored Services : MSName");
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testGetNotificationRuleData() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/notification-rule/"
+                                + "rule")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+    RestResponse<NotificationRuleResponse> restResponse = response.readEntity(new GenericType<>() {});
+    assertThat(restResponse.getResource().getNotificationRule()).isEqualTo(notificationRuleDTO);
   }
 
   private String getYAML(String filePath) throws IOException {

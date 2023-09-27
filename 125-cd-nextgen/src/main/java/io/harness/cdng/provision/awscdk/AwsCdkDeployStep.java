@@ -87,6 +87,7 @@ public class AwsCdkDeployStep extends AbstractContainerStepV2<StepElementParamet
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     AwsCdkDeployStepParameters awsCdkDeployStepParameters = (AwsCdkDeployStepParameters) stepParameters.getSpec();
+    awsCdkStepHelper.handleBinaryResponseData(responseDataMap);
     StepStatusTaskResponseData stepStatusTaskResponseData =
         containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
 

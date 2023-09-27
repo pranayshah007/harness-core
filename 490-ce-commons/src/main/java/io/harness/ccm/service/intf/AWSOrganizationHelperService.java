@@ -12,6 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.remote.CEAwsServiceEndpointConfig;
+import io.harness.remote.CEProxyConfig;
 
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
 import com.amazonaws.services.organizations.model.Account;
@@ -21,8 +23,10 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CE)
 public interface AWSOrganizationHelperService {
   List<CECloudAccount> getAWSAccounts(String accountId, String connectorId, CEAwsConnectorDTO ceAwsConnectorDTO,
-      String awsAccessKey, String awsSecretKey);
+      String awsAccessKey, String awsSecretKey, CEProxyConfig ceProxyConfig,
+      CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
   List<Tag> listAwsAccountTags(AWSOrganizationsClient awsOrganizationsClient, String awsAccountId);
-  List<Account> listAwsAccounts(CrossAccountAccessDTO crossAccountAccess, String awsAccessKey, String awsSecretKey);
+  List<Account> listAwsAccounts(CrossAccountAccessDTO crossAccountAccess, String awsAccessKey, String awsSecretKe,
+      CEProxyConfig ceProxyConfig, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig);
   List<Account> listAwsAccounts(AWSOrganizationsClient awsOrganizationsClient);
 }

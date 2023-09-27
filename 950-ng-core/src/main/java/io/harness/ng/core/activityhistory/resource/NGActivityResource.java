@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
+import io.harness.encryption.Scope;
 import io.harness.ng.core.activityhistory.NGActivityStatus;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckSummaryDTO;
@@ -71,16 +72,17 @@ public class NGActivityResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
       @QueryParam(NGCommonEntityConstants.STATUS) NGActivityStatus status,
       @NotNull @QueryParam(NGCommonEntityConstants.REFERRED_ENTITY_TYPE) EntityType referredEntityType,
-      @QueryParam(NGCommonEntityConstants.REFERRED_BY_ENTITY_TYPE) EntityType referredByEntityType,
+      @QueryParam(NGCommonEntityConstants.REFERRED_BY_ENTITY_TYPE) Set<EntityType> referredByEntityTypes,
       @QueryParam(NGCommonEntityConstants.ACTIVITY_TYPES) Set<NGActivityType> ngActivityTypes,
-      @QueryParam(NGCommonEntityConstants.SEARCH_TERM) String searchTerm) {
+      @QueryParam(NGCommonEntityConstants.SEARCH_TERM) String searchTerm,
+      @QueryParam(NGCommonEntityConstants.SCOPE_FILTER) Set<Scope> scopeFilter) {
     if (isEmpty(ngActivityTypes)) {
       ngActivityTypes = new HashSet<>(List.of(NGActivityType.values()));
       ngActivityTypes.remove(NGActivityType.CONNECTIVITY_CHECK);
     }
     return ResponseDTO.newResponse(activityHistoryService.list(page, size, accountIdentifier, orgIdentifier,
         projectIdentifier, referredEntityIdentifier, startTime, endTime, status, referredEntityType,
-        referredByEntityType, ngActivityTypes, searchTerm));
+        referredByEntityTypes, ngActivityTypes, searchTerm, scopeFilter));
   }
 
   @GET

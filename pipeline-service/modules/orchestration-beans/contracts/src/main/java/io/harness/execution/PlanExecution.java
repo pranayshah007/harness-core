@@ -113,6 +113,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   @UtilityClass
   public static class PlanExecutionKeys {
     public static final String accountId = PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId;
+    public static final String planId = PlanExecutionKeys.ambiance + ".planId";
   }
 
   public static List<MongoIndex> mongoIndexes() {

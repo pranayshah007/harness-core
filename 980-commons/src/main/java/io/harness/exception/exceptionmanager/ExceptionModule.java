@@ -14,6 +14,7 @@ import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.GeneralExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.JGitExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.JexlRuntimeExceptionHandler;
+import io.harness.exception.exceptionmanager.exceptionhandler.SpringDataAccessExceptionHandler;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
@@ -37,6 +38,8 @@ public class ExceptionModule extends AbstractModule {
 
     GeneralExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(GeneralExceptionHandler.class));
+    SpringDataAccessExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(SpringDataAccessExceptionHandler.class));
     JexlRuntimeExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(JexlRuntimeExceptionHandler.class));
     JGitExceptionHandler.exceptions().forEach(

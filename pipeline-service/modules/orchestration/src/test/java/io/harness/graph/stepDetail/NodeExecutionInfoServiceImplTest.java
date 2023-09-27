@@ -110,7 +110,6 @@ public class NodeExecutionInfoServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     pmsGraphStepDetailsService.saveNodeExecutionInfo(
         nodeExecutionId, planExecutionId, StrategyMetadata.newBuilder().build());
-    verify(stepDetailsUpdateObserverSubject, times(1)).fireInform(any(), any());
     verify(nodeExecutionsInfoRepositoryMock, times(1)).save(any());
   }
 

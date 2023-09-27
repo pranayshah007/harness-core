@@ -46,11 +46,13 @@ import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.scope.ScopeHelper;
 
+import com.google.common.hash.Hashing;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -125,6 +127,7 @@ public class PMSPipelineDtoMapper {
           .description(basicPipeline.getDescription())
           .tags(TagMapper.convertToList(basicPipeline.getTags()))
           .allowStageExecutions(basicPipeline.isAllowStageExecutions())
+          .yamlHash(getYamlHash(yaml))
           .build();
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
@@ -151,7 +154,8 @@ public class PMSPipelineDtoMapper {
         .name(pipelineName)
         .identifier(pipelineId)
         .tags(TagMapper.convertToList(null))
-        .harnessVersion(PipelineVersion.V1)
+        .harnessVersion(HarnessYamlVersion.V1)
+        .yamlHash(getYamlHash(yaml))
         .build();
   }
 
@@ -159,7 +163,7 @@ public class PMSPipelineDtoMapper {
       String pipelineName, String yaml, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity;
     // Use the pipeline name from api request only for V1 yaml
-    if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+    if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
       // PipelineId is passed as null since it gets created using pipelineName
       pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, pipelineIdentifier, pipelineName, yaml);
     } else {
@@ -173,11 +177,15 @@ public class PMSPipelineDtoMapper {
     return pipelineEntity;
   }
 
+  Integer getYamlHash(String yaml) {
+    return Hashing.murmur3_32_fixed().hashString(yaml, StandardCharsets.UTF_8).asInt();
+  }
+
   public PipelineEntity toPipelineEntityWithPipelineId(String accountId, String orgId, String projectId,
       String pipelineId, String pipelineName, String yaml, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity;
     // Use pipelineId for V1 yaml only since we can't change it if name gets changed
-    if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+    if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
       pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, pipelineId, pipelineName, yaml);
     } else {
       pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
@@ -197,7 +205,7 @@ public class PMSPipelineDtoMapper {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
       }
       BasicPipeline basicPipeline = null;
-      if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+      if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
         return toSimplifiedPipelineEntity(accountId, orgId, projectId, requestInfoDTO.getIdentifier(),
             requestInfoDTO.getName(), requestInfoDTO.getYaml());
       } else {
@@ -249,6 +257,7 @@ public class PMSPipelineDtoMapper {
       if (isDraft == null) {
         isDraft = false;
       }
+      pipelineEntity.setYamlHash(getYamlHash(requestInfoDTO.getYaml()));
       pipelineEntity.setIsDraft(isDraft);
       return pipelineEntity;
     } catch (IOException e) {
@@ -471,6 +480,7 @@ public class PMSPipelineDtoMapper {
           .cacheState(cacheResponse.getCacheState())
           .ttlLeft(cacheResponse.getTtlLeft())
           .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+          .isSyncEnabled(cacheResponse.isSyncEnabled())
           .build();
     }
     return null;

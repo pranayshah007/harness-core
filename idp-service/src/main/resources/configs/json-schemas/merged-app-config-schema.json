@@ -16,7 +16,8 @@
     "lighthouse",
     "jenkins",
     "confluence",
-    "catalog"
+    "catalog",
+    "grafana"
   ],
   "properties": {
     "app": {
@@ -62,6 +63,10 @@
     "catalog": {
       "$id": "#root/catalog",
       "title": "Catalog"
+    },
+    "grafana": {
+      "$id": "#root/grafana",
+      "title": "Grafana"
     }
   }
 }

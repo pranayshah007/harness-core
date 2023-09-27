@@ -44,19 +44,22 @@ public class AzureWebAppSlotDeploymentRequest extends AbstractSlotDataRequest {
   private Set<String> prevExecUserAddedAppSettingNames;
   private Set<String> prevExecUserAddedConnStringNames;
   private boolean prevExecUserChangedStartupCommand;
+  private boolean cleanDeployment;
 
   @Builder
   public AzureWebAppSlotDeploymentRequest(String accountId, AzureAppServicePreDeploymentData preDeploymentData,
       CommandUnitsProgress commandUnitsProgress, AzureWebAppInfraDelegateConfig infrastructure,
       AppSettingsFile startupCommand, AppSettingsFile applicationSettings, AppSettingsFile connectionStrings,
       AzureArtifactConfig artifact, Integer timeoutIntervalInMin, Set<String> prevExecUserAddedAppSettingsNames,
-      Set<String> prevExecUserAddedConnStringsNames, boolean prevExecUserChangedStartupCommand) {
+      Set<String> prevExecUserAddedConnStringsNames, boolean prevExecUserChangedStartupCommand,
+      boolean cleanDeployment) {
     super(accountId, commandUnitsProgress, infrastructure, startupCommand, applicationSettings, connectionStrings,
         artifact, timeoutIntervalInMin);
     this.preDeploymentData = preDeploymentData;
     this.prevExecUserAddedAppSettingNames = prevExecUserAddedAppSettingsNames;
     this.prevExecUserAddedConnStringNames = prevExecUserAddedConnStringsNames;
     this.prevExecUserChangedStartupCommand = prevExecUserChangedStartupCommand;
+    this.cleanDeployment = cleanDeployment;
   }
 
   @Override

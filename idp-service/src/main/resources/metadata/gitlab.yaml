@@ -6,6 +6,7 @@ category: Source Control Mgmt
 source: https://github.com/immobiliare/backstage-plugin-gitlab
 iconUrl: https://about.gitlab.com/images/press/logo/png/gitlab-icon-rgb.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/grafana/
 exports:
   defaultEntityTypes:
     - service

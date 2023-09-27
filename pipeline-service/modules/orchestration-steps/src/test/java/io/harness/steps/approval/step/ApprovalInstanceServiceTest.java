@@ -81,6 +81,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -117,6 +118,7 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   private static final String APPROVAL_KEY = "key";
   private static final String APPROVAL_ID = "approvalId";
   private static final String TASK_ID = "taskId";
+  private static final String KEYS_IN_CRITERIA = "status,priority,issuetype";
   private static final Long CREATED_AT = 1000L;
   private static final String APPROVAL_NAME = "Admin";
   private static final String APPROVAL_COMMENT = "Approval comment";
@@ -389,6 +391,7 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     approvalInstance.setAmbiance(ambiance2);
     approvalInstance.setId("_id");
     approvalInstances.add(approvalInstance);
+    approvalInstance.setDeadline(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1));
     when(approvalInstanceRepository.findAll(Criteria.where("accountId")
                                                 .is(ACCOUNT_ID)
                                                 .and("orgIdentifier")
@@ -957,6 +960,26 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testUpdateKeyListInKeyValueCriteria() {
+    approvalInstanceServiceImpl.updateKeyListInKeyValueCriteria(APPROVAL_ID, null);
+    approvalInstanceServiceImpl.updateKeyListInKeyValueCriteria("   ", "");
+
+    approvalInstanceServiceImpl.updateKeyListInKeyValueCriteria(APPROVAL_ID, KEYS_IN_CRITERIA);
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
+    ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
+    verify(approvalInstanceRepository, times(1))
+        .updateFirst(queryArgumentCaptor.capture(), updateArgumentCaptor.capture());
+    assertThat(queryArgumentCaptor.getValue())
+        .isEqualTo(new Query(Criteria.where(Mapper.ID_KEY).is(APPROVAL_ID))
+                       .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING))
+                       .addCriteria(Criteria.where(ApprovalInstanceKeys.type).is(ApprovalType.JIRA_APPROVAL)));
+    assertThat(updateArgumentCaptor.getValue())
+        .isEqualTo(new Update().set(JiraApprovalInstanceKeys.keyListInKeyValueCriteria, KEYS_IN_CRITERIA));
+  }
+
+  @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testFindLatestApprovalInstanceByPlanExecutionIdAndType() {
@@ -1020,5 +1043,49 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
         () -> approvalInstanceServiceImpl.findLatestApprovalInstanceByPlanExecutionIdAndType(planExecutionId, null))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("ApprovalType cannot be null");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testFindAllPreviousWaitingApprovalsWithExpiredInstances() {
+    Ambiance ambiance1 = Ambiance.newBuilder().setPlanExecutionId("planExecutionId1").build();
+    Ambiance ambiance2 = Ambiance.newBuilder().setPlanExecutionId("planExecutionId2").build();
+    List<ApprovalInstance> approvalInstances = new ArrayList<>();
+    ApprovalInstance approvalInstance = HarnessApprovalInstance.builder()
+                                            .approvalKey("key")
+                                            .approvalActivities(Collections.EMPTY_LIST)
+                                            .approvalMessage("message1")
+                                            .approvers(ApproversDTO.builder().build())
+                                            .isAutoRejectEnabled(true)
+                                            .includePipelineExecutionHistory(false)
+                                            .build();
+    approvalInstance.setAmbiance(ambiance2);
+    approvalInstance.setId("_id");
+    approvalInstances.add(approvalInstance);
+    approvalInstance.setDeadline(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1));
+    when(approvalInstanceRepository.findAll(Criteria.where("accountId")
+                                                .is(ACCOUNT_ID)
+                                                .and("orgIdentifier")
+                                                .is(ORG_ID)
+                                                .and("projectIdentifier")
+                                                .is(PROJECT_ID)
+                                                .and("pipelineIdentifier")
+                                                .is(PIPELINE_ID)
+                                                .and("approvalKey")
+                                                .is(APPROVAL_KEY)
+                                                .and(ApprovalInstanceKeys.status)
+                                                .is(ApprovalStatus.WAITING)
+                                                .and("isAutoRejectEnabled")
+                                                .is(true)
+                                                .and(ApprovalInstanceKeys.createdAt)
+                                                .lt(CREATED_AT)))
+        .thenReturn(approvalInstances);
+    when(pmsEngineExpressionService.renderExpression(ambiance1, "<+service.identifier>", true)).thenReturn("ser1");
+    when(pmsEngineExpressionService.renderExpression(ambiance2, "<+service.identifier>", true)).thenReturn("ser1");
+    List<String> approvalIds = approvalInstanceServiceImpl.findAllPreviousWaitingApprovals(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, APPROVAL_KEY, ambiance1, CREATED_AT);
+    assertThat(approvalIds).isNotNull();
+    assertThat(approvalIds.size()).isEqualTo(0);
   }
 }

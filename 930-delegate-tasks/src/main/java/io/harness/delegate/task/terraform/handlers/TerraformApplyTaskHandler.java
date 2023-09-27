@@ -200,6 +200,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
               .encryptDecryptPlanForHarnessSMOnManager(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager())
               .additionalCliFlags(taskParameters.getTerraformCommandFlags())
               .isNG(true)
+              .skipColorLogs(taskParameters.isSkipColorLogs())
               .build();
 
       TerraformStepResponse terraformStepResponse =

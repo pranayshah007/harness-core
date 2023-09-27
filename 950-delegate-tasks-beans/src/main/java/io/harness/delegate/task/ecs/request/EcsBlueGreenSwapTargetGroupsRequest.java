@@ -18,6 +18,7 @@ import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -39,4 +40,6 @@ public class EcsBlueGreenSwapTargetGroupsRequest
   boolean isFirstDeployment;
   boolean doNotDownsizeOldService;
   @NonFinal @Expression(ALLOW_SECRETS) Integer downsizeOldServiceDelayInSecs;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> ecsScalableTargetManifestContentList;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> ecsScalingPolicyManifestContentList;
 }

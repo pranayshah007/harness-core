@@ -53,7 +53,7 @@ public class RemoteFunctorService extends RemoteFunctorServiceImplBase {
                                  .build();
       }
     } catch (Exception ex) {
-      log.error(ExceptionUtils.getMessage(ex), ex);
+      log.warn(ExceptionUtils.getMessage(ex), ex);
       WingsException processedException = exceptionManager.processException(ex);
       expressionResponse =
           ExpressionResponse.newBuilder()

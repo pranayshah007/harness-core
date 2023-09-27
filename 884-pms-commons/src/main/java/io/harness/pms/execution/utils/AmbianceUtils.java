@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.execution.utils;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
@@ -26,14 +27,13 @@ import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionMode;
-import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.strategy.StrategyValidationUtils;
@@ -60,6 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AmbianceUtils {
   public static final String STAGE = "STAGE";
   public static final String SPECIAL_CHARACTER_REGEX = "[^a-zA-Z0-9]";
+  public static final String PIE_SIMPLIFY_LOG_BASE_KEY = "PIE_SIMPLIFY_LOG_BASE_KEY";
 
   public static Ambiance cloneForFinish(@NonNull Ambiance ambiance) {
     return clone(ambiance, ambiance.getLevelsList().size() - 1);
@@ -67,13 +68,6 @@ public class AmbianceUtils {
 
   public static Ambiance cloneForFinish(@NonNull Ambiance ambiance, Level level) {
     Ambiance.Builder builder = cloneBuilder(ambiance, ambiance.getLevelsList().size() - 1);
-    if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
-      builder.setStageExecutionId(level.getRuntimeId());
-      if (isRollbackModeExecution(ambiance)) {
-        builder.setOriginalStageExecutionIdForRollbackMode(
-            obtainOriginalStageExecutionIdForRollbackMode(ambiance, level));
-      }
-    }
     return builder.addLevels(level).build();
   }
 
@@ -97,36 +91,7 @@ public class AmbianceUtils {
 
   public static Ambiance cloneForChild(@NonNull Ambiance ambiance, @NonNull Level level) {
     Ambiance.Builder builder = cloneBuilder(ambiance, ambiance.getLevelsList().size());
-    if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
-      builder.setStageExecutionId(level.getRuntimeId());
-      if (isRollbackModeExecution(ambiance)) {
-        builder.setOriginalStageExecutionIdForRollbackMode(
-            obtainOriginalStageExecutionIdForRollbackMode(ambiance, level));
-      }
-    }
     return builder.addLevels(level).build();
-  }
-
-  String obtainOriginalStageExecutionIdForRollbackMode(Ambiance ambiance, Level stageLevel) {
-    List<PostExecutionRollbackInfo> postExecutionRollbackInfoList =
-        ambiance.getMetadata().getPostExecutionRollbackInfoList();
-    if (obtainCurrentLevel(ambiance).getStepType().getStepCategory().equals(StepCategory.STRATEGY)) {
-      // postExecutionRollbackStageId will be the strategy setup id, that is what we need as the current setup id
-      String strategySetupId = obtainCurrentSetupId(ambiance);
-      int currentIteration = stageLevel.getStrategyMetadata().getCurrentIteration();
-      return postExecutionRollbackInfoList.stream()
-          .filter(info -> Objects.equals(info.getPostExecutionRollbackStageId(), strategySetupId))
-          .filter(info -> info.getRollbackStageStrategyMetadata().getCurrentIteration() == currentIteration)
-          .map(PostExecutionRollbackInfo::getOriginalStageExecutionId)
-          .findFirst()
-          .orElse("");
-    }
-    String currentSetupId = stageLevel.getSetupId();
-    return postExecutionRollbackInfoList.stream()
-        .filter(info -> Objects.equals(info.getPostExecutionRollbackStageId(), currentSetupId))
-        .map(PostExecutionRollbackInfo::getOriginalStageExecutionId)
-        .findFirst()
-        .orElse("");
   }
 
   public static Ambiance.Builder cloneBuilder(Ambiance ambiance, int levelsToKeep) {
@@ -319,7 +284,7 @@ public class AmbianceUtils {
   }
 
   public static String getStrategyPostfix(Level level, boolean useMatrixFieldName) {
-    if (level == null || !level.hasStrategyMetadata()) {
+    if (level == null || !hasStrategyMetadata(level)) {
       return StringUtils.EMPTY;
     }
     return getStrategyPostFixUsingMetadata(level.getStrategyMetadata(), useMatrixFieldName);
@@ -398,7 +363,7 @@ public class AmbianceUtils {
 
   public boolean isCurrentNodeUnderStageStrategy(Ambiance ambiance) {
     Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
-    return stageLevel.isPresent() && stageLevel.get().hasStrategyMetadata();
+    return stageLevel.isPresent() && hasStrategyMetadata(stageLevel.get());
   }
 
   public boolean isCurrentLevelAtStep(Ambiance ambiance) {
@@ -422,7 +387,7 @@ public class AmbianceUtils {
   public static String getPipelineVersion(Ambiance ambiance) {
     ExecutionMetadata metadata = ambiance.getMetadata();
     if (EmptyPredicate.isEmpty(metadata.getHarnessVersion())) {
-      return PipelineVersion.V0;
+      return HarnessYamlVersion.V0;
     }
     return metadata.getHarnessVersion();
   }
@@ -447,7 +412,7 @@ public class AmbianceUtils {
   }
 
   public String getPipelineExecutionIdentifier(Ambiance ambiance) {
-    if (ambiance.getPlanExecutionId() != null) {
+    if (EmptyPredicate.isNotEmpty(ambiance.getPlanExecutionId())) {
       return ambiance.getPlanExecutionId();
     } else if (ambiance.getMetadata() != null) {
       return ambiance.getMetadata().getExecutionUuid();
@@ -554,5 +519,14 @@ public class AmbianceUtils {
       }
     }
     return enabledFeatureFlags;
+  }
+
+  public boolean shouldSimplifyLogBaseKey(Ambiance ambiance) {
+    return ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY);
+  }
+
+  public boolean hasStrategyMetadata(Level level) {
+    return level.hasStrategyMetadata();
   }
 }

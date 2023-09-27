@@ -136,7 +136,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                                         .applicationName("a_s_e__3")
                                                         .runningCount(inactiveInstanceCount)
                                                         .applicationGuid(inactiveApplicationGuid)
-                                                        .attachedRoutes(Arrays.asList(inactiveRoute))
+                                                        .attachedRoutes(List.of(inactiveRoute))
                                                         .build();
 
     String releaseNamePrefix = "release";
@@ -153,7 +153,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
             .downsizeOldApplication(true)
             .useAppAutoScalar(true)
             .newApplicationName(newApplicationDetails.getApplicationName())
-            .existingApplicationNames(Arrays.asList(activeApplicationDetails.getApplicationName()))
+            .existingApplicationNames(List.of(activeApplicationDetails.getApplicationName()))
             .build();
 
     String cfCliPath = "cfCliPath";
@@ -239,7 +239,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         .performAppRenaming(ROLLBACK_OPERATOR, cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
 
     String newAppName = "app";
-    List<String> newApps = Arrays.asList(newAppName);
+    List<String> newApps = List.of(newAppName);
     doReturn(newApps)
         .when(pcfCommandTaskHelper)
         .getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -276,7 +276,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                              .requestedState(STOPPED)
                                              .runningInstances(0)
                                              .build();
-    List<ApplicationSummary> previousReleases = Arrays.asList(previousRelease);
+    List<ApplicationSummary> previousReleases = List.of(previousRelease);
     doReturn(previousReleases)
         .when(cfDeploymentManager)
         .getPreviousReleases(cfRequestConfig, cfRouteUpdateConfigData.getCfAppNamePrefix());
@@ -330,6 +330,10 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
     cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -384,7 +388,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                                         .applicationName("a_s_e__3")
                                                         .runningCount(inactiveInstanceCount)
                                                         .applicationGuid(inactiveApplicationGuid)
-                                                        .attachedRoutes(Arrays.asList(inactiveRoute))
+                                                        .attachedRoutes(List.of(inactiveRoute))
                                                         .build();
 
     String releaseNamePrefix = "release";
@@ -448,7 +452,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         .performAppRenaming(ROLLBACK_OPERATOR, cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
 
     String newAppName = "app";
-    List<String> newApps = Arrays.asList(newAppName);
+    List<String> newApps = List.of(newAppName);
     doReturn(newApps)
         .when(pcfCommandTaskHelper)
         .getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -485,7 +489,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                              .requestedState(STOPPED)
                                              .runningInstances(0)
                                              .build();
-    List<ApplicationSummary> previousReleases = Arrays.asList(previousRelease);
+    List<ApplicationSummary> previousReleases = List.of(previousRelease);
     doReturn(previousReleases)
         .when(cfDeploymentManager)
         .getPreviousReleases(cfRequestConfig, cfRouteUpdateConfigData.getCfAppNamePrefix());
@@ -534,6 +538,23 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
     // Test Exception flow
     doThrow(new IOException("")).when(pcfCommandTaskHelper).generateWorkingDirectoryForDeployment();
     cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
@@ -592,7 +613,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                                         .applicationName("a_s_e__3")
                                                         .runningCount(inactiveInstanceCount)
                                                         .applicationGuid(inactiveApplicationGuid)
-                                                        .attachedRoutes(Arrays.asList(inactiveRoute))
+                                                        .attachedRoutes(List.of(inactiveRoute))
                                                         .build();
 
     String releaseNamePrefix = "release";
@@ -656,7 +677,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         .performAppRenaming(ROLLBACK_OPERATOR, cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
 
     String newAppName = "app";
-    List<String> newApps = Arrays.asList(newAppName);
+    List<String> newApps = List.of(newAppName);
     doReturn(newApps)
         .when(pcfCommandTaskHelper)
         .getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -693,7 +714,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                              .requestedState(STOPPED)
                                              .runningInstances(0)
                                              .build();
-    List<ApplicationSummary> previousReleases = Arrays.asList(previousRelease);
+    List<ApplicationSummary> previousReleases = List.of(previousRelease);
     doReturn(previousReleases)
         .when(cfDeploymentManager)
         .getPreviousReleases(cfRequestConfig, cfRouteUpdateConfigData.getCfAppNamePrefix());
@@ -742,6 +763,20 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
     // Test Exception flow
     doThrow(new IOException("")).when(pcfCommandTaskHelper).generateWorkingDirectoryForDeployment();
     cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
@@ -800,7 +835,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                                         .applicationName("a_s_e__3")
                                                         .runningCount(inactiveInstanceCount)
                                                         .applicationGuid(inactiveApplicationGuid)
-                                                        .attachedRoutes(Arrays.asList(inactiveRoute))
+                                                        .attachedRoutes(List.of(inactiveRoute))
                                                         .build();
 
     String releaseNamePrefix = "release";
@@ -864,7 +899,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         .performAppRenaming(ROLLBACK_OPERATOR, cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
 
     String newAppName = "app";
-    List<String> newApps = Arrays.asList(newAppName);
+    List<String> newApps = List.of(newAppName);
     doReturn(newApps)
         .when(pcfCommandTaskHelper)
         .getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -901,7 +936,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                              .requestedState(STOPPED)
                                              .runningInstances(0)
                                              .build();
-    List<ApplicationSummary> previousReleases = Arrays.asList(previousRelease);
+    List<ApplicationSummary> previousReleases = List.of(previousRelease);
     doReturn(previousReleases)
         .when(cfDeploymentManager)
         .getPreviousReleases(cfRequestConfig, cfRouteUpdateConfigData.getCfAppNamePrefix());
@@ -950,6 +985,23 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
     // Test Exception flow
     doThrow(new IOException("")).when(pcfCommandTaskHelper).generateWorkingDirectoryForDeployment();
     cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
@@ -1009,7 +1061,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                                         .applicationName("a_s_e__3")
                                                         .runningCount(inactiveInstanceCount)
                                                         .applicationGuid(inactiveApplicationGuid)
-                                                        .attachedRoutes(Arrays.asList(inactiveRoute))
+                                                        .attachedRoutes(List.of(inactiveRoute))
                                                         .build();
 
     String releaseNamePrefix = "release";
@@ -1073,7 +1125,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         .performAppRenaming(ROLLBACK_OPERATOR, cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
 
     String newAppName = "app";
-    List<String> newApps = Arrays.asList(newAppName);
+    List<String> newApps = List.of(newAppName);
     doReturn(newApps)
         .when(pcfCommandTaskHelper)
         .getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -1110,7 +1162,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                              .requestedState(STOPPED)
                                              .runningInstances(0)
                                              .build();
-    List<ApplicationSummary> previousReleases = Arrays.asList(previousRelease);
+    List<ApplicationSummary> previousReleases = List.of(previousRelease);
     doReturn(previousReleases)
         .when(cfDeploymentManager)
         .getPreviousReleases(cfRequestConfig, cfRouteUpdateConfigData.getCfAppNamePrefix());
@@ -1161,6 +1213,9 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
     // Test Exception flow
     doThrow(new IOException("")).when(pcfCommandTaskHelper).generateWorkingDirectoryForDeployment();
     cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
@@ -1219,7 +1274,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                                         .applicationName("a_s_e__3")
                                                         .runningCount(inactiveInstanceCount)
                                                         .applicationGuid(inactiveApplicationGuid)
-                                                        .attachedRoutes(Arrays.asList(inactiveRoute))
+                                                        .attachedRoutes(List.of(inactiveRoute))
                                                         .build();
 
     String releaseNamePrefix = "release";
@@ -1283,7 +1338,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         .performAppRenaming(ROLLBACK_OPERATOR, cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
 
     String newAppName = "app";
-    List<String> newApps = Arrays.asList(newAppName);
+    List<String> newApps = List.of(newAppName);
     doReturn(newApps)
         .when(pcfCommandTaskHelper)
         .getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -1320,7 +1375,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                              .requestedState(STOPPED)
                                              .runningInstances(0)
                                              .build();
-    List<ApplicationSummary> previousReleases = Arrays.asList(previousRelease);
+    List<ApplicationSummary> previousReleases = List.of(previousRelease);
     doReturn(previousReleases)
         .when(cfDeploymentManager)
         .getPreviousReleases(cfRequestConfig, cfRouteUpdateConfigData.getCfAppNamePrefix());
@@ -1369,6 +1424,23 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo("Guid:a_s_e__6");
     // Test Exception flow
     doThrow(new IOException("")).when(pcfCommandTaskHelper).generateWorkingDirectoryForDeployment();
     cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
@@ -1427,7 +1499,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                                         .applicationName("a_s_e__3")
                                                         .runningCount(inactiveInstanceCount)
                                                         .applicationGuid(inactiveApplicationGuid)
-                                                        .attachedRoutes(Arrays.asList(inactiveRoute))
+                                                        .attachedRoutes(List.of(inactiveRoute))
                                                         .build();
 
     String releaseNamePrefix = "release";
@@ -1491,7 +1563,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
         .performAppRenaming(ROLLBACK_OPERATOR, cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
 
     String newAppName = "app";
-    List<String> newApps = Arrays.asList(newAppName);
+    List<String> newApps = List.of(newAppName);
     doReturn(newApps)
         .when(pcfCommandTaskHelper)
         .getAppNameBasedOnGuidForBlueGreenDeployment(
@@ -1528,7 +1600,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                                              .requestedState(STOPPED)
                                              .runningInstances(0)
                                              .build();
-    List<ApplicationSummary> previousReleases = Arrays.asList(previousRelease);
+    List<ApplicationSummary> previousReleases = List.of(previousRelease);
     doReturn(previousReleases)
         .when(cfDeploymentManager)
         .getPreviousReleases(cfRequestConfig, cfRouteUpdateConfigData.getCfAppNamePrefix());

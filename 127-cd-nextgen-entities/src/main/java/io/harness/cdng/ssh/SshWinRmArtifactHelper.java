@@ -32,6 +32,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GoogleCloudStorageArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -42,6 +43,7 @@ import io.harness.delegate.beans.aws.s3.S3FileDetailRequest;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -64,6 +66,7 @@ import io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.GcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GoogleCloudStorageArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
@@ -256,6 +259,18 @@ public class SshWinRmArtifactHelper {
           .version(githubPackagesArtifactOutcome.getVersion())
           .image(githubPackagesArtifactOutcome.getImage())
           .build();
+    } else if (artifactOutcome instanceof GoogleCloudStorageArtifactOutcome) {
+      GoogleCloudStorageArtifactOutcome googleCloudStorageArtifactOutcome =
+          (GoogleCloudStorageArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(googleCloudStorageArtifactOutcome.getConnectorRef(), ngAccess);
+      return GoogleCloudStorageArtifactDelegateConfig.builder()
+          .identifier(googleCloudStorageArtifactOutcome.getIdentifier())
+          .bucket(googleCloudStorageArtifactOutcome.getBucket())
+          .filePath(googleCloudStorageArtifactOutcome.getArtifactPath())
+          .project(googleCloudStorageArtifactOutcome.getProject())
+          .connectorDTO(connectorDTO)
+          .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+          .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
@@ -313,6 +328,12 @@ public class SshWinRmArtifactHelper {
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
         return getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
+      case GCP:
+        GcpConnectorDTO gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
+        List<DecryptableEntity> gcpConnectorDecryptableEntities = gcpConnectorDTO.getDecryptableEntities();
+        return isNotEmpty(gcpConnectorDecryptableEntities)
+            ? secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig())
+            : emptyList();
       default:
         throw new UnsupportedOperationException(
             format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));

@@ -35,12 +35,12 @@ public class TerragruntResourceTest extends CategoryTest {
             TerragruntCommandFlagType.INIT, TerragruntCommandFlagType.WORKSPACE, TerragruntCommandFlagType.PLAN);
     assertThat(terragruntResource.getTerragruntCommandFlags(TerragruntStepsForCliOptions.APPLY).getData())
         .containsExactlyInAnyOrder(TerragruntCommandFlagType.INIT, TerragruntCommandFlagType.WORKSPACE,
-            TerragruntCommandFlagType.PLAN, TerragruntCommandFlagType.APPLY);
+            TerragruntCommandFlagType.PLAN, TerragruntCommandFlagType.APPLY, TerragruntCommandFlagType.OUTPUT);
     assertThat(terragruntResource.getTerragruntCommandFlags(TerragruntStepsForCliOptions.DESTROY).getData())
         .containsExactlyInAnyOrder(TerragruntCommandFlagType.INIT, TerragruntCommandFlagType.WORKSPACE,
             TerragruntCommandFlagType.APPLY, TerragruntCommandFlagType.DESTROY);
     assertThat(terragruntResource.getTerragruntCommandFlags(TerragruntStepsForCliOptions.ROLLBACK).getData())
         .containsExactlyInAnyOrder(TerragruntCommandFlagType.INIT, TerragruntCommandFlagType.WORKSPACE,
-            TerragruntCommandFlagType.APPLY, TerragruntCommandFlagType.DESTROY);
+            TerragruntCommandFlagType.APPLY, TerragruntCommandFlagType.DESTROY, TerragruntCommandFlagType.OUTPUT);
   }
 }

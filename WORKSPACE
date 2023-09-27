@@ -1298,8 +1298,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:6hZxf0aETV17830fMCPrgcA4y8j/8Gdfy0xEdInUeqQ=",
-    version = "v1.31.2",
+    sum = "h1:RnGwmapfLPyTIuQ8FfSeWo29v5gyPgMF4DAhWX9RxcY=",
+    version = "v1.32.1",
 )
 
 go_repository(
@@ -4623,8 +4623,8 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:tKAZ/8G4ErcAMEPmVsA3A0w+aYpagXwT3fXxtFcJKiM=",
-    version = "v0.0.0-20230827043740-d394b7ccaa1a",
+    sum = "h1:MVFzBU0ScnbCHFxzyMZo5oLzeDwQLwaqibXQtjUzcvw=",
+    version = "v0.0.0-20230919114308-05b6697b67f9",
 )
 
 go_rules_dependencies()
@@ -4871,7 +4871,7 @@ plain_artifacts = [
     "com.nimbusds:oauth2-oidc-sdk:7.4",
     "org.asynchttpclient:async-http-client:2.12.3",
     "com.novemberain:quartz-mongodb:2.2.0-rc2",
-    "com.offbytwo.jenkins:jenkins-client:0.3.9",
+    "com.offbytwo.jenkins:jenkins-client:0.3.10",
     "com.openpojo:openpojo:0.8.3",
     "com.palominolabs.metrics:metrics-guice:3.2.0",
     "com.papertrail:profiler:1.0.2",
@@ -5045,11 +5045,11 @@ plain_artifacts = [
     "io.projectreactor.netty:reactor-netty-core:1.0.24",
     "io.projectreactor.netty:reactor-netty-http:1.0.24",
     "io.projectreactor:reactor-core:3.4.18",
-    "io.prometheus:simpleclient:0.5.0",
-    "io.prometheus:simpleclient_common:0.5.0",
-    "io.prometheus:simpleclient_dropwizard:0.5.0",
-    "io.prometheus:simpleclient_servlet:0.3.0",
-    "io.prometheus:simpleclient_httpserver:0.4.0",
+    "io.prometheus:simpleclient:0.16.0",
+    "io.prometheus:simpleclient_common:0.16.0",
+    "io.prometheus:simpleclient_dropwizard:0.16.0",
+    "io.prometheus:simpleclient_servlet:0.16.0",
+    "io.prometheus:simpleclient_httpserver:0.16.0",
     "io.reactivex.rxjava2:rxjava:2.2.19",
     "io.reactivex:rxjava:1.3.8",
     "io.rest-assured:rest-assured:3.2.0",
@@ -5172,10 +5172,10 @@ plain_artifacts = [
     "org.atmosphere:wasync:3.0.0",
     "org.atteo:evo-inflector:1.2.2",
     "org.bitbucket.b_c:jose4j:0.9.3",
-    "org.bouncycastle:bcpg-jdk15on:1.70",
-    "org.bouncycastle:bcpkix-jdk15on:1.70",
-    "org.bouncycastle:bcprov-ext-jdk15on:1.70",
-    "org.bouncycastle:bcprov-jdk15on:1.70",
+    "org.bouncycastle:bcpg-jdk18on:1.76",
+    "org.bouncycastle:bcpkix-jdk18on:1.76",
+    "org.bouncycastle:bcprov-ext-jdk18on:1.76",
+    "org.bouncycastle:bcprov-jdk18on:1.76",
     "org.checkerframework:checker-compat-qual:2.5.5",
     "org.checkerframework:checker-qual:3.4.0",
     "org.cloudfoundry:cloudfoundry-client-reactor:5.9.0.RELEASE",
@@ -5641,6 +5641,9 @@ maven_install(
         "com.azure.resourcemanager:azure-resourcemanager-authorization:2.14.0",
         "com.azure.resourcemanager:azure-resourcemanager-resources:2.14.0",
     ],
+    override_targets = {
+        "net.minidev:json-smart": "@maven//:net_minidev_json_smart",
+    },
     repositories = [
         "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",

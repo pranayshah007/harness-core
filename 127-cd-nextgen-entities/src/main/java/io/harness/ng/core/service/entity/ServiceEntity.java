@@ -114,8 +114,8 @@ public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware, Gi
   @Wither @LastModifiedDate Long lastModifiedAt;
   @Wither @Version Long version;
   @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
-  @Builder.Default Boolean gitOpsEnabled;
-  ServiceDefinitionType type;
+  @Builder.Default @With Boolean gitOpsEnabled;
+  @With ServiceDefinitionType type;
 
   Long deletedAt;
   @With String yaml;

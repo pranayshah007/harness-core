@@ -32,6 +32,7 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RISHABH;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -214,6 +215,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -293,7 +295,12 @@ public class TasStepHelperTest extends CategoryTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
                                         .setStageExecutionId(STAGE_EXECUTION_ID)
+                                        .setMetadata(ExecutionMetadata.newBuilder()
+                                                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                         .setPipelineIdentifier("pipelineIdentifier")
+                                                         .build())
                                         .build();
+
   private final EnvironmentOutcome environment =
       EnvironmentOutcome.builder()
           .identifier("env")

@@ -45,6 +45,8 @@ import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import io.harness.template.utils.TemplateSchemaFetcher;
+import io.harness.yaml.individualschema.TemplateSchemaParserFactory;
+import io.harness.yaml.individualschema.TemplateSchemaParserV0;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.client.YamlSchemaClient;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -52,6 +54,7 @@ import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -86,6 +89,9 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
   @Mock TemplateServiceConfiguration templateServiceConfiguration;
 
   @Mock TemplateSchemaFetcher templateSchemaFetcher;
+
+  @Mock TemplateSchemaParserV0 templateSchemaParserV0;
+  @Mock TemplateSchemaParserFactory templateSchemaParserFactory;
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -408,7 +414,8 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
   @Test
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
-  public void testValidateWithStaticSchema() throws Exception {
+  public void testValidateWithIndividualStaticSchema() throws Exception {
+    when(templateSchemaParserFactory.getTemplateSchemaParser("v0")).thenReturn(templateSchemaParserV0);
     when(yamlSchemaValidator.validate(anyString(), anyString(), anyBoolean(), anyInt(), anyString()))
         .thenReturn(Collections.emptySet());
     TemplateEntity templateEntity = TemplateEntity.builder()
@@ -435,5 +442,16 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
       ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
     }
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetStaticSchemaForAllEntities() {
+    when(templateSchemaParserFactory.getTemplateSchemaParser("v0")).thenReturn(templateSchemaParserV0);
+    when(templateSchemaParserV0.getIndividualSchema(any()))
+        .thenReturn((ObjectNode) readJsonFile("template-schema.json"));
+    ObjectNode schema = ngTemplateSchemaService.getIndividualStaticSchema("stage", "Deployment", "v0");
+    assertThat(schema).isNotNull();
   }
 }

@@ -19,9 +19,15 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgConfigurationManifestHandler;
 import io.harness.aws.asg.manifest.AsgLaunchTemplateManifestHandler;
+import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
+import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
+import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
@@ -40,11 +46,16 @@ import software.wings.service.impl.AwsUtils;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.LaunchTemplateSpecification;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.RequestLaunchTemplateData;
+import com.amazonaws.services.ec2.model.ResponseLaunchTemplateData;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -273,5 +284,84 @@ public class AsgTaskHelper {
       asgConfigurationOverrideProperties.put(
           AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, asgCapacityConfig.getDesired());
     }
+  }
+
+  public boolean isBaseAsgDeployment(AsgInfraConfig asgInfraConfig) {
+    return isNotEmpty(asgInfraConfig.getBaseAsgName());
+  }
+
+  public String getAsgName(AsgCommandRequest asgCommandRequest, Map<String, List<String>> asgStoreManifestsContent) {
+    if (isNotEmpty(asgCommandRequest.getAsgName())) {
+      return asgCommandRequest.getAsgName();
+    }
+
+    String asgConfigurationContent = getAsgConfigurationContent(asgStoreManifestsContent);
+    CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
+        AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
+    return createAutoScalingGroupRequest.getAutoScalingGroupName();
+  }
+
+  public Map<String, List<String>> getAsgStoreManifestsContent(
+      AsgInfraConfig asgInfraConfig, Map<String, List<String>> asgStoreManifestsContent, AsgSdkManager asgSdkManager) {
+    boolean isBaseAsg = isBaseAsgDeployment(asgInfraConfig);
+    if (isBaseAsg) {
+      Map<String, List<String>> map =
+          createAsgStoreManifestsContentFromAsg(asgInfraConfig.getBaseAsgName(), asgSdkManager);
+      // merge userData
+      if (isNotEmpty(asgStoreManifestsContent) && isNotEmpty(asgStoreManifestsContent.get(AsgUserData))) {
+        map.put(AsgUserData, asgStoreManifestsContent.get(AsgUserData));
+      }
+      return map;
+    }
+
+    return asgStoreManifestsContent;
+  }
+
+  private Map<String, List<String>> createAsgStoreManifestsContentFromAsg(
+      String baseAsgName, AsgSdkManager asgSdkManager) {
+    asgSdkManager.info("Getting Asg configuration for ASG `%s`", baseAsgName);
+
+    // Chain factory code to handle each manifest one by one in a chain
+    AsgManifestHandlerChainState chainState =
+        AsgManifestHandlerChainFactory.builder()
+            .initialChainState(AsgManifestHandlerChainState.builder().asgName(baseAsgName).build())
+            .asgSdkManager(asgSdkManager)
+            .build()
+            .addHandler(AsgConfiguration, AsgConfigurationManifestRequest.builder().build())
+            .addHandler(AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().build())
+            .addHandler(AsgScheduledUpdateGroupAction, AsgScheduledActionManifestRequest.builder().build())
+            .getContent();
+
+    if (chainState.getAutoScalingGroup() == null) {
+      throw new InvalidRequestException(format("base ASG with name `%s` does not exist", baseAsgName));
+    }
+
+    Map<String, List<String>> result = chainState.getAsgManifestsDataForRollback();
+    String launchTemplateContent = generateManifestContentForLaunchTemplateForBaseDeploy(asgSdkManager, baseAsgName);
+    result.put(AsgLaunchTemplate, Arrays.asList(launchTemplateContent));
+
+    return chainState.getAsgManifestsDataForRollback();
+  }
+
+  private String generateManifestContentForLaunchTemplateForBaseDeploy(
+      AsgSdkManager asgSdkManager, String baseAsgName) {
+    AutoScalingGroup baseAsg = asgSdkManager.getASG(baseAsgName);
+    LaunchTemplateSpecification launchTemplateSpecification = baseAsg.getLaunchTemplate();
+
+    ResponseLaunchTemplateData responseLaunchTemplateData = asgSdkManager.getLaunchTemplateData(
+        launchTemplateSpecification.getLaunchTemplateName(), launchTemplateSpecification.getVersion());
+
+    RequestLaunchTemplateData requestLaunchTemplateData = mapToRequestLaunchTemplateData(responseLaunchTemplateData);
+
+    // don't use new CreateLaunchTemplateRequest() as it creates properties with bidirectional relations and leads to
+    // stackOverflow
+    Map<String, RequestLaunchTemplateData> map = Map.of("launchTemplateData", requestLaunchTemplateData);
+    return AsgContentParser.toString(map, false);
+  }
+
+  private RequestLaunchTemplateData mapToRequestLaunchTemplateData(
+      ResponseLaunchTemplateData responseLaunchTemplateData) {
+    String responseLaunchTemplateDataJson = AsgContentParser.toString(responseLaunchTemplateData, false);
+    return AsgContentParser.parseJson(responseLaunchTemplateDataJson, RequestLaunchTemplateData.class, false);
   }
 }

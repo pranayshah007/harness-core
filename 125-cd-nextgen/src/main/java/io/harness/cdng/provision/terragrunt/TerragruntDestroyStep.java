@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.terragrunt;
 import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
 import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG;
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
 import static io.harness.cdng.provision.terragrunt.TerragruntStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.provision.TerragruntConstants.DESTROY;
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
@@ -178,6 +179,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
             spec.getConfigFiles().getStore().getSpec(), spec.getBackendConfig(), spec.getVarFiles(), ambiance))
         .useUniqueDirectoryForBaseDir(
             cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG))
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
         .build();
 
     return prepareCDTaskRequest(ambiance, builder, StepBaseParameters, stepParameters);
@@ -225,6 +227,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
             helper.tfPlanEncryptionOnManager(accountId, inheritOutput.encryptionConfig))
         .useUniqueDirectoryForBaseDir(
             cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG))
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
         .timeoutInMillis(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), DEFAULT_TIMEOUT));
     builder.build();
 
@@ -265,6 +268,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
                 terragruntConfig.getBackendConfigFile(), terragruntConfig.getVarFileConfigs(), ambiance))
         .useUniqueDirectoryForBaseDir(
             cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG))
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
         .timeoutInMillis(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), DEFAULT_TIMEOUT));
     builder.build();
     return prepareCDTaskRequest(ambiance, builder, StepBaseParameters, stepParameters);

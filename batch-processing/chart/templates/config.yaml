@@ -55,6 +55,29 @@ data:
   AWS_ACCOUNT_TAGS_COLLECTION_JOB_ENABLED: {{ .Values.awsAccountTagsCollectionJobConfig.enabled | quote }}
   GCP_BQ_UPDATE_BATCH_ENABLED: "false"
   CF_CLIENT_API_KEY: {{ .Values.CF_CLIENT_API_KEY | quote }}
+  {{- if .Values.global.proxy.enabled }}
+  PROXY_ENABLED: '{{ .Values.global.proxy.enabled }}'
+  PROXY_HOST: {{ .Values.global.proxy.host }}
+  PROXY_PORT: '{{ .Values.global.proxy.port }}'
+  PROXY_USERNAME: '{{ .Values.global.proxy.username }}'
+  PROXY_PASSWORD: '{{ .Values.global.proxy.password }}'
+  PROXY_PROTOCOL: {{ .Values.global.proxy.protocol }}
+  {{- end }}
+  {{- if .Values.cliProxy.enabled }}
+  CLI_PROXY_ENABLED: '{{ .Values.cliProxy.enabled }}'
+  CLI_PROXY_HOST: {{ .Values.cliProxy.host }}
+  CLI_PROXY_PORT: '{{ .Values.cliProxy.port }}'
+  CLI_PROXY_USERNAME: '{{ .Values.cliProxy.username }}'
+  CLI_PROXY_PASSWORD: '{{ .Values.cliProxy.password }}'
+  CLI_PROXY_PROTOCOL: {{ .Values.cliProxy.protocol }}
+  {{- end }}
+  {{- if .Values.global.awsServiceEndpointUrls.enabled }}
+  AWS_SERVICE_ENDPOINT_URLS_ENABLED: '{{ .Values.global.awsServiceEndpointUrls.enabled }}'
+  AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION: {{ .Values.global.awsServiceEndpointUrls.endPointRegion }}
+  AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.stsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.ecsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.cloudwatchEndPointUrl }}
+  {{- end }}
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}

@@ -116,6 +116,9 @@ public interface ServiceNowRestClient {
   Call<JsonNode> getTemplate(@Header("Authorization") String authorization, @Path("ticketType") String ticketType,
       @Query("sysparm_query") String query, @Query("sysparm_display_value") String displayValue);
 
+  @GET("/api/now/table/sys_template/{sys_id}?sysparm_fields=template")
+  Call<JsonNode> getStandardTemplate(@Header("Authorization") String authorization, @Path("sys_id") String sys_id);
+
   @GET("/api/now/table/sys_db_object?sysparm_query=super_class.label=Import%20Set%20Row")
   Call<JsonNode> getStagingTableList(@Header("Authorization") String authorization);
 
@@ -123,6 +126,11 @@ public interface ServiceNowRestClient {
       "api/now/table/sys_db_object?sysparm_query=super_class.nameINchange_request%2Cincident%2Cproblem%2Cchange_task%2Ctask%5EORDERBYlabel&sysparm_fields=name%2Clabel&sysparm_limit=60")
   Call<JsonNode>
   getTicketTypes(@Header("Authorization") String authorization);
+
+  @GET("api/now/table/std_change_record_producer")
+  Call<JsonNode> getStandardTemplate(@Header("Authorization") String authorization,
+      @Query("sysparm_query") String sysparm_query, @Query("sysparm_fields") String sparm_fields,
+      @Query("sysparm_limit") int limit, @Query("sysparm_offset") int offset);
 
   // Scripted API to list templates
   @GET("/api/x_harne_harness_ap/template/list")

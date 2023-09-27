@@ -23,9 +23,9 @@ import org.apache.avro.util.Utf8;
 @org.apache.avro.specific.AvroGenerated
 public class ClusterBillingData
     extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -7745108068168076119L;
+  private static final long serialVersionUID = -6930107962324795327L;
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse(
-      "{\"type\":\"record\",\"name\":\"ClusterBillingData\",\"namespace\":\"io.harness.avro\",\"fields\":[{\"name\":\"starttime\",\"type\":\"long\"},{\"name\":\"endtime\",\"type\":\"long\"},{\"name\":\"accountid\",\"type\":\"string\"},{\"name\":\"settingid\",\"type\":[\"string\",\"null\"]},{\"name\":\"instanceid\",\"type\":\"string\"},{\"name\":\"instancetype\",\"type\":\"string\"},{\"name\":\"billingaccountid\",\"type\":[\"string\",\"null\"]},{\"name\":\"clusterid\",\"type\":[\"string\",\"null\"]},{\"name\":\"clustername\",\"type\":[\"string\",\"null\"]},{\"name\":\"appid\",\"type\":[\"string\",\"null\"]},{\"name\":\"serviceid\",\"type\":[\"string\",\"null\"]},{\"name\":\"envid\",\"type\":[\"string\",\"null\"]},{\"name\":\"appname\",\"type\":[\"string\",\"null\"]},{\"name\":\"servicename\",\"type\":[\"string\",\"null\"]},{\"name\":\"envname\",\"type\":[\"string\",\"null\"]},{\"name\":\"cloudproviderid\",\"type\":[\"string\",\"null\"]},{\"name\":\"parentinstanceid\",\"type\":[\"string\",\"null\"]},{\"name\":\"region\",\"type\":[\"string\",\"null\"]},{\"name\":\"launchtype\",\"type\":[\"string\",\"null\"]},{\"name\":\"clustertype\",\"type\":[\"string\",\"null\"]},{\"name\":\"workloadname\",\"type\":[\"string\",\"null\"]},{\"name\":\"workloadtype\",\"type\":[\"string\",\"null\"]},{\"name\":\"namespace\",\"type\":[\"string\",\"null\"]},{\"name\":\"cloudservicename\",\"type\":[\"string\",\"null\"]},{\"name\":\"taskid\",\"type\":[\"string\",\"null\"]},{\"name\":\"cloudprovider\",\"type\":[\"string\",\"null\"]},{\"name\":\"billingamount\",\"type\":\"double\"},{\"name\":\"cpubillingamount\",\"type\":[\"double\",\"null\"]},{\"name\":\"memorybillingamount\",\"type\":[\"double\",\"null\"]},{\"name\":\"idlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpuidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"memoryidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"usagedurationseconds\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpuunitseconds\",\"type\":[\"double\",\"null\"]},{\"name\":\"memorymbseconds\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxcpuutilization\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxmemoryutilization\",\"type\":[\"double\",\"null\"]},{\"name\":\"avgcpuutilization\",\"type\":[\"double\",\"null\"]},{\"name\":\"avgmemoryutilization\",\"type\":[\"double\",\"null\"]},{\"name\":\"systemcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpusystemcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"memorysystemcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"actualidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpuactualidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"memoryactualidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"unallocatedcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpuunallocatedcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"memoryunallocatedcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"instancename\",\"type\":[\"string\",\"null\"]},{\"name\":\"cpurequest\",\"type\":[\"double\",\"null\"]},{\"name\":\"memoryrequest\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpulimit\",\"type\":[\"double\",\"null\"]},{\"name\":\"memorylimit\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxcpuutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxmemoryutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"avgcpuutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"avgmemoryutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"networkcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"pricingsource\",\"type\":[\"string\",\"null\"]},{\"name\":\"storagecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"storageactualidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"storageunallocatedcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"storageutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"storagerequest\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxstorageutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxstoragerequest\",\"type\":[\"double\",\"null\"]},{\"name\":\"orgIdentifier\",\"type\":[\"string\",\"null\"]},{\"name\":\"projectIdentifier\",\"type\":[\"string\",\"null\"]},{\"name\":\"labels\",\"type\":{\"type\":\"array\",\"items\":[{\"type\":\"record\",\"name\":\"Label\",\"fields\":[{\"name\":\"key\",\"type\":[\"null\",\"string\"]},{\"name\":\"value\",\"type\":[\"null\",\"string\"]}]}]}}],\"javaAnnotation\":[\"javax.annotation.Generated(\\\"avro\\\")\"]}");
+      "{\"type\":\"record\",\"name\":\"ClusterBillingData\",\"namespace\":\"io.harness.avro\",\"fields\":[{\"name\":\"starttime\",\"type\":\"long\"},{\"name\":\"endtime\",\"type\":\"long\"},{\"name\":\"accountid\",\"type\":\"string\"},{\"name\":\"settingid\",\"type\":[\"string\",\"null\"]},{\"name\":\"instanceid\",\"type\":\"string\"},{\"name\":\"instancetype\",\"type\":\"string\"},{\"name\":\"billingaccountid\",\"type\":[\"string\",\"null\"]},{\"name\":\"clusterid\",\"type\":[\"string\",\"null\"]},{\"name\":\"clustername\",\"type\":[\"string\",\"null\"]},{\"name\":\"appid\",\"type\":[\"string\",\"null\"]},{\"name\":\"serviceid\",\"type\":[\"string\",\"null\"]},{\"name\":\"envid\",\"type\":[\"string\",\"null\"]},{\"name\":\"appname\",\"type\":[\"string\",\"null\"]},{\"name\":\"servicename\",\"type\":[\"string\",\"null\"]},{\"name\":\"envname\",\"type\":[\"string\",\"null\"]},{\"name\":\"cloudproviderid\",\"type\":[\"string\",\"null\"]},{\"name\":\"parentinstanceid\",\"type\":[\"string\",\"null\"]},{\"name\":\"region\",\"type\":[\"string\",\"null\"]},{\"name\":\"launchtype\",\"type\":[\"string\",\"null\"]},{\"name\":\"clustertype\",\"type\":[\"string\",\"null\"]},{\"name\":\"workloadname\",\"type\":[\"string\",\"null\"]},{\"name\":\"workloadtype\",\"type\":[\"string\",\"null\"]},{\"name\":\"namespace\",\"type\":[\"string\",\"null\"]},{\"name\":\"cloudservicename\",\"type\":[\"string\",\"null\"]},{\"name\":\"taskid\",\"type\":[\"string\",\"null\"]},{\"name\":\"cloudprovider\",\"type\":[\"string\",\"null\"]},{\"name\":\"billingamount\",\"type\":\"double\"},{\"name\":\"cpubillingamount\",\"type\":[\"double\",\"null\"]},{\"name\":\"memorybillingamount\",\"type\":[\"double\",\"null\"]},{\"name\":\"idlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpuidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"memoryidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"usagedurationseconds\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpuunitseconds\",\"type\":[\"double\",\"null\"]},{\"name\":\"memorymbseconds\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxcpuutilization\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxmemoryutilization\",\"type\":[\"double\",\"null\"]},{\"name\":\"avgcpuutilization\",\"type\":[\"double\",\"null\"]},{\"name\":\"avgmemoryutilization\",\"type\":[\"double\",\"null\"]},{\"name\":\"systemcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpusystemcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"memorysystemcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"actualidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpuactualidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"memoryactualidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"unallocatedcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpuunallocatedcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"memoryunallocatedcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"instancename\",\"type\":[\"string\",\"null\"]},{\"name\":\"cpurequest\",\"type\":[\"double\",\"null\"]},{\"name\":\"memoryrequest\",\"type\":[\"double\",\"null\"]},{\"name\":\"cpulimit\",\"type\":[\"double\",\"null\"]},{\"name\":\"memorylimit\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxcpuutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxmemoryutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"avgcpuutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"avgmemoryutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"networkcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"pricingsource\",\"type\":[\"string\",\"null\"]},{\"name\":\"storagecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"storageactualidlecost\",\"type\":[\"double\",\"null\"]},{\"name\":\"storageunallocatedcost\",\"type\":[\"double\",\"null\"]},{\"name\":\"storageutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"storagerequest\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxstorageutilizationvalue\",\"type\":[\"double\",\"null\"]},{\"name\":\"maxstoragerequest\",\"type\":[\"double\",\"null\"]},{\"name\":\"orgIdentifier\",\"type\":[\"string\",\"null\"]},{\"name\":\"projectIdentifier\",\"type\":[\"string\",\"null\"]},{\"name\":\"usagestarttime\",\"type\":[\"long\",\"null\"]},{\"name\":\"usagestoptime\",\"type\":[\"long\",\"null\"]},{\"name\":\"labels\",\"type\":{\"type\":\"array\",\"items\":[{\"type\":\"record\",\"name\":\"Label\",\"fields\":[{\"name\":\"key\",\"type\":[\"null\",\"string\"]},{\"name\":\"value\",\"type\":[\"null\",\"string\"]}]}]}}],\"javaAnnotation\":[\"javax.annotation.Generated(\\\"avro\\\")\"]}");
   public static org.apache.avro.Schema getClassSchema() {
     return SCHEMA$;
   }
@@ -150,6 +150,8 @@ public class ClusterBillingData
   private java.lang.Double maxstoragerequest;
   private java.lang.CharSequence orgIdentifier;
   private java.lang.CharSequence projectIdentifier;
+  private java.lang.Long usagestarttime;
+  private java.lang.Long usagestoptime;
   private java.util.List<java.lang.Object> labels;
 
   /**
@@ -229,6 +231,8 @@ public class ClusterBillingData
    * @param maxstoragerequest The new value for maxstoragerequest
    * @param orgIdentifier The new value for orgIdentifier
    * @param projectIdentifier The new value for projectIdentifier
+   * @param usagestarttime The new value for usagestarttime
+   * @param usagestoptime The new value for usagestoptime
    * @param labels The new value for labels
    */
   public ClusterBillingData(java.lang.Long starttime, java.lang.Long endtime, java.lang.CharSequence accountid,
@@ -254,8 +258,8 @@ public class ClusterBillingData
       java.lang.Double storagecost, java.lang.Double storageactualidlecost, java.lang.Double storageunallocatedcost,
       java.lang.Double storageutilizationvalue, java.lang.Double storagerequest,
       java.lang.Double maxstorageutilizationvalue, java.lang.Double maxstoragerequest,
-      java.lang.CharSequence orgIdentifier, java.lang.CharSequence projectIdentifier,
-      java.util.List<java.lang.Object> labels) {
+      java.lang.CharSequence orgIdentifier, java.lang.CharSequence projectIdentifier, java.lang.Long usagestarttime,
+      java.lang.Long usagestoptime, java.util.List<java.lang.Object> labels) {
     this.starttime = starttime;
     this.endtime = endtime;
     this.accountid = accountid;
@@ -324,6 +328,8 @@ public class ClusterBillingData
     this.maxstoragerequest = maxstoragerequest;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
+    this.usagestarttime = usagestarttime;
+    this.usagestoptime = usagestoptime;
     this.labels = labels;
   }
 
@@ -473,6 +479,10 @@ public class ClusterBillingData
       case 67:
         return projectIdentifier;
       case 68:
+        return usagestarttime;
+      case 69:
+        return usagestoptime;
+      case 70:
         return labels;
       default:
         throw new org.apache.avro.AvroRuntimeException("Bad index");
@@ -689,6 +699,12 @@ public class ClusterBillingData
         projectIdentifier = (java.lang.CharSequence) value$;
         break;
       case 68:
+        usagestarttime = (java.lang.Long) value$;
+        break;
+      case 69:
+        usagestoptime = (java.lang.Long) value$;
+        break;
+      case 70:
         labels = (java.util.List<java.lang.Object>) value$;
         break;
       default:
@@ -1785,6 +1801,38 @@ public class ClusterBillingData
   }
 
   /**
+   * Gets the value of the 'usagestarttime' field.
+   * @return The value of the 'usagestarttime' field.
+   */
+  public java.lang.Long getUsagestarttime() {
+    return usagestarttime;
+  }
+
+  /**
+   * Sets the value of the 'usagestarttime' field.
+   * @param value the value to set.
+   */
+  public void setUsagestarttime(java.lang.Long value) {
+    this.usagestarttime = value;
+  }
+
+  /**
+   * Gets the value of the 'usagestoptime' field.
+   * @return The value of the 'usagestoptime' field.
+   */
+  public java.lang.Long getUsagestoptime() {
+    return usagestoptime;
+  }
+
+  /**
+   * Sets the value of the 'usagestoptime' field.
+   * @param value the value to set.
+   */
+  public void setUsagestoptime(java.lang.Long value) {
+    this.usagestoptime = value;
+  }
+
+  /**
    * Gets the value of the 'labels' field.
    * @return The value of the 'labels' field.
    */
@@ -1908,6 +1956,8 @@ public class ClusterBillingData
     private java.lang.Double maxstoragerequest;
     private java.lang.CharSequence orgIdentifier;
     private java.lang.CharSequence projectIdentifier;
+    private java.lang.Long usagestarttime;
+    private java.lang.Long usagestoptime;
     private java.util.List<java.lang.Object> labels;
 
     /** Creates a new Builder */
@@ -2193,9 +2243,17 @@ public class ClusterBillingData
         this.projectIdentifier = data().deepCopy(fields()[67].schema(), other.projectIdentifier);
         fieldSetFlags()[67] = other.fieldSetFlags()[67];
       }
-      if (isValidValue(fields()[68], other.labels)) {
-        this.labels = data().deepCopy(fields()[68].schema(), other.labels);
+      if (isValidValue(fields()[68], other.usagestarttime)) {
+        this.usagestarttime = data().deepCopy(fields()[68].schema(), other.usagestarttime);
         fieldSetFlags()[68] = other.fieldSetFlags()[68];
+      }
+      if (isValidValue(fields()[69], other.usagestoptime)) {
+        this.usagestoptime = data().deepCopy(fields()[69].schema(), other.usagestoptime);
+        fieldSetFlags()[69] = other.fieldSetFlags()[69];
+      }
+      if (isValidValue(fields()[70], other.labels)) {
+        this.labels = data().deepCopy(fields()[70].schema(), other.labels);
+        fieldSetFlags()[70] = other.fieldSetFlags()[70];
       }
     }
 
@@ -2477,9 +2535,17 @@ public class ClusterBillingData
         this.projectIdentifier = data().deepCopy(fields()[67].schema(), other.projectIdentifier);
         fieldSetFlags()[67] = true;
       }
-      if (isValidValue(fields()[68], other.labels)) {
-        this.labels = data().deepCopy(fields()[68].schema(), other.labels);
+      if (isValidValue(fields()[68], other.usagestarttime)) {
+        this.usagestarttime = data().deepCopy(fields()[68].schema(), other.usagestarttime);
         fieldSetFlags()[68] = true;
+      }
+      if (isValidValue(fields()[69], other.usagestoptime)) {
+        this.usagestoptime = data().deepCopy(fields()[69].schema(), other.usagestoptime);
+        fieldSetFlags()[69] = true;
+      }
+      if (isValidValue(fields()[70], other.labels)) {
+        this.labels = data().deepCopy(fields()[70].schema(), other.labels);
+        fieldSetFlags()[70] = true;
       }
     }
 
@@ -5065,6 +5131,82 @@ public class ClusterBillingData
     }
 
     /**
+     * Gets the value of the 'usagestarttime' field.
+     * @return The value.
+     */
+    public java.lang.Long getUsagestarttime() {
+      return usagestarttime;
+    }
+
+    /**
+     * Sets the value of the 'usagestarttime' field.
+     * @param value The value of 'usagestarttime'.
+     * @return This builder.
+     */
+    public io.harness.avro.ClusterBillingData.Builder setUsagestarttime(java.lang.Long value) {
+      validate(fields()[68], value);
+      this.usagestarttime = value;
+      fieldSetFlags()[68] = true;
+      return this;
+    }
+
+    /**
+     * Checks whether the 'usagestarttime' field has been set.
+     * @return True if the 'usagestarttime' field has been set, false otherwise.
+     */
+    public boolean hasUsagestarttime() {
+      return fieldSetFlags()[68];
+    }
+
+    /**
+     * Clears the value of the 'usagestarttime' field.
+     * @return This builder.
+     */
+    public io.harness.avro.ClusterBillingData.Builder clearUsagestarttime() {
+      usagestarttime = null;
+      fieldSetFlags()[68] = false;
+      return this;
+    }
+
+    /**
+     * Gets the value of the 'usagestoptime' field.
+     * @return The value.
+     */
+    public java.lang.Long getUsagestoptime() {
+      return usagestoptime;
+    }
+
+    /**
+     * Sets the value of the 'usagestoptime' field.
+     * @param value The value of 'usagestoptime'.
+     * @return This builder.
+     */
+    public io.harness.avro.ClusterBillingData.Builder setUsagestoptime(java.lang.Long value) {
+      validate(fields()[69], value);
+      this.usagestoptime = value;
+      fieldSetFlags()[69] = true;
+      return this;
+    }
+
+    /**
+     * Checks whether the 'usagestoptime' field has been set.
+     * @return True if the 'usagestoptime' field has been set, false otherwise.
+     */
+    public boolean hasUsagestoptime() {
+      return fieldSetFlags()[69];
+    }
+
+    /**
+     * Clears the value of the 'usagestoptime' field.
+     * @return This builder.
+     */
+    public io.harness.avro.ClusterBillingData.Builder clearUsagestoptime() {
+      usagestoptime = null;
+      fieldSetFlags()[69] = false;
+      return this;
+    }
+
+    /**
      * Gets the value of the 'labels' field.
      * @return The value.
      */
@@ -5078,9 +5220,9 @@ public class ClusterBillingData
      * @return This builder.
      */
     public io.harness.avro.ClusterBillingData.Builder setLabels(java.util.List<java.lang.Object> value) {
-      validate(fields()[68], value);
+      validate(fields()[70], value);
       this.labels = value;
-      fieldSetFlags()[68] = true;
+      fieldSetFlags()[70] = true;
       return this;
     }
 
@@ -5089,7 +5231,7 @@ public class ClusterBillingData
      * @return True if the 'labels' field has been set, false otherwise.
      */
     public boolean hasLabels() {
-      return fieldSetFlags()[68];
+      return fieldSetFlags()[70];
     }
 
     /**
@@ -5098,7 +5240,7 @@ public class ClusterBillingData
      */
     public io.harness.avro.ClusterBillingData.Builder clearLabels() {
       labels = null;
-      fieldSetFlags()[68] = false;
+      fieldSetFlags()[70] = false;
       return this;
     }
 
@@ -5216,8 +5358,10 @@ public class ClusterBillingData
             fieldSetFlags()[66] ? this.orgIdentifier : (java.lang.CharSequence) defaultValue(fields()[66]);
         record.projectIdentifier =
             fieldSetFlags()[67] ? this.projectIdentifier : (java.lang.CharSequence) defaultValue(fields()[67]);
+        record.usagestarttime = fieldSetFlags()[68] ? this.usagestarttime : (java.lang.Long) defaultValue(fields()[68]);
+        record.usagestoptime = fieldSetFlags()[69] ? this.usagestoptime : (java.lang.Long) defaultValue(fields()[69]);
         record.labels =
-            fieldSetFlags()[68] ? this.labels : (java.util.List<java.lang.Object>) defaultValue(fields()[68]);
+            fieldSetFlags()[70] ? this.labels : (java.util.List<java.lang.Object>) defaultValue(fields()[70]);
         return record;
       } catch (org.apache.avro.AvroMissingFieldException e) {
         throw e;

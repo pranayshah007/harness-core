@@ -51,6 +51,7 @@ import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 import software.wings.service.impl.aws.model.AwsVPC;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -503,7 +504,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                    .build();
 
-    doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
+    doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString(), any(Duration.class));
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
     List<String> result = service.getEKSClusterNames(mockIdentifierRef, "org", "project");

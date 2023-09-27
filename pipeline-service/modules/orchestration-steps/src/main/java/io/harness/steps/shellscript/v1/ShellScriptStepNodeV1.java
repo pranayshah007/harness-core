@@ -12,7 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.v1.StepElementParametersV1;
 import io.harness.plancreator.steps.common.v1.StepElementParametersV1.StepElementParametersV1Builder;
@@ -29,6 +32,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Data;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Data
 @JsonTypeName(StepSpecTypeConstants.SHELL_SCRIPT)
 @OwnedBy(PIPELINE)
@@ -57,6 +62,7 @@ public class ShellScriptStepNodeV1 extends PmsAbstractStepNodeV1 {
         .source(spec.getSource())
         .delegateSelectors(spec.getDelegateSelectors())
         .includeInfraSelectors(spec.getIncludeInfraSelectors())
+        .outputAlias(spec.getOutputAlias())
         .build();
   }
 }

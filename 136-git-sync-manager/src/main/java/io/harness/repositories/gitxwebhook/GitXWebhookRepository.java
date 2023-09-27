@@ -24,5 +24,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface GitXWebhookRepository extends CrudRepository<GitXWebhook, String>, GitXWebhookRepositoryCustom {
   List<GitXWebhook> findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
 
-  GitXWebhook findByAccountIdentifierAndRepoName(String accountIdentifier, String repoName);
+  List<GitXWebhook> findByAccountIdentifierAndRepoName(String accountIdentifier, String repoName);
 }

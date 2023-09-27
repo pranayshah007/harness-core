@@ -7,6 +7,13 @@
     "description": "GitHub"
   },
   {
+    "id": "650afa0a6d9186ea1b8cdfdf",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "bitbucket",
+    "name": "Bitbucket",
+    "description": "Bitbucket"
+  },
+  {
     "id": "64d5c5bb203cd415307204e3",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "catalog",
@@ -26,5 +33,12 @@
     "identifier": "pagerduty",
     "name": "PagerDuty",
     "description": "PagerDuty"
+  },
+  {
+    "id": "64fec177de5b168dff5cebd7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "kubernetes",
+    "name": "Kubernetes",
+    "description": "Kubernetes"
   }
 ]

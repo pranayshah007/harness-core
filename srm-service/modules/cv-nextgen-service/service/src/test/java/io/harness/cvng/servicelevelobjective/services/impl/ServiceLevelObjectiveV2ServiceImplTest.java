@@ -77,6 +77,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
@@ -2182,6 +2183,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                                                 .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
                                                 .build();
     hPersistence.save(sloHealthIndicator);
+
     sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
                  .identifier("id5")
                  .userJourneyRefs(Collections.singletonList("uj2"))
@@ -2193,6 +2195,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                              .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
                              .build();
     hPersistence.save(sloHealthIndicator);
+
     sloDTO =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
             .identifier("id2")
@@ -2216,19 +2219,59 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                              .errorBudgetRisk(ErrorBudgetRisk.EXHAUSTED)
                              .build();
     hPersistence.save(sloHealthIndicator);
+
     sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
                  .identifier("id3")
                  .userJourneyRefs(Collections.singletonList("uj3"))
                  .build();
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
+    spec.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    sloDTO.setSpec(spec);
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                             .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                             .errorBudgetRemainingPercentage(60)
+                             .errorBudgetRisk(ErrorBudgetRisk.OBSERVE)
+                             .build();
+    hPersistence.save(sloHealthIndicator);
+
+    ServiceLevelObjectiveV2DTO compositeSLODTO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .name("compositeSLO")
+            .identifier("compositeSLO")
+            .userJourneyRefs(Collections.singletonList("uj1, uj3"))
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef("id1")
+                                            .weightagePercentage(75.0)
+                                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                            .accountId(builderFactory.getContext().getAccountId())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef("id3")
+                                  .weightagePercentage(25.0)
+                                  .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                  .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                  .accountId(builderFactory.getContext().getAccountId())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLODTO);
+    sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                             .serviceLevelObjectiveIdentifier(compositeSLODTO.getIdentifier())
+                             .errorBudgetRemainingPercentage(30)
+                             .monitoredServiceIdentifier(null)
+                             .errorBudgetRisk(ErrorBudgetRisk.NEED_ATTENTION)
+                             .build();
+    hPersistence.save(sloHealthIndicator);
 
     SLORiskCountResponse sloRiskCountResponse = serviceLevelObjectiveV2Service.getRiskCount(projectParams,
         SLODashboardApiFilter.builder()
             .userJourneyIdentifiers(Arrays.asList("uj1"))
-            .sliTypes(Arrays.asList(ServiceLevelIndicatorType.AVAILABILITY))
             .targetTypes(Arrays.asList(SLOTargetType.ROLLING))
             .build());
-
     assertThat(sloRiskCountResponse.getTotalCount()).isEqualTo(1);
     assertThat(sloRiskCountResponse.getRiskCounts()).hasSize(5);
     assertThat(sloRiskCountResponse.getRiskCounts()
@@ -2241,6 +2284,31 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(sloRiskCountResponse.getRiskCounts()
                    .stream()
                    .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.UNHEALTHY))
+                   .findAny()
+                   .get()
+                   .getCount())
+        .isEqualTo(1);
+
+    sloRiskCountResponse = serviceLevelObjectiveV2Service.getRiskCount(projectParams,
+        SLODashboardApiFilter.builder()
+            .type(ServiceLevelObjectiveType.COMPOSITE)
+            .targetTypes(Arrays.asList(SLOTargetType.ROLLING))
+            .build());
+    assertThat(sloRiskCountResponse.getTotalCount()).isEqualTo(2);
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.NEED_ATTENTION))
+                   .findAny()
+                   .get()
+                   .getCount())
+        .isEqualTo(1);
+
+    sloRiskCountResponse = serviceLevelObjectiveV2Service.getRiskCount(
+        projectParams, SLODashboardApiFilter.builder().envIdentifiers(Arrays.asList("env1")).build());
+    assertThat(sloRiskCountResponse.getTotalCount()).isEqualTo(3);
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.OBSERVE))
                    .findAny()
                    .get()
                    .getCount())

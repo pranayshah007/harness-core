@@ -82,6 +82,14 @@ public class IACMStepsUtils {
     return iacmServiceUtils.GetTerraformEndpointsData(account, org, project, workspaceId);
   }
 
+  private String getHarnessInfracostKey() {
+    return iacmServiceUtils.getCostEstimationToken();
+  }
+
+  private String getInfracostAPIEndpoint() {
+    return iacmServiceUtils.getCostEstimationAPIEndpoint();
+  }
+
   public void createExecution(Ambiance ambiance, String workspaceId) {
     iacmServiceUtils.createIACMExecution(ambiance, workspaceId);
   }
@@ -129,6 +137,8 @@ public class IACMStepsUtils {
     pluginEnvs.put("PLUGIN_CONNECTOR_REF", workspaceInfo.getProvider_connector());
     pluginEnvs.put("PLUGIN_PROVISIONER", workspaceInfo.getProvisioner());
     pluginEnvs.put("PLUGIN_ENDPOINT_VARIABLES", getTerraformEndpointsInfo(accountId, org, projectId, workspaceID));
+    pluginEnvs.put("PLUGIN_HARNESS_INFRACOST_KEY", getHarnessInfracostKey());
+    pluginEnvs.put("PLUGIN_PRICING_API_ENDPOINT", getInfracostAPIEndpoint());
 
     for (WorkspaceVariables variable : variables) {
       switch (variable.getKind()) {

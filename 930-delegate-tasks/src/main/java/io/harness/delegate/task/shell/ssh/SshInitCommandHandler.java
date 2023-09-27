@@ -51,6 +51,7 @@ import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,10 +159,19 @@ public class SshInitCommandHandler implements CommandHandler {
     String cmd = String.format("mkdir -p %s", getExecutionStagingDir(taskParameters));
     CommandExecutionStatus commandExecutionStatus = executor.executeCommandString(cmd, true);
 
+    // We don't want to print any logs in case of print env command hence setting shouldSaveExecutionLogs as false.
+    // We can set unset this boolean here as this executor is newly created for this thread and not used by any other
+    // thread.
+
+    boolean shouldSaveExecutionLogs = executor.getShouldSaveExecutionLogs();
+    executor.setShouldSaveExecutionLogs(false);
+
     StringBuffer envVariablesFromHost = new StringBuffer();
     commandExecutionStatus = commandExecutionStatus == CommandExecutionStatus.SUCCESS
         ? executor.executeCommandString("printenv", envVariablesFromHost)
         : commandExecutionStatus;
+
+    executor.setShouldSaveExecutionLogs(shouldSaveExecutionLogs);
 
     Properties properties = new Properties();
     try {
@@ -185,11 +195,13 @@ public class SshInitCommandHandler implements CommandHandler {
     String workingDir =
         isNotBlank(commandUnit.getWorkingDirectory()) ? "'" + commandUnit.getWorkingDirectory().trim() + "'" : "";
     try (StringWriter stringWriter = new StringWriter()) {
+      // We are creating a new map because env variables can be further modified
+      Map<String, String> envVariableMap = new HashMap<>(taskParameters.getEnvironmentVariables());
       Map<String, Object> templateParams = ImmutableMap.<String, Object>builder()
                                                .put("executionId", taskParameters.getExecutionId())
                                                .put("executionStagingDir", getExecutionStagingDir(taskParameters))
-                                               .put("envVariables", taskParameters.getEnvironmentVariables())
-                                               .put("safeEnvVariables", taskParameters.getEnvironmentVariables())
+                                               .put("envVariables", envVariableMap)
+                                               .put("safeEnvVariables", envVariableMap)
                                                .put("scriptWorkingDirectory", workingDir)
                                                .put("includeTailFunctions", includeTailFunctions)
                                                .build();

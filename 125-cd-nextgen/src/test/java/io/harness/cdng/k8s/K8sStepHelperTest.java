@@ -33,6 +33,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -103,6 +104,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.KustomizePatchesManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -194,6 +196,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
@@ -283,11 +286,17 @@ public class K8sStepHelperTest extends CDNGTestBase {
   @Spy @InjectMocks private K8sStepHelper k8sStepHelper;
 
   @Mock private LogCallback mockLogCallback;
+
   private final Ambiance ambiance = Ambiance.newBuilder()
                                         .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+                                        .setMetadata(ExecutionMetadata.newBuilder()
+                                                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                         .setPipelineIdentifier("pipelineIdentifier")
+                                                         .build())
                                         .build();
+
   private static final String SOME_URL = "https://url.com/owner/repo.git";
 
   private final String ENCODED_REPO_NAME = "c26979e4-1d8c-344e-8181-45f484c57fe5";
@@ -317,7 +326,13 @@ public class K8sStepHelperTest extends CDNGTestBase {
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
 
-    return Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).build();
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(setupAbstractions)
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                         .setPipelineIdentifier("pipelineIdentifier")
+                         .build())
+        .build();
   }
 
   @Test
@@ -1208,7 +1223,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -2324,6 +2339,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
                     .spec(OciHelmChartStoreGenericConfig.builder()
                               .connectorRef(ParameterField.createValueField("oci-helm-connector"))
                               .build())
+                    .type(OciHelmChartStoreConfigType.GENERIC)
                     .build()))
             .build();
 
@@ -3964,7 +3980,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4148,7 +4164,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo(TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG.getDisplayName());
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4429,7 +4445,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();

@@ -26,9 +26,13 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
@@ -90,7 +94,11 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
       stepsYamlFieldMap.put(stepsNodeId, stepsField);
       responseMap.put(stepsNodeId,
           PlanCreationResponse.builder()
-              .dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap))
+              .dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap)
+                                .toBuilder()
+                                .putDependencyMetadata(stepsNodeId,
+                                    Dependency.newBuilder().setParentInfo(generateParentInfo(ctx, config)).build())
+                                .build())
               .build());
     }
     addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(), config.getIdentifier(),
@@ -120,7 +128,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
         YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
     return PlanNode.builder()
         .name(config.getName())
-        .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid()))
+        .uuid(getFinalPlanNodeId(ctx, config))
         .identifier(config.getIdentifier())
         .stepType(StepGroupStep.STEP_TYPE)
         .group(StepCategory.STEP_GROUP.name())
@@ -283,5 +291,23 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
                   OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
               .build());
     }
+  }
+
+  private HarnessStruct generateParentInfo(PlanCreationContext ctx, StepGroupElementConfig config) {
+    YamlField field = ctx.getCurrentField();
+    HarnessStruct.Builder parentInfo = HarnessStruct.newBuilder();
+    parentInfo.putData(PlanCreatorConstants.STEP_GROUP_ID,
+        HarnessValue.newBuilder().setStringValue(getFinalPlanNodeId(ctx, config)).build());
+    if (StrategyUtils.isWrappedUnderStrategy(field)) {
+      parentInfo.putData(
+          PlanCreatorConstants.STRATEGY_ID, HarnessValue.newBuilder().setStringValue(config.getUuid()).build());
+      parentInfo.putData(PlanCreatorConstants.STRATEGY_NODE_TYPE,
+          HarnessValue.newBuilder().setStringValue(YAMLFieldNameConstants.STEP_GROUP).build());
+    }
+    return parentInfo.build();
+  }
+
+  private String getFinalPlanNodeId(PlanCreationContext ctx, StepGroupElementConfig config) {
+    return StrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid());
   }
 }

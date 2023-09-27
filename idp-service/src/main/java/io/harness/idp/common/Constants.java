@@ -21,8 +21,8 @@ public class Constants {
   public static final String IDP_RESOURCE_TYPE = "IDP_SETTINGS";
   public static final String IDP_PERMISSION = "idp_idpsettings_manage";
   public static final List<String> pluginIds = List.of("circleci", "confluence", "firehydrant", "github-actions",
-      "github-catalog-discovery", "github-insights", "github-pull-requests", "harness-ci-cd", "harness-feature-flags",
-      "jenkins", "jira", "kubernetes", "pager-duty", "todo");
+      "github-catalog-discovery", "github-insights", "github-pull-requests", "grafana", "harness-ci-cd",
+      "harness-feature-flags", "jenkins", "jira", "kubernetes", "pager-duty", "todo");
   public static final String GITHUB_TOKEN = "HARNESS_GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "HARNESS_GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";
@@ -61,12 +61,15 @@ public class Constants {
 
   public static final String HARNESS_IDENTIFIER = "harness";
   public static final String GITHUB_IDENTIFIER = "github";
+  public static final String BITBUCKET_IDENTIFIER = "bitbucket";
   public static final String CATALOG_IDENTIFIER = "catalog";
+  public static final String KUBERNETES_IDENTIFIER = "kubernetes";
   public static final String CUSTOM_IDENTIFIER = "custom";
   public static final String PAGERDUTY_IDENTIFIER = "pagerduty";
   public static final String DSL_RESPONSE = "dsl_response";
   public static final String DATA_POINT_VALUE_KEY = "value";
   public static final String ERROR_MESSAGE_KEY = "error_messages";
+  public static final String MESSAGE_KEY = "message";
 
   public static final String QA_HOST = "qa.harness.io";
   public static final String PRE_QA_HOST = "stress.harness.io";
@@ -86,9 +89,12 @@ public class Constants {
   public static final String HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS = "harness_ci_success_percent_in_seven_days";
 
   public static final String HARNESS_TEST_PASSING_ON_CI_IS_ZERO = "harness_test_passing_on_ci_is_zero";
-  public static final String GITHUB_DEFAULT_BRANCH_KEY = "refs/";
-  public static final String GITHUB_DEFAULT_BRANCH_KEY_ESCAPED = "\"refs/\"";
+  public static final String DEFAULT_BRANCH_KEY = "refs/";
+  public static final String DEFAULT_BRANCH_KEY_ESCAPED = "\"refs/\"";
 
   public static final String PAGERDUTY_SERVICE_DIRECTORY = "pagerduty_service_directory";
   public static final String PAGERDUTY_INCIDENTS = "pagerduty_incidents";
+  public static final String KUBERNETES = "kubernetes";
+  public static final String HARNESS_ACCOUNT = "Harness-Account";
+  public static final String PAGERDUTY_RESOLVED_INCIDENTS = "pagerduty_resolved_incidents";
 }

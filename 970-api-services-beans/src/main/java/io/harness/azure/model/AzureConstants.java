@@ -289,6 +289,10 @@ public interface AzureConstants {
   String ZIP_DEPLOY = "Deploying artifact ZIP file on slot, %nArtifact file: %s%nApp name: %s%nSlot name: %s";
   String WAR_DEPLOY = "Deploying artifact WAR file on slot, %nArtifact file: %s%nApp name: %s%nSlot name: %s";
 
+  String DEPLOY_LOG = "Deploying artifact file of type %s on site slot";
+  String DEPLOY_DETAILS_LOG = "Artifact file: %s%nApp name: %s%nSlot name: %s";
+  String DEPLOY_OPTIONS_LOG = "With deploy options: { type: %s, clean: %b }";
+
   // Azure App Service Command Units
   String SAVE_EXISTING_CONFIGURATIONS = "Save App Service Configurations";
   String STOP_DEPLOYMENT_SLOT = "Stop Slot";

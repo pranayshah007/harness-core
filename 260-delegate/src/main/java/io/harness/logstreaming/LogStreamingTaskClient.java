@@ -178,10 +178,12 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
   private void colorLog(LogLine logLine) {
     String message = logLine.getMessage();
-    if (logLine.getLevel() == LogLevel.ERROR) {
-      message = color(message, Red, Bold);
-    } else if (logLine.getLevel() == LogLevel.WARN) {
-      message = color(message, Yellow, Bold);
+    if (!logLine.isSkipColoring()) {
+      if (logLine.getLevel() == LogLevel.ERROR) {
+        message = color(message, Red, Bold);
+      } else if (logLine.getLevel() == LogLevel.WARN) {
+        message = color(message, Yellow, Bold);
+      }
     }
     message = doneColoring(message);
     logLine.setMessage(message);

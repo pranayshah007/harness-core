@@ -8,6 +8,7 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VITALIE;
@@ -15,6 +16,7 @@ import static io.harness.rule.OwnerRule.VITALIE;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT;
+import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_GCS_ARTIFACT;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_GIT_CONFIGS;
 import static software.wings.beans.TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS;
@@ -36,6 +38,7 @@ import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GoogleCloudStorageArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
@@ -252,5 +255,22 @@ public class CommandTaskDataFactoryTest extends CategoryTest {
             .build();
     TaskData taskData = commandTaskDataFactory.create(sshCommandTaskParameters, ParameterField.createValueField("5"));
     assertThat(taskData.getTaskType()).isEqualTo(COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT.name());
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldCreateCommandTaskWithGcs() {
+    SshCommandTaskParameters sshCommandTaskParameters =
+        SshCommandTaskParameters.builder()
+            .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
+            .artifactDelegateConfig(GoogleCloudStorageArtifactDelegateConfig.builder().build())
+            .executeOnDelegate(false)
+            .accountId("accountId")
+            .commandUnits(Arrays.asList(NgInitCommandUnit.builder().build(),
+                ScriptCommandUnit.builder().name("test").build(), NgCleanupCommandUnit.builder().build()))
+            .build();
+    TaskData taskData = commandTaskDataFactory.create(sshCommandTaskParameters, ParameterField.createValueField("5"));
+    assertThat(taskData.getTaskType()).isEqualTo(COMMAND_TASK_NG_WITH_GCS_ARTIFACT.name());
   }
 }

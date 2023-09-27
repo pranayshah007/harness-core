@@ -7,6 +7,7 @@
 
 package io.harness.service.instancesynchandler;
 
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
@@ -19,11 +20,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
+import io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata;
+import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
+import io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
@@ -43,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -191,6 +197,51 @@ public class NativeHelmInstanceSyncHandlerTest extends InstancesTestBase {
   public void testGetDeploymentInfoWhenNotInstanceOfK8sShouldThrowInvalidArgumentsException() {
     AzureWebAppInfrastructureOutcome infrastructureOutcome = AzureWebAppInfrastructureOutcome.builder().build();
     nativeHelmInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, getServiceInstanceInfos());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testUpdateDeploymentInfoDTO() {
+    Map<String, List<String>> workloadLabelSelectors = Map.of("worklaod", List.of("label1=value1", "label2", "value2"));
+    DeploymentInfoDTO deploymentInfo = NativeHelmDeploymentInfoDTO.builder().build();
+    DeploymentOutcomeMetadata deploymentOutcomeMetadata =
+        NativeHelmDeploymentOutcomeMetadata.builder().workloadLabelSelectors(workloadLabelSelectors).build();
+
+    DeploymentInfoDTO deploymentInfoDTO =
+        nativeHelmInstanceSyncHandler.updateDeploymentInfoDTO(deploymentInfo, deploymentOutcomeMetadata);
+
+    assertThat(((NativeHelmDeploymentInfoDTO) deploymentInfoDTO).getWorkloadLabelSelectors())
+        .isEqualTo(workloadLabelSelectors);
+  }
+
+  @Test(expected = InvalidArgumentsException.class)
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testUpdateDeploymentInfoDTOShouldThrowInvalidArgumentsException1() {
+    DeploymentInfoDTO deploymentInfo = K8sDeploymentInfoDTO.builder().build();
+    DeploymentOutcomeMetadata deploymentOutcomeMetadata = NativeHelmDeploymentOutcomeMetadata.builder().build();
+    nativeHelmInstanceSyncHandler.updateDeploymentInfoDTO(deploymentInfo, deploymentOutcomeMetadata);
+  }
+
+  @Test(expected = InvalidArgumentsException.class)
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testUpdateDeploymentInfoDTOShouldThrowInvalidArgumentsException2() {
+    DeploymentInfoDTO deploymentInfo = NativeHelmDeploymentInfoDTO.builder().build();
+    DeploymentOutcomeMetadata deploymentOutcomeMetadata = CustomDeploymentOutcomeMetadata.builder().build();
+    nativeHelmInstanceSyncHandler.updateDeploymentInfoDTO(deploymentInfo, deploymentOutcomeMetadata);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testUpdateDeploymentInfoDTOWhenOutcomeMetadaIsNull() {
+    DeploymentInfoDTO deploymentInfo = NativeHelmDeploymentInfoDTO.builder().build();
+
+    DeploymentInfoDTO deploymentInfoDTO = nativeHelmInstanceSyncHandler.updateDeploymentInfoDTO(deploymentInfo, null);
+
+    assertThat(((NativeHelmDeploymentInfoDTO) deploymentInfoDTO).getWorkloadLabelSelectors()).isEqualTo(null);
   }
 
   private List<ServerInstanceInfo> getServiceInstanceInfos() {

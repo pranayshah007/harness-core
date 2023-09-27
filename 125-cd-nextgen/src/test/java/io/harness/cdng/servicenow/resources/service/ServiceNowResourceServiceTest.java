@@ -27,6 +27,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -422,8 +423,8 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
             ServiceNowTemplate.builder().name("name2").sys_id("key2").build());
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTemplateList(serviceNowFieldNGList1).build());
-    assertThat(serviceNowResourceService.getTemplateList(
-                   identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2, TEMPLATE_NAME, "CHANGE_TASK", "filter"))
+    assertThat(serviceNowResourceService.getTemplateList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2,
+                   TEMPLATE_NAME, "CHANGE_TASK", "filter", null))
         .isEqualTo(serviceNowFieldNGList1);
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
@@ -433,6 +434,62 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
     assertThat(parameters.getSearchTerm()).isEqualTo("filter");
     assertThat(parameters.getTemplateListOffset()).isEqualTo(100);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetTemplateListForIncidentStandardTemplate() {
+    List<ServiceNowTemplate> serviceNowFieldNGList1 =
+        Arrays.asList(ServiceNowTemplate.builder().name("name1").sys_id("key1").build(),
+            ServiceNowTemplate.builder().name("name2").sys_id("key2").build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTemplateList(serviceNowFieldNGList1).build());
+    assertThatThrownBy(
+        ()
+            -> serviceNowResourceService.getTemplateList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2,
+                TEMPLATE_NAME, "INCIDENT", "filter", ServiceNowTemplateTypeEnum.STANDARD))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Get template metadata is supported for ticketType CHANGE_REQUEST and templateType STANDARD");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetTemplateListForStandardTemplateFFoff() {
+    List<ServiceNowTemplate> serviceNowFieldNGList1 =
+        Arrays.asList(ServiceNowTemplate.builder().name("name1").sys_id("key1").build(),
+            ServiceNowTemplate.builder().name("name2").sys_id("key2").build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTemplateList(serviceNowFieldNGList1).build());
+    assertThatThrownBy(
+        ()
+            -> serviceNowResourceService.getTemplateList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2,
+                TEMPLATE_NAME, "CHANGE_REQUEST", "filter", ServiceNowTemplateTypeEnum.STANDARD))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Feature flag CDS_GET_SERVICENOW_STANDARD_TEMPLATE is not enabled for this account");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetTemplateListForStandardTemplate() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
+    List<ServiceNowTemplate> serviceNowFieldNGList1 =
+        Arrays.asList(ServiceNowTemplate.builder().name("name1").sys_id("key1").build(),
+            ServiceNowTemplate.builder().name("name2").sys_id("key2").build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(
+            ServiceNowTaskNGResponse.builder()
+                .serviceNowFieldJsonNGListAsString(
+                    "short_description=Include a title for your change no greater than 100 characters^description=Describe what you plan to do^implementation_plan=List the steps in order of completion that will be worked through when implementing this change^EQ")
+                .serviceNowTemplateList(serviceNowFieldNGList1)
+                .build());
+    List<ServiceNowTemplate> serviceNowTemplateList =
+        serviceNowResourceService.getTemplateList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2,
+            TEMPLATE_NAME, "CHANGE_REQUEST", "filter", ServiceNowTemplateTypeEnum.STANDARD);
+    ServiceNowTemplate serviceNowTemplate = serviceNowTemplateList.get(0);
+    assertThat(serviceNowTemplate.getFields().size()).isEqualTo(3);
+    assertThat(serviceNowTemplate.getFields()).containsKeys("short_description", "description", "implementation_plan");
   }
 
   @Test

@@ -135,28 +135,33 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public TaskChainResponse startChainLink(
       AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
-    // Get ManifestsOutcome
     LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
-
-    // Get UserDataOutcome and update expressions
-    UserDataOutcome userDataOutcome = resolveAsgUserDataOutcome(ambiance);
-    cdExpressionResolver.updateExpressions(ambiance, userDataOutcome);
-
-    // Get ManifestsOutcome and update expressions
-    ManifestsOutcome manifestsOutcome = resolveAsgManifestsOutcome(ambiance);
-    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
-
-    // Validate ManifestsOutcome
-    validateManifestsOutcome(ambiance, manifestsOutcome);
-    checkRequiredManifests(manifestsOutcome);
 
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
-    Collection<ManifestOutcome> manifestOutcomeList = manifestsOutcome.values();
+    boolean isBaseAsg = isBaseAsgDeployment(ambiance, infrastructureOutcome, stepElementParameters);
+
+    Collection<ManifestOutcome> manifestOutcomeList = new ArrayList<>();
+
+    if (!isBaseAsg) {
+      // Get ManifestsOutcome and update expressions
+      ManifestsOutcome manifestsOutcome = resolveAsgManifestsOutcome(ambiance);
+      cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
+
+      // Validate ManifestsOutcome
+      validateManifestsOutcome(ambiance, manifestsOutcome);
+      checkRequiredManifests(manifestsOutcome);
+
+      manifestOutcomeList.addAll(manifestsOutcome.values());
+    }
+
+    // Get UserDataOutcome and update expressions
+    UserDataOutcome userDataOutcome = resolveAsgUserDataOutcome(ambiance);
+    cdExpressionResolver.updateExpressions(ambiance, userDataOutcome);
+
     if (userDataOutcome != null) {
-      manifestOutcomeList = new ArrayList<>(manifestOutcomeList);
       manifestOutcomeList.add(convertUserDataOutcomeToManifestOutcome(userDataOutcome));
     }
 
@@ -776,16 +781,26 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   public boolean isV2Feature(Map<String, List<String>> asgStoreManifestsContent, AsgInstances instances,
-      List<AwsAsgLoadBalancerConfigYaml> loadBalancers) {
-    if (isNotEmpty(asgStoreManifestsContent)
-        && isNotEmpty(asgStoreManifestsContent.get(OutcomeExpressionConstants.USER_DATA))) {
-      return true;
+      List<AwsAsgLoadBalancerConfigYaml> loadBalancers, AsgInfraConfig asgInfraConfig,
+      AsgSpecParameters asgSpecParameters) {
+    return asgStoreManifestsContent != null
+        && isNotEmpty(asgStoreManifestsContent.get(OutcomeExpressionConstants.USER_DATA))
+        || instances != null || isNotEmpty(loadBalancers)
+        || asgInfraConfig != null && isNotEmpty(asgInfraConfig.getBaseAsgName())
+        || asgSpecParameters != null && isNotEmpty(getParameterFieldValue(asgSpecParameters.getAsgName()));
+  }
+
+  boolean isBaseAsgDeployment(
+      Ambiance ambiance, InfrastructureOutcome infrastructureOutcome, StepBaseParameters stepElementParameters) {
+    AsgInfraConfig asgInfraConfig = getAsgInfraConfig(infrastructureOutcome, ambiance);
+    AsgSpecParameters asgSpecParameters = (AsgSpecParameters) stepElementParameters.getSpec();
+    String baseAsg = asgInfraConfig.getBaseAsgName();
+    String asg = getParameterFieldValue(asgSpecParameters.getAsgName());
+
+    if (isNotEmpty(baseAsg) && isEmpty(asg)) {
+      throw new InvalidRequestException("asgName is required if baseAsgName is provided in infrastructure");
     }
 
-    if (instances != null || isNotEmpty(loadBalancers)) {
-      return true;
-    }
-
-    return false;
+    return isNotEmpty(baseAsg);
   }
 }

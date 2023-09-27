@@ -94,6 +94,8 @@ iacmServiceConfig:
   baseUrl: http://localhost:8080
   externalUrl: http://localhost:8080
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+  costEstimationToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+  costEstimationAPIIUrl: "https://pricing.api.infracost.io"
 
 sscaServiceConfig:
   httpClientConfig:
@@ -270,7 +272,6 @@ ciExecutionServiceConfig:
     jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
     httpClientConfig:
       baseUrl: ${GITNESS_INTERNAL_URL:- http://localhost:3000}
-
 scmConnectionConfig:
   url: localhost:8091
 

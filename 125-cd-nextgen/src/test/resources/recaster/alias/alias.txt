@@ -619,7 +619,6 @@ io.harness.cdng.aws.asg.AsgInstances
 io.harness.cdng.aws.asg.AsgFixedInstances
 io.harness.cdng.aws.asg.UserDataOutcome
 io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome
-io.harness.cdng.environment.steps.EnvironmentStepParameters
 io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig
 io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput
 io.harness.cdng.provision.terragrunt.TerragruntExecutionData
@@ -1014,6 +1013,7 @@ io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepParame
 io.harness.cdng.manifestConfigs.ManifestConfigurations
 io.harness.cdng.provision.terraform.TerraformPassThroughData
 io.harness.delegate.cdng.execution.K8sStepInstanceInfo
+io.harness.delegate.cdng.execution.TasStepInstanceInfo
 io.harness.beans.Scope
 io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig
 io.harness.cdng.common.beans.StepDelegateInfo
@@ -1279,6 +1279,17 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcome
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOutcomeDTO
 io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
 io.harness.cdng.pipeline.beans.CustomStageSpecParams
 io.harness.cdng.creator.plan.stage.CustomStageNode
-io.harness.cdng.environment.steps.CustomStageEnvironmentStepParameters
+io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum
+io.harness.cdng.environment.helper.beans.CustomStageEnvironmentStepParameters
+io.harness.cdng.ecs.EcsServiceSetupStepInfo
+io.harness.cdng.ecs.EcsBasicRollbackStepInfo
+io.harness.cdng.ecs.EcsUpgradeContainerStepInfo
+io.harness.cdng.ecs.EcsServiceSetupStepParameters
+io.harness.cdng.ecs.EcsUpgradeContainerStepParameters
+io.harness.cdng.ecs.EcsBasicRollbackStepParameters
+io.harness.cdng.ecs.EcsUpgradeContainerStepNode
+io.harness.cdng.ecs.EcsServiceSetupStepNode
+io.harness.cdng.ecs.EcsBasicRollbackStepNode

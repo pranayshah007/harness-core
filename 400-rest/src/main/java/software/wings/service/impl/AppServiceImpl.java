@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
 import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
@@ -63,7 +62,6 @@ import io.harness.service.EventService;
 import io.harness.validation.PersistenceValidator;
 
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.Base;
@@ -74,6 +72,7 @@ import software.wings.beans.InformationNotification;
 import software.wings.beans.Role;
 import software.wings.beans.Service;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountEventType;
 import software.wings.common.NotificationMessageResolver.NotificationMessageType;
 import software.wings.dl.GenericDbCache;
 import software.wings.dl.WingsPersistence;
@@ -281,7 +280,7 @@ public class AppServiceImpl implements AppService {
   public PageResponse<Application> list(
       PageRequest<Application> req, boolean details, boolean withTags, String tagFilter, boolean hitSecondary) {
     PageResponse<Application> response =
-        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, hitSecondary);
+        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, hitSecondary, false);
 
     List<Application> applicationList = response.getResponse();
     if (isEmpty(applicationList)) {
@@ -505,9 +504,7 @@ public class AppServiceImpl implements AppService {
   @Override
   public List<Application> getAppsByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-      findOptions.readPreference(ReadPreference.secondaryPreferred());
-    }
+    findOptions.readPreference(ReadPreference.secondaryPreferred());
     return wingsPersistence.createQuery(Application.class)
         .filter(ApplicationKeys.accountId, accountId)
         .asList(findOptions);
@@ -516,9 +513,7 @@ public class AppServiceImpl implements AppService {
   @Override
   public List<String> getAppIdsByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-      findOptions.readPreference(ReadPreference.secondaryPreferred());
-    }
+    findOptions.readPreference(ReadPreference.secondaryPreferred());
     return wingsPersistence.createQuery(Application.class)
         .filter(ApplicationKeys.accountId, accountId)
         .asKeyList(findOptions)
@@ -530,9 +525,7 @@ public class AppServiceImpl implements AppService {
   @Override
   public Set<String> getAppIdsAsSetByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-      findOptions.readPreference(ReadPreference.secondaryPreferred());
-    }
+    findOptions.readPreference(ReadPreference.secondaryPreferred());
     return wingsPersistence.createQuery(Application.class)
         .filter(ApplicationKeys.accountId, accountId)
         .asKeyList(findOptions)
@@ -544,9 +537,7 @@ public class AppServiceImpl implements AppService {
   @Override
   public List<String> getAppNamesByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-      findOptions.readPreference(ReadPreference.secondaryPreferred());
-    }
+    findOptions.readPreference(ReadPreference.secondaryPreferred());
     return wingsPersistence.createQuery(Application.class)
         .project(ApplicationKeys.name, true)
         .filter(ApplicationKeys.accountId, accountId)
@@ -559,9 +550,7 @@ public class AppServiceImpl implements AppService {
   @Override
   public void deleteByAccountId(String accountId) {
     FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-      findOptions.readPreference(ReadPreference.secondaryPreferred());
-    }
+    findOptions.readPreference(ReadPreference.secondaryPreferred());
     wingsPersistence.createQuery(Application.class)
         .filter(Application.ACCOUNT_ID_KEY2, accountId)
         .asKeyList(findOptions)

@@ -32,7 +32,9 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
@@ -155,6 +157,7 @@ public class InfrastructureResource {
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private final SshEntityHelper sshEntityHelper;
   private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
 
@@ -393,7 +396,9 @@ public class InfrastructureResource {
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
-      @QueryParam("sort") List<String> sort) {
+      @QueryParam("sort") List<String> sort,
+      @Parameter(description = "list of service refs required to fetch infrastructures scoped to these service refs")
+      @QueryParam("serviceRefs") List<String> serviceRefs) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envIdentifier);
     checkForAccessOrThrow(
@@ -408,6 +413,9 @@ public class InfrastructureResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
     Page<InfrastructureEntity> infraEntities = infrastructureEntityService.list(criteria, pageRequest);
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SCOPE_INFRA_TO_SERVICES)) {
+      infraEntities = infrastructureEntityService.getScopedInfrastructures(infraEntities, serviceRefs);
+    }
     if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == deploymentType && !isEmpty(deploymentTemplateIdentifier)
         && !isEmpty(versionLabel)) {
       infraEntities = customDeploymentYamlHelper.getFilteredInfraEntities(

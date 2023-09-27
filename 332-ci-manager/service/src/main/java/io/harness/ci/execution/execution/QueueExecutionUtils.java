@@ -41,8 +41,8 @@ public class QueueExecutionUtils {
     return ciExecutionRepository.countByAccountIdAndStatusIn(accountID, status);
   }
 
-  public long getActiveMacExecutionsCount(String accountID) {
-    return ciExecutionRepository.countByAccountIdAndBuildType(accountID, OSType.MacOS);
+  public long getActiveMacExecutionsCount(String accountID, List<String> status) {
+    return ciExecutionRepository.countByAccountIdAndBuildTypeAndStatusIn(accountID, OSType.MacOS, status);
   }
 
   public CIExecutionMetadata deleteActiveExecutionRecord(String stageExecutionID) {

@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.importer;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.service.NgMigrationService.getYamlStringV2;
 import static io.harness.ngmigration.utils.NGMigrationConstants.INFRASTRUCTURE_DEFINITIONS;
 import static io.harness.ngmigration.utils.NGMigrationConstants.INFRA_DEFINITION_ID;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
@@ -62,6 +63,7 @@ import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.WorkflowPhase;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -167,14 +169,25 @@ public class WorkflowImportService implements ImportService {
 
   private void createPipeline(MigrationInputDTO inputDTO, PipelineConfig pipelineConfig) {
     PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
-    String yaml = YamlUtils.writeYamlString(pipelineConfig);
+
     try {
+      String yaml = YamlUtils.writeYamlString(pipelineConfig);
       Response<ResponseDTO<PipelineSaveResponse>> resp =
           pmsClient
               .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                   inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
                   RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
               .execute();
+
+      if (!(resp.code() >= 200 && resp.code() < 300)) {
+        yaml = getYamlStringV2(pipelineConfig);
+        resp = pmsClient
+                   .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                       inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                       RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
+                   .execute();
+      }
+
       log.info("Workflow as pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
         log.info("Workflows as pipeline template is \n - {}", yaml);
@@ -459,17 +472,22 @@ public class WorkflowImportService implements ImportService {
   }
 
   private List<NgEntityDetail> getMigratedEntity(SaveSummaryDTO summaryDTO, String entityId) {
-    List<NgEntityDetail> entityNG =
-        summaryDTO.getAlreadyMigratedDetails()
-            .stream()
-            .filter(migratedEntity -> migratedEntity.getCgEntityDetail().getId().equals(entityId))
-            .map(MigratedDetails::getNgEntityDetail)
-            .collect(Collectors.toList());
+    List<NgEntityDetail> entityNG = summaryDTO.getAlreadyMigratedDetails()
+                                        .stream()
+                                        .filter(migratedEntity -> {
+                                          CgBasicInfo cgEntityDetail = migratedEntity.getCgEntityDetail();
+                                          return cgEntityDetail != null && entityId.equals(cgEntityDetail.getId());
+                                        })
+                                        .map(MigratedDetails::getNgEntityDetail)
+                                        .collect(Collectors.toList());
 
     List<NgEntityDetail> successfullyMigratedList =
         summaryDTO.getSuccessfullyMigratedDetails()
             .stream()
-            .filter(migratedEntity -> migratedEntity.getCgEntityDetail().getId().equals(entityId))
+            .filter(migratedEntity -> {
+              CgBasicInfo cgEntityDetail = migratedEntity.getCgEntityDetail();
+              return cgEntityDetail != null && entityId.equals(cgEntityDetail.getId());
+            })
             .map(MigratedDetails::getNgEntityDetail)
             .collect(Collectors.toList());
     entityNG.addAll(successfullyMigratedList);

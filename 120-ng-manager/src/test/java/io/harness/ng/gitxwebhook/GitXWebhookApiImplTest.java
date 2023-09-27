@@ -179,7 +179,7 @@ public class GitXWebhookApiImplTest extends CategoryTest {
     GitXEventsListResponseDTO gitXEventsListResponseDTO =
         GitXEventsListResponseDTO.builder().gitXEventDTOS(gitXEventDTOList).build();
     when(gitXWebhookEventService.listEvents(any())).thenReturn(gitXEventsListResponseDTO);
-    Response response = gitXWebhooksApi.listGitxWebhookEvents(ACCOUNT_IDENTIFIER, 0, 10, "", null, null);
+    Response response = gitXWebhooksApi.listGitxWebhookEvents(ACCOUNT_IDENTIFIER, 0, 10, "", null, null, null, null);
     List<GitXWebhookEventResponse> eventResponseList = (List<GitXWebhookEventResponse>) response.getEntity();
     assertEquals(2, eventResponseList.size());
     assertEquals(WEBHOOK_IDENTIFIER, eventResponseList.get(0).getWebhookIdentifier());

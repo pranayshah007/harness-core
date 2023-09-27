@@ -29,6 +29,8 @@ import static io.harness.eventsframework.EventsFrameworkConstants.SRM_SLO_CRUD_L
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeGraphResponse;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -184,6 +186,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject
   private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
       notificationRuleConditionTypeTemplateDataGeneratorMap;
+  private Query<AbstractServiceLevelObjective> sloQuery;
 
   @Override
   public TimeGraphResponse getOnboardingGraph(CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
@@ -682,6 +685,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .monitoredServiceIdentifier(sloDashboardApiFilter.getMonitoredServiceIdentifier())
             .targetTypes(sloDashboardApiFilter.getTargetTypes())
             .sliTypes(sloDashboardApiFilter.getSliTypes())
+            .sloType(sloDashboardApiFilter.getType())
+            .envIdentifiers(sloDashboardApiFilter.getEnvIdentifiers())
             .sliEvaluationType(sloDashboardApiFilter.getEvaluationType())
             .searchFilter(sloDashboardApiFilter.getSearchFilter())
             .childResource(sloDashboardApiFilter.isChildResource())
@@ -811,6 +816,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     : null)
             .sliEvaluationType(filter.getEvaluationType())
             .childResource(filter.isChildResource())
+            .envIdentifiers(filter.getEnvIdentifiers())
             .build());
   }
 
@@ -1402,6 +1408,10 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       sloQuery.filter(SimpleServiceLevelObjectiveKeys.monitoredServiceIdentifier, filter.monitoredServiceIdentifier);
     }
     List<AbstractServiceLevelObjective> serviceLevelObjectiveList = sloQuery.asList();
+    if (isNotEmpty(filter.getEnvIdentifiers())) {
+      serviceLevelObjectiveList =
+          getSLOList(projectParams.getAccountIdentifier(), serviceLevelObjectiveList, filter.getEnvIdentifiers());
+    }
     if (filter.getNotificationRuleRef() != null) {
       serviceLevelObjectiveList =
           serviceLevelObjectiveList.stream()
@@ -1445,6 +1455,45 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             -> slo.getType().equals(ServiceLevelObjectiveType.COMPOSITE)
                 || accessibleProjects.contains(
                     getScopedInformation(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier())))
+        .collect(Collectors.toList());
+  }
+
+  private List<AbstractServiceLevelObjective> getSLOList(
+      String accountId, List<AbstractServiceLevelObjective> serviceLevelObjectiveList, List<String> envIdentifiers) {
+    serviceLevelObjectiveList = serviceLevelObjectiveList.stream()
+                                    .filter(slo -> slo.getType().equals(ServiceLevelObjectiveType.SIMPLE))
+                                    .collect(Collectors.toList());
+
+    Set<String> monitoredServiceIdentifiers =
+        serviceLevelObjectiveList.stream()
+            .map(slo -> ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier())
+            .collect(Collectors.toSet());
+
+    Set<String> scopedMonitoredServicesIdentifiers =
+        serviceLevelObjectiveList.stream()
+            .map(slo
+                -> getScopedInformation(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
+                    ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier()))
+            .collect(Collectors.toSet());
+
+    Map<String, String> scopedMonitoredServiceIdentifierToEnvRef =
+        monitoredServiceService.get(accountId, monitoredServiceIdentifiers)
+            .stream()
+            .map(MonitoredServiceResponse::getMonitoredServiceDTO)
+            .filter(monitoredServiceDTO
+                -> scopedMonitoredServicesIdentifiers.contains(
+                    getScopedInformation(accountId, monitoredServiceDTO.getOrgIdentifier(),
+                        monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getIdentifier())))
+            .collect(Collectors.toMap(monitoredServiceDTO
+                -> getScopedInformation(accountId, monitoredServiceDTO.getOrgIdentifier(),
+                    monitoredServiceDTO.getProjectIdentifier(), monitoredServiceDTO.getIdentifier()),
+                MonitoredServiceDTO::getEnvironmentRef));
+
+    return serviceLevelObjectiveList.stream()
+        .filter(slo
+            -> envIdentifiers.contains(scopedMonitoredServiceIdentifierToEnvRef.get(
+                getScopedInformation(slo.getAccountId(), slo.getOrgIdentifier(), slo.getProjectIdentifier(),
+                    ((SimpleServiceLevelObjective) slo).getMonitoredServiceIdentifier()))))
         .collect(Collectors.toList());
   }
 
@@ -1530,5 +1579,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     ServiceLevelObjectiveType sloType;
     SLIEvaluationType sliEvaluationType;
     boolean childResource;
+    List<String> envIdentifiers;
   }
 }

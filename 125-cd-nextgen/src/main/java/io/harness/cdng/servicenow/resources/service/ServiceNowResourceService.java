@@ -11,6 +11,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum;
 import io.harness.servicenow.ServiceNowFieldNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
@@ -28,7 +29,7 @@ public interface ServiceNowResourceService {
       IdentifierRef serviceNowConnectorRef, String orgId, String projectId, String ticketType);
 
   List<ServiceNowTemplate> getTemplateList(IdentifierRef connectorRef, String orgId, String projectId, int limit,
-      int offset, String templateName, String ticketType, String searchTerm);
+      int offset, String templateName, String ticketType, String searchTerm, ServiceNowTemplateTypeEnum templateType);
   List<ServiceNowStagingTable> getStagingTableList(IdentifierRef connectorRef, String orgId, String projectId);
   List<ServiceNowTicketTypeDTO> getTicketTypesV2(IdentifierRef connectorRef, String orgId, String projectId);
 

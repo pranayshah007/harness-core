@@ -26,7 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class GitlabCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_FILE_WITH_INVALID_CREDS =
-      "The requested file<FILEPATH> couldn't be created in Gitlab. " + ScmErrorExplanations.INVALID_CONNECTOR_CREDS;
+      "The requested file<FILEPATH> couldn't be created in Gitlab. " + ScmErrorExplanations.INVALID_CONNECTOR_CREDS
+      + "\n- " + ScmErrorExplanations.OAUTH_ACCESS_DENIED;
   public static final String CREATE_FILE_NOT_FOUND_ERROR_HINT = "Please check the following:\n"
       + "1. If requested Gitlab repository<REPO> exists or not.\n"
       + "2. If requested branch<BRANCH> exists or not.\n"

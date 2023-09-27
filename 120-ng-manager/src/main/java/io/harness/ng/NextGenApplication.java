@@ -72,6 +72,7 @@ import io.harness.connector.entities.Connector;
 import io.harness.connector.gitsync.ConnectorGitSyncHelper;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.credit.schedular.CICreditExpiryIteratorHandler;
+import io.harness.credit.schedular.ProvisionMonthlyCICreditsHandler;
 import io.harness.credit.schedular.SendProvisionedCICreditsToSegmentHandler;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
@@ -101,6 +102,7 @@ import io.harness.gitsync.core.runnable.GitChangeSetRunnable;
 import io.harness.gitsync.core.webhook.GitSyncEventConsumerService;
 import io.harness.gitsync.core.webhook.createbranchevent.WebhookBranchHookEventQueueProcessor;
 import io.harness.gitsync.core.webhook.pushevent.WebhookPushEventQueueProcessor;
+import io.harness.gitsync.gitxwebhooks.runnable.GitXWebhookProcessorRunnable;
 import io.harness.gitsync.migration.GitSyncMigrationProvider;
 import io.harness.gitsync.server.GitSyncGrpcModule;
 import io.harness.gitsync.server.GitSyncServiceConfiguration;
@@ -666,6 +668,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .registerIterator(ngIteratorsConfig.getCdLicenseDailyReportIteratorConfig());
     injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
     injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
+    injector.getInstance(ProvisionMonthlyCICreditsHandler.class).registerIterators(2);
   }
 
   public void registerJobs(Injector injector) {
@@ -763,6 +766,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     aliases.put("artifact", "artifacts.primary");
     aliases.put("infra", "stage.spec.infrastructure.output");
     aliases.put("INFRA_KEY", "stage.spec.infrastructure.output.infrastructureKey");
+    aliases.put("INFRA_KEY_SHORT_ID", "stage.spec.infrastructure.output.infrastructureKeyShort");
     aliases.put("OnRollbackModeExecution",
         "(<+ambiance.metadata.executionMode> == \"POST_EXECUTION_ROLLBACK\") || (<+ambiance.metadata.executionMode> == \"PIPELINE_ROLLBACK\")");
     return aliases;
@@ -971,6 +975,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitChangeSet")))
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(4), 4L, TimeUnit.SECONDS);
+
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitXWebhookEvents")))
+        .scheduleWithFixedDelay(
+            injector.getInstance(GitXWebhookProcessorRunnable.class), random.nextInt(4), 4L, TimeUnit.SECONDS);
 
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);

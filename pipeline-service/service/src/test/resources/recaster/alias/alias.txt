@@ -336,6 +336,7 @@ io.harness.beans.Scope
 io.harness.spotinst.model.ElastiGroup
 io.harness.ng.core.dto.secrets.SSHConfigDTO
 io.harness.delegate.cdng.execution.K8sStepInstanceInfo
+io.harness.delegate.cdng.execution.TasStepInstanceInfo
 io.harness.delegate.cdng.execution.StepExecutionInstanceInfo
 io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO
 io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO
@@ -452,3 +453,4 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureClientSecretKeyO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO
 io.harness.slsa.beans.SlsaConfig
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata

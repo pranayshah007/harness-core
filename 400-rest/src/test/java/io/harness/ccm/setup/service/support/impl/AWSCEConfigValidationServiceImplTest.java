@@ -26,6 +26,7 @@ import io.harness.ccm.setup.service.support.impl.pojo.BucketPolicyJson;
 import io.harness.ccm.setup.service.support.impl.pojo.BucketPolicyStatement;
 import io.harness.ccm.setup.service.support.intfc.AwsEKSHelperService;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.remote.CEProxyConfig;
 import io.harness.rule.Owner;
 
 import software.wings.beans.AwsCrossAccountAttributes;
@@ -111,11 +112,15 @@ public class AWSCEConfigValidationServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void updateBucketPermissionsTest() {
+    CEProxyConfig mockCeProxyConfig = mock(CEProxyConfig.class);
+    doReturn(mockCeProxyConfig).when(awsCredentialHelper).getCeProxyConfig();
     AWSCredentialsProvider mockCredential = mock(AWSCredentialsProvider.class);
     AmazonS3Client mockS3Client = mock(AmazonS3Client.class);
     BucketPolicy mockBucketPolicy = mock(BucketPolicy.class);
+
     doReturn(mockCredential).when(awsCredentialHelper).constructBasicAwsCredentials();
     doReturn(mockS3Client).when(awsceConfigValidationService).getAmazonS3Client(mockCredential);
+
     Map<String, List<String>> principle = new HashMap<>();
 
     principle.put(aws, Collections.singletonList(roleArnPredefined));
@@ -178,6 +183,8 @@ public class AWSCEConfigValidationServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void validateCURReportAccessAndReturnS3Region() {
+    CEProxyConfig mockCeProxyConfig = mock(CEProxyConfig.class);
+    doReturn(mockCeProxyConfig).when(awsCredentialHelper).getCeProxyConfig();
     AWSCredentialsProvider mockCredential = mock(AWSCredentialsProvider.class);
     doReturn(mockCredential)
         .when(awsceConfigValidationService)
@@ -192,6 +199,8 @@ public class AWSCEConfigValidationServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void reportNotFoundTestCase() {
+    CEProxyConfig mockCeProxyConfig = mock(CEProxyConfig.class);
+    doReturn(mockCeProxyConfig).when(awsCredentialHelper).getCeProxyConfig();
     AWSCredentialsProvider mockCredential = mock(AWSCredentialsProvider.class);
     doReturn(mockCredential)
         .when(awsceConfigValidationService)
@@ -207,6 +216,8 @@ public class AWSCEConfigValidationServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void invalidS3BucketTestCase() {
+    CEProxyConfig mockCeProxyConfig = mock(CEProxyConfig.class);
+    doReturn(mockCeProxyConfig).when(awsCredentialHelper).getCeProxyConfig();
     AWSCredentialsProvider mockCredential = mock(AWSCredentialsProvider.class);
     doReturn(mockCredential)
         .when(awsceConfigValidationService)
@@ -224,6 +235,8 @@ public class AWSCEConfigValidationServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void invalidCompressionTestCase() {
+    CEProxyConfig mockCeProxyConfig = mock(CEProxyConfig.class);
+    doReturn(mockCeProxyConfig).when(awsCredentialHelper).getCeProxyConfig();
     AWSCredentialsProvider mockCredential = mock(AWSCredentialsProvider.class);
     doReturn(mockCredential)
         .when(awsceConfigValidationService)
@@ -241,6 +254,8 @@ public class AWSCEConfigValidationServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void invalidTimeGranularityTestCase() {
+    CEProxyConfig mockCeProxyConfig = mock(CEProxyConfig.class);
+    doReturn(mockCeProxyConfig).when(awsCredentialHelper).getCeProxyConfig();
     AWSCredentialsProvider mockCredential = mock(AWSCredentialsProvider.class);
     doReturn(mockCredential)
         .when(awsceConfigValidationService)
@@ -258,6 +273,8 @@ public class AWSCEConfigValidationServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void invalidReportVersioningTestCase() {
+    CEProxyConfig mockCeProxyConfig = mock(CEProxyConfig.class);
+    doReturn(mockCeProxyConfig).when(awsCredentialHelper).getCeProxyConfig();
     AWSCredentialsProvider mockCredential = mock(AWSCredentialsProvider.class);
     doReturn(mockCredential)
         .when(awsceConfigValidationService)
@@ -275,6 +292,8 @@ public class AWSCEConfigValidationServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void invalidRefreshSettingTestCase() {
+    CEProxyConfig mockCeProxyConfig = mock(CEProxyConfig.class);
+    doReturn(mockCeProxyConfig).when(awsCredentialHelper).getCeProxyConfig();
     AWSCredentialsProvider mockCredential = mock(AWSCredentialsProvider.class);
     doReturn(mockCredential)
         .when(awsceConfigValidationService)
@@ -292,6 +311,8 @@ public class AWSCEConfigValidationServiceImplTest extends CategoryTest {
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void resourceIdNotPresentTestCase() {
+    CEProxyConfig mockCeProxyConfig = mock(CEProxyConfig.class);
+    doReturn(mockCeProxyConfig).when(awsCredentialHelper).getCeProxyConfig();
     AWSCredentialsProvider mockCredential = mock(AWSCredentialsProvider.class);
     doReturn(mockCredential)
         .when(awsceConfigValidationService)

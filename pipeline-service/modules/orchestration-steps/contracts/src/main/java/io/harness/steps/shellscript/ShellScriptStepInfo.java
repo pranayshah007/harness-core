@@ -8,8 +8,11 @@
 package io.harness.steps.shellscript;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.filters.WithSecretRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -36,6 +39,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -53,8 +58,8 @@ public class ShellScriptStepInfo
   public ShellScriptStepInfo(ShellType shell, ShellScriptSourceWrapper source, ExecutionTarget executionTarget,
       ParameterField<Boolean> onDelegate, List<NGVariable> outputVariables, List<NGVariable> environmentVariables,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid,
-      ParameterField<Boolean> includeInfraSelectors) {
-    super(uuid, shell, source, executionTarget, onDelegate, delegateSelectors, includeInfraSelectors);
+      ParameterField<Boolean> includeInfraSelectors, OutputAlias outputAlias) {
+    super(uuid, shell, source, executionTarget, onDelegate, delegateSelectors, includeInfraSelectors, outputAlias);
     this.outputVariables = outputVariables;
     this.environmentVariables = environmentVariables;
   }
@@ -83,6 +88,7 @@ public class ShellScriptStepInfo
         .source(getSource())
         .delegateSelectors(getDelegateSelectors())
         .includeInfraSelectors(getIncludeInfraSelectors())
+        .outputAlias(getOutputAlias())
         .build();
   }
 

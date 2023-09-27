@@ -208,3 +208,8 @@ func (gw *GrpcRemoteClient) Tail(ctx context.Context, key string) (<-chan string
 func (gw *GrpcRemoteClient) Info(ctx context.Context) (*stream.Info, error) {
 	return nil, errors.New("not implemented")
 }
+
+// Healthz is not implemented.
+func (gw *GrpcRemoteClient) Healthz(ctx context.Context) error {
+	return errors.New("not implemented")
+}

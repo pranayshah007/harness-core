@@ -20,6 +20,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.SettingValueType;
@@ -100,7 +101,7 @@ public class ChannelServiceImplTest extends CategoryTest {
     verify(slackService, times(1)).send(any());
   }
 
-  @Test
+  @Test(expected = InvalidRequestException.class)
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void sendTestNotification_channelDisabled_willNotSend() throws IOException {
@@ -111,8 +112,7 @@ public class ChannelServiceImplTest extends CategoryTest {
         SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
 
-    assertThat(channelService.sendTestNotification(notificationSettingDTO)).isEqualTo(false);
-    verify(slackService, times(0)).sendTestNotification(any());
+    channelService.sendTestNotification(notificationSettingDTO);
   }
 
   @Test

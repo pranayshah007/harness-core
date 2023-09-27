@@ -1082,7 +1082,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .sources(Sources.builder().healthSources(new HashSet<>()).build())
             .build();
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(
         () -> monitoredServiceService.update(builderFactory.getContext().getAccountId(), updatingMonitoredService))
@@ -1136,7 +1136,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), existingMonitoredService);
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(()
                            -> monitoredServiceService.delete(

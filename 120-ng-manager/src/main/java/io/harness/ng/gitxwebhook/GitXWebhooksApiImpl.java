@@ -123,7 +123,7 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
 
   @Override
   public Response listGitxWebhookEvents(String harnessAccount, Integer page, @Max(1000L) Integer limit,
-      String webhookIdentifier, Long eventStartTime, Long eventEndTime) {
+      String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath) {
     GitXEventsListRequestDTO gitXEventsListRequestDTO = GitXWebhookMapper.buildEventsListGitXWebhookRequestDTO(
         harnessAccount, webhookIdentifier, eventStartTime, eventEndTime);
     GitXEventsListResponseDTO gitXEventsListResponseDTO = gitXWebhookEventService.listEvents(gitXEventsListRequestDTO);

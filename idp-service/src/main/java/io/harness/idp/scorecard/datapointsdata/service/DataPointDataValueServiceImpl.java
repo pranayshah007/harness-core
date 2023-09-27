@@ -42,11 +42,11 @@ public class DataPointDataValueServiceImpl implements DataPointDataValueService 
         dataSourceDataPointInfo.getDataSourceLocation()
             .getDataPoints()
             .stream()
-            .map(dataPointInputValues -> dataPointInputValues.getDataPointIdentifier())
+            .map(DataPointInputValues::getDataPointIdentifier)
             .collect(Collectors.toList()),
         datasourceIdentifier);
 
-    List<String> dslIdentifiers = dataToFetch.keySet().stream().collect(Collectors.toList());
+    List<String> dslIdentifiers = new ArrayList<>(dataToFetch.keySet());
     log.info("Mapped DSL identifier for datapoints - {}", dslIdentifiers.get(0));
 
     DslDataProvider dslDataProvider = dataSourceDataProvider.getDslDataProvider(dslIdentifiers.get(0));

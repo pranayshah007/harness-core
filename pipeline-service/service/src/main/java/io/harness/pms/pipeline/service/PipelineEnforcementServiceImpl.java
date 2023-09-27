@@ -25,7 +25,7 @@ import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -144,7 +144,7 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
         if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
           modules.add(stageTypeToModule.get(stageField.getNode().getType()));
         } else {
-          if (PlanCreatorUtils.supportsField(supportedTypes, stageField, PipelineVersion.V0)) {
+          if (PlanCreatorUtils.supportsField(supportedTypes, stageField, HarnessYamlVersion.V0)) {
             modules.add(planCreatorServiceInfoEntry.getKey());
             stageTypeToModule.put(stageField.getNode().getType(), planCreatorServiceInfoEntry.getKey());
           }

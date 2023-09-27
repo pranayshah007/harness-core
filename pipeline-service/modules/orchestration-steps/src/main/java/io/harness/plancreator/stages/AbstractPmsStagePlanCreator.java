@@ -78,7 +78,7 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     PlanNodeBuilder builder =
         PlanNode.builder()
-            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
+            .uuid(getFinalPlanNodeId(ctx, stageNode))
             .name(stageNode.getName())
             .identifier(stageNode.getIdentifier())
             .group(StepOutcomeGroup.STAGE.name())
@@ -95,5 +95,9 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
     return builder.build();
+  }
+
+  protected String getFinalPlanNodeId(PlanCreationContext ctx, T stageNode) {
+    return StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid());
   }
 }

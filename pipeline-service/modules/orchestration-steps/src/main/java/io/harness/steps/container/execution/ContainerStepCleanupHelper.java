@@ -10,7 +10,6 @@ package io.harness.steps.container.execution;
 import static io.harness.steps.StepUtils.buildAbstractions;
 import static io.harness.steps.container.constants.ContainerStepExecutionConstants.CLEANUP_DETAILS;
 
-import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -27,9 +26,9 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
@@ -60,7 +59,6 @@ public class ContainerStepCleanupHelper {
   @Inject DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject ConnectorUtils connectorUtils;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject OutcomeService outcomeService;
   @Inject LogStreamingStepClientFactory logStreamingClient;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
@@ -69,21 +67,21 @@ public class ContainerStepCleanupHelper {
   public void sendCleanupRequest(Ambiance ambiance) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     try {
-      RetryPolicy<Object> retryPolicy = getRetryPolicy(format("[Retrying failed call to clean pod attempt: {}"),
-          format("Failed to clean pod after retrying {} times"));
+      RetryPolicy<Object> retryPolicy = getRetryPolicy();
 
       Failsafe.with(retryPolicy).run(() -> {
         Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
         closeLogStream(ambiance);
-        ContainerCleanupDetails podCleanupDetails;
-        OptionalSweepingOutput optionalCleanupSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(
-                io.harness.steps.container.constants.ContainerStepExecutionConstants.CLEANUP_DETAILS));
+        ContainerCleanupDetails podCleanupDetails = null;
+        OptionalSweepingOutput optionalCleanupSweepingOutput = executionSweepingOutputService.resolveOptional(
+            ambiance, RefObjectUtils.getSweepingOutputRefObject(CLEANUP_DETAILS));
         if (!optionalCleanupSweepingOutput.isFound()) {
           return;
         } else {
-          podCleanupDetails = (ContainerCleanupDetails) executionSweepingOutputService.resolve(
-              ambiance, RefObjectUtils.getSweepingOutputRefObject(CLEANUP_DETAILS));
+          ExecutionSweepingOutput podCleanupDetailsOutput = optionalCleanupSweepingOutput.getOutput();
+          if (podCleanupDetailsOutput instanceof ContainerCleanupDetails) {
+            podCleanupDetails = (ContainerCleanupDetails) podCleanupDetailsOutput;
+          }
         }
 
         if (podCleanupDetails == null) {
@@ -106,13 +104,16 @@ public class ContainerStepCleanupHelper {
     }
   }
 
-  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+  private RetryPolicy<Object> getRetryPolicy() {
     return new RetryPolicy<>()
         .handle(Exception.class)
         .withBackoff(5, 60, ChronoUnit.SECONDS)
         .withMaxAttempts(MAX_ATTEMPTS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+        .onFailedAttempt(event
+            -> log.info(
+                "[Retrying failed call to clean pod attempt: {}", event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event
+            -> log.error("Failed to clean pod after retrying {} times", event.getAttemptCount(), event.getFailure()));
   }
 
   public CIK8CleanupTaskParams buildK8CleanupParameters(Ambiance ambiance, ContainerCleanupDetails podDetails) {

@@ -27,7 +27,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -119,9 +119,9 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   private String getYamlVersionFromStepField(YamlField currField) {
     if (currField.getNode().getField(YAMLFieldNameConstants.STEP) != null
         || YAMLFieldNameConstants.STEP.equals(currField.getNode().getFieldName())) {
-      return PipelineVersion.V0;
+      return HarnessYamlVersion.V0;
     }
-    return PipelineVersion.V1;
+    return HarnessYamlVersion.V1;
   }
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
@@ -152,7 +152,7 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V1);
+    return Set.of(HarnessYamlVersion.V1);
   }
 
   private List<YamlField> getStepYamlFields(YamlField yamlField) {

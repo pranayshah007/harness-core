@@ -111,15 +111,23 @@ public class GcrArtifactResource {
     }
     // todo(hinger): resolve other expressions here?
 
-    gcrConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, gcrConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    gcrConnectorIdentifier = artifactResourceUtils
+                                 .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                     projectIdentifier, pipelineIdentifier, runtimeInputYaml, gcrConnectorIdentifier,
+                                     fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                 .getValue();
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    imagePath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
-    registryHostname = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, registryHostname, fqnPath, gitEntityBasicInfo, serviceRef);
+    imagePath = artifactResourceUtils
+                    .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                    .getValue();
+    registryHostname =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, registryHostname, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
     GcrResponseDTO buildDetails =
         gcrResourceService.getBuildDetails(connectorRef, imagePath, registryHostname, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

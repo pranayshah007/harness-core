@@ -25,6 +25,7 @@ public enum ServiceNowActionNG {
   UPDATE_TICKET("Update ticket"),
   GET_METADATA("Get Metadata"),
   GET_TEMPLATE("Get Template"),
+  GET_STANDARD_TEMPLATE("Get Standard Template"),
   IMPORT_SET("Import Set"),
   GET_IMPORT_SET_STAGING_TABLES("Get Import Set Staging Tables"),
   GET_TICKET_TYPES("Get Ticket Types"),

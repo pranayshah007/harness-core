@@ -341,6 +341,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .build();
     NodeExecutionMap nodeExecutionMap = (NodeExecutionMap) functor.bind();
     assertThat(engine.getProperty(nodeExecutionMap, "param")).isEqualTo("ao");
@@ -360,6 +361,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
     assertThat(engine.getProperty(functor, "stage.param")).isEqualTo("di1");
@@ -384,6 +386,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .pmsOutcomeService(pmsOutcomeService)
             .pmsSweepingOutputService(pmsSweepingOutputService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
     assertThat(engine.getProperty(functor, "stage.matrix.os")).isEqualTo("test");
@@ -400,6 +403,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
 
@@ -426,6 +430,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
 
@@ -475,6 +480,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                                                     nodeExecutionService, planService, nodeExecution1.getAmbiance()))
                                                 .pmsOutcomeService(pmsOutcomeService)
                                                 .ambiance(nodeExecution1.getAmbiance())
+                                                .engine(engine)
                                                 .build();
     NodeExecutionMap nodeExecutionMap = (NodeExecutionMap) functor.bind();
     assertThat(engine.getProperty(nodeExecutionMap, "a.b.param")).isEqualTo("bo");

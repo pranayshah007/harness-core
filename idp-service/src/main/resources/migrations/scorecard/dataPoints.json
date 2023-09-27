@@ -69,8 +69,7 @@
     "name": "STO stage added in pipeline",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_sto_scan_dsl",
-    "isConditional": true
+    "dataSourceLocationIdentifier": "harness_sto_scan_dsl"
   },
   {
     "id": "64ef79bbf616c89330020df6",
@@ -129,10 +128,54 @@
   {
     "id": "6500c08d8ea5a4798502f513",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "avgAcknowledgementTimeForLastTenIncidentsInMinutes",
-    "name": "Average acknowledgement time of the last 10 incidents (in minutes)",
+    "identifier": "avgResolvedTimeForLastTenResolvedIncidentsInMinutes",
+    "name": "Average resolved time of the last 10 resolved incidents (in Minutes)",
     "type": "NUMBER",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_incidents"
+    "dataSourceLocationIdentifier": "pagerduty_resolved_incidents"
+  },
+  {
+    "id": "64fec3d52d2a3d15f97b75a6",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "replicas",
+    "name": "Replicas Count",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "kubernetes",
+    "dataSourceLocationIdentifier": "kubernetes",
+    "outcomeExpression":  "kubernetes.workload.spec.replicas",
+    "isConditional": false
+  },
+  {
+    "id": "65082c922e570ea8a97f4fec",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "daysSinceLastDeployed",
+    "name": "Days passed since the application was last deployed",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "kubernetes",
+    "dataSourceLocationIdentifier": "kubernetes",
+    "outcomeExpression":  "kubernetes.workload.status.conditions",
+    "isConditional": false
+  },
+  {
+    "id": "650afb9076990ecb89d7d502",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "meanTimeToMerge",
+    "name": "Mean time to merge Pull Request (in hours)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "bitbucket",
+    "dataSourceLocationIdentifier": "bitbucket_mean_time_to_merge_pr",
+    "isConditional": true,
+    "conditionalInputValueDescription": "Branch name"
+  },
+  {
+    "id": "650afc30838d877cd2c8f881",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isBranchProtected",
+    "name": "Branch protection is set (boolean)",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "bitbucket",
+    "dataSourceLocationIdentifier": "bitbucket_is_branch_protection_set",
+    "isConditional": true,
+    "conditionalInputValueDescription" : "Branch name"
   }
 ]

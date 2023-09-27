@@ -39,6 +39,7 @@ import io.harness.security.EncryptionInterface;
 import io.harness.security.SimpleEncryption;
 import io.harness.validation.Create;
 
+import software.wings.beans.account.AccountPreferences;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
@@ -90,6 +91,12 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
                 .name("account_status_deletion_iteration")
                 .field(AccountKeys.accountStatusKey)
                 .field(AccountKeys.accountDeletionIteration)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("accountStatus_accountType_workflowDataCollectionIteration")
+                .field(AccountKeys.accountStatusKey)
+                .field(AccountKeys.accountType)
+                .field(AccountKeys.workflowDataCollectionIteration)
                 .build())
         .build();
   }
@@ -926,5 +933,6 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     public static final String DELEGATE_CONFIGURATION_DELEGATE_VERSIONS =
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;
     public static final String accountStatusKey = "licenseInfo.accountStatus";
+    public static final String accountType = "licenseInfo.accountType";
   }
 }

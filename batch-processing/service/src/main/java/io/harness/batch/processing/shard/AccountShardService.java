@@ -88,7 +88,8 @@ public class AccountShardService {
 
   private List<AccountLicenseDTO> getCeAccounts() {
     List<ModuleLicenseDTO> ngAccounts = getNgAccounts();
-    List<Account> cgAccounts = getCgAccounts();
+    List<Account> cgAccounts =
+        mainConfig.getBatchQueryConfig().isDisableBatchJobsInCG() ? Collections.emptyList() : getCgAccounts();
     Set<String> ngAccountIds =
         ngAccounts.stream().map(ModuleLicenseDTO::getAccountIdentifier).collect(Collectors.toSet());
     List<AccountLicenseDTO> accounts = ngAccounts.stream()
@@ -108,7 +109,7 @@ public class AccountShardService {
                                 .licenseType(LicenseType.PAID)
                                 .edition(Edition.ENTERPRISE)
                                 .build()));
-    log.info("Account size Ng {} : Ng+CG {}", ngAccountSize, ngAccounts.size());
+    log.info("Account size Ng {} : Ng+CG {}", ngAccountSize, accounts.size());
     return accounts;
   }
 

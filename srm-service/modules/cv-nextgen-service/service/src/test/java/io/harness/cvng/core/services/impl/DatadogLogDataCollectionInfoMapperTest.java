@@ -69,7 +69,7 @@ public class DatadogLogDataCollectionInfoMapperTest extends CvNextGenTestBase {
     NextGenLogCVConfig datadogLogCVConfig =
         NextGenLogCVConfig.builder()
             .queryIdentifier("onboarding_query_name")
-            .queryParams(QueryParams.builder().serviceInstanceField("host").index("main").build())
+            .queryParams(QueryParams.builder().serviceInstanceField("host").indexes(List.of("main")).build())
             .dataSourceType(DataSourceType.DATADOG_LOG)
             .groupName("onboarding_default_group")
             .queryName("onboarding_query_name")

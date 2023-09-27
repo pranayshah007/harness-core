@@ -7,6 +7,7 @@ core: true
 source: https://github.com/harness/backstage-plugins/tree/main/plugins/harness-ci-cd
 iconUrl: https://static.harness.io/ng-static/images/favicon.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/harness-ci-cd/
 config: |-
   proxy:
     '/harness/prod':

@@ -59,9 +59,10 @@ public class ElastigroupSetupStepMapperImpl extends StepMapper {
     SpotInstServiceSetup elastigroupState = (SpotInstServiceSetup) state;
     Integer timeoutIntervalInMin = elastigroupState.getTimeoutIntervalInMin();
     if (null != timeoutIntervalInMin) {
-      return MigratorUtility.getTimeout(timeoutIntervalInMin * 60 * 1000);
+      return MigratorUtility.getTimeout(timeoutIntervalInMin * 60 * 1000L);
     } else {
-      return MigratorUtility.getTimeout(state.getTimeoutMillis());
+      Integer timeoutMillis = state.getTimeoutMillis();
+      return MigratorUtility.getTimeout(timeoutMillis != null ? timeoutMillis.longValue() : null);
     }
   }
 

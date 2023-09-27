@@ -92,14 +92,4 @@ public class CompositeSLORestoreMetricAnalysisStateExecutor
   public AnalysisState handleTransition(CompositeSLORestoreMetricAnalysisState analysisState) {
     return analysisState;
   }
-
-  @Override
-  public AnalysisState handleRetry(CompositeSLORestoreMetricAnalysisState analysisState) {
-    if (analysisState.getRetryCount() >= getMaxRetry()) {
-      analysisState.setStatus(AnalysisStatus.FAILED);
-    } else {
-      return handleRerun(analysisState);
-    }
-    return analysisState;
-  }
 }

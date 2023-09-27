@@ -31,6 +31,7 @@ import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.ResponseMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -92,6 +93,7 @@ public class ServiceLevelObjectiveV2Resource {
   @Timed
   @ExceptionMetered
   @Path("composite-slo/onboarding-graph")
+  @ResponseMetered
   @ApiOperation(value = "Get onboarding graph for composite slo", nickname = "getOnboardingGraph")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public RestResponse<TimeGraphResponse> getOnboardingGraph(@BeanParam ProjectParams projectParams,
@@ -103,6 +105,7 @@ public class ServiceLevelObjectiveV2Resource {
   @POST
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @ApiOperation(value = "saves slo data", nickname = "saveSLOV2Data")
   @Operation(operationId = "saveSLOV2Data", summary = "Saves SLO data",
       responses =
@@ -131,6 +134,7 @@ public class ServiceLevelObjectiveV2Resource {
   @PUT
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}")
   @ApiOperation(value = "update slo data", nickname = "updateSLOV2Data")
   @Operation(operationId = "updateSLOV2Data", summary = "Update SLO data",
@@ -153,6 +157,7 @@ public class ServiceLevelObjectiveV2Resource {
   @DELETE
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @Path("{identifier}")
   @ApiOperation(value = "delete slo data", nickname = "deleteSLOV2Data")
   @Operation(operationId = "deleteSLOV2Data", summary = "Delete SLO data",
@@ -172,6 +177,7 @@ public class ServiceLevelObjectiveV2Resource {
   @GET
   @Timed
   @ExceptionMetered
+  @ResponseMetered
   @ApiOperation(value = "get all service level objectives", nickname = "getServiceLevelObjectivesV2")
   @Operation(operationId = "getServiceLevelObjectivesV2", summary = "Get all SLOs",
       responses =

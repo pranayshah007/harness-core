@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,9 +33,12 @@ public class TemplateMonitoredServiceSpec extends MonitoredServiceSpec {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<String> monitoredServiceTemplateRef;
 
-  @NotNull String versionLabel;
+  String versionLabel;
 
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) JsonNode templateInputs;
+  @VariableExpression(skipVariableExpression = true)
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
+  JsonNode templateInputs;
 
   @Override
   public String getType() {

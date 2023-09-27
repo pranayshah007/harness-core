@@ -42,8 +42,8 @@ import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO.ChildExec
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -111,10 +111,10 @@ public class PipelineStageHelper {
         pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, "true");
     String pipelineVersion = entity.getHarnessVersion();
     switch (pipelineVersion) {
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
         break;
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         pipelineStageHelperV1.containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
         break;
       default:
@@ -172,9 +172,9 @@ public class PipelineStageHelper {
 
   public JsonNode getInputSetJsonNode(YamlField pipelineInputs, String pipelineVersion) {
     switch (pipelineVersion) {
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         return getInputSetJsonNode(pipelineInputs);
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return pipelineStageHelperV1.getInputSetJsonNode(pipelineInputs);
       default:
         throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));

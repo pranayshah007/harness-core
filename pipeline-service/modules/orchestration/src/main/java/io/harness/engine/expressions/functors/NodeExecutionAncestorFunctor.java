@@ -23,6 +23,7 @@ import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
 @OwnedBy(CDC)
 @Value
@@ -35,6 +36,7 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
   transient Ambiance ambiance;
   transient Set<NodeExecutionEntityType> entityTypes;
   transient Map<String, String> groupAliases;
+  transient JexlEngine engine;
 
   @Override
   public synchronized Object get(Object key) {
@@ -51,6 +53,7 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
                                             .ambiance(ambiance)
                                             .startNodeExecution(startNodeExecution)
                                             .entityTypes(entityTypes)
+                                            .engine(engine)
                                             .build()
                                             .bind();
   }

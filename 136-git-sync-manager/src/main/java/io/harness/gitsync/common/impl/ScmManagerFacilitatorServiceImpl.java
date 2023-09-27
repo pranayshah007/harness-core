@@ -234,6 +234,14 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
   }
 
   @Override
+  public GitDiffResultFileListDTO listCommitsDiffFiles(
+      Scope scope, ScmConnector scmConnector, String initialCommitId, String finalCommitId) {
+    CompareCommitsResponse compareCommitsResponse =
+        scmClient.compareCommits(scmConnector, initialCommitId, finalCommitId);
+    return PRFileListMapper.toGitDiffResultFileListDTO(compareCommitsResponse.getFilesList());
+  }
+
+  @Override
   public List<String> listCommits(YamlGitConfigDTO yamlGitConfigDTO, String branch) {
     final ScmConnector decryptedConnector =
         gitSyncConnectorHelper.getDecryptedConnector(yamlGitConfigDTO, yamlGitConfigDTO.getAccountIdentifier());

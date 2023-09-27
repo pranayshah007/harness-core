@@ -7,6 +7,7 @@
 
 package io.harness.ci.execution.integrationstage;
 
+import static io.harness.beans.FeatureName.CI_DLITE_DISTRIBUTED;
 import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
@@ -74,6 +75,10 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
 import io.harness.yaml.core.failurestrategy.OnFailureConfig;
 import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.OnRetryFailureConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
@@ -107,6 +112,8 @@ public class CIStepGroupUtils {
   private static final String TEN_K_SECONDS = "10000s";
   private static final String ONE_HOUR = "1h";
   private static final String IMPLICIT_CACHE_STEP = "implicit_restore_cache";
+  private static final String INITIALISE_RETRY_WAITTIME = "10s";
+  private static final int INITIALISE_RETRY_COUNT = 1;
 
   public List<ExecutionWrapperConfig> createExecutionWrapperWithInitializeStep(IntegrationStageNode stageNode,
       CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, Infrastructure infrastructure, String accountId) {
@@ -177,6 +184,29 @@ public class CIStepGroupUtils {
         ExecutionElementConfig.builder().uuid(generateUuid()).steps(liteEngineExecutionSections).build(), ciCodebase,
         integrationStage, ciExecutionArgs, infrastructure, accountId);
 
+    ParameterField<List<FailureStrategyConfig>> failureStrategy = ParameterField.ofNull();
+    if (infrastructure != null && infrastructure.getType() == Infrastructure.Type.HOSTED_VM
+        && featureFlagService.isEnabled(CI_DLITE_DISTRIBUTED, accountId)) {
+      failureStrategy = ParameterField.createValueField(List.of(
+          FailureStrategyConfig.builder()
+              .onFailure(
+                  OnFailureConfig.builder()
+                      .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
+                      .action(RetryFailureActionConfig.builder()
+                                  .specConfig(
+                                      RetryFailureSpecConfig.builder()
+                                          .retryCount(ParameterField.createValueField(INITIALISE_RETRY_COUNT))
+                                          .retryIntervals(ParameterField.createValueField(
+                                              List.of(Timeout.fromString(INITIALISE_RETRY_WAITTIME))))
+                                          .onRetryFailure(OnRetryFailureConfig.builder()
+                                                              .action(MarkAsFailFailureActionConfig.builder().build())
+                                                              .build())
+                                          .build())
+                                  .build())
+                      .build())
+              .build()));
+    }
+
     try {
       String uuid = generateUuid();
       String jsonString = JsonPipelineUtils.writeJsonString(InitializeStepNode.builder()
@@ -186,6 +216,7 @@ public class CIStepGroupUtils {
                                                                 .type(InitializeStepNode.StepType.liteEngineTask)
                                                                 .timeout(getTimeout(infrastructure, accountId))
                                                                 .initializeStepInfo(initializeStepInfo)
+                                                                .failureStrategies(failureStrategy)
                                                                 .build());
       JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
       return ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();

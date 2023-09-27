@@ -18,9 +18,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class CfSwapRouteCommandResult {
-  private List<CfServiceData> instanceDataUpdated;
-  private List<CfInternalInstanceElement> cfInstanceElements;
-  private CfInBuiltVariablesUpdateValues updatedValues;
   private List<CfInternalInstanceElement> newAppInstances;
-  private List<CfInternalInstanceElement> inactiveAppInstances;
+  private TasApplicationInfo activeApplicationInfo;
+  private TasApplicationInfo newApplicationInfo;
 }

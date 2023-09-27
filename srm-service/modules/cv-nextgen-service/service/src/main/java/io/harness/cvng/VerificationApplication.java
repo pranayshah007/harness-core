@@ -7,6 +7,8 @@
 
 package io.harness.cvng;
 
+import static io.harness.CVNGPrometheusExporterUtils.registerJVMMetrics;
+import static io.harness.CVNGPrometheusExporterUtils.registerPrometheusExporter;
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
@@ -261,6 +263,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -526,7 +529,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
     initializeEnforcementSdk(injector);
-    initAutoscalingMetrics();
+    initCustomMetrics();
     registerOasResource(configuration, environment, injector);
     initializeSrmMonitoring(configuration, injector);
     registerAPIAuthTelemetryFilters(configuration, environment, injector);
@@ -583,10 +586,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void registerUpdateProgressScheduler(Injector injector) {
     // This is need for wait notify update progress for CVNG step.
-    ScheduledThreadPoolExecutor waitNotifyUpdateProgressExecutor =
-        new ScheduledThreadPoolExecutor(2, new ThreadFactoryBuilder().setNameFormat("wait-notify-update").build());
-    waitNotifyUpdateProgressExecutor.scheduleWithFixedDelay(
-        injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
   private void registerQueueListeners(Injector injector) {
@@ -1432,8 +1433,12 @@ public class VerificationApplication extends Application<VerificationConfigurati
         .collect(Collectors.toSet());
   }
 
-  private void initAutoscalingMetrics() {
-    CVConstants.LEARNING_ENGINE_TASKS_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+  private void initCustomMetrics() {
+    CVConstants.CUSTOM_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+    registerJVMMetrics(metricRegistry);
+    registerPrometheusExporter("io.harness.cvng.core.resources", "MonitoredServiceResource", metricRegistry);
+    registerPrometheusExporter(
+        "io.harness.cvng.servicelevelobjective.resources", "ServiceLevelObjectiveV2Resource", metricRegistry);
   }
 
   private void registerGaugeMetric(String metricName, String[] labels) {

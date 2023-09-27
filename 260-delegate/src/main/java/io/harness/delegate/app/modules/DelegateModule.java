@@ -413,6 +413,7 @@ import io.harness.delegate.task.shell.ssh.ArtifactoryCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.AwsS3ArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.AzureArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
+import io.harness.delegate.task.shell.ssh.GcsArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.GithubPackageArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.JenkinsArtifactCommandUnitHandler;
 import io.harness.delegate.task.shell.ssh.NexusArtifactCommandUnitHandler;
@@ -1111,6 +1112,17 @@ public class DelegateModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("serviceNowFetchTicketExecutor")
+  public ExecutorService serviceNowFetchTicketExecutor() {
+    return ThreadPool.create(3, 30, 7, TimeUnit.SECONDS,
+        new ThreadFactoryBuilder()
+            .setNameFormat("serviceNowFetchTicketExecutor-%d")
+            .setPriority(Thread.NORM_PRIORITY)
+            .build());
+  }
+
+  @Provides
+  @Singleton
   @Named("jenkinsExecutor")
   public ExecutorService jenkinsExecutor() {
     return ThreadPool.create(1, 40, 1, TimeUnit.SECONDS,
@@ -1694,6 +1706,7 @@ public class DelegateModule extends AbstractModule {
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.AZURE.name()).to(AzureArtifactCommandUnitHandler.class);
     artifactCommandHandlers.addBinding(SshWinRmArtifactType.GITHUB_PACKAGE.name())
         .to(GithubPackageArtifactCommandUnitHandler.class);
+    artifactCommandHandlers.addBinding(SshWinRmArtifactType.GCS.name()).to(GcsArtifactCommandUnitHandler.class);
 
     registerSecretManagementBindings();
     registerConnectorValidatorsBindings();
@@ -2104,6 +2117,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT).toInstance(CommandTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT)
         .toInstance(CommandTaskNG.class);
+    mapBinder.addBinding(TaskType.COMMAND_TASK_NG_WITH_GCS_ARTIFACT).toInstance(CommandTaskNG.class);
     mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_TASK_NG).toInstance(TerraformCloudTaskNG.class);

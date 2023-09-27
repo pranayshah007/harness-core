@@ -28,7 +28,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -94,7 +94,7 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     String version = getYamlVersionFromStageField(curr);
     if (curr.getNode().getField(YAMLFieldNameConstants.STAGE) != null) {
       curr = curr.getNode().getField(YAMLFieldNameConstants.STAGE);
-      version = PipelineVersion.V0;
+      version = HarnessYamlVersion.V0;
     }
     responseMap.put(curr.getUuid(),
         PlanCreationResponse.builder()
@@ -122,16 +122,12 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   private String getYamlVersionFromStageField(YamlField currField) {
     if (currField.getNode().getField(YAMLFieldNameConstants.STAGE) != null
         || YAMLFieldNameConstants.STAGE.equals(currField.getNode().getFieldName())) {
-      return PipelineVersion.V0;
+      return HarnessYamlVersion.V0;
     }
-    return PipelineVersion.V1;
+    return HarnessYamlVersion.V1;
   }
   @Override
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext ctx, YamlField config) {
-    // Create graphLayout only if stages node is grand child of pipeline.(Return empty if its child of parallel.spec)
-    if (!isStagesNodeGrandChildOfPipelineNode(config)) {
-      return GraphLayoutResponse.builder().build();
-    }
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     List<YamlField> stagesYamlField =
         getStageYamlFields(config).stream().map(this::getStageField).collect(Collectors.toList());
@@ -161,15 +157,6 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
         .layoutNodes(stageYamlFieldMap)
         .startingNodeId(stagesYamlField.get(0).getNode().getUuid())
         .build();
-  }
-
-  private boolean isStagesNodeGrandChildOfPipelineNode(YamlField config) {
-    YamlNode parentYamlNode = config.getNode().getParentNode();
-    if (parentYamlNode != null && parentYamlNode.getParentNode() != null
-        && YAMLFieldNameConstants.PIPELINE.equals(parentYamlNode.getParentNode().getType())) {
-      return true;
-    }
-    return false;
   }
 
   @Override

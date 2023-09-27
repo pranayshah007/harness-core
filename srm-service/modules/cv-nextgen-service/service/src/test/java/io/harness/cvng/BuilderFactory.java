@@ -1436,6 +1436,27 @@ public class BuilderFactory {
         .setExecutionTime(1000l);
   }
 
+  public InternalChangeEventDTO.Builder getInternalChangeEventBuilderCE() {
+    return InternalChangeEventDTO.newBuilder()
+        .setAccountId(context.getAccountId())
+        .setOrgIdentifier(context.getOrgIdentifier())
+        .setProjectIdentifier(context.getProjectIdentifier())
+        .addServiceIdentifier("Service1")
+        .addEnvironmentIdentifier("Env1")
+        .setEventDetails(EventDetails.newBuilder()
+                             .setUser("user")
+                             .addEventDetails("test event detail")
+                             .setInternalLinkToEntity("testInternalUrl")
+                             .setChangeEventDetailsLink("testChangeEventDetailsLink")
+                             .build())
+        .setType("CHAOS_EXPERIMENT")
+        .setPipelineId("test pipeline id")
+        .setPlanExecutionId("test plan execution id")
+        .setStageId("test stage id")
+        .setStageStepId("test stage step id")
+        .setExecutionTime(1000l);
+  }
+
   private ChangeSourceDTOBuilder getChangeSourceDTOBuilder(ChangeSourceType changeSourceType) {
     return ChangeSourceDTO.builder()
         .identifier(generateUuid())
@@ -1464,7 +1485,7 @@ public class BuilderFactory {
                        .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
-                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTO()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
                   .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
@@ -1495,7 +1516,7 @@ public class BuilderFactory {
                                  .build())
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
-                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTO()))
                   .healthSourceRef("healthSourceIdentifier")
                   .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
                   .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
@@ -1606,7 +1627,7 @@ public class BuilderFactory {
     return UserJourneyDTO.builder().identifier("userJourney").name("userJourney").build();
   }
 
-  public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTOBuilder() {
+  public ServiceLevelIndicatorDTO getServiceLevelIndicatorDTO() {
     return ServiceLevelIndicatorDTO.builder()
         .type(SLIEvaluationType.WINDOW)
         .spec(WindowBasedServiceLevelIndicatorSpec.builder()

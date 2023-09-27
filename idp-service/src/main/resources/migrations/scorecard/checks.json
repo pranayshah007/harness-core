@@ -3,8 +3,8 @@
     "id": "64d4f1a9b308cf71096284be",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__bfeece93-8892-4459-be93-b7a647df7e5f",
-    "name": "Mean time to merge PR is less than 2 days",
-    "description": "Mean time to merge PR is less than 2 days",
+    "name": "GitHub Mean time to merge PR is less than 2 days",
+    "description": "GitHub Mean time to merge PR is less than 2 days",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -44,8 +44,8 @@
     "id": "64d5f23eb90d6686d2a9a007",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__a9b98e87-d9c1-4c5e-9ba6-4485f171dbc4",
-    "name": "Branch protection is set",
-    "description": "Branch protection is set",
+    "name": "GitHub Branch protection is set",
+    "description": "GitHub Branch protection is set",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -105,8 +105,8 @@
     "id": "64ede62a8b4004661f8e59aa",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__b9a99e87-d9c1-4c5e-9ba6-4605a771dbc4",
-    "name": "Gitleaks file exists",
-    "description": "Gitleaks file exists",
+    "name": "GitHub Gitleaks file exists",
+    "description": "GitHub Gitleaks file exists",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -266,20 +266,81 @@
     "id": "6500ce178ea5a4798502f516",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__565c5545-2b7f-4400-95e2-6b8ac470f40e",
-    "name": "Average acknowledgement time for the last 10 incidents is less than 30 minutes",
-    "description": "Checks if the average acknowledgement time for last 10 incidents is less than 30 minutes on PagerDuty",
+    "name": "Average resolved time for the last 10 resolved incidents is less than 50 minutes",
+    "description": "Checks if the average resolved time for last 10 resolved incidents is less than 50 minutes on PagerDuty",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
         "data_source_identifier": "pagerduty",
-        "data_point_identifier": "avgAcknowledgementTimeForLastTenIncidentsInMinutes",
+        "data_point_identifier": "avgResolvedTimeForLastTenResolvedIncidentsInMinutes",
         "operator": "<",
-        "value": "30"
+        "value": "50"
       }
     ],
-    "expression": "pagerduty.avgAcknowledgementTimeForLastTenIncidentsInMinutes < 30",
+    "expression": "pagerduty.avgResolvedTimeForLastTenResolvedIncidentsInMinutes < 50",
     "tags": ["DevOps maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "Average acknowledgement time for last 10 incidents is more than 30 minutes."
+    "failMessage": "Average resolved time for last 10 resolved incidents is more than 50 minutes."
+  },
+  {
+    "id": "64fec4369a5dcde88b2137c7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__ce1ea812-868e-457e-a547-00638dbcafb2",
+    "name": "Replicas count greater than 1",
+    "description": "Replicas count greater than 1",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "kubernetes",
+        "data_point_identifier": "replicas",
+        "operator": ">",
+        "value": 1
+      }
+    ],
+    "expression": "kubernetes.replicas > 1",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Make sure you have minimum 2 replicas configured for the application to be considered minimally available"
+  },
+  {
+    "id": "65083295bd13c114730fe02c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__43957df0-d59b-4799-a2ed-14ecbd32fe3f",
+    "name": "Deployed within last 7 days",
+    "description": "Checks if the most recent deployment was done within the past 7 days.",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "kubernetes",
+        "data_point_identifier": "daysSinceLastDeployed",
+        "operator": "<=",
+        "value": 7
+      }
+    ],
+    "expression": "kubernetes.daysSinceLastDeployed <= 7",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Application should be deployed within a week"
+  },
+  {
+    "id": "650c3ff3b0979ea005707417",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__beefce94-8892-5590-be93-b7a247ef7e5e",
+    "name": "Bitbucket Mean time to merge PR is less than 2 days",
+    "description": "Bitbucket Mean time to merge PR is less than 2 days",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "bitbucket",
+        "data_point_identifier": "meanTimeToMerge",
+        "conditional_input_value": "\"refs/\"",
+        "operator": "<",
+        "value": "48"
+      }
+    ],
+    "expression": "bitbucket.meanTimeToMerge < 48",
+    "tags": ["Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Mean time to merge PR is more than 2 days"
   }
 ]

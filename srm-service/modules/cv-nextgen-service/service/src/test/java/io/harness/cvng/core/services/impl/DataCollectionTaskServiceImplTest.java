@@ -152,7 +152,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   private String dataCollectionWorkerId;
   private String verificationTaskId;
 
-  private String sliVerificationTaskId;
+  private Optional<String> sliVerificationTaskId;
   private CVConfig cvConfig;
   private BuilderFactory builderFactory;
   private ServiceLevelIndicator serviceLevelIndicator;
@@ -957,10 +957,10 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     dataCollectionTaskService.updateTaskStatus(result);
     DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
     verify(serviceLevelIndicatorServiceMock)
-        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId,
+        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId.get(),
             fakeNow.minus(Duration.ofMinutes(7)), fakeNow.minus(Duration.ofMinutes(2)), serviceLevelIndicator);
     verify(serviceLevelIndicatorServiceMock)
-        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId,
+        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId.get(),
             fakeNow.minus(Duration.ofMinutes(2)), fakeNow.plus(Duration.ofMinutes(300)), serviceLevelIndicator);
     assertThat(updated.getStatus()).isEqualTo(DataCollectionExecutionStatus.FAILED);
     assertThat(updated.getRetryCount()).isEqualTo(1);
@@ -1308,7 +1308,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
           .build();
     } else if (type == Type.SLI) {
       return SLIDataCollectionTask.builder()
-          .verificationTaskId(sliVerificationTaskId)
+          .verificationTaskId(sliVerificationTaskId.get())
           .type(Type.SLI)
           .dataCollectionWorkerId(dataCollectionWorkerId)
           .accountId(accountId)

@@ -300,6 +300,13 @@ public class StrategyUtils {
     JsonNodeUtils.updatePropertyInObjectNode(jsonNode, NAME, newName);
   }
 
+  public void modifyJsonNode(JsonNode jsonNode, String identifierPostfix) {
+    String newIdentifier = jsonNode.get(IDENTIFIER).asText() + identifierPostfix;
+    String newName = jsonNode.get(NAME).asText() + identifierPostfix;
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, IDENTIFIER, newIdentifier);
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, NAME, newName);
+  }
+
   public void replaceExpressions(
       Object jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     EngineExpressionEvaluator evaluator = new StrategyExpressionEvaluator(
@@ -328,7 +335,7 @@ public class StrategyUtils {
    */
   public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
-    if (level.hasStrategyMetadata()) {
+    if (AmbianceUtils.hasStrategyMetadata(level)) {
       return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
     }
     strategyObjectMap.put(ITERATION, 0);

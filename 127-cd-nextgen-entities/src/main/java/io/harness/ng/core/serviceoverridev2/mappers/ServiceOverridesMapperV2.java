@@ -26,6 +26,7 @@ import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec.ServiceOverridesSpecBuilder;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -128,6 +129,17 @@ public class ServiceOverridesMapperV2 {
     if (isEmpty(envInfoConfig.getVariables()) && envInfoConfig.getNgEnvironmentGlobalOverride() == null) {
       return Optional.empty();
     }
+
+    ServiceOverridesSpecBuilder serviceOverridesSpecBuilder =
+        ServiceOverridesSpec.builder().variables(envInfoConfig.getVariables());
+    NGEnvironmentGlobalOverride ngEnvironmentGlobalOverride = envInfoConfig.getNgEnvironmentGlobalOverride();
+    if (ngEnvironmentGlobalOverride != null) {
+      serviceOverridesSpecBuilder.manifests(ngEnvironmentGlobalOverride.getManifests())
+          .configFiles(ngEnvironmentGlobalOverride.getConfigFiles())
+          .connectionStrings(ngEnvironmentGlobalOverride.getConnectionStrings())
+          .applicationSettings(ngEnvironmentGlobalOverride.getApplicationSettings());
+    }
+
     return Optional.of(
         ServiceOverrideRequestDTOV2.builder()
             .projectIdentifier(envInfoConfig.getProjectIdentifier())
@@ -135,13 +147,7 @@ public class ServiceOverridesMapperV2 {
             .environmentRef(IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, envInfoConfig.getOrgIdentifier(),
                 envInfoConfig.getProjectIdentifier(), envInfoConfig.getIdentifier()))
             .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
-            .spec(ServiceOverridesSpec.builder()
-                      .variables(envInfoConfig.getVariables())
-                      .manifests(envInfoConfig.getNgEnvironmentGlobalOverride().getManifests())
-                      .configFiles(envInfoConfig.getNgEnvironmentGlobalOverride().getConfigFiles())
-                      .connectionStrings(envInfoConfig.getNgEnvironmentGlobalOverride().getConnectionStrings())
-                      .applicationSettings(envInfoConfig.getNgEnvironmentGlobalOverride().getApplicationSettings())
-                      .build())
+            .spec(serviceOverridesSpecBuilder.build())
             .build());
   }
 }

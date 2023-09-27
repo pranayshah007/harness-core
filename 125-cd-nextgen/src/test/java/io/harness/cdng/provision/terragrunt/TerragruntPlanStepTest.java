@@ -274,7 +274,6 @@ public class TerragruntPlanStepTest extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
     assertThat(stepOutcome.getOutcome()).isInstanceOf(TerragruntPlanOutcome.class);
-    assertThat(stepOutcome.getOutcome().toViewJson()).isNotBlank();
     TerragruntPlanOutcome terragruntPlanOutcome = (TerragruntPlanOutcome) stepOutcome.getOutcome();
     assertThat(terragruntPlanOutcome.getJsonFilePath())
         .isEqualTo(TerraformPlanJsonFunctor.getExpression("step1", "test-terraformJsonOutput"));

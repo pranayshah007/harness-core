@@ -12,12 +12,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.stages.AbstractPmsStagePlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
@@ -81,6 +85,8 @@ public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomSt
                 DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                     .toBuilder()
                     .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                    .putDependencyMetadata(executionField.getNode().getUuid(),
+                        Dependency.newBuilder().setParentInfo(generateParentInfo(ctx, field)).build())
                     .build())
             .build());
 
@@ -106,8 +112,22 @@ public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomSt
         .build();
   }
 
+  private HarnessStruct generateParentInfo(PlanCreationContext ctx, CustomStageNode stageNode) {
+    YamlField field = ctx.getCurrentField();
+    HarnessStruct.Builder parentInfo = HarnessStruct.newBuilder();
+    parentInfo.putData(PlanCreatorConstants.STAGE_ID,
+        HarnessValue.newBuilder().setStringValue(getFinalPlanNodeId(ctx, stageNode)).build());
+    if (StrategyUtils.isWrappedUnderStrategy(field)) {
+      parentInfo.putData(
+          PlanCreatorConstants.STRATEGY_ID, HarnessValue.newBuilder().setStringValue(stageNode.getUuid()).build());
+      parentInfo.putData(PlanCreatorConstants.STRATEGY_NODE_TYPE,
+          HarnessValue.newBuilder().setStringValue(YAMLFieldNameConstants.STAGE).build());
+    }
+    return parentInfo.build();
+  }
+
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+    return Set.of(HarnessYamlVersion.V0);
   }
 }

@@ -8,15 +8,22 @@
 package io.harness.engine.pms.execution.strategy;
 
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.pms.advise.NodeAdviseHelper;
+import io.harness.engine.pms.advise.NodeAdviserUtils;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
+import io.harness.engine.pms.execution.modifier.ambiance.AmbianceModifier;
+import io.harness.engine.pms.execution.modifier.ambiance.AmbianceModifierFactory;
 import io.harness.event.handlers.SdkResponseProcessor;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PmsNodeExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
+import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -31,7 +38,10 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
     implements NodeExecutionStrategy<P, NodeExecution, M> {
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private SdkResponseProcessorFactory sdkResponseProcessorFactory;
+  @Inject private NodeAdviseHelper nodeAdviseHelper;
+  @Inject private AmbianceModifierFactory ambianceModifierFactory;
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
+  @Inject @Named("publishAdviserEventForCustomAdvisers") private boolean publishAdviserEventForCustomAdvisers;
   @Override
   public NodeExecution runNode(@NonNull Ambiance ambiance, @NonNull P node, M metadata) {
     return runNode(ambiance, node, metadata, InitiateMode.CREATE_AND_START);
@@ -87,6 +97,40 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
     }
   }
 
-  public abstract NodeExecution createNodeExecution(
+  public void processOrQueueAdvisingEvent(NodeExecution nodeExecution, Node planNode, Status fromStatus) {
+    if (!publishAdviserEventForCustomAdvisers || NodeAdviserUtils.hasCustomAdviser(planNode)) {
+      nodeAdviseHelper.queueAdvisingEvent(nodeExecution, planNode, fromStatus);
+    } else {
+      SdkResponseEventProto responseEventProto =
+          nodeAdviseHelper.getResponseInCaseOfNoCustomAdviser(nodeExecution, planNode, fromStatus);
+      if (responseEventProto != null) {
+        handleSdkResponse(responseEventProto);
+      }
+    }
+  }
+
+  private void handleSdkResponse(SdkResponseEventProto sdkResponseEventProto) {
+    if (sdkResponseEventProto.getSdkResponseEventType() == SdkResponseEventType.HANDLE_EVENT_ERROR) {
+      handleSdkResponseEvent(sdkResponseEventProto);
+    } else {
+      executorService.submit(() -> handleSdkResponseEvent(sdkResponseEventProto));
+    }
+  }
+
+  public NodeExecution createNodeExecution(
+      Ambiance ambiance, P node, M metadata, String notifyId, String parentId, String previousId) {
+    Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
+    AmbianceModifier ambianceModifier = null;
+    if (currentLevel != null && currentLevel.getStepType() != null) {
+      ambianceModifier = ambianceModifierFactory.obtainModifier(currentLevel.getStepType().getStepCategory());
+    }
+    Ambiance modifiedAmbiance = ambiance;
+    if (ambianceModifier != null) {
+      modifiedAmbiance = ambianceModifier.modify(ambiance);
+    }
+    return createNodeExecutionInternal(modifiedAmbiance, node, metadata, notifyId, parentId, previousId);
+  }
+
+  public abstract NodeExecution createNodeExecutionInternal(
       Ambiance ambiance, P node, M metadata, String notifyId, String parentId, String previousId);
 }

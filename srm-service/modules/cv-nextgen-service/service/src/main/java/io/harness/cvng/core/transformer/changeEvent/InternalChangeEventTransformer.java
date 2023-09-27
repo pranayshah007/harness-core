@@ -33,6 +33,10 @@ public class InternalChangeEventTransformer
         .changeSourceIdentifier(changeEventDTO.getChangeSourceIdentifier())
         .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())
         .activityName(changeEventDTO.getName())
+        .pipelineId(internalChangeEventMetaData.getPipelineId())
+        .stageId(internalChangeEventMetaData.getStageId())
+        .stageStepId(internalChangeEventMetaData.getStageStepId())
+        .planExecutionId(internalChangeEventMetaData.getPlanExecutionId())
         .build();
   }
 

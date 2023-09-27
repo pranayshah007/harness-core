@@ -98,6 +98,11 @@ public abstract class StepMapper {
     return Collections.emptyList();
   }
 
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, String stepGroupName, GraphNode graphNode) {
+    return Collections.emptyList();
+  }
+
   public abstract AbstractStepNode getSpec(
       MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode);
 
@@ -187,7 +192,11 @@ public abstract class StepMapper {
   }
 
   public ParameterField<Timeout> getTimeout(State state) {
-    return MigratorUtility.getTimeout(state.getTimeoutMillis());
+    Integer timeoutMillis = state.getTimeoutMillis();
+    if (timeoutMillis != null) {
+      return MigratorUtility.getTimeout(timeoutMillis.longValue());
+    }
+    return MigratorUtility.getTimeout(null);
   }
 
   public String getDescription(GraphNode stepYaml) {

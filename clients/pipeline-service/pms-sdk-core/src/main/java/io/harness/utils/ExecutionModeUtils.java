@@ -16,4 +16,8 @@ public class ExecutionModeUtils {
   public boolean isRollbackMode(ExecutionMode executionMode) {
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
   }
+
+  public boolean isPostExecutionRollbackMode(ExecutionMode executionMode) {
+    return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK;
+  }
 }

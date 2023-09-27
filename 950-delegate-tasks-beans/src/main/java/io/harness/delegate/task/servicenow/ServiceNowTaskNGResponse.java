@@ -44,10 +44,12 @@ public class ServiceNowTaskNGResponse implements DelegateTaskNotifyResponseData 
   DelegateMetaInfo delegateMetaInfo;
   List<ServiceNowFieldNG> serviceNowFieldNGList;
   ServiceNowTicketNG ticket;
+  List<ServiceNowTicketNG> tickets;
   List<ServiceNowTemplate> serviceNowTemplateList;
   ServiceNowImportSetResponseNG serviceNowImportSetResponseNG;
   List<ServiceNowStagingTable> serviceNowStagingTableList;
   List<ServiceNowTicketTypeDTO> serviceNowTicketTypeList;
-  String serviceNowFieldJsonNGListAsString;
+  String serviceNowFieldJsonNGListAsString; // This field is used by get standard template method to pass the fields as
+                                            // string, where
   String serviceNowStandardTemplateReadOnlyFields;
 }

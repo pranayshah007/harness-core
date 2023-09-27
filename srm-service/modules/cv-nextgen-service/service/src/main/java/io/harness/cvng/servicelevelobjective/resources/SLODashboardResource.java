@@ -16,6 +16,7 @@ import io.harness.cvng.CVConstants;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.EnvironmentIdentifierResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
@@ -190,6 +191,19 @@ public class SLODashboardResource {
   public ResponseDTO<PageResponse<MSDropdownResponse>>
   getSLOAssociatedMonitoredServices(@BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
     return ResponseDTO.newResponse(sloDashboardService.getSLOAssociatedMonitoredServices(projectParams, pageParams));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("environment-identifiers")
+  @ApiOperation(value = "get all environment identifiers associated with the slos",
+      nickname = "getSLOAssociatedEnvironmentIdentifiers")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<EnvironmentIdentifierResponse>>
+  getSLOAssociatedEnvironmentIdentifiers(@BeanParam ProjectParams projectParams, @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(
+        sloDashboardService.getSLOAssociatedEnvironmentIdentifiers(projectParams, pageParams));
   }
 
   @GET

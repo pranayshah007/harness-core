@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.winrm.WinRmSession.FILE_CACHE_TYPE;
 import static io.harness.delegate.task.winrm.WinRmSession.KERBEROS_CACHE_NAME_ENV;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
@@ -453,6 +454,84 @@ public class WinRmSessionTest extends CategoryTest {
     assertThat(passedEnvVariables)
         .containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(
             KERBEROS_CACHE_NAME_ENV, format("%s:%s", FILE_CACHE_TYPE, sessionConfig.getSessionCacheFilePath())));
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testDisableEscapeEnvVariablesSpecialChars() throws Exception {
+    WinRmClient winRmClient = mock(WinRmClient.class);
+    ShellCommand shell = mock(ShellCommand.class);
+
+    winRmClientMockedStatic.when(() -> WinRmClient.builder(anyString()))
+        .thenAnswer(invocationOnMock -> winRmClientBuilder);
+    doReturn(winRmClient).when(winRmClientBuilder).build();
+    when(winRmClient.createShell()).thenReturn(shell);
+
+    WinRmSessionConfig sessionConfig =
+        WinRmSessionConfig.builder()
+            .executionId("harnessExecutionId")
+            .authenticationScheme(AuthenticationScheme.NTLM)
+            .useKerberosUniqueCacheFile(false)
+            .username("user")
+            .password("password")
+            .hostname("harness.internal")
+            .workingDirectory("/tmp")
+            .domain("harness")
+            .port(1234)
+            .environment(ImmutableMap.of("testNotEscaped", "^|><&%v%", "testEscapePercentage", "invalid%",
+                "testEscapeLessThenOrGreaterThen", "<>"))
+            .disableWinRmEnvVarEscaping(true)
+            .build();
+
+    try (WinRmSession session = new WinRmSession(sessionConfig, logCallback)) {
+      WinRmTool winRmTool = on(session).get("winRmTool");
+      assertThat(winRmTool).isNotNull();
+      Map<String, String> environment = on(winRmTool).get("environment");
+      assertThat(environment).isNotNull();
+
+      Map<String, String> expectedEnvMap = ImmutableMap.of(
+          "testNotEscaped", "^|><&%v%", "testEscapePercentage", "", "testEscapeLessThenOrGreaterThen", "");
+      assertThat(environment).containsExactlyInAnyOrderEntriesOf(expectedEnvMap);
+    }
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testEscapeEnvVariablesSpecialChars() throws Exception {
+    WinRmClient winRmClient = mock(WinRmClient.class);
+    ShellCommand shell = mock(ShellCommand.class);
+
+    winRmClientMockedStatic.when(() -> WinRmClient.builder(anyString()))
+        .thenAnswer(invocationOnMock -> winRmClientBuilder);
+    doReturn(winRmClient).when(winRmClientBuilder).build();
+    when(winRmClient.createShell()).thenReturn(shell);
+
+    WinRmSessionConfig sessionConfig =
+        WinRmSessionConfig.builder()
+            .executionId("harnessExecutionId")
+            .authenticationScheme(AuthenticationScheme.NTLM)
+            .useKerberosUniqueCacheFile(false)
+            .username("user")
+            .password("password")
+            .hostname("harness.internal")
+            .workingDirectory("/tmp")
+            .domain("harness")
+            .port(1234)
+            .environment(ImmutableMap.of("testEscaped", "^|><&%v%", "testEscapePercentage", "invalid%"))
+            .disableWinRmEnvVarEscaping(true)
+            .build();
+
+    try (WinRmSession session = new WinRmSession(sessionConfig, logCallback)) {
+      WinRmTool winRmTool = on(session).get("winRmTool");
+      assertThat(winRmTool).isNotNull();
+      Map<String, String> environment = on(winRmTool).get("environment");
+      assertThat(environment).isNotNull();
+
+      Map<String, String> expectedEnvMap = ImmutableMap.of("testEscaped", "^|><&%v%", "testEscapePercentage", "");
+      assertThat(environment).containsExactlyInAnyOrderEntriesOf(expectedEnvMap);
+    }
   }
 
   private void setupMocks(List<String> commands, ShellCommand shell, WinRmTool winRmTool, PyWinrmArgs pyWinrmArgs,
