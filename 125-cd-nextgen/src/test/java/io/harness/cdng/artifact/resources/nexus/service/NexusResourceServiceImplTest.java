@@ -85,7 +85,7 @@ public class NexusResourceServiceImplTest extends CategoryTest {
   private static final NexusRequestDTO NEXUS_REQUEST_DTO = NexusRequestDTO.builder().build();
 
   private static final String REPOSITORY_MESSAGE = "value for repository is empty or not provided";
-  private static final String PACKAGE_MESSAGE = "value for package is empty or not provided";
+  private static final String PACKAGE_MESSAGE = "value for packageName is empty or not provided";
   private static final String GROUP_ID_MESSAGE = "value for groupId is empty or not provided";
   private static final String ARTIFACT_PATH_MESSAGE = "value for artifactPath is empty or not provided";
   private static final String REPOSITORY_URL_PORT_MESSAGE =
