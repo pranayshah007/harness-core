@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
+import static io.harness.cvng.notification.beans.NotificationRuleConditionType.CODE_ERRORS;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
@@ -1917,19 +1918,28 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @VisibleForTesting
-  List<NotificationRule> getEnabledAndEligibleNotificationRules(MonitoredService monitoredService) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(monitoredService.getAccountId())
-                                      .orgIdentifier(monitoredService.getOrgIdentifier())
-                                      .projectIdentifier(monitoredService.getProjectIdentifier())
-                                      .build();
-    List<String> notificationRuleRefs = monitoredService.getNotificationRuleRefs()
-                                            .stream()
-                                            .filter(ref -> ref.isEligible(clock.instant(), COOL_OFF_DURATION))
-                                            .filter(NotificationRuleRef::isEnabled)
-                                            .map(NotificationRuleRef::getNotificationRuleRef)
-                                            .collect(Collectors.toList());
-    return notificationRuleService.getEntities(projectParams, notificationRuleRefs);
+  List<NotificationRule> getEnabledAndEligibleNotificationRules(
+      MonitoredService monitoredService, ProjectParams projectParams) {
+    List<NotificationRule> notificationRules = new ArrayList<>();
+    final List<NotificationRuleRef> notificationRuleRefs = monitoredService.getNotificationRuleRefs();
+
+    for (NotificationRuleRef notificationRuleRef : notificationRuleRefs) {
+      final NotificationRule notificationRule =
+          notificationRuleService.getEntity(projectParams, notificationRuleRef.getNotificationRuleRef());
+      final Duration coolOffDuration = getCoolOffDuration((MonitoredServiceNotificationRule) notificationRule);
+      if (notificationRuleRef.isEligible(clock.instant(), coolOffDuration)) {
+        notificationRules.add(notificationRule);
+      }
+    }
+    return notificationRules;
+  }
+
+  private Duration getCoolOffDuration(MonitoredServiceNotificationRule notificationRule) {
+    Duration coolOffDuration = COOL_OFF_DURATION;
+    if (notificationRule.getConditions().contains(CODE_ERRORS)) {
+      coolOffDuration = Duration.ZERO;
+    }
+    return coolOffDuration;
   }
 
   @VisibleForTesting
@@ -1954,7 +1964,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                       .orgIdentifier(monitoredService.getOrgIdentifier())
                                       .projectIdentifier(monitoredService.getProjectIdentifier())
                                       .build();
-    List<NotificationRule> notificationRules = getEnabledAndEligibleNotificationRules(monitoredService);
+    List<NotificationRule> notificationRules = getEnabledAndEligibleNotificationRules(monitoredService, projectParams);
     Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
     for (NotificationRule notificationRule : notificationRules) {
@@ -2467,7 +2477,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
         final String baseLinkUrl =
             ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
-                 NotificationRuleConditionType.CODE_ERRORS))
+                 CODE_ERRORS))
                 .getBaseLinkUrl(monitoredService.getAccountId());
         templateDataMap.putAll(
             getCodeErrorTemplateData(codeErrorCondition.getErrorTrackingEventStatus(), notificationData, baseLinkUrl));

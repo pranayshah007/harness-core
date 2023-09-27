@@ -8,12 +8,14 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
+import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
 import static io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution.FIVE_MIN;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ANJAN;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
+import static io.harness.rule.OwnerRule.JAMES_RICKS;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -28,6 +30,8 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -63,7 +67,10 @@ import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
+import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
+import io.harness.cvng.beans.errortracking.Scorecard;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
+import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.FakeNotificationClient;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.NextGenServiceImpl;
@@ -139,6 +146,9 @@ import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
 import io.harness.cvng.notification.beans.DeploymentImpactReportConditionSpec;
+import io.harness.cvng.notification.beans.ErrorTrackingConditionSpec;
+import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
+import io.harness.cvng.notification.beans.ErrorTrackingEventType;
 import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
@@ -187,6 +197,7 @@ import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -251,6 +262,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
 
   @Mock private NgLicenseHttpClient ngLicenseHttpClient;
 
+  @Mock private ErrorTrackingService errorTrackingService;
+
+  private static final Instant UNIX_EPOCH = Instant.parse("1970-01-01T00:00:00Z");
   private BuilderFactory builderFactory;
   String healthSourceName;
   String healthSourceIdentifier;
@@ -324,6 +338,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
     FieldUtils.writeField(monitoredServiceService, "featureFlagService", featureFlagService, true);
     FieldUtils.writeField(monitoredServiceService, "ngLicenseHttpClient", ngLicenseHttpClient, true);
+    FieldUtils.writeField(monitoredServiceService, "errorTrackingService", errorTrackingService, true);
   }
 
   @Test
@@ -3144,55 +3159,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testGetNotificationRules_withCoolOffLogic() {
-    NotificationRuleDTO notificationRuleDTO =
-        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
-    NotificationRuleResponse notificationRuleResponse =
-        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
-
-    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
-        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
-    monitoredServiceDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder()
-                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
-                          .enabled(true)
-                          .build()));
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
-
-    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getEnabledAndEligibleNotificationRules(monitoredService)
-                   .size())
-        .isEqualTo(1);
-  }
-
-  @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
-  public void testGetNotificationRules_withDisabled() {
-    NotificationRuleDTO notificationRuleDTO =
-        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
-    NotificationRuleResponse notificationRuleResponse =
-        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
-
-    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
-        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
-    monitoredServiceDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder()
-                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
-                          .enabled(false)
-                          .build()));
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
-
-    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getEnabledAndEligibleNotificationRules(monitoredService)
-                   .size())
-        .isEqualTo(0);
-  }
-  @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
   public void testSendNotification() throws IllegalAccessException, IOException {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
@@ -3625,6 +3591,158 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         builderFactory.getContext().getProjectParams(), notificationRuleDTO.getIdentifier());
 
     assertThat(notificationRule).isNull();
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testSendCodeErrorNotification() throws IllegalAccessException {
+    when(featureFlagService.isFeatureFlagEnabled(
+             eq(builderFactory.getContext().getAccountId()), eq(SRM_CODE_ERROR_NOTIFICATIONS)))
+        .thenReturn(true);
+    Scorecard scorecard = Scorecard.builder().build();
+    List<Scorecard> scorecards = new ArrayList<>();
+    scorecards.add(scorecard);
+    ErrorTrackingNotificationData etnd = ErrorTrackingNotificationData.builder()
+                                             .from(Timestamp.from(clock.instant()))
+                                             .to(Timestamp.from(clock.instant()))
+                                             .scorecards(scorecards)
+                                             .build();
+
+    when(errorTrackingService.getNotificationData(
+             anyString(), anyString(), anyString(), anyString(), anyString(), anyList(), anyList(), anyString()))
+        .thenReturn(etnd);
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+
+    notificationRuleDTO.setName("rule1");
+    notificationRuleDTO.setIdentifier("rule1");
+    notificationRuleDTO.setConditions(
+        Arrays.asList(NotificationRuleCondition.builder()
+                          .type(NotificationRuleConditionType.CODE_ERRORS)
+                          .spec(ErrorTrackingConditionSpec.builder()
+                                    .errorTrackingEventTypes(Arrays.asList(ErrorTrackingEventType.EXCEPTION))
+                                    .errorTrackingEventStatus(Arrays.asList(ErrorTrackingEventStatus.NEW_EVENTS))
+                                    .build())
+                          .build()));
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder()
+                                                  .identifier("testService_testEnvironment")
+                                                  .serviceRef("testService")
+                                                  .environmentRef("testEnvironment")
+                                                  .build();
+
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    createHeatMaps(monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+
+    // Set the clock to 1 second later to ensure cool off duration does not take effect for Code Errors
+    clock = Clock.fixed(UNIX_EPOCH.plus(1, ChronoUnit.SECONDS), ZoneOffset.UTC);
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+
+    when(notificationClient.sendNotificationAsync(any()))
+        .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+
+    monitoredServiceService.handleNotification(monitoredService);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testSendNotificationNotCooledOff() throws IllegalAccessException {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    createHeatMaps(monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+
+    // Set the clock to just one second before the cool off duration so that the notification is not sent
+    clock = Clock.fixed(UNIX_EPOCH.plus(59, ChronoUnit.MINUTES).plus(59, ChronoUnit.SECONDS), ZoneOffset.UTC);
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    when(notificationClient.sendNotificationAsync(any()))
+        .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+
+    monitoredServiceService.handleNotification(monitoredService);
+    verify(notificationClient, times(0)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testSendNotificationCooledOff() throws IllegalAccessException {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    createHeatMaps(monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+
+    // Set the clock to exactly 1 hour later so that the notification is cooled off and the message sent
+    clock = Clock.fixed(UNIX_EPOCH.plus(1, ChronoUnit.HOURS), ZoneOffset.UTC);
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    when(notificationClient.sendNotificationAsync(any()))
+        .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+
+    monitoredServiceService.handleNotification(monitoredService);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = JAMES_RICKS)
+  @Category(UnitTests.class)
+  public void testSendDisabledNotification() throws IllegalAccessException {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(false)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    createHeatMaps(monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+
+    // Set the clock to exactly 1 hour later so that the notification is cooled off and would be sent if enabled
+    clock = Clock.fixed(UNIX_EPOCH.plus(1, ChronoUnit.HOURS), ZoneOffset.UTC);
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    when(notificationClient.sendNotificationAsync(any()))
+        .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+
+    monitoredServiceService.handleNotification(monitoredService);
+    verify(notificationClient, times(0)).sendNotificationAsync(any());
   }
 
   private void createActivity(MonitoredServiceDTO monitoredServiceDTO) {
