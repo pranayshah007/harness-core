@@ -16,6 +16,7 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -49,6 +50,18 @@ public class FQNHelper {
     res.put(fqn, value);
   }
 
+  public boolean checkIfListHasNoIdentifier(ArrayNode list) {
+    JsonNode firstNode = list.get(0);
+    Set<String> fieldNames = new LinkedHashSet<>();
+    firstNode.fieldNames().forEachRemaining(fieldNames::add);
+    String topKey = fieldNames.iterator().next();
+    if (topKey.equals(YAMLFieldNameConstants.PARALLEL)) {
+      return false;
+    }
+    JsonNode innerMap = firstNode.get(topKey);
+    return !innerMap.has(YAMLFieldNameConstants.IDENTIFIER);
+  }
+
   public String getIdentifierKeyIfPresent(JsonNode jsonNode) {
     Set<String> fieldNames = new LinkedHashSet<>();
     jsonNode.fieldNames().forEachRemaining(fieldNames::add);
@@ -65,14 +78,23 @@ public class FQNHelper {
     return null;
   }
 
-  public String getUuidKey(JsonNode jsonNode) {
+  public String getUuidKey(ArrayNode list) {
+    JsonNode element = list.get(0);
     for (String uuidKey : possibleUUIDs) {
-      if (jsonNode.has(uuidKey)) {
+      if (element.has(uuidKey)) {
         return uuidKey;
       }
     }
     return "";
   }
+  //  public String getUuidKey(JsonNode jsonNode) {
+  //    for (String uuidKey : possibleUUIDs) {
+  //      if (jsonNode.has(uuidKey)) {
+  //        return uuidKey;
+  //      }
+  //    }
+  //    return "";
+  //  }
 
   public boolean isKeyInsideUUIdsToIdentityElementInList(String key) {
     return UUIDsToIdentityElementInList.contains(key);
