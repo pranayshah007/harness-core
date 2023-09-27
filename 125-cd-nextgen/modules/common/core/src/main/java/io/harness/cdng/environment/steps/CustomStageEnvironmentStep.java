@@ -107,9 +107,6 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
       Optional<Environment> environment =
           getEnvironment(ambiance, parameters, accountId, orgIdentifier, projectIdentifier);
 
-      // final NGLogCallback logCallback =
-      //      serviceStepsHelper.getServiceLogCallback(ambiance, true, SERVICE_STEP_COMMAND_UNIT);
-
       final NGLogCallback logCallback =
           new NGLogCallback(logStreamingStepClientFactory, ambiance, ENVIRONMENT_COMMAND_UNIT, true);
 
@@ -169,8 +166,6 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
 
     StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
 
-    // final NGLogCallback logCallback =
-    //   serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     final NGLogCallback logCallback =
         new NGLogCallback(logStreamingStepClientFactory, ambiance, ENVIRONMENT_COMMAND_UNIT, false);
 

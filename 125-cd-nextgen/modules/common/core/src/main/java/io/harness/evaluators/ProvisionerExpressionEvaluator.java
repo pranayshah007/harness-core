@@ -16,7 +16,6 @@ import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionEvaluatorResolver;
 import io.harness.pms.expression.ParameterFieldResolverFunctor;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 
 import java.util.HashMap;
@@ -66,11 +65,6 @@ public class ProvisionerExpressionEvaluator extends EngineExpressionEvaluator {
     }
     return propertyNameEvaluatedMap;
   }
-
-  public <T> ParameterField<T> resolveExpression(ParameterField<T> parameterField, ExpressionMode expressionMode) {
-    return (ParameterField<T>) resolve(parameterField, expressionMode);
-  }
-
   @Override
   public Object resolve(Object o, ExpressionMode expressionMode) {
     return ExpressionEvaluatorUtils.updateExpressions(o,

@@ -604,7 +604,6 @@ public class ServiceStepOverrideHelper {
 
   private boolean hasWebAppSpec(NGServiceV2InfoConfig serviceV2Config) {
     return serviceV2Config != null && serviceV2Config.getServiceDefinition() != null
-        && serviceV2Config.getServiceDefinition().getServiceSpec() != null
         && WebAppSpec.class.isAssignableFrom(serviceV2Config.getServiceDefinition().getServiceSpec().getClass());
   }
 

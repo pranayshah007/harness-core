@@ -171,7 +171,6 @@ public class ServiceStepsHelper {
       }
     }
     return ambiance;
-    // throw new UnsupportedOperationException("Not inside service step or one of it's children");
   }
 
   public List<Outcome> getChildrenOutcomes(Map<String, ResponseData> responseDataMap) {

@@ -24,9 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Contains method useful for service plan creator
- */
 @Slf4j
 public class PlanCreatorHelper {
   public static void addManifestsNode(
