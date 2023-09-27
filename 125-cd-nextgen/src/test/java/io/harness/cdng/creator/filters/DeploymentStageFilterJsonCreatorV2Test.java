@@ -10,6 +10,7 @@ package io.harness.cdng.creator.filters;
 import static io.harness.cdng.service.beans.ServiceDefinitionType.KUBERNETES;
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -53,6 +54,7 @@ import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
@@ -171,7 +173,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfigUseFromStageInvalid")
-  public void getFiltersWithUseFromStageInvalid(DeploymentStageNode node) {
+  public void getFiltersWithUseFromStageInvalid(DeploymentStageNode node) throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 6));
     FilterCreationContext ctx = FilterCreationContext.builder()
                                     .currentField(new YamlField(new YamlNode(null)))
                                     .setupMetadata(SetupMetadata.newBuilder()
@@ -179,6 +184,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                                        .setOrgId("orgId")
                                                        .setProjectId("projectId")
                                                        .build())
+                                    .currentField(specField)
                                     .build();
     assertThatThrownBy(() -> filterCreator.getFilter(ctx, node))
         .isInstanceOf(InvalidRequestException.class)
@@ -190,7 +196,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfigUseFromStageForEnvironmentInvalid")
-  public void getFiltersWithUseFromStageForEnvironmentInvalid(DeploymentStageNode node) {
+  public void getFiltersWithUseFromStageForEnvironmentInvalid(DeploymentStageNode node) throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 6));
     FilterCreationContext ctx = FilterCreationContext.builder()
                                     .currentField(new YamlField(new YamlNode(null)))
                                     .setupMetadata(SetupMetadata.newBuilder()
@@ -198,6 +207,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                                        .setOrgId("orgId")
                                                        .setProjectId("projectId")
                                                        .build())
+                                    .currentField(specField)
                                     .build();
     assertThatThrownBy(() -> filterCreator.getFilter(ctx, node))
         .isInstanceOf(InvalidRequestException.class)
@@ -209,7 +219,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfigUseFromStageForServicesInvalid")
-  public void getFiltersWithUseFromStageForServicesInvalid(DeploymentStageNode node) {
+  public void getFiltersWithUseFromStageForServicesInvalid(DeploymentStageNode node) throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 6));
     FilterCreationContext ctx = FilterCreationContext.builder()
                                     .currentField(new YamlField(new YamlNode(null)))
                                     .setupMetadata(SetupMetadata.newBuilder()
@@ -217,6 +230,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                                        .setOrgId("orgId")
                                                        .setProjectId("projectId")
                                                        .build())
+                                    .currentField(specField)
                                     .build();
     assertThatThrownBy(() -> filterCreator.getFilter(ctx, node))
         .isInstanceOf(InvalidRequestException.class)
@@ -301,13 +315,17 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   @Parameters(method = "dataForUseFromStage")
-  public void getFiltersWhenUseFromStage(DeploymentStageNode node) {
+  public void getFiltersWhenUseFromStage(DeploymentStageNode node) throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 6));
     FilterCreationContext ctx = FilterCreationContext.builder()
                                     .setupMetadata(SetupMetadata.newBuilder()
                                                        .setAccountId("accountId")
                                                        .setOrgId("orgId")
                                                        .setProjectId("projectId")
                                                        .build())
+                                    .currentField(specField)
                                     .build();
     PipelineFilter filter = filterCreator.getFilter(ctx, node);
     assertThat(filter.toJson())
@@ -320,13 +338,13 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     node1.setDeploymentStageConfig(
         DeploymentStageConfig.builder()
             .serviceConfig(
-                ServiceConfig.builder().useFromStage(ServiceUseFromStage.builder().stage("stage-1").build()).build())
+                ServiceConfig.builder().useFromStage(ServiceUseFromStage.builder().stage("stage1").build()).build())
             .infrastructure(PipelineInfrastructure.builder()
                                 .environment(EnvironmentYaml.builder()
                                                  .identifier(envEntity.getIdentifier())
                                                  .name(envEntity.getName())
                                                  .build())
-                                .useFromStage(InfraUseFromStage.builder().stage("stage-1").build())
+                                .useFromStage(InfraUseFromStage.builder().stage("stage1").build())
                                 .build())
             .build());
 
@@ -511,6 +529,222 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
             "Environment contains duplicates provisioner identifiers [duplicateIdentifier], stage []");
   }
 
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testSavePipelineWithUseFromStageReferredStageNotPresentForServicePropagation() throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder().useFromStage(ServiceUseFromStageV2.builder().stage("s1").build()).build())
+            .environment(EnvironmentYamlV2.builder().build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField =
+        new YamlField(YamlNode.fromYamlPath(getYaml("pipelineWithUseFromStageReferredStageNotExists.yaml"), ""));
+
+    YamlField currentField = fullYamlField.fromYamlPath("pipeline/stages/[0]/stage");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    assertThatExceptionOfType(InvalidYamlRuntimeException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessageContaining(String.format(
+            "Stage with identifier [%s] given for service propagation does not exist. Please add it and try again.",
+            "s1"));
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testSavePipelineWithParallelStagesAndUseFromStageReferredStageNotPresentForServicePropagation()
+      throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder().useFromStage(ServiceUseFromStageV2.builder().stage("s1").build()).build())
+            .environment(EnvironmentYamlV2.builder().build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField = new YamlField(
+        YamlNode.fromYamlPath(getYaml("pipelineWithParallelStagesAndUseFromStageReferredStageNotExists.yaml"), ""));
+
+    YamlField currentField = fullYamlField.fromYamlPath("pipeline/stages/[0]/parallel/[1]/stage");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    assertThatExceptionOfType(InvalidYamlRuntimeException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessageContaining(String.format(
+            "Stage with identifier [%s] given for service propagation does not exist. Please add it and try again.",
+            "s1"));
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testSavePipelineWithParallelStagesAndUseFromStageReferredStageIsPresentForServicePropagation()
+      throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder().useFromStage(ServiceUseFromStageV2.builder().stage("s1").build()).build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.createValueField("env"))
+                             .infrastructureDefinition(
+                                 ParameterField.createValueField(InfraStructureDefinitionYaml.builder().build()))
+                             .build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField = new YamlField(
+        YamlNode.fromYamlPath(getYaml("pipelineWithParallelStagesAndUseFromStageReferredStageExists.yaml"), ""));
+
+    YamlField currentField = fullYamlField.fromYamlPath("pipeline/stages/[1]/parallel/[1]/stage");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    filterCreator.getFilter(ctx, node);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testSavePipelineWithParallelStagesAndUseFromStageReferredStageNotPresentForServicePropagation2()
+      throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder().useFromStage(ServiceUseFromStageV2.builder().stage("s1").build()).build())
+            .environment(EnvironmentYamlV2.builder().build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField = new YamlField(
+        YamlNode.fromYamlPath(getYaml("pipelineWithParallelStagesAndUseFromStageReferredStageNotExists2.yaml"), ""));
+
+    YamlField currentField = fullYamlField.fromYamlPath("pipeline/stages/[1]/stage");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    assertThatExceptionOfType(InvalidYamlRuntimeException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessageContaining(String.format(
+            "Stage with identifier [%s] given for service propagation does not exist. Please add it and try again.",
+            "s1"));
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testSavePipelineWithParallelStagesAndUseFromStageReferredStageIsPresentForServicePropagation2()
+      throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder().useFromStage(ServiceUseFromStageV2.builder().stage("s1").build()).build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.createValueField("env"))
+                             .infrastructureDefinition(
+                                 ParameterField.createValueField(InfraStructureDefinitionYaml.builder().build()))
+                             .build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField = new YamlField(
+        YamlNode.fromYamlPath(getYaml("pipelineWithParallelStagesAndUseFromStageReferredStageExists2.yaml"), ""));
+
+    YamlField currentField = fullYamlField.fromYamlPath("pipeline/stages/[1]/stage");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    filterCreator.getFilter(ctx, node);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testSavePipelineWithUseFromStageReferredStageNotPresentForMultiServicePropagation() throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .services(ServicesYaml.builder().useFromStage(ServiceUseFromStageV2.builder().stage("s1").build()).build())
+            .environment(EnvironmentYamlV2.builder().build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField = new YamlField(
+        YamlNode.fromYamlPath(getYaml("pipelineWithUseFromStageReferredStageNotExistsForMultiServices.yaml"), ""));
+
+    YamlField currentField = fullYamlField.fromYamlPath("pipeline/stages/[0]/stage");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    assertThatExceptionOfType(InvalidYamlRuntimeException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessageContaining(String.format(
+            "Stage with identifier [%s] given for multi-service propagation does not exist. Please add it and try again.",
+            "s1"));
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testSavePipelineWithUseFromStageNotPresentForEnvironmentPropagation() throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder().build())
+            .environment(EnvironmentYamlV2.builder()
+                             .useFromStage(EnvironmentInfraUseFromStage.builder().stage("s1").build())
+                             .build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField = new YamlField(
+        YamlNode.fromYamlPath(getYaml("pipelineWithUseFromStageReferredStageNotExistsForEnvironment.yaml"), ""));
+
+    YamlField currentField = fullYamlField.fromYamlPath("pipeline/stages/[0]/stage");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    assertThatExceptionOfType(InvalidYamlRuntimeException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessageContaining(String.format(
+            "Stage with identifier [%s] given for environment propagation does not exist. Please add it and try again.",
+            "s1"));
+  }
+
   private Object[][] getDeploymentStageConfigWithFilters() throws IOException {
     final DeploymentStageNode node1 =
         getDeploymentStageNodeFromYaml("multisvcinfra/gitops/deployStageWithEnvironmentAndFilter.yaml");
@@ -599,7 +833,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
         DeploymentStageConfig.builder()
             .service(ServiceYamlV2.builder()
                          .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
-                         .useFromStage(ServiceUseFromStageV2.builder().stage("stageId").build())
+                         .useFromStage(ServiceUseFromStageV2.builder().stage("stage1").build())
                          .build())
             .environment(EnvironmentYamlV2.builder()
                              .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
@@ -623,7 +857,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                          .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
                          .build())
             .environment(EnvironmentYamlV2.builder()
-                             .useFromStage(EnvironmentInfraUseFromStage.builder().stage("stageId").build())
+                             .useFromStage(EnvironmentInfraUseFromStage.builder().stage("stage1").build())
                              .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
                              .build())
             .deploymentType(KUBERNETES)
@@ -640,10 +874,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                 ServicesYaml.builder()
                     .values(ParameterField.createValueField(List.of(
                         ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("service_1")).build())))
-                    .useFromStage(ServiceUseFromStageV2.builder().stage("stageId").build())
+                    .useFromStage(ServiceUseFromStageV2.builder().stage("stage1").build())
                     .build())
             .environment(EnvironmentYamlV2.builder()
-                             .useFromStage(EnvironmentInfraUseFromStage.builder().stage("stageId").build())
+                             .useFromStage(EnvironmentInfraUseFromStage.builder().stage("stage1").build())
                              .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
                              .build())
             .deploymentType(KUBERNETES)
@@ -870,5 +1104,19 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   private String getYaml(String filePath) throws IOException {
     final URL testFile = classLoader.getResource(filePath);
     return Resources.toString(testFile, Charsets.UTF_8);
+  }
+
+  private static YamlNode getStageNodeAtIndex(YamlField pipeline, int idx) {
+    return pipeline.getNode()
+        .getField("pipeline")
+        .getNode()
+        .getField("stages")
+        .getNode()
+        .asArray()
+        .get(idx)
+        .getField("stage")
+        .getNode()
+        .getField(YAMLFieldNameConstants.SPEC)
+        .getNode();
   }
 }
