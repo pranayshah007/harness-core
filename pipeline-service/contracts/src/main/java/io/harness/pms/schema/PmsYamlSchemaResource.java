@@ -14,7 +14,6 @@ import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.EntityType;
-import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,7 +23,6 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.pipeline.PipelineConfig;
-import io.harness.pms.yaml.YamlSchemaResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.Api;
@@ -53,6 +51,7 @@ import javax.ws.rs.QueryParam;
 public interface PmsYamlSchemaResource {
   @GET
   @ApiOperation(value = "Get Yaml Schema", nickname = "getSchemaYaml")
+  @Deprecated
   ResponseDTO<JsonNode> getYamlSchema(@QueryParam("entityType") @NotNull EntityType entityType,
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,
@@ -62,14 +61,6 @@ public interface PmsYamlSchemaResource {
   @Path("/invalidate-cache")
   @ApiOperation(value = "Invalidate yaml schema cache", nickname = "invalidateYamlSchemaCache")
   ResponseDTO<Boolean> invalidateYamlSchemaCache();
-
-  @GET
-  @Path("/get")
-  @ApiOperation(value = "Get step YAML schema", nickname = "getStepYamlSchema")
-  ResponseDTO<YamlSchemaResponse> getIndividualYamlSchema(@NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(ORG_KEY) String orgIdentifier, @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @QueryParam("yamlGroup") String yamlGroup,
-      @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType stepEntityType, @QueryParam("scope") Scope scope);
 
   @GET
   @ApiOperation(value = "dummy api for checking pms schema", nickname = "dummyApiForSwaggerSchemaCheck")

@@ -7,14 +7,10 @@
 
 package io.harness.pms.pipeline.service;
 
-import static io.harness.pms.pipeline.service.PMSYamlSchemaServiceImpl.STAGE_ELEMENT_CONFIG;
-import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.STEP_ELEMENT_CONFIG;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
-import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.TRIGGER_NODE;
@@ -31,7 +27,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,22 +37,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
-import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
-import io.harness.jackson.JsonNodeUtils;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
-import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
-import io.harness.utils.PmsFeatureFlagService;
-import io.harness.yaml.individualschema.AbstractStaticSchemaParser;
-import io.harness.yaml.schema.YamlSchemaProvider;
-import io.harness.yaml.schema.YamlSchemaTransientHelper;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -67,7 +54,6 @@ import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -91,15 +77,11 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PMSYamlSchemaServiceImplTest {
   @Mock private SchemaFetcher schemaFetcher;
-  @Mock private YamlSchemaProvider yamlSchemaProvider;
   @Mock PmsYamlSchemaHelper pmsYamlSchemaHelper;
-  @Mock PmsSdkInstanceService pmsSdkInstanceService;
   @Mock YamlSchemaValidator yamlSchemaValidator;
 
-  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
   @Mock private ExecutorService yamlSchemaExecutor;
-  @Mock AbstractStaticSchemaParser abstractStaticSchemaParser;
 
   PipelineServiceConfiguration pipelineServiceConfiguration;
 
@@ -110,8 +92,8 @@ public class PMSYamlSchemaServiceImplTest {
   @Before
   public void setUp() throws ExecutionException, InterruptedException, TimeoutException {
     MockitoAnnotations.initMocks(this);
-    pmsYamlSchemaService = new PMSYamlSchemaServiceImpl(yamlSchemaProvider, yamlSchemaValidator, pmsSdkInstanceService,
-        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor, pmsFeatureFlagService, null, null);
+    pmsYamlSchemaService = new PMSYamlSchemaServiceImpl(
+        yamlSchemaValidator, pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor, null);
   }
 
   @Test
@@ -159,24 +141,6 @@ public class PMSYamlSchemaServiceImplTest {
           .isInstanceOf(InvalidYamlException.class)
           .hasMessage("Invalid yaml in node [DUMMY]");
     }
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldAddStepSpecTypeWhenGetIndividualYamlSchema() throws IOException {
-    String yamlGroup = "";
-    JsonNode expected = readJsonNode("individual-yaml-schema.json");
-
-    when(
-        schemaFetcher.fetchStepYamlSchema(ACC_ID, PRJ_ID, ORG_ID, Scope.ACCOUNT, EntityType.PIPELINES, yamlGroup, null))
-        .thenReturn(expected);
-
-    final JsonNode result = pmsYamlSchemaService.getIndividualYamlSchema(
-        ACC_ID, ORG_ID, PRJ_ID, Scope.ACCOUNT, EntityType.PIPELINES, yamlGroup);
-
-    assertThat(result).isNotNull();
-    assertThat(result.get(DEFINITIONS_NODE).get("StepSpecType")).isNotNull();
   }
 
   @Test
@@ -270,15 +234,6 @@ public class PMSYamlSchemaServiceImplTest {
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
-  public void verifyGetPipelineYamlSchema() throws Throwable {
-    final Scope scope = Scope.ORG;
-    prepareAndAssertGetPipelineYamlSchemaInternal(
-        scope, () -> pmsYamlSchemaService.getPipelineYamlSchema(ACC_ID, PRJ_ID, ORG_ID, scope));
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
   public void shouldInvalidateCaches() {
     pmsYamlSchemaService.invalidateAllCache();
     verify(schemaFetcher).invalidateAllCache();
@@ -300,7 +255,6 @@ public class PMSYamlSchemaServiceImplTest {
   public void shouldValidateYamlSchema() throws Throwable {
     final String yaml = "yamlContent";
     final String schemaString = "schemaContent";
-    final Scope scope = Scope.PROJECT;
     pmsYamlSchemaService.allowedParallelStages = 0;
 
     when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, ACC_ID))
@@ -310,13 +264,10 @@ public class PMSYamlSchemaServiceImplTest {
 
     when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.PIE_STATIC_YAML_SCHEMA, ACC_ID)).thenReturn(false);
 
-    try (MockedStatic<JsonPipelineUtils> pipelineUtils = mockStatic(JsonPipelineUtils.class)) {
-      pipelineUtils.when(() -> JsonPipelineUtils.writeJsonString(any())).thenReturn(schemaString);
-      prepareAndAssertGetPipelineYamlSchemaInternal(scope,
-          ()
-              -> pmsYamlSchemaService.validateYamlSchemaInternal(
-                  ACC_ID, ORG_ID, PRJ_ID, YamlUtils.readAsJsonNode(yaml)));
-    }
+    MockedStatic<JsonPipelineUtils> pipelineUtils = mockStatic(JsonPipelineUtils.class);
+    pipelineUtils.when(() -> JsonPipelineUtils.writeJsonString(any())).thenReturn(schemaString);
+
+    pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, YamlUtils.readAsJsonNode(yaml));
 
     verify(yamlSchemaValidator)
         .validate(eq(YamlUtils.readAsJsonNode(yaml)), eq(schemaString), anyBoolean(), anyInt(), anyString());
@@ -326,57 +277,5 @@ public class PMSYamlSchemaServiceImplTest {
     final String resource = IOUtils.resourceToString(resourceName, StandardCharsets.UTF_8, getClass().getClassLoader());
     ObjectMapper objectMapper = new ObjectMapper();
     return objectMapper.readTree(resource);
-  }
-
-  // WE PREPARE THE SAME BEHAVIOR TO EVERY CALL THAT NEED USE THE GetPipelineYamlSchemaInternal PRIVATE METHOD.
-  // USING THIS APPROACH IS NOT REQUIRED DUPLICATE CODE JUST TO CREATE A SUCCESSFUL BEHAVIOR TO EVERYONE. BUT IS
-  // IMPORTANT TO NOTE THAT WE DON'T COVERAGE SPECIFIC CASES, JUST THE SUNNY DAY.
-  private void prepareAndAssertGetPipelineYamlSchemaInternal(Scope scope, PipelineYamlSchemaInternal verification)
-      throws Throwable {
-    ObjectNode pipelineSchema = mock(ObjectNode.class);
-    JsonNode pipelineSteps = mock(JsonNode.class);
-    when(yamlSchemaProvider.getYamlSchema(EntityType.PIPELINES, ORG_ID, PRJ_ID, scope)).thenReturn(pipelineSchema);
-    when(yamlSchemaProvider.getYamlSchema(EntityType.PIPELINE_STEPS, ORG_ID, PRJ_ID, scope)).thenReturn(pipelineSteps);
-
-    ObjectNode pipelineDefinitions = mock(ObjectNode.class);
-    ObjectNode pipelineStepsDefinitions = mock(ObjectNode.class);
-    when(pipelineSchema.get(DEFINITIONS_NODE)).thenReturn(pipelineDefinitions);
-    when(pipelineSteps.get(DEFINITIONS_NODE)).thenReturn(pipelineStepsDefinitions);
-
-    ObjectNode stageElementConfig = mock(ObjectNode.class);
-    when(pipelineDefinitions.get(STAGE_ELEMENT_CONFIG)).thenReturn(stageElementConfig);
-    when(stageElementConfig.get(ONE_OF_NODE)).thenReturn(mock(ArrayNode.class));
-
-    try (MockedStatic<JsonNodeUtils> jsonNodeUtils = mockStatic(JsonNodeUtils.class);
-         MockedStatic<YamlSchemaTransientHelper> yamlHelper = mockStatic(YamlSchemaTransientHelper.class);
-         MockedStatic<PmsYamlSchemaHelper> schemaHelper = mockStatic(PmsYamlSchemaHelper.class)) {
-      ObjectNode mergedDefinitions = mock(ObjectNode.class);
-      jsonNodeUtils.when(() -> JsonNodeUtils.merge(pipelineDefinitions, pipelineStepsDefinitions))
-          .thenReturn(mergedDefinitions);
-
-      ObjectNode finalMergedDefinitions = mock(ObjectNode.class);
-      when(yamlSchemaProvider.mergeAllV2StepsDefinitions(
-               eq(PRJ_ID), eq(ORG_ID), eq(scope), eq(mergedDefinitions), any()))
-          .thenReturn(finalMergedDefinitions);
-      ObjectNode stepElementConfig = mock(ObjectNode.class);
-      when(finalMergedDefinitions.get(STEP_ELEMENT_CONFIG)).thenReturn(stepElementConfig);
-
-      // EXECUTE
-      verification.apply();
-      verify(pipelineSchema).set(DEFINITIONS_NODE, pipelineDefinitions);
-
-      yamlHelper.verify(() -> YamlSchemaTransientHelper.removeV2StepEnumsFromStepElementConfig(stepElementConfig));
-      yamlHelper.verify(() -> YamlSchemaTransientHelper.deleteSpecNodeInStageElementConfig(stageElementConfig));
-      schemaHelper.verify(() -> PmsYamlSchemaHelper.flattenParallelElementConfig(any()));
-
-      verify(pmsYamlSchemaHelper).getNodeEntityTypesByYamlGroup(StepCategory.STEP.name());
-      verify(pmsSdkInstanceService).getActiveInstanceNames();
-      verify(yamlSchemaProvider, times(2))
-          .mergeAllV2StepsDefinitions(eq(PRJ_ID), eq(ORG_ID), eq(scope), eq(mergedDefinitions), any());
-    }
-  }
-
-  private interface PipelineYamlSchemaInternal {
-    void apply() throws Throwable;
   }
 }

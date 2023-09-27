@@ -23,11 +23,13 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import javax.ws.rs.NotSupportedException;
 import org.junit.Test;
@@ -38,8 +40,6 @@ import org.mockito.Mock;
 public class PmsYamlSchemaResourceTest extends PipelineServiceTestBase {
   @InjectMocks PmsYamlSchemaResourceImpl pmsYamlSchemaResource;
   @Mock PMSYamlSchemaService pmsYamlSchemaService;
-  @Mock NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
-
   String project = "project";
   String org = "org";
   String acc = "acc";
@@ -49,14 +49,22 @@ public class PmsYamlSchemaResourceTest extends PipelineServiceTestBase {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetYamlSchema() {
-    JsonNode textNode1 = new TextNode("placeholder1");
-    doReturn(textNode1).when(pmsYamlSchemaService).getPipelineYamlSchema(acc, project, org, Scope.PROJECT);
+    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectNode textNode1 = objectMapper.createObjectNode();
+    textNode1.set("myObject", new TextNode("placeholder1"));
+    doReturn(textNode1)
+        .when(pmsYamlSchemaService)
+        .getStaticSchemaForAllEntities(YAMLFieldNameConstants.PIPELINE, "", "", "v0");
     ResponseDTO<JsonNode> yamlSchema1 =
         pmsYamlSchemaResource.getYamlSchema(PIPELINES, project, org, Scope.PROJECT, id, acc);
     assertThat(yamlSchema1.getData()).isEqualTo(textNode1);
 
-    JsonNode textNode2 = new TextNode("placeholder2");
-    doReturn(textNode2).when(ngTriggerYamlSchemaService).getTriggerYamlSchema(project, org, id, Scope.PROJECT);
+    ObjectNode textNode2 = objectMapper.createObjectNode();
+    textNode1.set("myObject", new TextNode("placeholder2"));
+    doReturn(textNode2)
+        .when(pmsYamlSchemaService)
+        .getStaticSchemaForAllEntities(YAMLFieldNameConstants.TRIGGER, "", "", "v0");
+
     ResponseDTO<JsonNode> yamlSchema2 =
         pmsYamlSchemaResource.getYamlSchema(TRIGGERS, project, org, Scope.PROJECT, id, acc);
     assertThat(yamlSchema2.getData()).isEqualTo(textNode2);
