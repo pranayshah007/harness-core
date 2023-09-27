@@ -12,6 +12,7 @@ public enum YamlSchemaFieldConstants {
   TYPE("type"),
   DEPENDS_ON("dependsOn"),
   INPUT_PROPERTIES("inputProperties"),
+  METADATA("metadata"),
   PIPELINE("pipeline"),
   TEMPLATE("template"),
   INPUTS("inputs"),
