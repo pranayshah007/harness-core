@@ -27,6 +27,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
+import io.harness.engine.pms.execution.modifier.ambiance.AmbianceModifier;
+import io.harness.engine.pms.execution.modifier.ambiance.AmbianceModifierFactory;
 import io.harness.event.handlers.HandleStepResponseRequestProcessor;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecutionMetadata;
@@ -58,6 +60,8 @@ public class AbstractNodeExecutionStrategyTest {
   @Mock ExecutorService executorService;
   HandleStepResponseRequestProcessor handleStepResponseRequestProcessor;
   @Mock SdkResponseProcessorFactory sdkResponseProcessorFactory;
+  AmbianceModifier ambianceModifier;
+  @Mock AmbianceModifierFactory ambianceModifierFactory;
   AbstractNodeExecutionStrategy abstractNodeExecutionStrategy;
   @Mock OrchestrationEngine orchestrationEngine;
   @Mock NodeAdviseHelper nodeAdviseHelper;
@@ -77,8 +81,11 @@ public class AbstractNodeExecutionStrategyTest {
     doReturn(handleStepResponseRequestProcessor)
         .when(sdkResponseProcessorFactory)
         .getHandler(SdkResponseEventType.HANDLE_STEP_RESPONSE);
+    ambianceModifier = mock(AmbianceModifier.class);
+    doReturn(ambianceModifier).when(ambianceModifierFactory).obtainModifier(any());
     planNode = PlanNode.builder().executionInputTemplate("setup").build();
     abstractNodeExecutionStrategy = spy(AbstractNodeExecutionStrategy.class);
+    FieldUtils.writeField(abstractNodeExecutionStrategy, "ambianceModifierFactory", ambianceModifierFactory, true);
     when(abstractNodeExecutionStrategy.createNodeExecution(ambiance, planNode, nodeExecutionMetadata, "", "", ""))
         .thenReturn(NodeExecution.builder().uuid(accountId).build());
     FieldUtils.writeField(

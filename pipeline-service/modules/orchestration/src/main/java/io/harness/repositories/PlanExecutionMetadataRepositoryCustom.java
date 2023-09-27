@@ -21,5 +21,5 @@ public interface PlanExecutionMetadataRepositoryCustom {
 
   // Updates multiple records for given criteria
   void multiUpdatePlanExecution(Criteria criteria, Update update);
-  PlanExecutionMetadata getWithFieldsIncluded(String planExecutionId, Set<String> fieldsToInclude);
+  PlanExecutionMetadata getWithFieldsIncludedFromSecondary(String planExecutionId, Set<String> fieldsToInclude);
 }

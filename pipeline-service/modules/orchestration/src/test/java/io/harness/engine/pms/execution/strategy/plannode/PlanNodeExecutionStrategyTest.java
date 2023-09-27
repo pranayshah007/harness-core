@@ -184,7 +184,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
 
     doReturn(NodeExecution.builder().build())
         .when(executionStrategy)
-        .createNodeExecution(ambiance, planNode, null, null, null, null);
+        .createNodeExecutionInternal(ambiance, planNode, null, null, null, null);
     executionStrategy.runNode(ambiance, planNode, null);
     verify(executorService).submit(any(Runnable.class));
     doReturn(NodeExecution.builder().uuid("fda").build()).when(nodeExecutionService).save(any());
@@ -794,7 +794,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .skipExpressionChain(false)
                                       .build();
     when(nodeExecutionService.save(any(NodeExecution.class))).thenReturn(nodeExecution);
-    NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node, null, "NID", "PaID", "PrID");
+    NodeExecution nodeExecution1 =
+        executionStrategy.createNodeExecutionInternal(ambiance, node, null, "NID", "PaID", "PrID");
     assertEquals(nodeExecution1, nodeExecution);
     ArgumentCaptor<NodeExecution> mCaptor = ArgumentCaptor.forClass(NodeExecution.class);
     verify(nodeExecutionService).save(mCaptor.capture());
@@ -844,7 +845,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .nodeType(NodeType.PLAN_NODE.name())
                                       .build();
     when(nodeExecutionService.save(any(NodeExecution.class))).thenReturn(nodeExecution);
-    NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node,
+    NodeExecution nodeExecution1 = executionStrategy.createNodeExecutionInternal(ambiance, node,
         NodeExecutionMetadata.builder().strategyMetadata(StrategyMetadata.newBuilder().build()).build(), "NID", "PaID",
         "PrID");
     assertEquals(nodeExecution1, nodeExecution);

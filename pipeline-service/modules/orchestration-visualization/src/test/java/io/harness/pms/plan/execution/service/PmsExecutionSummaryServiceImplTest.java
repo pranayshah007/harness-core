@@ -33,8 +33,10 @@ import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.strategy.StrategyType;
@@ -47,6 +49,7 @@ import io.harness.pms.contracts.execution.run.NodeRunInfo;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
@@ -82,6 +85,7 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
   @Mock PmsExecutionSummaryRepository pmsExecutionSummaryRepositoryMock;
   @Inject PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Mock NodeExecutionService nodeExecutionService;
+  @Mock PlanExecutionMetadataService planExecutionMetadataService;
   @Mock NodeExecutionInfoService pmsGraphStepDetailsService;
   @Mock AbortInfoHelper abortInfoHelper;
   @InjectMocks PmsExecutionSummaryServiceImpl pmsExecutionSummaryService;
@@ -406,6 +410,7 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     String prevStageId = "prevStageId";
     String prevStageNodeId = "prevStageNodeId";
     String nodeId = "nodeId";
+    String planExecutionId = "planExecutionId";
     NodeExecution currentNodeExecution = NodeExecution.builder()
                                              .ambiance(basicAmbiance)
                                              .stepType(prbStepType)
@@ -415,8 +420,12 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
                                              .build();
     NodeExecution prevNodeExecution = NodeExecution.builder().nodeId(prevStageNodeId).build();
     doReturn(prevNodeExecution).when(nodeExecutionService).get(prevStageId);
+    doReturn(PlanExecutionMetadata.builder().build())
+        .when(planExecutionMetadataService)
+        .getWithFieldsIncludedFromSecondary(
+            planExecutionId, PlanExecutionProjectionConstants.fieldsForPostProdRollback);
     Update update = new Update();
-    pmsExecutionSummaryService.handleNodeExecutionUpdateFromGraphUpdate(null, currentNodeExecution, update);
+    pmsExecutionSummaryService.handleNodeExecutionUpdateFromGraphUpdate(planExecutionId, currentNodeExecution, update);
     Document updateObject = update.getUpdateObject();
     assertThat(updateObject).hasSize(1);
     Document setObjects = (Document) updateObject.get("$set");
