@@ -9,7 +9,10 @@ package io.harness.steps.resourcerestraint.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintRegistry;
 import io.harness.distribution.constraint.Consumer;
@@ -21,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 @OwnedBy(PIPELINE)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = HarnessModuleComponent.CDS_PIPELINE)
 public interface ResourceRestraintInstanceService extends ConstraintRegistry {
   ResourceRestraintInstance save(ResourceRestraintInstance resourceRestraintInstance);
 

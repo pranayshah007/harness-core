@@ -22,7 +22,10 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintId;
@@ -75,6 +78,7 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 @Slf4j
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = HarnessModuleComponent.CDS_PIPELINE)
 public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintInstanceService {
   @Inject private ResourceRestraintInstanceRepository restraintInstanceRepository;
   @Inject private MongoTemplate mongoTemplate;
@@ -310,16 +314,14 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
         id.getValue(), unit.getValue(), new ArrayList<>(Arrays.asList(ACTIVE, BLOCKED)));
 
     instances.forEach(instance
-        -> consumers.add(
-            Consumer.builder()
-                .id(new ConsumerId(instance.getUuid()))
-                .state(instance.getState())
-                .permits(instance.getPermits())
-                .context(ImmutableMap.of(ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityType,
-                    instance.getReleaseEntityType(),
-                    ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityId,
-                    instance.getReleaseEntityId()))
-                .build()));
+        -> consumers.add(Consumer.builder()
+                             .id(new ConsumerId(instance.getUuid()))
+                             .state(instance.getState())
+                             .permits(instance.getPermits())
+                             .context(ImmutableMap.of(ResourceRestraintInstanceKeys.releaseEntityType,
+                                 instance.getReleaseEntityType(), ResourceRestraintInstanceKeys.releaseEntityId,
+                                 instance.getReleaseEntityId()))
+                             .build()));
     return consumers;
   }
 
@@ -335,13 +337,11 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
             .uuid(consumer.getId().getValue())
             .resourceRestraintId(id.getValue())
             .resourceUnit(unit.getValue())
-            .releaseEntityType((String) consumer.getContext().get(
-                ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityType))
-            .releaseEntityId((String) consumer.getContext().get(
-                ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityId))
+            .releaseEntityType((String) consumer.getContext().get(ResourceRestraintInstanceKeys.releaseEntityType))
+            .releaseEntityId((String) consumer.getContext().get(ResourceRestraintInstanceKeys.releaseEntityId))
             .permits(consumer.getPermits())
             .state(consumer.getState())
-            .order((int) consumer.getContext().get(ResourceRestraintInstance.ResourceRestraintInstanceKeys.order));
+            .order((int) consumer.getContext().get(ResourceRestraintInstanceKeys.order));
 
     if (ACTIVE == consumer.getState()) {
       builder.acquireAt(System.currentTimeMillis());
@@ -360,10 +360,10 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
   @Override
   public boolean adjustRegisterConsumerContext(ConstraintId id, Map<String, Object> context) {
     final int order = getMaxOrder(id.getValue()) + 1;
-    if (order == (int) context.get(ResourceRestraintInstance.ResourceRestraintInstanceKeys.order)) {
+    if (order == (int) context.get(ResourceRestraintInstanceKeys.order)) {
       return false;
     }
-    context.put(ResourceRestraintInstance.ResourceRestraintInstanceKeys.order, order);
+    context.put(ResourceRestraintInstanceKeys.order, order);
     return true;
   }
 
@@ -394,20 +394,18 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
 
   @Override
   public boolean overlappingScope(Consumer consumer, Consumer blockedConsumer) {
-    String releaseScope =
-        (String) consumer.getContext().get(ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityType);
-    String blockedReleaseScope = (String) blockedConsumer.getContext().get(
-        ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityType);
+    String releaseScope = (String) consumer.getContext().get(ResourceRestraintInstanceKeys.releaseEntityType);
+    String blockedReleaseScope =
+        (String) blockedConsumer.getContext().get(ResourceRestraintInstanceKeys.releaseEntityType);
 
     if (!PmsConstants.RELEASE_ENTITY_TYPE_PLAN.equals(releaseScope)
         || !PmsConstants.RELEASE_ENTITY_TYPE_PLAN.equals(blockedReleaseScope)) {
       return false;
     }
 
-    String planExecutionId =
-        (String) consumer.getContext().get(ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityId);
-    String blockedPlanExecutionId = (String) blockedConsumer.getContext().get(
-        ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityId);
+    String planExecutionId = (String) consumer.getContext().get(ResourceRestraintInstanceKeys.releaseEntityId);
+    String blockedPlanExecutionId =
+        (String) blockedConsumer.getContext().get(ResourceRestraintInstanceKeys.releaseEntityId);
 
     return planExecutionId.equals(blockedPlanExecutionId);
   }

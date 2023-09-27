@@ -7,6 +7,9 @@
 
 package io.harness.steps.resourcerestraint;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
@@ -34,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = HarnessModuleComponent.CDS_PIPELINE)
 public class ResourceRestraintObserver
     implements OrchestrationEndObserver, NodeStatusUpdateObserver, AsyncInformObserver {
   private final ExecutorService executorService = Executors.newSingleThreadExecutor();

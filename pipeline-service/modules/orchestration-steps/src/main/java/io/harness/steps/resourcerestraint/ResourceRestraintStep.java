@@ -12,7 +12,10 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.REJECTED;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintUnit;
@@ -42,7 +45,8 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
-import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
+import io.harness.steps.resourcerestraint.beans.ResourceRestraint.ResourceRestraintKeys;
+import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.ResourceRestraintInstanceKeys;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintOutcome;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintService;
@@ -60,6 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PIPELINE)
 @Slf4j
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = HarnessModuleComponent.CDS_PIPELINE)
 public class ResourceRestraintStep implements AsyncExecutable<StepElementParameters> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.RESOURCE_CONSTRAINT_STEP_TYPE;
 
@@ -181,13 +186,12 @@ public class ResourceRestraintStep implements AsyncExecutable<StepElementParamet
   private Map<String, Object> populateConstraintContext(
       ResourceRestraint resourceRestraint, IResourceRestraintSpecParameters stepParameters, String releaseEntityId) {
     Map<String, Object> constraintContext = new HashMap<>();
-    constraintContext.put(ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityType,
-        stepParameters.getHoldingScope().name());
-    constraintContext.put(ResourceRestraintInstance.ResourceRestraintInstanceKeys.releaseEntityId, releaseEntityId);
-    constraintContext.put(ResourceRestraintInstance.ResourceRestraintInstanceKeys.order,
+    constraintContext.put(ResourceRestraintInstanceKeys.releaseEntityType, stepParameters.getHoldingScope().name());
+    constraintContext.put(ResourceRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    constraintContext.put(ResourceRestraintInstanceKeys.order,
         resourceRestraintInstanceService.getMaxOrder(resourceRestraint.getUuid()) + 1);
-    constraintContext.put(ResourceRestraint.ResourceRestraintKeys.capacity, resourceRestraint.getCapacity());
-    constraintContext.put(ResourceRestraint.ResourceRestraintKeys.name, resourceRestraint.getName());
+    constraintContext.put(ResourceRestraintKeys.capacity, resourceRestraint.getCapacity());
+    constraintContext.put(ResourceRestraintKeys.name, resourceRestraint.getName());
     constraintContext.put(FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name(), true);
 
     return constraintContext;
