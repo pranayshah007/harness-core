@@ -164,7 +164,7 @@ public class CDLicenseDailyReportIteratorHandler implements MongoPersistenceIter
       // job needs to generate report from: (fromDate could be 12 months back or missing report days back)
       // to: one day prior the job is triggered
       LocalDate fromDate = setFromDate(accountId, licenseType);
-      LocalDate toDate = LocalDate.now(ZoneOffset.UTC).minusDays(1);
+      LocalDate toDate = LocalDate.now(ZoneOffset.UTC).minusDays(0);
       if (fromDate.isAfter(toDate)) {
         log.info("CD license daily report is already generated for day {}, fromDate: {}", toDate, fromDate);
         return;

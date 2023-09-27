@@ -60,6 +60,10 @@ BEGIN
                 (
                     SELECT
                         CASE
+                            WHEN instancesPerServices.instancetype IS NOT NULL AND instancesPerServices.instancetype = 'AWS_LAMBDA_INSTANCE' AND (instancesPerServices.instanceCount IS NULL OR instancesPerServices.instanceCount <= 100)
+                                THEN 1
+                            WHEN instancesPerServices.instancetype IS NOT NULL AND instancesPerServices.instancetype = 'AWS_LAMBDA_INSTANCE' AND (instancesPerServices.instanceCount > 5)
+                                THEN CEILING(instancesPerServices.instanceCount / 100.0)
                             WHEN instancesPerServices.instanceCount IS NULL OR instancesPerServices.instanceCount <= 20
                                 THEN 1
                             WHEN instancesPerServices.instanceCount > 20
@@ -94,14 +98,16 @@ BEGIN
                                 PERCENTILE_DISC(.95) WITHIN GROUP (ORDER BY instancesPerServicesReportedAt.instanceCount) AS instanceCount,
                                 orgid,
                                 projectid,
-                                serviceid
+                                serviceid,
+                                instancetype
                             FROM
                                 (
                                     SELECT
                                         DATE_TRUNC('minute', reportedat) AS reportedat,
                                         orgid,
                                         projectid,
-                                        serviceid
+                                        serviceid,
+                                        instancetype,
                                         SUM(instancecount) AS instanceCount
                                     FROM
                                         ng_instance_stats
@@ -116,13 +122,15 @@ BEGIN
                                     GROUP BY
                                         orgid,
                                         projectid,
-                                        serviceid
+                                        serviceid,
+                                        instancetype,
                                         DATE_TRUNC('minute', reportedat)
                                 ) instancesPerServicesReportedAt
                             GROUP BY
                                 orgid,
                                 projectid,
-                                serviceid
+                                serviceid,
+                                instancetype
                         ) instancesPerServices ON activeServices.orgIdentifier = instancesPerServices.orgid
                             AND activeServices.projectIdentifier = instancesPerServices.projectid
                             AND activeServices.serviceIdentifier = instancesPerServices.serviceid

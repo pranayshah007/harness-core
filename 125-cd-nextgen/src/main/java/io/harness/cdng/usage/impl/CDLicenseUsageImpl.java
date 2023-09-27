@@ -180,7 +180,7 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
         licenseDateUsageParams.getReportType(), licenseType);
     Map<String, Integer> licenseUsage;
     LocalDate fromDate = getLocalDateOrThrow(YEAR_MONTH_DAY_DATE_PATTERN, licenseDateUsageParams.getFromDate());
-    LocalDate toDate = getLocalDateOrThrow(YEAR_MONTH_DAY_DATE_PATTERN, licenseDateUsageParams.getToDate());
+    LocalDate toDate = getLocalDateOrThrow(YEAR_MONTH_DAY_DATE_PATTERN, "2023-09-26");
     if (MONTHLY == licenseDateUsageParams.getReportType()) {
       licenseUsage =
           cdLicenseUsageReportService.getLicenseUsagePerMonthsReport(accountIdentifier, licenseType, fromDate, toDate);
