@@ -58,6 +58,8 @@ import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
 @Slf4j
 public class TemplatePipelineStepMonitoredServiceResolutionServiceImpl
     implements PipelineStepMonitoredServiceResolutionService {
@@ -169,7 +171,9 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImpl
     JsonNode templateInputsNode = templateMonitoredServiceSpec.getTemplateInputs();
     Map<String, JsonNode> templateMap = new HashMap<>();
     templateMap.put(VerifyStepConstants.TEMPLATE_YAML_KEYS_TEMPLATE_REF, new TextNode(monitoredServiceTemplateRef));
-    templateMap.put(VerifyStepConstants.TEMPLATE_YAML_KEYS_VERSION_LABEL, new TextNode(versionLabel));
+    if (StringUtils.isNotEmpty(versionLabel)) {
+      templateMap.put(VerifyStepConstants.TEMPLATE_YAML_KEYS_VERSION_LABEL, new TextNode(versionLabel));
+    }
     templateMap.put(VerifyStepConstants.TEMPLATE_YAML_KEYS_TEMPLATE_INPUTS, templateInputsNode);
     JsonNode templateNode = new ObjectNode(JsonNodeFactory.instance, templateMap);
     Map<String, JsonNode> monitoredServiceMap =
