@@ -33,8 +33,8 @@ public class StageStartEvent extends NodeExecutionEvent {
   @Builder
   public StageStartEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, String stageIdentifier, String stageType, Long startTs,
-      String nodeExecutionId, TriggeredInfo triggeredInfo) {
-    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
+      String nodeExecutionId, Integer runSequence, TriggeredInfo triggeredInfo) {
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId, runSequence);
     this.stageIdentifier = stageIdentifier;
     this.stageType = stageType;
     this.startTs = startTs;
