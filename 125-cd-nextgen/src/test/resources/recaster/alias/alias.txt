@@ -1284,3 +1284,12 @@ io.harness.cdng.pipeline.beans.CustomStageSpecParams
 io.harness.cdng.creator.plan.stage.CustomStageNode
 io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum
 io.harness.cdng.environment.helper.beans.CustomStageEnvironmentStepParameters
+io.harness.cdng.ecs.EcsServiceSetupStepInfo
+io.harness.cdng.ecs.EcsBasicRollbackStepInfo
+io.harness.cdng.ecs.EcsUpgradeContainerStepInfo
+io.harness.cdng.ecs.EcsServiceSetupStepParameters
+io.harness.cdng.ecs.EcsUpgradeContainerStepParameters
+io.harness.cdng.ecs.EcsBasicRollbackStepParameters
+io.harness.cdng.ecs.EcsUpgradeContainerStepNode
+io.harness.cdng.ecs.EcsServiceSetupStepNode
+io.harness.cdng.ecs.EcsBasicRollbackStepNode

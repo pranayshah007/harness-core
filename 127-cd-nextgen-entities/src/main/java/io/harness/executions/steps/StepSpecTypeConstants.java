@@ -96,6 +96,9 @@ public interface StepSpecTypeConstants {
   String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+  String ECS_SERVICE_SETUP = "EcsServiceSetup";
+  String ECS_UPGRADE_CONTAINER = "EcsUpgradeContainer";
+  String ECS_BASIC_ROLLBACK = "EcsBasicRollback";
 
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = "DeployCloudFunction";
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
