@@ -160,6 +160,7 @@ public class ViewsQueryBuilder {
   private static final String CLICKHOUSE_LABEL_KEYS = "arrayJoin(labels.keys)";
   private static final String CLICKHOUSE_LABEL_VALUES = "arrayJoin(labels.values)";
   private static final Double DEFAULT_MARKUP = 1.0;
+  private static final String[] EMPTY_ARRAY = new String[0];
 
   @Inject private ViewCustomFieldDao viewCustomFieldDao;
   @Inject private BusinessMappingService businessMappingService;
@@ -328,7 +329,7 @@ public class ViewsQueryBuilder {
       sharedBucketNames =
           businessMapping.getSharedCosts().stream().map(SharedCost::getName).collect(Collectors.toList());
     }
-    return sharedBucketNames.toArray(new String[0]);
+    return handleSingleQuotes(sharedBucketNames.toArray(new String[0]));
   }
 
   private void decorateQueryWithGroupByAndColumns(SelectQuery selectQuery, List<QLCEViewFieldInput> groupByEntity,
@@ -875,8 +876,8 @@ public class ViewsQueryBuilder {
             BinaryCondition.equalTo(new CustomSql(ViewsMetaDataFields.INSTANCE_TYPE.getFieldName()), EMPTY_STRING));
       }
       conditionList.add(UnaryCondition.isNull(new CustomSql(ViewsMetaDataFields.INSTANCE_TYPE.getFieldName())));
-      conditionList.add(new InCondition(
-          new CustomSql(ViewsMetaDataFields.INSTANCE_TYPE.getFieldName()), (Object[]) instancetypeStringArray));
+      conditionList.add(new InCondition(new CustomSql(ViewsMetaDataFields.INSTANCE_TYPE.getFieldName()),
+          (Object[]) handleSingleQuotes(instancetypeStringArray)));
       selectQuery.addCondition(getSqlOrCondition(conditionList));
     }
   }
@@ -1484,7 +1485,7 @@ public class ViewsQueryBuilder {
                 .addCustomParams(getSQLCaseStatementBusinessMappingSharedCost(viewPreferenceAggregations,
                     sharedCost.getRules(), isClusterTable, tableIdentifier, viewLabelsFlattened)),
             Collections.singletonList(0)),
-        modifyStringToComplyRegex(sharedCost.getName())));
+        modifyStringToComplyRegex(handleSingleQuotes(sharedCost.getName()))));
   }
 
   private CustomSql getSQLCaseStatementBusinessMappingSharedCost(
@@ -1888,18 +1889,19 @@ public class ViewsQueryBuilder {
 
     switch (operator) {
       case EQUALS:
-        condition = BinaryCondition.equalTo(conditionKey, filter.getValues()[0]);
+        condition = BinaryCondition.equalTo(conditionKey, handleSingleQuotes(filter.getValues()[0]));
         break;
       case IN:
-        condition = new InCondition(conditionKey, (Object[]) filter.getValues());
+        condition = new InCondition(conditionKey, (Object[]) handleSingleQuotes(filter.getValues()));
         break;
       case NOT_IN:
-        condition = new InCondition(conditionKey, (Object[]) filter.getValues()).setNegate(true);
+        condition = new InCondition(conditionKey, (Object[]) handleSingleQuotes(filter.getValues())).setNegate(true);
         break;
       case NOT_NULL:
         condition = UnaryCondition.isNotNull(conditionKey);
         if (viewFieldIdentifier == BUSINESS_MAPPING) {
-          condition = new InCondition(conditionKey, businessMapping.getUnallocatedCost().getLabel()).setNegate(true);
+          condition = new InCondition(conditionKey, handleSingleQuotes(businessMapping.getUnallocatedCost().getLabel()))
+                          .setNegate(true);
         }
         break;
       case NULL:
@@ -1909,15 +1911,18 @@ public class ViewsQueryBuilder {
           condition = UnaryCondition.isNull(conditionKey);
         }
         if (viewFieldIdentifier == BUSINESS_MAPPING) {
-          condition = new InCondition(conditionKey, businessMapping.getUnallocatedCost().getLabel());
+          condition =
+              new InCondition(conditionKey, handleSingleQuotes(businessMapping.getUnallocatedCost().getLabel()));
         }
         break;
       case LIKE:
-        condition = new CustomCondition(String.format(regexFilter, conditionKey, filter.getValues()[0]));
+        condition =
+            new CustomCondition(String.format(regexFilter, conditionKey, handleSingleQuotes(filter.getValues()[0])));
         break;
       case SEARCH:
         // Searching capability for idFilters only
-        condition = new CustomCondition(getSearchCondition(conditionKey.toString(), filter.getValues()[0]));
+        condition =
+            new CustomCondition(getSearchCondition(conditionKey.toString(), handleSingleQuotes(filter.getValues()[0])));
         break;
       default:
         throw new InvalidRequestException("Invalid View Filter operator: " + operator);
@@ -1973,7 +1978,8 @@ public class ViewsQueryBuilder {
 
   private Condition getCondition(QLCEInExpressionFilter filter) {
     Condition condition = new InCondition(Converter.toCustomColumnSqlObject(new InFieldsExpression(filter.getFields())),
-        Converter.toCustomColumnSqlObject(new InValuesExpression(filter.getValues())));
+        Converter.toCustomColumnSqlObject(
+            new InValuesExpression(handleSingleQuotesForInExpressionValues(filter.getValues()))));
     if (Objects.nonNull(filter.getNullValueField())) {
       condition = ComboCondition.or(condition, UnaryCondition.isNull(new CustomSql(filter.getNullValueField())));
     }
@@ -1982,7 +1988,8 @@ public class ViewsQueryBuilder {
 
   private Condition getCondition(QLCEInExpressionFilter filter, Object sqlObjectFromField) {
     Condition condition = new InCondition(Converter.toCustomColumnSqlObject(sqlObjectFromField),
-        Converter.toCustomColumnSqlObject(new InValuesExpression(filter.getValues())));
+        Converter.toCustomColumnSqlObject(
+            new InValuesExpression(handleSingleQuotesForInExpressionValues(filter.getValues()))));
     if (Objects.nonNull(filter.getNullValueField())) {
       condition = ComboCondition.or(condition, UnaryCondition.isNull(new CustomSql(sqlObjectFromField)));
     }
@@ -2035,7 +2042,7 @@ public class ViewsQueryBuilder {
           Condition condition =
               getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier, viewLabelsFlattened);
           if (!condition.isEmpty()) {
-            caseStatement.addWhen(condition, handleSingleQuotesInName(costTarget.getName()));
+            caseStatement.addWhen(condition, handleSingleQuotes(costTarget.getName()));
           }
         }
       }
@@ -2044,7 +2051,7 @@ public class ViewsQueryBuilder {
           Condition condition =
               getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier, viewLabelsFlattened);
           if (!condition.isEmpty()) {
-            caseStatement.addWhen(condition, handleSingleQuotesInName(costTarget.getName()));
+            caseStatement.addWhen(condition, handleSingleQuotes(costTarget.getName()));
           }
         }
       }
@@ -2130,7 +2137,7 @@ public class ViewsQueryBuilder {
           if (!condition.isEmpty()) {
             multiIfStatement.append(condition)
                 .append(',')
-                .append(String.format("'%s'", costTarget.getName()))
+                .append(String.format("'%s'", handleSingleQuotes(costTarget.getName())))
                 .append(',');
           }
         }
@@ -2160,7 +2167,7 @@ public class ViewsQueryBuilder {
       for (final SharedCost sharedCost : businessMapping.getSharedCosts()) {
         Condition condition = getConsolidatedRuleCondition(sharedCost.getRules(), tableIdentifier, viewLabelsFlattened);
         if (!condition.isEmpty()) {
-          caseStatement.addWhen(condition, sharedCost.getName());
+          caseStatement.addWhen(condition, handleSingleQuotes(sharedCost.getName()));
         }
       }
       caseStatement.addElse(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName());
@@ -2178,7 +2185,7 @@ public class ViewsQueryBuilder {
         if (!condition.isEmpty()) {
           multiIfStatement.append(condition)
               .append(',')
-              .append(String.format("'%s'", sharedCost.getName()))
+              .append(String.format("'%s'", handleSingleQuotes(sharedCost.getName())))
               .append(',');
         }
       }
@@ -2347,7 +2354,25 @@ public class ViewsQueryBuilder {
     return Math.round(value * 100D) / 100D;
   }
 
-  private static String handleSingleQuotesInName(String string) {
-    return string.replaceAll("'", "\\\\'");
+  private static String handleSingleQuotes(String value) {
+    return value.replaceAll("'", "\\\\'");
+  }
+
+  private static String[] handleSingleQuotes(String[] values) {
+    return Objects.isNull(values)
+        ? EMPTY_ARRAY
+        : Arrays.stream(values).map(ViewsQueryBuilder::handleSingleQuotes).toArray(String[] ::new);
+  }
+
+  private static List<String> handleSingleQuotes(List<String> values) {
+    return Lists.isNullOrEmpty(values)
+        ? Collections.emptyList()
+        : values.stream().map(ViewsQueryBuilder::handleSingleQuotes).collect(Collectors.toList());
+  }
+
+  private static List<List<String>> handleSingleQuotesForInExpressionValues(List<List<String>> values) {
+    return Lists.isNullOrEmpty(values)
+        ? Collections.emptyList()
+        : values.stream().map(ViewsQueryBuilder::handleSingleQuotes).collect(Collectors.toList());
   }
 }
