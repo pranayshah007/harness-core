@@ -164,6 +164,8 @@ public class NextGenConfiguration extends Configuration {
   public static final String SUPPORT_PACKAGE = "io.harness.ng.support.resource";
 
   public static final String IP_ALLOWLIST_PACKAGE = "io.harness.ipallowlist.resource";
+
+  public static final String K8S_RELEASE_DETAILS_PACKAGE = "io.harness.ng.core.releasedetails.resources";
   public static final String FAVORITES_PACKAGE = "io.harness.favorites.remote";
   public static final String EULA_PACKAGE = "io.harness.eula.resource";
   public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
@@ -350,7 +352,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE,
                 NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE,
                 NextGenConfiguration.SUPPORT_PACKAGE, NextGenConfiguration.EULA_PACKAGE,
-                NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE, NextGenConfiguration.GITX_WEBHOOKS_PACKAGE))
+                NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE, NextGenConfiguration.GITX_WEBHOOKS_PACKAGE,
+                NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE))
         .collect(Collectors.toSet());
   }
 

@@ -180,6 +180,20 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     Query query = new Query().addCriteria(criteria).with(Sort.by(Sort.Direction.DESC, InstanceKeys.createdAt));
     return secondaryMongoTemplate.find(query, Instance.class);
   }
+  @Override
+  public List<Instance> getActiveInstancesByInstanceNamespaceAndReleaseName(
+      String accountIdentifier, String instanceInfoNamespace, String releaseName) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeysAdditional.instanceInfoNamespace)
+                            .is(instanceInfoNamespace)
+                            .and(InstanceKeysAdditional.instanceInfoReleaseName)
+                            .is(releaseName)
+                            .and(InstanceKeys.isDeleted)
+                            .is(false);
+    Query query = new Query().addCriteria(criteria).with(Sort.by(Sort.Direction.DESC, InstanceKeys.createdAt));
+    return secondaryMongoTemplate.find(query, Instance.class);
+  }
 
   /*
     Returns instances that are active at a given timestamp for specified accountIdentifier, projectIdentifier,
