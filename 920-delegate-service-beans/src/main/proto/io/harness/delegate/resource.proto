@@ -6,7 +6,6 @@
 syntax = "proto3";
 
 package io.harness.delegate;
-import "google/protobuf/any.proto";
 
 option java_multiple_files = true;
 option go_package = "920_delegate_service_beans";
