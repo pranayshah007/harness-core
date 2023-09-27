@@ -8,6 +8,7 @@
 package io.harness.pms.approval.custom;
 
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,6 +33,7 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
@@ -91,11 +93,14 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
                                           .build();
     instance.setType(ApprovalType.CUSTOM_APPROVAL);
     instance.setId("__ID__");
-    instance.setAmbiance(Ambiance.newBuilder()
-                             .putSetupAbstractions(SetupAbstractionKeys.accountId, "__ACCOUNT_ID__")
-                             .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "__ORG__")
-                             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "__PROJ__")
-                             .build());
+    instance.setAmbiance(
+        Ambiance.newBuilder()
+            .putSetupAbstractions(SetupAbstractionKeys.accountId, "__ACCOUNT_ID__")
+            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "__ORG__")
+            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "__PROJ__")
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build());
 
     when(shellScriptHelperService.buildShellScriptTaskParametersNG(any(), any()))
         .thenReturn(ShellScriptTaskParametersNG.builder().build());
@@ -152,11 +157,14 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
                                           .build();
     instance.setType(ApprovalType.CUSTOM_APPROVAL);
     instance.setId("__ID__");
-    instance.setAmbiance(Ambiance.newBuilder()
-                             .putSetupAbstractions(SetupAbstractionKeys.accountId, "__ACCOUNT_ID__")
-                             .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "__ORG__")
-                             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "__PROJ__")
-                             .build());
+    instance.setAmbiance(
+        Ambiance.newBuilder()
+            .putSetupAbstractions(SetupAbstractionKeys.accountId, "__ACCOUNT_ID__")
+            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "__ORG__")
+            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "__PROJ__")
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build());
 
     when(shellScriptHelperService.buildShellScriptTaskParametersNG(any(), any()))
         .thenReturn(ShellScriptTaskParametersNG.builder().build());
