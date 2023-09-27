@@ -8,6 +8,10 @@ package io.harness.ng.support;
 
 import static io.harness.rule.OwnerRule.ASHINSABU;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -28,7 +32,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -91,8 +94,8 @@ public class CannyClientTest extends NgManagerTestBase {
     };
     CannyBoardsResponseDTO expectedResponse = CannyBoardsResponseDTO.builder().boards(expectedBoardsList).build();
 
-    Assert.assertNotNull(boardsResponse);
-    Assert.assertEquals(boardsResponse, expectedResponse);
+    assertNotNull(boardsResponse);
+    assertEquals(boardsResponse, expectedResponse);
   }
 
   @Test
@@ -141,8 +144,8 @@ public class CannyClientTest extends NgManagerTestBase {
     CannyPostResponseDTO postResponseDTO =
         cannyClient.createPost("test@example.com", "Test User", "Test Title", "Test Details", "board123");
 
-    Assert.assertNotNull(postResponseDTO);
-    Assert.assertEquals(expectedPostResponseDTO, postResponseDTO);
+    assertNotNull(postResponseDTO);
+    assertEquals(expectedPostResponseDTO, postResponseDTO);
   }
 
   @Test
@@ -207,8 +210,8 @@ public class CannyClientTest extends NgManagerTestBase {
     CannyPostResponseDTO postResponseDTO =
         cannyClient.createPost("test@example.com", "Test User", "Test Title", "Test Details", "board123");
 
-    Assert.assertNotNull(postResponseDTO);
-    Assert.assertEquals(expectedPostResponseDTO, postResponseDTO);
+    assertNotNull(postResponseDTO);
+    assertEquals(expectedPostResponseDTO, postResponseDTO);
   }
 
   @Test
@@ -223,9 +226,9 @@ public class CannyClientTest extends NgManagerTestBase {
 
     try {
       cannyClient.createPost("test@example.com", "Test User", "Test Title", "Test Details", "board123");
-      Assert.fail("Expected an exception to be thrown");
+      fail("Expected an exception to be thrown");
     } catch (Exception e) {
-      Assert.assertTrue(e.getMessage().contains("Exception occurred while creating post at createPost():"));
+      assertTrue(e.getMessage().contains("Exception occurred while creating post at createPost():"));
     }
   }
 
@@ -254,9 +257,9 @@ public class CannyClientTest extends NgManagerTestBase {
 
     try {
       cannyClient.createPost("test@test.com", "Test User", "Test Title", "Test Details", "board123");
-      Assert.fail("Expected an exception to be thrown");
+      fail("Expected an exception to be thrown");
     } catch (Exception e) {
-      Assert.assertTrue(e.getMessage().contains("Exception occurred while creating post at createPost():"));
+      assertTrue(e.getMessage().contains("Exception occurred while creating post at createPost():"));
     }
   }
 
@@ -296,9 +299,9 @@ public class CannyClientTest extends NgManagerTestBase {
 
     try {
       cannyClient.createPost("test@test.com", "Test User", "Test Title", "Test Details", "board123");
-      Assert.fail("Expected an exception to be thrown");
+      fail("Expected an exception to be thrown");
     } catch (Exception e) {
-      Assert.assertTrue(e.getMessage().contains("Exception occurred while creating post at createPost():"));
+      assertTrue(e.getMessage().contains("Exception occurred while creating post at createPost():"));
     }
   }
 
@@ -321,8 +324,8 @@ public class CannyClientTest extends NgManagerTestBase {
 
     String authorId = cannyClient.getPostCreationAuthorId("test@example.com", "Test User");
 
-    Assert.assertNotNull(authorId);
-    Assert.assertEquals("author123", authorId);
+    assertNotNull(authorId);
+    assertEquals("author123", authorId);
   }
 
   @Test
@@ -356,7 +359,7 @@ public class CannyClientTest extends NgManagerTestBase {
     doReturn(createUserResponse).when(cannyClient).createCannyUser(anyString(), anyString(), anyString());
 
     String authorId = cannyClient.getPostCreationAuthorId("test@test.com", "Test User");
-    Assert.assertNotNull(authorId);
-    Assert.assertEquals("author123", authorId);
+    assertNotNull(authorId);
+    assertEquals("author123", authorId);
   }
 }
