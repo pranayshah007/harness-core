@@ -7,6 +7,7 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.idp.common.Constants.BITBUCKET_IDENTIFIER;
 import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
 import static io.harness.idp.common.Constants.CUSTOM_IDENTIFIER;
 import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
@@ -52,6 +53,9 @@ public class DataSourceProviderFactory {
         return new GithubProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(GITHUB_IDENTIFIER),
             backstageEnvVariableRepository, ngSecretService, configReader);
+      case BITBUCKET_IDENTIFIER:
+        return new BitbucketProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataSourceDataPointParserFactory.getDataPointParserFactory(BITBUCKET_IDENTIFIER), configReader);
       case HARNESS_IDENTIFIER:
         return new HarnessProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(HARNESS_IDENTIFIER), idpAuthInterceptor, env);

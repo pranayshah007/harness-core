@@ -56,7 +56,7 @@ public class ServerlessRollbackV2PluginInfoProvider implements CDPluginInfoProvi
 
     Builder pluginDetailsBuilder =
         PluginInfoProviderHelper.buildPluginDetails(serverlessAwsLambdaRollbackV2StepInfo.getResources(),
-            serverlessAwsLambdaRollbackV2StepInfo.getRunAsUser(), usedPorts);
+            serverlessAwsLambdaRollbackV2StepInfo.getRunAsUser(), usedPorts, true);
 
     final ImageDetails imageDetails;
 
@@ -99,7 +99,7 @@ public class ServerlessRollbackV2PluginInfoProvider implements CDPluginInfoProvi
 
   private Builder getPluginDetailsBuilder(
       ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
-    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts);
+    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts, true);
   }
 
   public CdAbstractStepNode read(String stepJsonNode) throws IOException {

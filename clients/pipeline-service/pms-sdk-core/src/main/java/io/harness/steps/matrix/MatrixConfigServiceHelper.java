@@ -138,12 +138,15 @@ public class MatrixConfigServiceHelper {
   public StrategyInfo expandJsonNodeFromClass(List<String> keys, Map<String, AxisConfig> axes,
       Map<String, ExpressionAxisConfig> expressionAxes, ParameterField<List<ExcludeConfig>> exclude,
       ParameterField<Integer> maxConcurrencyParameterField, JsonNode jsonNode, Optional<Integer> maxExpansionLimit,
-      boolean isStepGroup, Class cls, Ambiance ambiance) {
+      boolean isStepGroup, Class cls, Ambiance ambiance, String nodeName) {
+    // no use of childNodeId in the case of CI
+    List<ChildrenExecutableResponse.Child> children =
+        fetchChildren(keys, axes, expressionAxes, exclude, "", nodeName, ambiance);
+    List<JsonNode> jsonNodes = new ArrayList<>();
     List<Map<String, String>> combinations = new ArrayList<>();
-    List<List<Integer>> matrixMetadata = new ArrayList<>();
-    fetchCombinations(new LinkedHashMap<>(), axes, expressionAxes, combinations,
-        ParameterField.isBlank(exclude) ? null : exclude.getValue(), matrixMetadata, keys, 0, new LinkedList<>());
-    int totalCount = combinations.size();
+
+    int totalCount = children.size();
+
     if (totalCount == 0) {
       throw new InvalidRequestException(
           "Total number of iterations found to be 0 for this strategy. Please check pipeline yaml");
@@ -155,33 +158,22 @@ public class MatrixConfigServiceHelper {
       }
     }
 
-    List<JsonNode> jsonNodes = new ArrayList<>();
-    int currentIteration = 0;
-
-    boolean enableMatrixLabelsByName = AmbianceUtils.shouldUseMatrixFieldName(ambiance);
-    if (enableMatrixLabelsByName) {
-      for (Map<String, String> combination : combinations) {
-        JsonNode resolvedJsonNode =
-            getresolvedJsonNode(isStepGroup, currentIteration, totalCount, jsonNode, cls, combinations);
-        StrategyUtils.modifyJsonNode(resolvedJsonNode,
-            combination.entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(t -> t.getValue().replace(".", ""))
-                .collect(Collectors.toList()));
-        jsonNodes.add(resolvedJsonNode);
-        currentIteration++;
-      }
-    } else {
-      for (List<Integer> matrixData : matrixMetadata) {
-        JsonNode resolvedJsonNode =
-            getresolvedJsonNode(isStepGroup, currentIteration, totalCount, jsonNode, cls, combinations);
-        StrategyUtils.modifyJsonNode(
-            resolvedJsonNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
-        jsonNodes.add(resolvedJsonNode);
-        currentIteration++;
+    for (ChildrenExecutableResponse.Child child : children) {
+      StrategyMetadata strategyMetadata = child.getStrategyMetadata();
+      if (strategyMetadata.getMatrixMetadata() != null) {
+        combinations.add(strategyMetadata.getMatrixMetadata().getMatrixValuesMap());
       }
     }
+    for (ChildrenExecutableResponse.Child child : children) {
+      StrategyMetadata strategyMetadata = child.getStrategyMetadata();
+      String identifierPostFix = strategyMetadata.getIdentifierPostFix();
+      int currentIteration = strategyMetadata.getCurrentIteration();
+      JsonNode resolvedJsonNode =
+          getResolvedJsonNode(isStepGroup, currentIteration, totalCount, jsonNode, cls, combinations);
+      StrategyUtils.modifyJsonNode(resolvedJsonNode, identifierPostFix);
+      jsonNodes.add(resolvedJsonNode);
+    }
+
     int maxConcurrency = jsonNodes.size();
     if (!ParameterField.isBlank(maxConcurrencyParameterField)) {
       maxConcurrency = maxConcurrencyParameterField.getValue();
@@ -189,7 +181,7 @@ public class MatrixConfigServiceHelper {
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }
 
-  private JsonNode getresolvedJsonNode(boolean isStepGroup, int currentIteration, int totalCount, JsonNode jsonNode,
+  private JsonNode getResolvedJsonNode(boolean isStepGroup, int currentIteration, int totalCount, JsonNode jsonNode,
       Class cls, List<Map<String, String>> combinations) {
     Object o;
     try {

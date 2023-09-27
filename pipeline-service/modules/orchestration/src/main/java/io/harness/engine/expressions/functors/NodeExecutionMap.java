@@ -226,38 +226,39 @@ public class NodeExecutionMap extends LateBindingMap {
       return Optional.empty();
     }
 
-    Ambiance newAmbiance = nodeExecution.getAmbiance();
-    if (newAmbiance == null) {
+    List<String> levelRuntimeIdx = nodeExecution.getLevelRuntimeIdx();
+    if (levelRuntimeIdx == null) {
       return Optional.empty();
     }
 
-    Optional<Object> value = fetchOutcome(newAmbiance, key);
+    Optional<Object> value = fetchOutcome(ambiance.getPlanExecutionId(), levelRuntimeIdx, key);
     if (!value.isPresent()) {
-      value = fetchSweepingOutput(newAmbiance, key);
+      value = fetchSweepingOutput(ambiance.getPlanExecutionId(), levelRuntimeIdx, key);
     }
     return value;
   }
 
-  private Optional<Object> fetchOutcome(Ambiance newAmbiance, String key) {
+  private Optional<Object> fetchOutcome(String planExecutionId, List<String> levelRuntimeIdIdx, String key) {
     if (!entityTypes.contains(NodeExecutionEntityType.OUTCOME)) {
       return Optional.empty();
     }
 
     try {
-      return jsonToObject(pmsOutcomeService.resolve(newAmbiance, RefObjectUtils.getOutcomeRefObject(key)));
+      return jsonToObject(pmsOutcomeService.resolveUsingLevelRuntimeIdx(
+          planExecutionId, levelRuntimeIdIdx, RefObjectUtils.getOutcomeRefObject(key)));
     } catch (OutcomeException ignored) {
       return Optional.empty();
     }
   }
 
-  private Optional<Object> fetchSweepingOutput(Ambiance newAmbiance, String key) {
+  private Optional<Object> fetchSweepingOutput(String planExecutionId, List<String> levelRuntimeIdIdx, String key) {
     if (!entityTypes.contains(NodeExecutionEntityType.SWEEPING_OUTPUT)) {
       return Optional.empty();
     }
 
     try {
-      return jsonToObject(
-          pmsSweepingOutputService.resolve(newAmbiance, RefObjectUtils.getSweepingOutputRefObject(key)));
+      return jsonToObject(pmsSweepingOutputService.resolveUsingLevelRuntimeIdx(
+          planExecutionId, levelRuntimeIdIdx, RefObjectUtils.getSweepingOutputRefObject(key)));
     } catch (SweepingOutputException ignored) {
       return Optional.empty();
     }

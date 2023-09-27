@@ -155,6 +155,8 @@ public enum FeatureName {
       "With enabling this FF with serviceV2 setup, pipeline in different projects but having the same infra key can be executed parallely",
       HarnessTeam.CDC),
   CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
+  CDS_QUERY_OPTIMIZATION_GLOBAL(
+      "Feature flag to optimize CG Queries when accountId is not present", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
   CDS_RECONFIGURE_JIRA_APPROVAL_TIMEOUT("Reconfigure Jira Approval Timeout to 1 Minute", HarnessTeam.CDC),
   CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP),
@@ -164,7 +166,6 @@ public enum FeatureName {
   CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT(
       "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC),
   CDS_SERVERLESS_V2("FF for enabling Serverless 2.0 deployments", HarnessTeam.CDP),
-  CDS_SERVICENOW_REFRESH_TOKEN_AUTH("Refresh Token auth support for servicenow connector", HarnessTeam.CDC),
   CDS_SERVICENOW_USE_METADATA_V2(
       "Using METADATA_V2 in /metadata (create update) and /createMetadata (approval) API in Servicenow Steps NG; and changing /metadata parsing to manager",
       HarnessTeam.CDC),
@@ -224,6 +225,7 @@ public enum FeatureName {
   CET_PLATFORM_MONITORED_SERVICE(
       "Enable Continuous Error Tracking agent column and settings in platform Monitored Services", HarnessTeam.CET),
   CET_AGENT_WIZARD("Enable agent configuration wizard in UI of Continuous Error Tracking module", HarnessTeam.CET),
+  CET_SAVED_SEARCH("Enable saved search functionality in the UI of Continuous Error Tracking module", HarnessTeam.CET),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
@@ -562,6 +564,7 @@ public enum FeatureName {
   PL_FIX_INCONSISTENT_USER_DATA(
       "This FF process all users of this account and fixes their inconsistent data between CG Manager, NG manager and Access Control ",
       HarnessTeam.PL),
+  PL_PUBLISH_HEARTBEAT_METRICS("FF for publishing delegate heartbeat metrics to prometheus", HarnessTeam.PL),
   PL_HELM2_DELEGATE_BANNER("FF for adding banner on delegate to mention deprecation of helm 2", HarnessTeam.PL),
   PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
   PL_HIDE_ORGANIZATION_LEVEL_MANAGED_ROLE("FF to hide organization level managed roles", HarnessTeam.PL),
@@ -914,7 +917,12 @@ public enum FeatureName {
       "This flag enables the usage of release name in service configuration for K8s & Helm service types.",
       HarnessTeam.CDP),
   CDS_SHELL_VARIABLES_EXPORT("Export shell script output variables to different scopes", HarnessTeam.CDC),
-  CDS_CUSTOM_STAGE_WITH_ENV_INFRA("Enable optional environment and infrastructure in custom stage", HarnessTeam.CDC);
+  CDS_CUSTOM_STAGE_WITH_ENV_INFRA("Enable optional environment and infrastructure in custom stage", HarnessTeam.CDC),
+  CDS_ECS_BASIC_DEPLOYMENT_STRATEGY(
+      "This flag enables the basic deployment strategy in ECS Deployment Swimlane", HarnessTeam.CDP),
+  CDS_TF_TG_SKIP_ERROR_LOGS_COLORING(
+      "Skip coloring execution logs that are coming form standart error output of process executor for terraform and terragrunt steps",
+      HarnessTeam.CDP);
 
   // keep-sorted end
 

@@ -39,9 +39,11 @@ import io.harness.spec.server.template.v1.model.GitCreateDetails;
 import io.harness.spec.server.template.v1.model.GitFindDetails;
 import io.harness.spec.server.template.v1.model.GitImportDetails;
 import io.harness.spec.server.template.v1.model.GitUpdateDetails;
+import io.harness.spec.server.template.v1.model.TemplateCreateRequestBody;
 import io.harness.spec.server.template.v1.model.TemplateImportRequestDTO;
 import io.harness.spec.server.template.v1.model.TemplateImportResponseBody;
 import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
+import io.harness.spec.server.template.v1.model.TemplateUpdateRequestBody;
 import io.harness.spec.server.template.v1.model.TemplateUpdateStableResponse;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.mappers.NGTemplateDtoMapper;
@@ -137,12 +139,12 @@ public class TemplateResourceApiUtils {
   }
 
   public Response createTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
-      @ProjectIdentifier String project, GitCreateDetails gitEntityCreateInfo, String templateYaml,
+      @ProjectIdentifier String project, GitCreateDetails gitEntityCreateInfo, TemplateRequestInfoDTO requestInfoDTO,
       boolean setDefaultTemplate, String comments) {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, org, project), Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     GitAwareContextHelper.populateGitDetails(templateResourceApiMapper.populateGitCreateDetails(gitEntityCreateInfo));
-    TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(account, org, project, templateYaml);
+    TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(account, org, project, requestInfoDTO);
     log.info(String.format("Creating Template with identifier %s with label %s in project %s, org %s, account %s",
         templateEntity.getIdentifier(), templateEntity.getVersionLabel(), project, org, account));
     TemplateEntity createdTemplate = templateService.create(templateEntity, setDefaultTemplate, comments, false);
@@ -184,12 +186,13 @@ public class TemplateResourceApiUtils {
 
   public Response updateTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String templateIdentifier, String versionLabel,
-      GitUpdateDetails gitEntityInfo, String templateYaml, boolean setDefaultTemplate, String comments) {
+      GitUpdateDetails gitEntityInfo, TemplateRequestInfoDTO requestInfoDTO, boolean setDefaultTemplate,
+      String comments) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     GitAwareContextHelper.populateGitDetails(templateResourceApiMapper.populateGitUpdateDetails(gitEntityInfo));
     TemplateEntity templateEntity =
-        NGTemplateDtoMapper.toTemplateEntity(account, org, project, templateIdentifier, versionLabel, templateYaml);
+        NGTemplateDtoMapper.toTemplateEntity(account, org, project, templateIdentifier, versionLabel, requestInfoDTO);
     log.info(
         String.format("Updating Template with identifier %s with versionLabel %s in project %s, org %s, account %s",
             templateEntity.getIdentifier(), templateEntity.getVersionLabel(), project, org, account));
@@ -292,5 +295,27 @@ public class TemplateResourceApiUtils {
             listType));
     }
     return type;
+  }
+
+  public TemplateRequestInfoDTO mapCreateToRequestInfoDTO(TemplateCreateRequestBody requestBody) {
+    return TemplateRequestInfoDTO.builder()
+        .label(requestBody.getLabel())
+        .name(requestBody.getName())
+        .identifier(requestBody.getIdentifier())
+        .yaml(requestBody.getTemplateYaml())
+        .description(requestBody.getDescription())
+        .tags(requestBody.getTags())
+        .build();
+  }
+
+  public TemplateRequestInfoDTO mapUpdateToRequestInfoDTO(TemplateUpdateRequestBody requestBody) {
+    return TemplateRequestInfoDTO.builder()
+        .label(requestBody.getLabel())
+        .name(requestBody.getName())
+        .identifier(requestBody.getIdentifier())
+        .yaml(requestBody.getTemplateYaml())
+        .description(requestBody.getDescription())
+        .tags(requestBody.getTags())
+        .build();
   }
 }

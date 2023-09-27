@@ -1,0 +1,211 @@
+{{- if .Values.global.ingress.enabled -}}
+{{- $fullName := include "idp-service.fullname" . -}}
+{{- $svcPort := .Values.service.port -}}
+{{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "idp-service.labels" . | nindent 4 }}
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  {{- if and .Values.global.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.global.ingress.className }}
+  {{- end }}
+  tls:
+  rules:
+    - http:
+        paths:
+          - path: /(v1/backstage-env-variables.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/status-info/.+)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/onboarding/.+)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/namespace-info.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/account-info/.+)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/provision-idp.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/backstage-permissions.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/layout.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/plugins-info.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/app-config.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/plugin-toggle.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/connector-info.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/merged-plugins-config.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/idp-proxy.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/backstage-plugins-info.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/plugin/request.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/auth-info/.+)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/allow-list.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/configuration-entities.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/data-sources.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/scores.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/scorecards.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/checks.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+          - path: /(v1/entity-facets.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{.Values.name}}
+                port:
+                  number: 12003
+{{- end }}

@@ -57,4 +57,5 @@ public class TemplateMetadataSummaryResponseDTO {
   StoreType storeType;
   String connectorRef;
   String icon;
+  String yamlVersion;
 }

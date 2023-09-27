@@ -520,6 +520,7 @@ public class SCMGitSyncHelper {
         .cacheState(getCacheStateFromGitProtoResponse(cacheResponse.getCacheState()))
         .lastUpdatedAt(cacheResponse.getLastUpdateAt())
         .ttlLeft(cacheResponse.getTtlLeft())
+        .isSyncEnabled(cacheResponse.getIsSyncEnabled())
         .build();
   }
 

@@ -50,7 +50,9 @@ import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.scope.ScopeHelper;
 
+import com.google.common.hash.Hashing;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -125,6 +127,7 @@ public class PMSPipelineDtoMapper {
           .description(basicPipeline.getDescription())
           .tags(TagMapper.convertToList(basicPipeline.getTags()))
           .allowStageExecutions(basicPipeline.isAllowStageExecutions())
+          .yamlHash(getYamlHash(yaml))
           .build();
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
@@ -152,6 +155,7 @@ public class PMSPipelineDtoMapper {
         .identifier(pipelineId)
         .tags(TagMapper.convertToList(null))
         .harnessVersion(HarnessYamlVersion.V1)
+        .yamlHash(getYamlHash(yaml))
         .build();
   }
 
@@ -171,6 +175,10 @@ public class PMSPipelineDtoMapper {
     pipelineEntity.setIsDraft(isDraft);
     pipelineEntity.setHarnessVersion(pipelineVersion);
     return pipelineEntity;
+  }
+
+  Integer getYamlHash(String yaml) {
+    return Hashing.murmur3_32_fixed().hashString(yaml, StandardCharsets.UTF_8).asInt();
   }
 
   public PipelineEntity toPipelineEntityWithPipelineId(String accountId, String orgId, String projectId,
@@ -249,6 +257,7 @@ public class PMSPipelineDtoMapper {
       if (isDraft == null) {
         isDraft = false;
       }
+      pipelineEntity.setYamlHash(getYamlHash(requestInfoDTO.getYaml()));
       pipelineEntity.setIsDraft(isDraft);
       return pipelineEntity;
     } catch (IOException e) {
@@ -471,6 +480,7 @@ public class PMSPipelineDtoMapper {
           .cacheState(cacheResponse.getCacheState())
           .ttlLeft(cacheResponse.getTtlLeft())
           .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+          .isSyncEnabled(cacheResponse.isSyncEnabled())
           .build();
     }
     return null;

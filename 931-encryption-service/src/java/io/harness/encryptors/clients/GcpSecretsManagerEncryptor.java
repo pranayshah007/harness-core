@@ -16,9 +16,9 @@ import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.helpers.GlobalSecretManagerUtils.getValueByJsonPath;
+import static io.harness.helpers.GlobalSecretManagerUtils.parse;
 
 import static com.google.datastore.v1.client.DatastoreHelper.getProjectIdFromComputeEngine;
-import static com.jayway.jsonpath.JsonPath.parse;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;

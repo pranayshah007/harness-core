@@ -32,14 +32,13 @@ import java.util.Map;
 public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
   @Override
   public ParameterField<Timeout> getTimeout(State state) {
-    Integer timeoutMillis = null;
     if (state instanceof AwsAmiServiceSetup) {
       AwsAmiServiceSetup asgState = (AwsAmiServiceSetup) state;
       if (asgState.getAutoScalingSteadyStateTimeout() > 0) {
-        timeoutMillis = asgState.getAutoScalingSteadyStateTimeout();
+        return MigratorUtility.getTimeout((long) asgState.getAutoScalingSteadyStateTimeout());
       }
     }
-    return MigratorUtility.getTimeout(timeoutMillis);
+    return MigratorUtility.getTimeout(null);
   }
   @Override
   public String getStepType(GraphNode stepYaml) {

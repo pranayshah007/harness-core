@@ -9,6 +9,7 @@ package io.harness.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.encryption.Scope;
 import io.harness.ng.core.NGAccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -20,6 +21,7 @@ import java.util.Map;
     subTypes = {IdentifierRef.class, InputSetReference.class, NGTemplateReference.class, TriggerReference.class},
     discriminator = "type")
 public interface EntityReference extends NGAccess {
+  Scope getScope();
   @JsonIgnore String getFullyQualifiedName();
   String getBranch();
   String getRepoIdentifier();

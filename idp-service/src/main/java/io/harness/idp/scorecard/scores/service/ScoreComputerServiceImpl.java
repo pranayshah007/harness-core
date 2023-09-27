@@ -22,8 +22,6 @@ import io.harness.clients.BackstageResourceClient;
 import io.harness.exception.UnexpectedException;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.backstagebeans.BackstageCatalogEntityTypes;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.idp.scorecard.datapoints.repositories.DataPointsRepository;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProvider;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProviderFactory;
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
@@ -72,7 +70,6 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
   @Inject BackstageResourceClient backstageResourceClient;
   @Inject DataSourceProviderFactory dataSourceProviderFactory;
   @Inject ScoreRepository scoreRepository;
-  @Inject DataPointsRepository datapointRepository;
   @Inject ConfigReader configReader;
   static final ObjectMapper mapper =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -90,14 +87,14 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
       return;
     }
 
-    Map<String, Set<String>> dataPointsAndInputValues = getDataPointsAndInputValues(scorecardsAndChecks);
+    Map<String, Map<String, Set<String>>> providerDataPointValues = getProviderDataPointValues(scorecardsAndChecks);
     String configs = configReader.fetchAllConfigs(accountIdentifier);
 
     CountDownLatch latch = new CountDownLatch(entities.size());
     for (BackstageCatalogEntity entity : entities) {
       executorService.submit(() -> {
         try {
-          Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, dataPointsAndInputValues, configs);
+          Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, providerDataPointValues, configs);
           compute(accountIdentifier, entity, scorecardsAndChecks, data);
         } catch (Exception e) {
           log.error("Could not fetch data and compute score for account: {}, entity: {}", accountIdentifier,
@@ -184,28 +181,12 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
   }
 
   private Map<String, Map<String, Object>> fetch(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs) {
+      Map<String, Map<String, Set<String>>> providerDataPoints, String configs) {
     try (AutoLogContext ignore1 = ScoreComputationLogContext.builder()
                                       .accountIdentifier(accountIdentifier)
                                       .threadName(Thread.currentThread().getName())
                                       .build(AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
       log.info("Fetching data from provider for entity: {}", entity.getMetadata().getUid());
-      Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
-      List<DataPointEntity> dataPointEntities = datapointRepository.findByIdentifierIn(dataPointIdentifiers);
-      Map<String, Map<String, Set<String>>> providerDataPoints = new HashMap<>();
-      dataPointsAndInputValues.forEach((k, v) -> {
-        DataPointEntity dataPointEntity =
-            dataPointEntities.stream().filter(dpe -> dpe.getIdentifier().equals(k)).findFirst().orElse(null);
-        assert dataPointEntity != null;
-        String dataSourceIdentifier = dataPointEntity.getDataSourceIdentifier();
-        if (providerDataPoints.containsKey(dataSourceIdentifier)) {
-          Map<String, Set<String>> existingProviderDataPoints = providerDataPoints.get(dataSourceIdentifier);
-          existingProviderDataPoints.put(k, v);
-          providerDataPoints.put(dataSourceIdentifier, existingProviderDataPoints);
-        } else {
-          providerDataPoints.put(dataSourceIdentifier, new HashMap<>(Map.of(k, v)));
-        }
-      });
 
       Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
       providerDataPoints.forEach((k, v) -> {
@@ -359,8 +340,9 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
     });
   }
 
-  private Map<String, Set<String>> getDataPointsAndInputValues(List<ScorecardAndChecks> scorecardsAndChecks) {
-    Map<String, Set<String>> dataPointIdentifiersAndInputValues = new HashMap<>();
+  private Map<String, Map<String, Set<String>>> getProviderDataPointValues(
+      List<ScorecardAndChecks> scorecardsAndChecks) {
+    Map<String, Map<String, Set<String>>> providerDataPointValues = new HashMap<>();
 
     for (ScorecardAndChecks scorecardAndChecks : scorecardsAndChecks) {
       List<CheckEntity> checks = scorecardAndChecks.getChecks();
@@ -372,15 +354,19 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
           continue;
         }
         for (Rule rule : check.getRules()) {
+          String dataSourceIdentifier = rule.getDataSourceIdentifier();
+          Map<String, Set<String>> dataPointIdentifiersAndInputValues =
+              providerDataPointValues.getOrDefault(dataSourceIdentifier, new HashMap<>());
           Set<String> inputValues =
               dataPointIdentifiersAndInputValues.getOrDefault(rule.getDataPointIdentifier(), new HashSet<>());
           if (StringUtils.isNotBlank(rule.getConditionalInputValue())) {
             inputValues.add(rule.getConditionalInputValue());
           }
           dataPointIdentifiersAndInputValues.put(rule.getDataPointIdentifier(), inputValues);
+          providerDataPointValues.put(dataSourceIdentifier, dataPointIdentifiersAndInputValues);
         }
       }
     }
-    return dataPointIdentifiersAndInputValues;
+    return providerDataPointValues;
   }
 }

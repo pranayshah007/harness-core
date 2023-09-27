@@ -18,6 +18,8 @@ public class HealthSourceGeneratorFactory {
 
   @Inject private SplunkHealthSourceGenerator splunkHealthSourceGenerator;
 
+  @Inject private NewRelicSourceGenerator newRelicSourceGenerator;
+
   public Optional<HealthSourceGenerator> getHealthSourceGenerator(String stepType) {
     switch (stepType) {
       case "PROMETHEUS":
@@ -28,6 +30,9 @@ public class HealthSourceGeneratorFactory {
         return Optional.of(elkHealthSourceGenerator);
       case "SPLUNKV2":
         return Optional.of(splunkHealthSourceGenerator);
+      case "NEW_RELIC":
+        return Optional.of(newRelicSourceGenerator);
+
       default:
         return Optional.empty();
     }

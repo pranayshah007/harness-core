@@ -72,7 +72,7 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
       log.info("Parsed request body method: {}", backstageProxyRequest.getMethod());
       StringBuilder headerString = new StringBuilder();
       backstageProxyRequest.getHeaders().forEach((key, value) -> {
-        if (!key.equals(AUTHORIZATION)) {
+        if (!key.equalsIgnoreCase(AUTHORIZATION)) {
           headerString.append(String.format(HEADER_STRING_PATTERN, key, value));
         } else {
           log.debug("Skipped logging {} header", AUTHORIZATION);

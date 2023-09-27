@@ -58,7 +58,7 @@ public class DelegateInstallationCommandServiceTest {
   @Category(UnitTests.class)
   public void testDockerCommandOnSmp() {
     String defaultTokenName = delegateNgTokenService.getDefaultTokenName(null);
-    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, defaultTokenName, true)).thenReturn(TOKEN_DETAIL);
+    when(delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(ACCOUNT_ID, null)).thenReturn(TOKEN_DETAIL);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
     when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES_ONPREM);
     final String result = String.format("docker run --cpus=1 --memory=2g \\\n"
@@ -81,7 +81,7 @@ public class DelegateInstallationCommandServiceTest {
   @Category(UnitTests.class)
   public void testDockerCommand() {
     String defaultTokenName = delegateNgTokenService.getDefaultTokenName(null);
-    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, defaultTokenName, true)).thenReturn(TOKEN_DETAIL);
+    when(delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(ACCOUNT_ID, null)).thenReturn(TOKEN_DETAIL);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
     when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
     final String result = String.format("docker run --cpus=1 --memory=2g \\\n"
@@ -103,7 +103,7 @@ public class DelegateInstallationCommandServiceTest {
   @Category(UnitTests.class)
   public void testHelmCommand() {
     String defaultTokenName = delegateNgTokenService.getDefaultTokenName(null);
-    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, defaultTokenName, true)).thenReturn(TOKEN_DETAIL);
+    when(delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(ACCOUNT_ID, null)).thenReturn(TOKEN_DETAIL);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
     when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
     final String result =
@@ -125,7 +125,7 @@ public class DelegateInstallationCommandServiceTest {
   @Category(UnitTests.class)
   public void testHelmCommandOnSmp() {
     String defaultTokenName = delegateNgTokenService.getDefaultTokenName(null);
-    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, defaultTokenName, true)).thenReturn(TOKEN_DETAIL);
+    when(delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(ACCOUNT_ID, null)).thenReturn(TOKEN_DETAIL);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
     when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES_ONPREM);
     final String result =
@@ -148,7 +148,7 @@ public class DelegateInstallationCommandServiceTest {
   @Category(UnitTests.class)
   public void testKubernetesInstructions() {
     String defaultTokenName = delegateNgTokenService.getDefaultTokenName(null);
-    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, defaultTokenName, true)).thenReturn(TOKEN_DETAIL);
+    when(delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(ACCOUNT_ID, null)).thenReturn(TOKEN_DETAIL);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
     when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
     final String result = String.format("\"PUT_YOUR_DELEGATE_NAME\" with kubernetes-delegate\n"
@@ -167,7 +167,7 @@ public class DelegateInstallationCommandServiceTest {
   @Category(UnitTests.class)
   public void testGetTerraformExampleModuleFile() throws IOException {
     String defaultTokenName = delegateNgTokenService.getDefaultTokenName(null);
-    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, defaultTokenName, true)).thenReturn(TOKEN_DETAIL);
+    when(delegateNgTokenService.getDefaultTokenOrOldestActiveDelegateToken(ACCOUNT_ID, null)).thenReturn(TOKEN_DETAIL);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
     when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
     final String result =

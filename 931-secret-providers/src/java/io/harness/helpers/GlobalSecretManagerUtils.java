@@ -11,12 +11,16 @@ import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static com.jayway.jsonpath.internal.DefaultsImpl.INSTANCE;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -24,6 +28,11 @@ import lombok.experimental.UtilityClass;
 public class GlobalSecretManagerUtils {
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final ObjectMapper mapper = new ObjectMapper();
+  private static final Configuration configuration = new Configuration.ConfigurationBuilder()
+                                                         .jsonProvider(INSTANCE.jsonProvider())
+                                                         .mappingProvider(INSTANCE.mappingProvider())
+                                                         .options(INSTANCE.options())
+                                                         .build();
 
   public static boolean isNgHarnessSecretManager(NGSecretManagerMetadata ngSecretManagerMetadata) {
     return ngSecretManagerMetadata != null
@@ -38,5 +47,13 @@ public class GlobalSecretManagerUtils {
     }
 
     return mapper.writeValueAsString(value);
+  }
+
+  public static DocumentContext parse(Object json) {
+    return JsonPath.using(configuration).parse(json);
+  }
+
+  public static DocumentContext parse(String json) {
+    return JsonPath.using(configuration).parse(json);
   }
 }

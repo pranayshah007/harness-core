@@ -100,8 +100,11 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
       ArtifactOutcome artifactOutcome = azureWebAppStepHelper.getPrimaryArtifactOutcome(ambiance);
       boolean isPackageType = azureWebAppStepHelper.isPackageArtifactType(artifactOutcome);
       AzureArtifactConfig previousArtifactConfig = null;
+      boolean cleanDeploymentEnabled = false;
       if (isPackageType) {
-        previousArtifactConfig = getPreviousArtifactConfig(ambiance, infraDelegateConfig);
+        AzureWebAppsStageExecutionDetails executionDetails =
+            azureWebAppStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
+        previousArtifactConfig = getPreviousArtifactConfig(executionDetails);
         if (previousArtifactConfig == null && !swapSlotsSweepingOutput.isFound()) {
           return getSkipTaskRequest("No swap slots done and previous artifact not found, skipping rollback");
         }
@@ -110,6 +113,8 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
           return getSkipTaskRequest(
               "Rollback is not possible when previous artifact is of type Docker and current artifact is of type package");
         }
+
+        cleanDeploymentEnabled = getCleanDeploymentEnabled(executionDetails);
       }
 
       AzureWebAppRollbackRequest azureWebAppRollbackRequest =
@@ -123,6 +128,7 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
                       azureAppServicePreDeploymentData.getAppName()))
               .artifact(previousArtifactConfig)
               .azureArtifactType(isPackageType ? AzureArtifactType.PACKAGE : AzureArtifactType.CONTAINER)
+              .cleanDeployment(cleanDeploymentEnabled)
               .build();
 
       List<String> units = getUnits(swapSlotsSweepingOutput, azureWebAppRollbackRequest.getArtifact() != null);
@@ -137,11 +143,14 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
         .build();
   }
 
-  private AzureArtifactConfig getPreviousArtifactConfig(
-      Ambiance ambiance, AzureWebAppInfraDelegateConfig infraDelegateConfig) {
-    AzureWebAppsStageExecutionDetails executionDetails =
-        azureWebAppStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
+  private AzureArtifactConfig getPreviousArtifactConfig(AzureWebAppsStageExecutionDetails executionDetails) {
     return executionDetails != null ? executionDetails.getArtifactConfig() : null;
+  }
+
+  private boolean getCleanDeploymentEnabled(AzureWebAppsStageExecutionDetails executionDetails) {
+    return executionDetails != null && executionDetails.getCleanDeployment() != null
+        ? executionDetails.getCleanDeployment()
+        : false;
   }
 
   private String getTargetSlotFromSweepingOutput(OptionalSweepingOutput swapSlotsSweepingOutput) {

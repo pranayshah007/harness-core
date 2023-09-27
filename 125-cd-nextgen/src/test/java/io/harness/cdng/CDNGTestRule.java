@@ -297,6 +297,9 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(Producer.class)
             .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
             .toInstance(mock(NoOpProducer.class));
+        bind(Producer.class)
+            .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_ACTIVITY))
+            .toInstance(mock(NoOpProducer.class));
         bind(SecretNGManagerClient.class)
             .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
             .toInstance(mock(SecretNGManagerClient.class));

@@ -32,6 +32,7 @@ public class CIStepConfig {
   StepImageConfig sscaOrchestrationConfig;
   StepImageConfig sscaEnforcementConfig;
   StepImageConfig provenanceConfig;
+  StepImageConfig provenanceGcrConfig;
   StepImageConfig slsaVerificationConfig;
   StepImageConfig iacmTerraform;
   VmImageConfig vmImageConfig;

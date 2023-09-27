@@ -82,6 +82,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import lombok.NonNull;
@@ -311,8 +312,12 @@ public class K8sRecommendationDAO {
                     .from(table(name(CTE_KUBE))))
             .fetch();
 
-    Timestamp minStartTime =
-        result.stream().map(record -> (Timestamp) record.get(MIN_STARTTIME)).min(Timestamp::compareTo).orElse(null);
+    Timestamp minStartTime = result.stream()
+                                 .filter(Objects::nonNull)
+                                 .map(record -> (Timestamp) record.get(MIN_STARTTIME))
+                                 .filter(Objects::nonNull)
+                                 .min(Timestamp::compareTo)
+                                 .orElse(null);
 
     if (minStartTime == null) {
       return OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME);

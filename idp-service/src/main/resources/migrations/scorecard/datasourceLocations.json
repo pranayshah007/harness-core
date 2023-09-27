@@ -175,6 +175,52 @@
       },
       "requestBody": "{BODY}"
     }
+  },
+  {
+    "id": "650ae5f5047ed6bddfdeee81",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "bitbucket_mean_time_to_merge_pr",
+    "dataSourceIdentifier": "bitbucket",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "https://api.bitbucket.org/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/pullrequests?q=state=\"MERGED\"",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BASIC_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "650ae614f618a0c0a125440d",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "bitbucket_is_branch_protection_set",
+    "dataSourceIdentifier": "bitbucket",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "https://api.bitbucket.org/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/branch-restrictions?pattern={BRANCH_NAME_REPLACER}",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BASIC_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "650c086a9fc07a1b94f76e1a",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty_resolved_incidents",
+    "dataSourceIdentifier": "pagerduty",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{TARGET_URL}/incidents?service_ids[]={SERVICE_ID}&statuses[]=resolved&limit=10&sort_by=created_at:desc",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{TOKEN_AUTH}"
+      }
+    }
   }
 ]
 

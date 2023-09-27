@@ -1318,7 +1318,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     buildServiceMapBinder.addBinding(SftpConfig.class).toInstance(SftpBuildService.class);
     buildServiceMapBinder.addBinding(AzureArtifactsPATConfig.class).toInstance(AzureArtifactsBuildService.class);
 
-    install(new ManagerCacheRegistrar());
+    install(new ManagerCacheRegistrar(configuration));
     install(new FactoryModuleBuilder().implement(Jenkins.class, JenkinsImpl.class).build(JenkinsFactory.class));
     install(SecretManagementCoreModule.getInstance());
     install(new InstanceSyncMonitoringModule());

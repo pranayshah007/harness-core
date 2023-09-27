@@ -7,6 +7,9 @@
 
 package io.harness.ccm.views.helper;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.views.dto.ViewTimeRangeDto;
 import io.harness.ccm.views.dto.ViewTimeRangeDto.ViewTimeRangeDtoBuilder;
 import io.harness.ccm.views.entities.ViewTimeRange;
@@ -20,6 +23,8 @@ import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 public class ViewTimeRangeHelper {
   private static final String DEFAULT_TIMEZONE = "GMT";
   private static final long ONE_DAY_MILLIS = 86400000L;

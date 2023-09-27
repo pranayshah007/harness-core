@@ -308,6 +308,7 @@ public class ContainerDeploymentDelegateBaseHelper {
           log.info("File doesn't exist. Creating file at path {}", configFilePath);
           FileUtils.forceMkdir(file.getParentFile());
           FileUtils.writeStringToFile(file, configFileContent, UTF_8);
+          kubernetesContainerService.modifyFileReadableProperties(configFilePath);
           log.info("Created file with size {}", file.length());
         }
         return file.getAbsolutePath();

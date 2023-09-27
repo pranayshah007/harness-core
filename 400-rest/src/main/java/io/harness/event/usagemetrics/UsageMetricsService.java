@@ -172,7 +172,7 @@ public class UsageMetricsService {
                                               .addFilter("appId", Operator.IN, appIds.toArray())
                                               .addFieldsIncluded("_id")
                                               .build();
-      return pipelineService.listPipelines(pageRequest).getTotal();
+      return pipelineService.listPipelines(pageRequest, false, null).getTotal();
     } else {
       return 0;
     }

@@ -192,6 +192,7 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
               .additionalCliFlags(taskParameters.getTerraformCommandFlags())
               .encryptDecryptPlanForHarnessSMOnManager(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager())
               .isNG(true)
+              .skipColorLogs(taskParameters.isSkipColorLogs())
               .build();
 
       TerraformStepResponse terraformStepResponse =

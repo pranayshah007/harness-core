@@ -8,7 +8,6 @@
 package software.wings.service.impl.workflow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
-import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
 import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
@@ -471,9 +470,7 @@ public class WorkflowServiceImpl implements WorkflowService {
   @Override
   public List<Workflow> list(String accountId, List<String> projectFields, String queryHint) {
     FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-      findOptions.readPreference(ReadPreference.secondaryPreferred());
-    }
+    findOptions.readPreference(ReadPreference.secondaryPreferred());
     Query<Workflow> workflowQuery =
         wingsPersistence.createQuery(Workflow.class).filter(WorkflowKeys.accountId, accountId);
     emptyIfNull(projectFields).forEach(field -> { workflowQuery.project(field, true); });
@@ -663,8 +660,12 @@ public class WorkflowServiceImpl implements WorkflowService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Workflow> listWorkflowsWithoutOrchestration(PageRequest<Workflow> pageRequest) {
+  public PageResponse<Workflow> listWorkflowsWithoutOrchestration(
+      PageRequest<Workflow> pageRequest, boolean hitSecondary) {
     pageRequest.addFieldsExcluded(WorkflowKeys.orchestration);
+    if (hitSecondary) {
+      return wingsPersistence.querySecondary(Workflow.class, pageRequest);
+    }
     return wingsPersistence.query(Workflow.class, pageRequest);
   }
 
@@ -673,7 +674,7 @@ public class WorkflowServiceImpl implements WorkflowService {
    */
   @Override
   public PageResponse<Workflow> listWorkflows(PageRequest<Workflow> pageRequest) {
-    PageResponse<Workflow> response = listWorkflows(pageRequest, 0, false, null);
+    PageResponse<Workflow> response = listWorkflows(pageRequest, 0, false, null, false);
     return response == null ? new PageResponse<>() : response;
   }
 
@@ -686,10 +687,10 @@ public class WorkflowServiceImpl implements WorkflowService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Workflow> listWorkflows(
-      PageRequest<Workflow> pageRequest, Integer previousExecutionsCount, boolean withTags, String tagFilter) {
-    PageResponse<Workflow> workflows =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.WORKFLOW, withTags, false);
+  public PageResponse<Workflow> listWorkflows(PageRequest<Workflow> pageRequest, Integer previousExecutionsCount,
+      boolean withTags, String tagFilter, boolean hitSecondary) {
+    PageResponse<Workflow> workflows = resourceLookupService.listWithTagFilters(
+        pageRequest, tagFilter, EntityType.WORKFLOW, withTags, hitSecondary, true);
 
     if (workflows != null && workflows.getResponse() != null) {
       for (Workflow workflow : workflows.getResponse()) {
@@ -843,7 +844,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (workflow == null) {
       return null;
     }
-    workflow.setTagLinks(harnessTagService.getTagLinksWithEntityId(workflow.getAccountId(), workflowId));
+    workflow.setTagLinks(harnessTagService.getTagLinksWithEntityId(workflow.getAccountId(), workflowId, false));
     loadOrchestrationWorkflow(workflow, version);
     return workflow;
   }
@@ -1247,7 +1248,8 @@ public class WorkflowServiceImpl implements WorkflowService {
               .withLimit(PageRequest.UNLIMITED)
               .addFilter(PipelineKeys.appId, EQ, appId)
               .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflowId)
-              .build());
+              .build(),
+          false, accountId);
       if (isNotEmpty(pipelinesWithWorkflowLinked)) {
         updateEnvIdInLinkedPipelines(workflow, envId, pipelinesWithWorkflowLinked);
         pipelineService.savePipelines(pipelinesWithWorkflowLinked, true);
@@ -1480,7 +1482,8 @@ public class WorkflowServiceImpl implements WorkflowService {
             .withLimit(PageRequest.UNLIMITED)
             .addFilter(PipelineKeys.appId, EQ, workflow.getAppId())
             .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflow.getUuid())
-            .build());
+            .build(),
+        false, workflow.getAccountId());
 
     if (isNotEmpty(pipelines)) {
       List<String> pipelineNames = pipelines.stream().map(Pipeline::getName).collect(toList());

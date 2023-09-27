@@ -23,4 +23,5 @@ public class CacheResponse {
   CacheState cacheState;
   long ttlLeft;
   long lastUpdatedAt;
+  boolean isSyncEnabled;
 }

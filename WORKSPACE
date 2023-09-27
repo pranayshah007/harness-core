@@ -4623,8 +4623,8 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:tKAZ/8G4ErcAMEPmVsA3A0w+aYpagXwT3fXxtFcJKiM=",
-    version = "v0.0.0-20230827043740-d394b7ccaa1a",
+    sum = "h1:MVFzBU0ScnbCHFxzyMZo5oLzeDwQLwaqibXQtjUzcvw=",
+    version = "v0.0.0-20230919114308-05b6697b67f9",
 )
 
 go_rules_dependencies()
@@ -5045,11 +5045,11 @@ plain_artifacts = [
     "io.projectreactor.netty:reactor-netty-core:1.0.24",
     "io.projectreactor.netty:reactor-netty-http:1.0.24",
     "io.projectreactor:reactor-core:3.4.18",
-    "io.prometheus:simpleclient:0.5.0",
-    "io.prometheus:simpleclient_common:0.5.0",
-    "io.prometheus:simpleclient_dropwizard:0.5.0",
-    "io.prometheus:simpleclient_servlet:0.3.0",
-    "io.prometheus:simpleclient_httpserver:0.4.0",
+    "io.prometheus:simpleclient:0.16.0",
+    "io.prometheus:simpleclient_common:0.16.0",
+    "io.prometheus:simpleclient_dropwizard:0.16.0",
+    "io.prometheus:simpleclient_servlet:0.16.0",
+    "io.prometheus:simpleclient_httpserver:0.16.0",
     "io.reactivex.rxjava2:rxjava:2.2.19",
     "io.reactivex:rxjava:1.3.8",
     "io.rest-assured:rest-assured:3.2.0",

@@ -40,7 +40,7 @@ public class TerraformCliErrorLogOutputStreamTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testNoLinesSanitized() {
     LogCallback logCallback = mock(LogCallback.class);
-    TerraformCliErrorLogOutputStream logOutputStream = new TerraformCliErrorLogOutputStream(logCallback);
+    TerraformCliErrorLogOutputStream logOutputStream = new TerraformCliErrorLogOutputStream(logCallback, true);
 
     String ansiTagsLogLine = "│[31m\u001B[0m\u001B[0m \u001B[";
     String simpleTextLogLine = "simple text";
@@ -48,8 +48,8 @@ public class TerraformCliErrorLogOutputStreamTest extends CategoryTest {
     logOutputStream.processLine(ansiTagsLogLine);
     logOutputStream.processLine(simpleTextLogLine);
 
-    verify(logCallback, times(1)).saveExecutionLog(eq(ansiTagsLogLine), eq(LogLevel.ERROR));
-    verify(logCallback, times(1)).saveExecutionLog(eq(simpleTextLogLine), eq(LogLevel.ERROR));
+    verify(logCallback, times(1)).saveExecutionLog(eq(ansiTagsLogLine), eq(LogLevel.ERROR), eq(true));
+    verify(logCallback, times(1)).saveExecutionLog(eq(simpleTextLogLine), eq(LogLevel.ERROR), eq(true));
 
     assertThat(logOutputStream.getError()).isEqualTo(ansiTagsLogLine + " " + simpleTextLogLine);
   }
@@ -59,7 +59,7 @@ public class TerraformCliErrorLogOutputStreamTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testLinesSanitized() {
     LogCallback logCallback = mock(LogCallback.class);
-    TerraformCliErrorLogOutputStream logOutputStream = new TerraformCliErrorLogOutputStream(logCallback);
+    TerraformCliErrorLogOutputStream logOutputStream = new TerraformCliErrorLogOutputStream(logCallback, true);
     String expectedSanitizedLine = "secret_key = testsecret/test";
 
     String ansiUnderlinedLogLine = "secret_key = \u001B[4mtestsecret\u001B[0m/test";
@@ -68,8 +68,8 @@ public class TerraformCliErrorLogOutputStreamTest extends CategoryTest {
     logOutputStream.processLine(ansiUnderlinedLogLine);
     logOutputStream.processLine(simpleTextLogLine);
 
-    verify(logCallback, times(1)).saveExecutionLog(eq(expectedSanitizedLine), eq(LogLevel.ERROR));
-    verify(logCallback, times(1)).saveExecutionLog(eq(simpleTextLogLine), eq(LogLevel.ERROR));
+    verify(logCallback, times(1)).saveExecutionLog(eq(expectedSanitizedLine), eq(LogLevel.ERROR), eq(true));
+    verify(logCallback, times(1)).saveExecutionLog(eq(simpleTextLogLine), eq(LogLevel.ERROR), eq(true));
 
     assertThat(logOutputStream.getError()).isEqualTo(expectedSanitizedLine + " " + simpleTextLogLine);
   }

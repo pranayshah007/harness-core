@@ -48,7 +48,10 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.timescaledb.Tables.ANOMALIES;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.ccm.msp.entities.MarginDetails;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
@@ -116,6 +119,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @OwnedBy(CE)
 public class ViewsQueryBuilder {
@@ -1876,7 +1881,7 @@ public class ViewsQueryBuilder {
     }
     QLCEViewFilterOperator operator = filter.getOperator();
 
-    if (filter.getValues().length > 0 && operator == QLCEViewFilterOperator.EQUALS) {
+    if (filter.getValues() != null && filter.getValues().length > 0 && operator == QLCEViewFilterOperator.EQUALS) {
       operator = QLCEViewFilterOperator.IN;
     }
 
@@ -2020,10 +2025,12 @@ public class ViewsQueryBuilder {
     Set<String> selectedCostTargets = null;
     if (Objects.nonNull(filter)) {
       operator = filter.getOperator();
-      if (filter.getValues().length > 0 && operator == QLCEViewFilterOperator.EQUALS) {
-        operator = QLCEViewFilterOperator.IN;
+      if (filter.getValues() != null) {
+        if (filter.getValues().length > 0 && operator == QLCEViewFilterOperator.EQUALS) {
+          operator = QLCEViewFilterOperator.IN;
+        }
+        selectedCostTargets = new HashSet<>(Arrays.asList(filter.getValues()));
       }
-      selectedCostTargets = new HashSet<>(Arrays.asList(filter.getValues()));
     }
 
     CaseStatement caseStatement = new CaseStatement();
@@ -2035,7 +2042,7 @@ public class ViewsQueryBuilder {
           Condition condition =
               getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier, viewLabelsFlattened);
           if (!condition.isEmpty()) {
-            caseStatement.addWhen(condition, costTarget.getName());
+            caseStatement.addWhen(condition, handleSingleQuotesInName(costTarget.getName()));
           }
         }
       }
@@ -2044,7 +2051,7 @@ public class ViewsQueryBuilder {
           Condition condition =
               getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier, viewLabelsFlattened);
           if (!condition.isEmpty()) {
-            caseStatement.addWhen(condition, costTarget.getName());
+            caseStatement.addWhen(condition, handleSingleQuotesInName(costTarget.getName()));
           }
         }
       }
@@ -2345,5 +2352,9 @@ public class ViewsQueryBuilder {
 
   private double getRoundedDoubleValue(double value) {
     return Math.round(value * 100D) / 100D;
+  }
+
+  private static String handleSingleQuotesInName(String string) {
+    return string.replaceAll("'", "\\\\'");
   }
 }

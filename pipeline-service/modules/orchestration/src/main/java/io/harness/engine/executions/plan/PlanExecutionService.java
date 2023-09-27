@@ -81,6 +81,7 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
   CloseableIterator<PlanExecution> fetchPlanExecutionsByStatusFromAnalytics(
       Set<Status> statuses, Set<String> fieldNames);
 
+  // Todo: Remove
   List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
       String accountId, String orgId, String projectId, long startTS, long endTS);
 

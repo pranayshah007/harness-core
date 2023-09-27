@@ -62,6 +62,6 @@ public class SlackNotificationFeature extends AbstractNotificationFeature {
   }
 
   private PageResponse<UserGroup> getUserGroups(String accountId) {
-    return userGroupService.list(accountId, new PageRequest<>(), false, null, null);
+    return userGroupService.list(accountId, new PageRequest<>(), false, null, null, false);
   }
 }

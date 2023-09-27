@@ -319,7 +319,7 @@ public class AmbianceUtils {
   }
 
   public static String getStrategyPostfix(Level level, boolean useMatrixFieldName) {
-    if (level == null || !level.hasStrategyMetadata()) {
+    if (level == null || !hasStrategyMetadata(level)) {
       return StringUtils.EMPTY;
     }
     return getStrategyPostFixUsingMetadata(level.getStrategyMetadata(), useMatrixFieldName);
@@ -398,7 +398,7 @@ public class AmbianceUtils {
 
   public boolean isCurrentNodeUnderStageStrategy(Ambiance ambiance) {
     Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
-    return stageLevel.isPresent() && stageLevel.get().hasStrategyMetadata();
+    return stageLevel.isPresent() && hasStrategyMetadata(stageLevel.get());
   }
 
   public boolean isCurrentLevelAtStep(Ambiance ambiance) {
@@ -554,5 +554,9 @@ public class AmbianceUtils {
       }
     }
     return enabledFeatureFlags;
+  }
+
+  public boolean hasStrategyMetadata(Level level) {
+    return level.hasStrategyMetadata();
   }
 }

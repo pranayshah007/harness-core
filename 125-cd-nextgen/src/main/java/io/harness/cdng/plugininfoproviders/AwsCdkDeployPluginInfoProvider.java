@@ -47,7 +47,7 @@ public class AwsCdkDeployPluginInfoProvider extends AbstractPluginInfoProvider {
         awsCdkDeployStepInfo.getImage(), awsCdkDeployStepInfo.getImagePullPolicy());
     PluginDetails pluginDetails =
         getPluginDetails(usedPorts, awsCdkDeployStepInfo.getRunAsUser(), awsCdkDeployStepInfo.getResources(),
-            awsCdkDeployStepInfo.getPrivileged(), getEnvironmentVariables(awsCdkDeployStepInfo), imageDetails);
+            awsCdkDeployStepInfo.getPrivileged(), getEnvironmentVariables(awsCdkDeployStepInfo), imageDetails, false);
     PluginCreationResponse response = PluginCreationResponse.newBuilder().setPluginDetails(pluginDetails).build();
     StepInfoProto stepInfoProto = getStepInfoProto(cdAbstractStepNode);
 

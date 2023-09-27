@@ -30,8 +30,7 @@ public interface DataSourceLocation {
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
       Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException;
 
-  String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, String> dataPointIdsAndInputValue, String requestBody);
+  String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValue, String requestBody);
 
   default ApiRequestDetails fetchApiRequestDetails(DataSourceLocationEntity dataSourceLocationEntity) {
     return ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
@@ -42,7 +41,14 @@ public interface DataSourceLocation {
     String requestBody = apiRequestDetails.getRequestBody();
     requestBody = replaceRequestBodyPlaceholdersIfAny(possibleReplaceableRequestBodyPairs, requestBody);
     Map<String, String> dataPointIdAndInputValue = convertDataPointEntityMapToDataPointIdMap(dataPointAndInputValue);
-    return replaceRequestBodyInputValuePlaceholdersIfAny(dataPointIdAndInputValue, requestBody);
+    return replaceInputValuePlaceholdersIfAny(dataPointIdAndInputValue, requestBody);
+  }
+
+  default String constructUrl(
+      String url, Map<String, String> replaceableUrls, Map<DataPointEntity, String> dataPointAndInputValue) {
+    String replacedUrl = replaceUrlsPlaceholdersIfAny(url, replaceableUrls);
+    Map<String, String> dataPointIdAndInputValue = convertDataPointEntityMapToDataPointIdMap(dataPointAndInputValue);
+    return replaceInputValuePlaceholdersIfAny(dataPointIdAndInputValue, replacedUrl);
   }
 
   default void matchAndReplaceHeaders(Map<String, String> headers, Map<String, String> replaceableHeaders) {

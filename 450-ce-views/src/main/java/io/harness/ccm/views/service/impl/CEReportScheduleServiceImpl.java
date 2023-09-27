@@ -7,8 +7,11 @@
 
 package io.harness.ccm.views.service.impl;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.service.CEReportScheduleService;
@@ -22,6 +25,8 @@ import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.support.CronSequenceGenerator;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
 public class CEReportScheduleServiceImpl implements CEReportScheduleService {

@@ -7,6 +7,8 @@
 
 package io.harness.ccm.views.dao;
 
+import static io.harness.beans.FeatureName.CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI;
+
 import io.harness.ccm.commons.entities.CCMSort;
 import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.views.entities.Rule;
@@ -15,6 +17,7 @@ import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -37,6 +40,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class RuleDAO {
   @Inject private HPersistence hPersistence;
   @Inject private MongoTemplate mongoTemplate;
+  @Inject private FeatureFlagService featureFlagService;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final String LOCALE_EN = "en";
 
@@ -85,6 +89,10 @@ public class RuleDAO {
                             .field(RuleId.accountId)
                             .in(Arrays.asList(governancePolicyFilter.getAccountId(), GLOBAL_ACCOUNT_ID));
 
+    if (featureFlagService.isNotEnabled(
+            CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI, governancePolicyFilter.getAccountId())) {
+      rules.field(RuleId.cloudProvider).notEqual(RuleCloudProviderType.AZURE);
+    }
     if (governancePolicyFilter.getCloudProvider() != null) {
       rules.field(RuleId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
     }

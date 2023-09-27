@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.resources.ecr;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -158,6 +159,67 @@ public class EcrResourceServiceImplTest extends CategoryTest {
         connectorRef, REGISTRY_ID, IMAGE_PATH, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(ecrResponseDTO).isNotNull();
     assertThat(ecrResponseDTO.getBuildDetailsList().get(0).getTag()).isEqualTo("tag");
+  }
+
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_ImagePath_NULL() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, REGISTRY_ID, null, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_ImagePath_Empty() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, REGISTRY_ID, "", REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_ImagePath_Input() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, REGISTRY_ID, INPUT, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Region_NULL() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH, null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Region_Empty() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH, "", ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Region_Input() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, REGISTRY_ID, IMAGE_PATH, INPUT, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
   }
 
   @Test

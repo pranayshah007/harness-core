@@ -7,7 +7,6 @@
 
 package io.harness.cdng.gitops.updategitopsapp;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
@@ -28,17 +27,17 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.GITOPS)
 @RecasterAlias("io.harness.cdng.gitops.updategitopsapp.KustomizeValues")
 public class KustomizeValues {
-  @YamlSchemaTypes(expression)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @JsonProperty("images")
   ParameterField<List<String>> images;
 
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @JsonProperty("namespace")
   ParameterField<String> namespace;
 
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.GITOPS_KUSTOMIZE_REPLICAS_LIST_CLASSPATH)
   @JsonProperty("replicas")
   ParameterField<List<KustomizeReplicas>> replicas;

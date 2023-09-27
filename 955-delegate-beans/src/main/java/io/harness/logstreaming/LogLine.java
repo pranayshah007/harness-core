@@ -9,6 +9,7 @@ package io.harness.logstreaming;
 
 import io.harness.logging.LogLevel;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.Map;
@@ -28,4 +29,6 @@ public class LogLine {
   @JsonProperty("pos") int position;
 
   @JsonProperty("args") Map<String, String> arguments;
+
+  @JsonIgnore boolean skipColoring;
 }

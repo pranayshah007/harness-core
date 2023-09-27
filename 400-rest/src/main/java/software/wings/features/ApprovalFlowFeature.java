@@ -96,7 +96,7 @@ public class ApprovalFlowFeature extends AbstractPremiumFeature implements Compl
   }
 
   private List<Pipeline> getAllPipelinesByAccountId(String accountId) {
-    return pipelineService.listPipelines(getPipelinesPageRequest(accountId));
+    return pipelineService.listPipelines(getPipelinesPageRequest(accountId), true, accountId);
   }
 
   private List<Workflow> getAllWorkflowsByAccountId(String accountId) {

@@ -7,6 +7,7 @@
 
 package io.harness.ccm.views.dao;
 
+import static io.harness.beans.FeatureName.CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI;
 import static io.harness.persistence.HQuery.excludeValidate;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
@@ -25,9 +26,11 @@ import io.harness.ccm.views.entities.RuleRecommendation;
 import io.harness.ccm.views.entities.RuleRecommendation.RuleRecommendationId;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.OverviewExecutionDetails;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
 import io.harness.ccm.views.helper.RuleExecutionList;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -51,6 +54,7 @@ public class RuleExecutionDAO {
   @Inject private RuleDAO ruleDAO;
   @Inject private RuleEnforcementDAO ruleEnforcementDAO;
   @Inject private DSLContext dslContext;
+  @Inject private FeatureFlagService featureFlagService;
 
   private static final int RETRY_COUNT = 3;
   private static final int SLEEP_DURATION = 100;
@@ -135,6 +139,10 @@ public class RuleExecutionDAO {
             throw new InvalidRequestException("Operator not supported not supported for time fields");
         }
       }
+    }
+    if (featureFlagService.isNotEnabled(
+            CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI, ruleExecutionFilter.getAccountId())) {
+      query.field(RuleExecutionKeys.cloudProvider).notEqual(RuleCloudProviderType.AZURE);
     }
     ruleExecutionList.setTotalItems(query.asList().size());
     final RuleExecutionSortType modifiedSortType = Objects.isNull(ruleExecutionFilter.getRuleExecutionSortType())

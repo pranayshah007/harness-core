@@ -13,9 +13,8 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -23,6 +22,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
 import io.harness.category.element.UnitTests;
+import io.harness.cli.CliCommandRequest;
 import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
 import io.harness.filesystem.FileIo;
@@ -48,6 +48,7 @@ import lombok.SneakyThrows;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -92,8 +93,11 @@ public class TerragruntClientImplTest extends CategoryTest {
   public void testRefreshRunModule() {
     final TerragruntClient tgClient = createClient();
     final String expectedCommand = TerragruntCommandUtils.refresh("", "");
-    final TerragruntCliRequest request =
-        TerragruntCliRequest.builder().timeoutInMillis(60000L).runType(TerragruntRunType.RUN_MODULE).build();
+    final TerragruntCliRequest request = TerragruntCliRequest.builder()
+                                             .timeoutInMillis(60000L)
+                                             .runType(TerragruntRunType.RUN_MODULE)
+                                             .skipColorLogs(true)
+                                             .build();
 
     setupCliResponse(CommandExecutionStatus.FAILURE, "error", expectedCommand, request);
 
@@ -288,15 +292,23 @@ public class TerragruntClientImplTest extends CategoryTest {
                  .error(status == CommandExecutionStatus.FAILURE ? output : "")
                  .build())
         .when(cliHelper)
-        .executeCliCommand(eq(command), eq(request.getTimeoutInMillis()), eq(request.getEnvVars()),
-            eq(request.getWorkingDirectory()), eq(logCallback), eq(command), any(LogOutputStream.class), any(),
-            anyLong());
+        .executeCliCommand(any());
   }
 
   @SneakyThrows
   private void verifyCommandExecuted(String command, AbstractTerragruntCliRequest request) {
-    verify(cliHelper).executeCliCommand(eq(command), eq(request.getTimeoutInMillis()), eq(request.getEnvVars()),
-        eq(request.getWorkingDirectory()), eq(logCallback), eq(command), any(LogOutputStream.class), any(), anyLong());
+    ArgumentCaptor<CliCommandRequest> captor = ArgumentCaptor.forClass(CliCommandRequest.class);
+
+    verify(cliHelper).executeCliCommand(captor.capture());
+    CliCommandRequest cliCommandRequest = captor.getValue();
+    assertThat(cliCommandRequest.getCommand()).isEqualTo(command);
+    assertThat(cliCommandRequest.getEnvVariables()).isEqualTo(request.getEnvVars());
+    assertThat(cliCommandRequest.getLogCallback()).isEqualTo(logCallback);
+    assertThat(cliCommandRequest.getLoggingCommand()).isEqualTo(command);
+    assertThat((LogCallback) on(cliCommandRequest.getErrorLogOutputStream()).get("executionLogCallback"))
+        .isEqualTo(logCallback);
+    assertThat((boolean) on(cliCommandRequest.getErrorLogOutputStream()).get("skipColorLogs"))
+        .isEqualTo(request.isSkipColorLogs());
   }
 
   private TerragruntClient createClient() {

@@ -50,7 +50,7 @@ public class LogStreamingStepClientImplTest extends CategoryTest {
   private LogStreamingStepClientImpl logStreamingStepClient = spy(new LogStreamingStepClientImpl(
       logStreamingClient, logStreamingSanitizer, TOKEN, ACCOUNT_ID, BASE_LOG_KEY, logStreamingClientExecutor));
   private static final LogLine LOG_LINE =
-      new LogLine(LogLevel.INFO, "Message", Instant.ofEpochMilli(1L), 1, new HashMap<>());
+      new LogLine(LogLevel.INFO, "Message", Instant.ofEpochMilli(1L), 1, new HashMap<>(), false);
   @Before
   public void before() throws Exception {
     MockitoAnnotations.initMocks(this);

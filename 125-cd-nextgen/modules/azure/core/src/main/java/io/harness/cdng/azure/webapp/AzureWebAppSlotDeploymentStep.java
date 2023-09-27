@@ -215,8 +215,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
         (AzureSlotDeploymentPassThroughData) passThroughData;
     AzureArtifactConfig azureArtifactConfig = azureWebAppStepHelper.getPrimaryArtifactConfig(
         ambiance, azureSlotDeploymentPassThroughData.getPrimaryArtifactOutcome());
-    updateStageExecutionDetails(ambiance, azureArtifactConfig,
-        azureSlotDeploymentPassThroughData.getPreDeploymentData(), slotDeploymentResponse);
+    updateStageExecutionDetails(
+        ambiance, azureArtifactConfig, azureSlotDeploymentPassThroughData, slotDeploymentResponse);
 
     StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
         AzureWebAppToServerInstanceInfoMapper.toServerInstanceInfoList(
@@ -226,7 +226,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
   }
 
   private void updateStageExecutionDetails(Ambiance ambiance, AzureArtifactConfig azureArtifactConfig,
-      AzureAppServicePreDeploymentData preDeploymentData, AzureWebAppSlotDeploymentResponse response) {
+      AzureSlotDeploymentPassThroughData passThroughData, AzureWebAppSlotDeploymentResponse response) {
+    AzureAppServicePreDeploymentData preDeploymentData = passThroughData.getPreDeploymentData();
     Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
         AmbianceUtils.getProjectIdentifier(ambiance));
     Map<String, Object> updates = new HashMap<>();
@@ -247,6 +248,10 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
                       AzureWebAppsStageExecutionDetailsKeys.artifactConfig),
           azureArtifactConfig);
     }
+
+    updates.put(String.format("%s.%s", StageExecutionInfoKeys.executionDetails,
+                    AzureWebAppsStageExecutionDetailsKeys.cleanDeployment),
+        passThroughData.getCleanDeploymentEnabled());
 
     stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
   }
@@ -376,7 +381,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
         .chainEnd(true)
         .taskRequest(azureWebAppStepHelper.prepareTaskRequest(
             stepElementParameters, ambiance, slotDeploymentRequest, taskType, getCommandUnits(passThroughData, false)))
-        .passThroughData(passThroughData)
+        .passThroughData(
+            cleanDeployment ? passThroughData.toBuilder().cleanDeploymentEnabled(true).build() : passThroughData)
         .build();
   }
 

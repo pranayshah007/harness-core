@@ -191,7 +191,7 @@ public class SyncRunnable implements Runnable {
     OptionalSweepingOutput optionalSweepingOutputUpdateGitOpsApp = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(UPDATE_GITOPS_APP_OUTCOME));
     if (optionalSweepingOutputUpdateGitOpsApp != null && optionalSweepingOutputUpdateGitOpsApp.isFound()) {
-      applications.add(((UpdateGitOpsAppOutcome) optionalSweepingOutput.getOutput()).getApplication());
+      applications.add(((UpdateGitOpsAppOutcome) optionalSweepingOutputUpdateGitOpsApp.getOutput()).getApplication());
     }
 
     if (syncStepParameters.getApplicationsList().getValue() != null) {

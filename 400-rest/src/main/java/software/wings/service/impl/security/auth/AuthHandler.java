@@ -927,8 +927,7 @@ public class AuthHandler {
                                                .addFieldsIncluded("_id", "appId", "environmentType")
                                                .build();
 
-    List<Environment> list =
-        getAllEntities(pageRequest, () -> environmentService.list(pageRequest, false, null, false));
+    List<Environment> list = getAllEntities(pageRequest, () -> environmentService.list(pageRequest, false, null, true));
 
     return list.stream().collect(Collectors.groupingBy(Base::getAppId));
   }
@@ -950,7 +949,8 @@ public class AuthHandler {
       return pipelines.stream().collect(Collectors.groupingBy(Base::getAppId));
     } else {
       PageRequest<Pipeline> pageRequest = aPageRequest().addFilter("accountId", Operator.EQ, accountId).build();
-      List<Pipeline> list = getAllEntities(pageRequest, () -> pipelineService.listPipelines(pageRequest));
+      List<Pipeline> list =
+          getAllEntities(pageRequest, () -> pipelineService.listPipelines(pageRequest, false, accountId));
       return list.stream().collect(Collectors.groupingBy(Base::getAppId));
     }
   }
@@ -1998,7 +1998,7 @@ public class AuthHandler {
                                              .addFilter("accountId", EQ, accountId)
                                              .addFilter("name", EQ, DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME)
                                              .build();
-    PageResponse<UserGroup> userGroups = userGroupService.list(accountId, pageRequest, true, null, null);
+    PageResponse<UserGroup> userGroups = userGroupService.list(accountId, pageRequest, true, null, null, false);
     UserGroup userGroup = null;
     if (CollectionUtils.isNotEmpty(userGroups)) {
       userGroup = userGroups.get(0);

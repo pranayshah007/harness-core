@@ -496,7 +496,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                             Collections.singletonList(Application.Builder.anApplication().uuid(applicationId).build()))
                         .build());
     PageResponse pageResponse = userGroupService.list(accountId, PageRequestBuilder.aPageRequest().build(), true,
-        UserGroupSearchTermType.APPLICATION_NAME, "application");
+        UserGroupSearchTermType.APPLICATION_NAME, "application", false);
     assertThat(pageResponse).isNotNull();
     List<UserGroup> userGroupList = pageResponse.getResponse();
     assertThat(userGroupList).isNotNull();
@@ -530,7 +530,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
     UserGroup savedUserGroup2 = userGroupService.save(userGroup2);
 
     PageResponse pageResponse = userGroupService.list(
-        accountId, PageRequestBuilder.aPageRequest().withLimit("10000").build(), true, null, null);
+        accountId, PageRequestBuilder.aPageRequest().withLimit("10000").build(), true, null, null, false);
     assertThat(pageResponse).isNotNull();
     List<UserGroup> userGroupList = pageResponse.getResponse();
     assertThat(userGroupList).isNotNull();
@@ -563,7 +563,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                                     .build();
 
     PageResponse pageResponse = userGroupService.list(
-        accountId, PageRequestBuilder.aPageRequest().addFilter(searchFilter).build(), true, null, null);
+        accountId, PageRequestBuilder.aPageRequest().addFilter(searchFilter).build(), true, null, null, false);
     assertThat(pageResponse).isNotNull();
     List<UserGroup> userGroupList = pageResponse.getResponse();
     assertThat(userGroupList).isNotNull();

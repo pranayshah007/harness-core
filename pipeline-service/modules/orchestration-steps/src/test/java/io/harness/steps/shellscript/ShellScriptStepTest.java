@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
@@ -39,6 +40,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
@@ -69,6 +71,7 @@ public class ShellScriptStepTest extends CategoryTest {
   @Mock private StepHelper stepHelper;
   @Mock private ShellScriptHelperService shellScriptHelperService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Mock LogStreamingStepClientImpl logClient;
   @InjectMocks private ShellScriptStep shellScriptStep;
 
@@ -162,8 +165,11 @@ public class ShellScriptStepTest extends CategoryTest {
   public void testHandleTaskResultForSuccessTask() throws Exception {
     Ambiance ambiance = buildAmbiance();
     Map<String, Object> outputVariables = new HashMap<>();
-    ShellScriptStepParameters stepParameters =
-        ShellScriptStepParameters.infoBuilder().outputVariables(outputVariables).shellType(ShellType.Bash).build();
+    ShellScriptStepParameters stepParameters = ShellScriptStepParameters.infoBuilder()
+                                                   .outputVariables(outputVariables)
+                                                   .shellType(ShellType.Bash)
+                                                   .outputAlias(OutputAlias.builder().build())
+                                                   .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
     Map<String, String> envVariables = new HashMap<>();
 
@@ -176,6 +182,7 @@ public class ShellScriptStepTest extends CategoryTest {
                                                     .status(CommandExecutionStatus.SUCCESS)
                                                     .executeCommandResponse(executeCommandResponse)
                                                     .build();
+    when(pmsFeatureFlagHelper.isEnabled(any(), (FeatureName) any())).thenReturn(false);
 
     StepResponse stepResponse =
         shellScriptStep.handleTaskResult(ambiance, stepElementParameters, () -> successResponse);
@@ -186,10 +193,13 @@ public class ShellScriptStepTest extends CategoryTest {
     doReturn(shellScriptOutcome)
         .when(shellScriptHelperService)
         .prepareShellScriptOutcome(envVariables, outputVariables);
+    when(pmsFeatureFlagHelper.isEnabled(any(), (FeatureName) any())).thenReturn(true);
     stepResponse = shellScriptStep.handleTaskResult(ambiance, stepElementParameters, () -> successResponse);
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     assertThat(((List<StepOutcome>) stepResponse.getStepOutcomes()).get(0).getOutcome()).isEqualTo(shellScriptOutcome);
     verify(logClient, times(2)).closeStream("Execute");
+    verify(shellScriptHelperService, times(1))
+        .exportOutputVariablesUsingAlias(ambiance, stepParameters, shellScriptOutcome);
   }
 
   @Test

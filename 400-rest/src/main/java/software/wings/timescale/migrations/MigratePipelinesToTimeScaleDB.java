@@ -13,6 +13,8 @@ import static software.wings.beans.Pipeline.PipelineKeys;
 import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
 import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.insertArrayData;
 
+import static java.util.Objects.isNull;
+
 import io.harness.persistence.HIterator;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -118,7 +120,8 @@ public class MigratePipelinesToTimeScaleDB implements TimeScaleEntityMigrationIn
     for (PipelineStage pipelineStage : pipelineStages) {
       List<PipelineStageElement> pipelineStageElements = pipelineStage.getPipelineStageElements();
       for (PipelineStageElement pipelineStageElement : pipelineStageElements) {
-        if (pipelineStageElement.getProperties().containsKey("envId")) {
+        if (pipelineStageElement.getProperties().containsKey("envId")
+            && !isNull(pipelineStageElement.getProperties().get("envId"))) {
           String envId = pipelineStageElement.getProperties().get("envId").toString();
           if (envId != null) {
             if (!isEnvIdPresent.containsKey(envId)) {
@@ -128,7 +131,8 @@ public class MigratePipelinesToTimeScaleDB implements TimeScaleEntityMigrationIn
           }
         }
 
-        if (pipelineStageElement.getProperties().containsKey("workflowId")) {
+        if (pipelineStageElement.getProperties().containsKey("workflowId")
+            && !isNull(pipelineStageElement.getProperties().get("workflowId"))) {
           String workflowId = pipelineStageElement.getProperties().get("workflowId").toString();
           if (workflowId != null) {
             if (!isWorkflowIdPresent.containsKey(workflowId)) {

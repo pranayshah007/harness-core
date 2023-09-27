@@ -104,7 +104,7 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
 
   public Builder getPluginDetailsBuilder(
       ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
-    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts);
+    return PluginInfoProviderHelper.buildPluginDetails(resources, runAsUser, usedPorts, true);
   }
 
   public CdAbstractStepNode getRead(String stepJsonNode) throws IOException {

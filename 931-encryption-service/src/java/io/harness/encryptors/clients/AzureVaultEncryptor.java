@@ -16,9 +16,9 @@ import static io.harness.eraro.ErrorCode.AZURE_KEY_VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.helpers.GlobalSecretManagerUtils.getValueByJsonPath;
+import static io.harness.helpers.GlobalSecretManagerUtils.parse;
 import static io.harness.threading.Morpheus.sleep;
 
-import static com.jayway.jsonpath.JsonPath.parse;
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 

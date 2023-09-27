@@ -9,6 +9,7 @@ package io.harness.steps.shellscript;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VITALIE;
 
@@ -21,6 +22,8 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -31,6 +34,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
+import io.harness.exception.GeneralException;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.remote.FileStoreClient;
 import io.harness.network.SafeHttpCall;
@@ -46,6 +51,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
@@ -103,7 +109,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Mock FileStoreClient fileStoreClient;
   @Mock private InputSetValidatorFactory inputSetValidatorFactory;
   @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
-
+  @Mock Ambiance ambiance;
   @InjectMocks private ShellScriptHelperServiceImpl shellScriptHelperServiceImpl;
 
   @Before
@@ -616,5 +622,50 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
         ShellScriptHelperService.prepareShellScriptOutcome(new HashMap<>(), outputVariables, secretOutputVars);
     assertThat(shellScriptOutcome).isNotNull();
     assertThat(shellScriptOutcome.getOutputVariables().get("output1")).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testExportOutputVariablesUsingAlias() {
+    Map<String, String> outputVars = new LinkedHashMap<>();
+    outputVars.put("key1", "val1");
+    outputVars.put("key2", "val2");
+    ShellScriptStepParameters stepParameters = ShellScriptStepParameters.infoBuilder()
+                                                   .shellType(ShellType.Bash)
+                                                   .onDelegate(ParameterField.createValueField(true))
+                                                   .secretOutputVariables(new HashSet<>())
+                                                   .build();
+    when(executionSweepingOutputService.consume(any(), any(), any(), any())).thenReturn("");
+    when(ambiance.getExpressionFunctorToken()).thenReturn(1234L);
+    // invalid cases
+    shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(
+        ambiance, stepParameters, ShellScriptOutcome.builder().outputVariables(outputVars).build());
+    stepParameters.setOutputAlias(
+        OutputAlias.builder().key(ParameterField.createValueField("abc")).scope(ExportScope.PIPELINE).build());
+    shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(
+        ambiance, stepParameters, ShellScriptOutcome.builder().outputVariables(new HashMap<>()).build());
+    // normal case
+    shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(
+        ambiance, stepParameters, ShellScriptOutcome.builder().outputVariables(outputVars).build());
+    verify(executionSweepingOutputService, times(1))
+        .consume(ambiance, OutputAliasUtils.generateSweepingOutputKeyUsingUserAlias("abc", ambiance),
+            OutputAliasSweepingOutput.builder().outputVariables(outputVars).build(), StepOutcomeGroup.PIPELINE.name());
+    // negative cases
+    when(executionSweepingOutputService.consume(any(), any(), any(), any()))
+        .thenThrow(new GeneralException("DuplicateKeyException"))
+        .thenThrow(new GeneralException("random"));
+    assertThatThrownBy(()
+                           -> shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(ambiance, stepParameters,
+                               ShellScriptOutcome.builder().outputVariables(outputVars).build()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Output alias with key abc, already saved in Pipeline scope. Please ensure that there are no duplicate output alias keys within the same scope");
+
+    assertThatThrownBy(()
+                           -> shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(ambiance, stepParameters,
+                               ShellScriptOutcome.builder().outputVariables(outputVars).build()))
+        .isInstanceOf(InternalServerErrorException.class)
+        .hasMessage("Error while publishing outputAlias for the key abc for scope Pipeline: GENERAL_ERROR");
   }
 }
