@@ -20,8 +20,8 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
 import io.harness.cdng.aws.asg.AsgServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
-import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.creator.plan.helper.PlanCreatorHelper;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
@@ -31,7 +31,6 @@ import io.harness.cdng.environment.yaml.EnvironmentInfraUseFromStage;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.hooks.steps.ServiceHooksStep;
-import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
@@ -61,6 +60,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 
+import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -77,6 +77,7 @@ import lombok.experimental.UtilityClass;
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @UtilityClass
 public class ServiceAllInOnePlanCreatorUtils {
+  @Inject private PlanCreatorHelper planCreatorHelper;
   /**
    * Add the following plan nodes
    * ServiceStepV3 ( 3 children )
@@ -267,42 +268,10 @@ public class ServiceAllInOnePlanCreatorUtils {
         artifactsNode.getUuid(), PlanCreationResponse.builder().planNode(artifactsNode).build());
 
     // Add manifests node
-    final PlanNode manifestsNode =
-        PlanNode.builder()
-            .uuid("manifests-" + UUIDGenerator.generateUuid())
-            .stepType(ManifestsStepV2.STEP_TYPE)
-            .name(PlanCreatorConstants.MANIFESTS_NODE_NAME)
-            .identifier(YamlTypes.MANIFEST_LIST_CONFIG)
-            .stepParameters(new EmptyStepParameters())
-            .facilitatorObtainment(
-                FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
-                    .build())
-            .skipExpressionChain(true)
-            .skipGraphType(SkipType.SKIP_TREE)
-            .build();
-    nodeIds.add(manifestsNode.getUuid());
-    planCreationResponseMap.put(
-        manifestsNode.getUuid(), PlanCreationResponse.builder().planNode(manifestsNode).build());
+    planCreatorHelper.addManifestsNode(planCreationResponseMap, nodeIds);
 
     // Add configFiles node
-    final PlanNode configFilesNode =
-        PlanNode.builder()
-            .uuid("configFiles-" + UUIDGenerator.generateUuid())
-            .stepType(ConfigFilesStepV2.STEP_TYPE)
-            .name(PlanCreatorConstants.CONFIG_FILES_NODE_NAME)
-            .identifier(YamlTypes.CONFIG_FILES)
-            .stepParameters(new EmptyStepParameters())
-            .facilitatorObtainment(
-                FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
-                    .build())
-            .skipExpressionChain(true)
-            .skipGraphType(SkipType.SKIP_TREE)
-            .build();
-    nodeIds.add(configFilesNode.getUuid());
-    planCreationResponseMap.put(
-        configFilesNode.getUuid(), PlanCreationResponse.builder().planNode(configFilesNode).build());
+    planCreatorHelper.addConfigFilesNode(planCreationResponseMap, nodeIds);
 
     // Add serviceHooks node
     final PlanNode serviceHooksNode =

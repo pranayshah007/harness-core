@@ -63,10 +63,11 @@ public class EnvironmentMapper {
   }
 
   public EnvironmentOutcome toEnvironmentOutcome(Environment environment,
-      @NonNull NGEnvironmentConfig ngEnvironmentConfig, @NonNull NGServiceOverrideConfig ngServiceOverrides,
+      @NonNull NGEnvironmentConfig ngEnvironmentConfig, NGServiceOverrideConfig ngServiceOverrides,
       @Nullable EnvironmentGroupEntity envGroup,
       Map<ServiceOverridesType, NGServiceOverrideConfigV2> overridesV2Configs, boolean isOverrideV2Enabled) {
-    List<NGVariable> svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig() == null
+    List<NGVariable> svcOverrideVariables =
+        (ngServiceOverrides == null || ngServiceOverrides.getServiceOverrideInfoConfig() == null)
         ? new ArrayList<>()
         : ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
     final Map<String, Object> variables = isOverrideV2Enabled
@@ -108,10 +109,7 @@ public class EnvironmentMapper {
     return NGVariablesUtils.getMapOfVariables(new ArrayList<>(finalNGVariables.values()));
   }
 
-  public ServiceStepV3Parameters toServiceStepV3Parameters(CustomStageEnvironmentStepParameters parameters) {
-    if (parameters == null) {
-      return null;
-    }
+  public ServiceStepV3Parameters toServiceStepV3Parameters(@NonNull CustomStageEnvironmentStepParameters parameters) {
     return ServiceStepV3Parameters.builder()
         .envRef(parameters.getEnvRef())
         .infraId(parameters.getInfraId())

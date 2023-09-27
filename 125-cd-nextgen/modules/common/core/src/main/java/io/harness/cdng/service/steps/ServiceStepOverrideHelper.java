@@ -34,11 +34,13 @@ import io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput;
 import io.harness.cdng.azure.webapp.steps.NgConnectionStringsSweepingOutput;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput;
+import io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput.NgConfigFilesMetadataSweepingOutputBuilder;
 import io.harness.cdng.hooks.ServiceHook;
 import io.harness.cdng.hooks.ServiceHookWrapper;
 import io.harness.cdng.hooks.steps.ServiceHooksMetadataSweepingOutput;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
+import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput.NgManifestsMetadataSweepingOutputBuilder;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
@@ -84,48 +86,51 @@ import org.apache.commons.lang3.StringUtils;
 public class ServiceStepOverrideHelper {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
 
-  public void prepareAndSaveFinalManifestMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
+  public void prepareAndSaveFinalManifestMetadataToSweepingOutput(NGServiceConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
       String manifestsSweepingOutputName) {
-    NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
-    if (ngServiceV2InfoConfig == null) {
-      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+    NGServiceV2InfoConfig ngServiceV2InfoConfig = null;
+    if (serviceV2Config != null) {
+      ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
+      if (ngServiceV2InfoConfig == null) {
+        throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+      }
     }
 
     Map<String, List<ManifestConfigWrapper>> finalLocationManifestsMap = new HashMap<>();
 
     // Processing envGroups. EnvironmentConfig and serviceOverrideConfig is null for envGroup. GitOps Flow
     if (serviceOverrideConfig == null && ngEnvironmentConfig == null) {
-      final List<ManifestConfigWrapper> svcManifests = getSvcManifests(serviceV2Config.getNgServiceV2InfoConfig());
+      final List<ManifestConfigWrapper> svcManifests = getSvcManifests(ngServiceV2InfoConfig);
       finalLocationManifestsMap.put(SERVICE, svcManifests);
     } else {
       finalLocationManifestsMap = getManifestsFromAllLocations(ngServiceV2InfoConfig, serviceOverrideConfig,
           ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
     }
 
-    final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
+    NgManifestsMetadataSweepingOutputBuilder manifestsSweepingOutputBuilder =
         NgManifestsMetadataSweepingOutput.builder()
             .finalSvcManifestsMap(finalLocationManifestsMap)
-            .serviceDefinitionType(ngServiceV2InfoConfig.getServiceDefinition().getType())
-            .serviceIdentifier(ngServiceV2InfoConfig.getIdentifier())
             .environmentIdentifier(
                 ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
                     ? StringUtils.EMPTY
-                    : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier())
-            .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
-                ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()))
-            .build();
+                    : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier());
+
+    if (ngServiceV2InfoConfig != null) {
+      manifestsSweepingOutputBuilder.serviceDefinitionType(ngServiceV2InfoConfig.getServiceDefinition().getType())
+          .serviceIdentifier(ngServiceV2InfoConfig.getIdentifier())
+          .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
+              ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()));
+    }
+
     sweepingOutputService.consume(
-        ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
+        ambiance, manifestsSweepingOutputName, manifestsSweepingOutputBuilder.build(), StepCategory.STAGE.name());
   }
 
   // This is for overrides V2 design
-  public void saveFinalManifestsToSweepingOutputV2(@NonNull NGServiceV2InfoConfig ngServiceV2InfoConfig,
-      Ambiance ambiance, String manifestsSweepingOutputName,
-      EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs, String environmentRef) {
-    if (ngServiceV2InfoConfig == null) {
-      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
-    }
+  public void saveFinalManifestsToSweepingOutputV2(NGServiceV2InfoConfig ngServiceV2InfoConfig, Ambiance ambiance,
+      String manifestsSweepingOutputName, EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs,
+      String environmentRef) {
     final List<ManifestConfigWrapper> svcManifests = getSvcManifests(ngServiceV2InfoConfig);
     Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
     if (isNotEmpty(overrideV2Configs)) {
@@ -136,18 +141,20 @@ public class ServiceStepOverrideHelper {
       });
     }
 
-    final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
+    NgManifestsMetadataSweepingOutputBuilder manifestSweepingOutputBuilder =
         NgManifestsMetadataSweepingOutput.builder()
-            .serviceDefinitionType(ngServiceV2InfoConfig.getServiceDefinition().getType())
-            .serviceIdentifier(ngServiceV2InfoConfig.getIdentifier())
             .environmentIdentifier(environmentRef)
             .svcManifests(svcManifests)
-            .manifestsFromOverride(manifestsFromOverride)
-            .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
-                ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()))
-            .build();
+            .manifestsFromOverride(manifestsFromOverride);
+
+    if (ngServiceV2InfoConfig != null) {
+      manifestSweepingOutputBuilder.serviceDefinitionType(ngServiceV2InfoConfig.getServiceDefinition().getType())
+          .serviceIdentifier(ngServiceV2InfoConfig.getIdentifier())
+          .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
+              ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()));
+    }
     sweepingOutputService.consume(
-        ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
+        ambiance, manifestsSweepingOutputName, manifestSweepingOutputBuilder.build(), StepCategory.STAGE.name());
   }
   @NonNull
   public static List<ManifestConfigWrapper> prepareFinalManifests(NGServiceV2InfoConfig ngServiceV2InfoConfig,
@@ -299,19 +306,21 @@ public class ServiceStepOverrideHelper {
     }
   }
 
-  public void prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
+  public void prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(NGServiceConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
       String configFilesSweepingOutputName) {
-    NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
-    if (ngServiceV2InfoConfig == null) {
-      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+    NGServiceV2InfoConfig ngServiceV2InfoConfig = null;
+    if (serviceV2Config != null) {
+      ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
+      if (ngServiceV2InfoConfig == null) {
+        throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+      }
     }
     List<ConfigFileWrapper> finalConfigFiles;
     Map<String, String> configFileLocation = new HashMap<>();
     // Processing envGroups. EnvironmentConfig and serviceOverrideConfig is null for envGroup. GitOps Flow
     if (serviceOverrideConfig == null && ngEnvironmentConfig == null) {
-      final Map<String, ConfigFileWrapper> svcConfigFiles =
-          getSvcConfigFiles(serviceV2Config.getNgServiceV2InfoConfig());
+      final Map<String, ConfigFileWrapper> svcConfigFiles = getSvcConfigFiles(ngServiceV2InfoConfig);
       Map<String, ConfigFileWrapper> finalConfigFilesMap = new HashMap<>();
       createConfigFileMap(configFileLocation, svcConfigFiles, finalConfigFilesMap, SERVICE);
       finalConfigFiles = new ArrayList<>(finalConfigFilesMap.values());
@@ -320,18 +329,21 @@ public class ServiceStepOverrideHelper {
           ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), configFileLocation);
     }
 
-    final NgConfigFilesMetadataSweepingOutput configFileSweepingOutput =
+    NgConfigFilesMetadataSweepingOutputBuilder configFileSweepingOutputBuilder =
         NgConfigFilesMetadataSweepingOutput.builder()
             .finalSvcConfigFiles(finalConfigFiles)
-            .serviceIdentifier(ngServiceV2InfoConfig.getIdentifier())
             .configFileLocation(configFileLocation)
             .environmentIdentifier(
                 ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
                     ? StringUtils.EMPTY
-                    : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier())
-            .build();
+                    : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier());
+
+    if (ngServiceV2InfoConfig != null) {
+      configFileSweepingOutputBuilder.serviceIdentifier(ngServiceV2InfoConfig.getIdentifier());
+    }
+
     sweepingOutputService.consume(
-        ambiance, configFilesSweepingOutputName, configFileSweepingOutput, StepCategory.STAGE.name());
+        ambiance, configFilesSweepingOutputName, configFileSweepingOutputBuilder.build(), StepCategory.STAGE.name());
   }
 
   private static void createConfigFileMap(Map<String, String> configFileLocation,
@@ -344,22 +356,24 @@ public class ServiceStepOverrideHelper {
   }
 
   // This is for overrides V2
-  public void saveFinalConfigFilesToSweepingOutputV2(@NonNull NGServiceV2InfoConfig ngServiceV2InfoConfig,
+  public void saveFinalConfigFilesToSweepingOutputV2(NGServiceV2InfoConfig ngServiceV2InfoConfig,
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs, String environmentRef,
       Ambiance ambiance, String configFilesSweepingOutputName) {
     List<ConfigFileWrapper> finalConfigFiles = new ArrayList<>();
     Map<String, String> configFileLocation = new HashMap<>();
     finalConfigFiles = prepareFinalConfigFilesV2(ngServiceV2InfoConfig, overrideV2Configs, configFileLocation);
 
-    final NgConfigFilesMetadataSweepingOutput configFileSweepingOutput =
+    NgConfigFilesMetadataSweepingOutputBuilder configFilesSweepingOutputBuilder =
         NgConfigFilesMetadataSweepingOutput.builder()
             .finalSvcConfigFiles(finalConfigFiles)
             .configFileLocation(configFileLocation)
-            .serviceIdentifier(ngServiceV2InfoConfig.getIdentifier())
-            .environmentIdentifier(environmentRef)
-            .build();
+            .environmentIdentifier(environmentRef);
+
+    if (ngServiceV2InfoConfig != null) {
+      configFilesSweepingOutputBuilder.serviceIdentifier(ngServiceV2InfoConfig.getIdentifier());
+    }
     sweepingOutputService.consume(
-        ambiance, configFilesSweepingOutputName, configFileSweepingOutput, StepCategory.STAGE.name());
+        ambiance, configFilesSweepingOutputName, configFilesSweepingOutputBuilder.build(), StepCategory.STAGE.name());
   }
 
   private List<ConfigFileWrapper> prepareFinalConfigFilesV2(NGServiceV2InfoConfig serviceV2Config,
@@ -383,7 +397,7 @@ public class ServiceStepOverrideHelper {
   }
 
   // This is for overrides V2
-  public void saveFinalAppSettingsToSweepingOutputV2(@NonNull NGServiceV2InfoConfig ngServiceV2InfoConfig,
+  public void saveFinalAppSettingsToSweepingOutputV2(NGServiceV2InfoConfig ngServiceV2InfoConfig,
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs, Ambiance ambiance,
       String appSettingsSweepingOutputName) {
     List<ApplicationSettingsConfiguration> finalAppSettings;
@@ -417,7 +431,7 @@ public class ServiceStepOverrideHelper {
   }
 
   // This is for overrides V2
-  public void saveFinalConnectionStringsToSweepingOutputV2(@NonNull NGServiceV2InfoConfig ngServiceV2InfoConfig,
+  public void saveFinalConnectionStringsToSweepingOutputV2(NGServiceV2InfoConfig ngServiceV2InfoConfig,
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs, Ambiance ambiance,
       String connectionStringsSweepingOutputName) {
     List<ConnectionStringsConfiguration> finalConnectionStrings;
@@ -469,12 +483,15 @@ public class ServiceStepOverrideHelper {
         ambiance, serviceHooksSweepingOutputName, serviceHooksSweepingOutput, StepCategory.STAGE.name());
   }
 
-  public void prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
+  public void prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(NGServiceConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
       String configFilesSweepingOutputName) {
-    NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
-    if (ngServiceV2InfoConfig == null) {
-      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+    NGServiceV2InfoConfig ngServiceV2InfoConfig = null;
+    if (serviceV2Config != null) {
+      ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
+      if (ngServiceV2InfoConfig == null) {
+        throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+      }
     }
     final List<ConnectionStringsConfiguration> svcConnectionStrings =
         prepareFinalConnectionStrings(ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig);
@@ -492,12 +509,15 @@ public class ServiceStepOverrideHelper {
     }
   }
 
-  public void prepareAndSaveFinalAppServiceMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
+  public void prepareAndSaveFinalAppServiceMetadataToSweepingOutput(NGServiceConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
       String appSettingsSweepingOutputName) {
-    NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
-    if (ngServiceV2InfoConfig == null) {
-      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+    NGServiceV2InfoConfig ngServiceV2InfoConfig = null;
+    if (serviceV2Config != null) {
+      ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
+      if (ngServiceV2InfoConfig == null) {
+        throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+      }
     }
     final List<ApplicationSettingsConfiguration> finalAppSettings =
         prepareFinalAppSettings(ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig);

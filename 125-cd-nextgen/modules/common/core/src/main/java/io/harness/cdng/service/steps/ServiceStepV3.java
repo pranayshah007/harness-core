@@ -28,7 +28,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
@@ -41,7 +40,6 @@ import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.k8s.HarnessRelease;
-import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
@@ -620,15 +618,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                          .group(StepCategory.STAGE.name())
                          .build());
 
-    final OptionalSweepingOutput manifestsOutput = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.MANIFESTS));
-    if (manifestsOutput.isFound()) {
-      stepOutcomes.add(StepResponse.StepOutcome.builder()
-                           .name(OutcomeExpressionConstants.MANIFESTS)
-                           .outcome((ManifestsOutcome) manifestsOutput.getOutput())
-                           .group(StepCategory.STAGE.name())
-                           .build());
-    }
+    serviceStepV3Helper.addManifestsOutputToStepOutcome(ambiance, stepOutcomes);
 
     final OptionalSweepingOutput artifactsOutput = sweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ARTIFACTS));
@@ -640,15 +630,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                            .build());
     }
 
-    final OptionalSweepingOutput configFilesOutput = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.CONFIG_FILES));
-    if (configFilesOutput.isFound()) {
-      stepOutcomes.add(StepResponse.StepOutcome.builder()
-                           .name(OutcomeExpressionConstants.CONFIG_FILES)
-                           .outcome((ConfigFilesOutcome) configFilesOutput.getOutput())
-                           .group(StepCategory.STAGE.name())
-                           .build());
-    }
+    serviceStepV3Helper.addConfigFilesOutputToStepOutcome(ambiance, stepOutcomes);
 
     final OptionalSweepingOutput serviceHooksOutput = sweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
