@@ -13,7 +13,6 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.constraint.Consumer;
-import io.harness.iterator.PersistentRegularIterable;
 import io.harness.logging.AutoLogContext;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -45,7 +44,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Entity(value = "githubRestraintInstances")
 @Document("githubRestraintInstances")
 @TypeAlias("githubRestraintInstance")
-public class GithubRestraintInstance implements PersistentEntity, UuidAccess, PersistentRegularIterable {
+public class GithubRestraintInstance implements PersistentEntity, UuidAccess {
   public static final long TTL = 6;
 
   @Id @dev.morphia.annotations.Id String uuid;
@@ -62,24 +61,12 @@ public class GithubRestraintInstance implements PersistentEntity, UuidAccess, Pe
 
   long acquireAt;
 
-  Long nextIteration;
-
   // audit fields
   @With @FdIndex @CreatedDate Long createdAt;
   @With @LastModifiedDate Long lastUpdatedAt;
   @Version Long version;
 
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL).toInstant());
-
-  @Override
-  public Long obtainNextIteration(String fieldName) {
-    return nextIteration;
-  }
-
-  @Override
-  public void updateNextIteration(String fieldName, long nextIteration) {
-    this.nextIteration = nextIteration;
-  }
 
   public AutoLogContext autoLogContext() {
     Map<String, String> logContext = new HashMap<>();

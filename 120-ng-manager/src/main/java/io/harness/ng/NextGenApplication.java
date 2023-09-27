@@ -668,8 +668,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(CDLicenseDailyReportIteratorHandler.class)
         .registerIterator(ngIteratorsConfig.getCdLicenseDailyReportIteratorConfig());
-    //    injector.getInstance(GithubRestraintPersistenceMonitor.class)
-    //        .registerIterators(ngIteratorsConfig.getGithubRestraintIteratorConfig());
     injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
     injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
     injector.getInstance(ProvisionMonthlyCICreditsHandler.class).registerIterators(2);

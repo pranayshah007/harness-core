@@ -25,8 +25,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
-import io.harness.cdng.gitops.MergePRStep;
-import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
 import io.harness.cdng.instance.service.InstanceDeploymentInfoService;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
@@ -39,7 +37,6 @@ import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
@@ -66,9 +63,6 @@ import lombok.extern.slf4j.Slf4j;
 public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
   private static final Set<String> STEPS_TO_UPDATE_LOG_STREAMS =
       getFieldValuesByType(StepSpecTypeConstants.class, String.class);
-
-  private static final Set<StepType> STEP_TYPES_GIT_LOCK =
-      Set.of(UpdateReleaseRepoStep.STEP_TYPE, MergePRStep.STEP_TYPE);
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;

@@ -161,8 +161,6 @@ import com.esotericsoftware.kryo.Kryo;
 public class NGKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
-    kryo.register(GitopsStepFinishCallback.class, 13007);
-    kryo.register(GithubRestraintInstanceResponseData.class, 13008);
     kryo.register(UpdateReleaseRepoStepInfo.class, 13009);
     kryo.register(UpdateReleaseRepoStepParams.class, 13010);
     kryo.register(RevertPRStepInfo.class, 13011);
@@ -170,6 +168,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(UpdateGitOpsAppStepInfo.class, 13013);
     kryo.register(UpdateGitOpsAppStepParameters.class, 13014);
     kryo.register(UpdateGitOpsAppResponse.class, 13015);
+    kryo.register(GitopsStepFinishCallback.class, 13016);
+    kryo.register(GithubRestraintInstanceResponseData.class, 13017);
 
     kryo.register(ArtifactStepParameters.class, 8001);
     kryo.register(ServiceStepParameters.class, 8008);
