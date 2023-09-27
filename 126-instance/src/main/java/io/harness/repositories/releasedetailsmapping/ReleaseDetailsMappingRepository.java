@@ -13,13 +13,16 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.entities.ReleaseDetailsMapping;
 
+import java.util.List;
 import java.util.Optional;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 @HarnessRepo
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
-public interface ReleaseDetailsMappingRepository extends CrudRepository<ReleaseDetailsMapping, String> {
+public interface ReleaseDetailsMappingRepository extends PagingAndSortingRepository<ReleaseDetailsMapping, String> {
   Optional<ReleaseDetailsMapping> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndReleaseKeyAndInfraKey(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String releaseKey, String infraKey);
+
+  List<ReleaseDetailsMapping> findByAccountIdentifierAndReleaseKey(String accountIdentifier, String releaseKey);
 
   long deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
