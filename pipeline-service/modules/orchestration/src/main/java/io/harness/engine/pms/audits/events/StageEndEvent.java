@@ -9,13 +9,17 @@ package io.harness.engine.pms.audits.events;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Data
 @NoArgsConstructor
@@ -26,11 +30,12 @@ public class StageEndEvent extends NodeExecutionEvent {
   private String nodeExecutionId;
   private long endTs;
   private String status;
+  private TriggeredInfo triggeredInfo;
 
   @Builder
   public StageEndEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, String stageIdentifier, String stageType, Long startTs,
-      String nodeExecutionId, Long endTs, String status) {
+      String nodeExecutionId, Long endTs, String status, TriggeredInfo triggeredInfo) {
     super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
     this.stageIdentifier = stageIdentifier;
     this.stageType = stageType;
@@ -38,6 +43,7 @@ public class StageEndEvent extends NodeExecutionEvent {
     this.nodeExecutionId = nodeExecutionId;
     this.endTs = endTs;
     this.status = status;
+    this.triggeredInfo = triggeredInfo;
   }
 
   @JsonIgnore

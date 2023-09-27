@@ -7,8 +7,11 @@
 
 package io.harness.pms.notification.orchestration;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.beans.custom.executions.NodeExecutionEventData;
 import io.harness.audit.beans.custom.executions.TriggeredByInfoAuditDetails;
 import io.harness.beans.AbortedBy;
@@ -27,6 +30,7 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class NodeExecutionEventUtils {
@@ -55,6 +59,7 @@ public class NodeExecutionEventUtils {
         .stageType(ambiance.getMetadata().getModuleType())
         .planExecutionId(ambiance.getPlanExecutionId())
         .nodeExecutionId(nodeOutboxInfo.getNodeExecutionId())
+        .triggeredInfo(buildTriggeredByFromAmbiance(ambiance))
         .startTs(nodeOutboxInfo.getNodeExecution().getStartTs())
         .build();
   }
@@ -71,6 +76,7 @@ public class NodeExecutionEventUtils {
         .planExecutionId(ambiance.getPlanExecutionId())
         .nodeExecutionId(nodeOutboxInfo.getNodeExecutionId())
         .startTs(nodeOutboxInfo.getNodeExecution().getStartTs())
+        .triggeredInfo(buildTriggeredByFromAmbiance(ambiance))
         .endTs(nodeOutboxInfo.getUpdatedTs())
         .status(nodeOutboxInfo.getStatus().name())
         .build();
@@ -152,6 +158,7 @@ public class NodeExecutionEventUtils {
         .stageType(stageStartEvent.getStageType())
         .planExecutionId(stageStartEvent.getPlanExecutionId())
         .nodeExecutionId(stageStartEvent.getNodeExecutionId())
+        .triggeredBy(getTriggeredByInfoAuditDetails(stageStartEvent.getTriggeredInfo()))
         .startTs(stageStartEvent.getStartTs())
         .build();
   }
@@ -167,6 +174,7 @@ public class NodeExecutionEventUtils {
         .planExecutionId(stageEndEvent.getPlanExecutionId())
         .nodeExecutionId(stageEndEvent.getNodeExecutionId())
         .status(stageEndEvent.getStatus())
+        .triggeredBy(getTriggeredByInfoAuditDetails(stageEndEvent.getTriggeredInfo()))
         .startTs(stageEndEvent.getStartTs())
         .endTs(stageEndEvent.getEndTs())
         .build();
