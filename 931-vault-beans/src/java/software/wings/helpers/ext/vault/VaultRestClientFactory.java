@@ -54,10 +54,10 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(PL)
 public class VaultRestClientFactory {
   private static final String PATH_SEPARATOR = "/";
-  private static final String KEY_NAME_SEPARATOR = "#";
+  public static final String KEY_NAME_SEPARATOR = "#";
 
   private static final String DEFAULT_BASE_PATH = "harness";
-  private static final String DEFAULT_KEY_NAME = "value";
+  public static final String DEFAULT_KEY_NAME = "value";
 
   // This Jackson object mapper always ignore unknown properties while deserialize JSON documents.
   private static ObjectMapper objectMapper = new ObjectMapper();
