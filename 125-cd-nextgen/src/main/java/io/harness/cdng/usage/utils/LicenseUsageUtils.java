@@ -31,7 +31,10 @@ public class LicenseUsageUtils {
   }
 
   public static long computeLicenseConsumedForNG(long serviceInstanceCount, String instanceType) {
-    if (InstanceType.AWS_LAMBDA_INSTANCE.toString().equals(instanceType)) {
+    if (InstanceType.AWS_LAMBDA_INSTANCE.toString().equals(instanceType)
+        || InstanceType.GOOGLE_CLOUD_FUNCTIONS_INSTANCE.toString().equals(instanceType)
+        || InstanceType.AWS_SAM_INSTANCE.toString().equals(instanceType)
+        || InstanceType.SERVERLESS_AWS_LAMBDA_INSTANCE.toString().equals(instanceType)) {
       if (serviceInstanceCount <= SERVICE_INSTANCE_LIMIT_FOR_LAMBDA) {
         return 1;
       } else {

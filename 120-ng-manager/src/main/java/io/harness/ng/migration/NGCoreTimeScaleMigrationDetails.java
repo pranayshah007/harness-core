@@ -69,6 +69,7 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(18, CreateCDStageHelmManifestTable.class))
         .add(Pair.of(19, AddChartVersionToCDStageHelmManifestTable.class))
         .add(Pair.of(20, GetActiveServicesByDateFunction.class))
+        .add(Pair.of(21, GetActiveServicesByDateFunction.class))
         .build();
   }
 }

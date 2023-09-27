@@ -60,9 +60,9 @@ BEGIN
                 (
                     SELECT
                         CASE
-                            WHEN instancesPerServices.instancetype IS NOT NULL AND instancesPerServices.instancetype = 'AWS_LAMBDA_INSTANCE' AND (instancesPerServices.instanceCount IS NULL OR instancesPerServices.instanceCount <= 100)
+                            WHEN instancesPerServices.instancetype IS NOT NULL AND (instancesPerServices.instancetype = 'AWS_LAMBDA_INSTANCE' OR instancesPerServices.instancetype = 'GOOGLE_CLOUD_FUNCTIONS_INSTANCE' OR instancesPerServices.instancetype = 'AWS_SAM_INSTANCE' OR instancesPerServices.instancetype = 'SERVERLESS_AWS_LAMBDA_INSTANCE') AND (instancesPerServices.instanceCount IS NULL OR instancesPerServices.instanceCount <= 100)
                                 THEN 1
-                            WHEN instancesPerServices.instancetype IS NOT NULL AND instancesPerServices.instancetype = 'AWS_LAMBDA_INSTANCE' AND (instancesPerServices.instanceCount > 5)
+                            WHEN instancesPerServices.instancetype IS NOT NULL AND (instancesPerServices.instancetype = 'AWS_LAMBDA_INSTANCE' OR instancesPerServices.instancetype = 'GOOGLE_CLOUD_FUNCTIONS_INSTANCE' OR instancesPerServices.instancetype = 'AWS_SAM_INSTANCE' OR instancesPerServices.instancetype = 'SERVERLESS_AWS_LAMBDA_INSTANCE') AND (instancesPerServices.instanceCount > 100)
                                 THEN CEILING(instancesPerServices.instanceCount / 100.0)
                             WHEN instancesPerServices.instanceCount IS NULL OR instancesPerServices.instanceCount <= 20
                                 THEN 1
