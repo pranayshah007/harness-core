@@ -33,7 +33,7 @@ public class TemplateMonitoredServiceSpec extends MonitoredServiceSpec {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<String> monitoredServiceTemplateRef;
 
-  @NotNull String versionLabel;
+  String versionLabel;
 
   @VariableExpression(skipVariableExpression = true)
   @NotNull
