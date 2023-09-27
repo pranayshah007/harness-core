@@ -8,10 +8,10 @@ package io.harness.ng.support;
 
 import static io.harness.rule.OwnerRule.ASHINSABU;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -26,7 +26,9 @@ import io.harness.rule.Owner;
 
 import java.util.ArrayList;
 import java.util.List;
+import okhttp3.Call;
 import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -36,15 +38,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+
 public class CannyClientTest extends NgManagerTestBase {
   @Spy @InjectMocks private CannyClient cannyClient;
   private AutoCloseable openMocks;
-
+  @Spy @Mock private OkHttpClient okHttpClient = new OkHttpClient();
   @Before
   public void setUp() {
     openMocks = MockitoAnnotations.openMocks(this);
+    cannyClient.okHttpClient = okHttpClient;
   }
 
   @After
@@ -89,13 +94,36 @@ public class CannyClientTest extends NgManagerTestBase {
     doReturn(responseSuccess).when(cannyClient).getCannyBoardsResponse();
 
     CannyBoardsResponseDTO boardsResponse = cannyClient.getBoards();
-    List<CannyBoardsResponseDTO.Board> expectedBoardsList = new ArrayList<CannyBoardsResponseDTO.Board>() {
+    List<CannyBoardsResponseDTO.Board> expectedBoardsList = new ArrayList<>() {
       { add(CannyBoardsResponseDTO.Board.builder().name("BOARD").id("xyz").build()); }
     };
     CannyBoardsResponseDTO expectedResponse = CannyBoardsResponseDTO.builder().boards(expectedBoardsList).build();
 
     assertNotNull(boardsResponse);
     assertEquals(boardsResponse, expectedResponse);
+  }
+
+  @Test
+  @Owner(developers = ASHINSABU)
+  @Category(UnitTests.class)
+  public void testGetBoardsFailure() throws Exception {
+    Request mockrequest = new Request.Builder().url("https://canny.io/api/v1/boards/list").build();
+    Response responseFailure =
+        new Response.Builder()
+            .code(400)
+            .protocol(Protocol.HTTP_2)
+            .message("success")
+            .request(mockrequest)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"error\": \"request failed\"}"))
+            .build();
+    doReturn(responseFailure).when(cannyClient).getCannyBoardsResponse();
+
+    try {
+      cannyClient.getBoards();
+      fail("Expected an exception to be thrown");
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("Exception occurred while fetching boards from Canny:"));
+    }
   }
 
   @Test
@@ -237,7 +265,8 @@ public class CannyClientTest extends NgManagerTestBase {
   @Category(UnitTests.class)
   public void testPostCreationCreatePostFail() throws Exception {
     // this tests the following flow
-    // retrieve user(success) -> create post(fails and throws exception) -> post creation throws exception (resource can
+    // retrieve user(success) -> create post(first assert: fails and throws exception
+    // second assert: succeeds but returns non-success response) -> post creation throws exception (resource can
     // return 500 now)
     Request mockUserExistsRequest = new Request.Builder().url("https://canny.io/api/v1/users/retrieve").build();
     Response responseSuccess =
@@ -252,6 +281,25 @@ public class CannyClientTest extends NgManagerTestBase {
 
     doThrow(
         new UnexpectedException("Exception occurred while making createPost request to Canny at createCannyPost():"))
+        .when(cannyClient)
+        .createCannyPost(anyString(), anyString(), anyString(), anyString());
+
+    try {
+      cannyClient.createPost("test@test.com", "Test User", "Test Title", "Test Details", "board123");
+      fail("Expected an exception to be thrown");
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("Exception occurred while creating post at createPost():"));
+    }
+    Request mockPostCreationRequest = new Request.Builder().url("https://canny.io/api/v1/posts/create").build();
+    Response reponsePostCreationFailFail =
+        new Response.Builder()
+            .code(400)
+            .message("Bad Request")
+            .protocol(Protocol.HTTP_2)
+            .request(mockPostCreationRequest)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"error\": \"post creation failed\"}"))
+            .build();
+    doReturn(reponsePostCreationFailFail)
         .when(cannyClient)
         .createCannyPost(anyString(), anyString(), anyString(), anyString());
 
@@ -296,6 +344,24 @@ public class CannyClientTest extends NgManagerTestBase {
         new UnexpectedException("Exception occurred while retrieving post from canny at retrieveCannyPostDetails()"))
         .when(cannyClient)
         .retrieveCannyPostDetails(anyString());
+
+    try {
+      cannyClient.createPost("test@test.com", "Test User", "Test Title", "Test Details", "board123");
+      fail("Expected an exception to be thrown");
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("Exception occurred while creating post at createPost():"));
+    }
+
+    Request mockRetrievePostRequest = new Request.Builder().url("https://canny.io/api/v1/posts/retrieve").build();
+    Response retrievePostResponse =
+        new Response.Builder()
+            .code(400)
+            .message("Bad Request")
+            .protocol(Protocol.HTTP_2)
+            .request(mockRetrievePostRequest)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"error\": \"post retrieval failed\"}"))
+            .build();
+    doReturn(retrievePostResponse).when(cannyClient).retrieveCannyPostDetails(anyString());
 
     try {
       cannyClient.createPost("test@test.com", "Test User", "Test Title", "Test Details", "board123");
@@ -361,5 +427,52 @@ public class CannyClientTest extends NgManagerTestBase {
     String authorId = cannyClient.getPostCreationAuthorId("test@test.com", "Test User");
     assertNotNull(authorId);
     assertEquals("author123", authorId);
+
+    Response createUserResponseFailure =
+        new Response.Builder()
+            .code(400)
+            .message("Bad Request")
+            .protocol(Protocol.HTTP_2)
+            .request(mockCreateUserRequest)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{\"error\": \"user creation failed\"}"))
+            .build();
+
+    doReturn(createUserResponseFailure).when(cannyClient).createCannyUser(anyString(), anyString(), anyString());
+
+    try {
+      cannyClient.getPostCreationAuthorId("test@test.com", "Test User");
+      fail("Expected an exception to be thrown");
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("Exception occurred while retrieving user at getPostCreationAuthorId():"));
+    }
+  }
+
+  @Test
+  @Owner(developers = ASHINSABU)
+  @Category(UnitTests.class)
+  public void testGetCannyBoardsResponse() throws Exception {
+    Request mockrequest = new Request.Builder().url("https://canny.io/api/v1/boards/list").build();
+    Response responseSuccess = new Response.Builder()
+                                   .code(200)
+                                   .protocol(Protocol.HTTP_2)
+                                   .message("success")
+                                   .request(mockrequest)
+                                   .body(ResponseBody.create(MediaType.parse("application/json"), "{\"boards\": []}"))
+                                   .build();
+    Call mockCall = okHttpClient.newCall(mockrequest);
+    doReturn(mockCall).when(okHttpClient).newCall(mockrequest);
+    doReturn(responseSuccess).when(mockCall).execute();
+
+    Response boardsResponse = cannyClient.getCannyBoardsResponse();
+    assertNotNull(boardsResponse);
+
+    doThrow(new UnexpectedException("Exception occurred while fetching boards from Canny:")).when(mockCall).execute();
+    try {
+      cannyClient.getCannyBoardsResponse();
+      fail("Expected an exception to be thrown");
+    } catch (Exception e) {
+      assertTrue(
+          e.getMessage().contains("Exception occurred while retrieving user from canny at retrieveCannyUser():"));
+    }
   }
 }

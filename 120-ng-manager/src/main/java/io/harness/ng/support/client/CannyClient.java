@@ -15,6 +15,7 @@ import io.harness.ng.support.dto.CannyPostResponseDTO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -40,8 +41,11 @@ public class CannyClient {
   public static final String NAME_NODE = "name";
   public static final String BOARDS_NODE = "boards";
   public static final String ADMIN_BOARD_NAME = "Test Board - only admins can see";
+  public static final String API_KEY = "apiKey";
 
   public static final ObjectMapper objectMapper = new ObjectMapper();
+
+  @VisibleForTesting
   public OkHttpClient okHttpClient = new OkHttpClient.Builder().retryOnConnectionFailure(true).build();
 
   @Inject
@@ -150,7 +154,7 @@ public class CannyClient {
 
   public Response getCannyBoardsResponse() {
     try {
-      String jsonRequestBody = "{\"apiKey\":\"" + cannyConfig.token + "\"}";
+      String jsonRequestBody = "{\"" + API_KEY + "\":\"" + cannyConfig.token + "\"}";
       RequestBody requestBody = RequestBody.create(MediaType.parse("application/json"), jsonRequestBody);
       Request request = new Request.Builder().url(CANNY_BASE_URL + "/api/v1/boards/list").post(requestBody).build();
 
@@ -163,7 +167,7 @@ public class CannyClient {
   }
   public Response retrieveCannyUser(String emailId) {
     try {
-      FormBody.Builder formBodyBuilder = new FormBody.Builder().add("apiKey", cannyConfig.token).add("email", emailId);
+      FormBody.Builder formBodyBuilder = new FormBody.Builder().add(API_KEY, cannyConfig.token).add("email", emailId);
       Request request =
           new Request.Builder().url(CANNY_BASE_URL + "/api/v1/users/retrieve").post(formBodyBuilder.build()).build();
 
@@ -178,7 +182,7 @@ public class CannyClient {
   public Response createCannyUser(String userId, String email, String name) {
     try {
       FormBody.Builder formBodyBuiler = new FormBody.Builder()
-                                            .add("apiKey", cannyConfig.token)
+                                            .add(API_KEY, cannyConfig.token)
                                             .add("userID", userId)
                                             .add("email", email)
                                             .add("name", name);
@@ -199,7 +203,7 @@ public class CannyClient {
   public Response createCannyPost(String authorId, String boardId, String title, String details) {
     try {
       FormBody.Builder formBodyBuilder = new FormBody.Builder()
-                                             .add("apiKey", cannyConfig.token)
+                                             .add(API_KEY, cannyConfig.token)
                                              .add("authorID", authorId)
                                              .add("boardID", boardId)
                                              .add("details", details)
@@ -218,7 +222,7 @@ public class CannyClient {
 
   public Response retrieveCannyPostDetails(String postId) {
     try {
-      FormBody.Builder formBodyBuilder = new FormBody.Builder().add("apiKey", cannyConfig.token).add("id", postId);
+      FormBody.Builder formBodyBuilder = new FormBody.Builder().add(API_KEY, cannyConfig.token).add("id", postId);
 
       Request request =
           new Request.Builder().url(CANNY_BASE_URL + "/api/v1/posts/retrieve").post(formBodyBuilder.build()).build();
