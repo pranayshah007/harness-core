@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YamlSchemaFieldConstants.DEPENDS_ON;
 import static io.harness.pms.yaml.YamlSchemaFieldConstants.INPUT_PROPERTIES;
 import static io.harness.pms.yaml.YamlSchemaFieldConstants.INTERNAL_TYPE;
+import static io.harness.pms.yaml.YamlSchemaFieldConstants.METADATA;
 import static io.harness.pms.yaml.YamlSchemaFieldConstants.TYPE;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -62,22 +63,25 @@ public class InputsSchemaServiceImpl implements InputsSchemaService {
               InputFieldMetadata.builder().parentNodeType(parentNodeType).fqn(fqn).build();
           specFieldToInputNameMap.put(inputFieldMetadata, inputDetails.getName());
           JsonNode inputFieldSchemaNode = schemaParser.getFieldNode(inputFieldMetadata);
-          JsonNode inputPropertiesNode = JsonFieldUtils.get(inputFieldSchemaNode, INPUT_PROPERTIES);
-          if (inputPropertiesNode != null) {
-            // Assuming inputType is always text field, check if validation is required
-            inputMetadata.addInputDetailsPerField(JsonFieldUtils.getTextOrEmpty(inputPropertiesNode, TYPE),
-                JsonFieldUtils.getTextOrEmpty(inputPropertiesNode, INTERNAL_TYPE));
-            if (JsonFieldUtils.isPresent(inputPropertiesNode, DEPENDS_ON)) {
-              ArrayNode requiredFields = JsonFieldUtils.getArrayNode(inputPropertiesNode, DEPENDS_ON);
-              List<InputFieldMetadata> requiredFieldsMetadata = new ArrayList<>();
-              requiredFields.forEach(requiredField
-                  -> requiredFieldsMetadata.add(InputFieldMetadata
-                                                    .builder()
-                                                    // Assuming dependency is always on a field from same step
-                                                    .parentNodeType(inputFieldMetadata.getParentNodeType())
-                                                    .fqn(fqn.getSiblingFQN(requiredField.asText()))
-                                                    .build()));
-              inputToSpecFieldDependencyMap.put(inputDetails, requiredFieldsMetadata);
+          JsonNode metadataSchemaNode = JsonFieldUtils.get(inputFieldSchemaNode, METADATA);
+          if (metadataSchemaNode != null) {
+            JsonNode inputPropertiesNode = JsonFieldUtils.get(metadataSchemaNode, INPUT_PROPERTIES);
+            if (inputPropertiesNode != null) {
+              // Assuming inputType is always text field, check if validation is required
+              inputMetadata.addInputDetailsPerField(JsonFieldUtils.getTextOrEmpty(inputPropertiesNode, TYPE),
+                  JsonFieldUtils.getTextOrEmpty(inputPropertiesNode, INTERNAL_TYPE));
+              if (JsonFieldUtils.isPresent(inputPropertiesNode, DEPENDS_ON)) {
+                ArrayNode requiredFields = JsonFieldUtils.getArrayNode(inputPropertiesNode, DEPENDS_ON);
+                List<InputFieldMetadata> requiredFieldsMetadata = new ArrayList<>();
+                requiredFields.forEach(requiredField
+                    -> requiredFieldsMetadata.add(InputFieldMetadata
+                                                      .builder()
+                                                      // Assuming dependency is always on a field from same step
+                                                      .parentNodeType(inputFieldMetadata.getParentNodeType())
+                                                      .fqn(fqn.getSiblingFQN(requiredField.asText()))
+                                                      .build()));
+                inputToSpecFieldDependencyMap.put(inputDetails, requiredFieldsMetadata);
+              }
             }
           }
         }
