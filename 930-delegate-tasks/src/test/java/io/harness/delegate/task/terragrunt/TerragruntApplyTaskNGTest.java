@@ -139,7 +139,7 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
     assertThat(captor.getAllValues().get(4).getCommand())
         .isEqualTo("terragrunt apply -input=false -lock-timeout=10s tfplan");
     assertThat(captor.getAllValues().get(4).getEnvVariables()).isEqualTo(applyParameters.getEnvVars());
-    assertThat(captor.getAllValues().get(5).getCommand()).contains("terragrunt output -json >");
+    assertThat(captor.getAllValues().get(5).getCommand()).contains("terragrunt output  -json >");
     assertThat(captor.getAllValues().get(5).getEnvVariables()).isEqualTo(applyParameters.getEnvVars());
 
     FileIo.deleteDirectoryAndItsContentIfExists(TG_BE_FILES_DIR);
@@ -157,6 +157,7 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
     TerragruntApplyTaskParameters applyParameters = TerragruntTestUtils.createApplyTaskParameters(runConfiguration);
 
     applyParameters.setUseUniqueDirectoryForBaseDir(true);
+    applyParameters.getTerragruntCommandFlags().put("OUTPUT", "-lock-timeout=10s");
 
     TerragruntContext terragruntContext = TerragruntTestUtils.createTerragruntContext(cliHelper);
     when(taskService.prepareTerragrunt(
@@ -211,7 +212,7 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
     assertThat(captor.getAllValues().get(4).getCommand())
         .isEqualTo("terragrunt apply -input=false -lock-timeout=10s tfplan");
     assertThat(captor.getAllValues().get(4).getEnvVariables()).isEqualTo(applyParameters.getEnvVars());
-    assertThat(captor.getAllValues().get(5).getCommand()).contains("terragrunt output -json >");
+    assertThat(captor.getAllValues().get(5).getCommand()).contains("terragrunt output -lock-timeout=10s -json >");
     assertThat(captor.getAllValues().get(5).getEnvVariables()).isEqualTo(applyParameters.getEnvVars());
 
     FileIo.deleteDirectoryAndItsContentIfExists(TG_BE_FILES_DIR);
@@ -276,7 +277,7 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
     assertThat(captor.getAllValues().get(3).getCommand())
         .isEqualTo("terragrunt apply -input=false -lock-timeout=10s tfplan");
     assertThat(captor.getAllValues().get(3).getEnvVariables()).isEqualTo(applyParameters.getEnvVars());
-    assertThat(captor.getAllValues().get(4).getCommand()).contains("terragrunt output -json >");
+    assertThat(captor.getAllValues().get(4).getCommand()).contains("terragrunt output  -json >");
     assertThat(captor.getAllValues().get(4).getEnvVariables()).isEqualTo(applyParameters.getEnvVars());
 
     captor.getAllValues().forEach(request -> {
@@ -349,7 +350,8 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
         .isEqualTo(
             "terragrunt run-all apply -input=false --terragrunt-non-interactive  -target=\"test-target\"   -var-file=\"test-terragrunt-12345.tfvars\"  -lock-timeout=10s");
     assertThat(captor.getAllValues().get(3).getEnvVariables()).isEqualTo(applyParameters.getEnvVars());
-    assertThat(captor.getAllValues().get(4).getCommand()).contains("echo \"y\" | terragrunt run-all output --json >");
+    assertThat(captor.getAllValues().get(4).getCommand())
+        .contains("echo \"y\" | terragrunt run-all output --terragrunt-non-interactive  --json >");
     assertThat(captor.getAllValues().get(4).getEnvVariables()).isEqualTo(applyParameters.getEnvVars());
 
     captor.getAllValues().forEach(request -> {
