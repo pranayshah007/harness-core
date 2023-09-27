@@ -47,11 +47,6 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
     return ResponseDTO.newResponse(schema);
   }
 
-  public ResponseDTO<Boolean> invalidateYamlSchemaCache() {
-    pmsYamlSchemaService.invalidateAllCache();
-    return ResponseDTO.newResponse(true);
-  }
-
   // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
   public ResponseDTO<PipelineConfig> dummyApiForSwaggerSchemaCheck() {
     log.info("Get pipeline");

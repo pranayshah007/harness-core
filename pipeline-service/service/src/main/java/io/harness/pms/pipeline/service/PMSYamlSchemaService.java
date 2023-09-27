@@ -25,8 +25,6 @@ public interface PMSYamlSchemaService {
 
   void validateUniqueFqn(String yaml);
 
-  void invalidateAllCache();
-
   List<YamlInputDetails> getInputSchemaDetails(String yaml);
 
   ObjectNode getStaticSchemaForAllEntities(

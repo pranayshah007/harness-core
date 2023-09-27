@@ -32,7 +32,6 @@ import io.swagger.annotations.ApiResponses;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -56,11 +55,6 @@ public interface PmsYamlSchemaResource {
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,
       @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier);
-
-  @POST
-  @Path("/invalidate-cache")
-  @ApiOperation(value = "Invalidate yaml schema cache", nickname = "invalidateYamlSchemaCache")
-  ResponseDTO<Boolean> invalidateYamlSchemaCache();
 
   @GET
   @ApiOperation(value = "dummy api for checking pms schema", nickname = "dummyApiForSwaggerSchemaCheck")

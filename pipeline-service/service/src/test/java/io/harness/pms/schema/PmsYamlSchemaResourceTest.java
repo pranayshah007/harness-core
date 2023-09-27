@@ -13,10 +13,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import io.harness.EntityType;
 import io.harness.PipelineServiceTestBase;
@@ -76,15 +73,5 @@ public class PmsYamlSchemaResourceTest extends PipelineServiceTestBase {
       assertThatThrownBy(() -> pmsYamlSchemaResource.getYamlSchema(value, project, org, Scope.PROJECT, id, acc))
           .isInstanceOf(NotSupportedException.class);
     }
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testInvalidateYamlSchemaCache() {
-    doNothing().when(pmsYamlSchemaService).invalidateAllCache();
-    ResponseDTO<Boolean> responseDTO = pmsYamlSchemaResource.invalidateYamlSchemaCache();
-    assertThat(responseDTO.getData()).isTrue();
-    verify(pmsYamlSchemaService, times(1)).invalidateAllCache();
   }
 }
