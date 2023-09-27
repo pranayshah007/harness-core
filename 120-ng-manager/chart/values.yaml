@@ -458,6 +458,27 @@ secrets:
     - secretName: ""
       keys:
         LOG_STREAMING_SERVICE_TOKEN: ""
+    - secretName: ""
+      keys:
+        OPA_SERVER_SECRET: ""
+    - secretName: ""
+      keys:
+        GITOPS_SERVICE_SECRET: ""
+    - secretName: ""
+      keys:
+        SMTP_HOST: ""
+    - secretName: ""
+      keys:
+        SMTP_USERNAME: ""
+    - secretName: ""
+      keys:
+        SMTP_PASSWORD: ""
+    - secretName: ""
+      keys:
+        SMTP_USE_SSL: ""
+    - secretName: ""
+      keys:
+        SMTP_PORT: ""
   secretManagement:
     externalSecretsOperator:
       - secretStore:
@@ -471,6 +492,48 @@ secrets:
           name: ""
           kind: ""
         remoteKeys:
-          LOG_STREAMING_SERVICE_TOKEN:
+          OPA_SERVER_SECRET:
+            name: ""
+            property: ""
+      - secretStore:
+          name: ""
+          kind: ""
+        remoteKeys:
+          GITOPS_SERVICE_SECRET:
+            name: ""
+            property: ""
+      - secretStore:
+          name: ""
+          kind: ""
+        remoteKeys:
+          SMTP_HOST:
+            name: ""
+            property: ""
+      - secretStore:
+          name: ""
+          kind: ""
+        remoteKeys:
+          SMTP_USERNAME:
+            name: ""
+            property: ""
+      - secretStore:
+          name: ""
+          kind: ""
+        remoteKeys:
+          SMTP_PASSWORD:
+            name: ""
+            property: ""
+      - secretStore:
+          name: ""
+          kind: ""
+        remoteKeys:
+          SMTP_USE_SSL:
+            name: ""
+            property: ""
+      - secretStore:
+          name: ""
+          kind: ""
+        remoteKeys:
+          SMTP_PORT:
             name: ""
             property: ""

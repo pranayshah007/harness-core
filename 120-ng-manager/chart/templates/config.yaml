@@ -12,7 +12,6 @@ metadata:
   {{- end }}
 data:
   GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
-  GITOPS_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
   CACHE_BACKEND: "REDIS"
   DEPLOY_MODE: KUBERNETES_ONPREM
   MANAGER_TARGET: harness-manager:9879
@@ -71,7 +70,6 @@ data:
   {{- end}}
   {{- if .Values.global.opa.enabled }}
   OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
-  OPA_SERVER_SECRET: 'dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq'
   OPA_CONNECTIVITY_ENABLED: 'true'
   {{- end }}
   NOTIFICATION_BASE_URL: http://platform-service:9005/api/
