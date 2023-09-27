@@ -73,6 +73,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -562,8 +563,8 @@ public class AwsResourceServiceImpl implements AwsResourceService {
     AwsTaskParams awsTaskParams =
         AwsTaskParams.builder().awsConnector(awsConnector).encryptionDetails(encryptedData).build();
 
-    DelegateResponseData responseData =
-        serviceHelper.getResponseData(access, awsTaskParams, TaskType.AWS_EKS_LIST_CLUSTERS_TASK.name());
+    DelegateResponseData responseData = serviceHelper.getResponseData(
+        access, awsTaskParams, TaskType.AWS_EKS_LIST_CLUSTERS_TASK.name(), Duration.ofMinutes(5));
     return getEKSClusterNamesFromResponse(responseData);
   }
 
