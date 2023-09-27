@@ -430,12 +430,12 @@ featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
 
-enableDashboardTimescale: false
+enableDashboardTimescale: true
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
-  timescaledbUsername: ""
-  timescaledbPassword: ""
+  timescaledbUsername: "admin"
+  timescaledbPassword: "password"
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false

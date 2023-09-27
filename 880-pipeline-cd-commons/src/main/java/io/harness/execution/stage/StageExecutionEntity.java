@@ -7,10 +7,13 @@
 
 package io.harness.execution.stage;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
-import io.harness.annotations.StoreInMultiple;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -24,14 +27,6 @@ import io.harness.persistence.UuidAware;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.utils.StageStatus;
-
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.google.common.collect.ImmutableList;
-import dev.morphia.annotations.Entity;
-import dev.morphia.annotations.Id;
-import java.util.List;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -43,14 +38,18 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+import java.util.List;
+
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Data
 @Builder
 @ToString
 @FieldNameConstants(innerTypeName = "StageExecutionEntityKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@StoreInMultiple({ @StoreIn(DbAliases.PMS)
-                   , @StoreIn(DbAliases.NG_MANAGER) })
+@StoreIn(DbAliases.PMS)
+@StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "stageExecutionEntity", noClassnameStored = true)
 @Document("stageExecutionEntity")
 @TypeAlias("stageExecutionEntity")
