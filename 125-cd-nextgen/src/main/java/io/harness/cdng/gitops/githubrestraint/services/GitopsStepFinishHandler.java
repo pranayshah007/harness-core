@@ -7,6 +7,8 @@
 
 package io.harness.cdng.gitops.githubrestraint.services;
 
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
+
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.resume.GitopsStepFinishCallback;
 import io.harness.delay.DelayEventHelper;
@@ -32,7 +34,7 @@ public class GitopsStepFinishHandler implements OrchestrationEventHandler {
   private void unblockConstraints(Ambiance ambiance) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       String resumeId = delayEventHelper.delay(DELAY_IN_SECONDS, Collections.emptyMap());
-      waitNotifyEngine.waitForAllOn("gitopsStepFinishHandler",
+      waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION,
           new GitopsStepFinishCallback(Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance))),
           resumeId);
 

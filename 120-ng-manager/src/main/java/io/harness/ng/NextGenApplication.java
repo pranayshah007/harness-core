@@ -47,7 +47,6 @@ import io.harness.cdng.creator.filters.CDNGFilterCreationResponseMerger;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.gitSync.EnvironmentGroupEntityGitSyncHelper;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintPersistenceMonitor;
 import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
 import io.harness.cdng.migration.CDMigrationProvider;
 import io.harness.cdng.orchestration.NgStepRegistrar;
@@ -75,6 +74,7 @@ import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.credit.schedular.CICreditExpiryIteratorHandler;
 import io.harness.credit.schedular.ProvisionMonthlyCICreditsHandler;
 import io.harness.credit.schedular.SendProvisionedCICreditsToSegmentHandler;
+import io.harness.delay.DelayEventListener;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -238,7 +238,6 @@ import io.harness.threading.ThreadPool;
 import io.harness.timescale.CDRetentionHandlerNG;
 import io.harness.token.remote.TokenClient;
 import io.harness.tracing.MongoRedisTracer;
-import io.harness.waiter.CdngNotifyEventConsumerRedis;
 import io.harness.waiter.NotifierScheduledExecutorService;
 import io.harness.waiter.NotifyEvent;
 import io.harness.waiter.NotifyQueuePublisherRegister;
@@ -547,6 +546,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void registerQueueListeners(Injector injector) {
     log.info("Initializing queue listeners...");
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
+    queueListenerController.register(injector.getInstance(DelayEventListener.class), 1);
     queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListener.class), 1);
   }
 
@@ -698,7 +698,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         injector.getInstance(PipelineEventConsumerController.class);
     pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(CdngOrchestrationEventRedisConsumer.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(CdngNotifyEventConsumerRedis.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
