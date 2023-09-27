@@ -105,6 +105,7 @@ public class OwnerRule implements TestRule {
   public static final String ANGELO = "angelo.rodriguez";
   public static final String ANKIT = "ankit.singhal";
   public static final String ANKUSH = "ankush.shaw";
+  public static final String ANSHIKA = "anshika.anand";
   public static final String ANSHUL = "anshul";
   public static final String ANSUMAN = "ansuman.satapathy";
   public static final String ANUBHAW = "anubhaw";
@@ -590,6 +591,7 @@ public class OwnerRule implements TestRule {
           .put(AYUSHI_TIWARI, defaultUserInfo(AYUSHI_TIWARI).slack("U05KLP7V9J5").team(SPG).build())
           .put(RAKSHIT_AGARWAL, defaultUserInfo(RAKSHIT_AGARWAL).slack("U05NERB33M0").team(CDC).build())
           .put(SAHITHI, defaultUserInfo(SAHITHI).slack("U05H8CUM2LR").team(CI).build())
+          .put(ANSHIKA, defaultUserInfo(ANSHIKA).slack("U05LMLVA9FE").team(CV).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));
