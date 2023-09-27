@@ -62,7 +62,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plugin.service.BasePluginCompatibleSerializer;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -100,7 +100,6 @@ import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -196,8 +195,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       long timeoutInMillis, String stringTimeout, StageInfraDetails stageInfraDetails, StageDetails stageDetails);
 
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance);
   }
 
   public abstract void resolveGitAppFunctor(Ambiance ambiance, CIStepInfo ciStepInfo);

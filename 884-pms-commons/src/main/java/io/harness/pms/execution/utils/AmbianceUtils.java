@@ -60,6 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AmbianceUtils {
   public static final String STAGE = "STAGE";
   public static final String SPECIAL_CHARACTER_REGEX = "[^a-zA-Z0-9]";
+  public static final String PIE_SIMPLIFY_LOG_BASE_KEY = "PIE_SIMPLIFY_LOG_BASE_KEY";
 
   public static Ambiance cloneForFinish(@NonNull Ambiance ambiance) {
     return clone(ambiance, ambiance.getLevelsList().size() - 1);
@@ -554,6 +555,11 @@ public class AmbianceUtils {
       }
     }
     return enabledFeatureFlags;
+  }
+
+  public boolean shouldSimplifyLogBaseKey(Ambiance ambiance) {
+    return ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY);
   }
 
   public boolean hasStrategyMetadata(Level level) {
