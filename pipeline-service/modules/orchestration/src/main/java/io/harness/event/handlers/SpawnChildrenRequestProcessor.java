@@ -175,7 +175,9 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
    */
   @VisibleForTesting
   List<Child> getFilteredChildren(Ambiance ambiance, List<Child> children) {
-    if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+    // Calculating children only when strategy is at stage level - AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance)
+    if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK
+        && AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance)) {
       List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
           ambiance.getMetadata().getPostExecutionRollbackInfoList();
       Multimap<String, StrategyMetadata> strategyMetadataMap = HashMultimap.create();

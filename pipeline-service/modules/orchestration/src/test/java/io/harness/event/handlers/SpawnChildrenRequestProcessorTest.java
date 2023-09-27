@@ -244,6 +244,14 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
             .addLevels(
                 Level.newBuilder()
                     .setIdentifier("IDENTIFIER")
+                    .setStepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
+                    .setRuntimeId(nodeExecutionId)
+                    .setSetupId(planNodeId)
+                    .setGroup("STAGES")
+                    .build())
+            .addLevels(
+                Level.newBuilder()
+                    .setIdentifier("IDENTIFIER")
                     .setStepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.FORK).build())
                     .setRuntimeId(nodeExecutionId)
                     .setSetupId(planNodeId)
@@ -355,7 +363,7 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
                                      .build())
             .build());
     List<Child> filteredChildren = processor.getFilteredChildren(ambiance, children);
-    assertThat(filteredChildren.size()).isEqualTo(1);
+    assertThat(filteredChildren.size()).isEqualTo(3);
     assertThat(filteredChildren.get(0)).isEqualTo(children.get(0));
   }
 }
