@@ -112,7 +112,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
 
   @Override
-  public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
+  public NodeExecution createNodeExecutionInternal(@NotNull Ambiance ambiance, @NotNull PlanNode node,
       NodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     NodeExecution nodeExecution =

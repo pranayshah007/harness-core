@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,8 +27,10 @@ import io.harness.OrchestrationTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
@@ -42,6 +45,7 @@ import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.rule.Owner;
 import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
@@ -62,6 +66,7 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
   @Mock InitiateNodeHelper initiateNodeHelper;
   @Mock WaitNotifyEngine waitNotifyEngine;
   @Mock OrchestrationEngine engine;
+  @Mock PlanExecutionMetadataService planExecutionMetadataService;
 
   @Inject @InjectMocks SpawnChildrenRequestProcessor processor;
 
@@ -233,14 +238,7 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
         Ambiance.newBuilder()
             .setPlanId(planId)
             .setPlanExecutionId(planExecutionId)
-            .setMetadata(
-                ExecutionMetadata.newBuilder()
-                    .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
-                    .addPostExecutionRollbackInfo(PostExecutionRollbackInfo.newBuilder()
-                                                      .setPostExecutionRollbackStageId(planNodeId)
-                                                      .setRollbackStageStrategyMetadata(rollbackSTrategyMetadata)
-                                                      .build())
-                    .build())
+            .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK).build())
             .addLevels(
                 Level.newBuilder()
                     .setIdentifier("IDENTIFIER")
@@ -277,6 +275,16 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
             .setAmbiance(ambiance)
             .build();
 
+    doReturn(PlanExecutionMetadata.builder()
+                 .postExecutionRollbackInfo(PostExecutionRollbackInfo.newBuilder()
+                                                .setPostExecutionRollbackStageId(planNodeId)
+                                                .setRollbackStageStrategyMetadata(rollbackSTrategyMetadata)
+                                                .build())
+                 .build())
+        .when(planExecutionMetadataService)
+        .getWithFieldsIncludedFromSecondary(
+            planExecutionId, PlanExecutionProjectionConstants.fieldsForPostProdRollback);
+
     processor.handleEvent(event);
 
     ArgumentCaptor<String> nodeIdCaptor = ArgumentCaptor.forClass(String.class);
@@ -312,14 +320,17 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
   public void testGetFilteredChildren() {
     Ambiance ambiance =
         Ambiance.newBuilder()
+            .setPlanExecutionId(generateUuid())
             .addLevels(Level.newBuilder().setSetupId("parallelId").build())
-            .setMetadata(
-                ExecutionMetadata.newBuilder()
-                    .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
-                    .addPostExecutionRollbackInfo(
-                        PostExecutionRollbackInfo.newBuilder().setPostExecutionRollbackStageId("stageId").build())
-                    .build())
+            .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK).build())
             .build();
+    doReturn(PlanExecutionMetadata.builder()
+                 .postExecutionRollbackInfo(
+                     PostExecutionRollbackInfo.newBuilder().setPostExecutionRollbackStageId("stageId").build())
+                 .build())
+        .when(planExecutionMetadataService)
+        .getWithFieldsIncludedFromSecondary(
+            ambiance.getPlanExecutionId(), PlanExecutionProjectionConstants.fieldsForPostProdRollback);
     List<Child> children = Collections.singletonList(Child.newBuilder().build());
     List<Child> filteredChildren = processor.getFilteredChildren(ambiance, children);
     assertThat(filteredChildren.size()).isEqualTo(1);
@@ -332,19 +343,9 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
   public void testGetFilteredChildrenMatrix() {
     Ambiance ambiance =
         Ambiance.newBuilder()
+            .setPlanExecutionId(generateUuid())
             .addLevels(Level.newBuilder().setSetupId("stageId").build())
-            .setMetadata(
-                ExecutionMetadata.newBuilder()
-                    .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
-                    .addPostExecutionRollbackInfo(
-                        PostExecutionRollbackInfo.newBuilder()
-                            .setPostExecutionRollbackStageId("stageId")
-                            .setRollbackStageStrategyMetadata(
-                                StrategyMetadata.newBuilder()
-                                    .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(0).build())
-                                    .build())
-                            .build())
-                    .build())
+            .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK).build())
             .build();
     List<Child> children = List.of(
         Child.newBuilder()
@@ -362,6 +363,19 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
                                      .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(2).build())
                                      .build())
             .build());
+    doReturn(PlanExecutionMetadata.builder()
+                 .postExecutionRollbackInfo(
+                     PostExecutionRollbackInfo.newBuilder()
+                         .setPostExecutionRollbackStageId("stageId")
+                         .setRollbackStageStrategyMetadata(
+                             StrategyMetadata.newBuilder()
+                                 .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(0).build())
+                                 .build())
+                         .build())
+                 .build())
+        .when(planExecutionMetadataService)
+        .getWithFieldsIncludedFromSecondary(
+            ambiance.getPlanExecutionId(), PlanExecutionProjectionConstants.fieldsForPostProdRollback);
     List<Child> filteredChildren = processor.getFilteredChildren(ambiance, children);
     assertThat(filteredChildren.size()).isEqualTo(3);
     assertThat(filteredChildren.get(0)).isEqualTo(children.get(0));
