@@ -25,6 +25,7 @@ import io.harness.distribution.constraint.UnableToLoadConstraintException;
 import io.harness.distribution.constraint.UnableToSaveConstraintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
+import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceBuilder;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.gitopsprovider.entity.GithubRestraintInstanceResponseData;
 import io.harness.logging.AutoLogContext;
@@ -193,7 +194,7 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
 
   @Override
   public boolean registerConsumer(ConstraintId id, ConstraintUnit unit, Consumer consumer, int currentlyRunning) {
-    final GithubRestraintInstance.GithubRestraintInstanceBuilder builder =
+    final GithubRestraintInstanceBuilder builder =
         GithubRestraintInstance.builder()
             .uuid(consumer.getId().getValue())
             .resourceUnit(unit.getValue())

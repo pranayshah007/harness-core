@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.springdata.TransactionHelper;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;

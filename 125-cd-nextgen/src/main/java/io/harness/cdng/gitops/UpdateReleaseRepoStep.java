@@ -148,7 +148,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
   @SneakyThrows
   public AsyncChainExecutableResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    NGLogCallback logCallback = getLogCallback(ambiance, true);
+    NGLogCallback logCallback = getLogCallback(ambiance, false);
 
     UpdateReleaseRepoStepParams gitOpsSpecParams = (UpdateReleaseRepoStepParams) stepParameters.getSpec();
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
@@ -226,7 +226,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataSupplier.get();
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
-      NGLogCallback logCallback = getLogCallback(ambiance, true);
+      NGLogCallback logCallback = getLogCallback(ambiance, false);
       logCallback.saveExecutionLog("UpdateReleaseRepo step finished.", INFO, SUCCESS);
       UpdateReleaseRepoOutcome updateReleaseRepoOutcome = UpdateReleaseRepoOutcome.builder()
                                                               .prlink(ngGitOpsResponse.getPrLink())
