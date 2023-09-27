@@ -23917,7 +23917,8 @@
             "WORKSPACE",
             "PLAN",
             "APPLY",
-            "DESTROY"
+            "DESTROY",
+            "OUTPUT"
           ]
         },
         "flag": {

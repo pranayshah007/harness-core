@@ -25,8 +25,8 @@ public enum TerragruntStepWithAllowedCommand {
   PLAN(ImmutableSet.of(TerragruntStepsForCliOptions.PLAN, TerragruntStepsForCliOptions.APPLY)),
   APPLY(ImmutableSet.of(
       TerragruntStepsForCliOptions.APPLY, TerragruntStepsForCliOptions.DESTROY, TerragruntStepsForCliOptions.ROLLBACK)),
-  DESTROY(ImmutableSet.of(TerragruntStepsForCliOptions.DESTROY, TerragruntStepsForCliOptions.ROLLBACK));
-
+  DESTROY(ImmutableSet.of(TerragruntStepsForCliOptions.DESTROY, TerragruntStepsForCliOptions.ROLLBACK)),
+  OUTPUT(ImmutableSet.of(TerragruntStepsForCliOptions.APPLY, TerragruntStepsForCliOptions.ROLLBACK));
   private final Set<String> stepsAllowed;
 
   TerragruntStepWithAllowedCommand(Set<String> stepsAllowed) {
