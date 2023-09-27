@@ -93,8 +93,8 @@ import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHe
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
-import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -102,6 +102,7 @@ import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.PmsFeatureFlagService;
+import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -164,6 +165,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private final PMSYamlSchemaService pmsYamlSchemaService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -912,7 +914,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public String pipelineVersion(String accountId, String yaml) {
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
-    return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
+    return NGYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
   }
 
   @Override
@@ -957,6 +959,18 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
 
     return pipelineAfterUpdate.getIdentifier();
+  }
+
+  @Override
+  public List<YamlInputDetails> getInputSchemaDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    Optional<PipelineEntity> optionalPipelineEntity =
+        getPipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+    if (optionalPipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
+          orgIdentifier, projectIdentifier, pipelineIdentifier));
+    }
+    return pmsYamlSchemaService.getInputSchemaDetails(optionalPipelineEntity.get().getYaml());
   }
 
   private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,

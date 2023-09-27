@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -804,7 +805,9 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       }
     } else {
       if (budgetGroup.getBudgetGroupHistory() != null) {
-        for (BudgetCostData historyBudgetGroupCostData : budgetGroup.getBudgetGroupHistory().values()) {
+        TreeMap<Long, BudgetCostData> sortedBudgetGroupHistory = new TreeMap<>();
+        sortedBudgetGroupHistory.putAll(budgetGroup.getBudgetGroupHistory());
+        for (BudgetCostData historyBudgetGroupCostData : sortedBudgetGroupHistory.values()) {
           budgetGroupCostDataList.add(historyBudgetGroupCostData);
         }
       }

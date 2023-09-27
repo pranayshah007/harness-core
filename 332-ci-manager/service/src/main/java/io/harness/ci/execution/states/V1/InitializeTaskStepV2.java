@@ -148,7 +148,6 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -216,6 +215,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     addExecutionRecord(ambiance, stepParameters, accountId);
     String runTime = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String stageRuntimeId = AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
+    InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
+    Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
 
     stepExecutionParametersRepository.save(StepExecutionParameters.builder()
                                                .accountId(accountId)
@@ -224,12 +225,16 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                                .stepParameters(RecastOrchestrationUtils.toJson(stepParameters))
                                                .build());
 
-    boolean availableCapacity = buildEnforcer.checkBuildEnforcement(
-        AmbianceUtils.getAccountId(ambiance), Arrays.asList(Status.RUNNING.toString(), Status.QUEUED.toString()));
+    boolean shouldQueue = false;
+    boolean queueConcurrencyEnabled = infrastructure.getType() == Infrastructure.Type.HOSTED_VM
+        && ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
 
-    boolean queueConcurrencyEnabled =
-        ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));
-    if (queueConcurrencyEnabled && !availableCapacity) {
+    // only check if queue is enabled
+    if (queueConcurrencyEnabled) {
+      shouldQueue = buildEnforcer.shouldQueue(accountId, infrastructure);
+    }
+
+    if (shouldQueue) {
       String topic = ciExecutionServiceConfig.getQueueServiceClientConfig().getTopic();
       log.info("start executeAsyncAfterRbac for initialize step with queue. Topic: {}", topic);
       taskId = generateUuid();
@@ -259,8 +264,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
         AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
             CollectionUtils.emptyIfNull(singletonList(logKey)));
 
-    // Sending the status if feature flag is enabled
-    if (queueConcurrencyEnabled && !availableCapacity) {
+    // Sending the status if shouldQueue is true
+    if (shouldQueue) {
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
     } else {
       InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =

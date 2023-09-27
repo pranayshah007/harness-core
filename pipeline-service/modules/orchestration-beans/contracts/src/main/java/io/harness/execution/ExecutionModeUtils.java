@@ -19,8 +19,11 @@ import static io.harness.pms.contracts.execution.ExecutionMode.TASK;
 import static io.harness.pms.contracts.execution.ExecutionMode.TASK_CHAIN;
 import static io.harness.pms.contracts.execution.ExecutionMode.WAIT_STEP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.execution.ExecutionMode;
 
 import java.util.EnumSet;
@@ -29,6 +32,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = HarnessModuleComponent.CDS_PIPELINE)
 public class ExecutionModeUtils {
   private final Set<ExecutionMode> CHAIN_MODES = EnumSet.of(TASK_CHAIN, CHILD_CHAIN);
 

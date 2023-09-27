@@ -27,6 +27,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
+import io.harness.cli.CliCommandRequest;
 import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
 import io.harness.cli.LogCallbackOutputStream;
@@ -247,9 +248,20 @@ public class TerragruntClientImpl implements TerragruntClient {
       String command, AbstractTerragruntCliRequest cliRequest, LogCallback logCallback, LogOutputStream outputStream)
       throws IOException, InterruptedException, TimeoutException {
     logCallback.saveExecutionLog(color(command, LogColor.White, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
-    return cliHelper.executeCliCommand(command, cliRequest.getTimeoutInMillis(), cliRequest.getEnvVars(),
-        cliRequest.getWorkingDirectory(), logCallback, command, outputStream,
-        new TerraformCliErrorLogOutputStream(logCallback), SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN);
+    CliCommandRequest request =
+        CliCommandRequest.builder()
+            .command(command)
+            .timeoutInMillis(cliRequest.getTimeoutInMillis())
+            .envVariables(cliRequest.getEnvVars())
+            .directory(cliRequest.getWorkingDirectory())
+            .logCallback(logCallback)
+            .loggingCommand(command)
+            .logOutputStream(outputStream)
+            .errorLogOutputStream(new TerraformCliErrorLogOutputStream(logCallback, cliRequest.isSkipColorLogs()))
+            .secondsToWaitForGracefulShutdown(SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN)
+            .build();
+
+    return cliHelper.executeCliCommand(request);
   }
 
   private Set<String> parseWorkspaceList(String workspaceOutput) {

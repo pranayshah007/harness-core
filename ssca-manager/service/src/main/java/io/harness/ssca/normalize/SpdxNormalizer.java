@@ -18,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
               .artifactUrl(settings.getArtifactURL())
               .artifactId(settings.getArtifactID())
               .artifactName(sbom.getName())
+              .tags(Collections.singletonList(settings.getArtifactTag()))
               .createdOn(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
                              .parse(sbom.getCreationInfo().getCreated())
                              .toInstant())

@@ -24,4 +24,5 @@ public class TerraformApplyCommandRequest {
   List<String> targets;
   boolean isTerraformCloudCli;
   Map<String, String> additionalCliFlags;
+  boolean skipColorLogs;
 }

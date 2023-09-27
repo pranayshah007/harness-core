@@ -26,6 +26,7 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
 public class GithubMeanTimeToMergeParser implements DataPointParser {
+  private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
     Map<String, Object> dataPointData = new HashMap<>();
@@ -43,22 +44,18 @@ public class GithubMeanTimeToMergeParser implements DataPointParser {
             constructDataPointInfo(inputValue, false, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
         continue;
       }
-      int numberOfPullRequests = 0;
+      int numberOfPullRequests = edges.size();
       long totalTimeToMerge = 0;
       for (Map<String, Object> edge : edges) {
         Map<String, Object> node = (Map<String, Object>) edge.get("node");
-        long createdAtMillis = DateUtils.parseTimestamp((String) node.get("createdAt"));
-        long mergedAtMillis = DateUtils.parseTimestamp((String) node.get("mergedAt"));
+        long createdAtMillis = DateUtils.parseTimestamp((String) node.get("createdAt"), DATE_FORMAT);
+        long mergedAtMillis = DateUtils.parseTimestamp((String) node.get("mergedAt"), DATE_FORMAT);
         long timeToMergeMillis = mergedAtMillis - createdAtMillis;
         totalTimeToMerge += timeToMergeMillis;
-        numberOfPullRequests++;
       }
 
-      long value = 0;
-      if (numberOfPullRequests != 0) {
-        double meanTimeToMergeMillis = (double) totalTimeToMerge / numberOfPullRequests;
-        value = (long) (meanTimeToMergeMillis / (60 * 60 * 1000));
-      }
+      double meanTimeToMergeMillis = (double) totalTimeToMerge / numberOfPullRequests;
+      long value = (long) (meanTimeToMergeMillis / (60 * 60 * 1000));
       dataPointData.putAll(constructDataPointInfo(inputValue, value, null));
     }
     return dataPointData;

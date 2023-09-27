@@ -1407,7 +1407,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
 
     PageResponse<SLOHealthListView> pageResponse =
         sloDashboardService.getSloHealthListView(builderFactory.getProjectParams(),
-            SLODashboardApiFilter.builder().compositeSLO(true).build(), PageParams.builder().page(0).size(10).build());
+            SLODashboardApiFilter.builder().type(ServiceLevelObjectiveType.COMPOSITE).build(),
+            PageParams.builder().page(0).size(10).build());
     assertThat(pageResponse.getPageItemCount()).isEqualTo(1);
     assertThat(pageResponse.getTotalItems()).isEqualTo(1);
     List<SLOHealthListView> sloDashboardWidgets = pageResponse.getContent();

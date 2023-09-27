@@ -142,6 +142,8 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
+import io.harness.secretusage.SecretRuntimeUsageService;
+import io.harness.secretusage.SecretRuntimeUsageServiceImpl;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
 
@@ -243,6 +245,7 @@ public class NGModule extends AbstractModule {
     bind(CDLicenseUsageReportService.class).to(CDLicenseUsageReportServiceImpl.class);
     bind(ManifestTaskService.class).to(ManifestTaskServiceImpl.class);
     bind(GithubRestraintInstanceService.class).to(GithubRestraintInstanceServiceImpl.class);
+    bind(SecretRuntimeUsageService.class).to(SecretRuntimeUsageServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

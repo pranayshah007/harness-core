@@ -115,7 +115,7 @@ public class NotificationRuleResource {
   @Timed
   @ExceptionMetered
   @Path("{identifier}")
-  @ApiOperation(value = "get notificationRule data", nickname = "getNotificationRuleData")
+  @ApiOperation(value = "get notificationRule data", nickname = "getNotificationRule")
   public RestResponse<NotificationRuleResponse> getNotificationRuleData(@BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") String identifier) {
     return new RestResponse<>(notificationRuleService.get(projectParams, identifier));
@@ -124,7 +124,7 @@ public class NotificationRuleResource {
   @GET
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get notificationRule data", nickname = "getNotificationRule")
+  @ApiOperation(value = "get notificationRule data", nickname = "getNotificationRuleData")
   public ResponseDTO<PageResponse<NotificationRuleResponse>> getNotificationRuleData(
       @BeanParam ProjectParams projectParams,
       @QueryParam("notificationRuleIdentifiers") List<String> notificationRuleIdentifiers,

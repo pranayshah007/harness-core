@@ -143,7 +143,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                 -> getSLOListView(projectParams, sloResponse, scopedMonitoredServiceIdentifierToDTOMap,
                     scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap,
                     monitoredServiceIdentifierToUnavailabilityStatusesDTOMap, scopedIdentifierToSLOErrorMap))
-            .filter(sloHealthListView -> sloHealthListView != null)
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
     return PageResponse.<SLOHealthListView>builder()

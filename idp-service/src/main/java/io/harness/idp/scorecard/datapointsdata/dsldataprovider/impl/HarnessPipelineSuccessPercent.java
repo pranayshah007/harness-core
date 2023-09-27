@@ -34,12 +34,17 @@ public class HarnessPipelineSuccessPercent implements DslDataProvider {
   PipelineSuccessPercentResponseFactory pipelineSuccessPercentResponseFactory;
 
   @Override
-  public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
+  public Map<String, Object> getDslData(String accountIdentifier, Object config) {
+    Map<String, Object> returnData = new HashMap<>();
+    if (!(config instanceof DataSourceDataPointInfo)) {
+      return returnData;
+    }
+
+    DataSourceDataPointInfo dataSourceDataPointInfo = (DataSourceDataPointInfo) config;
     log.info("HarnessPipelineSuccessPercent DSL invoked - for {} datapoints - {}", accountIdentifier,
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());
 
     String ciPipelineUrl = DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml());
-    Map<String, Object> returnData = new HashMap<>();
 
     Map<String, Object> errorMessageForMissingNewAnnotations =
         DslUtils.checkAndGetMissingNewAnnotationErrorMessage(ciPipelineUrl, true, null, false, dataSourceDataPointInfo);

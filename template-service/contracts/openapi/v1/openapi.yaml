@@ -700,6 +700,9 @@ components:
         connector_ref:
           type: string
           description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+        yaml_version:
+          type: string
+          description: Specifies the yaml version of the template
         stable_template:
           type: boolean
           description: True if this version is stable version of Template
@@ -825,6 +828,9 @@ components:
         connector_ref:
           type: string
           description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+        yaml_version:
+          type: string
+          description: Specifies the yaml version of the template
         stable_template:
           type: boolean
           description: True if this version is stable version of Template
@@ -1143,6 +1149,30 @@ components:
         template_yaml:
           type: string
           description: Yaml for updating existing Template
+        identifier:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          maxLength: 128
+          description: Template identifier
+        name:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+          maxLength: 128
+          description: Template name
+        label:
+          type: string
+          maxLength: 128
+          description: Template version label
+        description:
+          type: string
+          maxLength: 1024
+          description: Pipeline description
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Template tags
         git_details:
           $ref: '#/components/schemas/GitUpdateDetails'
         comments:
@@ -1196,6 +1226,30 @@ components:
         template_yaml:
           type: string
           description: Yaml for creating new Template
+        identifier:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          maxLength: 128
+          description: Template identifier
+        name:
+          type: string
+          pattern: '^[a-zA-Z_][0-9a-zA-Z-_ ]{0,127}$'
+          maxLength: 128
+          description: Template name
+        label:
+          type: string
+          maxLength: 128
+          description: Template version label
+        description:
+          type: string
+          maxLength: 1024
+          description: Pipeline description
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 128
+          description: Template tags
         git_details:
           $ref: '#/components/schemas/GitCreateDetails'
         is_stable:

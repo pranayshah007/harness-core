@@ -9,11 +9,15 @@ package io.harness.idp.gitintegration.processor.impl;
 
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_PROXY;
 import static io.harness.rule.OwnerRule.DEVESH;
+import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,11 +32,13 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.delegate.task.scm.ScmPushTaskResponseData;
@@ -55,7 +61,11 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
-import io.harness.spec.server.idp.v1.model.*;
+import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
+import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
+import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.io.IOException;
@@ -67,7 +77,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -85,6 +100,8 @@ public class GithubConnectorProcessorTest {
 
   private static final String ACCOUNT_IDENTIFIER = "test-secret-identifier";
   private static final String USER_NAME = "test-username";
+  private static final String INSTALLATION_ID = "test-installationId";
+  private static final String APPLICATION_ID = "test-applicationId";
   private static final String EMAIL = "test-email@gmail.com";
   private static final String URL = "https://test-url";
   private static final String CONNECTOR_NAME = "test-connector-name";
@@ -106,7 +123,8 @@ public class GithubConnectorProcessorTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetConnectorSecretsInfoForInvalidType() {
-    ConnectorDTO connectorDTO = getGithubConnectorDTO(false, false, true, true, true);
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(false, false, true, true, true, GithubHttpAuthenticationType.USERNAME_AND_PASSWORD);
     githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, connectorDTO.getConnectorInfo());
   }
 
@@ -114,7 +132,8 @@ public class GithubConnectorProcessorTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetConnectorSecretsInfoForSSHAuth() {
-    ConnectorDTO connectorDTO = getGithubConnectorDTO(false, true, false, true, true);
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(false, true, false, true, true, GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
     githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, connectorDTO.getConnectorInfo());
   }
 
@@ -122,7 +141,8 @@ public class GithubConnectorProcessorTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetConnectorSecretsInfoForInvalidAuthType() {
-    ConnectorDTO connectorDTO = getGithubConnectorDTO(false, true, true, false, true);
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(false, true, true, false, true, GithubHttpAuthenticationType.USERNAME_AND_PASSWORD);
     githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, connectorDTO.getConnectorInfo());
   }
 
@@ -130,7 +150,8 @@ public class GithubConnectorProcessorTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetConnectorSecretsInfoForInvalidIdentifier() {
-    ConnectorDTO connectorDTO = getGithubConnectorDTO(false, true, true, true, false);
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(false, true, true, true, false, GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
     githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, connectorDTO.getConnectorInfo());
   }
 
@@ -138,9 +159,38 @@ public class GithubConnectorProcessorTest {
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
   public void testGetSecretsInfoForGithubUsernameAndTokenAuthHttpConnection() {
-    ConnectorDTO connectorDTO = getGithubConnectorDTO(false, true, true, true, true);
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(false, true, true, true, true, GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
 
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    MockedStatic<NGRestUtils> mockRestStatic = mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.of(connectorDTO));
+    DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder()
+                                                    .decryptedValue(DECRYPTED_SECRET_VALUE)
+                                                    .identifier(TOKEN_SECRET_IDENTIFIER)
+                                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                    .orgIdentifier(null)
+                                                    .projectIdentifier(null)
+                                                    .build();
+    when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, TOKEN_SECRET_IDENTIFIER))
+        .thenReturn(decryptedSecretValue);
+
+    Map<String, BackstageEnvVariable> response =
+        githubConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, connectorDTO.getConnectorInfo());
+
+    assertEquals(TOKEN_SECRET_IDENTIFIER,
+        ((BackstageEnvSecretVariable) response.get(Constants.GITHUB_TOKEN)).getHarnessSecretIdentifier());
+    assertEquals(Constants.GITHUB_TOKEN, response.get(Constants.GITHUB_TOKEN).getEnvName());
+    mockRestStatic.close();
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testGetSecretsInfoForGithubGithubAppAuthHttpConnection() {
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(true, true, true, true, true, GithubHttpAuthenticationType.GITHUB_APP);
+
+    MockedStatic<NGRestUtils> mockRestStatic = mockStatic(NGRestUtils.class);
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.of(connectorDTO));
     DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder()
                                                     .decryptedValue(DECRYPTED_SECRET_VALUE)
@@ -165,9 +215,10 @@ public class GithubConnectorProcessorTest {
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
   public void testGetSecretsInfoForGithubUsernameAndTokenAuthWithGithubAppWithHttpConnection() {
-    ConnectorDTO connectorDTO = getGithubConnectorDTO(true, true, true, true, true);
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(true, true, true, true, true, GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
 
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    MockedStatic<NGRestUtils> mockRestStatic = mockStatic(NGRestUtils.class);
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.of(connectorDTO));
     DecryptedSecretValue decryptedSecretValueToken = DecryptedSecretValue.builder()
                                                          .decryptedValue(DECRYPTED_SECRET_VALUE)
@@ -205,7 +256,9 @@ public class GithubConnectorProcessorTest {
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
   public void testCreateOrUpdateIntegrationConfigForGithubUsernameAndTokenAuthHttpConnection() {
-    ConnectorInfoDTO connectorInfoDTO = getGithubConnectorDTO(false, true, true, true, true).getConnectorInfo();
+    ConnectorInfoDTO connectorInfoDTO =
+        getGithubConnectorDTO(false, true, true, true, true, GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+            .getConnectorInfo();
     doNothing().when(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
     MockedStatic<ConfigManagerUtils> mockRestUtilsConfigManagerUtils = mockStatic(ConfigManagerUtils.class);
     MockedStatic<GitIntegrationUtils> mockRestUtilsGitIntegrationUtils = mockStatic(GitIntegrationUtils.class);
@@ -222,7 +275,9 @@ public class GithubConnectorProcessorTest {
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
   public void testCreateOrUpdateIntegrationConfigForUsernameAndTokenAuthWithGithubAppWithHttpConnection() {
-    ConnectorInfoDTO connectorInfoDTO = getGithubConnectorDTO(true, true, true, true, true).getConnectorInfo();
+    ConnectorInfoDTO connectorInfoDTO =
+        getGithubConnectorDTO(true, true, true, true, true, GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+            .getConnectorInfo();
     doNothing().when(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
     MockedStatic<ConfigManagerUtils> mockRestUtilsConfigManagerUtils = mockStatic(ConfigManagerUtils.class);
     MockedStatic<GitIntegrationUtils> mockRestUtilsGitIntegrationUtils = mockStatic(GitIntegrationUtils.class);
@@ -262,9 +317,10 @@ public class GithubConnectorProcessorTest {
   @Category(UnitTests.class)
   public void testPerformPushOperation() {
     CatalogConnectorInfo catalogConnectorInfo = getCatalogConnectorInfo();
-    ConnectorDTO connectorDTO = getGithubConnectorDTO(true, true, true, true, true);
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(true, true, true, true, true, GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
 
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    MockedStatic<NGRestUtils> mockRestStatic = mockStatic(NGRestUtils.class);
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.of(connectorDTO));
     DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder()
                                                     .decryptedValue(DECRYPTED_SECRET_VALUE)
@@ -273,7 +329,7 @@ public class GithubConnectorProcessorTest {
                                                     .orgIdentifier(null)
                                                     .projectIdentifier(null)
                                                     .build();
-    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
+    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = mockStatic(ConfigManagerUtils.class);
     mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
         .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(any(), any(), any(), any())).thenReturn(decryptedSecretValue);
@@ -281,7 +337,54 @@ public class GithubConnectorProcessorTest {
         mockStatic(SourcePrincipalContextBuilder.class);
     mockedStaticContextBuilder.when(SourcePrincipalContextBuilder::getSourcePrincipal)
         .thenReturn(new UserPrincipal(USER_NAME, EMAIL, USER_NAME, ACCOUNT_IDENTIFIER));
-    MockedStatic<Files> mockedStaticFile = Mockito.mockStatic(Files.class);
+    MockedStatic<Files> mockedStaticFile = mockStatic(Files.class);
+    mockedStaticFile.when(() -> Files.readString(any())).thenReturn("sample content");
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(List.of(EncryptedDataDetail.builder().build()));
+    ListRemoteResult listRemoteResult =
+        ListRemoteResult.builder().remoteList(Map.of("refs/heads/develop", "develop")).build();
+    CreateFileResponse createFileResponse = CreateFileResponse.newBuilder().setStatus(200).build();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(GitCommandExecutionResponse.builder().gitCommandResult(listRemoteResult).build())
+        .thenReturn(ScmPushTaskResponseData.builder().createFileResponse(createFileResponse.toByteArray()).build());
+
+    githubConnectorProcessor.performPushOperation(
+        ACCOUNT_IDENTIFIER, catalogConnectorInfo, "", List.of("catalog-info.yaml"), true);
+    verify(ngSecretService).getDecryptedSecretValue(any(), any(), any(), stringCaptor.capture());
+    assertEquals(TOKEN_SECRET_IDENTIFIER, stringCaptor.getValue());
+
+    mockRestStatic.close();
+    mockedStaticConfigManagerUtils.close();
+    mockedStaticContextBuilder.close();
+    mockedStaticFile.close();
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testPerformPushOperationGithubAppAuth() {
+    CatalogConnectorInfo catalogConnectorInfo = getCatalogConnectorInfo();
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(true, true, true, true, true, GithubHttpAuthenticationType.GITHUB_APP);
+
+    MockedStatic<NGRestUtils> mockRestStatic = mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.of(connectorDTO));
+    DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder()
+                                                    .decryptedValue(DECRYPTED_SECRET_VALUE)
+                                                    .identifier(TOKEN_SECRET_IDENTIFIER)
+                                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                    .orgIdentifier(null)
+                                                    .projectIdentifier(null)
+                                                    .build();
+    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = mockStatic(ConfigManagerUtils.class);
+    mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
+        .thenReturn("");
+    when(ngSecretService.getDecryptedSecretValue(any(), any(), any(), any())).thenReturn(decryptedSecretValue);
+    MockedStatic<SourcePrincipalContextBuilder> mockedStaticContextBuilder =
+        mockStatic(SourcePrincipalContextBuilder.class);
+    mockedStaticContextBuilder.when(SourcePrincipalContextBuilder::getSourcePrincipal)
+        .thenReturn(new UserPrincipal(USER_NAME, EMAIL, USER_NAME, ACCOUNT_IDENTIFIER));
+    MockedStatic<Files> mockedStaticFile = mockStatic(Files.class);
     mockedStaticFile.when(() -> Files.readString(any())).thenReturn("sample content");
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(List.of(EncryptedDataDetail.builder().build()));
@@ -308,9 +411,10 @@ public class GithubConnectorProcessorTest {
   @Category(UnitTests.class)
   public void testPerformPushOperationThrowsException() {
     CatalogConnectorInfo catalogConnectorInfo = getCatalogConnectorInfo();
-    ConnectorDTO connectorDTO = getGithubConnectorDTO(true, true, true, true, true);
+    ConnectorDTO connectorDTO =
+        getGithubConnectorDTO(true, true, true, true, true, GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
 
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    MockedStatic<NGRestUtils> mockRestStatic = mockStatic(NGRestUtils.class);
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.of(connectorDTO));
     DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder()
                                                     .decryptedValue(DECRYPTED_SECRET_VALUE)
@@ -319,7 +423,7 @@ public class GithubConnectorProcessorTest {
                                                     .orgIdentifier(null)
                                                     .projectIdentifier(null)
                                                     .build();
-    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
+    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = mockStatic(ConfigManagerUtils.class);
     mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
         .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(any(), any(), any(), any())).thenReturn(decryptedSecretValue);
@@ -327,7 +431,7 @@ public class GithubConnectorProcessorTest {
         mockStatic(SourcePrincipalContextBuilder.class);
     mockedStaticContextBuilder.when(SourcePrincipalContextBuilder::getSourcePrincipal)
         .thenReturn(new UserPrincipal(USER_NAME, EMAIL, USER_NAME, ACCOUNT_IDENTIFIER));
-    MockedStatic<Files> mockedStaticFile = Mockito.mockStatic(Files.class);
+    MockedStatic<Files> mockedStaticFile = mockStatic(Files.class);
     mockedStaticFile.when(() -> Files.readString(any())).thenReturn("sample content");
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(List.of(EncryptedDataDetail.builder().build()));
@@ -371,8 +475,8 @@ public class GithubConnectorProcessorTest {
     openMocks.close();
   }
 
-  private ConnectorDTO getGithubConnectorDTO(
-      boolean isGithubApp, boolean validType, boolean isHttpAuth, boolean validAuthType, boolean validIdentifier) {
+  private ConnectorDTO getGithubConnectorDTO(boolean isGithubApp, boolean validType, boolean isHttpAuth,
+      boolean validAuthType, boolean validIdentifier, GithubHttpAuthenticationType githubHttpAuthenticationType) {
     SecretRefData secretRefData =
         SecretRefData.builder().identifier(validIdentifier ? TOKEN_SECRET_IDENTIFIER : "").build();
     SecretRefData secretRefDataGithubAppPrivateKeyRef =
@@ -384,13 +488,21 @@ public class GithubConnectorProcessorTest {
                                             .build();
     GithubApiAccessDTO githubApiAccessDTO =
         GithubApiAccessDTO.builder().type(GithubApiAccessType.GITHUB_APP).spec(githubAppSpecDTO).build();
-    GithubUsernameTokenDTO githubUsernameTokenDTO =
-        GithubUsernameTokenDTO.builder().tokenRef(secretRefData).username(USER_NAME).usernameRef(null).build();
+    GithubHttpCredentialsSpecDTO githubHttpCredentialsSpecDTO = null;
+    if (githubHttpAuthenticationType.equals(GithubHttpAuthenticationType.USERNAME_AND_TOKEN)) {
+      githubHttpCredentialsSpecDTO =
+          GithubUsernameTokenDTO.builder().tokenRef(secretRefData).username(USER_NAME).usernameRef(null).build();
+    } else if (githubHttpAuthenticationType.equals(GithubHttpAuthenticationType.GITHUB_APP)) {
+      githubHttpCredentialsSpecDTO = GithubAppDTO.builder()
+                                         .installationId(INSTALLATION_ID)
+                                         .applicationId(APPLICATION_ID)
+                                         .privateKeyRef(secretRefData)
+                                         .build();
+    }
     GithubHttpCredentialsDTO githubHttpCredentialsDTO =
         GithubHttpCredentialsDTO.builder()
-            .type(validAuthType ? GithubHttpAuthenticationType.USERNAME_AND_TOKEN
-                                : GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
-            .httpCredentialsSpec(githubUsernameTokenDTO)
+            .type(validAuthType ? githubHttpAuthenticationType : GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
+            .httpCredentialsSpec(githubHttpCredentialsSpecDTO)
             .build();
     GithubAuthenticationDTO githubAuthenticationDTO = GithubAuthenticationDTO.builder()
                                                           .authType(isHttpAuth ? GitAuthType.HTTP : GitAuthType.SSH)

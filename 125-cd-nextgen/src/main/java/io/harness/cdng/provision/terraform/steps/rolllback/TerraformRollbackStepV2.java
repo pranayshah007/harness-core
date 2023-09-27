@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.terraform.steps.rolllback;
 
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
+
 import static java.lang.String.format;
 
 import io.harness.account.services.AccountService;
@@ -207,7 +209,9 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
         .environmentVariables(rollbackConfig.getEnvironmentVariables() == null
                 ? new HashMap<>()
                 : rollbackConfig.getEnvironmentVariables())
-        .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+        .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+        .skipColorLogs(
+            cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TF_TG_SKIP_ERROR_LOGS_COLORING));
 
     ParameterField<Boolean> skipTerraformRefreshCommandParameter = stepParametersSpec.getSkipRefreshCommand();
 

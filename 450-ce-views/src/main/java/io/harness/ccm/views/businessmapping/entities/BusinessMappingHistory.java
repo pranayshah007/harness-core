@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -19,6 +21,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
@@ -39,6 +42,27 @@ import org.hibernate.validator.constraints.NotBlank;
 @OwnedBy(CE)
 public final class BusinessMappingHistory
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_startAt")
+                 .field(BusinessMappingHistoryKeys.accountId)
+                 .field(BusinessMappingHistoryKeys.startAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_endAt_startAt")
+                 .field(BusinessMappingHistoryKeys.accountId)
+                 .field(BusinessMappingHistoryKeys.endAt)
+                 .field(BusinessMappingHistoryKeys.startAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_businessMappingId_endAt")
+                 .field(BusinessMappingHistoryKeys.accountId)
+                 .field(BusinessMappingHistoryKeys.businessMappingId)
+                 .field(BusinessMappingHistoryKeys.endAt)
+                 .build())
+        .build();
+  }
   @Id String uuid;
   String businessMappingId;
   // We consider a businessMappingHistory for duration in range [startAt, endAt)

@@ -20,7 +20,7 @@ public class PagerDutyDataPointParserFactory implements DataPointParserFactory {
   private PagerDutyOnCallSetParser pagerDutyOnCallSetParser;
   private PagerDutyIsEscalationPolicySetParser pagerDutyIsEscalationPolicySetParser;
   private PagerDutyNoOfIncidentsInLastThirtyDaysParser pagerDutyNoOfIncidentsInLastThirtyDaysParser;
-  private PagerDutyAvgAcknowledgementTimeForLastTenIncidents pagerDutyAvgAcknowledgementTimeForLastTenIncidents;
+  private PagerDutyAvgResolvedTimeForLastTenResolvedIncidents pagerDutyAvgResolvedTimeForLastTenResolvedIncidents;
 
   public DataPointParser getParser(String identifier) {
     switch (identifier) {
@@ -30,8 +30,8 @@ public class PagerDutyDataPointParserFactory implements DataPointParserFactory {
         return pagerDutyIsEscalationPolicySetParser;
       case NO_OF_INCIDENTS_IN_LAST_THIRTY_DAYS:
         return pagerDutyNoOfIncidentsInLastThirtyDaysParser;
-      case AVG_ACKNOWLEDGEMENT_TIME_FOR_LAST_TEN_INCIDENTS_IN_MINUTES:
-        return pagerDutyAvgAcknowledgementTimeForLastTenIncidents;
+      case AVG_RESOLVED_TIME_FOR_LAST_TEN_RESOLVED_INCIDENTS_IN_MINUTES:
+        return pagerDutyAvgResolvedTimeForLastTenResolvedIncidents;
 
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataPoint parser for %s", identifier));

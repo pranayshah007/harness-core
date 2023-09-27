@@ -7,6 +7,8 @@
 
 package io.harness.ci.execution.states;
 
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
@@ -285,8 +287,17 @@ public class DockerStepTest extends CIExecutionTestBase {
   }
 
   private BuildMetadata getBuildMetadata(DockerStepInfo stepInfo) {
-    BuildMetadata buildMetadata = new BuildMetadata(stepInfo.getRepo(), stepInfo.getBuildArgs(), stepInfo.getContext(),
-        stepInfo.getDockerfile(), stepInfo.getLabels());
+    String repo = resolveStringParameter(
+        "repo", "BuildAndPushDockerRegistry", stepInfo.getIdentifier(), stepInfo.getRepo(), true);
+    Map<String, String> buildArgs = resolveMapParameter(
+        "buildArgs", "BuildAndPushDockerRegistry", stepInfo.getIdentifier(), stepInfo.getBuildArgs(), false);
+    String context = resolveStringParameter(
+        "context", "BuildAndPushDockerRegistry", stepInfo.getIdentifier(), stepInfo.getContext(), false);
+    String dockerFile = resolveStringParameter(
+        "dockerfile", "BuildAndPushDockerRegistry", stepInfo.getIdentifier(), stepInfo.getDockerfile(), false);
+    Map<String, String> labels = resolveMapParameter(
+        "labels", "BuildAndPushDockerRegistry", stepInfo.getIdentifier(), stepInfo.getLabels(), false);
+    BuildMetadata buildMetadata = new BuildMetadata(repo, buildArgs, context, dockerFile, labels);
     return buildMetadata;
   }
 

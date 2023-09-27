@@ -11,11 +11,15 @@ import static io.harness.idp.common.Constants.HARNESS_POLICY_EVALUATION_DSL;
 import static io.harness.idp.common.Constants.HARNESS_STO_SCAN_SETUP_DSL;
 import static io.harness.idp.common.Constants.HARNESS_TEST_PASSING_ON_CI_IS_ZERO;
 import static io.harness.idp.common.Constants.PAGERDUTY_INCIDENTS;
+import static io.harness.idp.common.Constants.PAGERDUTY_RESOLVED_INCIDENTS;
 import static io.harness.idp.common.Constants.PAGERDUTY_SERVICE_DIRECTORY;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_IS_BRANCH_PROTECTION_SET;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BITBUCKET_MEAN_TIME_TO_MERGE_PR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.CATALOG;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_MERGE_PR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.KUBERNETES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,10 +33,13 @@ public class DataSourceLocationFactory {
   private GithubMeanTimeToMergePRDsl githubMeanTimeToMergePRDsl;
   private GithubIsBranchProtectionSetDsl githubIsBranchProtectionSetDsl;
   private GithubFileExistsDsl githubFileExistsDsl;
+  private BitbucketMeanTimeToMergePRDsl bitbucketMeanTimeToMergePRDsl;
+  private BitbucketIsBranchProtectionSetDsl bitbucketIsBranchProtectionSetDsl;
   private HarnessProxyThroughDsl harnessProxyThroughDsl;
   private NoOpDsl noOpDsl;
   private PagerDutyServiceDirectory pagerDutyServiceDirectory;
   private PagerDutyIncidents pagerDutyIncidents;
+  private KubernetesProxyThroughDsl kubernetesProxyThroughDsl;
 
   public DataSourceLocation getDataSourceLocation(String identifier) {
     switch (identifier) {
@@ -43,6 +50,12 @@ public class DataSourceLocationFactory {
         return githubIsBranchProtectionSetDsl;
       case GITHUB_FILE_EXISTS:
         return githubFileExistsDsl;
+
+      // Bitbucket
+      case BITBUCKET_MEAN_TIME_TO_MERGE_PR:
+        return bitbucketMeanTimeToMergePRDsl;
+      case BITBUCKET_IS_BRANCH_PROTECTION_SET:
+        return bitbucketIsBranchProtectionSetDsl;
 
         // Harness
       case HARNESS_STO_SCAN_SETUP_DSL:
@@ -59,7 +72,12 @@ public class DataSourceLocationFactory {
       case PAGERDUTY_SERVICE_DIRECTORY:
         return pagerDutyServiceDirectory;
       case PAGERDUTY_INCIDENTS:
+      case PAGERDUTY_RESOLVED_INCIDENTS:
         return pagerDutyIncidents;
+
+      // Kubernetes
+      case KUBERNETES:
+        return kubernetesProxyThroughDsl;
 
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataSource Location for %s", identifier));

@@ -106,6 +106,7 @@ public class AccountChangeHandlerTest extends WingsBaseTest {
     FieldUtils.writeField(accountChangeHandler, "accountService", accountService, true);
     FieldUtils.writeField(accountChangeHandler, "salesforceApiCheck", salesforceApiCheck, true);
     FieldUtils.writeField(accountChangeHandler, "utils", utils, true);
+    FieldUtils.writeField(accountChangeHandler, "featureFlagService", featureFlagService, true);
 
     when(accountService.get(anyString())).thenReturn(account);
     when(accountService.getAccountStatus(anyString())).thenReturn(AccountStatus.ACTIVE);

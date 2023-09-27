@@ -47,8 +47,13 @@ public class HarnessTestPassingInCi implements DslDataProvider {
   @Inject @Named("tiServiceConfig") TIServiceConfig tiServiceConfig;
 
   @Override
-  public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
+  public Map<String, Object> getDslData(String accountIdentifier, Object config) {
     Map<String, Object> returnData = new HashMap<>();
+    if (!(config instanceof DataSourceDataPointInfo)) {
+      return returnData;
+    }
+
+    DataSourceDataPointInfo dataSourceDataPointInfo = (DataSourceDataPointInfo) config;
 
     log.info("HarnessTestPassingInCi DSL invoked for account - {} datapoints - {}", accountIdentifier,
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());

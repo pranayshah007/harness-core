@@ -210,11 +210,43 @@ public class ApplicationResource {
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class SyncPolicy {
     @JsonProperty("automated") public Automated automated;
+    @JsonProperty("managedNamespaceMetadata") public ManagedNamespaceMetadata managedNamespaceMetadata;
+    @JsonProperty("retry") public Retry retry;
+    @JsonProperty("syncOptions") public List<String> syncOptions;
+  }
 
-    @Data
-    @Builder
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Automated {}
+  @Data
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Automated {
+    @JsonProperty("allowEmpty") public boolean allowEmpty;
+    @JsonProperty("prune") public boolean prune;
+    @JsonProperty("selfHeal") public boolean selfHeal;
+  }
+
+  @Data
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class ManagedNamespaceMetadata {
+    @JsonProperty("annotations") public Object annotations;
+    @JsonProperty("labels") public Object labels;
+  }
+
+  @Data
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Retry {
+    @JsonProperty("backoff") public BackOff backoff;
+    @JsonProperty("limit") public Integer limit;
+  }
+
+  @Data
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class BackOff {
+    @JsonProperty("duration") public String duration;
+    @JsonProperty("factor") public Integer factor;
+    @JsonProperty("maxDuration") public String maxDuration;
   }
 
   @Data

@@ -30,6 +30,7 @@ import io.harness.engine.interrupts.helpers.ExpiryHelper;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.InterruptKeys;
 import io.harness.iterator.PersistenceIteratorFactory;
@@ -44,6 +45,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -114,7 +116,8 @@ public class InterruptMonitor implements Handler<Interrupt> {
       // The null check is for really old plans which are cleared by mongo
       PlanExecution planExecution = null;
       try {
-        planExecution = planExecutionService.getPlanExecutionMetadata(interrupt.getPlanExecutionId());
+        planExecution = planExecutionService.getWithFieldsIncluded(
+            interrupt.getPlanExecutionId(), Sets.newHashSet(PlanExecutionKeys.status));
       } catch (Exception ex) {
         // Just ignoring this exception this happens again for old executions where the plan execution have been removed
         // from database

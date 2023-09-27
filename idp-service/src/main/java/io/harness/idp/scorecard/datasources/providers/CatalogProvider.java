@@ -17,6 +17,8 @@ import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -34,7 +36,8 @@ public class CatalogProvider extends DataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs) {
+      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      throws NoSuchAlgorithmException, KeyManagementException {
     return processOut(accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier, null),
         Collections.emptyMap(), Collections.emptyMap());
   }

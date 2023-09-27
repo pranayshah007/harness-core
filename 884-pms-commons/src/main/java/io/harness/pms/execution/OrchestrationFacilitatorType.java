@@ -9,7 +9,10 @@ package io.harness.pms.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -17,6 +20,7 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
 @UtilityClass
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = HarnessModuleComponent.CDS_PIPELINE)
 public class OrchestrationFacilitatorType {
   // Provided From the orchestration layer system facilitators
   public static final String SYNC = "SYNC";

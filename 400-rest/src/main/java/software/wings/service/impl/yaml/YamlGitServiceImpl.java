@@ -6,8 +6,6 @@
  */
 
 package software.wings.service.impl.yaml;
-
-import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
@@ -1395,9 +1393,7 @@ public class YamlGitServiceImpl implements YamlGitService {
       fullSync(accountId, accountId, EntityType.ACCOUNT, false);
 
       FindOptions findOptions = new FindOptions();
-      if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-        findOptions.readPreference(ReadPreference.secondaryPreferred());
-      }
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<Application> apps = new HIterator<>(wingsPersistence.createQuery(Application.class)
                                                              .filter(ApplicationKeys.accountId, accountId)

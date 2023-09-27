@@ -25,6 +25,8 @@ import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookCriteriaDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.entity.Author;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
@@ -68,6 +70,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
       }
       GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhook.getIdentifier());
       GitXWebhookEvent createdGitXWebhookEvent = gitXWebhookEventsRepository.create(gitXWebhookEvent);
+      updateGitXWebhook(gitXWebhook, webhookDTO.getTime());
       log.info(
           String.format("Successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
     } catch (DuplicateKeyException ex) {
@@ -171,5 +174,13 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
 
   private Author buildAuthor(WebhookDTO webhookDTO) {
     return Author.builder().name(webhookDTO.getParsedResponse().getPush().getCommit().getAuthor().getName()).build();
+  }
+
+  private void updateGitXWebhook(GitXWebhook gitXWebhook, long triggerEventTime) {
+    gitXWebhookService.updateGitXWebhook(UpdateGitXWebhookCriteriaDTO.builder()
+                                             .accountIdentifier(gitXWebhook.getAccountIdentifier())
+                                             .webhookIdentifier(gitXWebhook.getIdentifier())
+                                             .build(),
+        UpdateGitXWebhookRequestDTO.builder().lastEventTriggerTime(triggerEventTime).build());
   }
 }

@@ -29,6 +29,8 @@ import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocat
 import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +58,8 @@ public class GithubProvider extends DataSourceProvider {
 
   @Override
   public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      Map<String, Set<String>> dataPointsAndInputValues, String configs) {
+      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      throws NoSuchAlgorithmException, KeyManagementException {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, null);
     Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
 
@@ -92,7 +95,9 @@ public class GithubProvider extends DataSourceProvider {
       possibleReplaceableRequestBodyPairs.put(REPO_SCM, catalogLocationParts[2]);
       possibleReplaceableRequestBodyPairs.put(REPOSITORY_OWNER, catalogLocationParts[3]);
       possibleReplaceableRequestBodyPairs.put(REPOSITORY_NAME, catalogLocationParts[4]);
-      possibleReplaceableRequestBodyPairs.put(REPOSITORY_BRANCH, catalogLocationParts[6]);
+      if (catalogLocationParts.length > 6) {
+        possibleReplaceableRequestBodyPairs.put(REPOSITORY_BRANCH, catalogLocationParts[6]);
+      }
     } catch (ArrayIndexOutOfBoundsException e) {
       log.error("Error occurred while reading source location annotation ", e);
     }

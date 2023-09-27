@@ -16,9 +16,11 @@ import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.service.PMSYamlSchemaServiceImpl;
 import io.harness.spec.server.pipeline.v1.SchemasApi;
 import io.harness.spec.server.pipeline.v1.model.IndividualSchemaResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineInputsSchemaRequestBody;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
+import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -40,5 +42,10 @@ public class SchemasApiImpl implements SchemasApi {
     IndividualSchemaResponseBody responseBody = new IndividualSchemaResponseBody();
     responseBody.setData(schema);
     return Response.ok().entity(responseBody).build();
+  }
+
+  @Override
+  public Response getInputsSchema(@Valid PipelineInputsSchemaRequestBody body, String harnessAccount) {
+    return null;
   }
 }

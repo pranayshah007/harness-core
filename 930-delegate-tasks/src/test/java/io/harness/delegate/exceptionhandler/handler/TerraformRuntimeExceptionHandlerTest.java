@@ -62,7 +62,10 @@ public class TerraformRuntimeExceptionHandlerTest {
       "[31m \u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mFailed to install provider\u001B[0m  \u001B[0mError while installing hashicorp/null v3.1.0: mkdir .terraform: no such file or directory \u001B[0m\u001B[0m";
 
   private static final String TEST_ERROR_ASKING_FOR_STATE_MIGRATION =
-      "[31m \u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mFailed to install provider\u001B[0m  \u001B[0merror asking for state migration \u001B[0m\u001B[0m";
+      "[31m \u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mInitializing the backend\u001B[0m  \u001B[0merror asking for state migration \u001B[0m\u001B[0m";
+
+  private static final String TEST_ERROR_ASKING_FOR_STATE_MIGRATION2 =
+      "[31m\u001B[31m╷\u001B[0m\u001B[0m \u001B[31m│\u001B[0m \u001B[0m\u001B[1m\u001B[31mError: \u001B[0m\u001B[0m\u001B[1mCan't ask approval for state migration when interactive input is disabled. \u001B[31m│\u001B[0m \u001B[0m \u001B[31m│\u001B[0m \u001B[0mPlease remove the \"-input=false\" option and try again.\u001B[0m \u001B[31m│\u001B[0m \u001B[0m \u001B[31m│\u001B[0m \u001B[0m\u001B[0m \u001B[31m╵\u001B[0m\u001B[0m \u001B[0m\u001B[0m";
   private static final String TEST_LONG_UNKNOWN_ERROR = StringUtils.repeat("Errr", 156);
 
   TerraformRuntimeExceptionHandler handler = new TerraformRuntimeExceptionHandler();
@@ -144,7 +147,18 @@ public class TerraformRuntimeExceptionHandlerTest {
     TerraformCliRuntimeException cliRuntimeException =
         new TerraformCliRuntimeException("Terraform failed", "terraform init", TEST_ERROR_ASKING_FOR_STATE_MIGRATION);
     assertSingleErrorMessage(handler.handleException(cliRuntimeException), HINT_ERROR_ASKING_FOR_STATE_MIGRATION,
-        EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION, "terraform init failed with: Failed to install provider");
+        EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION, "terraform init failed with: Initializing the backend");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFailedWithStateMigrationError2() {
+    TerraformCliRuntimeException cliRuntimeException =
+        new TerraformCliRuntimeException("Terraform failed", "terraform init", TEST_ERROR_ASKING_FOR_STATE_MIGRATION2);
+    assertSingleErrorMessage(handler.handleException(cliRuntimeException), HINT_ERROR_ASKING_FOR_STATE_MIGRATION,
+        EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION,
+        "terraform init failed with: Can't ask approval for state migration when interactive input is disabled.");
   }
 
   @Test

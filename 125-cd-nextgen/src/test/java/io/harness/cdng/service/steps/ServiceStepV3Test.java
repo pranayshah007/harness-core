@@ -123,6 +123,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -150,6 +151,7 @@ public class ServiceStepV3Test extends CategoryTest {
   @Mock private NGSettingsClient ngSettingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Spy @InjectMocks private ServiceStepV3Helper serviceStepV3Helper;
 
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();

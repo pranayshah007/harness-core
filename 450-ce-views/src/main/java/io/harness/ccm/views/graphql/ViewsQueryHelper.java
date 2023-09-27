@@ -495,7 +495,7 @@ public class ViewsQueryHelper {
     return selectedCostTargets;
   }
 
-  public List<String> getSelectedCostTargetsFromViewRules(List<ViewRule> viewRules, String businessMappingId) {
+  public static List<String> getSelectedCostTargetsFromViewRules(List<ViewRule> viewRules, String businessMappingId) {
     List<String> selectedCostTargets = new ArrayList<>();
     for (ViewRule rule : viewRules) {
       List<String> selectedTargetsFromRule = new ArrayList<>();
@@ -523,14 +523,14 @@ public class ViewsQueryHelper {
     return timeGroupBy.orElse(null);
   }
 
-  public List<String> union(List<String> list1, List<String> list2) {
+  public static List<String> union(List<String> list1, List<String> list2) {
     Set<String> set = new HashSet<>();
     set.addAll(list1);
     set.addAll(list2);
     return new ArrayList<>(set);
   }
 
-  public List<String> intersection(List<String> list1, List<String> list2) {
+  public static List<String> intersection(List<String> list1, List<String> list2) {
     if (list1.isEmpty()) {
       return list2;
     } else if (list2.isEmpty()) {

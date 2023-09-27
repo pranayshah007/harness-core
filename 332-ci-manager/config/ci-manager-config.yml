@@ -160,20 +160,20 @@ ciExecutionServiceConfig:
     freeBasicUser:
       dailyMaxBuildsCount: 25
     free:
-      defaultTotalExecutionCount: 20
-      defaultMacExecutionCount: 5
+      defaultTotalExecutionCount: 21
+      defaultMacExecutionCount: 1
     team:
-      defaultTotalExecutionCount: 50
-      defaultMacExecutionCount: 10
+      defaultTotalExecutionCount: 45
+      defaultMacExecutionCount: 5
     enterprise:
-      defaultTotalExecutionCount: 100
-      defaultMacExecutionCount: 10
+      defaultTotalExecutionCount: 65
+      defaultMacExecutionCount: 5
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.24
-  liteEngineImage: harness/ci-lite-engine:1.16.24
+  addonImage: harness/ci-addon:1.16.25
+  liteEngineImage: harness/ci-lite-engine:1.16.25
   isLocal: false
   remoteDebugTimeout: 3600
   tmateEndpoint: ${TMATE_ENDPOINT:-"ssh.harness.io"}
@@ -353,6 +353,10 @@ ciExecutionServiceConfig:
       entrypoint:
         - /bin/ssca-plugin
     provenanceConfig:
+      image: harness/slsa-plugin:latest
+      entrypoint:
+        - /bin/slsa-plugin
+    provenanceGcrConfig:
       image: harness/slsa-plugin:latest
       entrypoint:
         - /bin/slsa-plugin

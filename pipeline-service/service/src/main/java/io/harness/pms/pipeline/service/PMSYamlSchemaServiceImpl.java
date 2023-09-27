@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.beans.FeatureName.PIE_STATIC_YAML_SCHEMA;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.APPROVAL_NAMESPACE;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.PARALLEL_STEP_ELEMENT_CONFIG;
@@ -45,21 +46,24 @@ import io.harness.manage.ManagedExecutorService;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
-import io.harness.pms.yaml.individualschema.PipelineSchemaMetadata;
-import io.harness.pms.yaml.individualschema.PipelineSchemaParserFactory;
-import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
 import io.harness.utils.PmsFeatureFlagService;
+import io.harness.yaml.individualschema.PipelineSchemaMetadata;
+import io.harness.yaml.individualschema.PipelineSchemaParserFactory;
+import io.harness.yaml.individualschema.PipelineSchemaRequest;
+import io.harness.yaml.individualschema.SchemaParserInterface;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
+import io.harness.yaml.schema.inputs.InputsSchemaServiceImpl;
+import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.utils.YamlSchemaUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
@@ -92,6 +96,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -113,6 +118,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final PmsYamlSchemaHelper pmsYamlSchemaHelper;
   private final SchemaFetcher schemaFetcher;
   private final PmsFeatureFlagService pmsFeatureFlagService;
+  private final PMSPipelineService pmsPipelineService;
+  private final InputsSchemaServiceImpl inputsSchemaService;
 
   private ExecutorService yamlSchemaExecutor;
 
@@ -130,7 +137,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
       PmsSdkInstanceService pmsSdkInstanceService, PmsYamlSchemaHelper pmsYamlSchemaHelper, SchemaFetcher schemaFetcher,
       @Named("allowedParallelStages") Integer allowedParallelStages,
-      @Named("YamlSchemaExecutorService") ExecutorService executor, PmsFeatureFlagService pmsFeatureFlagService) {
+      @Named("YamlSchemaExecutorService") ExecutorService executor, PmsFeatureFlagService pmsFeatureFlagService,
+      PMSPipelineService pmsPipelineService, InputsSchemaServiceImpl inputsSchemaService) {
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaValidator = yamlSchemaValidator;
     this.pmsSdkInstanceService = pmsSdkInstanceService;
@@ -139,6 +147,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     this.allowedParallelStages = allowedParallelStages;
     this.yamlSchemaExecutor = executor;
     this.pmsFeatureFlagService = pmsFeatureFlagService;
+    this.pmsPipelineService = pmsPipelineService;
+    this.inputsSchemaService = inputsSchemaService;
   }
 
   @Override
@@ -537,7 +547,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   private ObjectNode getIndividualSchema(
       String nodeGroup, String nodeType, String nodeGroupDifferentiator, String version) {
-    AbstractStaticSchemaParser pipelineSchemaParser = pipelineSchemaParserFactory.getPipelineSchemaParser(version);
+    SchemaParserInterface pipelineSchemaParser = pipelineSchemaParserFactory.getPipelineSchemaParser(version);
     return pipelineSchemaParser.getIndividualSchema(
         PipelineSchemaRequest.builder()
             .individualSchemaMetadata(PipelineSchemaMetadata.builder()
@@ -546,6 +556,23 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
                                           .nodeType(nodeType)
                                           .build())
             .build());
+  }
+
+  @Override
+  @SneakyThrows
+  public List<YamlInputDetails> getInputSchemaDetails(String yaml) {
+    YamlConfig yamlConfig = new YamlConfig(yaml);
+    SchemaParserInterface staticSchemaParser = getStaticSchemaParser(yamlConfig);
+
+    return inputsSchemaService.getInputsSchemaRelations(staticSchemaParser, yaml);
+  }
+
+  private SchemaParserInterface getStaticSchemaParser(YamlConfig yamlConfig) {
+    if (yamlConfig.getYamlMap().get("pipeline") != null) {
+      return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V0);
+    }
+    // TODO add more cases for other versions of yaml for pipeline
+    return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V0);
   }
 
   /*
@@ -588,7 +615,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   private JsonNode getStepGroupProperties(String namespace) {
-    if (EmptyPredicate.isNotEmpty(namespace)) {
+    if (isNotEmpty(namespace)) {
       namespace = namespace + "/";
     }
     String stepGroupProperties = "\"#/definitions/" + namespace + "StepGroupElementConfig\"";

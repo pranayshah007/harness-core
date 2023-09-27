@@ -18,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import io.harness.configuration.DeployMode;
+import io.harness.delegate.beans.SupportedDelegateVersion;
 import io.harness.delegate.beans.VersionOverride;
 import io.harness.delegate.beans.VersionOverride.VersionOverrideKeys;
 import io.harness.delegate.beans.VersionOverrideType;
@@ -171,6 +172,17 @@ public class DelegateVersionService {
       log.error("Unable to fetch watcher version from {} ", watcherMetadataUrl, ex);
       throw new IllegalStateException("Unable to fetch watcher version");
     }
+  }
+
+  public SupportedDelegateVersion getSupportedDelegateVersion(String accountId) {
+    String latestSupportedDelegateImage = getImmutableDelegateImageTag(accountId);
+    String[] split = latestSupportedDelegateImage.split(":");
+    String latestVersion = split[1];
+
+    return SupportedDelegateVersion.builder()
+        .latestSupportedVersion(latestSupportedDelegateImage)
+        .latestSupportedMinimalVersion(latestVersion.concat(".minimal"))
+        .build();
   }
 
   private VersionOverride getVersionOverride(final String accountId, final VersionOverrideType overrideType) {

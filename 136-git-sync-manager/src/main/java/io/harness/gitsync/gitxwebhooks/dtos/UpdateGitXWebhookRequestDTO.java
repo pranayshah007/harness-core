@@ -34,4 +34,5 @@ public class UpdateGitXWebhookRequestDTO {
   String connectorRef;
   List<String> folderPaths;
   Boolean isEnabled;
+  Long lastEventTriggerTime;
 }

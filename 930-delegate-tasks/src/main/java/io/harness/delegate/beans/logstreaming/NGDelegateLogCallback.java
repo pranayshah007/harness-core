@@ -50,13 +50,24 @@ public class NGDelegateLogCallback implements LogCallback {
   }
 
   @Override
+  public void saveExecutionLog(String line, LogLevel logLevel, boolean skipColoringLog) {
+    saveExecutionLogInternal(line, logLevel, CommandExecutionStatus.RUNNING, false, skipColoringLog);
+  }
+
+  @Override
   public void saveExecutionLog(
       String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus, boolean closeLogStream) {
+    saveExecutionLogInternal(line, logLevel, commandExecutionStatus, closeLogStream, false);
+  }
+
+  private void saveExecutionLogInternal(String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus,
+      boolean closeLogStream, boolean skipColoringLog) {
     if (this.iLogStreamingTaskClient == null) {
       return;
     }
     Instant now = Instant.now();
-    LogLine logLine = LogLine.builder().message(line).level(logLevel).timestamp(now).build();
+    LogLine logLine =
+        LogLine.builder().message(line).level(logLevel).timestamp(now).skipColoring(skipColoringLog).build();
     iLogStreamingTaskClient.writeLogLine(logLine, commandUnitName);
 
     if (closeLogStream) {

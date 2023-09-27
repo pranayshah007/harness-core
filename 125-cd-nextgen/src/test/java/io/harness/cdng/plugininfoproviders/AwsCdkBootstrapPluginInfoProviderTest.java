@@ -107,7 +107,7 @@ public class AwsCdkBootstrapPluginInfoProviderTest extends CategoryTest {
 
     PluginDetails pluginDetails = awsCdkBootstrapPluginInfoProvider.getPluginDetails(new HashSet<>(),
         ParameterField.<Integer>builder().value(1).build(), containerResource,
-        ParameterField.<Boolean>builder().value(true).build(), envVars, imageDetails);
+        ParameterField.<Boolean>builder().value(true).build(), envVars, imageDetails, false);
 
     assertThat(pluginDetails.getEnvVariablesMap()).isEqualTo(envVars);
     assertThat(pluginDetails.getRunAsUser()).isEqualTo(1);

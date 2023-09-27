@@ -27,6 +27,7 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.PostLoad;
 import dev.morphia.annotations.PrePersist;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,12 @@ public final class K8sWorkload implements PersistentEntity, UuidAware, CreatedAt
                  .name("accountId_lastUpdatedAt")
                  .field(K8sWorkloadKeys.accountId)
                  .field(K8sWorkloadKeys.lastUpdatedAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_clusterId_kind_name_namespace_decreasing_lastUpdatedAt")
+                 .fields(Arrays.asList(K8sWorkloadKeys.accountId, K8sWorkloadKeys.clusterId, K8sWorkloadKeys.kind,
+                     K8sWorkloadKeys.name, K8sWorkloadKeys.namespace))
+                 .descSortField(K8sWorkloadKeys.lastUpdatedAt)
                  .build())
         .build();
   }

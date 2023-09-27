@@ -29,7 +29,6 @@ import io.harness.engine.facilitation.facilitator.publisher.FacilitateEventPubli
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
-import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.ResolverUtils;
@@ -97,7 +96,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private FacilitationHelper facilitationHelper;
   @Inject private ExceptionManager exceptionManager;
   @Inject private EndNodeExecutionHelper endNodeExecutionHelper;
-  @Inject private NodeAdviseHelper nodeAdviseHelper;
   @Inject private FacilitateEventPublisher facilitateEventPublisher;
   @Inject private NodeStartHelper startHelper;
   @Inject private InterruptService interruptService;
@@ -361,7 +359,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       log.warn("Cannot conclude node execution. Status update failed To:{}", toStatus);
       return;
     }
-    nodeAdviseHelper.queueAdvisingEvent(updatedNodeExecution, node, fromStatus);
+    processOrQueueAdvisingEvent(updatedNodeExecution, node, fromStatus);
   }
 
   @Override
@@ -436,7 +434,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       return;
     }
 
-    nodeAdviseHelper.queueAdvisingEvent(updatedNodeExecution, planNode, nodeExecution.getStatus());
+    processOrQueueAdvisingEvent(updatedNodeExecution, planNode, nodeExecution.getStatus());
   }
 
   @VisibleForTesting

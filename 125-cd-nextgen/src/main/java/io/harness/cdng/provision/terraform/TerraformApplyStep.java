@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 
 import io.harness.EntityType;
@@ -212,6 +213,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .useOptimizedTfPlan(true)
             .isTerraformCloudCli(isTerraformCloudCli)
             .skipTerraformRefresh(skipRefreshCommand)
+            .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
             .build();
 
     TaskData taskData =
@@ -271,6 +273,8 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .encryptDecryptPlanForHarnessSMOnManager(
                 helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
             .useOptimizedTfPlan(true)
+            .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+
             .build();
 
     TaskData taskData =

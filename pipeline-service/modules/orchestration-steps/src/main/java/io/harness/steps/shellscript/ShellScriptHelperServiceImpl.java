@@ -34,6 +34,8 @@ import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG.WinRmShellScriptTaskParametersNGBuilder;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
@@ -503,5 +505,35 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
       }
     });
     return outputVars;
+  }
+
+  @Override
+  public void exportOutputVariablesUsingAlias(@Nonnull Ambiance ambiance,
+      @Nonnull ShellScriptStepParameters shellScriptStepParameters, @Nonnull ShellScriptOutcome shellScriptOutcome) {
+    if (isNull(shellScriptStepParameters.getOutputAlias())
+        || EmptyPredicate.isEmpty(shellScriptOutcome.getOutputVariables())) {
+      log.debug("Skipping exporting output variables as output alias not present or output variables are empty");
+      return;
+    }
+    String userAlias = (String) shellScriptStepParameters.getOutputAlias().getKey().fetchFinalValue();
+    String uuid = OutputAliasUtils.generateSweepingOutputKeyUsingUserAlias(userAlias, ambiance);
+    try {
+      executionSweepingOutputService.consume(ambiance, uuid,
+          OutputAliasSweepingOutput.builder().outputVariables(shellScriptOutcome.getOutputVariables()).build(),
+          shellScriptStepParameters.getOutputAlias().getScope().toStepOutcomeGroup());
+    } catch (Exception ex) {
+      if (OutputAliasUtils.isDuplicateKeyException(ex)) {
+        log.warn("Error while publishing outputAlias due to the output already saved for the key [{}:{}] for scope {}",
+            userAlias, uuid, shellScriptStepParameters.getOutputAlias().getScope(), ex);
+        throw new InvalidRequestException(String.format(
+            "Output alias with key %s, already saved in %s scope. Please ensure that there are no duplicate output alias keys within the same scope",
+            userAlias, shellScriptStepParameters.getOutputAlias().getScope()));
+      }
+      log.warn("Error while publishing outputAlias for the key [{}:{}] for scope {}", userAlias, uuid,
+          shellScriptStepParameters.getOutputAlias().getScope(), ex);
+      throw new InternalServerErrorException(
+          String.format("Error while publishing outputAlias for the key %s for scope %s: %s", userAlias,
+              shellScriptStepParameters.getOutputAlias().getScope(), ExceptionUtils.getMessage(ex)));
+    }
   }
 }

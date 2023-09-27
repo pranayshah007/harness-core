@@ -41,17 +41,16 @@ public class SLODashboardApiFilter {
   @QueryParam("errorBudgetRisks")
   List<ErrorBudgetRisk> errorBudgetRisks;
   @Parameter(description = "For filtering on the basis of name") @QueryParam("filter") String searchFilter;
-  @Parameter(description = "For filtering on the basis of SLO type") ServiceLevelObjectiveType type;
+  @Parameter(description = "For filtering on the basis of SLO type")
+  @QueryParam("sloType")
+  ServiceLevelObjectiveType type;
   @Parameter(description = "For filtering on the basis of SLO target spec") SLOTargetFilterDTO sloTargetFilterDTO;
   @Parameter(description = "For filtering on the basis of Composite SLO") String compositeSLOIdentifier;
   @Parameter(description = "For filtering on the basis of SLI Evaluation type")
   @QueryParam("evaluationType")
   SLIEvaluationType evaluationType;
   @Parameter(description = "For filtering the simple slo's on the basis of accountId") boolean childResource;
-
   @Parameter(description = "For Filtering on the basis of environment identifiers")
   @QueryParam("envIdentifiers")
   List<String> envIdentifiers;
-
-  @Parameter(description = "For filtering only the Composite SLOs") @QueryParam("compositeSLO") boolean compositeSLO;
 }

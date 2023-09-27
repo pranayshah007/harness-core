@@ -41,10 +41,12 @@ public interface PipelineService extends OwnedByApplication {
   /**
    * List pipelines page response.
    *
-   * @param pageRequest the page request
+   * @param pageRequest  the page request
+   * @param hitSecondary
+   * @param accountId
    * @return the page response
    */
-  PageResponse<Pipeline> listPipelines(PageRequest<Pipeline> pageRequest);
+  PageResponse<Pipeline> listPipelines(PageRequest<Pipeline> pageRequest, boolean hitSecondary, String accountId);
 
   PageResponse<Pipeline> listPipelines(PageRequest<Pipeline> pageRequest, boolean withDetails,
       Integer previousExecutionsCount, boolean withTags, String tagFilter);

@@ -8,6 +8,8 @@
 package io.harness.engine.pms.execution.strategy;
 
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.pms.advise.NodeAdviseHelper;
+import io.harness.engine.pms.advise.NodeAdviserUtils;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
 import io.harness.event.handlers.SdkResponseProcessor;
 import io.harness.execution.NodeExecution;
@@ -15,8 +17,10 @@ import io.harness.execution.PmsNodeExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
+import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -31,7 +35,9 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
     implements NodeExecutionStrategy<P, NodeExecution, M> {
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private SdkResponseProcessorFactory sdkResponseProcessorFactory;
+  @Inject private NodeAdviseHelper nodeAdviseHelper;
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
+  @Inject @Named("publishAdviserEventForCustomAdvisers") private boolean publishAdviserEventForCustomAdvisers;
   @Override
   public NodeExecution runNode(@NonNull Ambiance ambiance, @NonNull P node, M metadata) {
     return runNode(ambiance, node, metadata, InitiateMode.CREATE_AND_START);
@@ -84,6 +90,26 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
       log.info("Event for SdkResponseEvent for event type {} completed successfully", event.getSdkResponseEventType());
     } catch (Exception ex) {
       handleError(event.getAmbiance(), ex);
+    }
+  }
+
+  public void processOrQueueAdvisingEvent(NodeExecution nodeExecution, Node planNode, Status fromStatus) {
+    if (!publishAdviserEventForCustomAdvisers || NodeAdviserUtils.hasCustomAdviser(planNode)) {
+      nodeAdviseHelper.queueAdvisingEvent(nodeExecution, planNode, fromStatus);
+    } else {
+      SdkResponseEventProto responseEventProto =
+          nodeAdviseHelper.getResponseInCaseOfNoCustomAdviser(nodeExecution, planNode, fromStatus);
+      if (responseEventProto != null) {
+        handleSdkResponse(responseEventProto);
+      }
+    }
+  }
+
+  private void handleSdkResponse(SdkResponseEventProto sdkResponseEventProto) {
+    if (sdkResponseEventProto.getSdkResponseEventType() == SdkResponseEventType.HANDLE_EVENT_ERROR) {
+      handleSdkResponseEvent(sdkResponseEventProto);
+    } else {
+      executorService.submit(() -> handleSdkResponseEvent(sdkResponseEventProto));
     }
   }
 

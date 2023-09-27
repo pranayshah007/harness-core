@@ -7,10 +7,12 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.idp.common.Constants.BITBUCKET_IDENTIFIER;
 import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
 import static io.harness.idp.common.Constants.CUSTOM_IDENTIFIER;
 import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.HARNESS_IDENTIFIER;
+import static io.harness.idp.common.Constants.KUBERNETES_IDENTIFIER;
 import static io.harness.idp.common.Constants.PAGERDUTY_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -51,6 +53,9 @@ public class DataSourceProviderFactory {
         return new GithubProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(GITHUB_IDENTIFIER),
             backstageEnvVariableRepository, ngSecretService, configReader);
+      case BITBUCKET_IDENTIFIER:
+        return new BitbucketProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataSourceDataPointParserFactory.getDataPointParserFactory(BITBUCKET_IDENTIFIER), configReader);
       case HARNESS_IDENTIFIER:
         return new HarnessProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(HARNESS_IDENTIFIER), idpAuthInterceptor, env);
@@ -60,6 +65,10 @@ public class DataSourceProviderFactory {
       case PAGERDUTY_IDENTIFIER:
         return new PagerDutyProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(PAGERDUTY_IDENTIFIER), configReader);
+      case KUBERNETES_IDENTIFIER:
+        return new KubernetesProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataSourceDataPointParserFactory.getDataPointParserFactory(KUBERNETES_IDENTIFIER), configReader,
+            idpAuthInterceptor, env);
       default:
         throw new IllegalArgumentException("DataSource provider " + dataSource + " is not supported yet");
     }

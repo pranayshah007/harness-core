@@ -20,7 +20,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ngmigration.dto.BaseEntityDetailsDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
@@ -51,6 +53,8 @@ import software.wings.security.annotations.Scope;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,6 +77,7 @@ import org.apache.commons.lang3.StringUtils;
 @NextGenManagerAuth
 public class EntityDetailsResource {
   @Inject HPersistence hPersistence;
+  @Inject FeatureFlagService featureFlagService;
 
   @GET
   @Path("/workflows")
@@ -289,7 +294,7 @@ public class EntityDetailsResource {
                                  .filter(UserGroupKeys.accountId, accountId)
                                  .project(BaseKeys.uuid, true)
                                  .project(UserGroupKeys.name, true)
-                                 .asList();
+                                 .asList(createFindOptionsToHitSecondaryNode(accountId));
 
     if (EmptyPredicate.isNotEmpty(groups)) {
       entities = groups.stream()
@@ -297,5 +302,12 @@ public class EntityDetailsResource {
                      .collect(Collectors.toList());
     }
     return new RestResponse<>(entities);
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

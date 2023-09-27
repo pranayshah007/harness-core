@@ -9,7 +9,9 @@ package io.harness.pms.plan.execution.handlers;
 
 import static io.harness.rule.OwnerRule.FERNANDOD;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -19,8 +21,11 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
@@ -34,10 +39,12 @@ import io.harness.waiter.WaitNotifyEngine;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBase {
@@ -64,12 +71,23 @@ public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBas
                  "accountId", "orgIdentifier", "projectIdentifier", "planExecutionId", true))
         .thenReturn(Optional.of(pipelineExecutionSummaryEntity));
     when(pmsExecutionSummaryRepository.update(notNull(), notNull())).thenReturn(pipelineExecutionSummaryEntity);
+    Ambiance ambiance = createAmbiance();
+    PlanExecution planExecution = PlanExecution.builder().status(Status.SUCCEEDED).endTs(100L).build();
+    doReturn(planExecution)
+        .when(planExecutionService)
+        .getWithFieldsIncluded(
+            ambiance.getPlanExecutionId(), Set.of(PlanExecutionKeys.endTs, PlanExecutionKeys.status));
 
-    pipelineStatusUpdateEventHandler.onEnd(createAmbiance(), Status.SUCCEEDED);
-
+    pipelineStatusUpdateEventHandler.onEnd(ambiance, Status.SUCCEEDED);
+    ArgumentCaptor<OrchestrationEvent> argumentCaptor = ArgumentCaptor.forClass(OrchestrationEvent.class);
     // IN THIS SCENARIO WE ARE ONLY VERIFYING THAT EVENT WAS EMITTED TWICE AND WITHOUT NPE
     // A NEW TEST CASE SHOULD BE CREATED TO ASSERT EMITTED EVENT PROPERTIES.
-    verify(eventEmitter, times(2)).emitEvent(notNull());
+    verify(eventEmitter, times(2)).emitEvent(argumentCaptor.capture());
+
+    OrchestrationEvent event = argumentCaptor.getValue();
+    assertThat(event.getEndTs()).isEqualTo(planExecution.getEndTs());
+    assertThat(event.getStatus())
+        .isEqualTo(ExecutionStatus.getExecutionStatus(planExecution.getStatus()).getEngineStatus());
   }
 
   private Ambiance createAmbiance() {

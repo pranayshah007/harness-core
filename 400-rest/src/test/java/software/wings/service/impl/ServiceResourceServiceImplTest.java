@@ -511,7 +511,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
 
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.EMPTY_LIST);
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false, false))
         .thenReturn(pageResponse);
 
     mockedServiceResourceService.list(pageRequest, false, false, false, null);
@@ -552,7 +552,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
 
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.EMPTY_LIST);
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false, false))
         .thenReturn(pageResponse);
 
     mockedServiceResourceService.list(pageRequest, false, false, false, null);
@@ -599,7 +599,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
 
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.emptyList());
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false, false))
         .thenReturn(pageResponse);
 
     mockedServiceResourceService.list(pageRequest, false, false, false, null);
@@ -655,7 +655,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
 
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.emptyList());
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false, false))
         .thenReturn(pageResponse);
 
     assertThatThrownBy(() -> mockedServiceResourceService.list(pageRequest, false, false, false, null))
@@ -678,7 +678,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
     when(appService.getAccountIdByAppId("app1")).thenReturn(ACCOUNT_ID);
     PageResponse<Service> pageResponse = new PageResponse<>();
     pageResponse.setResponse(Collections.emptyList());
-    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false))
+    when(resourceLookupService.listWithTagFilters(pageRequest, null, EntityType.SERVICE, false, false, false))
         .thenReturn(pageResponse);
 
     mockedServiceResourceService.list(pageRequest, false, false, false, null);
@@ -710,7 +710,7 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
                               .build();
     Service savedService = serviceResourceService.save(helmService);
     List<HarnessTagLink> tagLinksWithEntityId =
-        harnessTagService.getTagLinksWithEntityId(ACCOUNT_ID, savedService.getUuid());
+        harnessTagService.getTagLinksWithEntityId(ACCOUNT_ID, savedService.getUuid(), false);
     assertThat(tagLinksWithEntityId).hasSize(2);
     assertTrue(tagLinksWithEntityId.stream().anyMatch(
         tagLink -> tagLink.getKey().equals("deploymentType") && tagLink.getValue().equals("HELM")));

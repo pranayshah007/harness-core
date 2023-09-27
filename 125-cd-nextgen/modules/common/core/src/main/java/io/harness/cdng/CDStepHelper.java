@@ -9,6 +9,8 @@ package io.harness.cdng;
 
 import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
+import static io.harness.cdng.ReleaseNameAutoCorrector.isDnsCompliant;
+import static io.harness.cdng.ReleaseNameAutoCorrector.makeDnsCompliant;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -69,6 +71,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
@@ -246,6 +249,8 @@ public class CDStepHelper {
 
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
   public static final String GIT = "/_git/";
+  private static final String RELEASE_NAME_AUTOCORRECTION_ERROR =
+      "The release name [%s] provided in Service configuration is not valid. %n: 1. Cannot be empty. %n2. Cannot contain more than 63 characters. %n3. Contain only lowercase alphanumeric characters or \"-\". %n4. Start with an alphabetic char and end with an alphanumeric char.";
 
   // Optimised (SCM based) file fetch methods:
   public boolean isGitlabTokenAuth(ScmConnector scmConnector) {
@@ -645,7 +650,7 @@ public class CDStepHelper {
   public String getReleaseName(Ambiance ambiance, InfrastructureOutcome infrastructure) {
     Optional<String> releaseNameFromServiceOptional = getReleaseNameFromService(ambiance);
     if (releaseNameFromServiceOptional.isPresent()) {
-      return releaseNameFromServiceOptional.get();
+      return correctReleaseNameIfNeeded(releaseNameFromServiceOptional.get());
     }
 
     String releaseName;
@@ -676,12 +681,28 @@ public class CDStepHelper {
     return resolveAndValidateReleaseName(ambiance, releaseName);
   }
 
+  private static String correctReleaseNameIfNeeded(String releaseName) {
+    if (!isDnsCompliant(releaseName) || releaseName.length() == 1) {
+      String correctedReleaseName = makeDnsCompliant(releaseName);
+      if (isEmpty(correctedReleaseName) || !isDnsCompliant(correctedReleaseName)) {
+        // 2nd check for DNS compliance for added safety
+        throw new InvalidRequestException(format(RELEASE_NAME_AUTOCORRECTION_ERROR, releaseName));
+      }
+      return correctedReleaseName;
+    }
+    return releaseName;
+  }
+
   private String resolveAndValidateReleaseName(Ambiance ambiance, String releaseName) {
+    releaseName = resolveReleaseName(ambiance, releaseName);
+    validateReleaseName(releaseName);
+    return releaseName;
+  }
+
+  private String resolveReleaseName(Ambiance ambiance, String releaseName) {
     if (EngineExpressionEvaluator.hasExpressions(releaseName)) {
       releaseName = engineExpressionService.renderExpression(ambiance, releaseName);
     }
-
-    validateReleaseName(releaseName);
     return releaseName;
   }
 
@@ -691,7 +712,7 @@ public class CDStepHelper {
     if (serviceStepOutcome != null && serviceStepOutcome.getRelease() != null
         && serviceStepOutcome.getRelease().getName() != null) {
       String rawReleaseName = serviceStepOutcome.getRelease().getName();
-      return Optional.ofNullable(resolveAndValidateReleaseName(ambiance, rawReleaseName));
+      return Optional.ofNullable(resolveReleaseName(ambiance, rawReleaseName));
     }
     return Optional.empty();
   }
@@ -781,13 +802,6 @@ public class CDStepHelper {
               format("Invalid connector selected in %s. Select Http Helm connector", message));
         }
         break;
-      case ManifestStoreType.OCI:
-        if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
-          throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Oci Helm connector", message));
-        }
-        break;
-
       case ManifestStoreType.S3:
         if (!((connectorInfoDTO.getConnectorConfig()) instanceof AwsConnectorDTO)) {
           throw new InvalidRequestException(
@@ -812,6 +826,26 @@ public class CDStepHelper {
         break;
       default:
         throw new UnsupportedOperationException(format("Unknown manifest store type: [%s]", manifestStoreType));
+    }
+  }
+
+  public void validateOciManifest(
+      OciHelmChartStoreConfigType ociStoreConfigType, ConnectorInfoDTO connectorInfoDTO, String message) {
+    switch (ociStoreConfigType) {
+      case GENERIC:
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
+          throw new InvalidRequestException(
+              format("Invalid connector selected in %s. Select Oci Helm connector", message));
+        }
+        break;
+      case ECR:
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
+          throw new InvalidRequestException(
+              format("Invalid connector selected in %s. Select Amazon Web Services connector", message));
+        }
+        break;
+      default:
+        throw new UnsupportedOperationException(format("Unknown manifest store type: [%s]", ociStoreConfigType));
     }
   }
 

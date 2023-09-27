@@ -6,6 +6,7 @@
  */
 
 package io.harness.text.resolver;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,10 +16,13 @@ import io.harness.annotations.dev.ProductModule;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.text.StringEscapeUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class StringReplacer {
   private static final char ESCAPE_CHAR = '\\';
 
@@ -104,7 +108,7 @@ public class StringReplacer {
 
         // Get whole expression
         int expressionEndPos = pos;
-        String expressionWithDelimiters = buf.substring(expressionStartPos, expressionEndPos);
+        String expressionWithDelimiters = getModifiedExpression(expressionStartPos, expressionEndPos, buf);
         String expression = expressionWithDelimiters.substring(
             expressionPrefix.length, expressionWithDelimiters.length() - expressionSuffix.length);
 
@@ -287,5 +291,17 @@ public class StringReplacer {
       }
     }
     return true;
+  }
+
+  // When expression is wrapped around quotes, the characters like " and \ will be escaped in it. So, when we are
+  // extracting the expression from buf we need to unescape them.
+  private String getModifiedExpression(int expressionStartPos, int expressionEndPos, StringBuffer buf) {
+    String expression = buf.substring(expressionStartPos, expressionEndPos);
+    if (expressionStartPos > 0 && buf.charAt(expressionStartPos - 1) == '\"' && expressionEndPos < buf.length()
+        && buf.charAt(expressionEndPos) == '\"') {
+      log.info("[String Replacer] expression: {}, unescaped expression: {}", expression,
+          StringEscapeUtils.unescapeJson(expression));
+    }
+    return expression;
   }
 }

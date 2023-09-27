@@ -194,6 +194,7 @@ public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEn
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
+  @Setter @NonFinal Integer yamlHash;
 
   // to maintain pipeline version
   @Setter @NonFinal String harnessVersion;

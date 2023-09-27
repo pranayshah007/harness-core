@@ -48,7 +48,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.common.collect.Lists;
@@ -231,7 +231,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .executionInputConfigured(orchestrationStartInfo.getPlanExecutionMetadata().getExecutionInputConfigured())
             .connectorRef(isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .executionMode(metadata.getExecutionMode())
-            .pipelineVersion(PipelineYamlHelper.getVersion(planExecutionMetadata.getPipelineYaml()))
+            .pipelineVersion(NGYamlHelper.getVersion(planExecutionMetadata.getPipelineYaml()))
             .build();
     pmsExecutionSummaryService.save(pipelineExecutionSummaryEntity);
     unsetPipelineYamlInPlanExecutionMetadata(planExecutionMetadata);

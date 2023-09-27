@@ -68,7 +68,6 @@ import io.harness.audit.entities.ResourceScope;
 import io.harness.audit.entities.YamlDiffRecord;
 import io.harness.audit.mapper.ResourceMapper;
 import io.harness.audit.mapper.ResourceScopeMapper;
-import io.harness.audit.metrics.impl.ProjectAuditMetricsServiceImpl;
 import io.harness.audit.remote.StaticAuditFilterV2;
 import io.harness.audit.repositories.AuditRepository;
 import io.harness.ng.beans.PageRequest;
@@ -114,7 +113,6 @@ public class AuditServiceImpl implements AuditService {
   public static List<Action> loginEvents = List.of(LOGIN, LOGIN2FA, UNSUCCESSFUL_LOGIN);
   public static List<Action> runTimeEvents = List.of(START, STAGE_START, STAGE_END, END, PAUSE, RESUME, ABORT, TIMEOUT);
 
-  @Inject private ProjectAuditMetricsServiceImpl projectAuditMetricsService;
   @Inject
   public AuditServiceImpl(AuditRepository auditRepository, AuditYamlService auditYamlService,
       AuditFilterPropertiesValidator auditFilterPropertiesValidator, TransactionTemplate transactionTemplate,
@@ -149,12 +147,6 @@ public class AuditServiceImpl implements AuditService {
                     + savedAuditEvent.getResourceScope().getAccountIdentifier(),
                 savedAuditEvent.getResourceScope().getAccountIdentifier(), properties,
                 Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-
-            projectAuditMetricsService.recordAuditMetricForActiveProject(
-                savedAuditEvent.getResourceScope().getProjectIdentifier(),
-                savedAuditEvent.getResourceScope().getOrgIdentifier(),
-                savedAuditEvent.getResourceScope().getAccountIdentifier(),
-                savedAuditEvent.getAuthenticationInfo().getPrincipal().getIdentifier());
           }
           saveYamlDiff(auditEventDTO, savedAuditEvent.getId());
           return true;
