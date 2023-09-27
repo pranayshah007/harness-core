@@ -5641,6 +5641,9 @@ maven_install(
         "com.azure.resourcemanager:azure-resourcemanager-authorization:2.14.0",
         "com.azure.resourcemanager:azure-resourcemanager-resources:2.14.0",
     ],
+    override_targets = {
+        "net.minidev:json-smart": "@maven//:net_minidev_json_smart",
+    },
     repositories = [
         "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
