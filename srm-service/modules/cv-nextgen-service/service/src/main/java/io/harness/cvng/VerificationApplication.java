@@ -529,7 +529,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
     initializeEnforcementSdk(injector);
-    initAutoscalingMetrics();
+    initCustomMetrics();
     registerOasResource(configuration, environment, injector);
     initializeSrmMonitoring(configuration, injector);
     registerAPIAuthTelemetryFilters(configuration, environment, injector);
@@ -1433,8 +1433,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
         .collect(Collectors.toSet());
   }
 
-  private void initAutoscalingMetrics() {
-    CVConstants.LEARNING_ENGINE_TASKS_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+  private void initCustomMetrics() {
+    CVConstants.CUSTOM_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
     registerJVMMetrics(metricRegistry);
     registerPrometheusExporter("io.harness.cvng.core.resources", "MonitoredServiceResource", metricRegistry);
     registerPrometheusExporter(
