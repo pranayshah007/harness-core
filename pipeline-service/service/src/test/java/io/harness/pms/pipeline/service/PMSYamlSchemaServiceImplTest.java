@@ -7,15 +7,12 @@
 
 package io.harness.pms.pipeline.service;
 
-import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.FERNANDOD;
-import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.TRIGGER_NODE;
 
-import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,16 +20,11 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.EntityType;
-import io.harness.ModuleType;
-import io.harness.PipelineServiceConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -44,23 +36,13 @@ import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.serializer.JsonUtils;
-import io.harness.yaml.schema.beans.YamlGroup;
-import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
-import io.harness.yaml.schema.beans.YamlSchemaMetadata;
-import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
 import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
@@ -83,8 +65,6 @@ public class PMSYamlSchemaServiceImplTest {
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
   @Mock private ExecutorService yamlSchemaExecutor;
 
-  PipelineServiceConfiguration pipelineServiceConfiguration;
-
   private static final String ACC_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PRJ_ID = "projectId";
@@ -94,27 +74,6 @@ public class PMSYamlSchemaServiceImplTest {
     MockitoAnnotations.initMocks(this);
     pmsYamlSchemaService = new PMSYamlSchemaServiceImpl(
         yamlSchemaValidator, pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor, null);
-  }
-
-  @Test
-  @Owner(developers = BRIJESH)
-  @Category(UnitTests.class)
-  public void testFetchSchemaWithDetailsFromModules() {
-    ModuleType moduleType = ModuleType.CD;
-    YamlSchemaMetadata yamlSchemaMetadata =
-        YamlSchemaMetadata.builder().yamlGroup(YamlGroup.builder().group("step").build()).build();
-    doReturn(
-        YamlSchemaDetailsWrapper.builder()
-            .yamlSchemaWithDetailsList(Collections.singletonList(
-                YamlSchemaWithDetails.builder().moduleType(moduleType).yamlSchemaMetadata(yamlSchemaMetadata).build()))
-            .build())
-        .when(schemaFetcher)
-        .fetchSchemaDetail(any(), any());
-    List<YamlSchemaWithDetails> yamlSchemaWithDetailsList =
-        pmsYamlSchemaService.fetchSchemaWithDetailsFromModules("accountId", Collections.singletonList(moduleType));
-
-    assertEquals(yamlSchemaWithDetailsList.get(0).getYamlSchemaMetadata(), yamlSchemaMetadata);
-    assertEquals(yamlSchemaWithDetailsList.get(0).getModuleType(), moduleType);
   }
 
   @Test
@@ -195,48 +154,6 @@ public class PMSYamlSchemaServiceImplTest {
     assertThatThrownBy(() -> pmsYamlSchemaService.getStaticSchemaForAllEntities("pipeline", null, null, "v2x"))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("[PMS] Incorrect version [v2x] of Pipeline Schema passed, Valid values are [v0, v1]");
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldRemoveDuplicateFromStageElementConfig() throws IOException {
-    final JsonNode jsonNode = readJsonNode("remove-duplicate-yaml-schema.json");
-    assertThat(jsonNode.get("oneOf").get(1).get("allOf").size()).isEqualTo(3);
-
-    pmsYamlSchemaService.removeDuplicateIfThenFromStageElementConfig((ObjectNode) jsonNode);
-
-    // AFTER REMOVE WE SHOULD HAVE ONLY "#/definitions/CustomStageConfig"
-    assertThat(jsonNode.get("oneOf").get(1).get("allOf").size()).isEqualTo(1);
-  }
-
-  @Test
-  @Owner(developers = PRASHANTSHARMA)
-  @Category(UnitTests.class)
-  public void testCalculateFileURL() {
-    pipelineServiceConfiguration = mock(PipelineServiceConfiguration.class);
-    pmsYamlSchemaService.pipelineServiceConfiguration = pipelineServiceConfiguration;
-
-    doReturn("https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s")
-        .when(pipelineServiceConfiguration)
-        .getStaticSchemaFileURL();
-    String fileUrL = pmsYamlSchemaService.calculateFileURL(EntityType.PIPELINES, "v0");
-    assertThat(fileUrL).isEqualTo("https://raw.githubusercontent.com/harness/harness-schema/main/v0/pipeline.json");
-  }
-
-  public JsonNode fetchFile(String filePath) throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    String staticJson =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
-    return JsonUtils.asObject(staticJson, JsonNode.class);
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldInvalidateCaches() {
-    pmsYamlSchemaService.invalidateAllCache();
-    verify(schemaFetcher).invalidateAllCache();
   }
 
   @Test
