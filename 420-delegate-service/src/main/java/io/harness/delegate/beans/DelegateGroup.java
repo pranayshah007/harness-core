@@ -95,11 +95,12 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
                  .name("byAcctNgOwner")
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("unique_identification")
+                 .name("unique_identification1")
                  .unique(true)
                  .field(DelegateGroupKeys.accountId)
                  .field(DelegateGroupKeys.owner)
                  .field(DelegateGroupKeys.identifier)
+                 .field(DelegateGroupKeys.ng)
                  .build())
         .build();
   }
