@@ -51,7 +51,7 @@ public class AwsConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
   @Valid AwsSdkClientBackoffStrategyDTO awsSdkClientBackOffStrategyOverride;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.AWS;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

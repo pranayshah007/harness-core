@@ -42,7 +42,7 @@ import lombok.experimental.FieldDefaults;
 public class PagerDutyConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData apiTokenRef;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.PAGER_DUTY;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

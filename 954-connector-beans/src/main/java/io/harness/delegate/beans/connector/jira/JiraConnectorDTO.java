@@ -66,7 +66,8 @@ public class JiraConnectorDTO extends ConnectorConfigDTO implements DecryptableE
   SecretRefData passwordRef;
   Set<String> delegateSelectors;
   @Valid @NotNull JiraAuthenticationDTO auth;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.JIRA;
+
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

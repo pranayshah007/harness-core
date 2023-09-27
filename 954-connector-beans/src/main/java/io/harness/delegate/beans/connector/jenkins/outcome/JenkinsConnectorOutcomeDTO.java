@@ -41,5 +41,5 @@ public class JenkinsConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implem
   @URL @NotNull @NotBlank String jenkinsUrl;
   @Valid JenkinsAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.JENKINS;
 }

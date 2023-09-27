@@ -67,7 +67,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   @Schema(description = "This specifies the Azure Environment type, which is AZURE by default.")
   private AzureEnvironmentType azureEnvironmentType = AZURE;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.AZURE;
 
   @Schema(description = "Boolean value to indicate if managed identity is used") private Boolean useManagedIdentity;
   @Schema(description = "Managed Identity Type") private AzureManagedIdentityType azureManagedIdentityType;

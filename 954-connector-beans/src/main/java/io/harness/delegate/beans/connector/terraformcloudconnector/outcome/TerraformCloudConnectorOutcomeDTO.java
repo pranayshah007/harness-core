@@ -36,5 +36,5 @@ public class TerraformCloudConnectorOutcomeDTO
   @Valid @NotNull TerraformCloudCredentialOutcomeDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.TERRAFORM_CLOUD;
 }

@@ -42,7 +42,7 @@ public class TerraformCloudConnectorDTO extends ConnectorConfigDTO implements De
   @NotNull @Valid TerraformCloudCredentialDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.TERRAFORM_CLOUD;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

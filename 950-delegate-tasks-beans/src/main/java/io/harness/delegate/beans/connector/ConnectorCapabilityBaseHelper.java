@@ -20,12 +20,11 @@ public class ConnectorCapabilityBaseHelper {
   public static void populateDelegateSelectorCapability(
       List<ExecutionCapability> capabilityList, Set<String> delegateSelectors, ConnectorType connectorType) {
     if (isNotEmpty(delegateSelectors)) {
-      StringBuilder connectorOrigin = new StringBuilder();
+      StringBuilder connectorOrigin = new StringBuilder(origin);
       if (connectorType != null) {
+        connectorOrigin.append(" Type: ");
         connectorOrigin.append(connectorType.getDisplayName());
-        connectorOrigin.append(" ");
       }
-      connectorOrigin.append(origin);
       capabilityList.add(
           SelectorCapability.builder().selectors(delegateSelectors).selectorOrigin(connectorOrigin.toString()).build());
     }

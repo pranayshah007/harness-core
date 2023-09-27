@@ -41,5 +41,5 @@ public class BambooConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO impleme
   @URL @NotNull @NotBlank String bambooUrl;
   @Valid BambooAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.BAMBOO;
 }

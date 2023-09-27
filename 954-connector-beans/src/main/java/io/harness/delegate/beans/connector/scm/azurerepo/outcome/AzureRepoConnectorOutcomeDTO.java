@@ -45,7 +45,7 @@ public class AzureRepoConnectorOutcomeDTO
   Boolean executeOnDelegate = true;
   String gitConnectionUrl;
   private static final String AZURE_REPO_NAME_SEPARATOR = "_git/";
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.AZURE_REPO;
 
 
   @Builder

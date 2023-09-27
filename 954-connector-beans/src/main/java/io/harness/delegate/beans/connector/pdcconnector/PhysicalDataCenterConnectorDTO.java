@@ -42,7 +42,8 @@ import lombok.EqualsAndHashCode;
 public class PhysicalDataCenterConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @JsonDeserialize(using = HostDTOsDeserializer.class) @JsonProperty("hosts") @Valid List<HostDTO> hosts;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.;
+
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

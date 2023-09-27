@@ -69,7 +69,7 @@ public class AwsKmsConnectorDTO extends ConnectorConfigDTO implements DelegateSe
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema @JsonIgnore private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.AWS_KMS;
 
   @Builder
   public AwsKmsConnectorDTO(SecretRefData kmsArn, String region, AwsKmsConnectorCredentialDTO credential,

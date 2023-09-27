@@ -42,7 +42,7 @@ import lombok.experimental.FieldDefaults;
 @RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorDTO")
 public class RancherConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.RANCHER;
 
   @Valid @JsonProperty("credential") RancherConnectorConfigDTO config;
 

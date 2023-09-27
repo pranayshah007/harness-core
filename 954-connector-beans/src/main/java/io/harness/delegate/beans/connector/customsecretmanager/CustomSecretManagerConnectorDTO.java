@@ -54,7 +54,7 @@ public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implemen
   @Builder.Default Boolean onDelegate = Boolean.FALSE;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema @JsonIgnore private boolean harnessManaged;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.CUSTOM_SECRET_MANAGER;
 
   @SecretReference
   @ApiModelProperty(dataType = "string")

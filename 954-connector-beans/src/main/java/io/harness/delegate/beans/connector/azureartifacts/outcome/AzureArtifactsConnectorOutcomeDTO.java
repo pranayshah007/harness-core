@@ -41,7 +41,7 @@ public class AzureArtifactsConnectorOutcomeDTO
   Set<String> delegateSelectors;
 
   Boolean executeOnDelegate = true;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.AZURE_ARTIFACTS;
 
   @Builder
   public AzureArtifactsConnectorOutcomeDTO(String azureArtifactsUrl, AzureArtifactsAuthenticationOutcomeDTO auth,

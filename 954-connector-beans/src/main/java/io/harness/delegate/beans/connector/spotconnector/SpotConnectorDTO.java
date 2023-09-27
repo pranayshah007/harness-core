@@ -41,7 +41,7 @@ public class SpotConnectorDTO extends ConnectorConfigDTO implements DelegateSele
   @Valid @NotNull SpotCredentialDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.SPOT;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

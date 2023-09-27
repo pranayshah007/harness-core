@@ -63,7 +63,7 @@ public class ServiceNowConnectorDTO extends ConnectorConfigDTO implements Decryp
   @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   SecretRefData passwordRef;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.SERVICENOW;
   @Valid @NotNull ServiceNowAuthenticationDTO auth;
 
   @Override

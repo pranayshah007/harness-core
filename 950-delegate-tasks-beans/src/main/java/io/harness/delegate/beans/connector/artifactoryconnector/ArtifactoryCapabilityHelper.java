@@ -27,7 +27,7 @@ public class ArtifactoryCapabilityHelper extends ConnectorCapabilityBaseHelper {
     capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
         artifactoryServerUrl.endsWith("/") ? artifactoryServerUrl : artifactoryServerUrl.concat("/"),
         maskingEvaluator));
-    populateDelegateSelectorCapability(capabilityList, artifactoryConnectorDTO.getDelegateSelectors(),artifactoryConnectorDTO);
+    populateDelegateSelectorCapability(capabilityList, artifactoryConnectorDTO.getDelegateSelectors(),artifactoryConnectorDTO.getConnectorType());
     return capabilityList;
   }
 }

@@ -44,7 +44,7 @@ import lombok.EqualsAndHashCode;
 public class KubernetesClusterConfigDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @Valid @NotNull KubernetesCredentialDTO credential;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.KUBERNETES_CLUSTER;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

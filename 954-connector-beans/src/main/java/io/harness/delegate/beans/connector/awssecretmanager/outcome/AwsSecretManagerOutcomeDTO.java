@@ -44,5 +44,5 @@ public class AwsSecretManagerOutcomeDTO extends ConnectorConfigOutcomeDTO implem
 
   @Schema(description = SecretManagerDescriptionConstants.AWS_SECRET_NAME_PREFIX) private String secretNamePrefix;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.AWS;
 }

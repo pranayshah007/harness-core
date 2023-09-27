@@ -48,7 +48,7 @@ public class NexusConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @NotNull @NotBlank String version;
   @Valid NexusAuthenticationDTO auth;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.NEXUS;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

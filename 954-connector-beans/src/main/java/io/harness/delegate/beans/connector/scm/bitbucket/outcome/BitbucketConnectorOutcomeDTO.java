@@ -47,7 +47,7 @@ public class BitbucketConnectorOutcomeDTO
   private Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
   private String gitConnectionUrl;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.BITBUCKET;
 
   @Builder
   public BitbucketConnectorOutcomeDTO(GitConnectionType type, String url, String validationRepo,

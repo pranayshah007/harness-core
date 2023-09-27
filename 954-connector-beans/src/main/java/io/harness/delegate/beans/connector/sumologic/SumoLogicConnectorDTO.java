@@ -45,7 +45,7 @@ public class SumoLogicConnectorDTO extends ConnectorConfigDTO implements Decrypt
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData accessIdRef;
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData accessKeyRef;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.SUMOLOGIC;
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);

@@ -49,7 +49,7 @@ public class JenkinsConnectorDTO extends ConnectorConfigDTO implements DelegateS
   @URL @NotNull @NotBlank String jenkinsUrl;
   @Valid JenkinsAuthenticationDTO auth;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.JENKINS;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

@@ -51,7 +51,7 @@ public class SplunkConnectorDTO extends ConnectorConfigDTO implements Decryptabl
   String username;
   @NotNull String accountId;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.SPLUNK;
 
   @Builder.Default @JsonProperty("type") SplunkAuthType authType = SplunkAuthType.USER_PASSWORD;
 

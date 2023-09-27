@@ -44,5 +44,5 @@ public class GcpSecretManagerConnectorOutcomeDTO extends ConnectorConfigOutcomeD
 
   @Schema(description = SecretManagerDescriptionConstants.ASSUME_CREDENTIALS_ON_DELEGATE)
   Boolean assumeCredentialsOnDelegate;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.GCP;
 }

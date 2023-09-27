@@ -37,7 +37,7 @@ public class NGAzureKeyVaultFetchEngineTaskParameters implements TaskParameters,
         HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(SUBSCRIPTION_REACHABLE_URL,
             HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY, maskingEvaluator));
     ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(
-        executionCapabilities, azureKeyVaultConnectorDTO.getDelegateSelectors(), azureKeyVaultConnectorDTO.toOutcome().getConnectorType());
+        executionCapabilities, azureKeyVaultConnectorDTO.getDelegateSelectors(), azureKeyVaultConnectorDTO.getConnectorType());
     return executionCapabilities;
   }
 }

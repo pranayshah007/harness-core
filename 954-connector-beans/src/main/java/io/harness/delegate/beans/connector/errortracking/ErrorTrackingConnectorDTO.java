@@ -43,7 +43,7 @@ public class ErrorTrackingConnectorDTO extends ConnectorConfigDTO implements Dec
   @NotNull @NotBlank String url;
   @NotNull @SecretReference @ApiModelProperty(dataType = "string") SecretRefData apiKeyRef;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.ERROR_TRACKING;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

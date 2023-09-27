@@ -46,5 +46,5 @@ public class CustomSecretManagerConnectorOutcomeDTO extends ConnectorConfigOutco
   private String host;
   private String workingDirectory;
   @NotNull private TemplateLinkConfigForCustomSecretManager template;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.CUSTOM_SECRET_MANAGER;
 }

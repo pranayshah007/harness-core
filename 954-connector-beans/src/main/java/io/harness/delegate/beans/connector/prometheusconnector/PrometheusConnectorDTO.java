@@ -51,7 +51,7 @@ public class PrometheusConnectorDTO extends ConnectorConfigDTO implements Decryp
   List<CustomHealthKeyAndValue> headers;
 
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.PROMETHEUS;
 
   public String getUrl() {
     return url.endsWith("/") ? url : url + "/";

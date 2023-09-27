@@ -50,7 +50,7 @@ public class GitConfigOutcomeDTO extends ConnectorConfigOutcomeDTO implements De
   @Valid
   @NotNull
   GitAuthenticationOutcomeDTO spec;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.GIT;
 
   @Builder
   public GitConfigOutcomeDTO(GitAuthType type, GitAuthenticationOutcomeDTO spec, GitConnectionType connectionType,

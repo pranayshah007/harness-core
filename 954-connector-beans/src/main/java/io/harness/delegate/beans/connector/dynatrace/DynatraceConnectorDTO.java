@@ -44,7 +44,7 @@ public class DynatraceConnectorDTO extends ConnectorConfigDTO implements Decrypt
   @URL @NotNull @NotBlank String url;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData apiTokenRef;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.DYNATRACE;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

@@ -45,7 +45,7 @@ public class OciHelmConnectorDTO extends ConnectorConfigDTO implements DelegateS
   @NotNull @NotBlank String helmRepoUrl;
   @Valid OciHelmAuthenticationDTO auth;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.OCI_HELM_REPO;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

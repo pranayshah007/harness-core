@@ -43,7 +43,7 @@ public class TasConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
   @NotNull @Valid TasCredentialDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.TAS;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

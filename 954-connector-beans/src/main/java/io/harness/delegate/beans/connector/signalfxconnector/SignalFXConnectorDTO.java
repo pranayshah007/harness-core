@@ -47,7 +47,7 @@ public class SignalFXConnectorDTO extends ConnectorConfigDTO implements Decrypta
   @URL @NotNull String url;
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData apiTokenRef;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.SIGNALFX;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

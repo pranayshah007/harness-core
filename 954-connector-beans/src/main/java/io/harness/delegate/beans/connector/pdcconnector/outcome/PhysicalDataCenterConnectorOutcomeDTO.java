@@ -31,5 +31,5 @@ import lombok.EqualsAndHashCode;
 public class PhysicalDataCenterConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @Valid List<HostOutcomeDTO> hosts;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.PDC;
 }

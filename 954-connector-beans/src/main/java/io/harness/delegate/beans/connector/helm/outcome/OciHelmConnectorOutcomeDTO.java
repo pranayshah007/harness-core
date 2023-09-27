@@ -36,5 +36,5 @@ public class OciHelmConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implem
   @NotNull @NotBlank String helmRepoUrl;
   @Valid OciHelmAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.OCI_HELM_REPO;
 }

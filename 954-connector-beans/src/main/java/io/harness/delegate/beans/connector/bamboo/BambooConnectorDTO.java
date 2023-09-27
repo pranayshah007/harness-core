@@ -49,7 +49,7 @@ public class BambooConnectorDTO extends ConnectorConfigDTO implements DelegateSe
   @URL @NotNull @NotBlank String bambooUrl;
   @Valid BambooAuthenticationDTO auth;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.BAMBOO;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

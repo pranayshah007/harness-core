@@ -49,7 +49,7 @@ public class ELKConnectorDTO extends ConnectorConfigDTO implements DecryptableEn
 
   private String username;
   private String apiKeyId;
-  ConnectorType connectorType;
+  //@Builder.Default private ConnectorType connectorType = ConnectorType.;
 
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData passwordRef;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData apiKeyRef;

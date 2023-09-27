@@ -48,7 +48,6 @@ public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements Scm
   @Valid @NotNull AwsCodeCommitAuthenticationDTO authentication;
   Set<String> delegateSelectors;
   String gitConnectionUrl;
-  ConnectorType connectorType;
 
   @Builder
   public AwsCodeCommitConnectorDTO(

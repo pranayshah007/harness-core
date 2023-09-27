@@ -51,7 +51,7 @@ public class GcpConnectorDTO extends ConnectorConfigDTO implements DelegateSelec
   @Valid @NotNull GcpConnectorCredentialDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.GCP;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

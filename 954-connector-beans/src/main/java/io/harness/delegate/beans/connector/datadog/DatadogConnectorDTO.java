@@ -49,5 +49,5 @@ public class DatadogConnectorDTO extends ConnectorConfigDTO implements Decryptab
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
   }
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.DATADOG;
 }

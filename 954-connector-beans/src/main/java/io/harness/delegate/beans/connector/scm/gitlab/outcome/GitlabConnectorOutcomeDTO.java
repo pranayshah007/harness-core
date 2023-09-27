@@ -44,7 +44,7 @@ public class GitlabConnectorOutcomeDTO
   Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
   String gitConnectionUrl;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.GITLAB;
 
   @Builder
   public GitlabConnectorOutcomeDTO(GitConnectionType type, String url, String validationRepo,

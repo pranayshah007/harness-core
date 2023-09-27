@@ -46,7 +46,7 @@ public class HttpHelmConnectorDTO extends ConnectorConfigDTO implements Delegate
   @URL @NotNull @NotBlank String helmRepoUrl;
   @Valid HttpHelmAuthenticationDTO auth;
   Set<String> delegateSelectors;
-  ConnectorType connectorType;
+  @Builder.Default private ConnectorType connectorType = ConnectorType.HTTP_HELM_REPO;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

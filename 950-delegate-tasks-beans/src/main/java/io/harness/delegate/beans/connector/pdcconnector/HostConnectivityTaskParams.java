@@ -35,12 +35,12 @@ public class HostConnectivityTaskParams
   private String hostName;
   private int port;
   @Builder.Default private int socketTimeout = DEFAULT_HOST_SOCKET_TIMEOUT_MS;
-  ConnectorType connectorType;
+  //@Builder.Default private ConnectorType connectorType = ConnectorType.;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
-    ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(capabilityList, delegateSelectors, connectorType);
+    ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability(capabilityList, delegateSelectors, null);
     return capabilityList;
   }
 }
