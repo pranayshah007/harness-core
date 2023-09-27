@@ -12,6 +12,11 @@ import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_O
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.executions.steps.ExecutionNodeType.GITOPS_UPDATE_RELEASE_REPO;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -55,7 +60,6 @@ import io.harness.distribution.constraint.PermanentlyBlockedConsumerException;
 import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -104,7 +108,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepElementParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.GITOPS_UPDATE_RELEASE_REPO.getYamlType())
+                                               .setType(GITOPS_UPDATE_RELEASE_REPO.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
@@ -136,7 +140,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     return constraintContext;
   }
 
-  public NGLogCallback getLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
+  private NGLogCallback getLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, null, shouldOpenStream);
   }
 
@@ -144,19 +148,21 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
   @SneakyThrows
   public AsyncChainExecutableResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    NGLogCallback logCallback = getLogCallback(ambiance, true);
+
     UpdateReleaseRepoStepParams gitOpsSpecParams = (UpdateReleaseRepoStepParams) stepParameters.getSpec();
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
     ConnectorInfoDTO connectorInfoDTO =
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
-    NGLogCallback logCallback = getLogCallback(ambiance, true);
-    logCallback.saveExecutionLog("Acquiring lock");
+    logCallback.saveExecutionLog("Trying to acquire lock");
     String tokenRefIdentifier = extractToken(connectorInfoDTO);
+    String constraintUnitIdentifier =
+        GITOPS_UPDATE_RELEASE_REPO.getName() + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
 
-    Constraint constraint =
-        githubRestraintInstanceService.createAbstraction(AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier);
+    Constraint constraint = githubRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
     String releaseEntityId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String consumerId = generateUuid();
-    ConstraintUnit constraintUnit = new ConstraintUnit(AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier);
+    ConstraintUnit constraintUnit = new ConstraintUnit(constraintUnitIdentifier);
 
     Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
 
@@ -165,6 +171,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
           constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintInstanceService);
       switch (state) {
         case BLOCKED:
+          logCallback.saveExecutionLog("Running instances were found, step queued.");
           return AsyncChainExecutableResponse.newBuilder().setCallbackId(consumerId).build();
         case ACTIVE:
           try {
@@ -179,13 +186,15 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
                 String.format("Failed to execute Update Release Repo step. %s", e.getMessage()));
           }
         case REJECTED:
+          logCallback.saveExecutionLog(
+              "Constraint acquire rejected. Please try again after few minutes.", ERROR, FAILURE);
           throw new GeneralException("Found already running resourceConstrains, marking this execution as failed");
         default:
           throw new IllegalStateException("This should never happen");
       }
 
     } catch (InvalidPermitsException | UnableToRegisterConsumerException | PermanentlyBlockedConsumerException e) {
-      log.error("Exception on ResourceRestraintStep for id [{}]", AmbianceUtils.obtainCurrentRuntimeId(ambiance), e);
+      log.error("Exception on UpdateReleaseRepoStep for id [{}]", AmbianceUtils.obtainCurrentRuntimeId(ambiance), e);
       throw e;
     }
   }
@@ -217,6 +226,8 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataSupplier.get();
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
+      NGLogCallback logCallback = getLogCallback(ambiance, true);
+      logCallback.saveExecutionLog("UpdateReleaseRepo step finished.", INFO, SUCCESS);
       UpdateReleaseRepoOutcome updateReleaseRepoOutcome = UpdateReleaseRepoOutcome.builder()
                                                               .prlink(ngGitOpsResponse.getPrLink())
                                                               .prNumber(ngGitOpsResponse.getPrNumber())

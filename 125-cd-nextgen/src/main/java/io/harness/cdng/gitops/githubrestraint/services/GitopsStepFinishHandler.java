@@ -9,11 +9,13 @@ package io.harness.cdng.gitops.githubrestraint.services;
 
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
+import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.resume.GitopsStepFinishCallback;
 import io.harness.delay.DelayEventHelper;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
@@ -23,6 +25,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -30,6 +33,8 @@ public class GitopsStepFinishHandler implements OrchestrationEventHandler {
   @Inject private DelayEventHelper delayEventHelper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   private static final long DELAY_IN_SECONDS = 5;
+  private static final Set<StepType> STEP_TYPES_GIT_LOCK =
+      Set.of(UpdateReleaseRepoStep.STEP_TYPE, MergePRStep.STEP_TYPE);
 
   private void unblockConstraints(Ambiance ambiance) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
@@ -47,7 +52,7 @@ public class GitopsStepFinishHandler implements OrchestrationEventHandler {
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
-    if (UpdateReleaseRepoStep.STEP_TYPE.equals(AmbianceUtils.getCurrentStepType(event.getAmbiance()))
+    if (STEP_TYPES_GIT_LOCK.contains(AmbianceUtils.getCurrentStepType(event.getAmbiance()))
         && StatusUtils.isFinalStatus(event.getStatus())) {
       unblockConstraints(event.getAmbiance());
     }
