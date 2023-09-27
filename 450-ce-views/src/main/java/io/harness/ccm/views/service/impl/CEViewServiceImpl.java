@@ -254,6 +254,9 @@ public class CEViewServiceImpl implements CEViewService {
     Set<ViewFieldIdentifier> viewFieldIdentifierSet = getViewFieldIdentifiers(ceView, validBusinessMappingIds);
     setDataSources(ceView, viewFieldIdentifierSet);
     ceView.setViewPreferences(ceViewPreferenceService.getCEViewPreferences(ceView, Collections.emptySet()));
+    Set<ViewFieldIdentifier> businessMappingCloudProvider =
+        getBusinessMappingDataSources(ceView, validBusinessMappingIds);
+    setBusinessMappingDataSources(ceView, businessMappingCloudProvider);
   }
 
   private ViewVisualization getDefaultViewVisualization() {
@@ -268,7 +271,6 @@ public class CEViewServiceImpl implements CEViewService {
                      .build())
         .build();
   }
-
   @NotNull
   private Set<ViewFieldIdentifier> getViewFieldIdentifiers(CEView ceView, Set<String> validBusinessMappingIds) {
     Set<ViewFieldIdentifier> viewFieldIdentifierSet = new HashSet<>();
@@ -328,7 +330,37 @@ public class CEViewServiceImpl implements CEViewService {
       throw new InvalidRequestException(String.format(INVALID_COST_CATEGORY_ID_EXCEPTION, id));
     }
   }
-
+  @NotNull
+  private Set<ViewFieldIdentifier> getBusinessMappingDataSources(CEView ceView, Set<String> validBusinessMappingIds) {
+    Set<ViewFieldIdentifier> businessMappingCloudProvider = new HashSet<>();
+    ViewFieldIdentifier groupByViewFieldIdentifier = ceView.getViewVisualization().getGroupBy().getIdentifier();
+    if (groupByViewFieldIdentifier == ViewFieldIdentifier.BUSINESS_MAPPING) {
+      List<ViewFieldIdentifier> businessMappingDataSource = businessMappingService.getBusinessMappingDataSources(
+          ceView.getAccountId(), ceView.getViewVisualization().getGroupBy().getFieldId());
+      for (ViewFieldIdentifier field : businessMappingDataSource) {
+        businessMappingCloudProvider.add(field);
+      }
+    }
+    if (ceView.getViewRules() != null) {
+      for (ViewRule rule : ceView.getViewRules()) {
+        for (ViewCondition condition : rule.getViewConditions()) {
+          ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
+          if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
+            if (validBusinessMappingIds == null) {
+              validBusinessMappingIds = businessMappingService.getBusinessMappingIds(ceView.getAccountId());
+            }
+            validateBusinessMappingId(validBusinessMappingIds, viewIdCondition.getViewField().getFieldId());
+            List<ViewFieldIdentifier> businessMappingDataSource = businessMappingService.getBusinessMappingDataSources(
+                ceView.getAccountId(), viewIdCondition.getViewField().getFieldId());
+            for (ViewFieldIdentifier field : businessMappingDataSource) {
+              businessMappingCloudProvider.add(field);
+            }
+          }
+        }
+      }
+    }
+    return businessMappingCloudProvider;
+  }
   @Override
   public Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(
       final ViewIdCondition viewIdCondition, String accountId) {
@@ -394,7 +426,10 @@ public class CEViewServiceImpl implements CEViewService {
       ceView.setDataSources(new ArrayList<>(viewFieldIdentifierSet));
     }
   }
-
+  private void setBusinessMappingDataSources(
+      final CEView ceView, final Set<ViewFieldIdentifier> businessMappingCloudProvider) {
+    ceView.setBusinessMappingDataSources(new ArrayList<>(businessMappingCloudProvider));
+  }
   @Override
   public CEView get(String uuid) {
     CEView view = ceViewDao.get(uuid);

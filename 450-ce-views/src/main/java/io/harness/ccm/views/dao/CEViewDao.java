@@ -85,16 +85,18 @@ public class CEViewDao {
                       .equal(ceView.getAccountId())
                       .field(CEViewKeys.uuid)
                       .equal(ceView.getUuid());
-    UpdateOperations<CEView> updateOperations = hPersistence.createUpdateOperations(CEView.class)
-                                                    .set(CEViewKeys.viewVersion, ceView.getViewVersion())
-                                                    .set(CEViewKeys.name, ceView.getName())
-                                                    .set(CEViewKeys.viewTimeRange, ceView.getViewTimeRange())
-                                                    .set(CEViewKeys.viewRules, ceView.getViewRules())
-                                                    .set(CEViewKeys.viewVisualization, ceView.getViewVisualization())
-                                                    .set(CEViewKeys.viewPreferences, ceView.getViewPreferences())
-                                                    .set(CEViewKeys.viewType, ceView.getViewType())
-                                                    .set(CEViewKeys.viewState, ViewState.COMPLETED)
-                                                    .set(CEViewKeys.dataSources, ceView.getDataSources());
+    UpdateOperations<CEView> updateOperations =
+        hPersistence.createUpdateOperations(CEView.class)
+            .set(CEViewKeys.viewVersion, ceView.getViewVersion())
+            .set(CEViewKeys.name, ceView.getName())
+            .set(CEViewKeys.viewTimeRange, ceView.getViewTimeRange())
+            .set(CEViewKeys.viewRules, ceView.getViewRules())
+            .set(CEViewKeys.viewVisualization, ceView.getViewVisualization())
+            .set(CEViewKeys.viewPreferences, ceView.getViewPreferences())
+            .set(CEViewKeys.viewType, ceView.getViewType())
+            .set(CEViewKeys.viewState, ViewState.COMPLETED)
+            .set(CEViewKeys.dataSources, ceView.getDataSources())
+            .set(CEViewKeys.businessMappingDataSources, ceView.getBusinessMappingDataSources());
     if (ceView.getFolderId() != null) {
       updateOperations = updateOperations.set(CEViewKeys.folderId, ceView.getFolderId());
     }

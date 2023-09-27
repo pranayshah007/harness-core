@@ -65,6 +65,7 @@ public final class CEView implements PersistentEntity, UuidAware, CreatedAtAware
   ViewTimeRange viewTimeRange;
   List<ViewRule> viewRules;
   List<ViewFieldIdentifier> dataSources;
+  List<ViewFieldIdentifier> businessMappingDataSources;
   ViewVisualization viewVisualization;
   ViewPreferences viewPreferences;
 

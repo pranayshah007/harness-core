@@ -26,12 +26,7 @@ import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.helper.BusinessMappingDataSourceHelper;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @OwnedBy(CE)
@@ -110,6 +105,19 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
       return businessMappings.stream().map(businessMapping -> businessMapping.getUuid()).collect(Collectors.toSet());
     }
     return Collections.emptySet();
+  }
+  public List<ViewFieldIdentifier> getBusinessMappingDataSources(String accountId, String businessMappingId) {
+    List<BusinessMapping> businessMappings = businessMappingDao.findBusinessMappingIdsByAccountId(accountId);
+    if (businessMappings != null) {
+      Optional<BusinessMapping> matchingBusinessMapping =
+          businessMappings.stream()
+              .filter(businessMapping -> businessMapping.getUuid().equals(businessMappingId))
+              .findFirst();
+      if (matchingBusinessMapping.isPresent()) {
+        return matchingBusinessMapping.get().getDataSources();
+      }
+    }
+    return Collections.emptyList();
   }
 
   @Override

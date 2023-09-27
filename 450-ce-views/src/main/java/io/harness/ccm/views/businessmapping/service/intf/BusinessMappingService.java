@@ -12,8 +12,10 @@ import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.BusinessMappingListDTO;
 import io.harness.ccm.views.businessmapping.entities.CostCategorySortType;
 import io.harness.ccm.views.entities.ViewField;
+import io.harness.ccm.views.entities.ViewFieldIdentifier;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface BusinessMappingService {
@@ -27,4 +29,5 @@ public interface BusinessMappingService {
   List<ViewField> getBusinessMappingViewFields(String accountId);
   Set<String> getBusinessMappingIds(String accountId);
   List<String> getCostTargetNames(String businessMappingId, String accountId, String searchString);
+  List<ViewFieldIdentifier> getBusinessMappingDataSources(String accountId, String businessMappingId);
 }
