@@ -7,7 +7,6 @@
 
 package io.harness.cvng.core.services.impl;
 
-import io.harness.beans.FeatureName;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.PrometheusDataCollectionInfo;
 import io.harness.cvng.beans.PrometheusDataCollectionInfo.MetricCollectionInfo;
@@ -18,12 +17,10 @@ import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.entities.VerificationTask;
-import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricDataCollectionInfoMapper;
 import io.harness.cvng.utils.PrometheusQueryUtils;
 
 import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,7 +29,6 @@ import org.apache.commons.lang3.StringUtils;
 
 public class PrometheusDataCollectionInfoMapper
     extends MetricDataCollectionInfoMapper<PrometheusDataCollectionInfo, MetricCVConfig> {
-  @Inject private FeatureFlagService featureFlagService;
   @Override
   protected PrometheusDataCollectionInfo toDataCollectionInfo(MetricCVConfig cvConfig) {
     PrometheusDataCollectionInfo prometheusDataCollectionInfo;
@@ -122,21 +118,18 @@ public class PrometheusDataCollectionInfoMapper
   @Override
   public void postProcessDataCollectionInfo(
       PrometheusDataCollectionInfo dataCollectionInfo, MetricCVConfig cvConfig, VerificationTask.TaskType taskType) {
-    if (featureFlagService.isFeatureFlagEnabled(
-            cvConfig.getAccountId(), FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())) {
-      PrometheusCVConfig prometheusCVConfig = (PrometheusCVConfig) cvConfig;
-      if (dataCollectionInfo.isCollectHostData()) {
-        dataCollectionInfo.setDataCollectionDsl(DataCollectionDSLFactory.readMetricDSL(DataSourceType.PROMETHEUS));
-        List<MetricCollectionInfo> metricCollectionInfoList =
-            prometheusCVConfig.getMetricInfos()
-                .stream()
-                .map(this::getMetricCollectionInfo)
-                .peek(metricCollectionInfo
-                    -> metricCollectionInfo.setQuery(PrometheusQueryUtils.formGroupByQuery(
-                        metricCollectionInfo.getQuery(), metricCollectionInfo.getServiceInstanceField())))
-                .collect(Collectors.toList());
-        dataCollectionInfo.setMetricCollectionInfoList(metricCollectionInfoList);
-      }
+    PrometheusCVConfig prometheusCVConfig = (PrometheusCVConfig) cvConfig;
+    if (dataCollectionInfo.isCollectHostData()) {
+      dataCollectionInfo.setDataCollectionDsl(DataCollectionDSLFactory.readMetricDSL(DataSourceType.PROMETHEUS));
+      List<MetricCollectionInfo> metricCollectionInfoList =
+          prometheusCVConfig.getMetricInfos()
+              .stream()
+              .map(this::getMetricCollectionInfo)
+              .peek(metricCollectionInfo
+                  -> metricCollectionInfo.setQuery(PrometheusQueryUtils.formGroupByQuery(
+                      metricCollectionInfo.getQuery(), metricCollectionInfo.getServiceInstanceField())))
+              .collect(Collectors.toList());
+      dataCollectionInfo.setMetricCollectionInfoList(metricCollectionInfoList);
     }
   }
 }
