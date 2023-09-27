@@ -266,6 +266,7 @@ public enum FeatureName {
       "Enables use of generative AI to provide remediation information in CI step logs", HarnessTeam.CI),
   CI_BITBUCKET_STATUS_KEY_HASH("Hash and abbreviate the stage ID for Bitbucket SaaS", HarnessTeam.CI),
   CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
+  CI_CREDIT_CARD_ONBOARDING("Feature flag for credit card experience in CI onboarding", HarnessTeam.CI),
   CI_DISABLE_RESOURCE_OPTIMIZATION(
       "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI),
   CI_DOCKER_INFRASTRUCTURE,
