@@ -1918,8 +1918,13 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @VisibleForTesting
-  List<NotificationRule> getEnabledAndEligibleNotificationRules(
-      MonitoredService monitoredService, ProjectParams projectParams) {
+  List<NotificationRule> getEnabledAndEligibleNotificationRules(MonitoredService monitoredService) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(monitoredService.getAccountId())
+                                      .orgIdentifier(monitoredService.getOrgIdentifier())
+                                      .projectIdentifier(monitoredService.getProjectIdentifier())
+                                      .build();
+
     List<NotificationRule> notificationRules = new ArrayList<>();
     final List<NotificationRuleRef> notificationRuleRefs = monitoredService.getNotificationRuleRefs();
 
@@ -1936,7 +1941,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   private Duration getCoolOffDuration(MonitoredServiceNotificationRule notificationRule) {
     Duration coolOffDuration = COOL_OFF_DURATION;
-    if (notificationRule.getConditions().contains(CODE_ERRORS)) {
+    if (notificationRule.getConditions().stream().anyMatch(c -> c.getType() == CODE_ERRORS)) {
       coolOffDuration = Duration.ZERO;
     }
     return coolOffDuration;
@@ -1964,7 +1969,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                       .orgIdentifier(monitoredService.getOrgIdentifier())
                                       .projectIdentifier(monitoredService.getProjectIdentifier())
                                       .build();
-    List<NotificationRule> notificationRules = getEnabledAndEligibleNotificationRules(monitoredService, projectParams);
+    List<NotificationRule> notificationRules = getEnabledAndEligibleNotificationRules(monitoredService);
     Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
     for (NotificationRule notificationRule : notificationRules) {
