@@ -141,6 +141,22 @@ public class ServiceVariableMigrationService extends NgMigrationService {
             .upsertServiceOverride(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 JsonUtils.asTree(requestDTO))
             .execute();
+
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      yaml = getYamlStringV2(yamlFile);
+      requestDTO = ServiceOverrideRequestDTO.builder()
+                       .serviceIdentifier(serviceOverrideInfoConfig.getServiceRef())
+                       .environmentIdentifier(serviceOverrideInfoConfig.getEnvironmentRef())
+                       .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
+                       .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
+                       .yaml(yaml)
+                       .build();
+      resp = ngClient
+                 .upsertServiceOverride(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     JsonUtils.asTree(requestDTO))
+                 .execute();
+    }
+
     log.info("Service variables creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
