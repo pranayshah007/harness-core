@@ -109,7 +109,7 @@ global:
       certName: ""
       certKey: ""
     redis:
-      installed: false
+      installed: true
       protocol: "redis"
       # --  provide default values if redis.installed is set to false
       hosts:
