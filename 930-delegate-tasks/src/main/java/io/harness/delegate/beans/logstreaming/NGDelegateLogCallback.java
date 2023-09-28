@@ -91,6 +91,24 @@ public class NGDelegateLogCallback implements LogCallback {
     }
   }
 
+  // This method is to close log stream without any message.
+  @Override
+  public void close(CommandExecutionStatus commandExecutionStatus) {
+    Instant now = Instant.now();
+    iLogStreamingTaskClient.closeStream(commandUnitName);
+    LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap =
+        commandUnitsProgress.getCommandUnitProgressMap();
+
+    boolean change = updateCommandUnitProgressMap(commandExecutionStatus, now, commandUnitProgressMap);
+
+    if (change) {
+      ITaskProgressClient taskProgressClient = iLogStreamingTaskClient.obtainTaskProgressClient();
+
+      ExecutorService taskProgressExecutor = iLogStreamingTaskClient.obtainTaskProgressExecutor();
+      taskProgressExecutor.submit(() -> sendTaskProgressUpdate(taskProgressClient));
+    }
+  }
+
   @Override
   public void saveExecutionLog(String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus) {
     boolean terminalStatus = CommandExecutionStatus.isTerminalStatus(commandExecutionStatus);
