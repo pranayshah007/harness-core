@@ -114,26 +114,34 @@ global:
       # --  provide default values if redis.installed is set to false
       hosts:
         - redis:6379
-      secretName: ""
-      userKey: ""
-      passwordKey: ""
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
       extraArgs: ""
       secrets:
         kubernetesSecrets:
           - secretName: ""
             keys:
-              REDIS_USERNAME: ""
-              REDIS_PASSWORD": ""
+              EVENTS_FRAMEWORK_REDIS_USERNAME: ""
+              EVENTS_FRAMEWORK_REDIS_PASSWORD": ""
+              LOCK_CONFIG_REDIS_USERNAME: ""
+              LOCK_CONFIG_REDIS_PASSWORD: ""
         secretManagement:
           externalSecretsOperator:
             - secretStore:
                 name: ""
                 kind: ""
               remoteKeys:
-                REDIS_USERNAME:
+                EVENTS_FRAMEWORK_REDIS_USERNAME:
                   name: ""
                   property: ""
-                REDIS_PASSWORD":
+                EVENTS_FRAMEWORK_REDIS_PASSWORD":
+                  name: ""
+                  property: ""
+                LOCK_CONFIG_REDIS_USERNAME":
+                  name: ""
+                  property: ""
+                LOCK_CONFIG_REDIS_PASSWORD":
                   name: ""
                   property: ""
   license:
