@@ -59,6 +59,7 @@ public final class EventsFrameworkMetadataConstants {
   public static final String DEPLOYMENT_FREEZE_ENTITY = "deploymentfreeze";
   public static final String ENVIRONMENT_ENTITY = "environment";
   public static final String ENVIRONMENT_GROUP_ENTITY = "environmentGroup";
+  public static final String FEATUREFLAG_ENTITY = "featureflag";
 
   public static final String RESOURCE_GROUP = "resourcegroup";
 
