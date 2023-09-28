@@ -43,7 +43,7 @@ exports:
             md: 6
     - type: CARD
       name: EntityOverviewDashboardViewer
-      addByDefault: true
+      addByDefault: false
       layoutSchemaSpecs:
         component: EntityOverviewDashboardViewer
         specs:
