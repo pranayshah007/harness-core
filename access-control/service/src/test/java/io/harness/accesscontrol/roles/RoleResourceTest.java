@@ -12,9 +12,11 @@ import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ROLE_PERMIS
 import static io.harness.accesscontrol.AccessControlResourceTypes.ROLE;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static junit.framework.TestCase.assertEquals;
@@ -47,9 +49,7 @@ import io.harness.accesscontrol.roles.api.RoleWithPrincipalCountResponseDTO;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
@@ -58,7 +58,6 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -70,15 +69,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 public class RoleResourceTest extends AccessControlTestBase {
   private RoleService roleService;
   private ScopeService scopeService;
   private RoleDTOMapper roleDTOMapper;
-  private TransactionTemplate transactionTemplate;
-  private OutboxService outboxService;
   private AccessControlClient accessControlClient;
   private RoleResource roleResource;
   private PageRequest pageRequest;
@@ -96,14 +92,12 @@ public class RoleResourceTest extends AccessControlTestBase {
     roleService = mock(RoleService.class);
     scopeService = mock(ScopeService.class);
     roleDTOMapper = mock(RoleDTOMapper.class);
-    transactionTemplate = mock(TransactionTemplate.class);
-    outboxService = mock(OutboxService.class);
     accessControlClient = mock(AccessControlClient.class);
     featureFlagService = mock(FeatureFlagService.class);
     roleWithPrincipalCountDTOMapper = mock(RoleWithPrincipalCountDTOMapper.class);
     roleAssignmentService = mock(RoleAssignmentService.class);
-    roleResource = new RoleResourceImpl(roleService, scopeService, roleDTOMapper, transactionTemplate, outboxService,
-        accessControlClient, featureFlagService, roleWithPrincipalCountDTOMapper);
+    roleResource = new RoleResourceImpl(roleService, scopeService, roleDTOMapper, accessControlClient,
+        featureFlagService, roleWithPrincipalCountDTOMapper);
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
     accountIdentifier = randomAlphabetic(10);
     orgIdentifier = randomAlphabetic(10);
@@ -267,7 +261,7 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, identifier), VIEW_ROLE_PERMISSION);
-    String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
+    String scopeIdentifier = fromParams(harnessScopeParams).toString();
     Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
     when(roleService.get(identifier, scopeIdentifier, NO_FILTER)).thenReturn(Optional.of(role));
     RoleResponseDTO roleResponseDTO =
@@ -292,7 +286,7 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    String scopeIdentifier = fromParams(scopeParams).toString();
     Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
     when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
     RoleResponseDTO roleResponseDTO =
@@ -318,7 +312,7 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    String scopeIdentifier = fromParams(scopeParams).toString();
     Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
     when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
     RoleResponseDTO roleResponseDTO =
@@ -344,7 +338,7 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    String scopeIdentifier = fromParams(scopeParams).toString();
     Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
     when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
     RoleResponseDTO roleResponseDTO =
@@ -373,7 +367,7 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    String scopeIdentifier = fromParams(scopeParams).toString();
     Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
     when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
     RoleResponseDTO roleResponseDTO =
@@ -402,7 +396,7 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), VIEW_ROLE_PERMISSION);
-    String scopeIdentifier = ScopeMapper.fromParams(scopeParams).toString();
+    String scopeIdentifier = fromParams(scopeParams).toString();
     Role role = Role.builder().scopeIdentifier(scopeIdentifier).identifier(identifier).build();
     when(roleService.get(eq(identifier), eq(scopeIdentifier), any())).thenReturn(Optional.of(role));
     RoleResponseDTO roleResponseDTO =
@@ -424,26 +418,30 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, identifier), VIEW_ROLE_PERMISSION);
-    String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
+    String scopeIdentifier = fromParams(harnessScopeParams).toString();
     when(roleService.get(identifier, scopeIdentifier, NO_FILTER)).thenReturn(Optional.empty());
     roleResource.get(identifier, harnessScopeParams);
   }
 
   @Test
-  @Owner(developers = KARAN)
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void testUpdate() {
     String identifier = randomAlphabetic(10);
     RoleDTO roleDTO = RoleDTO.builder().identifier(identifier).build();
+    Scope scope = fromParams(harnessScopeParams);
+    Role role = RoleDTOMapper.fromDTO(scope.toString(), roleDTO);
+    RoleResponseDTO roleResponseDTO = RoleResponseDTO.builder().role(roleDTO).build();
+    when(roleService.update(role)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, identifier), EDIT_ROLE_PERMISSION);
-    RoleResponseDTO roleResponseDTO = RoleResponseDTO.builder().role(roleDTO).build();
-    when(transactionTemplate.execute(any())).thenReturn(ResponseDTO.newResponse(roleResponseDTO));
     ResponseDTO<RoleResponseDTO> response = roleResource.update(identifier, harnessScopeParams, roleDTO);
     assertEquals(roleResponseDTO, response.getData());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).update(role);
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -467,33 +465,39 @@ public class RoleResourceTest extends AccessControlTestBase {
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, null), EDIT_ROLE_PERMISSION);
-    when(scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams)))
-        .thenReturn(Scope.builder().level(HarnessScopeLevel.ORGANIZATION).build());
+    Scope scope = fromParams(harnessScopeParams);
+    when(scopeService.getOrCreate(fromParams(harnessScopeParams))).thenReturn(scope);
     RoleResponseDTO roleResponseDTO = RoleResponseDTO.builder().role(roleDTO).build();
-    when(transactionTemplate.execute(any())).thenReturn(ResponseDTO.newResponse(roleResponseDTO));
+    Role role = RoleDTOMapper.fromDTO(scope.toString(), roleDTO);
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+    when(roleService.create(any())).thenReturn(role);
     ResponseDTO<RoleResponseDTO> response = roleResource.create(accountIdentifier, orgIdentifier, null, roleDTO);
     assertEquals(roleResponseDTO, response.getData());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     verify(scopeService, times(1)).getOrCreate(any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).create(any());
   }
 
   @Test
-  @Owner(developers = KARAN)
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
   @Category(UnitTests.class)
   public void testDelete() {
     String identifier = randomAlphabetic(10);
     doNothing()
         .when(accessControlClient)
         .checkForAccessOrThrow(resourceScope, Resource.of(ROLE, identifier), EDIT_ROLE_PERMISSION);
-    RoleResponseDTO roleResponseDTO =
-        RoleResponseDTO.builder().role(RoleDTO.builder().identifier(identifier).build()).build();
-    when(transactionTemplate.execute(any())).thenReturn(ResponseDTO.newResponse(roleResponseDTO));
+    RoleDTO roleDTO = RoleDTO.builder().identifier(identifier).build();
+    Scope scope = fromParams(harnessScopeParams);
+    Role role = RoleDTOMapper.fromDTO(scope.toString(), roleDTO);
+    RoleResponseDTO roleResponseDTO = RoleResponseDTO.builder().role(roleDTO).build();
+    when(roleDTOMapper.toResponseDTO(role)).thenReturn(roleResponseDTO);
+    when(roleService.delete(identifier, scope.toString())).thenReturn(role);
     ResponseDTO<RoleResponseDTO> response = roleResource.delete(identifier, harnessScopeParams);
     assertEquals(roleResponseDTO, response.getData());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).delete(identifier, scope.toString());
   }
+
   @Test
   @Owner(developers = ADITYA)
   @Category(UnitTests.class)
