@@ -43,8 +43,4 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     echo "Using Appdynamics java agent"
 fi
 
-if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml
-else
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml > /opt/harness/logs/pipeline-service.log 2>&1
-fi
+java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml

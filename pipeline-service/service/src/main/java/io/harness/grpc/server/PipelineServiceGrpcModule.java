@@ -40,11 +40,8 @@ import io.grpc.BindableService;
 import io.grpc.Channel;
 import io.grpc.ServerInterceptor;
 import io.grpc.inprocess.InProcessChannelBuilder;
-import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
-import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
-import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.grpc.services.HealthStatusManager;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +54,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PipelineServiceGrpcModule extends AbstractModule {
   private static PipelineServiceGrpcModule instance;
-  private final String deployMode = System.getenv().get("DEPLOY_MODE");
 
   public static PipelineServiceGrpcModule getInstance() {
     if (instance == null) {
@@ -147,23 +143,11 @@ public class PipelineServiceGrpcModule extends AbstractModule {
   private Channel getChannel(GrpcClientConfig clientConfig, NegotiationType grpcNegotiationType) throws SSLException {
     String authorityToUse = clientConfig.getAuthority();
     Channel channel;
-
-    if (shouldUsePlainTextNegotiationType(grpcNegotiationType, deployMode)) {
-      channel = NettyChannelBuilder.forTarget(clientConfig.getTarget())
-                    .overrideAuthority(authorityToUse)
-                    .usePlaintext()
-                    .maxInboundMessageSize(GrpcInProcessServer.GRPC_MAXIMUM_MESSAGE_SIZE)
-                    .build();
-    } else {
-      SslContext sslContext = GrpcSslContexts.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
-      channel = NettyChannelBuilder.forTarget(clientConfig.getTarget())
-                    .overrideAuthority(authorityToUse)
-                    .sslContext(sslContext)
-                    .maxInboundMessageSize(GrpcInProcessServer.GRPC_MAXIMUM_MESSAGE_SIZE)
-                    .build();
-    }
-
-    return channel;
+    return NettyChannelBuilder.forTarget(clientConfig.getTarget())
+        .overrideAuthority(authorityToUse)
+        .usePlaintext()
+        .maxInboundMessageSize(GrpcInProcessServer.GRPC_MAXIMUM_MESSAGE_SIZE)
+        .build();
   }
 
   @Provides
@@ -202,11 +186,5 @@ public class PipelineServiceGrpcModule extends AbstractModule {
     services.add(entityReferenceService);
     services.add(variablesService);
     return services;
-  }
-
-  @VisibleForTesting
-  boolean shouldUsePlainTextNegotiationType(NegotiationType negotiationType, String deployMode) {
-    return "ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode)
-        || (negotiationType != null && negotiationType.equals(NegotiationType.PLAINTEXT));
   }
 }
