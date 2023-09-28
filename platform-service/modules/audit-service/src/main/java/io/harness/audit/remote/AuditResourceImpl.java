@@ -19,6 +19,7 @@ import io.harness.audit.api.impl.AuditPermissionValidator;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
+import io.harness.audit.beans.custom.ActiveProjectMetricsDTO;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
 import io.harness.audit.mapper.AuditEventMapper;
 import io.harness.beans.SortOrder;
@@ -75,5 +76,13 @@ public class AuditResourceImpl implements AuditResource {
     ResponseDTO<PageResponse<AuditEventDTO>> response = ResponseDTO.newResponse(getNGPageResponse(audits));
     log.info(String.format("Took %d milliseconds for list audit api.", System.currentTimeMillis() - startTime));
     return response;
+  }
+
+  @InternalApi
+  public ResponseDTO<Void> publishMetrics(ActiveProjectMetricsDTO activeProjectMetricsDTO) {
+    auditService.computeMetricsForActiveProject(activeProjectMetricsDTO.getAccountIds(),
+        activeProjectMetricsDTO.getProjectCounts(), activeProjectMetricsDTO.getStartTime(),
+        activeProjectMetricsDTO.getEndTime());
+    return ResponseDTO.newResponse();
   }
 }

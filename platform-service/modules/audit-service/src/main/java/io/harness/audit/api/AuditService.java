@@ -16,6 +16,8 @@ import io.harness.audit.entities.AuditEvent;
 import io.harness.ng.beans.PageRequest;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -34,4 +36,7 @@ public interface AuditService {
   Set<String> getUniqueAuditedAccounts();
 
   void deleteAuditInfo(String accountId);
+
+  void computeMetricsForActiveProject(
+      List<String> accountIds, Map<String, Integer> projectCounts, long startTime, long endTime);
 }

@@ -1,0 +1,8 @@
+name: Project Activity Metrics
+identifier: project_activity_metrics
+metricGroup: project_activity_metrics_group
+metrics:
+  - metricName: project_activity_metrics
+    metricDefinition: Number of active project in an account
+    type: Count
+    unit: "1"

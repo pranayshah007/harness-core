@@ -14,6 +14,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
+import io.harness.audit.beans.custom.ActiveProjectMetricsDTO;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -94,4 +95,21 @@ public interface AuditResource {
        @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @BeanParam PageRequest pageRequest,
       @RequestBody(description = "This has the filter attributes for listing Audit Events")
       AuditFilterPropertiesDTO auditFilterPropertiesDTO);
+
+  @POST
+  @Path("/publish-metrics")
+  @Hidden
+  @ApiOperation(
+      hidden = true, value = "publish Metrics for Active Project", nickname = "publishMetricsForActiveProject")
+  @Operation(operationId = "publishMetricsForActiveProject", summary = "publish Metrics for Active Project",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "This has the information to publish Metrics for Active Project")
+      },
+      hidden = true)
+  @InternalApi
+  ResponseDTO<Void>
+  publishMetrics(@RequestBody(description = "This has the information to publish Metrics for Active Project",
+      required = true) @NotNull @Valid ActiveProjectMetricsDTO activeProjectMetricsDTO);
 }
