@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -28,6 +29,7 @@ import lombok.experimental.SuperBuilder;
 @JsonTypeName("Template")
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
+@RecasterAlias("io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec")
 public class TemplateMonitoredServiceSpec extends MonitoredServiceSpec {
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
