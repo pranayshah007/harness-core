@@ -33,6 +33,7 @@ import io.harness.cdng.provision.terraformcloud.dal.TerraformCloudConfig;
 import io.harness.cdng.provision.terragrunt.TerragruntConfig;
 import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.usage.task.CDLicenseReportAccounts;
+import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.polling.bean.PollingDocument;
@@ -65,6 +66,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(StageExecutionInstanceInfo.class);
     set.add(CDLicenseReportAccounts.class);
     set.add(AwsCdkConfig.class);
+    set.add(GithubRestraintInstance.class);
   }
 
   @Override
