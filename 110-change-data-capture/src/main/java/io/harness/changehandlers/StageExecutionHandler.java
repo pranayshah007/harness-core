@@ -13,6 +13,7 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.changehandlers.helper.ChangeHandlerHelper;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.changestreamsframework.ChangeType;
+import io.harness.execution.stage.StageExecutionEntity;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
@@ -51,16 +52,25 @@ public class StageExecutionHandler extends AbstractChangeDataHandler {
       columnValueMapping.put("duration", Long.toString(duration));
     }
 
-    BasicDBObject executionSummaryDetails =
-        (BasicDBObject) dbObject.get(StageExecutionInfoKeys.executionSummaryDetails);
-    BasicDBObject serviceInfo = (BasicDBObject) executionSummaryDetails.get("serviceInfo");
-
-    if (serviceInfo != null) {
-      boolean gitOpsEnabled = (boolean) serviceInfo.get("gitOpsEnabled");
-      if (gitOpsEnabled) {
-        columnValueMapping.put("type", "GITOPS");
+    if (dbObject.get(StageExecutionEntity.StageExecutionEntityKeys.stageType) != null) {
+      if ("CUSTOM_STAGE".equals(dbObject.get(StageExecutionEntity.StageExecutionEntityKeys.stageType).toString())) {
+        columnValueMapping.put("type", "Custom");
       } else {
-        columnValueMapping.put("type", "CD");
+        columnValueMapping.put(
+            "type", dbObject.get(StageExecutionEntity.StageExecutionEntityKeys.stageType).toString());
+      }
+    } else {
+      BasicDBObject executionSummaryDetails =
+          (BasicDBObject) dbObject.get(StageExecutionInfoKeys.executionSummaryDetails);
+      BasicDBObject serviceInfo = (BasicDBObject) executionSummaryDetails.get("serviceInfo");
+
+      if (serviceInfo != null) {
+        boolean gitOpsEnabled = (boolean) serviceInfo.get("gitOpsEnabled");
+        if (gitOpsEnabled) {
+          columnValueMapping.put("type", "GITOPS");
+        } else {
+          columnValueMapping.put("type", "CD");
+        }
       }
     }
 

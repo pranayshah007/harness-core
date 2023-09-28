@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.execution;
+
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
@@ -59,6 +60,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
     table = "execution_tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "StageTagsInfoNGCD")
 @ChangeDataCapture(table = "cd_stage_helm_manifest_info", dataStore = "ng-harness", fields = {},
     handler = "CDStageHelmManifestInfoHandler")
+@ChangeDataCapture(
+    table = "custom_stage_execution", dataStore = "ng-harness", fields = {}, handler = "CustomStageExecutionHandler")
 public class StageExecutionInfo implements PersistentEntity, UuidAware {
   // This class is used for saving only CD/GitOps Stage data
   @org.springframework.data.annotation.Id @Id String uuid;
@@ -86,6 +89,8 @@ public class StageExecutionInfo implements PersistentEntity, UuidAware {
 
   @Nullable private String[] tags;
   @Nullable private ExecutionDetails executionDetails;
+
+  private String stageType;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

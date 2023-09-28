@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.execution.service;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -190,6 +191,10 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     }
     if (EmptyPredicate.isNotEmpty(tags)) {
       stageExecutionInfoBuilder.tags(tags.toArray(new String[0]));
+    }
+    Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
+    if (currentLevel != null && ("CUSTOM_STAGE").equals(currentLevel.getStepType().getType())) {
+      stageExecutionInfoBuilder.stageType("CUSTOM_STAGE");
     }
     return save(stageExecutionInfoBuilder.build());
   }
@@ -378,15 +383,22 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
             .gitOpsAppSummary(stageExecutionInfoUpdateDTO.getGitOpsAppSummary())
             .build();
 
-    return StageExecutionInfo.builder()
-        .stageExecutionId(ambiance.getStageExecutionId())
-        .executionSummaryDetails(executionSummaryDetails)
-        .planExecutionId(ambiance.getPlanExecutionId())
-        .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
-        .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
-        .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
-        .status(Status.RUNNING)
-        .stageStatus(StageStatus.IN_PROGRESS)
-        .build();
+    StageExecutionInfoBuilder stageExecutionInfoBuilder =
+        StageExecutionInfo.builder()
+            .stageExecutionId(ambiance.getStageExecutionId())
+            .executionSummaryDetails(executionSummaryDetails)
+            .planExecutionId(ambiance.getPlanExecutionId())
+            .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+            .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+            .status(Status.RUNNING)
+            .stageStatus(StageStatus.IN_PROGRESS);
+
+    Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
+    if (currentLevel != null && ("CUSTOM_STAGE").equals(currentLevel.getStepType().getType())) {
+      stageExecutionInfoBuilder.stageType("CUSTOM_STAGE");
+    }
+
+    return stageExecutionInfoBuilder.build();
   }
 }
