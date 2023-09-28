@@ -261,6 +261,13 @@ public class AccountResourceNG {
   }
 
   @PUT
+  @Path("/{accountId}/harness-support-access")
+  public RestResponse<Boolean> updateHarnessSupportAccess(
+      @PathParam("accountId") @AccountIdentifier String accountId, @Body boolean isHarnessSupportAccessAllowed) {
+    return new RestResponse(accountService.updateHarnessSupportAccess(accountId, isHarnessSupportAccessAllowed));
+  }
+
+  @PUT
   @Hidden
   @Path("/{accountId}/cross-generation-access")
   @InternalApi
