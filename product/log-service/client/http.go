@@ -15,6 +15,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"fmt"
 	"io"
@@ -35,6 +36,7 @@ const (
 	blobEndpoint         = "/blob?accountID=%s&key=%s"
 	uploadLinkEndpoint   = "/blob/link/upload?accountID=%s&key=%s"
 	downloadLinkEndpoint = "/blob/link/download?accountID=%s&key=%s"
+	healthzEndpoint      = "/healthz"
 )
 
 // defaultClient is the default http.Client.
@@ -46,6 +48,7 @@ var defaultClient = &http.Client{
 
 // NewHTTPClient returns a new HTTPClient.
 func NewHTTPClient(endpoint, accountID, token string, skipverify bool, additionalCertsDir string) *HTTPClient {
+	endpoint = strings.TrimSuffix(endpoint, "/")
 	client := &HTTPClient{
 		Endpoint:   endpoint,
 		AccountID:  accountID,
@@ -239,6 +242,18 @@ func (c *HTTPClient) Info(ctx context.Context) (*stream.Info, error) {
 	out := new(stream.Info)
 	_, err := c.do(ctx, c.Endpoint+infoEndpoint, "GET", nil, out)
 	return out, err
+}
+
+// Healthz returns the health information.
+func (c *HTTPClient) Healthz(ctx context.Context) error {
+	response, err := c.do(ctx, c.Endpoint+healthzEndpoint, "GET", nil, nil)
+	if err != nil {
+		return err
+	}
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("log-service Healthz Ping failed. Status Code:%s", response.StatusCode)
+	}
+	return nil
 }
 
 func (c *HTTPClient) retry(ctx context.Context, method, path string, in, out interface{}, isOpen bool, b backoff.BackOff) (*http.Response, error) {

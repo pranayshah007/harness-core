@@ -561,6 +561,10 @@ github.com/harness/harness-core/product/ci/engine v0.0.0-20220222141117-7659b7ec
 github.com/harness/harness-core/product/ci/engine v0.0.0-20220526003445-374c61227e45/go.mod h1:r2CTprnVVdaD5hjeuYkrBXkG1VgR6mQbrO0hW6ZQGBM=
 github.com/harness/ti-client v0.0.0-20230625210213-de916cd21d22 h1:8KiTmGXHIydZEf5/YqE09Tc8Jan1qcaQnFo+ynSLy8M=
 github.com/harness/ti-client v0.0.0-20230625210213-de916cd21d22/go.mod h1:HsmeqG87yzAigxtybh05f2FPvT2pqsMoDLLRTkDWsW4=
+github.com/harness/ti-client v0.0.0-20230827043740-d394b7ccaa1a h1:tKAZ/8G4ErcAMEPmVsA3A0w+aYpagXwT3fXxtFcJKiM=
+github.com/harness/ti-client v0.0.0-20230827043740-d394b7ccaa1a/go.mod h1:/ow4f34mPgr5KPkzKxmBUB4cC09OjzStcLX6R8+43TI=
+github.com/harness/ti-client v0.0.0-20230919114308-05b6697b67f9 h1:MVFzBU0ScnbCHFxzyMZo5oLzeDwQLwaqibXQtjUzcvw=
+github.com/harness/ti-client v0.0.0-20230919114308-05b6697b67f9/go.mod h1:/ow4f34mPgr5KPkzKxmBUB4cC09OjzStcLX6R8+43TI=
 github.com/hashicorp/consul/api v1.1.0/go.mod h1:VmuI/Lkw1nC05EYQWNKwWGbkg+FbDBtguAZLlVdkD9Q=
 github.com/hashicorp/consul/api v1.3.0/go.mod h1:MmDNSzIMUjNpY/mQ398R4bk2FnqQLoPndWW5VkKPlCE=
 github.com/hashicorp/consul/sdk v0.1.1/go.mod h1:VKf9jXwCTEY1QZP2MOLRhb5i/I/ssyNV1vwHyQBF0x8=
