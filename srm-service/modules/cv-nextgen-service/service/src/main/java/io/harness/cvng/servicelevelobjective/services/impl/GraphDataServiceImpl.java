@@ -7,6 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.cvng.utils.ScopedInformation.getScopedInformation;
+
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
@@ -554,9 +556,13 @@ public class GraphDataServiceImpl implements GraphDataService {
   private SLIValue getSLIValue(CompositeSLORecord sloRecord, CompositeSLORecord prevSLORecord,
       CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail) {
     SLIRecord sliRecord = sloRecord.getScopedIdentifierSLIRecordMap().get(
-        serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+        getScopedInformation(serviceLevelObjectivesDetail.getAccountId(),
+            serviceLevelObjectivesDetail.getOrgIdentifier(), serviceLevelObjectivesDetail.getProjectIdentifier(),
+            serviceLevelObjectivesDetail.getServiceLevelObjectiveRef()));
     SLIRecord prevSLIRecord = prevSLORecord.getScopedIdentifierSLIRecordMap().get(
-        serviceLevelObjectiveV2Service.getScopedIdentifier(serviceLevelObjectivesDetail));
+        getScopedInformation(serviceLevelObjectivesDetail.getAccountId(),
+            serviceLevelObjectivesDetail.getOrgIdentifier(), serviceLevelObjectivesDetail.getProjectIdentifier(),
+            serviceLevelObjectivesDetail.getServiceLevelObjectiveRef()));
     SLIValue sliValue = SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord);
     return sliValue;
   }
