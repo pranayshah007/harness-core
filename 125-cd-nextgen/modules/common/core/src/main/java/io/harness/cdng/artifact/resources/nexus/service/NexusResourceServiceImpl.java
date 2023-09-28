@@ -56,9 +56,6 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.helpers.ext.nexus.NexusRepositories;
 import software.wings.utils.RepositoryFormat;
-import software.wings.utils.RepositoryType;
-
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
