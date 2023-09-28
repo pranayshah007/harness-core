@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.yaml;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -13,6 +14,7 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -59,6 +61,10 @@ public class TemplateRefHelper {
     for (FQN key : fqnSet) {
       if (key.getFqnList().size() >= 2) {
         List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());
+        if (YAMLFieldNameConstants.TYPE.equals(fqnList.get(fqnList.size() - 1).getKey())
+            && YAMLFieldNameConstants.TEMPLATE.equals(((JsonNode) fqnObjectMap.get(key)).asText())) {
+          return true;
+        }
         FQNNode lastNode = fqnList.get(fqnList.size() - 1);
         FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
         if (TEMPLATE_REF.equals(lastNode.getKey()) && TEMPLATE.equals(secondLastNode.getKey())) {

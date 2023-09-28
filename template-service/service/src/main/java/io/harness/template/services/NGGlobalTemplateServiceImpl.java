@@ -57,6 +57,7 @@ import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.organization.remote.OrganizationClient;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
 import io.harness.repositories.NGGlobalTemplateRepository;
@@ -586,9 +587,10 @@ public class NGGlobalTemplateServiceImpl implements NGGlobalTemplateService {
 
   private void applyTemplatesToYamlAndValidateSchema(GlobalTemplateEntity templateEntity) {
     TemplateMergeResponseDTO templateMergeResponseDTO = null;
+    String yamlVersion = NGYamlHelper.getVersion(templateEntity.getYaml());
     templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
         templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
-        YamlUtils.readAsJsonNode(templateEntity.getYaml()), false, false, false);
+        YamlUtils.readAsJsonNode(templateEntity.getYaml()), false, false, false, yamlVersion);
     populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
     checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier(), templateMergeResponseDTO);

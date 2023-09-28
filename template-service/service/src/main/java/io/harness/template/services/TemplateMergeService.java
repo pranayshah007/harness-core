@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.services;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -27,7 +28,7 @@ public interface TemplateMergeService {
 
   TemplateMergeResponseDTO applyTemplatesToYamlV2(String accountId, String orgId, String projectId,
       JsonNode entityJsonNode, boolean getMergedYamlWithTemplateField, boolean loadFromCache,
-      boolean appendInputSetValidator);
+      boolean appendInputSetValidator, String yamlVersion);
 
   TemplateRetainVariablesResponse mergeTemplateInputs(String newTemplateInputs, String originalTemplateInputs);
 }
