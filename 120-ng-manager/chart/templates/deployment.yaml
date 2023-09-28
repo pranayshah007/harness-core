@@ -81,7 +81,7 @@ spec:
           {{- toYaml .Values.resources | nindent 12 }}
         env:
             {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "LOG_STREAMING_SERVICE_TOKEN" "defaultKubernetesSecretName" "harness-manager-secret" "defaultKubernetesSecretKey" "LOG_STREAMING_SERVICE_TOKEN" "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
+            {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "LOG_STREAMING_SERVICE_TOKEN" "defaultKubernetesSecretName" "ng-manager-secret" "defaultKubernetesSecretKey" "LOG_STREAMING_SERVICE_TOKEN" "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" . "localDBCtx" .Values.mongo "globalDBCtx" .Values.global.database.mongo) | indent 12 }}
             {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" . "localTimescaleDBCtx" .Values.timescaledb "globalTimescaleDBCtx" .Values.global.database.timescaledb) | indent 12 }}
