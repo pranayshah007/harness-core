@@ -713,7 +713,7 @@ public class HarnessTagServiceImpl implements HarnessTagService {
   public List<HarnessTagLink> getTagLinksWithEntityId(String accountId, String entityId, boolean hitSecondary) {
     FindOptions findOptions = new FindOptions();
     if (hitSecondary && accountId != null
-        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
       findOptions.readPreference(ReadPreference.secondaryPreferred());
     }
     return wingsPersistence.createQuery(HarnessTagLink.class)

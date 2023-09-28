@@ -181,7 +181,7 @@ public class DeleteAccountHelper {
 
   private boolean deleteAppLevelDocuments(String accountId, Class<? extends PersistentEntity> entry) {
     FindOptions findOptions = new FindOptions();
-    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
       findOptions.readPreference(ReadPreference.secondaryPreferred());
     }
     try (

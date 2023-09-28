@@ -441,7 +441,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
       }
     }
 
-    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)
         && hitSecondary) {
       if (addAccountFilterAutomatically && !accountIdPresentInPageRequest(request)) {
         request.addFilter("accountId", EQ, accountId);
