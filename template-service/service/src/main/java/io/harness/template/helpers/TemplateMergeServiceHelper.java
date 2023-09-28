@@ -607,7 +607,8 @@ public class TemplateMergeServiceHelper {
   /**
    * This method Provides all the information from mergeTemplateInputsInObject method along with template references.
    */
-  // TODO(BRIJESH): Will handle this flow for v1 later.
+  // TODO(BRIJESH): Will handle this flow for v1 later. Its for OPA so not needed for now. BRIJESH to take care of this
+  // once back.
   public MergeTemplateInputsInObject mergeTemplateInputsInObjectAlongWithOpaPolicy(String accountId, String orgId,
       String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
       boolean loadFromCache, boolean appendInputSetValidator) {
