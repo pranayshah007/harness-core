@@ -150,6 +150,7 @@ import io.harness.ng.core.remote.licenserestriction.ProjectRestrictionsUsageImpl
 import io.harness.ng.core.remote.licenserestriction.SecretRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ServiceAccountRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.VariableRestrictionUsageImpl;
+import io.harness.ng.core.scheduler.projectMetricsJob.ActiveProjectMetricsRunnable;
 import io.harness.ng.core.user.exception.mapper.InvalidUserRemoveRequestExceptionMapper;
 import io.harness.ng.core.variable.expressions.functors.VariableFunctor;
 import io.harness.ng.migration.DelegateMigrationProvider;
@@ -1010,6 +1011,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .scheduleWithFixedDelay(injector.getInstance(ModuleVersionsMaintenanceTask.class), 0, 3, TimeUnit.HOURS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(CDLicenseDailyReportTask.class), 0, 3, TimeUnit.HOURS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(ActiveProjectMetricsRunnable.class), 0, 24, TimeUnit.HOURS);
   }
 
   private void registerAuthFilters(NextGenConfiguration configuration, Environment environment, Injector injector) {

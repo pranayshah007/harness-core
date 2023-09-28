@@ -23,6 +23,7 @@ import io.harness.audit.beans.AuditEventDTO.AuditEventDTOBuilder;
 import io.harness.audit.beans.AuthenticationInfoDTO;
 import io.harness.audit.beans.PrincipalType;
 import io.harness.audit.beans.YamlDiffRecordDTO;
+import io.harness.audit.beans.custom.ActiveProjectMetricsDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.audit.client.remote.AuditClient;
 import io.harness.context.GlobalContext;
@@ -116,6 +117,11 @@ public class AuditClientServiceImpl implements AuditClientService {
       auditEventDTOBuilder.internalInfo(ImmutableMap.of(CORRELATION_ID, correlationId));
     }
     return auditEventDTOBuilder.build();
+  }
+
+  @Override
+  public void publishMetrics(ActiveProjectMetricsDTO activeProjectMetricsDTO) {
+    getResponse(auditClient.publishMetrics(activeProjectMetricsDTO));
   }
 
   private void logAuthenticationInfoError(AuditEntry auditEntry) {
