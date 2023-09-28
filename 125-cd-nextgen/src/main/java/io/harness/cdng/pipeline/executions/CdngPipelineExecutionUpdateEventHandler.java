@@ -46,6 +46,7 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.utils.StageStatus;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,6 +64,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
   private static final Set<String> STEPS_TO_UPDATE_LOG_STREAMS =
       getFieldValuesByType(StepSpecTypeConstants.class, String.class);
+  private static final Set<String> STAGES_TO_UPDATE =
+      Sets.newHashSet("CUSTOM_STAGE", ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName());
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
@@ -72,8 +75,8 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
-    if (isDeploymentStageStep(event.getAmbiance())) {
-      processDeploymentStageEvent(event);
+    if (isDeploymentOrCustomStageStep(event.getAmbiance())) {
+      processDeploymentOrCustomStageEvent(event);
     } else if (isRollbackStepNode(event.getAmbiance())) {
       processRollbackStepEvent(event);
     }
@@ -123,7 +126,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     }
   }
 
-  private void processDeploymentStageEvent(@NotNull OrchestrationEvent event) {
+  private void processDeploymentOrCustomStageEvent(@NotNull OrchestrationEvent event) {
     Status status = event.getStatus();
     Ambiance ambiance = event.getAmbiance();
     String stageExecutionId = ambiance.getStageExecutionId();
@@ -186,10 +189,10 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     }
   }
 
-  private boolean isDeploymentStageStep(Ambiance ambiance) {
+  private boolean isDeploymentOrCustomStageStep(Ambiance ambiance) {
     Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
     return currentLevel != null
-        && currentLevel.getStepType().getType().equals(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName());
+        && (STAGES_TO_UPDATE.contains(Objects.requireNonNull(currentLevel.getStepType().getType())));
   }
 
   private boolean isRollbackStepNode(Ambiance ambiance) {

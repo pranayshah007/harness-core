@@ -14,17 +14,24 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.pipeline.beans.CustomStageSpecParams;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.StageStatus;
 
+import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,6 +41,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CustomStageStep implements ChildExecutable<StageElementParameters> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("CUSTOM_STAGE").setStepCategory(StepCategory.STAGE).build();
+
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
   public Class<StageElementParameters> getStepParametersClass() {
@@ -46,6 +55,8 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
     log.info("Executing custom stage with params [{}]", stepParameters);
     CustomStageSpecParams specParameters = (CustomStageSpecParams) stepParameters.getSpecConfig();
     String executionNodeId = specParameters.getChildNodeID();
+    stageExecutionInfoService.createStageExecutionInfo(
+        ambiance, stepParameters, getCustomStageStepCurrentLevel(ambiance));
     return ChildExecutableResponse.newBuilder().setChildNodeId(executionNodeId).build();
   }
 
@@ -54,6 +65,23 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
       Ambiance ambiance, StageElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Executed custom stage [{}]", stepParameters);
     StepResponse stepResponse = createStepResponseFromChildResponse(responseDataMap);
+    stageExecutionInfoService.updateStageExecutionInfo(ambiance, createStageExecutionInfoUpdateDTO(stepResponse));
     return stepResponse;
+  }
+
+  private StageExecutionInfoUpdateDTO createStageExecutionInfoUpdateDTO(StepResponse stepResponse) {
+    return StageExecutionInfoUpdateDTO.builder()
+        .failureInfo(stepResponse.getFailureInfo())
+        .status(stepResponse.getStatus())
+        .stageStatus(Status.SUCCEEDED.equals(stepResponse.getStatus()) ? StageStatus.SUCCEEDED : StageStatus.FAILED)
+        .build();
+  }
+
+  private Level getCustomStageStepCurrentLevel(Ambiance ambiance) {
+    Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
+    if (currentLevel != null && ("CUSTOM_STAGE").equals(currentLevel.getStepType().getType())) {
+      return currentLevel;
+    }
+    return null;
   }
 }

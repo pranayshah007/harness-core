@@ -6,12 +6,15 @@
  */
 
 package io.harness.changehandlers;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.changehandlers.helper.ChangeHandlerHelper;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.changestreamsframework.ChangeType;
+import io.harness.execution.stage.StageExecutionEntity;
 import io.harness.execution.stage.StageExecutionEntity.StageExecutionEntityKeys;
 
 import com.google.inject.Inject;
@@ -35,9 +38,24 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
     Map<String, String> columnValueMapping = new HashMap<>();
     DBObject dbObject = changeEvent.getFullDocument();
 
-    columnValueMapping.put("id", dbObject.get(StageExecutionEntityKeys.stageExecutionId).toString());
-    BasicDBObject failureInfo = (BasicDBObject) dbObject.get(StageExecutionEntityKeys.failureInfo);
-    changeHandlerHelper.parseFailureMessageFromFailureInfo(failureInfo, columnValueMapping, "failure_message");
+    String stageExecutionId = getStageExecutionId(changeEvent, dbObject);
+    columnValueMapping.put("id", stageExecutionId);
+
+    if (changeEvent.getEntityType() == StageExecutionEntity.class) {
+      BasicDBObject failureInfo = (BasicDBObject) dbObject.get(StageExecutionEntityKeys.failureInfo);
+      changeHandlerHelper.parseFailureMessageFromFailureInfo(failureInfo, columnValueMapping, "failure_message");
+    } else if (changeEvent.getEntityType() == StageExecutionInfo.class) {
+      BasicDBObject executionSummaryDetails =
+          (BasicDBObject) dbObject.get(StageExecutionInfo.StageExecutionInfoKeys.executionSummaryDetails);
+      if (executionSummaryDetails == null) {
+        return null;
+      }
+      BasicDBObject failureInfo = (BasicDBObject) executionSummaryDetails.get("failureInfo");
+      if (failureInfo != null) {
+        changeHandlerHelper.addKeyValuePairToMapFromDBObject(
+            failureInfo, columnValueMapping, "errorMessage_", "failure_message");
+      }
+    }
     return columnValueMapping;
   }
 
@@ -49,7 +67,10 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
     if (dbObject == null) {
       return true;
     }
-    return dbObject.get(StageExecutionEntityKeys.failureInfo) == null;
+    if (changeEvent.getEntityType() == StageExecutionEntity.class) {
+      return dbObject.get(StageExecutionEntityKeys.failureInfo) == null;
+    }
+    return false;
   }
 
   @Override
@@ -67,5 +88,16 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
         log.info("Change Event Type not Handled: {}", changeType);
         return false;
     }
+  }
+
+  private String getStageExecutionId(ChangeEvent<?> changeEvent, DBObject dbObject) {
+    if (changeEvent.getEntityType() == StageExecutionInfo.class
+        && dbObject.get(StageExecutionInfo.StageExecutionInfoKeys.stageExecutionId) != null) {
+      return dbObject.get(StageExecutionInfo.StageExecutionInfoKeys.stageExecutionId).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionEntity.class
+        && dbObject.get(StageExecutionEntityKeys.stageExecutionId) != null) {
+      return dbObject.get(StageExecutionEntityKeys.stageExecutionId).toString();
+    }
+    return null;
   }
 }
