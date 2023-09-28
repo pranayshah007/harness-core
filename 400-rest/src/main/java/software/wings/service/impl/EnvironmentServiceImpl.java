@@ -9,6 +9,7 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION_GLOBAL;
 import static io.harness.beans.FeatureName.HARNESS_TAGS;
 import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
@@ -53,6 +54,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.event.handler.impl.EventPublishHelper;
@@ -657,7 +659,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public List<Environment> getEnvByAccountId(String accountId, boolean hitSecondary) {
     PageRequest<Environment> pageRequest =
         aPageRequest().addFilter(EnvironmentKeys.accountId, EQ, accountId).withLimit(UNLIMITED).build();
-    if (hitSecondary) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId) && hitSecondary) {
       return wingsPersistence.querySecondary(Environment.class, pageRequest).getResponse();
     } else {
       return wingsPersistence.query(Environment.class, pageRequest).getResponse();
@@ -677,15 +679,27 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     if (isEmpty(appIds)) {
       return new HashMap<>();
     }
-    FindOptions findOptions = new FindOptions();
-    findOptions.readPreference(ReadPreference.secondaryPreferred());
-    List<Environment> list = wingsPersistence.createQuery(Environment.class)
-                                 .filter(EnvironmentKeys.accountId, accountId)
-                                 .field(EnvironmentKeys.appId)
-                                 .in(appIds)
-                                 .project(EnvironmentKeys.appId, true)
-                                 .project(EnvironmentKeys.environmentType, true)
-                                 .asList(findOptions);
+    List<Environment> list;
+
+    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      FindOptions findOptions = new FindOptions();
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+      list = wingsPersistence.createQuery(Environment.class)
+                 .filter(EnvironmentKeys.accountId, accountId)
+                 .field(EnvironmentKeys.appId)
+                 .in(appIds)
+                 .project(EnvironmentKeys.appId, true)
+                 .project(EnvironmentKeys.environmentType, true)
+                 .asList(findOptions);
+    } else {
+      PageRequest<Environment> pageRequest = aPageRequest()
+                                                 .addFilter(EnvironmentKeys.accountId, EQ, accountId)
+                                                 .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
+                                                 .addFieldsIncluded("_id", "appId", "environmentType")
+                                                 .build();
+
+      list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null, true));
+    }
 
     List<Base> emptyList = new ArrayList<>();
 
