@@ -33,7 +33,6 @@ import io.harness.repositories.activityhistory.NGActivityRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -73,9 +72,10 @@ public class NGActivityServiceImpl implements NGActivityService {
         searchTerm, scopeFilter);
     Pageable pageable =
         PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ActivityHistoryEntityKeys.activityTime));
-    List<NGActivity> activities = activityRepository.findAll(criteria, pageable).getContent();
-    return new PageImpl<>(activities.stream().map(activityEntityToDTOMapper::writeDTO).collect(Collectors.toList()),
-        pageable, activities.size());
+    Page<NGActivity> activities = activityRepository.findAll(criteria, pageable);
+    return new PageImpl<>(
+        activities.getContent().stream().map(activityEntityToDTOMapper::writeDTO).collect(Collectors.toList()),
+        pageable, activities.getTotalElements());
   }
 
   @Override
