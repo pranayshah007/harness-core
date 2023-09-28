@@ -26,7 +26,6 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "credits", noClassnameStored = true)
-
 @Persistent
 @TypeAlias("io.harness.credit.entities.CICredit")
 public class CICredit extends Credit implements PersistentRegularIterable {

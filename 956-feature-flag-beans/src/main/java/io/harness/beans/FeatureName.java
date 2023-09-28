@@ -560,6 +560,7 @@ public enum FeatureName {
   PL_FIX_INCONSISTENT_USER_DATA(
       "This FF process all users of this account and fixes their inconsistent data between CG Manager, NG manager and Access Control ",
       HarnessTeam.PL),
+  PL_PUBLISH_HEARTBEAT_METRICS("FF for publishing delegate heartbeat metrics to prometheus", HarnessTeam.PL),
   PL_HELM2_DELEGATE_BANNER("FF for adding banner on delegate to mention deprecation of helm 2", HarnessTeam.PL),
   PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
   PL_HIDE_ORGANIZATION_LEVEL_MANAGED_ROLE("FF to hide organization level managed roles", HarnessTeam.PL),
