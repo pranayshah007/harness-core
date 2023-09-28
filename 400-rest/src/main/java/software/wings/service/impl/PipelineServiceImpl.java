@@ -198,7 +198,7 @@ public class PipelineServiceImpl implements PipelineService {
   public PageResponse<Pipeline> listPipelines(
       PageRequest<Pipeline> pageRequest, boolean hitSecondary, String accountId) {
     if (hitSecondary && accountId != null
-        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
       return wingsPersistence.querySecondary(Pipeline.class, pageRequest);
     }
     return wingsPersistence.query(Pipeline.class, pageRequest);
