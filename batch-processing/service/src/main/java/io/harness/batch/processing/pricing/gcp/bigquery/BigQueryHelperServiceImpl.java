@@ -685,6 +685,10 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   }
 
   public BigQuery getBigQueryService() {
+    if (mainConfig.isClickHouseEnabled()) {
+      log.warn("BQ::: returning dummy BigQuery Object.");
+      return BigQueryOptions.newBuilder().build().getService();
+    }
     boolean usingWorkloadIdentity = Boolean.parseBoolean(System.getenv("USE_WORKLOAD_IDENTITY"));
     GoogleCredentials sourceCredentials = null;
     if (!usingWorkloadIdentity) {
