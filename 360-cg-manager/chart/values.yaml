@@ -239,7 +239,7 @@ timescaledb:
               name: ""
               property: ""
 mongo:
-  protocol: "redis"
+  protocol: "mongodb"
   hosts: []
   secretName: ""
   userKey: ""
