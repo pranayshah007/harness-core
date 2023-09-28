@@ -130,7 +130,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
-      boolean isLatest) {
+      boolean showAllExecutions) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -152,7 +152,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.status).in(statusList);
     }
 
-    criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(!isLatest);
+    if (!showAllExecutions) {
+      criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(false);
+    }
     criteria.and(PlanExecutionSummaryKeys.executionMode).ne(ExecutionMode.PIPELINE_ROLLBACK);
 
     Criteria filterCriteria = new Criteria();
