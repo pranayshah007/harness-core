@@ -104,7 +104,9 @@ global:
           - secretName: ""
             keys:
               REDIS_USERNAME: ""
-              REDIS_PASSWORD": ""
+              REDIS_PASSWORD: ""
+              EVENTS_FRAMEWORK_REDIS_USERNAME: ""
+              EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
         secretManagement: 
           externalSecretsOperator:
             - secretStore:
@@ -114,7 +116,13 @@ global:
                 REDIS_USERNAME:
                   name: ""
                   property: ""
-                REDIS_PASSWORD":
+                REDIS_PASSWORD:
+                  name: ""
+                  property: ""
+                EVENTS_FRAMEWORK_REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                EVENTS_FRAMEWORK_REDIS_PASSWORD:
                   name: ""
                   property: ""
   mongoSSL: false
@@ -197,6 +205,8 @@ redis:
         keys:
           REDIS_USERNAME: ""
           REDIS_PASSWORD": ""
+          EVENTS_FRAMEWORK_REDIS_USERNAME: ""
+          EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
     secretManagement: 
       externalSecretsOperator:
         - secretStore:
@@ -207,6 +217,12 @@ redis:
               name: ""
               property: ""
             REDIS_PASSWORD":
+              name: ""
+              property: ""
+            EVENTS_FRAMEWORK_REDIS_USERNAME:
+              name: ""
+              property: ""
+            EVENTS_FRAMEWORK_REDIS_USERNAME":
               name: ""
               property: ""
 
