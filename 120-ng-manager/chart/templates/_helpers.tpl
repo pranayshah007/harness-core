@@ -69,6 +69,7 @@ Create the name of the service account to use
 Manage NG Manager Secrets
 USAGE:
 {{- "ng-manager.generateSecrets" (dict "ctx" $)}}
+default LOG_STREAMING_SERVICE_TOKEN was c76e567a-b341-404d-a8dd-d9738714eb82 and
 */}}
 {{- define "ng-manager.generateSecrets" }}
     {{- $ := .ctx }}
@@ -76,15 +77,15 @@ USAGE:
     {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
     {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
     {{- $hasAtleastOneSecret = true }}
-LOG_STREAMING_SERVICE_TOKEN: "c76e567a-b341-404d-a8dd-d9738714eb82"
+LOG_STREAMING_SERVICE_TOKEN: {{ .ctx.Values.secrets.default.LOG_STREAMING_SERVICE_TOKEN | b64enc }}
     {{- end }}
     {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
     {{- $hasAtleastOneSecret = true }}
-OPA_SERVER_SECRET: "dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq"
+OPA_SERVER_SECRET: {{ .ctx.Values.secrets.default.OPA_SERVER_SECRET | b64enc }}
     {{- end }}
     {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "GITOPS_SERVICE_SECRET" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
     {{- $hasAtleastOneSecret = true }}
-GITOPS_SERVICE_SECRET: "HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU="
+GITOPS_SERVICE_SECRET: {{ .ctx.Values.secrets.default.GITOPS_SERVICE_SECRET | b64enc }}
     {{- end }}
     {{- if not $hasAtleastOneSecret }}
 {}
