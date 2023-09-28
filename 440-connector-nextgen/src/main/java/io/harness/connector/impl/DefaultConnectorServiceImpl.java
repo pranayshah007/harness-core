@@ -998,8 +998,14 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       ConnectorInfoDTO connectorInfo, String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String identifier) {
     ConnectorValidationResult validationResult;
-    validationResult = validateSafely(
-        connectorResponseDTO, connectorInfo, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    try {
+      validationResult = validateSafely(
+          connectorResponseDTO, connectorInfo, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    } catch (Exception ex) {
+      // generate secret usage for connector test
+      connectorEntityReferenceHelper.sendSecretUsageEventForConnectorTest(accountIdentifier, connectorInfo, FAILURE);
+      throw ex;
+    }
     // generate secret usage for connector test
     connectorEntityReferenceHelper.sendSecretUsageEventForConnectorTest(
         accountIdentifier, connectorInfo, validationResult.getStatus());
