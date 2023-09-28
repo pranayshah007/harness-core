@@ -64,6 +64,8 @@ import io.harness.ng.core.DefaultOrganization;
 import io.harness.ng.core.OrgIdentifier;
 import io.harness.ng.core.ProjectIdentifier;
 import io.harness.ng.core.api.DefaultUserGroupService;
+import io.harness.ng.core.beans.ProjectsPerAccountCount;
+import io.harness.ng.core.beans.ProjectsPerAccountCount.ProjectsPerAccountCountKeys;
 import io.harness.ng.core.beans.ProjectsPerOrganizationCount;
 import io.harness.ng.core.beans.ProjectsPerOrganizationCount.ProjectsPerOrganizationCountKeys;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
@@ -680,6 +682,22 @@ public class ProjectServiceImpl implements ProjectService {
         .getMappedResults()
         .forEach(projectsPerOrganizationCount
             -> result.put(projectsPerOrganizationCount.getOrgIdentifier(), projectsPerOrganizationCount.getCount()));
+    return result;
+  }
+
+  @Override
+  public Map<String, Integer> getProjectsCountPerAccount(List<String> accountIdentifier) {
+    Criteria criteria =
+        Criteria.where(ProjectKeys.accountIdentifier).in(accountIdentifier).and(ProjectKeys.deleted).ne(Boolean.TRUE);
+    MatchOperation matchStage = Aggregation.match(criteria);
+    GroupOperation groupBy = group(ProjectKeys.accountIdentifier).count().as(ProjectsPerAccountCountKeys.count);
+    ProjectionOperation projectionStage =
+        project().and(MONGODB_ID).as(ProjectKeys.accountIdentifier).andInclude(ProjectsPerAccountCountKeys.count);
+    Map<String, Integer> result = new HashMap<>();
+    projectRepository.aggregate(newAggregation(matchStage, groupBy, projectionStage), ProjectsPerAccountCount.class)
+        .getMappedResults()
+        .forEach(projectsPerAccountCount
+            -> result.put(projectsPerAccountCount.getAccountIdentifier(), projectsPerAccountCount.getCount()));
     return result;
   }
 

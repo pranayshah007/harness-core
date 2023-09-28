@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.audit.beans.AuthenticationInfoDTO;
+import io.harness.audit.beans.custom.ActiveProjectMetricsDTO;
 import io.harness.context.GlobalContext;
 
 @OwnedBy(PL)
@@ -22,4 +23,6 @@ public interface AuditClientService {
 
   AuditEventDTO getAuditEventDTO(
       AuditEntry auditEntry, GlobalContext globalContext, AuthenticationInfoDTO authenticationInfoDTO);
+
+  void publishMetrics(ActiveProjectMetricsDTO activeProjectMetricsDTO);
 }
