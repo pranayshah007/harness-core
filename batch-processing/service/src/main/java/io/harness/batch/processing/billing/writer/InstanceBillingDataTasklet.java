@@ -312,12 +312,12 @@ public class InstanceBillingDataTasklet implements Tasklet {
           eksFargateResourceIds.add(instanceData.getInstanceId());
         }
       });
-      if (isNotEmpty(resourceIds)) {
+      if (isNotEmpty(resourceIds) && !config.isClickHouseEnabled()) {
         awsCustomBillingService.updateAwsEC2BillingDataCache(
             new ArrayList<>(resourceIds), startTime, endTime, awsDataSetId, accountId);
       }
 
-      if (isNotEmpty(eksFargateResourceIds)) {
+      if (isNotEmpty(eksFargateResourceIds) && !config.isClickHouseEnabled()) {
         log.info("Updating EKS Fargate Cache for Resource Id's List of Size: {}", eksFargateResourceIds.size());
         awsCustomBillingService.updateEksFargateDataCache(
             new ArrayList<>(eksFargateResourceIds), startTime, endTime, awsDataSetId);
