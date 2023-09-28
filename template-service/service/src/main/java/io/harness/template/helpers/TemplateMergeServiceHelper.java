@@ -275,8 +275,7 @@ public class TemplateMergeServiceHelper {
   public Map<String, Object> mergeTemplateInputsInObject(String accountId, String orgId, String projectId,
       YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache,
       boolean appendInputSetValidator, String yamlVersion) {
-    boolean isV1TemplatePresent = isTemplatePresentV1(yamlNode.getCurrJsonNode());
-    if (isV1TemplatePresent) {
+    if (HarnessYamlVersion.isV1(yamlVersion) && isTemplatePresentV1(yamlNode.getCurrJsonNode())) {
       return mergeTemplateInputsInObjectV1(accountId, orgId, projectId, yamlNode, templateCacheMap, depth,
           loadFromCache, appendInputSetValidator, HarnessYamlVersion.V1);
     }

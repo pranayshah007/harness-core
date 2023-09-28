@@ -467,7 +467,7 @@ public class ExecutionHelper {
           pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
               featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
-              BOOLEAN_FALSE_VALUE);
+              BOOLEAN_FALSE_VALUE, pipelineEntity.getHarnessVersion());
       pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
       pipelineYamlWithTemplateRef =
           EmptyPredicate.isEmpty(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef())

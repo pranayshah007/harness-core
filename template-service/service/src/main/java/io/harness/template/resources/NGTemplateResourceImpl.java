@@ -59,7 +59,6 @@ import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlo
 import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
-import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -434,7 +433,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
-    String yamlVersion = NGYamlHelper.getVersion(templateApplyRequestDTO.getOriginalEntityYaml());
+    String yamlVersion = templateApplyRequestDTO.getYamlVersion();
     TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
         projectId, YamlUtils.readAsJsonNode(templateApplyRequestDTO.getOriginalEntityYaml()),
         templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),

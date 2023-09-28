@@ -30,4 +30,5 @@ public class TemplateApplyRequestDTO {
   boolean checkForAccess;
   boolean getMergedYamlWithTemplateField;
   boolean getOnlyFileContent;
+  String yamlVersion;
 }
