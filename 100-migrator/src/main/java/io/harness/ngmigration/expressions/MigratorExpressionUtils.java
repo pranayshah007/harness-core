@@ -158,6 +158,10 @@ public class MigratorExpressionUtils {
           k.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"), v.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"));
     });
 
+    context.put("artifact.metadata.s3_bucket", "<+artifact.metadata.get(\"s3_bucket\")>");
+    context.put("artifact.metadata.s3_key", "<+artifact.metadata.get(\"s3_key\")>");
+    context.put("artifact.metadata.s3_secret", "<+artifact.metadata.get(\"s3_secret\")>");
+
     context.put("artifact.label", new ArtifactLabelMigratorFunctor());
     context.put("rollbackArtifact.label", new ArtifactLabelMigratorFunctor());
     context.put("artifact.metadata.getSHA()", "artifact.metadata.SHA");
