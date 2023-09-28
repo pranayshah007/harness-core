@@ -56,6 +56,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.helpers.ext.nexus.NexusRepositories;
 import software.wings.utils.RepositoryFormat;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -335,7 +336,7 @@ public class NexusResourceServiceImpl implements NexusResourceService {
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new NexusRegistryException(
             "Unexpected error during authentication to nexus server " + remoteMethodReturnValueData.getReturnValue());
