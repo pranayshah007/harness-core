@@ -40,6 +40,7 @@ public interface CVNextGenConstants {
   int CVNG_TIMELINE_BUCKET_COUNT = 48;
   int SRM_STATEMACHINE_MAX_THREADS = 20;
   int LOG_RECORD_THRESHOLD = 500;
+  int STRING_LENGTH = 20000000;
   String SLASH_DELIMITER = "/";
   String ACCOUNT_IDENTIFIER_KEY = "accountIdentifier";
   String ORG_IDENTIFIER_KEY = "orgIdentifier";

@@ -10,6 +10,7 @@ package io.harness.perpetualtask.datacollection;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.FAILED;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.SUCCESS;
 import static io.harness.cvng.core.services.CVNextGenConstants.LOG_RECORD_THRESHOLD;
+import static io.harness.cvng.core.services.CVNextGenConstants.STRING_LENGTH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -224,7 +225,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
                   .filter(log -> isNotEmpty(log.getLog()) && isNotEmpty(log.getHostname()))
                   .collect(Collectors.toList());
           if (validRecords.size() < logDataRecords.size()) {
-            log.info(
+            log.warn(
                 "Log query is not optimized. Some records with invalid messageIdentifier and serviceInstanceIdentifier are present for verification task id: {}",
                 dataCollectionTask.getVerificationTaskId());
             ExecutionLog delegateLog =
@@ -232,6 +233,20 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
                     .logLevel(LogLevel.WARN)
                     .log(String.format(
                         "Log query is not optimized. Some records with invalid messageIdentifier and serviceInstanceIdentifier are present."))
+                    .build();
+            executionLogs.add(delegateLog);
+          }
+          int validRecordSize = validRecords.size();
+          validRecords = capStringLength(logDataRecords);
+          if (validRecords.size() < validRecordSize) {
+            log.warn(
+                "The size of single message is too high leading to high inter-service data transfer for verification task id: {}",
+                dataCollectionTask.getVerificationTaskId());
+            ExecutionLog delegateLog =
+                ExecutionLog.builder()
+                    .logLevel(LogLevel.WARN)
+                    .log(String.format(
+                        "The size of single message is too high leading to high inter-service data transfer."))
                     .build();
             executionLogs.add(delegateLog);
           }
@@ -331,6 +346,22 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
       Collections.swap(logDataRecords, i, random.nextInt(i + 1));
     }
     return new ArrayList<>(logDataRecords.subList(length - LOG_RECORD_THRESHOLD, length));
+  }
+
+  private List<LogDataRecord> capStringLength(List<LogDataRecord> logDataRecords) {
+    int i = 0;
+    int length = 0;
+    for (LogDataRecord logDataRecord : logDataRecords) {
+      if (length + logDataRecordLength(logDataRecord) > STRING_LENGTH) {
+        break;
+      }
+      i++;
+    }
+    return new ArrayList<>(logDataRecords.subList(0, i));
+  }
+  private long logDataRecordLength(LogDataRecord logDataRecord) {
+    return logDataRecord.getLog().length() + logDataRecord.getHostname().length()
+        + String.valueOf(logDataRecord.getTimestamp()).length();
   }
 
   @VisibleForTesting
