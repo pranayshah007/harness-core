@@ -211,7 +211,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
         builderFactory.getProjectParams(), requestSimpleServiceLevelObjectiveDTO2.getIdentifier());
 
     requestServiceLevelObjectiveV2DTO =
-        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder2()
             .identifier("requestCompositeSLOIdentifier")
             .spec(CompositeServiceLevelObjectiveSpec.builder()
                       .evaluationType(SLIEvaluationType.REQUEST)
@@ -237,7 +237,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
         builderFactory.getProjectParams(), requestServiceLevelObjectiveV2DTO.getIdentifier());
 
     serviceLevelObjectiveV2DTO =
-        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder2()
             .identifier("leastPerformantCompositeServiceLevelObjectiveIdentifier")
             .spec(CompositeServiceLevelObjectiveSpec.builder()
                       .evaluationType(SLIEvaluationType.REQUEST)
@@ -245,14 +245,14 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
                       .serviceLevelObjectivesDetails(Arrays.asList(
                           ServiceLevelObjectiveDetailsDTO.builder()
                               .serviceLevelObjectiveRef(requestSimpleServiceLevelObjective1.getIdentifier())
-                              .weightagePercentage(100.0)
+                              .weightagePercentage(84.0)
                               .accountId(requestSimpleServiceLevelObjective1.getAccountId())
                               .orgIdentifier(requestSimpleServiceLevelObjective1.getOrgIdentifier())
                               .projectIdentifier(requestSimpleServiceLevelObjective1.getProjectIdentifier())
                               .build(),
                           ServiceLevelObjectiveDetailsDTO.builder()
                               .serviceLevelObjectiveRef(requestSimpleServiceLevelObjective2.getIdentifier())
-                              .weightagePercentage(30.0)
+                              .weightagePercentage(83.0)
                               .accountId(requestSimpleServiceLevelObjective2.getAccountId())
                               .orgIdentifier(requestSimpleServiceLevelObjective2.getOrgIdentifier())
                               .projectIdentifier(requestSimpleServiceLevelObjective2.getProjectIdentifier())
@@ -564,18 +564,19 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetGraphData_CompositeSLO_weightedAverage() {
     List<SLIState> sliStateList1 =
-        Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD);
-    List<Long> goodCounts1 = Arrays.asList(100l, 200l, 0l, 0l, 100l);
-    List<Long> badCounts1 = Arrays.asList(10l, 20l, 0l, 0l, 10l);
+        Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, GOOD, GOOD, BAD);
+    List<Long> goodCounts1 = Arrays.asList(0l, 0l, 0l, 0l, 0l, 99l, 19701l, 19910l);
+    List<Long> badCounts1 = Arrays.asList(0l, 1l, 1l, 1l, 1l, 1l, 299l, 90l);
     List<SLIState> sliStateList2 =
-        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.BAD);
-    List<Long> goodCounts2 = Arrays.asList(100l, 200l, 300l, 0l, 0l);
-    List<Long> badCounts2 = Arrays.asList(0l, 0l, 10l, 0l, 0l);
-    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 93.18, 92.69, 92.69, 92.69);
-    List<Double> expectedBurndown = Lists.newArrayList(100.0, 65.90, 63.45, 63.45, 63.45);
-    testGraphCalculationCompositeSLO(requestCompositeServiceLevelObjective, requestVerificationTaskId, sliStateList1,
-        sliStateList2, goodCounts1, badCounts1, goodCounts2, badCounts2, expectedSLITrend, expectedBurndown, 0, 0, 0,
-        0);
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.BAD, BAD, BAD, GOOD);
+    List<Long> goodCounts2 = Arrays.asList(0l, 100l, 100l, 100l, 100l, 100l, 100l, 100l);
+    List<Long> badCounts2 = Arrays.asList(0l, 0l, 0l, 0l, 0l, 0l, 0l, 0l);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 25.0, 25.0, 25.0, 25.0, 96.39, 98.86, 99.26);
+    List<Double> expectedBurndown =
+        Lists.newArrayList(100.0, -3650.0, -3650.0, -3650.0, -3650.0, -80.288, 43.29, 63.15);
+    testGraphCalculationCompositeSLORequest(requestCompositeServiceLevelObjective, requestVerificationTaskId,
+        sliStateList1, sliStateList2, goodCounts1, badCounts1, goodCounts2, badCounts2, expectedSLITrend,
+        expectedBurndown, 0, 0, 0, 0);
   }
 
   @Test
@@ -590,9 +591,46 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     List<Long> badCounts2 = Arrays.asList(0l, 0l, 0l, 0l);
     List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
     List<Double> expectedBurndown = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
-    testGraphCalculationCompositeSLO(requestCompositeServiceLevelObjective, requestVerificationTaskId, sliStateList1,
-        sliStateList2, goodCounts1, badCounts1, goodCounts2, badCounts2, expectedSLITrend, expectedBurndown, 0, 0, 0,
-        0);
+    testGraphCalculationCompositeSLORequest(requestCompositeServiceLevelObjective, requestVerificationTaskId,
+        sliStateList1, sliStateList2, goodCounts1, badCounts1, goodCounts2, badCounts2, expectedSLITrend,
+        expectedBurndown, 0, 0, 0, 0);
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetGraphData_CompositeSLO_leastPerformance() {
+    List<SLIState> sliStateList1 =
+        Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, GOOD, GOOD, BAD);
+    List<Long> goodCounts1 = Arrays.asList(0l, 0l, 0l, 0l, 0l, 99l, 19701l, 19910l);
+    List<Long> badCounts1 = Arrays.asList(0l, 1l, 1l, 1l, 1l, 1l, 299l, 90l);
+    List<SLIState> sliStateList2 =
+        Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.BAD, BAD, BAD, GOOD);
+    List<Long> goodCounts2 = Arrays.asList(0l, 100l, 100l, 100l, 100l, 100l, 100l, 100l);
+    List<Long> badCounts2 = Arrays.asList(0l, 0l, 0l, 0l, 0l, 0l, 0l, 0l);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 0.0, 0.0, 0.0, 0.0, 95.19, 98.48, 99.01);
+    List<Double> expectedBurndown =
+        Lists.newArrayList(100.0, -4900.0, -4900.0, -4900.0, -4900.0, -140.38, 24.39, 50.87);
+    testGraphCalculationCompositeSLORequest(leastPerformantCompositeServiceLevelObjective,
+        leastPerformantVerificationTaskId, sliStateList1, sliStateList2, goodCounts1, badCounts1, goodCounts2,
+        badCounts2, expectedSLITrend, expectedBurndown, 0, 0, 0, 0);
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetGraphData_CompositeSLO_leastPerformance_allGood() {
+    List<SLIState> sliStateList1 = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
+    List<SLIState> sliStateList2 = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
+    List<Long> goodCounts1 = Arrays.asList(100l, 95l, 80l, 100l);
+    List<Long> badCounts1 = Arrays.asList(0l, 0l, 0l, 0l);
+    List<Long> goodCounts2 = Arrays.asList(100l, 95l, 135l, 90l);
+    List<Long> badCounts2 = Arrays.asList(0l, 0l, 0l, 0l);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
+    List<Double> expectedBurndown = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
+    testGraphCalculationCompositeSLORequest(leastPerformantCompositeServiceLevelObjective,
+        leastPerformantVerificationTaskId, sliStateList1, sliStateList2, goodCounts1, badCounts1, goodCounts2,
+        badCounts2, expectedSLITrend, expectedBurndown, 0, 0, 0, 0);
   }
 
   @Test
@@ -701,7 +739,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
   }
 
-  private void testGraphCalculationCompositeSLO(CompositeServiceLevelObjective compositeServiceLevelObjective,
+  private void testGraphCalculationCompositeSLORequest(CompositeServiceLevelObjective compositeServiceLevelObjective,
       String verificationTaskId, List<SLIState> sliStateList1, List<SLIState> sliStateList2, List<Long> goodCounts1,
       List<Long> badCounts1, List<Long> goodCounts2, List<Long> badCounts2, List<Double> expectedSLITrend,
       List<Double> expectedBurndown, int expectedErrorBudgetRemaining, long customMinutesStart, long customMinutesEnd,
@@ -723,15 +761,12 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     createSLIRecords(sliId2, sliStateList2, goodCounts2, badCounts2, startTime, endTime);
     sloRecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
 
-    List<CompositeSLORecord> sloRecords1 =
-        sloRecordService.getSLORecords(requestVerificationTaskId, startTime, endTime);
-
     Instant customStartTime = startTime.plus(Duration.ofMinutes(customMinutesStart));
     Instant customEndTime = startTime.plus(Duration.ofMinutes(sliStateList1.size() - customMinutesEnd + 1));
 
     SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphDataForCompositeSLO(
-        requestCompositeServiceLevelObjective, startTime, startTime.plus(Duration.ofMinutes(sliStateList1.size() + 1)),
-        100, 0, TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(),
+        compositeServiceLevelObjective, startTime, startTime.plus(Duration.ofMinutes(sliStateList1.size() + 1)), 100, 0,
+        TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build(),
         graphDataService.MAX_NUMBER_OF_POINTS);
 
     Duration duration = Duration.between(customStartTime, customEndTime);

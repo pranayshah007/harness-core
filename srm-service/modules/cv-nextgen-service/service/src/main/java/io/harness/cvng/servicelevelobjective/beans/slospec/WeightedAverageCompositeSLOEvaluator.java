@@ -7,10 +7,6 @@
 
 package io.harness.cvng.servicelevelobjective.beans.slospec;
 
-import io.harness.cvng.servicelevelobjective.beans.SLIValue;
-import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
-import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 
 import com.google.inject.Inject;

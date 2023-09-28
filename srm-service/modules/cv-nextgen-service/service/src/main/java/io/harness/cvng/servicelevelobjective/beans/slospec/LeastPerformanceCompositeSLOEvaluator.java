@@ -44,7 +44,6 @@ public class LeastPerformanceCompositeSLOEvaluator extends CompositeSLOEvaluator
     double sloErrorBudgetBurnDown = 100.0;
     double sloErrorBudgetRemaining = 0.0;
     for (int i = 0; i < weightage.size(); i++) {
-      sloErrorBudgetBurnDown = Math.min(weightage.get(i) * errorBudgetBurned.get(i), sloErrorBudgetBurnDown);
       double temp = errorBudgetBurned.get(i) * (1 - weightage.get(i));
       if (temp < sloErrorBudgetBurnDown) {
         sloErrorBudgetBurnDown = temp;

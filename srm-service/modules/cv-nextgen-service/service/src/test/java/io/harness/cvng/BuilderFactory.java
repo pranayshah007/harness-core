@@ -1595,6 +1595,44 @@ public class BuilderFactory {
         .userJourneyRefs(Collections.singletonList("userJourney"));
   }
 
+  public ServiceLevelObjectiveV2DTOBuilder getCompositeServiceLevelObjectiveV2DTOBuilder2() {
+    return ServiceLevelObjectiveV2DTO.builder()
+        .type(ServiceLevelObjectiveType.COMPOSITE)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .identifier("compositeSloIdentifier")
+        .name("sloName")
+        .tags(new HashMap<String, String>() {
+          {
+            put("tag1", "value1");
+            put("tag2", "");
+          }
+        })
+        .description("slo description")
+        .sloTarget(SLOTargetDTO.builder()
+                       .type(SLOTargetType.ROLLING)
+                       .sloTargetPercentage(98.0)
+                       .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
+                       .build())
+        .spec(CompositeServiceLevelObjectiveSpec.builder()
+                  .serviceLevelObjectivesDetails(Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                                                   .serviceLevelObjectiveRef("uuid1")
+                                                                   .weightagePercentage(75.0)
+                                                                   .projectIdentifier(context.getProjectIdentifier())
+                                                                   .orgIdentifier(context.getOrgIdentifier())
+                                                                   .accountId(context.getAccountId())
+                                                                   .build(),
+                      ServiceLevelObjectiveDetailsDTO.builder()
+                          .serviceLevelObjectiveRef("uuid2")
+                          .weightagePercentage(25.0)
+                          .projectIdentifier(context.getProjectIdentifier())
+                          .orgIdentifier(context.getOrgIdentifier())
+                          .accountId(context.getAccountId())
+                          .build()))
+                  .build())
+        .userJourneyRefs(Collections.singletonList("userJourney"));
+  }
+
   public SimpleServiceLevelObjectiveBuilder getSimpleServiceLevelObjectiveBuilder() {
     return SimpleServiceLevelObjective.builder()
         .type(ServiceLevelObjectiveType.SIMPLE)

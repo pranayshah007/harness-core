@@ -7,9 +7,6 @@
 
 package io.harness.cvng.servicelevelobjective.beans.slospec;
 
-import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
-import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
-
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.math3.util.Pair;
