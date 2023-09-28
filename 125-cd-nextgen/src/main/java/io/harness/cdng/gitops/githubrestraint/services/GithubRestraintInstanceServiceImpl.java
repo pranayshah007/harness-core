@@ -28,7 +28,6 @@ import io.harness.gitopsprovider.entity.GithubRestraintInstance;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceBuilder;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.gitopsprovider.entity.GithubRestraintInstanceResponseData;
-import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
 import io.harness.repositories.GithubRestraintInstanceRepository;
 import io.harness.springdata.SpringDataMongoUtils;

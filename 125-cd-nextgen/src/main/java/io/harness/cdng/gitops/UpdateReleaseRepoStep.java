@@ -111,6 +111,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
                                                .setType(GITOPS_UPDATE_RELEASE_REPO.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
+  private static final String CONSTRAINT_OPERATION = "CREATE_PR";
 
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
@@ -156,8 +157,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
     logCallback.saveExecutionLog("Trying to acquire lock");
     String tokenRefIdentifier = extractToken(connectorInfoDTO);
-    String constraintUnitIdentifier =
-        GITOPS_UPDATE_RELEASE_REPO.getName() + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
+    String constraintUnitIdentifier = CONSTRAINT_OPERATION + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
 
     Constraint constraint = githubRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
     String releaseEntityId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);

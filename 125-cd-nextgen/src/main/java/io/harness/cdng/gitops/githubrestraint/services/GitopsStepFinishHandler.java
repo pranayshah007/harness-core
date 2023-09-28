@@ -12,6 +12,7 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.resume.GitopsStepFinishCallback;
+import io.harness.cdng.gitops.revertpr.RevertPRStep;
 import io.harness.delay.DelayEventHelper;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -34,7 +35,7 @@ public class GitopsStepFinishHandler implements OrchestrationEventHandler {
   @Inject private WaitNotifyEngine waitNotifyEngine;
   private static final long DELAY_IN_SECONDS = 5;
   private static final Set<StepType> STEP_TYPES_GIT_LOCK =
-      Set.of(UpdateReleaseRepoStep.STEP_TYPE, MergePRStep.STEP_TYPE);
+      Set.of(UpdateReleaseRepoStep.STEP_TYPE, MergePRStep.STEP_TYPE, RevertPRStep.STEP_TYPE);
 
   private void unblockConstraints(Ambiance ambiance) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
