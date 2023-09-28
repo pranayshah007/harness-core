@@ -137,29 +137,6 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   }
 
   @Override
-  public void processRestraint(GithubRestraintInstance instance) {
-    String constraintId = instance.getResourceRestraintId();
-    boolean toUnblock = false;
-    try (AutoLogContext ignore = instance.autoLogContext()) {
-      if (BLOCKED == instance.getState()) {
-        // If the restraint is blocked then we try to unblock
-        toUnblock = true;
-      } else if (ACTIVE == instance.getState()) {
-        // If the restraint is active then we try to move this to finished
-        if (updateActiveConstraintsForInstance(instance)) {
-          // If this is finished successfully then we try to unblock the next restraint based in constraint id
-          log.info("The following github resource constraint needs to be unblocked: {}", constraintId);
-          toUnblock = true;
-        }
-      }
-      if (toUnblock) {
-        // unblock the constraints
-        updateBlockedConstraints(constraintId);
-      }
-    }
-  }
-
-  @Override
   public boolean updateActiveConstraintsForInstance(GithubRestraintInstance instance) {
     // we cant check if nodeExecution finished because we are on ng-manager here.
 
