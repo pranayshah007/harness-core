@@ -68,8 +68,10 @@ import io.harness.audit.entities.ResourceScope;
 import io.harness.audit.entities.YamlDiffRecord;
 import io.harness.audit.mapper.ResourceMapper;
 import io.harness.audit.mapper.ResourceScopeMapper;
+import io.harness.audit.metrics.impl.ProjectAuditMetricsServiceImpl;
 import io.harness.audit.remote.StaticAuditFilterV2;
 import io.harness.audit.repositories.AuditRepository;
+import io.harness.logging.ResponseTimeRecorder;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.KeyValuePair;
 import io.harness.ng.core.common.beans.KeyValuePair.KeyValuePairKeys;
@@ -83,6 +85,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -105,6 +108,7 @@ public class AuditServiceImpl implements AuditService {
   private final AuditSettingsService auditSettingsService;
   private final AuditFilterPropertiesValidator auditFilterPropertiesValidator;
   private final TelemetryReporter telemetryReporter;
+  @Inject private ProjectAuditMetricsServiceImpl projectAuditMetricsService;
 
   public static List<Action> entityChangeEvents =
       List.of(CREATE, UPDATE, RESTORE, DELETE, FORCE_DELETE, UPSERT, INVITE, RESEND_INVITE, REVOKE_INVITE,
@@ -133,21 +137,6 @@ public class AuditServiceImpl implements AuditService {
       Boolean result = Failsafe.with(transactionRetryPolicy).get(() -> {
         return transactionTemplate.execute(status -> {
           AuditEvent savedAuditEvent = auditRepository.save(auditEvent);
-          if (isNotEmpty(savedAuditEvent.getResourceScope().getProjectIdentifier())) {
-            HashMap<String, Object> identifyEventProperties = new HashMap<>();
-            identifyEventProperties.put("accountId", savedAuditEvent.getResourceScope().getAccountIdentifier());
-            identifyEventProperties.put("orgId", savedAuditEvent.getResourceScope().getOrgIdentifier());
-            identifyEventProperties.put("projectId", savedAuditEvent.getResourceScope().getProjectIdentifier());
-            telemetryReporter.sendIdentifyEvent(savedAuditEvent.getAuthenticationInfo().getPrincipal().getIdentifier(),
-                identifyEventProperties, Collections.singletonMap(AMPLITUDE, true));
-            HashMap<String, Object> properties = new HashMap<>();
-            properties.put("PROJECT_ID", savedAuditEvent.getResourceScope().getProjectIdentifier());
-            telemetryReporter.sendTrackEvent("Active Project",
-                TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX
-                    + savedAuditEvent.getResourceScope().getAccountIdentifier(),
-                savedAuditEvent.getResourceScope().getAccountIdentifier(), properties,
-                Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-          }
           saveYamlDiff(auditEventDTO, savedAuditEvent.getId());
           return true;
         });
@@ -378,5 +367,45 @@ public class AuditServiceImpl implements AuditService {
     auditRepository.delete(Criteria.where(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY).is(accountId));
     auditSettingsService.deleteByAccountIdentifier(accountId);
     log.info("Cleaned Audit Events, Yaml Diff and Audit settings for account: " + accountId);
+  }
+
+  @Override
+  public void computeMetricsForActiveProject(
+      List<String> accountIds, Map<String, Integer> projectCounts, long startTime, long endTime) {
+    Map<String, Integer> uniqueProjectCountPerAccountId =
+        auditRepository.getUniqueProjectCountPerAccountId(accountIds, startTime, endTime);
+
+    try (ResponseTimeRecorder ignore1 =
+             new ResponseTimeRecorder("Successfully Published metrics to Segment & Prometheus")) {
+      for (String accountIdentifier : accountIds) {
+        int projectCount = projectCounts.containsKey(accountIdentifier) ? projectCounts.get(accountIdentifier) : 0;
+        int uniqueProjectCount = uniqueProjectCountPerAccountId.containsKey(accountIdenifier)
+            ? uniqueProjectCountPerAccountId.get(accountIdenifier)
+            : 0;
+        sendSegmentMetricsForActiveProject(accountIdentifier, projectCount, uniqueProjectCount);
+        sendPrometheusEvents(accountIdentifier, projectCount, uniqueProjectCount);
+      }
+    }
+  }
+
+  private void sendSegmentMetricsForActiveProject(String accountIdentifier, int totalProjects, int activeProjects) {
+    HashMap<String, Object> identifyEventProperties = new HashMap<>();
+    identifyEventProperties.put("accountId", accountIdentifier);
+    identifyEventProperties.put("totalProjects", totalProjects);
+    identifyEventProperties.put("activeProjects", activeProjects);
+    float activeProjectPercentage = totalProjects != 0 ? ((activeProjects / totalProjects) * 100) : 0;
+    telemetryReporter.sendIdentifyEvent(
+        accountIdentifier, identifyEventProperties, Collections.singletonMap(AMPLITUDE, true));
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("activeProjectPercentage", activeProjectPercentage);
+    properties.put("totalProjects", totalProjects);
+    properties.put("activeProjects", activeProjects);
+    telemetryReporter.sendTrackEvent("project_activity",
+        TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountIdentifier, accountIdentifier, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+  }
+
+  private void sendPrometheusEvents(String accountIdentifier, int totalProjects, int activeProjects) {
+    projectAuditMetricsService.recordAuditMetricForActiveProject(accountIdentifier, totalProjects, activeProjects);
   }
 }

@@ -1,0 +1,6 @@
+name: Project Activity Metrics Group
+identifier: project_activity_metrics_group
+labels:
+  - accountId
+  - totalProjects
+  - activeProjects
