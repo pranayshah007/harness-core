@@ -417,7 +417,11 @@ public class CIStepGroupUtils {
 
     setCacheEnvVariables(envVariables, caching, accountId);
     // We will override cache for cache intel for now. Might need to surface it as an option
-    envVariables.put(PLUGIN_OVERRIDE, ParameterField.createValueField(STRING_TRUE));
+    if (featureFlagService.isEnabled(FeatureName.CI_CACHE_OVERRIDE_FALSE, accountId)) {
+      envVariables.put(PLUGIN_OVERRIDE, ParameterField.createValueField(STRING_FALSE));
+    } else {
+      envVariables.put(PLUGIN_OVERRIDE, ParameterField.createValueField(STRING_TRUE));
+    }
     envVariables.put(PLUGIN_REBUILD, ParameterField.createValueField(STRING_TRUE));
 
     PluginStepInfo step = PluginStepInfo.builder()
