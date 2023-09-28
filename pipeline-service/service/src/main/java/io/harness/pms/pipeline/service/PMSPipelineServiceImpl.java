@@ -22,6 +22,12 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineSettingsService;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -92,6 +98,7 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.NGYamlHelper;
@@ -109,6 +116,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -165,6 +173,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private final AccessControlClient accessControlClient;
   @Inject private final PMSYamlSchemaService pmsYamlSchemaService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
@@ -962,6 +971,49 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
+  public List<String> getPermittedPipelineIdentifier(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifierList) {
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        getAccessCheckResponseDTO(accountId, orgId, projectId, pipelineIdentifierList);
+    List<String> permittedPipelineIdentifier = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponseDTO.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedPipelineIdentifier.add(accessControlDTO.getResourceIdentifier());
+      }
+    }
+    return permittedPipelineIdentifier;
+  }
+
+  /*
+ getAccessCheckResponseDTO return the access response for pipeline view permission on the pipeline identifier list
+  */
+  private AccessCheckResponseDTO getAccessCheckResponseDTO(
+      String accountId, String orgId, String projectId, List<String> entityIdentifierList) {
+    List<PermissionCheckDTO> permissionChecks =
+        entityIdentifierList.stream()
+            .map(identifier
+                -> PermissionCheckDTO.builder()
+                       .permission(PipelineRbacPermissions.PIPELINE_VIEW)
+                       .resourceIdentifier(identifier)
+                       .resourceScope(ResourceScope.of(accountId, orgId, projectId))
+                       .resourceType("PIPELINE")
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+    return accessCheckResponse;
+  }
+
+  @Override
+  public List<String> listAllIdentifiers(Criteria criteria) {
+    return pmsPipelineRepository.findAllPipelineIdentifiers(criteria);
+  }
+
+  @Override
+  public boolean validateViewPermission(String accountId, String orgId, String projectId) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), Resource.of("PIPELINE", null),
+        PipelineRbacPermissions.PIPELINE_VIEW);
+  }
+
   public List<YamlInputDetails> getInputSchemaDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     Optional<PipelineEntity> optionalPipelineEntity =

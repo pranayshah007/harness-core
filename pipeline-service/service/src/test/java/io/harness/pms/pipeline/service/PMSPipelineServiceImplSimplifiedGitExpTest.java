@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.NoopPipelineSettingServiceImpl;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -92,6 +93,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock private AccountClient accountClient;
   @Mock NGSettingsClient settingsClient;
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
+  @Mock AccessControlClient accessControlClient;
   @Mock PMSYamlSchemaService yamlSchemaService;
 
   String accountIdentifier = "acc";
@@ -107,7 +109,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
         pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, null,
         new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, pipelineAsyncValidationService,
         pipelineValidationService, projectClient, organizationClient, pmsFeatureFlagService, gitXSettingsHelper,
-        accountClient, settingsClient, gitAwareEntityHelper, yamlSchemaService);
+        accountClient, settingsClient, gitAwareEntityHelper, accessControlClient, yamlSchemaService);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)

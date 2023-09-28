@@ -117,6 +117,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
+  @Inject private final PMSPipelineService pmsPipelineService;
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
 
   public static String PIPELINE_SAVE = "pipeline_save";
@@ -686,5 +687,19 @@ public class PMSPipelineServiceHelper {
                                            .isGitDefaultBranch(true)
                                            .build())
             .build());
+  }
+
+  public void setPermittedPipelines(String accountId, String orgId, String projectId, Criteria criteria) {
+    /*
+    If user is having all pipeline view permission, we do not need to check for individual pipeline view permission
+     */
+    if (!pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
+      List<String> allPipelineIdentifiers = pmsPipelineService.listAllIdentifiers(criteria);
+
+      List<String> permittedPipelineIdentifiers =
+          pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, allPipelineIdentifiers);
+
+      criteria.and(PipelineEntityKeys.identifier).in(permittedPipelineIdentifiers);
+    }
   }
 }

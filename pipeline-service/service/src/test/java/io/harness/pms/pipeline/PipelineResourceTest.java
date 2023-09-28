@@ -31,6 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.publicaccess.PublicAccessClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionNode;
@@ -120,6 +121,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Mock PipelineMetadataService pipelineMetadataService;
   @Mock PipelineAsyncValidationService pipelineAsyncValidationService;
   @Mock PipelineRefreshService pipelineRefreshService;
+  @Mock AccessControlClient accessControlClient;
   @Mock PublicAccessClient publicAccessClient;
   @InjectMocks PipelineRefreshResource pipelineRefreshResource;
 
@@ -149,7 +151,8 @@ public class PipelineResourceTest extends CategoryTest {
     MockitoAnnotations.openMocks(this);
     pipelineResource = new PipelineResourceImpl(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
         nodeExecutionToExecutioNodeMapper, pipelineTemplateHelper, featureFlagHelper, variableCreatorMergeService,
-        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService, publicAccessClient);
+        pipelineCloneHelper, pipelineMetadataService, pipelineAsyncValidationService, accessControlClient,
+        publicAccessClient);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "failure-strategy.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
@@ -654,6 +657,7 @@ public class PipelineResourceTest extends CategoryTest {
         .when(pipelineMetadataService)
         .getMetadataForGivenPipelineIds(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, Collections.singletonList(PIPELINE_IDENTIFIER));
+    doReturn(true).when(accessControlClient).hasAccess(any(), any(), any());
     List<PMSPipelineSummaryResponseDTO> content = pipelineResource
                                                       .getListOfPipelines(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                                           0, 25, null, null, null, null, null, null, null)
