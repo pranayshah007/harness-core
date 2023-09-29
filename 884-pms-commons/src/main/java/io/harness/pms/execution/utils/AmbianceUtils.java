@@ -517,7 +517,7 @@ public class AmbianceUtils {
 
   public boolean shouldSimplifyLogBaseKey(Ambiance ambiance) {
     return ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY);
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().getOrDefault(PIE_SIMPLIFY_LOG_BASE_KEY, false);
   }
 
   public boolean hasStrategyMetadata(Level level) {
