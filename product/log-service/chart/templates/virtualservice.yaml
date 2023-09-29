@@ -33,8 +33,6 @@ spec:
   - name: log-service
     match:
     - uri:
-        prefix: /log-service//
-    - uri:
         prefix: /log-service/
     - uri:
         prefix: /log-service
