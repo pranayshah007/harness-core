@@ -48,6 +48,7 @@ public class TaskSecretServiceImpl implements TaskSecretService {
                         .identifier(secretId)
                         .scope(scope)
                         .build())
+                .type(SecretVariableDTO.Type.TEXT)
                 .build();
     }
 }

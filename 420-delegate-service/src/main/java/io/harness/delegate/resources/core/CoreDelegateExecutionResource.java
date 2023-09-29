@@ -78,20 +78,20 @@ public class CoreDelegateExecutionResource {
   @Produces(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
   @Timed
   @ExceptionMetered
-  public Response acquireRequestPayload(@PathParam("executionId") final String executionId,
+  public Response acquireRequestPayload(@PathParam("executionId") final String taskId,
       @QueryParam("accountId") @NotEmpty final String accountId,
       @QueryParam("delegateInstanceId") final String delegateInstanceId,
       @QueryParam("delegateId") final String delegateId) {
-    try (AutoLogContext ignore1 = new TaskLogContext(executionId, OVERRIDE_ERROR);
+    try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       final var optionalDelegateTask =
-          delegateTaskServiceClassic.acquireTask(accountId, delegateId, executionId, delegateInstanceId);
+          delegateTaskServiceClassic.acquireTask(accountId, delegateId, taskId, delegateInstanceId);
       if (!optionalDelegateTask.isPresent()) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       return Response.ok(optionalDelegateTask.get()).build();
     } catch (final Exception e) {
-      log.error("Exception serializing task {} data ", executionId, e);
+      log.error("Exception serializing task {} data ", taskId, e);
       return Response.serverError().build();
     }
   }
