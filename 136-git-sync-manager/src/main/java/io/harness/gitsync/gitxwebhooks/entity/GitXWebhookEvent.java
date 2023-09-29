@@ -66,6 +66,7 @@ public class GitXWebhookEvent implements PersistentEntity, UuidAccess {
   String afterCommitId;
   String branch;
   Author author;
+  List<String> processedFilePaths;
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate @Builder.Default Long createdAt = 0L;
 
   public static List<MongoIndex> mongoIndexes() {

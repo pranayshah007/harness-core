@@ -5,27 +5,31 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.repositories.gitxwebhook;
+package io.harness.gitsync.gitxwebhooks.dtos;
 
-import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
+import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 
 import java.util.List;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.FieldDefaults;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
-@HarnessRepo
+@Getter
+@Builder
+@AllArgsConstructor
+@ToString
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
-public interface GitXWebhookEventsRepositoryCustom {
-  GitXWebhookEvent create(GitXWebhookEvent gitXWebhookEvent);
-
-  List<GitXWebhookEvent> list(Query query);
-
-  GitXWebhookEvent update(Query query, Update update);
+public class GitXEventUpdateRequestDTO {
+  List<String> processedFilePaths;
+  GitXWebhookEventStatus gitXWebhookEventStatus;
 }
