@@ -13,7 +13,7 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.changehandlers.helper.ChangeHandlerHelper;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.changestreamsframework.ChangeType;
-import io.harness.execution.stage.StageExecutionEntity;
+import io.harness.execution.stage.StageExecutionEntity.StageExecutionEntityKeys;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
@@ -52,12 +52,11 @@ public class StageExecutionHandler extends AbstractChangeDataHandler {
       columnValueMapping.put("duration", Long.toString(duration));
     }
 
-    if (dbObject.get(StageExecutionEntity.StageExecutionEntityKeys.stageType) != null) {
-      if ("CUSTOM_STAGE".equals(dbObject.get(StageExecutionEntity.StageExecutionEntityKeys.stageType).toString())) {
+    if (dbObject.get(StageExecutionEntityKeys.stageType) != null) {
+      if ("CUSTOM_STAGE".equals(dbObject.get(StageExecutionEntityKeys.stageType).toString())) {
         columnValueMapping.put("type", "Custom");
       } else {
-        columnValueMapping.put(
-            "type", dbObject.get(StageExecutionEntity.StageExecutionEntityKeys.stageType).toString());
+        columnValueMapping.put("type", dbObject.get(StageExecutionEntityKeys.stageType).toString());
       }
     } else {
       BasicDBObject executionSummaryDetails =

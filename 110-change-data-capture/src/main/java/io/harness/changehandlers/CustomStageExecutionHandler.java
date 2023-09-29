@@ -11,6 +11,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.changehandlers.helper.ChangeHandlerHelper;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.changestreamsframework.ChangeType;
@@ -46,7 +47,7 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
       changeHandlerHelper.parseFailureMessageFromFailureInfo(failureInfo, columnValueMapping, "failure_message");
     } else if (changeEvent.getEntityType() == StageExecutionInfo.class) {
       BasicDBObject executionSummaryDetails =
-          (BasicDBObject) dbObject.get(StageExecutionInfo.StageExecutionInfoKeys.executionSummaryDetails);
+          (BasicDBObject) dbObject.get(StageExecutionInfoKeys.executionSummaryDetails);
       if (executionSummaryDetails == null) {
         return null;
       }
@@ -92,8 +93,8 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
 
   private String getStageExecutionId(ChangeEvent<?> changeEvent, DBObject dbObject) {
     if (changeEvent.getEntityType() == StageExecutionInfo.class
-        && dbObject.get(StageExecutionInfo.StageExecutionInfoKeys.stageExecutionId) != null) {
-      return dbObject.get(StageExecutionInfo.StageExecutionInfoKeys.stageExecutionId).toString();
+        && dbObject.get(StageExecutionInfoKeys.stageExecutionId) != null) {
+      return dbObject.get(StageExecutionInfoKeys.stageExecutionId).toString();
     } else if (changeEvent.getEntityType() == StageExecutionEntity.class
         && dbObject.get(StageExecutionEntityKeys.stageExecutionId) != null) {
       return dbObject.get(StageExecutionEntityKeys.stageExecutionId).toString();
