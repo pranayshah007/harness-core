@@ -180,7 +180,7 @@ timescaleSecret:
     name: harness-secrets
     key: timescaledbPostgresPassword
 
-version: 1.0.80209
+version: 1.0.80220
 
 delegate_docker_image:
   image:
@@ -194,7 +194,7 @@ immutable_delegate_docker_image:
   image:
     registry: docker.io
     repository: harness/delegate
-    tag: 23.09.80112
+    tag: 23.09.80113
     digest: ""
 
 upgrader_docker_image:
