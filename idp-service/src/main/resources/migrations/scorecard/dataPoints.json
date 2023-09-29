@@ -177,5 +177,38 @@
     "dataSourceLocationIdentifier": "bitbucket_is_branch_protection_set",
     "isConditional": true,
     "conditionalInputValueDescription" : "Branch name"
+  },
+  {
+    "id": "65143c3d60a49366a99ff670",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "meanTimeToResolve",
+    "name": "Mean time to resolve (in hours)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "jira",
+    "dataSourceLocationIdentifier": "jira_mean_time_to_resolve",
+    "isConditional": true,
+    "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d)"
+  },
+  {
+    "id": "65143c458e971e8c2943a216",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "issuesCount",
+    "name": "Issues count",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "jira",
+    "dataSourceLocationIdentifier": "jira_issues_count",
+    "isConditional": true,
+    "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done)"
+  },
+  {
+    "id": "65155fa9d1b0fbf98d3a190e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "issuesOpenCloseRatio",
+    "name": "Issues Open/Close ratio",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "jira",
+    "dataSourceLocationIdentifier": "jira_issues_open_close_ratio",
+    "isConditional": true,
+    "conditionalInputValueDescription" : "JQL (e.g issuetype = Bug AND priority in (P0,P1) AND created >= -90d)"
   }
 ]
