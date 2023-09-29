@@ -32,7 +32,7 @@ WORKDIR /opt/harness-delegate
 
 RUN mkdir -p /opt/harness-delegate/additional_certs_pem_split
 
-COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
+COPY --from=eclipse-temurin:17.0.7_7-jre-ubi9-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV LANG=en_US.UTF-8
 ENV HOME=/opt/harness-delegate
