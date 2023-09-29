@@ -8,14 +8,17 @@
 package io.harness.delegate.service.handlermapping;
 
 import io.harness.delegate.core.beans.AcquireTasksResponse;
+import io.harness.delegate.core.beans.Secret;
 import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.service.common.AcquireTaskHelper;
+import io.harness.delegate.service.core.litek8s.RunnerDecryptionService;
 import io.harness.delegate.service.handlermapping.context.Context;
 import io.harness.delegate.service.handlermapping.handlers.Handler;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -28,14 +31,17 @@ public class HandlerMappingServer {
   private final AcquireTaskHelper acquireTaskHelper;
   private final Context context; // TODO: Don't inject context
   private final Map<String, Handler> handlersMap;
+  private final RunnerDecryptionService decryptionService;
 
   @Inject
   public HandlerMappingServer(@Named("taskExecutor") ThreadPoolExecutor taskExecutor,
-      AcquireTaskHelper acquireTaskHelper, Context context, Map<String, Handler> handlersMap) {
+      AcquireTaskHelper acquireTaskHelper, Context context, Map<String, Handler> handlersMap,
+      RunnerDecryptionService decryptionService) {
     this.taskExecutor = taskExecutor;
     this.acquireTaskHelper = acquireTaskHelper;
     this.context = context;
     this.handlersMap = handlersMap;
+    this.decryptionService = decryptionService;
   }
 
   public void serve(AcquireTasksResponse acquired) {
@@ -50,6 +56,18 @@ public class HandlerMappingServer {
     var handlerContext = context.deepCopy();
     handlerContext.set(Context.TASK_ID, taskPayload.getId());
     // TODO: add decrypted secrets here
+    // secret decryption start
+    List<Secret> binarySecretsList = taskPayload.getSecretsList();
+    for (Secret secret : binarySecretsList) {
+      try {
+        Map<String, char[]> decryptedValue = decryptionService.decryptByteArray(secret);
+        // add this to the env variable
+      } catch (Exception ex) {
+        log.error("exception occurred when decrypting the secret", ex);
+      }
+    }
+
+    // secret decryption end
     handler.handle(taskPayload.getRunnerType(), taskPayload, handlerContext);
     log.info("Finished executing handler {}", taskPayload.getEventType());
   }
