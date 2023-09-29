@@ -50,7 +50,8 @@ public class NGYamlHelper {
     String version = HarnessYamlVersion.V0;
     try {
       YamlField yamlField = YamlUtils.readTree(yaml);
-      if (yamlField.getNode().getCurrJsonNode().has(YAMLFieldNameConstants.SPEC)) {
+      if (yamlField.getNode().getCurrJsonNode().has(YAMLFieldNameConstants.SPEC)
+          || yamlField.getNode().getCurrJsonNode().has(YAMLFieldNameConstants.STAGES)) {
         version = HarnessYamlVersion.V1;
       }
     } catch (IOException ioException) {

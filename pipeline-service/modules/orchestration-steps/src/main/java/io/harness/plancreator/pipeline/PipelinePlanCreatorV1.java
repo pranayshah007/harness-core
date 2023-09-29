@@ -47,8 +47,14 @@ public class PipelinePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
       PlanCreationContext ctx, YamlField config) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
     Map<String, YamlField> dependencies = new HashMap<>();
-    YamlField stagesYamlNode = Preconditions.checkNotNull(
-        config.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STAGES));
+    YamlField stagesYamlNode;
+    // yaml will start with stages when a v1 template is linked with pipeline
+    if (config.getNode().getCurrJsonNode().has(YAMLFieldNameConstants.SPEC)) {
+      stagesYamlNode = Preconditions.checkNotNull(
+          config.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STAGES));
+    } else {
+      stagesYamlNode = Preconditions.checkNotNull(config.getNode().getField(YAMLFieldNameConstants.STAGES));
+    }
     if (stagesYamlNode.getNode() == null) {
       return responseMap;
     }
