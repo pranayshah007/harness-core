@@ -190,6 +190,17 @@ public class NexusResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = RAKSHIT_AGARWAL)
   @Category(UnitTests.class)
+  public void testGetBuildDetailsDefault_UnsupportedFormat() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               "invalidFormat", ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("No enum constant software.wings.utils.RepositoryFormat.invalidFormat");
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
   public void testGetBuildDetailsDocker_ArtifactPath_Null() {
     assertThatThrownBy(
         ()

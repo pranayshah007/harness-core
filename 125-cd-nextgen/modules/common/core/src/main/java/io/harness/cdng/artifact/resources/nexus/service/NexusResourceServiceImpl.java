@@ -119,7 +119,7 @@ public class NexusResourceServiceImpl implements NexusResourceService {
         break;
 
       default:
-        throw new InvalidRequestException("Invalid repository format: " + repositoryFormat);
+        throw new IllegalArgumentException("Invalid repository format: " + repositoryFormat);
     }
 
     NexusConnectorDTO connector = getConnector(nexusConnectorRef);
@@ -336,7 +336,7 @@ public class NexusResourceServiceImpl implements NexusResourceService {
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new NexusRegistryException(
             "Unexpected error during authentication to nexus server " + remoteMethodReturnValueData.getReturnValue());
