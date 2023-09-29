@@ -516,3 +516,5 @@ featureFlagConfig:
   syncFeaturesToCF: false
 
 enableQueue: ${ENABLE_QUEUE:-false}
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
