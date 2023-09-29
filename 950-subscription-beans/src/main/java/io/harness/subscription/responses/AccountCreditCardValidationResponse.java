@@ -10,17 +10,13 @@ package io.harness.subscription.responses;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.subscription.dto.CreditCardDTO;
 
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
 @OwnedBy(GTM)
 @Data
 @Builder
-public class CreditCardResponse {
-  @NotNull CreditCardDTO creditCardDTO;
-  private Long createdAt;
-  private Long lastUpdatedAt;
+public class AccountCreditCardValidationResponse {
+  private boolean hasAtleastOneValidCreditCard;
 }
