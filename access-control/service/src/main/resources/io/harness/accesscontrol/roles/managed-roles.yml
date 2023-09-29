@@ -568,6 +568,8 @@ roles:
         - ff_environment_edit
         - ff_environment_view
         - ff_featureflag_toggle
+        - ff_proxyapikey_view
+        - ff_proxyapikey_edit
         - gitops_agent_view
         - gitops_agent_edit
         - gitops_agent_delete
@@ -713,6 +715,8 @@ roles:
         - ff_target_view
         - ff_environment_apiKeyView
         - ff_environment_view
+        - ff_proxyapikey_view
+        - ff_proxyapikey_edit
         - core_dashboards_view
         - gitops_agent_view
         - gitops_application_view

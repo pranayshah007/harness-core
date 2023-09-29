@@ -496,6 +496,21 @@ permissions:
     includeInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: ff_proxyapikey_view
+    name: View Feature Flags Proxy API Key
+    status: ACTIVE
+    allowedScopeLevels:
+      - account
+  - identifier: ff_proxyapikey_edit
+    name: Create or edit Feature Flags Proxy API Key
+    status: ACTIVE
+    allowedScopeLevels:
+      - account
+  - identifier: ff_proxyapikey_delete
+    name: Delete Feature Flags Proxy API Key
+    status: ACTIVE
+    allowedScopeLevels:
+      - account
   - identifier: ff_featureflag_edit
     name: Create or edit Feature Flags
     status: ACTIVE

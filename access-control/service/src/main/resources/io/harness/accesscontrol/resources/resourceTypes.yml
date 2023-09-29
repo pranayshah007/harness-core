@@ -43,6 +43,8 @@ resourceTypes:
     permissionKey: authsetting
   - identifier: FEATUREFLAG
     permissionKey: featureflag
+  - identifier: PROXYAPIKEY
+    permissionKey: proxyapikey
   - identifier: TARGET
     permissionKey: target
   - identifier: TARGETGROUP
