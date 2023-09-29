@@ -17,12 +17,10 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 import io.harness.gitsync.common.dtos.GitDiffResultFileDTO;
 import io.harness.gitsync.common.dtos.GitDiffResultFileListDTO;
-import io.harness.gitsync.common.dtos.ScmGetBatchFileRequestIdentifier;
-import io.harness.gitsync.common.dtos.ScmGetBatchFilesByBranchRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.helper.GitRepoHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXCacheUpdateHelperRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventUpdateRequestDTO;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
@@ -34,9 +32,7 @@ import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -92,7 +88,7 @@ public class GitXWebhookProcessorRunnable implements Runnable {
           GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.SKIPPED).build());
     } else {
       gitXWebhookCacheUpdateHelper.submitTask(gitXWebhookEvent.getEventIdentifier(),
-          buildScmGetBatchFilesByBranchRequestDTO(gitXWebhook, gitXWebhookEvent, modifiedFilePaths, scmConnector));
+          buildGitXWebhookRunnableRequest(gitXWebhook, gitXWebhookEvent, modifiedFilePaths, scmConnector));
       gitXWebhookEventService.updateEvent(gitXWebhookEvent.getAccountIdentifier(),
           gitXWebhookEvent.getEventIdentifier(),
           GitXEventUpdateRequestDTO.builder()
@@ -102,42 +98,17 @@ public class GitXWebhookProcessorRunnable implements Runnable {
     }
   }
 
-  private ScmGetBatchFilesByBranchRequestDTO buildScmGetBatchFilesByBranchRequestDTO(GitXWebhook gitXWebhook,
+  private GitXCacheUpdateHelperRequestDTO buildGitXWebhookRunnableRequest(GitXWebhook gitXWebhook,
       GitXWebhookEvent gitXWebhookEvent, List<String> modifiedFilePaths, ScmConnector scmConnector) {
-    return ScmGetBatchFilesByBranchRequestDTO.builder()
+    return GitXCacheUpdateHelperRequestDTO.builder()
         .accountIdentifier(gitXWebhook.getAccountIdentifier())
-        .scmGetFileByBranchRequestDTOMap(
-            buildScmGetFileByBranchRequestDTOMap(gitXWebhook, gitXWebhookEvent, modifiedFilePaths, scmConnector))
+        .repoName(gitXWebhook.getRepoName())
+        .branch(gitXWebhookEvent.getBranch())
+        .connectorRef(gitXWebhook.getConnectorRef())
+        .eventIdentifier(gitXWebhookEvent.getEventIdentifier())
+        .modifiedFilePaths(modifiedFilePaths)
+        .scmConnector(scmConnector)
         .build();
-  }
-
-  private Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> buildScmGetFileByBranchRequestDTOMap(
-      GitXWebhook gitXWebhook, GitXWebhookEvent gitXWebhookEvent, List<String> modifiedFilePaths,
-      ScmConnector scmConnector) {
-    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap =
-        new HashMap<>();
-    modifiedFilePaths.forEach(modifiedFilePath -> {
-      String uniqueIdentifier = buildUniqueIdentifier(gitXWebhookEvent, modifiedFilePath);
-      ScmGetBatchFileRequestIdentifier scmGetBatchFileRequestIdentifier =
-          ScmGetBatchFileRequestIdentifier.builder().identifier(uniqueIdentifier).build();
-      ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO =
-          ScmGetFileByBranchRequestDTO.builder()
-              .scope(Scope.of(gitXWebhook.getAccountIdentifier()))
-              .scmConnector(scmConnector)
-              .repoName(gitXWebhook.getRepoName())
-              .branchName(gitXWebhookEvent.getBranch())
-              .filePath(modifiedFilePath)
-              .connectorRef(gitXWebhook.getConnectorRef())
-              .useCache(false)
-              .build();
-      scmGetFileByBranchRequestDTOMap.put(scmGetBatchFileRequestIdentifier, scmGetFileByBranchRequestDTO);
-    });
-    return scmGetFileByBranchRequestDTOMap;
-  }
-
-  private String buildUniqueIdentifier(GitXWebhookEvent gitXWebhookEvent, String modifiedFilePath) {
-    return gitXWebhookEvent.getAccountIdentifier() + "/" + gitXWebhookEvent.getEventIdentifier() + "/"
-        + modifiedFilePath;
   }
 
   private List<String> parsePayloadAndGetModifiedFilePaths(

@@ -77,6 +77,7 @@ import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.ScmUpdateGitCacheRequestDTO;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
@@ -494,7 +495,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     doGetBatchFileValidations(scmGetBatchFilesByBranchRequestDTO);
 
     if (!isBatchGetFileTaskSupportedByDelegates(scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier())) {
-      return processGetBatchFileTaskUsingSingleGetFileAPI(scmGetBatchFilesByBranchRequestDTO);
+      return processGetBatchFileTaskUsingSingleGetFileAPI(
+          scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap());
     }
 
     Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMapForManager = new HashMap<>();
@@ -537,6 +539,37 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             gitFileRequestMapForManager, gitFileRequestMapForDelegate);
     scmGetBatchFilesResponseDTO.getScmGetFileResponseV2DTOMap().putAll(cachedScmGetFileResponseMap);
     return scmGetBatchFilesResponseDTO;
+  }
+
+  @Override
+  public void updateGitCache(ScmUpdateGitCacheRequestDTO scmUpdateGitCacheRequestDTO) {
+    if (!isBatchGetFileTaskSupportedByDelegates(scmUpdateGitCacheRequestDTO.getAccountIdentifier())) {
+      processGetBatchFileTaskUsingSingleGetFileAPI(scmUpdateGitCacheRequestDTO.getScmGetFileByBranchRequestDTOMap());
+      return;
+    }
+
+    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMapForManager = new HashMap<>();
+    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMapForDelegate = new HashMap<>();
+
+    scmUpdateGitCacheRequestDTO.getScmGetFileByBranchRequestDTOMap().forEach(
+        (requestIdentifier, scmGetFileByBranchRequestDTO) -> {
+          ScmConnector scmConnector =
+              gitSyncConnectorHelper.getScmConnectorForGivenRepo(scmGetFileByBranchRequestDTO.getScope(),
+                  scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName());
+
+          GetBatchFileRequestIdentifier identifier =
+              GetBatchFileRequestIdentifier.builder().identifier(requestIdentifier.getIdentifier()).build();
+          GitFileRequestV2 gitFileRequest = getGitFileRequestV2(
+              scmGetFileByBranchRequestDTO, scmConnector, scmGetFileByBranchRequestDTO.getBranchName());
+          if (gitSyncConnectorHelper.isScmConnectorManagerExecutable(scmConnector)) {
+            gitFileRequestMapForManager.put(identifier, gitFileRequest);
+          } else {
+            gitFileRequestMapForDelegate.put(identifier, gitFileRequest);
+          }
+        });
+
+    processGitFileBatchRequest(
+        scmUpdateGitCacheRequestDTO.getAccountIdentifier(), gitFileRequestMapForManager, gitFileRequestMapForDelegate);
   }
 
   @Override
@@ -1117,9 +1150,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   }
 
   private ScmGetBatchFilesResponseDTO processGetBatchFileTaskUsingSingleGetFileAPI(
-      ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO) {
+      Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap) {
     Map<ScmGetBatchFileRequestIdentifier, ScmGetFileResponseV2DTO> scmGetFileResponseV2DTOMap = new HashMap<>();
-    scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap().forEach((identifier, request) -> {
+    scmGetFileByBranchRequestDTOMap.forEach((identifier, request) -> {
       ScmGetFileResponseV2DTO scmGetFileResponseV2DTO;
       try {
         ScmGetFileResponseDTO scmGetFileResponseDTO = getFileByBranch(request);
