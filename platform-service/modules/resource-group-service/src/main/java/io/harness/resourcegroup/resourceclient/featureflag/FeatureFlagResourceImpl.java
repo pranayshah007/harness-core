@@ -7,7 +7,7 @@
 
 package io.harness.resourcegroup.resourceclient.featureflag;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.annotations.dev.HarnessTeam.FF;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_ATTRIBUTE;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_ATTRIBUTE_INCLUDING_CHILD_SCOPES;
@@ -21,7 +21,7 @@ import static org.apache.commons.lang3.StringUtils.stripToNull;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
-//import io.harness.environment.remote.EnvironmentResourceClient;
+import io.harness.featureflag.EnvironmentResourceClient;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Slf4j
-@OwnedBy(PIPELINE)
+@OwnedBy(FF)
 public class FeastureFlagResourceImpl implements Resource {
   FeatureFlagResourceClient featureflagResourceClient;
 

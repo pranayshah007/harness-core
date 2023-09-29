@@ -5,9 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.featureflag.remote;
+package io.harness.featureflag;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.annotations.dev.HarnessTeam.FF;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.AbstractHttpClientFactory;
@@ -25,14 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Singleton
 @Slf4j
-@OwnedBy(PIPELINE)
+@OwnedBy(FF)
 public class FeatureFlagResourceClientHttpFactory
     extends AbstractHttpClientFactory implements Provider<FeatureFlagResourceClient> {
   public FeatureFlagResourceClientHttpFactory(ServiceHttpClientConfig ngManagerConfig, String serviceSecret,
       ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,
       ClientMode clientMode) {
     super(ngManagerConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false, clientMode);
-    log.info("secretManagerConfig {}", ngManagerConfig);
   }
 
   @Override

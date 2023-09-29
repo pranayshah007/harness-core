@@ -28,6 +28,8 @@ import io.harness.envgroup.EnvironmentGroupResourceClientModule;
 import io.harness.envgroup.remote.EnvironmentGroupResourceClient;
 import io.harness.environment.EnvironmentResourceClientModule;
 import io.harness.filestore.FileStoreClientModule;
+import io.harness.featureflag.FeatureFlagResourceClient;
+import io.harness.featureflag.FeatureFlagResourceClientModule;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.migration.NGMigrationSdkModule;
@@ -121,6 +123,7 @@ public class ResourceGroupModule extends AbstractModule {
     requireBinding(CEViewFolderClient.class);
     requireBinding(CodeResourceClient.class);
     requireBinding(GovernanceRuleClient.class);
+    requireBinding(FeatureFlagResourceClient.class);
   }
 
   private void installResourceValidators() {
@@ -170,6 +173,9 @@ public class ResourceGroupModule extends AbstractModule {
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCode().getBaseUrl()).build(),
         resourceClients.getCode().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
     install(new GovernanceRuleClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
+        resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
+     install(new FeatureFlagResourceClientModule(
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
         resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
   }

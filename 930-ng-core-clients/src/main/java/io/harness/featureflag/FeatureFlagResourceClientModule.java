@@ -7,7 +7,7 @@
 
 package io.harness.featureflag;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.annotations.dev.HarnessTeam.FF;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.environment.remote.EnvironmentResourceClient;
@@ -23,21 +23,12 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 
-@OwnedBy(PIPELINE)
+@OwnedBy(FF)
 public class FeatureFlagResourceClientModule extends AbstractModule {
   private final ServiceHttpClientConfig ngManagerClientConfig;
   private final String serviceSecret;
   private final String clientId;
   private final ClientMode clientMode;
-
-  @Inject
-  public FeatureFlagResourceClientModule(
-      ServiceHttpClientConfig ngManagerClientConfig, String serviceSecret, String clientId) {
-    this.ngManagerClientConfig = ngManagerClientConfig;
-    this.serviceSecret = serviceSecret;
-    this.clientId = clientId;
-    this.clientMode = ClientMode.NON_PRIVILEGED;
-  }
 
   @Inject
   public FeatureFlagResourceClientModule(

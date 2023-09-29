@@ -59,7 +59,6 @@ public final class EventsFrameworkMetadataConstants {
   public static final String DEPLOYMENT_FREEZE_ENTITY = "deploymentfreeze";
   public static final String ENVIRONMENT_ENTITY = "environment";
   public static final String ENVIRONMENT_GROUP_ENTITY = "environmentGroup";
-  public static final String FEATUREFLAG_ENTITY = "featureflag";
 
   public static final String RESOURCE_GROUP = "resourcegroup";
 
@@ -126,4 +125,7 @@ public final class EventsFrameworkMetadataConstants {
   public static final String SEI_CONFIGURATION_SETTINGS = "seiconfigurationsettings";
   public static final String SEI_COLLECTIONS = "seicollections";
   public static final String SEI_INSIGHTS = "seiinsights";
+
+  // FF
+  public static final String FEATUREFLAG_ENTITY = "featureflag";
 }
