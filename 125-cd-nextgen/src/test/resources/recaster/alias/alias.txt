@@ -1201,6 +1201,7 @@ io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO
 io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig
 io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO
 io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO
+io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
 io.harness.container.ContainerInfo
 io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 io.harness.delegate.beans.connector.gcpsecretmanager.outcome.GcpSecretManagerConnectorOutcomeDTO

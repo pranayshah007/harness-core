@@ -3308,3 +3308,4 @@
 20000618:io.harness.delegate.task.helm.response.HelmFetchChartManifestResponse
 20000619:io.harness.delegate.task.helm.response.HelmChartManifest
 20001000:io.harness.delegate.beans.connector.scm.github.GithubAppDTO
+20001001:io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO

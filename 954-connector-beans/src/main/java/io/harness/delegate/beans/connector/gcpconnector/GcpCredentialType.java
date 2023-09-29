@@ -12,7 +12,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum GcpCredentialType {
   @JsonProperty(GcpConstants.INHERIT_FROM_DELEGATE) INHERIT_FROM_DELEGATE(GcpConstants.INHERIT_FROM_DELEGATE),
-  @JsonProperty(GcpConstants.MANUAL_CONFIG) MANUAL_CREDENTIALS(GcpConstants.MANUAL_CONFIG);
+  @JsonProperty(GcpConstants.MANUAL_CONFIG) MANUAL_CREDENTIALS(GcpConstants.MANUAL_CONFIG),
+  @JsonProperty(GcpConstants.OIDC_AUTHENTICATION) OIDC_AUTHENTICATION(GcpConstants.OIDC_AUTHENTICATION);
 
   private final String displayName;
 
