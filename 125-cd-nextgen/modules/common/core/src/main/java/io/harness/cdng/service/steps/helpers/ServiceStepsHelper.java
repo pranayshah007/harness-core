@@ -195,7 +195,7 @@ public class ServiceStepsHelper {
   }
 
   public void saveServiceExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
-    stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+    stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
         StageExecutionInfoUpdateDTO.builder().serviceInfo(createServiceInfoFromResponse(stepResponse)).build());
   }
 

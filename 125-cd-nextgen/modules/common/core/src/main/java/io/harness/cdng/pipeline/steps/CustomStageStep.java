@@ -32,7 +32,9 @@ import io.harness.tasks.ResponseData;
 import io.harness.utils.StageStatus;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
@@ -43,6 +45,7 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
       StepType.newBuilder().setType("CUSTOM_STAGE").setStepCategory(StepCategory.STAGE).build();
 
   @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
 
   @Override
   public Class<StageElementParameters> getStepParametersClass() {
@@ -55,8 +58,9 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
     log.info("Executing custom stage with params [{}]", stepParameters);
     CustomStageSpecParams specParameters = (CustomStageSpecParams) stepParameters.getSpecConfig();
     String executionNodeId = specParameters.getChildNodeID();
-    stageExecutionInfoService.createStageExecutionInfo(
-        ambiance, stepParameters, getCustomStageStepCurrentLevel(ambiance));
+    dashboardExecutorService.submit(()
+                                        -> stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
+                                            createStageExecutionInfoUpdateDTOFromStepParameters(stepParameters)));
     return ChildExecutableResponse.newBuilder().setChildNodeId(executionNodeId).build();
   }
 
@@ -65,7 +69,9 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
       Ambiance ambiance, StageElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Executed custom stage [{}]", stepParameters);
     StepResponse stepResponse = createStepResponseFromChildResponse(responseDataMap);
-    stageExecutionInfoService.updateStageExecutionInfo(ambiance, createStageExecutionInfoUpdateDTO(stepResponse));
+    dashboardExecutorService.submit(()
+                                        -> stageExecutionInfoService.upsertStageExecutionInfo(
+                                            ambiance, createStageExecutionInfoUpdateDTO(stepResponse)));
     return stepResponse;
   }
 
@@ -74,6 +80,15 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
         .failureInfo(stepResponse.getFailureInfo())
         .status(stepResponse.getStatus())
         .stageStatus(Status.SUCCEEDED.equals(stepResponse.getStatus()) ? StageStatus.SUCCEEDED : StageStatus.FAILED)
+        .build();
+  }
+
+  private StageExecutionInfoUpdateDTO createStageExecutionInfoUpdateDTOFromStepParameters(
+      StageElementParameters stepParameters) {
+    return StageExecutionInfoUpdateDTO.builder()
+        .stageName(stepParameters.getName())
+        .stageIdentifier(stepParameters.getIdentifier())
+        .tags(stepParameters.getTags())
         .build();
   }
 

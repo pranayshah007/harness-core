@@ -625,7 +625,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     try {
       List<ManifestSummary> manifestsSummary = mapManifestOutcomeToSummary(manifestsOutcome);
       if (isNotEmpty(manifestsSummary)) {
-        stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+        stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
             StageExecutionInfoUpdateDTO.builder()
                 .manifestsSummary(ServiceExecutionSummaryDetails.ManifestsSummary.builder()
                                       .manifestSummaries(manifestsSummary)

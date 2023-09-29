@@ -51,12 +51,22 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
       if (executionSummaryDetails == null) {
         return null;
       }
+
+      BasicDBObject infraExecutionSummary = (BasicDBObject) executionSummaryDetails.get("infraExecutionSummary");
+      if (infraExecutionSummary != null) {
+        addInfraInfoDetailsToTimescale(infraExecutionSummary, columnValueMapping);
+      }
+
       BasicDBObject failureInfo = (BasicDBObject) executionSummaryDetails.get("failureInfo");
       if (failureInfo != null) {
         changeHandlerHelper.addKeyValuePairToMapFromDBObject(
             failureInfo, columnValueMapping, "errorMessage_", "failure_message");
       }
+
+      changeHandlerHelper.addKeyValuePairToMapFromDBObject(
+          dbObject, columnValueMapping, StageExecutionInfoKeys.rollbackDuration, "rollback_duration");
     }
+
     return columnValueMapping;
   }
 
@@ -70,6 +80,16 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
     }
     if (changeEvent.getEntityType() == StageExecutionEntity.class) {
       return dbObject.get(StageExecutionEntityKeys.failureInfo) == null;
+    }
+
+    String stageType = null;
+    if (changeEvent.getEntityType() == StageExecutionEntity.class) {
+      stageType = dbObject.get(StageExecutionEntityKeys.stageType).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionInfo.class) {
+      stageType = dbObject.get(StageExecutionInfoKeys.stageType).toString();
+    }
+    if (!("CUSTOM_STAGE").equals(stageType)) {
+      return true;
     }
     return false;
   }
@@ -100,5 +120,20 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
       return dbObject.get(StageExecutionEntityKeys.stageExecutionId).toString();
     }
     return null;
+  }
+
+  private void addInfraInfoDetailsToTimescale(DBObject infraExecutionSummary, Map<String, String> columnValueMapping) {
+    changeHandlerHelper.addKeyValuePairToMapFromDBObject(
+        infraExecutionSummary, columnValueMapping, "identifier", "env_id");
+    changeHandlerHelper.addKeyValuePairToMapFromDBObject(infraExecutionSummary, columnValueMapping, "name", "env_name");
+    changeHandlerHelper.addKeyValuePairToMapFromDBObject(infraExecutionSummary, columnValueMapping, "type", "env_type");
+    changeHandlerHelper.addKeyValuePairToMapFromDBObject(
+        infraExecutionSummary, columnValueMapping, "infrastructureIdentifier", "infra_id");
+    changeHandlerHelper.addKeyValuePairToMapFromDBObject(
+        infraExecutionSummary, columnValueMapping, "infrastructureName", "infra_name");
+    changeHandlerHelper.addKeyValuePairToMapFromDBObject(
+        infraExecutionSummary, columnValueMapping, "envGroupId", "env_group_id");
+    changeHandlerHelper.addKeyValuePairToMapFromDBObject(
+        infraExecutionSummary, columnValueMapping, "envGroupName", "env_group_name");
   }
 }

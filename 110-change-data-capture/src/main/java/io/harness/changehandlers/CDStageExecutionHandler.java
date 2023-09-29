@@ -38,6 +38,12 @@ public class CDStageExecutionHandler extends AbstractChangeDataHandler {
       return null;
     }
 
+    // for custom stage, separate CustomStageExecutionHandler is being used
+    BasicDBObject stageType = (BasicDBObject) dbObject.get(StageExecutionInfoKeys.stageType);
+    if ((stageType != null) && ("CUSTOM_STAGE".equals(stageType.toString()))) {
+      return null;
+    }
+
     BasicDBObject executionSummaryDetails =
         (BasicDBObject) dbObject.get(StageExecutionInfoKeys.executionSummaryDetails);
     if (executionSummaryDetails == null) {

@@ -57,7 +57,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ChangeDataCapture(
     table = "cd_stage_execution", dataStore = "ng-harness", fields = {}, handler = "CDStageExecutionHandler")
 @ChangeDataCapture(
-    table = "execution_tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "StageTagsInfoNGCD")
+    table = "execution_tags_info_ng", dataStore = "ng-harness", fields = {}, handler = "StageTagsInfoNGCD")
 @ChangeDataCapture(table = "cd_stage_helm_manifest_info", dataStore = "ng-harness", fields = {},
     handler = "CDStageHelmManifestInfoHandler")
 @ChangeDataCapture(

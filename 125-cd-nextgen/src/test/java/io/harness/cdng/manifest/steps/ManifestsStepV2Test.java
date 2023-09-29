@@ -310,7 +310,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
+    verify(stageExecutionInfoService, times(0)).upsertStageExecutionInfo(any(), any());
 
     T response = executeMethod.get();
 
@@ -363,7 +363,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     T response = executeMethod.get();
 
     ArgumentCaptor<StageExecutionInfoUpdateDTO> captor = ArgumentCaptor.forClass(StageExecutionInfoUpdateDTO.class);
-    verify(stageExecutionInfoService, times(1)).updateStageExecutionInfo(any(), captor.capture());
+    verify(stageExecutionInfoService, times(1)).upsertStageExecutionInfo(any(), captor.capture());
     StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO = captor.getValue();
     ServiceExecutionSummaryDetails.ManifestsSummary manifestsSummary =
         stageExecutionInfoUpdateDTO.getManifestsSummary();
@@ -427,7 +427,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
+    verify(stageExecutionInfoService, times(0)).upsertStageExecutionInfo(any(), any());
 
     T response = executeMethod.get();
 

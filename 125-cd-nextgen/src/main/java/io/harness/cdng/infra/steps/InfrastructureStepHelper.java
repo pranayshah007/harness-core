@@ -167,7 +167,7 @@ public class InfrastructureStepHelper {
   }
 
   public void saveInfraExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
-    stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+    stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
         StageExecutionInfoUpdateDTO.builder()
             .infraExecutionSummary(createInfraExecutionSummaryDetailsFromStepResponse(stepResponse))
             .build());
