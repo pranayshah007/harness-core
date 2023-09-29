@@ -108,6 +108,7 @@ import io.harness.cvng.migration.SRMCoreMigrationProvider;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
+import io.harness.cvng.notification.jobs.ErrorTrackingNotificationHandler;
 import io.harness.cvng.notification.jobs.MonitoredServiceNotificationHandler;
 import io.harness.cvng.notification.jobs.SLONotificationHandler;
 import io.harness.cvng.notification.jobs.SRMAnalysisStepNotificationHandler;
@@ -525,6 +526,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerNotificationTemplates(configuration, injector);
     registerSLONotificationIterator(injector);
     registerMonitoredServiceNotificationIterator(injector);
+    registerMonitoredServiceErrorTrackingNotificationIterator(injector);
     registerAnalysisStepReportNotificationIterator(injector);
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
@@ -1291,6 +1293,32 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
+    injector.injectMembers(dataCollectionIterator);
+    notificationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 2, TimeUnit.MINUTES);
+  }
+
+  private void registerMonitoredServiceErrorTrackingNotificationIterator(Injector injector) {
+    ScheduledThreadPoolExecutor notificationExecutor = new ScheduledThreadPoolExecutor(
+            5, new ThreadFactoryBuilder().setNameFormat("error-tracking-notification-iterator").build());
+    ErrorTrackingNotificationHandler notificationHandler =
+            injector.getInstance(ErrorTrackingNotificationHandler.class);
+
+    PersistenceIterator dataCollectionIterator =
+            MongoPersistenceIterator.<MonitoredService, MorphiaFilterExpander<MonitoredService>>builder()
+                    .mode(PersistenceIterator.ProcessMode.PUMP)
+                    .iteratorName("ErrorTrackingNotificationIterator")
+                    .clazz(MonitoredService.class)
+                    .fieldName(MonitoredServiceKeys.nextNotificationIteration)
+                    .targetInterval(ofMinutes(1))
+                    .acceptableNoAlertDelay(ofMinutes(1))
+                    .executorService(notificationExecutor)
+                    .semaphore(new Semaphore(5))
+                    .handler(notificationHandler)
+                    .schedulingType(REGULAR)
+                    .filterExpander(query -> query.field(MonitoredServiceKeys.notificationRuleRefs).exists())
+                    .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+                    .redistribute(true)
+                    .build();
     injector.injectMembers(dataCollectionIterator);
     notificationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 2, TimeUnit.MINUTES);
   }
