@@ -196,7 +196,7 @@ public class ServerlessGitFetchTaskTest extends CategoryTest {
 
     doReturn(fetchFilesResult)
         .when(serverlessGitFetchTaskHelper)
-        .fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, null);
+        .fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, null, false);
     ServerlessGitFetchResponse serverlessGitFetchResponse =
         (ServerlessGitFetchResponse) serverlessGitFetchTask.run(taskParameters);
     Map<String, FetchFilesResult> filesFromMultipleRepo = new HashMap<>();
