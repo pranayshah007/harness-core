@@ -68,10 +68,10 @@ import net.jodah.failsafe.RetryPolicy;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsSdkInitHelper {
   private static final int MAX_ATTEMPTS = 3;
-
   private static final long INITIAL_DELAY_MS = 100;
   private static final long MAX_DELAY_MS = 5000;
   private static final long DELAY_FACTOR = 5;
+  public static final int METRICS_RECORD_PERIOD_SECONDS = 120;
   private static final RetryPolicy<Object> RETRY_POLICY = createRetryPolicy();
 
   public static Map<String, Types> calculateSupportedTypes(PipelineServiceInfoProvider pipelineServiceInfoProvider) {
@@ -106,7 +106,7 @@ public class PmsSdkInitHelper {
 
   private static void initializeMetrics(Injector injector) {
     injector.getInstance(MetricService.class).initializeMetrics();
-    injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
+    injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks(METRICS_RECORD_PERIOD_SECONDS);
   }
 
   private static void registerSdk(Injector injector, PmsSdkConfiguration sdkConfiguration) {
