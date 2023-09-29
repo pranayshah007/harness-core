@@ -47,11 +47,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import lombok.Builder;
+
+import lombok.*;
 import lombok.Builder.Default;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -105,8 +103,19 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
 
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(6).toMillis();
 
+  // --- BEGIN Delegate-Runner new fields ---
+  @Builder
+  @Data
+  public static class SecretToDecrypt {
+    private final String secretId;
+    private final String scope;
+  }
+
+  private List<SecretToDecrypt> secretsToDecrypt;
   private byte[] taskData;
   private byte[] runnerData;
+  private String orgId;
+  private String projectId;
   // SETUP, EXECUTE or CLEANUP
   private String eventType;
   private String runnerType;
@@ -115,6 +124,7 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   private long executionTimeout;
   // TODO: remove this async
   private boolean async;
+  // --- END Delegate-Runner new fields ---
 
   private TaskData data;
 

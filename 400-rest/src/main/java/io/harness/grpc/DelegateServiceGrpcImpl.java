@@ -9,10 +9,12 @@ package io.harness.grpc;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.grpc.Status;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
+import io.harness.beans.DelegateTask.SecretToDecrypt;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.callback.DelegateCallbackToken;
@@ -114,6 +116,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
@@ -150,9 +156,14 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   }
 
   // Helper function that will persist a delegate grpc request to task.
-  private void scheduleTaskInternal(SchedulingConfig schedulingConfig, byte[] taskData, byte[] infraData,
-      SchedulingTaskEvent.EventType eventType, Optional<String> executionInfraRef, String taskId,
-      StreamObserver<SubmitTaskResponse> responseObserver) {
+  private void scheduleTaskInternal(@NotNull SchedulingConfig schedulingConfig,
+                                    @Nullable byte[] taskData,
+                                    @Nullable byte[] infraData,
+                                    SchedulingTaskEvent.EventType eventType,
+                                    Optional<String> executionInfraRef,
+                                    @NotNull String taskId,
+                                    Optional<List<SecretToDecrypt>> secrets,
+                                    StreamObserver<SubmitTaskResponse> responseObserver) {
     try {
       Map<String, String> setupAbstractions = schedulingConfig.getSetupAbstractions().getValuesMap();
 
@@ -186,6 +197,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .waitId(taskId)
               .accountId(schedulingConfig.getAccountId())
               .setupAbstractions(setupAbstractions)
+              .secretsToDecrypt(secrets.isPresent() ? secrets.get() : null)
               .workflowExecutionId(setupAbstractions.get(DelegateTaskKeys.workflowExecutionId))
               .executionCapabilities(capabilities)
               .selectionLogsTrackingEnabled(schedulingConfig.getSelectionTrackingLogEnabled())
@@ -331,8 +343,22 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     if (schedulingConfig.getRunnerType().equals(RunnerType.RUNNER_TYPE_K8S)) {
       String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
       K8SInfra k8SInfra = buildK8sInfra(setupExecutionInfrastructureRequest, taskId);
-      scheduleTaskInternal(setupExecutionInfrastructureRequest.getConfig(), null, k8SInfra.toByteArray(),
-          SchedulingTaskEvent.EventType.SETUP, executionInfraRef, taskId, responseObserver);
+      scheduleTaskInternal(
+              setupExecutionInfrastructureRequest.getConfig(),
+              null,
+              k8SInfra.toByteArray(),
+              SchedulingTaskEvent.EventType.SETUP,
+              executionInfraRef,
+              taskId,
+              Optional.of(setupExecutionInfrastructureRequest.getSecrets().getSecretsList()
+                      .stream()
+                      .map(ProtoSecretToSecretToDecryptMapper::map)
+                      .collect(Collectors.toList())),
+              responseObserver);
+    } else {
+      String errMsg = String.format("Runner type %s not supported for init request.", schedulingConfig.getRunnerType());
+      log.error(errMsg);
+      responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(errMsg).asRuntimeException());
     }
   }
 
@@ -347,7 +373,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     Optional<String> executionInfraRef = Optional.empty();
     String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
     scheduleTaskInternal(scheduleTaskRequest.getConfig(), execution.getInput().getData().toByteArray(), null,
-        SchedulingTaskEvent.EventType.EXECUTE, executionInfraRef, taskId, responseObserver);
+        SchedulingTaskEvent.EventType.EXECUTE, executionInfraRef, taskId, Optional.empty(), responseObserver);
   }
 
   private K8SInfra buildK8sInfra(

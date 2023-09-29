@@ -91,10 +91,11 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
-import io.harness.delegate.core.beans.AcquireTasksResponse;
-import io.harness.delegate.core.beans.InputData;
-import io.harness.delegate.core.beans.TaskPayload;
+import io.harness.delegate.core.beans.*;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
+import io.harness.delegate.secret.EncryptedDataRecordPojoProtoMapper;
+import io.harness.delegate.secret.EncryptionConfigPojoProtoMapper;
+import io.harness.delegate.secret.TaskSecretService;
 import io.harness.delegate.task.TaskFailureReason;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandRequest;
@@ -104,6 +105,7 @@ import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
+import io.harness.encryption.Scope;
 import io.harness.environment.SystemEnvironment;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
@@ -301,6 +303,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
+
+  @Inject private TaskSecretService taskSecretService;
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
       CacheBuilder.newBuilder()
@@ -982,11 +986,30 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
         // TODO: add metrics for new APIs
         // delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
+        // Fetch EncryptionDetails
+        List<EncryptedDataDetail> encryptedDataDetailList = new ArrayList<>();
+        delegateTask.getSecretsToDecrypt().forEach(secret -> {
+          List<EncryptedDataDetail> dataDetails = taskSecretService.getEncryptionDetails(
+                  secret.getSecretId(),
+                  Scope.fromString(secret.getScope()),
+                  delegateTask.getAccountId(),
+                  Optional.of(delegateTask.getOrgId()),
+                  Optional.of(delegateTask.getProjectId()));
+          encryptedDataDetailList.addAll(dataDetails);
+        });
+        List<Secret> secretsToDecryptByDelegate = encryptedDataDetailList.stream().map(encryptedDataDetail -> {
+          Secret secretToDecrypt = Secret.newBuilder()
+                  .setEncryptedRecord(EncryptedDataRecordPojoProtoMapper.map(encryptedDataDetail.getEncryptedData()))
+                  .setConfig(EncryptionConfigPojoProtoMapper.map(encryptedDataDetail.getEncryptionConfig()))
+                  .build();
+          return secretToDecrypt;
+        }).collect(toList());
+
         var builder = TaskPayload.newBuilder()
                           .setId(taskId)
                           .setExecutionInfraId(delegateTask.getInfraId())
                           .setEventType(delegateTask.getEventType())
-                          .setRunnerType(delegateTask.getRunnerType());
+                          .setRunnerType(delegateTask.getRunnerType()).addAllSecrets(secretsToDecryptByDelegate);
         if (Objects.nonNull(delegateTask.getRunnerData())) {
           builder.setInfraData(
               InputData.newBuilder().setBinaryData(ByteString.copyFrom(delegateTask.getRunnerData())).build());

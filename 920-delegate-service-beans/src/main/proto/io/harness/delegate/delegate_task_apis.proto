@@ -26,8 +26,7 @@ message SetupExecutionInfrastructureRequest {
 
 message ScheduleTaskRequest {
   Execution execution = 1;
-  Secrets secrets = 2;
-  SchedulingConfig config = 3;
+  SchedulingConfig config = 2;
 }
 
 message SchedulingConfig {
