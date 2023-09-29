@@ -35,8 +35,8 @@ public class TaskSecretServiceImpl implements TaskSecretService {
         return ngSecretService.getEncryptionDetails(
                 BaseNGAccess.builder()
                         .accountIdentifier(accountId)
-                        .orgIdentifier(orgId.orElseGet(null))
-                        .projectIdentifier(projectId.orElseGet(null))
+                        .orgIdentifier(orgId.orElseGet(() -> null))
+                        .projectIdentifier(projectId.orElseGet(() -> null))
                         .build(),
                 secretVariableDTO);
     }

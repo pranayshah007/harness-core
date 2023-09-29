@@ -136,6 +136,8 @@ import io.harness.delegate.event.listener.ProjectEntityCRUDEventListener;
 import io.harness.delegate.heartbeat.HeartbeatModule;
 import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
+import io.harness.delegate.secret.TaskSecretService;
+import io.harness.delegate.secret.TaskSecretServiceImpl;
 import io.harness.delegate.service.impl.AccountDataProviderImpl;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
 import io.harness.delegate.service.impl.DelegateFeedbacksServiceImpl;
@@ -1123,6 +1125,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(AwsClusterService.class).to(AwsClusterServiceImpl.class);
     bind(DelegateServiceQueue.class).to(DelegateTaskQueueService.class);
     bind(DelegateQueueServiceConfig.class).toProvider(Providers.of(configuration.getQueueServiceConfig()));
+    bind(TaskSecretService.class).to(TaskSecretServiceImpl.class);
     bind(GkeClusterService.class).to(GkeClusterServiceImpl.class);
     try {
       bind(new TypeLiteral<DataStore<StoredCredential>>() {

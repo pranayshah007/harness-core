@@ -34,14 +34,14 @@ public class EncryptedDataRecordPojoProtoMapper {
                                 .build())
                         .collect(Collectors.toList()))
                 .setEncryptionKey(data.getEncryptionKey())
-                .setEncryptionType(EncryptionType.valueOf(data.getEncryptionType().name()))
+                .setEncryptionType(EncryptionTypePojoProtoMapper.map(data.getEncryptionType()))
                 .setKmsId(data.getKmsId())
                 .setBackupEncryptionKey(data.getBackupEncryptionKey())
                 .setBackupEncryptedValue(
                         ByteString.copyFrom(
                                 new String(data.getBackupEncryptedValue()).getBytes(StandardCharsets.UTF_8)))
                 .setBackupKmsId(data.getBackupKmsId())
-                .setBackupEncryptionType(EncryptionType.valueOf(data.getBackupEncryptionType().name()))
+                .setBackupEncryptionType(EncryptionTypePojoProtoMapper.map(data.getBackupEncryptionType()))
                 .setBase64Encoded(data.isBase64Encoded())
                 .putAllAdditionalMetadata(mapAdditionalMetadata(data.getAdditionalMetadata()))
                 .build();

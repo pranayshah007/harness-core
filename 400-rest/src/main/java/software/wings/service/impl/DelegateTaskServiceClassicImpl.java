@@ -999,8 +999,16 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         });
         List<Secret> secretsToDecryptByDelegate = encryptedDataDetailList.stream().map(encryptedDataDetail -> {
           Secret secretToDecrypt = Secret.newBuilder()
-                  .setEncryptedRecord(EncryptedDataRecordPojoProtoMapper.map(encryptedDataDetail.getEncryptedData()))
-                  .setConfig(EncryptionConfigPojoProtoMapper.map(encryptedDataDetail.getEncryptionConfig()))
+                  .setEncryptedRecord(InputData.newBuilder()
+                          .setBinaryData(ByteString.copyFrom(
+                                  EncryptedDataRecordPojoProtoMapper.map(
+                                          encryptedDataDetail.getEncryptedData()).toByteArray()))
+                          .build())
+                  .setConfig(SecretConfig.newBuilder()
+                          .setBinaryData(ByteString.copyFrom(
+                                  EncryptionConfigPojoProtoMapper.map(
+                                          encryptedDataDetail.getEncryptionConfig()).toByteArray()))
+                          .build())
                   .build();
           return secretToDecrypt;
         }).collect(toList());

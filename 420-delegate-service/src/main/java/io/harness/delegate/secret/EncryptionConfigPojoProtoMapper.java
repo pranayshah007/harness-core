@@ -28,7 +28,7 @@ public class EncryptionConfigPojoProtoMapper {
                 .setName(config.getName())
                 .setIsGloblKms(config.isGlobalKms())
                 .setEncryptionType(
-                        io.harness.delegate.core.beans.EncryptionType.valueOf(config.getEncryptionType().name()))
+                        EncryptionTypePojoProtoMapper.map(config.getEncryptionType()))
                 .setSecretManagerType(SecretManagerType.valueOf(config.getType().name()))
                 .setEncryptionServiceUrl(config.getEncryptionServiceUrl())
                 .build();

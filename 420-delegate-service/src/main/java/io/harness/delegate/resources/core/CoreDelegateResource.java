@@ -163,7 +163,7 @@ public class CoreDelegateResource {
 
     return Secret.newBuilder()
         .setConfig(SecretConfig.newBuilder().setBinaryData(ByteString.copyFrom(configBytes)).build())
-        .setSecrets(InputData.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
+        .setEncryptedRecord(InputData.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
         .build();
   }
 
