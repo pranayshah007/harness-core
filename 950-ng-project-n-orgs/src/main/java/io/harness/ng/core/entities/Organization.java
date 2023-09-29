@@ -99,8 +99,7 @@ public class Organization implements PersistentEntity, NGAccountAccess {
 
   String accountIdentifier;
   @EntityIdentifier(allowBlank = false) @FdIndex String identifier;
-  @EntityIdentifier(allowBlank = false)String uuid;
-  @EntityIdentifier(allowBlank = false) String parentId;
+  @EntityIdentifier(allowBlank = false)String uniqueId;
   @NGEntityName String name;
 
   @NotNull @Size(max = 1024) String description;

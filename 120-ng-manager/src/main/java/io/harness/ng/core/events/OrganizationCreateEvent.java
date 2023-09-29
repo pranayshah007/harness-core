@@ -30,14 +30,12 @@ import lombok.NoArgsConstructor;
 public class OrganizationCreateEvent implements Event {
   private OrganizationDTO organization;
   private String accountIdentifier;
-  private String uuid;
-  private String parentId;
+  private String uniqueId;
 
   public OrganizationCreateEvent(String accountIdentifier, OrganizationDTO organization) {
     this.organization = organization;
     this.accountIdentifier = accountIdentifier;
-    this.uuid = organization.getUuid();
-    this.parentId = organization.getParentId();
+    this.uniqueId = organization.getUniqueId();
   }
 
   @JsonIgnore
@@ -51,9 +49,12 @@ public class OrganizationCreateEvent implements Event {
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, organization.getName());
-    labels.put("uuid", organization.getUuid());
-    labels.put("parentId", organization.getParentId());
-    return Resource.builder().identifier(organization.getIdentifier()).type(ORGANIZATION).labels(labels).build();
+    return Resource.builder()
+        .identifier(organization.getIdentifier())
+        .type(ORGANIZATION)
+        .labels(labels)
+        .uniqueId(organization.getUniqueId())
+        .build();
   }
 
   @JsonIgnore
