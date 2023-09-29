@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -25,38 +24,38 @@ import (
 )
 
 const (
-	accountIDEnv             = "HARNESS_ACCOUNT_ID"
-	orgIDEnv                 = "HARNESS_ORG_ID"
-	projectIDEnv             = "HARNESS_PROJECT_ID"
-	buildIDEnv               = "HARNESS_BUILD_ID"
-	stageIDEnv               = "HARNESS_STAGE_ID"
-	pipelineIDEnv            = "HARNESS_PIPELINE_ID"
-	tiSvcEp                  = "HARNESS_TI_SERVICE_ENDPOINT"
-	tiSvcToken               = "HARNESS_TI_SERVICE_TOKEN"
-	logSvcEp                 = "HARNESS_LOG_SERVICE_ENDPOINT"
-	logSvcToken              = "HARNESS_LOG_SERVICE_TOKEN"
-	logPrefixEnv             = "HARNESS_LOG_PREFIX"
-	serviceLogKeyEnv         = "HARNESS_SERVICE_LOG_KEY"
-	additionalCertsDir       = "HARNESS_ADDITIONAL_CERTS_DIR"
-	secretList               = "HARNESS_SECRETS_LIST"
-	dBranch                  = "DRONE_COMMIT_BRANCH"
-	dSourceBranch            = "DRONE_SOURCE_BRANCH"
-	dTargetBranch            = "DRONE_TARGET_BRANCH"
-	dRemoteUrl               = "DRONE_REMOTE_URL"
-	dCommitSha               = "DRONE_COMMIT_SHA"
-	dCommitLink              = "DRONE_COMMIT_LINK"
-	wrkspcPath               = "HARNESS_WORKSPACE"
-	logUploadFf              = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
-	gitBin                   = "git"
-	diffFilesCmd             = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
-	diffFilesCmdPush         = "%s diff --name-status --diff-filter=MADR %s"
-	safeDirCommand           = "%s config --global --add safe.directory '*'"
-	harnessStepIndex         = "HARNESS_STEP_INDEX"
-	harnessStepTotal         = "HARNESS_STEP_TOTAL"
-	harnessStageIndex        = "HARNESS_STAGE_INDEX"
-	harnessStageTotal        = "HARNESS_STAGE_TOTAL"
-	delegateLogURLEnabledEnv = "HARNESS_LE_DELEGATE_LOG_URL"
-	LogHealthEndpoint        = "/healthz"
+	accountIDEnv       = "HARNESS_ACCOUNT_ID"
+	orgIDEnv           = "HARNESS_ORG_ID"
+	projectIDEnv       = "HARNESS_PROJECT_ID"
+	buildIDEnv         = "HARNESS_BUILD_ID"
+	stageIDEnv         = "HARNESS_STAGE_ID"
+	pipelineIDEnv      = "HARNESS_PIPELINE_ID"
+	tiSvcEp            = "HARNESS_TI_SERVICE_ENDPOINT"
+	tiSvcToken         = "HARNESS_TI_SERVICE_TOKEN"
+	logSvcEp           = "HARNESS_LOG_SERVICE_ENDPOINT"
+	logSvcToken        = "HARNESS_LOG_SERVICE_TOKEN"
+	logPrefixEnv       = "HARNESS_LOG_PREFIX"
+	serviceLogKeyEnv   = "HARNESS_SERVICE_LOG_KEY"
+	additionalCertsDir = "HARNESS_ADDITIONAL_CERTS_DIR"
+	secretList         = "HARNESS_SECRETS_LIST"
+	dBranch            = "DRONE_COMMIT_BRANCH"
+	dSourceBranch      = "DRONE_SOURCE_BRANCH"
+	dTargetBranch      = "DRONE_TARGET_BRANCH"
+	dRemoteUrl         = "DRONE_REMOTE_URL"
+	dCommitSha         = "DRONE_COMMIT_SHA"
+	dCommitLink        = "DRONE_COMMIT_LINK"
+	wrkspcPath         = "HARNESS_WORKSPACE"
+	logUploadFf        = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
+	gitBin             = "git"
+	diffFilesCmd       = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	diffFilesCmdPush   = "%s diff --name-status --diff-filter=MADR %s"
+	safeDirCommand     = "%s config --global --add safe.directory '*'"
+	harnessStepIndex   = "HARNESS_STEP_INDEX"
+	harnessStepTotal   = "HARNESS_STEP_TOTAL"
+	harnessStageIndex  = "HARNESS_STAGE_INDEX"
+	harnessStageTotal  = "HARNESS_STAGE_TOTAL"
+	delegateLogURLEnv  = "HARNESS_LE_DELEGATE_LOG_URL"
+	delegateTiURLEnv   = "HARNESS_LE_DELEGATE_TI_URL"
 )
 
 // GetChangedFiles executes a shell command and returns a list of files changed in the PR
@@ -167,19 +166,6 @@ func GetHTTPRemoteLogger(key string) (*logs.RemoteLogger, error) {
 
 // GetRemoteHTTPClient returns a new HTTP client to talk to log service using information available in env.
 func GetRemoteHTTPClient() (client.Client, error) {
-
-	var url string
-	url, ok := os.LookupEnv(delegateLogURLEnabledEnv)
-	if ok && pingLogService(url) {
-		fmt.Println("%s env is set with value: %s ", delegateLogURLEnabledEnv, url)
-	} else {
-		url, ok = os.LookupEnv(logSvcEp)
-		if !ok {
-			return nil, fmt.Errorf("log service endpoint variable not set %s", logSvcEp)
-		}
-		fmt.Println("%s env is set with value from: %s : %s", logSvcEp, url)
-	}
-
 	account, err := GetAccountId()
 	if err != nil {
 		return nil, err
@@ -188,7 +174,28 @@ func GetRemoteHTTPClient() (client.Client, error) {
 	if !ok {
 		return nil, fmt.Errorf("log service token not set %s", logSvcToken)
 	}
-	return client.NewHTTPClient(url, account, token, false, GetAdditionalCertsDir()), nil
+	certsDir := GetAdditionalCertsDir()
+
+	delegateLogURL, delegateLogURLOk := os.LookupEnv(delegateLogURLEnv)
+	internalLogURL, internalLogURLOk := os.LookupEnv(logSvcEp)
+
+	if delegateLogURLOk && !isUrlSame(delegateLogURL, internalLogURL) {
+		httpClient := client.NewHTTPClient(delegateLogURL, account, token, false, certsDir)
+		err := httpClient.Healthz(context.Background())
+		if err == nil {
+			fmt.Printf("%s env is set with value: %s \n", delegateLogURLEnv, delegateLogURL)
+			return httpClient, nil
+		} else {
+			fmt.Printf("Failed to ping log-service: %w\n", err)
+		}
+	}
+	if internalLogURLOk {
+		fmt.Printf("Using internalLogURL %s:\n", internalLogURL)
+		return client.NewHTTPClient(internalLogURL, account, token, false, certsDir), nil
+	}
+
+	return nil, fmt.Errorf("No usable Log URL found.")
+
 }
 
 // GetLogKey returns a key for log service
@@ -218,7 +225,7 @@ func GetAdditionalCertsDir() string {
 
 // GetTiHTTPClient returns a client to talk to the TI service
 func GetTiHTTPClient(repo, sha, commitLink string, skipVerify bool) ticlient.Client {
-	endpoint, _ := GetTiSvcEp()
+	tiEndpoint, _ := GetTiSvcEp()
 	token, _ := GetTiSvcToken()
 	accountID, _ := GetAccountId()
 	orgID, _ := GetOrgId()
@@ -227,7 +234,20 @@ func GetTiHTTPClient(repo, sha, commitLink string, skipVerify bool) ticlient.Cli
 	buildID, _ := GetBuildId()
 	stageID, _ := GetStageId()
 	certsDir := GetAdditionalCertsDir()
-	return ticlient.NewHTTPClient(endpoint, token, accountID, orgID, projectID, pipelineID, buildID, stageID, repo, sha,
+	delegateTiURL, delegateTiURLOk := os.LookupEnv(delegateTiURLEnv)
+	if delegateTiURLOk && !isUrlSame(delegateTiURL, tiEndpoint) {
+		tiHttpClient := ticlient.NewHTTPClient(delegateTiURL, token, accountID, orgID, projectID, pipelineID, buildID, stageID, repo, sha,
+			commitLink, skipVerify, certsDir)
+		err := tiHttpClient.Healthz(context.Background())
+		if err == nil {
+			fmt.Printf("%s env is set with value: %s\n", delegateTiURLEnv, delegateTiURL)
+			return tiHttpClient
+		} else {
+			fmt.Printf("Failed to ping ti-service: %w\n", err)
+		}
+	}
+
+	return ticlient.NewHTTPClient(tiEndpoint, token, accountID, orgID, projectID, pipelineID, buildID, stageID, repo, sha,
 		commitLink, skipVerify, certsDir)
 }
 
@@ -481,24 +501,9 @@ func GetStepStrategyIterationsFromEnv() (int, error) {
 	return total, nil
 }
 
-func pingLogService(baseurl string) bool {
-	// Define the URL to ping
-	urlToPing := baseurl + LogHealthEndpoint
-
-	// Send an HTTP GET request to the URL
-	response, err := http.Get(urlToPing)
-	if err != nil {
-		fmt.Println("Error sending GET request:", err)
+func isUrlSame(url1, url2 string) bool {
+	if strings.TrimSuffix(url1, "/") != strings.TrimSuffix(url2, "/") {
 		return false
 	}
-	defer response.Body.Close()
-
-	// Check the response status code
-	if response.StatusCode == http.StatusOK {
-		fmt.Println("Ping successful! Status Code:", response.Status)
-		return true
-	}
-	fmt.Println("Ping failed. Status Code:", response.Status)
-	return false
-
+	return true
 }

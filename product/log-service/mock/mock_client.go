@@ -186,3 +186,17 @@ func (mr *MockClientMockRecorder) Info(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockClient)(nil).Info), ctx)
 }
+
+// Healthz mocks base method
+func (m *MockClient) Healthz(ctx context.Context)  error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Healthz", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Healthz indicates an expected call of Healthz
+func (mr *MockClientMockRecorder) Healthz(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Healthz", reflect.TypeOf((*MockClient)(nil).Info), ctx)
+}

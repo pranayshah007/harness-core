@@ -30,7 +30,7 @@ require (
 	github.com/harness/harness-core v0.0.0-20220210161509-69d6cb167b7a
 	github.com/harness/harness-core/commons/go/lib v0.0.0-20220222141117-7659b7eca599
 	github.com/harness/harness-core/product/ci/engine v0.0.0-20220526003445-374c61227e45
-	github.com/harness/ti-client v0.0.0-20230625210213-de916cd21d22
+	github.com/harness/ti-client v0.0.0-20230919114308-05b6697b67f9
 	github.com/hashicorp/go-retryablehttp v0.6.6 // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20200119135958-7558a9eaa5af // indirect
 	github.com/joho/godotenv v1.4.0
