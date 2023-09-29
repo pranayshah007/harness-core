@@ -115,6 +115,12 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   public NodeExecution createNodeExecutionInternal(@NotNull Ambiance ambiance, @NotNull PlanNode node,
       NodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String name = node.getName();
+    String identifier = node.getIdentifier();
+    if (metadata != null) {
+      name = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getName(), ambiance);
+      identifier = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getIdentifier(), ambiance);
+    }
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .uuid(uuid)
@@ -127,9 +133,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             .previousId(previousId)
             .unitProgresses(new ArrayList<>())
             .module(node.getServiceName())
-            .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
+            .name(name)
             .skipGraphType(node.getSkipGraphType())
-            .identifier(AmbianceUtils.modifyIdentifier(ambiance, node.getIdentifier()))
+            .identifier(identifier)
             .stepType(node.getStepType())
             .nodeId(node.getUuid())
             .stageFqn(node.getStageFqn())
