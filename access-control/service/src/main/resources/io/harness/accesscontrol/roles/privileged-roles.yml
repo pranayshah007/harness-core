@@ -73,3 +73,5 @@ roles:
       - code_repo_view
       - servicediscovery_networkmap_view
       - chaos_chaossecuritygovernance_view
+      - ccm_anomalies_view
+      - ccm_recommendations_view

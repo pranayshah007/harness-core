@@ -673,6 +673,8 @@ roles:
         - cet_criticalevent_view
         - cet_criticalevent_create
         - cet_criticalevent_delete
+        - ccm_anomalies_view
+        - ccm_recommendations_view
       allowedScopeLevels:
         - account
       managed: true
@@ -749,6 +751,8 @@ roles:
         - cet_agents_view
         - cet_token_view
         - cet_criticalevent_view
+        - ccm_anomalies_view
+        - ccm_recommendations_view
       allowedScopeLevels:
         - account
       managed: true
@@ -968,6 +972,8 @@ roles:
         - ccm_cloudAssetGovernanceEnforcement_edit
         - ccm_cloudAssetGovernanceEnforcement_view
         - ccm_cloudAssetGovernanceEnforcement_delete
+        - ccm_anomalies_view
+        - ccm_recommendations_view
       managed: true
       allowedScopeLevels:
         - account
@@ -986,6 +992,8 @@ roles:
         - ccm_cloudAssetGovernanceEnforcement_view
         - ccm_cloudAssetGovernanceRuleSet_view
         - ccm_cloudAssetGovernanceRule_view
+        - ccm_anomalies_view
+        - ccm_recommendations_view
       managed: true
       allowedScopeLevels:
         - account
