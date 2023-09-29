@@ -120,6 +120,9 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
+  public static final StepType STEP_TYPE =
+      StepType.newBuilder().setType(GITOPS_MERGE_PR.getYamlType()).setStepCategory(StepCategory.STEP).build();
+
   public GitStoreDelegateConfig getGitStoreDelegateConfig(Ambiance ambiance, ManifestOutcome manifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) manifestOutcome.getStore();
     String connectorId = gitStoreConfig.getConnectorRef().getValue();

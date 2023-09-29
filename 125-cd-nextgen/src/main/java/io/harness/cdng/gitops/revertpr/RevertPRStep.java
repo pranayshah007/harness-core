@@ -53,7 +53,7 @@ import io.harness.distribution.constraint.PermanentlyBlockedConsumerException;
 import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance;
+import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -309,9 +309,9 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
 
   private Map<String, Object> populateConstraintContext(ConstraintUnit constraintUnit, String releaseEntityId) {
     Map<String, Object> constraintContext = new HashMap<>();
-    constraintContext.put(GithubRestraintInstance.GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
-    constraintContext.put(GithubRestraintInstance.GithubRestraintInstanceKeys.order,
-        githubRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
+    constraintContext.put(GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    constraintContext.put(
+        GithubRestraintInstanceKeys.order, githubRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
 
     return constraintContext;
   }
