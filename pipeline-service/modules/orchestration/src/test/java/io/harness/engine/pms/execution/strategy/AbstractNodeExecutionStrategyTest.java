@@ -19,15 +19,14 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
-import io.harness.engine.pms.execution.modifier.ambiance.AmbianceModifier;
 import io.harness.engine.pms.execution.modifier.ambiance.AmbianceModifierFactory;
 import io.harness.event.handlers.HandleStepResponseRequestProcessor;
 import io.harness.execution.NodeExecution;
@@ -52,15 +51,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.PIPELINE)
-public class AbstractNodeExecutionStrategyTest {
+public class AbstractNodeExecutionStrategyTest extends CategoryTest {
   @Mock ExecutorService executorService;
   HandleStepResponseRequestProcessor handleStepResponseRequestProcessor;
   @Mock SdkResponseProcessorFactory sdkResponseProcessorFactory;
-  AmbianceModifier ambianceModifier;
   @Mock AmbianceModifierFactory ambianceModifierFactory;
   AbstractNodeExecutionStrategy abstractNodeExecutionStrategy;
   @Mock OrchestrationEngine orchestrationEngine;
@@ -73,7 +72,7 @@ public class AbstractNodeExecutionStrategyTest {
 
   @Before
   public void setUp() throws IllegalAccessException {
-    initMocks(this);
+    MockitoAnnotations.openMocks(this);
     ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
     node = Plan.builder().build();
     nodeExecutionMetadata = new NodeExecutionMetadata();
@@ -81,8 +80,6 @@ public class AbstractNodeExecutionStrategyTest {
     doReturn(handleStepResponseRequestProcessor)
         .when(sdkResponseProcessorFactory)
         .getHandler(SdkResponseEventType.HANDLE_STEP_RESPONSE);
-    ambianceModifier = mock(AmbianceModifier.class);
-    doReturn(ambianceModifier).when(ambianceModifierFactory).obtainModifier(any());
     planNode = PlanNode.builder().executionInputTemplate("setup").build();
     abstractNodeExecutionStrategy = spy(AbstractNodeExecutionStrategy.class);
     FieldUtils.writeField(abstractNodeExecutionStrategy, "ambianceModifierFactory", ambianceModifierFactory, true);
