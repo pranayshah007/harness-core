@@ -9,6 +9,7 @@ package io.harness.cdng.provision.awscdk;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig.AwsCdkConfigKeys;
 import io.harness.expression.EngineExpressionSecretUtils;
@@ -29,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 public class AwsCdkConfigDAL {
   @Inject private HPersistence persistence;
 
+  @Inject private CDExpressionResolver cdExpressionResolver;
+
   public void saveAwsCdkConfig(@NonNull AwsCdkConfig config) {
     AwsCdkConfig secretsRevertedConfig = (AwsCdkConfig) EngineExpressionSecretUtils.revertSecrets(config);
     persistence.save(secretsRevertedConfig);
@@ -43,6 +46,8 @@ public class AwsCdkConfigDAL {
                                     .order(Sort.descending(AwsCdkConfigKeys.createdAt));
     query.and(query.criteria(AwsCdkConfigKeys.stageExecutionId)
                   .notEqual(AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance)));
-    return query.get();
+    AwsCdkConfig awsCdkConfig = query.get();
+    cdExpressionResolver.updateExpressions(ambiance, awsCdkConfig);
+    return awsCdkConfig;
   }
 }

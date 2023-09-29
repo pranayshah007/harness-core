@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig.AwsCdkConfigKeys;
 import io.harness.persistence.HPersistence;
@@ -43,6 +44,7 @@ import org.mockito.junit.MockitoRule;
 public class AwsCdkConfigDALTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private HPersistence persistence;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @InjectMocks private final AwsCdkConfigDAL awsCdkConfigDAL = new AwsCdkConfigDAL();
 
   @Test
@@ -75,6 +77,7 @@ public class AwsCdkConfigDALTest extends CategoryTest {
     verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.orgId), eq("org"));
     verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.projectId), eq("project"));
     verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.provisionerIdentifier), eq(provisionerIdentifier));
+    verify(cdExpressionResolver).updateExpressions(any(), eq(awsCdkConfig));
   }
 
   private Ambiance getAmbiance() {
