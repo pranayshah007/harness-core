@@ -1,8 +1,8 @@
-{{- if .Values.nginx.create -}}
+{{- if .Values.global.ggIngress.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: harness-ingress-controller
+  name: harness-global-ingress-controller
   namespace: {{ .Release.Namespace }}
   labels:
     {{- if .Values.global.commonLabels }}
@@ -20,16 +20,14 @@ metadata:
     {{- end }}
 spec:
   selector:
-    app: harness-ingress-controller
-  {{- if .Values.global.ggIngress.enabled }}
-  type: 'ClusterIP'
-  {{- else if .Values.nginx.loadBalancerEnabled }}
+    app: harness-global-ingress-controller
+  {{- if .Values.nginx.loadBalancerEnabled }}
   type: 'LoadBalancer'
   loadBalancerIP: {{ .Values.nginx.loadBalancerIP }}
   {{- else }}
   type: 'NodePort'
   {{- end }}
-  # externalTrafficPolicy: 'Cluster'
+  externalTrafficPolicy: 'Cluster'
   ports:
   - name: health
     protocol: TCP
@@ -56,7 +54,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: harness-ingress-controller
+  name: harness-global-ingress-controller
   namespace: {{ .Release.Namespace }}
   labels:
     {{- if .Values.global.commonLabels }}
@@ -73,13 +71,13 @@ data:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: harness-serviceaccount
+  name: global-harness-serviceaccount
   namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: harness-role
+  name: global-harness-role
   namespace: {{ .Release.Namespace }}
 rules:
 - apiGroups:
@@ -96,7 +94,6 @@ rules:
   - secrets
   - endpoints
   verbs:
-  - update
   - get
   - list
   - watch
@@ -128,7 +125,7 @@ rules:
 - apiGroups:
   - ""
   resourceNames:
-  - ingress-controller-leader-{{ .Values.global.ingress.className }}
+  - ingress-controller-leader-{{ .Values.global.ggIngress.className }}
   resources:
   - configmaps
   verbs:
@@ -159,21 +156,21 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: harness-role-hsa-binding
+  name: global-harness-role-hsa-binding
   namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: harness-role
+  name: global-harness-role
 subjects:
   - kind: ServiceAccount
-    name: harness-serviceaccount
+    name: global-harness-serviceaccount
     namespace: {{ .Release.Namespace }}
 ---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: harness-ingress-controller
+  name: harness-global-ingress-controller
   namespace: {{ .Release.Namespace }}
   labels:
     {{- if .Values.global.commonLabels }}
@@ -186,7 +183,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: harness-ingress-controller
+      app: harness-global-ingress-controller
   progressDeadlineSeconds: 300
   strategy:
     rollingUpdate:
@@ -196,7 +193,7 @@ spec:
   template:
     metadata:
       labels:
-        app: "harness-ingress-controller"
+        app: "harness-global-ingress-controller"
         {{- if .Values.global.commonLabels }}
         {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 8 }}
         {{- end }}
@@ -232,7 +229,7 @@ spec:
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
-            name: harness-ingress-controller
+            name: harness-global-ingress-controller
         resources:
           {{- toYaml .Values.nginx.resources | nindent 10 }}
         ports:
@@ -264,14 +261,14 @@ spec:
               fieldPath: metadata.namespace
         args:
         - /nginx-ingress-controller
-        - --ingress-class={{ .Values.global.ingress.className }}
+        - --ingress-class={{ .Values.global.ggIngress.className }}
         - --default-backend-service=$(POD_NAMESPACE)/default-backend
-        - --election-id=ingress-controller-leader
+        - --election-id=global-ingress-controller-leader
         - --watch-namespace=$(POD_NAMESPACE)
         - --update-status=true
-        - --configmap=$(POD_NAMESPACE)/harness-ingress-controller
+        - --configmap=$(POD_NAMESPACE)/harness-global-ingress-controller
         - --http-port=8080
         - --https-port=8443
         - --default-ssl-certificate=$(POD_NAMESPACE)/{{ .Values.global.ingress.tls.secretName }}
-        - --publish-service=$(POD_NAMESPACE)/harness-ingress-controller
+        - --publish-service=$(POD_NAMESPACE)/harness-global-ingress-controller
 {{- end }}
