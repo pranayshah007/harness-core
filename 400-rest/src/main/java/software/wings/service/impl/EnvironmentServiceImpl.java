@@ -694,7 +694,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     } else {
       PageRequest<Environment> pageRequest = aPageRequest()
                                                  .addFilter(EnvironmentKeys.accountId, EQ, accountId)
-                                                 .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
+                                                 .addFilter(EnvironmentKeys.appId, IN, appIds.toArray())
                                                  .addFieldsIncluded("_id", "appId", "environmentType")
                                                  .build();
 
