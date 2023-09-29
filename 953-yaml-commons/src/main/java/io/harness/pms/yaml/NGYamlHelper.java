@@ -42,4 +42,22 @@ public class NGYamlHelper {
     }
     return isEmpty(version) ? HarnessYamlVersion.V0 : version;
   }
+
+  public String getVersionFromProcessedYaml(String yaml) {
+    if (isEmpty(yaml)) {
+      return HarnessYamlVersion.V0;
+    }
+    String version = HarnessYamlVersion.V0;
+    try {
+      YamlField yamlField = YamlUtils.readTree(yaml);
+      if (yamlField.getNode().getCurrJsonNode().has(YAMLFieldNameConstants.SPEC)) {
+        version = HarnessYamlVersion.V1;
+      }
+    } catch (IOException ioException) {
+      log.error("Error while deserializing the Yaml into YamlField", ioException);
+      throw new InvalidYamlException(
+          String.format("Invalid yaml passed. Error due to - %s", ioException.getMessage()), ioException);
+    }
+    return isEmpty(version) ? HarnessYamlVersion.V0 : version;
+  }
 }

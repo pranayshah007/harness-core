@@ -61,12 +61,14 @@ public class TemplateRefHelper {
     for (FQN key : fqnSet) {
       if (key.getFqnList().size() >= 2) {
         List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());
-        if (YAMLFieldNameConstants.TYPE.equals(fqnList.get(fqnList.size() - 1).getKey())
-            && YAMLFieldNameConstants.TEMPLATE.equals(((JsonNode) fqnObjectMap.get(key)).asText())) {
-          return true;
-        }
         FQNNode lastNode = fqnList.get(fqnList.size() - 1);
         FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
+        if ((YAMLFieldNameConstants.TYPE.equals(fqnList.get(fqnList.size() - 1).getKey())
+                && YAMLFieldNameConstants.TEMPLATE.equals(((JsonNode) fqnObjectMap.get(key)).asText()))
+            || ("ref".equals(lastNode.getKey()) && YAMLFieldNameConstants.SPEC.equals(secondLastNode.getKey()))) {
+          return true;
+        }
+
         if (TEMPLATE_REF.equals(lastNode.getKey()) && TEMPLATE.equals(secondLastNode.getKey())) {
           return true;
         }

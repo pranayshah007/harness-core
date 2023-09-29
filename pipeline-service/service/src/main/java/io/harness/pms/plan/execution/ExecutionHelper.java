@@ -101,6 +101,7 @@ import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -569,7 +570,7 @@ public class ExecutionHelper {
       PlanCreationBlobResponse resp;
       Plan plan;
       try {
-        String version = executionMetadata.getHarnessVersion();
+        String version = NGYamlHelper.getVersionFromProcessedYaml(planExecutionMetadata.getProcessedYaml());
         resp = planCreatorMergeService.createPlanVersioned(
             accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
         plan = PlanExecutionUtils.extractPlan(resp);

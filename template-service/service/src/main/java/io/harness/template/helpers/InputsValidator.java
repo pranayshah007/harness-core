@@ -26,6 +26,7 @@ import io.harness.ng.core.template.refresh.v2.TemplateNodeErrorSummary;
 import io.harness.ng.core.template.refresh.v2.UnknownNodeErrorSummary;
 import io.harness.ng.core.template.refresh.v2.ValidateInputsResponseDTO;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -237,7 +238,7 @@ public class InputsValidator {
     JsonNode templateNodeValue = templateNode.getCurrJsonNode();
     // Template YAML corresponding to the TemplateRef and Version Label
     TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
-        accountId, orgId, projectId, templateNodeValue, templateCacheMap, loadFromCache);
+        accountId, orgId, projectId, templateNodeValue, templateCacheMap, loadFromCache, HarnessYamlVersion.V0);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 

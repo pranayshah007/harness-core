@@ -19,6 +19,7 @@ import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -160,7 +161,7 @@ public class TemplateInputsRefreshHelper {
 
     // Template YAML corresponding to the TemplateRef and Version Label
     TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
-        accountId, orgId, projectId, TemplateNodeValue, templateCacheMap, loadFromCache);
+        accountId, orgId, projectId, TemplateNodeValue, templateCacheMap, loadFromCache, HarnessYamlVersion.V0);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 
