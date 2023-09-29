@@ -30,6 +30,7 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -153,7 +154,7 @@ public class InfrastructureRepositoryCustomImpl implements InfrastructureReposit
                                 .and(InfrastructureEntityKeys.deploymentType)
                                 .is(deploymentType);
 
-    Query query = new Query(baseCriteria);
+    Query query = new Query(baseCriteria).with(Sort.by(Sort.Direction.DESC, InfrastructureEntityKeys.createdAt));
     return mongoTemplate.find(query, InfrastructureEntity.class);
   }
 
