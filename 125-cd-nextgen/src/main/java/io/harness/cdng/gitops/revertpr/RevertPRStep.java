@@ -12,6 +12,8 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.executions.steps.ExecutionNodeType.GITOPS_REVERT_PR;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.INFO;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -52,6 +54,8 @@ import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
@@ -68,6 +72,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executable.AsyncChainExecutableWithRbac;
 import io.harness.supplier.ThrowingSupplier;
@@ -99,6 +104,11 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+
+  private NGLogCallback getLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
+    return new NGLogCallback(logStreamingStepClientFactory, ambiance, null, shouldOpenStream);
+  }
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -171,6 +181,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
   public AsyncChainExecutableResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     try {
+      NGLogCallback logCallback = getLogCallback(ambiance, true);
       RevertPRStepParameters gitOpsSpecParams = (RevertPRStepParameters) stepParameters.getSpec();
       ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
       ConnectorInfoDTO connectorInfoDTO =
@@ -185,18 +196,29 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
       ConstraintUnit constraintUnit = new ConstraintUnit(constraintUnitIdentifier);
 
       Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
+      logCallback.saveExecutionLog(
+          String.format("Trying to acquire lock on token for %s operation", CONSTRAINT_OPERATION));
 
       try {
         Consumer.State state = constraint.registerConsumer(
             constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintInstanceService);
         switch (state) {
           case BLOCKED:
-            return AsyncChainExecutableResponse.newBuilder().setCallbackId(consumerId).build();
+            logCallback.saveExecutionLog("Running instances were found, step queued.", INFO, SUCCESS);
+            return AsyncChainExecutableResponse.newBuilder()
+                .addAllLogKeys(getLogKeys(ambiance))
+                .setCallbackId(consumerId)
+                .build();
           case ACTIVE:
             try {
+              logCallback.saveExecutionLog("Lock acquired, proceeding with delegate task.", INFO, SUCCESS);
               String taskId =
                   queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
-              return AsyncChainExecutableResponse.newBuilder().setCallbackId(taskId).setChainEnd(true).build();
+              return AsyncChainExecutableResponse.newBuilder()
+                  .addAllLogKeys(getLogKeys(ambiance))
+                  .setCallbackId(taskId)
+                  .setChainEnd(true)
+                  .build();
 
             } catch (Exception e) {
               log.error("Failed to execute Update Release Repo step", e);
@@ -225,6 +247,8 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
       StepElementParameters stepParameters, StepInputPackage inputPackage,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     try {
+      NGLogCallback logCallback = getLogCallback(ambiance, false);
+      logCallback.saveExecutionLog("Lock acquired, proceeding with delegate task.", INFO, SUCCESS);
       RevertPRStepParameters gitOpsSpecParams = (RevertPRStepParameters) stepParameters.getSpec();
       ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
       ConnectorInfoDTO connectorInfoDTO =
@@ -232,20 +256,30 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
 
       String taskId =
           queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
-      return AsyncChainExecutableResponse.newBuilder().setCallbackId(taskId).setChainEnd(true).build();
+      return AsyncChainExecutableResponse.newBuilder()
+          .addAllLogKeys(getLogKeys(ambiance))
+          .setCallbackId(taskId)
+          .setChainEnd(true)
+          .build();
     } catch (Exception e) {
       log.error("Failed to execute RevertPR step", e);
       throw new InvalidRequestException(String.format("Failed to execute RevertPR step. %s", e.getMessage()));
     }
   }
 
+  private List<String> getLogKeys(Ambiance ambiance) {
+    return StepUtils.generateLogKeys(ambiance, new ArrayList<>());
+  }
+
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
-
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
+    NGLogCallback logCallback = getLogCallback(ambiance, false);
+
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
+      logCallback.saveExecutionLog("RevertPR step finished.", INFO, SUCCESS);
       RevertPROutcome revertPROutcome = RevertPROutcome.builder()
                                             .prlink(ngGitOpsResponse.getPrLink())
                                             .prNumber(ngGitOpsResponse.getPrNumber())

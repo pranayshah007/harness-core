@@ -84,6 +84,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executable.AsyncChainExecutableWithRbac;
 import io.harness.supplier.ThrowingSupplier;
@@ -149,13 +150,14 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
   @SneakyThrows
   public AsyncChainExecutableResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    NGLogCallback logCallback = getLogCallback(ambiance, false);
+    NGLogCallback logCallback = getLogCallback(ambiance, true);
 
     UpdateReleaseRepoStepParams gitOpsSpecParams = (UpdateReleaseRepoStepParams) stepParameters.getSpec();
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
     ConnectorInfoDTO connectorInfoDTO =
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
-    logCallback.saveExecutionLog("Trying to acquire lock");
+    logCallback.saveExecutionLog(
+        String.format("Trying to acquire lock on token for %s operation", CONSTRAINT_OPERATION));
     String tokenRefIdentifier = extractToken(connectorInfoDTO);
     String constraintUnitIdentifier = CONSTRAINT_OPERATION + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
 
@@ -171,14 +173,22 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
           constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintInstanceService);
       switch (state) {
         case BLOCKED:
-          logCallback.saveExecutionLog("Running instances were found, step queued.");
-          return AsyncChainExecutableResponse.newBuilder().setCallbackId(consumerId).build();
+          logCallback.saveExecutionLog("Running instances were found, step queued.", INFO, SUCCESS);
+          return AsyncChainExecutableResponse.newBuilder()
+              .addAllLogKeys(getLogKeys(ambiance))
+              .setCallbackId(consumerId)
+              .build();
         case ACTIVE:
           try {
+            logCallback.saveExecutionLog("Lock acquired, proceeding with delegate task.", INFO, SUCCESS);
             // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
             String taskId =
                 queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
-            return AsyncChainExecutableResponse.newBuilder().setCallbackId(taskId).setChainEnd(true).build();
+            return AsyncChainExecutableResponse.newBuilder()
+                .addAllLogKeys(getLogKeys(ambiance))
+                .setCallbackId(taskId)
+                .setChainEnd(true)
+                .build();
 
           } catch (Exception e) {
             log.error("Failed to execute Update Release Repo step", e);
@@ -199,11 +209,17 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     }
   }
 
+  private List<String> getLogKeys(Ambiance ambiance) {
+    return StepUtils.generateLogKeys(ambiance, new ArrayList<>());
+  }
+
   @Override
   public AsyncChainExecutableResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepParameters, StepInputPackage inputPackage,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     try {
+      NGLogCallback logCallback = getLogCallback(ambiance, false);
+      logCallback.saveExecutionLog("Lock acquired, proceeding with delegate task.", INFO, SUCCESS);
       UpdateReleaseRepoStepParams gitOpsSpecParams = (UpdateReleaseRepoStepParams) stepParameters.getSpec();
       ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
       ConnectorInfoDTO connectorInfoDTO =
@@ -211,7 +227,11 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
       // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
       String taskId =
           queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
-      return AsyncChainExecutableResponse.newBuilder().setCallbackId(taskId).setChainEnd(true).build();
+      return AsyncChainExecutableResponse.newBuilder()
+          .addAllLogKeys(getLogKeys(ambiance))
+          .setCallbackId(taskId)
+          .setChainEnd(true)
+          .build();
 
     } catch (Exception e) {
       log.error("Failed to execute Update Release Repo step", e);
@@ -224,9 +244,9 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataSupplier.get();
+    NGLogCallback logCallback = getLogCallback(ambiance, false);
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
-      NGLogCallback logCallback = getLogCallback(ambiance, false);
       logCallback.saveExecutionLog("UpdateReleaseRepo step finished.", INFO, SUCCESS);
       UpdateReleaseRepoOutcome updateReleaseRepoOutcome = UpdateReleaseRepoOutcome.builder()
                                                               .prlink(ngGitOpsResponse.getPrLink())

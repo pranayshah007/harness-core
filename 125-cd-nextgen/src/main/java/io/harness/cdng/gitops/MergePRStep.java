@@ -12,7 +12,9 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.executions.steps.ExecutionNodeType.GITOPS_MERGE_PR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -83,6 +85,7 @@ import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executable.AsyncChainExecutableWithRbac;
 import io.harness.supplier.ThrowingSupplier;
@@ -97,6 +100,7 @@ import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -105,6 +109,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
 public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementParameters> {
+  private static final String CONSTRAINT_OPERATION = "MERGE_PR";
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CDStepHelper cdStepHelper;
@@ -114,9 +119,6 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
-
-  public static final StepType STEP_TYPE =
-      StepType.newBuilder().setType(GITOPS_MERGE_PR.getYamlType()).setStepCategory(StepCategory.STEP).build();
 
   public GitStoreDelegateConfig getGitStoreDelegateConfig(Ambiance ambiance, ManifestOutcome manifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) manifestOutcome.getStore();
@@ -180,6 +182,8 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
     ConstraintUnit constraintUnit = new ConstraintUnit(constraintUnitIdentifier);
 
     Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
+    logCallback.saveExecutionLog(
+        String.format("Trying to acquire lock on token for %s operation", CONSTRAINT_OPERATION));
 
     try {
       Consumer.State state = constraint.registerConsumer(
@@ -187,14 +191,20 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
       switch (state) {
         case BLOCKED:
           logCallback.saveExecutionLog("Running instances were found, step queued.");
-          return AsyncChainExecutableResponse.newBuilder().setCallbackId(consumerId).build();
+          return AsyncChainExecutableResponse.newBuilder()
+              .addAllLogKeys(getLogKeys(ambiance))
+              .setCallbackId(consumerId)
+              .build();
         case ACTIVE:
           try {
-            // todo: check if this is needed
-            // String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
+            logCallback.saveExecutionLog("Lock acquired, proceeding with delegate task.", INFO, SUCCESS);
             String taskId =
                 queueDelegateTask(ambiance, gitOpsSpecParams, releaseRepoOutcome, connectorInfoDTO, stepParameters);
-            return AsyncChainExecutableResponse.newBuilder().setCallbackId(taskId).setChainEnd(true).build();
+            return AsyncChainExecutableResponse.newBuilder()
+                .addAllLogKeys(getLogKeys(ambiance))
+                .setCallbackId(taskId)
+                .setChainEnd(true)
+                .build();
 
           } catch (Exception e) {
             log.error("Failed to execute MergePR step", e);
@@ -213,12 +223,17 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
     }
   }
 
+  private List<String> getLogKeys(Ambiance ambiance) {
+    return StepUtils.generateLogKeys(ambiance, new ArrayList<>());
+  }
+
   @Override
   public AsyncChainExecutableResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepParameters, StepInputPackage inputPackage,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     try {
-      NGLogCallback logCallback = getLogCallback(ambiance, true);
+      NGLogCallback logCallback = getLogCallback(ambiance, false);
+      logCallback.saveExecutionLog("Lock acquired, proceeding with delegate task.", INFO, SUCCESS);
       MergePRStepParams gitOpsSpecParams = (MergePRStepParams) stepParameters.getSpec();
 
       ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
@@ -227,7 +242,11 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
 
       String taskId =
           queueDelegateTask(ambiance, gitOpsSpecParams, releaseRepoOutcome, connectorInfoDTO, stepParameters);
-      return AsyncChainExecutableResponse.newBuilder().setCallbackId(taskId).setChainEnd(true).build();
+      return AsyncChainExecutableResponse.newBuilder()
+          .addAllLogKeys(getLogKeys(ambiance))
+          .setCallbackId(taskId)
+          .setChainEnd(true)
+          .build();
     } catch (Exception e) {
       log.error("Failed to execute MergePR step", e);
       throw new InvalidRequestException(String.format("Failed to execute MergePR step. %s", e.getMessage()));
@@ -238,10 +257,11 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
-
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
+    NGLogCallback logCallback = getLogCallback(ambiance, false);
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
+      logCallback.saveExecutionLog("MergePR step finished.", INFO, SUCCESS);
       MergePROutcome mergePROutcome = MergePROutcome.builder().commitId(ngGitOpsResponse.getCommitId()).build();
 
       String outcomeName = ngGitOpsResponse.isRevertPR() ? OutcomeExpressionConstants.MERGE_REVERT_PR_OUTCOME
