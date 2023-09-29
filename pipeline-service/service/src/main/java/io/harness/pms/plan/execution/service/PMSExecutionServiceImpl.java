@@ -139,7 +139,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
-      boolean isLatest) {
+      boolean showAllExecutions) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -155,7 +155,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
           accountId, orgId, projectId, Collections.singletonList(pipelineIdentifier), criteria);
     } else {
       // If the user does not have permission for all pipelines then add the criteria for only view permission pipeline
-      pmsPipelineServiceHelper.setPermittedPipelines(accountId, orgId, projectId, criteria);
+      pmsPipelineServiceHelper.setPermittedPipelines(
+          accountId, orgId, projectId, criteria, PlanExecutionSummaryKeys.pipelineIdentifier);
     }
     // To show non-child execution. First or condition is added for older execution which do not have parentStageInfo
     if (EmptyPredicate.isEmpty(pipelineIdentifier)) {
@@ -165,7 +166,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.status).in(statusList);
     }
 
-    criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(!isLatest);
+    if (!showAllExecutions) {
+      criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(false);
+    }
     criteria.and(PlanExecutionSummaryKeys.executionMode).ne(ExecutionMode.PIPELINE_ROLLBACK);
 
     Criteria filterCriteria = new Criteria();
@@ -326,7 +329,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
       addCriteriaForPermittedPipeline(accountId, orgId, projectId, pipelineIdentifier, pipelineCriteria);
     } else {
-      pmsPipelineServiceHelper.setPermittedPipelines(accountId, orgId, projectId, criteria);
+      pmsPipelineServiceHelper.setPermittedPipelines(
+          accountId, orgId, projectId, criteria, PlanExecutionSummaryKeys.pipelineIdentifier);
     }
 
     Criteria filterCriteria = new Criteria();

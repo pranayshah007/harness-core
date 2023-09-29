@@ -391,7 +391,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
 
     // We need to fetch only those pipeline of which the user have view permission
-    pipelineServiceHelper.setPermittedPipelines(accountId, orgId, projectId, criteria);
+    pipelineServiceHelper.setPermittedPipelines(accountId, orgId, projectId, criteria, PipelineEntityKeys.identifier);
 
     Page<PipelineEntity> pipelineEntities =
         pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
