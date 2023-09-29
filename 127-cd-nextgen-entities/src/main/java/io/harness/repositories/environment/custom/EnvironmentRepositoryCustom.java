@@ -17,6 +17,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface EnvironmentRepositoryCustom {
   Page<Environment> findAll(Criteria criteria, Pageable pageable);
 
+  Environment saveGitAware(Environment environmentToSave);
+
   Environment upsert(Criteria criteria, Environment environment);
 
   Environment update(Criteria criteria, Environment environment);
