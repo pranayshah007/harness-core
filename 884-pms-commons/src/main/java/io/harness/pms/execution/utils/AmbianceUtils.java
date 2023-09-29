@@ -523,4 +523,12 @@ public class AmbianceUtils {
   public boolean hasStrategyMetadata(Level level) {
     return level.hasStrategyMetadata();
   }
+
+  public int getCurrentIteration(Level level) {
+    return level.getStrategyMetadata().getCurrentIteration();
+  }
+
+  public int getTotalIteration(Level level) {
+    return level.getStrategyMetadata().getTotalIterations();
+  }
 }
