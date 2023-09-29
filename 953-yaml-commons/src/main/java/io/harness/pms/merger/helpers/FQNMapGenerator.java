@@ -77,7 +77,7 @@ public class FQNMapGenerator {
     HashSet<String> expressions = new HashSet<>();
     Set<String> fieldNames = new LinkedHashSet<>();
     yamlMap.fieldNames().forEachRemaining(fieldNames::add);
-    String topKey = fieldNames.iterator().next();
+    String topKey = fieldNames.stream().filter(o -> yamlMap.get(o).isObject()).findAny().get();
 
     if (keepUuidFields && topKey.equals(UUID_FIELD_NAME) && fieldNames.size() > 1) {
       topKey = fieldNames.stream().filter(o -> !o.equals(UUID_FIELD_NAME)).findAny().get();

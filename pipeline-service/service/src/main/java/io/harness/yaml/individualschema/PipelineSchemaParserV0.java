@@ -47,7 +47,7 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
     parseAndIngestSchema();
   }
 
-  public void parseAndIngestSchema() {
+  private void parseAndIngestSchema() {
     traverseNodeAndExtractAllRefsRecursively(
         JsonPipelineUtils.getJsonNodeByPath(rootSchemaJsonNode, PIPELINE_DEFINITION_PATH), PIPELINE_DEFINITION_PATH);
 

@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaValidationException;
 import io.harness.logging.AccountLogContext;
@@ -71,6 +72,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   Integer allowedParallelStages;
 
   private final String PIPELINE_VERSION_V0 = "v0";
+  private final String PIPELINE_VERSION_V1 = "v1";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaValidator yamlSchemaValidator, PmsYamlSchemaHelper pmsYamlSchemaHelper,
@@ -192,7 +194,17 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     if (yamlConfig.getYamlMap().get("pipeline") != null) {
       return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V0);
     }
-    // TODO add more cases for other versions of yaml for pipeline
-    return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V0);
+
+    JsonNode versionNode = yamlConfig.getYamlMap().get("version");
+    if (versionNode != null) {
+      switch (versionNode.asText()) {
+        case "1":
+          return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V1);
+        default:
+          throw new InvalidRequestException("");
+      }
+    } else {
+      throw new InvalidRequestException("");
+    }
   }
 }

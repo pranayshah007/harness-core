@@ -18,13 +18,18 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineSchemaParserFactory {
   @Inject PipelineSchemaParserV0 pipelineSchemaParserV0;
+  @Inject PipelineSchemaParserV1 pipelineSchemaParserV1;
   public final String PIPELINE_VERSION_V0 = "v0";
+  public final String PIPELINE_VERSION_V1 = "v1";
 
   public SchemaParserInterface getPipelineSchemaParser(String version) {
     switch (version) {
       case PIPELINE_VERSION_V0:
         pipelineSchemaParserV0.initParser();
         return pipelineSchemaParserV0;
+      case PIPELINE_VERSION_V1:
+        pipelineSchemaParserV1.initParser();
+        return pipelineSchemaParserV1;
       default:
         throw new InternalServerErrorException("Pipeline schema parser not available for version: " + version);
     }

@@ -40,7 +40,8 @@ public class YamlInputUtils {
     JsonNode yamlJsonNode = YamlUtils.readAsJsonNode(yaml);
     // should pick hardcoded values from some constants, need to change it
 
-    inputsJsonNode = getInputsNode(yamlJsonNode);
+    JsonNode inputsParentNode = getInputsParentNode(yamlJsonNode);
+    inputsJsonNode = (ObjectNode) JsonFieldUtils.get(inputsParentNode, YamlSchemaFieldConstants.INPUTS);
     if (inputsJsonNode == null) {
       return inputDetails;
     }
@@ -48,7 +49,7 @@ public class YamlInputUtils {
     Iterator<String> inputNames = inputsJsonNode.fieldNames();
     for (Iterator<String> it = inputNames; it.hasNext();) {
       String inputName = it.next();
-      inputDetails.add(buildInputJsonNode(inputsJsonNode.get(inputName), inputName));
+      inputDetails.add(buildInputJsonNode(JsonFieldUtils.get(inputsJsonNode, inputName), inputName));
     }
 
     return inputDetails;
@@ -101,14 +102,10 @@ public class YamlInputUtils {
     return builder.build();
   }
 
-  private ObjectNode getInputsNode(JsonNode rootJsonNode) {
-    JsonNode firstNode = JsonFieldUtils.get(rootJsonNode, YamlSchemaFieldConstants.PIPELINE);
-    if (firstNode == null) {
-      firstNode = JsonFieldUtils.get(rootJsonNode, YamlSchemaFieldConstants.TEMPLATE);
+  private JsonNode getInputsParentNode(JsonNode yamlJsonNode) {
+    if (JsonFieldUtils.get(yamlJsonNode, YamlSchemaFieldConstants.VERSION) != null) {
+      return JsonFieldUtils.get(yamlJsonNode, YamlSchemaFieldConstants.SPEC);
     }
-    if (firstNode != null && JsonFieldUtils.isPresent(firstNode, YamlSchemaFieldConstants.INPUTS)) {
-      return (ObjectNode) JsonFieldUtils.get(firstNode, YamlSchemaFieldConstants.INPUTS);
-    }
-    return null;
+    return JsonFieldUtils.get(yamlJsonNode, YamlSchemaFieldConstants.PIPELINE);
   }
 }
