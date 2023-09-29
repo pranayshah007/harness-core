@@ -462,6 +462,7 @@ public class InfrastructureMapper {
                 .connectorRef(getParameterFieldValue(k8sAwsInfrastructure.getConnectorRef()))
                 .namespace(getParameterFieldValue(k8sAwsInfrastructure.getNamespace()))
                 .cluster(getParameterFieldValue(k8sAwsInfrastructure.getCluster()))
+                .region(getParameterFieldValue(k8sAwsInfrastructure.getRegion()))
                 .releaseName(k8sAwsReleaseName)
                 .environment(environmentOutcome)
                 .infrastructureKey(k8sAwsInfraKey.getKey())
