@@ -9,11 +9,12 @@ package io.harness.delegate.service.handlermapping.handlers;
 
 import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.service.handlermapping.context.Context;
+import io.harness.delegate.service.secret.DecryptedSecrets;
 
 import com.google.inject.Singleton;
 
 @Singleton
 public class CleanupHandler implements Handler {
   @Override
-  public void handle(String runnerType, TaskPayload taskPayload, Context context) {}
+  public void handle(String runnerType, TaskPayload taskPayload, DecryptedSecrets decryptedSecrets, Context context) {}
 }

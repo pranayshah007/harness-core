@@ -43,4 +43,7 @@ message TaskPayload {
   InputData infra_data = 5;       // binary data for infra config
   string execution_infra_id = 6;  // Id for the execution infra to use
   repeated Secret secrets = 7;    // Secrets to be decrypted
+  string account_id = 8;
+  string org_id = 9;
+  string project_id = 10;
 }

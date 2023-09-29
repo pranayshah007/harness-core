@@ -95,7 +95,6 @@ public class CoreDelegateResource {
 
       // Wrap DelegateTaskPackage with AcquireTaskResponse for Kryo tasks
       final var taskDataBytes = kryoSerializer.asBytes(delegateTaskPackage);
-      final List<Secret> protoSecrets = createProtoSecrets(delegateTaskPackage);
 
       final var resources = ResourceRequirements.newBuilder()
                                 .setMemory("128Mi")
@@ -109,7 +108,6 @@ public class CoreDelegateResource {
               .setPriority(delegateTaskPackage.getData().isAsync() ? ExecutionPriority.PRIORITY_DEFAULT
                                                                    : ExecutionPriority.PRIORITY_HIGH)
               //              .setInput(InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
-              .addAllInputSecrets(protoSecrets)
               .setRuntime(StepRuntime.newBuilder()
                               .setType(delegateTaskPackage.getData().getTaskType())
                               .setSource(PluginSource.SOURCE_IMAGE)
@@ -163,7 +161,7 @@ public class CoreDelegateResource {
 
     return Secret.newBuilder()
         .setConfig(SecretConfig.newBuilder().setBinaryData(ByteString.copyFrom(configBytes)).build())
-        .setSecrets(InputData.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
+        .setEncryptedRecord(InputData.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
         .build();
   }
 

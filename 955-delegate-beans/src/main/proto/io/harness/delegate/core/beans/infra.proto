@@ -16,7 +16,7 @@ option java_multiple_files = true;
 
 message K8SInfra {
   repeated K8SStep steps = 1;
-  repeated Secret infra_secrets = 2;     // Secret needed to setup execution environment (e.g. imagePullSecrets)
+  repeated SecretRef infra_secrets = 2;  // Secret needed to setup execution environment (e.g. imagePullSecrets)
   ResourceRequirements compute = 3;      // Global resource requirements for infra types that need it (e.g. K8S CPU/Mem)
   map<string, string> env = 4;           // Any global env variables
   SecurityContext security_context = 5;  // Startup user id for the execution infra
@@ -33,7 +33,7 @@ message K8SStep {
       3;  // Priority of the step. Under heavier load, higher priority steps may have precedence
   ExecutionType execution_type = 4;  // Type of the step
   StepRuntime runtime = 5;           // Environment in which the task should run
-  repeated Secret input_secrets =
+  repeated SecretRef input_secrets =
       6;  // Task specific secrets. One instance can contain multiple secrets from same provider
 }
 

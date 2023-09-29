@@ -12,7 +12,6 @@ import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.p
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/execution_infra.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/execution.proto";
-import "920-delegate-service-beans/src/main/proto/io/harness/delegate/secrets.proto";
 
 option java_multiple_files = true;
 option go_package = "920_delegate_service_beans";
@@ -20,8 +19,7 @@ option go_package = "920_delegate_service_beans";
 // Setup An Execution Infrastructure
 message SetupExecutionInfrastructureRequest {
   ExecutionInfrastructure infra = 1;  // Execution Infrastructure definition
-  Secrets secrets = 2;                // Infrastructure secrets
-  SchedulingConfig config = 3;        // Config related to where and how the task should be scheduled
+  SchedulingConfig config = 2;        // Config related to where and how the task should be scheduled
 }
 
 message SetupExecutionInfrastructureResponse {
@@ -32,8 +30,7 @@ message SetupExecutionInfrastructureResponse {
 
 message ScheduleTaskRequest {
   Execution execution = 1;
-  Secrets secrets = 2;
-  SchedulingConfig config = 3;
+  SchedulingConfig config = 2;
 }
 
 message ScheduleTaskResponse {
