@@ -13,6 +13,7 @@ import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 import io.harness.gitsync.common.dtos.ScmGetBatchFilesByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetBatchFilesResponseDTO;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventUpdateRequestDTO;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
 import io.harness.logging.ResponseTimeRecorder;
 
@@ -39,10 +40,10 @@ public class GitXWebhookCacheUpdateRunnable implements Runnable {
       ScmGetBatchFilesResponseDTO scmGetBatchFilesResponseDTO =
           scmFacilitatorService.getBatchFilesByBranch(scmGetBatchFilesByBranchRequestDTO);
       gitXWebhookEventService.updateEvent(scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier(), eventIdentifier,
-          GitXWebhookEventStatus.SUCCESSFUL);
+          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.SUCCESSFUL).build());
     } catch (Exception exception) {
-      gitXWebhookEventService.updateEvent(
-          scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier(), eventIdentifier, GitXWebhookEventStatus.FAILED);
+      gitXWebhookEventService.updateEvent(scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier(), eventIdentifier,
+          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.FAILED).build());
       log.error("Faced exception while submitting background task for updating the git cache for event: {} ",
           eventIdentifier, exception);
     }
