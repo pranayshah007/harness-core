@@ -25,8 +25,9 @@ import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
+import io.harness.notification.NotificationEntity;
+import io.harness.notification.NotificationEvent;
 import io.harness.notification.NotificationTriggerRequest;
-import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationserviceclient.intfc.NotificationServiceClient;
 import io.harness.observer.Subject;
 
@@ -142,14 +143,15 @@ public class DelegateDisconnectDetectorIterator
     Map<String, String> templateData = new HashMap<>();
     templateData.put("DELEGATE_HOST", delegate.getDelegateGroupName());
     templateData.put("DELEGATE_NAME", delegate.getHostName());
-    NotificationTriggerRequest.Builder notificationTriggerRequestBuilder = NotificationTriggerRequest.newBuilder()
-                                                                               .setId(notificationTriggerRequestId)
-                                                                               .setAccountId(delegate.getAccountId())
-                                                                               .setOrgId(orgId)
-                                                                               .setProjectId(projectId)
-                                                                               .setEventEntity("Delegate")
-                                                                               .setEvent("DelegateDown")
-                                                                               .putAllTemplateData(templateData);
+    NotificationTriggerRequest.Builder notificationTriggerRequestBuilder =
+        NotificationTriggerRequest.newBuilder()
+            .setId(notificationTriggerRequestId)
+            .setAccountId(delegate.getAccountId())
+            .setOrgId(orgId)
+            .setProjectId(projectId)
+            .setEventEntity(NotificationEntity.DELEGATE.name())
+            .setEvent(NotificationEvent.DELEGATE_DOWN.name())
+            .putAllTemplateData(templateData);
     notificationServiceClient.sendNotification(notificationTriggerRequestBuilder.build());
   }
 }
