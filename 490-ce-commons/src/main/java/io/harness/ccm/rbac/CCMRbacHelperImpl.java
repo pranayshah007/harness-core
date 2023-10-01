@@ -11,6 +11,7 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_CREATE_AND_EDIT;
 import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.BUDGET_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.CCM_ANOMALIES_VIEW;
+import static io.harness.ccm.rbac.CCMRbacPermissions.CCM_RECOMMENDATIONS_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_CREATE_AND_EDIT;
 import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.COST_CATEGORY_VIEW;
@@ -34,6 +35,7 @@ import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_SET_DELETE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_SET_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_VIEW;
 import static io.harness.ccm.rbac.CCMResources.CCM_ANOMALIES;
+import static io.harness.ccm.rbac.CCMResources.CCM_RECOMMENDATIONS;
 import static io.harness.ccm.rbac.CCMResources.COST_CATEGORY;
 import static io.harness.ccm.rbac.CCMResources.CURRENCY_PREFERENCE;
 import static io.harness.ccm.rbac.CCMResources.FOLDER;
@@ -214,9 +216,10 @@ public class CCMRbacHelperImpl implements CCMRbacHelper {
   }
 
   @Override
-  public void checkRecommendationsViewPermission(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId) {
-    checkPerspectiveViewPermission(accountIdentifier, orgIdentifier, projectIdentifier, folderId);
+  public boolean hasRecommendationsViewPermission(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(CCM_RECOMMENDATIONS, null), CCM_RECOMMENDATIONS_VIEW);
   }
 
   @Override
