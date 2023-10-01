@@ -44,6 +44,7 @@ public interface CCMRbacHelper {
 
   void checkAnomalyViewPermission(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String folderId);
+  boolean hasAnomalyViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   boolean hasCostOverviewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
