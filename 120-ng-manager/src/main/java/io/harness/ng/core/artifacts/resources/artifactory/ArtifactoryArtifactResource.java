@@ -6,13 +6,15 @@
  */
 
 package io.harness.ng.core.artifacts.resources.artifactory;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
@@ -25,13 +27,18 @@ import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryResponseDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.utils.IdentifierRefHelper;
+
+import software.wings.utils.RepositoryType;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -53,6 +60,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDC)
 @Api("artifacts")
 @Path("/artifacts/artifactory")
@@ -83,12 +91,13 @@ public class ArtifactoryArtifactResource {
       @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGArtifactConstants.ARTIFACT_FILTER) String artifactFilter,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
-        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
+        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, null, artifactFilter);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -106,12 +115,15 @@ public class ArtifactoryArtifactResource {
       @QueryParam("repositoryFormat") String repositoryFormat,
       @QueryParam("repositoryUrl") String artifactRepositoryUrl,
       @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @QueryParam(NGArtifactConstants.ARTIFACT_FILTER) String artifactFilter,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+      @QueryParam(NGArtifactConstants.TAG_INPUT) String tagInput, @NotNull @QueryParam("fqnPath") String fqnPath,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull String runtimeInputYaml,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    String tagRegex = null;
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -130,6 +142,13 @@ public class ArtifactoryArtifactResource {
           artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactDirectory().fetchFinalValue();
         }
       }
+
+      if (isEmpty(artifactFilter) && ParameterField.isNotNull(artifactoryRegistryArtifactConfig.getArtifactFilter())) {
+        if (RepositoryType.generic.name().equals(
+                artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue())) {
+          artifactFilter = (String) artifactoryRegistryArtifactConfig.getArtifactFilter().fetchFinalValue();
+        }
+      }
       if (isEmpty(repositoryFormat)) {
         repositoryFormat = (String) artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
       }
@@ -141,26 +160,58 @@ public class ArtifactoryArtifactResource {
       if (isEmpty(artifactoryConnectorIdentifier)) {
         artifactoryConnectorIdentifier = (String) artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue();
       }
+
+      if (EmptyPredicate.isNotEmpty(tagInput)) {
+        final ParameterField<String> tagRegexParameterField =
+            RuntimeInputValuesValidator.getInputSetParameterField(tagInput);
+        if (tagRegexParameterField != null && artifactResourceUtils.checkValidRegexType(tagRegexParameterField)) {
+          tagRegex = tagRegexParameterField.getInputSetValidator().getParameters();
+        }
+      }
+
+      if (EmptyPredicate.isEmpty(tagRegex)
+          && artifactResourceUtils.checkValidRegexType(artifactoryRegistryArtifactConfig.getArtifactPath())) {
+        tagRegex = artifactoryRegistryArtifactConfig.getArtifactPath().getInputSetValidator().getParameters();
+      }
     }
 
     artifactoryConnectorIdentifier =
-        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            runtimeInputYaml, artifactoryConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, artifactoryConnectorIdentifier, fqnPath, gitEntityBasicInfo,
+                serviceRef, null)
+            .getValue();
 
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     // todo(hinger): resolve other expressions here
-    artifactPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
+    artifactPath =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
-    repository = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef);
+    artifactFilter =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, artifactFilter, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
-    artifactRepositoryUrl = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
+    repository =
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef, null)
+            .getValue();
 
-    ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
-        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
+    artifactRepositoryUrl = artifactResourceUtils
+                                .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                    projectIdentifier, pipelineIdentifier, runtimeInputYaml, artifactRepositoryUrl,
+                                    fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                .getValue();
+
+    ArtifactoryResponseDTO buildDetails =
+        artifactoryResourceService.getBuildDetails(connectorRef, repository, artifactPath, repositoryFormat,
+            artifactRepositoryUrl, orgIdentifier, projectIdentifier, tagRegex, artifactFilter);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -295,8 +346,11 @@ public class ArtifactoryArtifactResource {
     }
 
     artifactoryConnectorIdentifier =
-        artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            runtimeInputYaml, artifactoryConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+        artifactResourceUtils
+            .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                pipelineIdentifier, runtimeInputYaml, artifactoryConnectorIdentifier, fqnPath, gitEntityBasicInfo,
+                serviceRef, null)
+            .getValue();
 
     if (artifactoryConnectorIdentifier != null && NGExpressionUtils.isRuntimeField(artifactoryConnectorIdentifier)) {
       throw new InvalidIdentifierRefException(

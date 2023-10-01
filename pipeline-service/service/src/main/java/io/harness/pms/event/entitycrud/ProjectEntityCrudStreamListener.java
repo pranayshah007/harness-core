@@ -9,6 +9,7 @@ package io.harness.pms.event.entitycrud;
 
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_TRIGGERS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 
@@ -18,6 +19,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 
 import com.google.inject.Inject;
@@ -27,10 +29,12 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ProjectEntityCrudStreamListener implements MessageListener {
   private final PMSPipelineService pmsPipelineService;
+  private final NGTriggerService ngTriggerService;
 
   @Inject
-  public ProjectEntityCrudStreamListener(PMSPipelineService pmsPipelineService) {
+  public ProjectEntityCrudStreamListener(PMSPipelineService pmsPipelineService, NGTriggerService ngTriggerService) {
     this.pmsPipelineService = pmsPipelineService;
+    this.ngTriggerService = ngTriggerService;
   }
 
   @Override
@@ -58,8 +62,15 @@ public class ProjectEntityCrudStreamListener implements MessageListener {
   private boolean processProjectEntityChangeEvent(ProjectEntityChangeDTO entityChangeDTO, String action) {
     if (DELETE_ACTION.equals(action)) {
       processDeleteEvent(entityChangeDTO);
+    } else if (DISABLE_TRIGGERS.equals(action)) {
+      processTriggerDisableEvent(entityChangeDTO);
     }
     return true;
+  }
+
+  private void processTriggerDisableEvent(ProjectEntityChangeDTO entityChangeDTO) {
+    ngTriggerService.disableTriggers(
+        entityChangeDTO.getAccountIdentifier(), entityChangeDTO.getOrgIdentifier(), entityChangeDTO.getIdentifier());
   }
 
   private void processDeleteEvent(ProjectEntityChangeDTO entityChangeDTO) {

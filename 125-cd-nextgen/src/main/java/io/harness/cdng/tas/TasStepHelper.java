@@ -64,6 +64,9 @@ import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
@@ -89,7 +92,7 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails.TasStageExecutionDetailsKeys;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
@@ -146,7 +149,6 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
@@ -170,19 +172,17 @@ import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pcf.model.PcfConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -227,18 +227,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Slf4j
 public class TasStepHelper {
   @Inject protected OutcomeService outcomeService;
   @Inject private CDStepHelper cdStepHelper;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private FileStoreService fileStoreService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
-  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
 
@@ -255,10 +255,9 @@ public class TasStepHelper {
   public static final String END_SLASH_ALL_MATCH = "/+\\Z";
 
   public TaskChainResponse startChainLink(
-      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
+      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
-    ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
     TasStepPassThroughData tasStepPassThroughData = TasStepPassThroughData.builder()
@@ -284,7 +283,7 @@ public class TasStepHelper {
   }
 
   public TaskChainResponse startChainLinkForCommandStep(
-      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
+      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepElementParameters.getSpec();
 
     UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
@@ -318,17 +317,16 @@ public class TasStepHelper {
     logCallback.saveExecutionLog("Successfully fetched Tanzu Command Script", INFO, SUCCESS);
 
     // Resolving expressions
-    scriptString = engineExpressionService.renderExpression(ambiance, scriptString);
+    scriptString = cdExpressionResolver.renderExpression(ambiance, scriptString);
     String rawScript = removeCommentedLineFromScript(scriptString);
     String repoRoot = "/";
 
-    TasStepPassThroughData tasStepPassThroughData = null;
+    TasStepPassThroughData tasStepPassThroughData;
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS));
     if (optionalOutcome.isFound()) {
       ManifestsOutcome manifestsOutcome = (ManifestsOutcome) optionalOutcome.getOutcome();
-      ExpressionEvaluatorUtils.updateExpressions(
-          manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+      cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
       cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
       tasStepPassThroughData = TasStepPassThroughData.builder()
@@ -543,12 +541,12 @@ public class TasStepHelper {
     }
   }
 
-  List<String> findPathFromScript(String rendredScript, String repoRoot) {
+  List<String> findPathFromScript(String rendredscript, String repoRoot) {
     final Set<String> finalPathLists = new HashSet<>();
     final List<String> repoRootPrefixPathList =
-        findPathFromScript(rendredScript, PATH_REGEX_REPO_ROOT_PATTERN, FILE_START_REPO_ROOT_REGEX, FILE_END_REGEX);
+        findPathFromScript(rendredscript, PATH_REGEX_REPO_ROOT_PATTERN, FILE_START_REPO_ROOT_REGEX, FILE_END_REGEX);
     List<String> serviceManifestPrefixPathList = findPathFromScript(
-        rendredScript, FILE_START_SERVICE_MANIFEST_PATTERN, FILE_START_SERVICE_MANIFEST_REGEX, FILE_END_REGEX);
+        rendredscript, FILE_START_SERVICE_MANIFEST_PATTERN, FILE_START_SERVICE_MANIFEST_REGEX, FILE_END_REGEX);
 
     if (!(isEmpty(repoRoot) || "/".equals(repoRoot))) {
       serviceManifestPrefixPathList = serviceManifestPrefixPathList.stream()
@@ -594,7 +592,7 @@ public class TasStepHelper {
   }
 
   private TaskChainResponse prepareManifests(TasStepExecutor tasStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
+      StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
     Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
     if (tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()) {
       LogCallback logCallback = cdStepHelper.getLogCallback(
@@ -870,7 +868,7 @@ public class TasStepHelper {
   }
 
   public TaskChainResponse executeNextLink(TasStepExecutor tasStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) passThroughData;
     TasManifestOutcome tasManifest = tasStepPassThroughData.getTasManifestOutcome();
@@ -911,7 +909,7 @@ public class TasStepHelper {
   }
 
   private TaskChainResponse handleGitFetchFilesResponse(ResponseData responseData, TasStepExecutor tasStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      Ambiance ambiance, StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       TasManifestOutcome tasManifest) {
     GitFetchResponse gitFetchResponse = (GitFetchResponse) responseData;
     if (gitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
@@ -939,7 +937,7 @@ public class TasStepHelper {
   }
 
   private TaskChainResponse handleCustomFetchResponse(ResponseData responseData, TasStepExecutor tasStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      Ambiance ambiance, StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       ManifestOutcome tasManifestOutcome) {
     CustomManifestValuesFetchResponse customManifestValuesFetchResponse =
         (CustomManifestValuesFetchResponse) responseData;
@@ -1006,7 +1004,7 @@ public class TasStepHelper {
   }
 
   public TaskChainResponse prepareManifestFilesFetchTask(TasStepExecutor tasStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
+      StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
     StoreConfig storeConfig = tasStepPassThroughData.getTasManifestOutcome().getStore();
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
         shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
@@ -1032,7 +1030,7 @@ public class TasStepHelper {
   }
 
   protected TaskChainResponse prepareCustomFetchManifestsTaskChainResponse(StoreConfig storeConfig, Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       List<ManifestOutcome> manifestOutcomeList) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
@@ -1145,7 +1143,7 @@ public class TasStepHelper {
   }
 
   protected TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
-      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
+      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepBaseParameters stepElementParameters,
       TasStepPassThroughData tasStepPassThroughData) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     GitFetchRequest gitFetchRequest =
@@ -1233,7 +1231,7 @@ public class TasStepHelper {
   }
 
   protected TaskChainResponse prepareGitFetchTaskChainResponse(Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       StoreConfig storeConfig) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapManifestsToGitFetchFileConfig(tasStepPassThroughData.getVarsManifestOutcomeList(),
@@ -1356,11 +1354,9 @@ public class TasStepHelper {
   }
 
   public TaskChainResponse prepareExecuteTasTaskForCommandStep(Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepExecutor tasStepExecutor,
+      StepBaseParameters stepElementParameters, TasStepExecutor tasStepExecutor,
       TasStepPassThroughData tasStepPassThroughData, ManifestOutcome tasManifestOutcome) {
     Map<String, String> allFilesFetched = new HashMap<>();
-    CDExpressionResolveFunctor cdExpressionResolveFunctor =
-        new CDExpressionResolveFunctor(engineExpressionService, ambiance);
     if (tasStepPassThroughData.getMaxManifestOrder() != null) {
       for (int manifestOrder = 0; manifestOrder <= tasStepPassThroughData.getMaxManifestOrder(); manifestOrder++) {
         String manifestOrderId = String.valueOf(manifestOrder);
@@ -1372,8 +1368,7 @@ public class TasStepHelper {
           FetchFilesResult gitFetchFilesResult = gitFetchFilesResultMap.get(manifestOrderId);
           if (!isNull(gitFetchFilesResult) && !isNull(gitFetchFilesResult.getFiles())) {
             for (GitFile file : gitFetchFilesResult.getFiles()) {
-              String fileContent = (String) ExpressionEvaluatorUtils.updateExpressions(
-                  file.getFileContent(), cdExpressionResolveFunctor);
+              String fileContent = (String) cdExpressionResolver.updateExpressions(ambiance, file.getFileContent());
               allFilesFetched.put(file.getFilePath(), fileContent);
             }
           }
@@ -1382,8 +1377,7 @@ public class TasStepHelper {
           Collection<CustomSourceFile> customSourceFilesResult = customFetchContent.get(manifestOrderId);
           if (!isNull(customSourceFilesResult)) {
             for (CustomSourceFile file : customSourceFilesResult) {
-              String fileContent = (String) ExpressionEvaluatorUtils.updateExpressions(
-                  file.getFileContent(), cdExpressionResolveFunctor);
+              String fileContent = (String) cdExpressionResolver.updateExpressions(ambiance, file.getFileContent());
               allFilesFetched.put(file.getFilePath(), fileContent);
             }
           }
@@ -1393,8 +1387,8 @@ public class TasStepHelper {
               localStoreFetchFilesResultMap.get(manifestOrderId);
           if (!isNull(localStoreValuesFileContent)) {
             for (TasManifestFileContents tasManifestFileContents : localStoreValuesFileContent) {
-              String fileContent = (String) ExpressionEvaluatorUtils.updateExpressions(
-                  tasManifestFileContents.getFileContent(), cdExpressionResolveFunctor);
+              String fileContent =
+                  (String) cdExpressionResolver.updateExpressions(ambiance, tasManifestFileContents.getFileContent());
               allFilesFetched.put(tasManifestFileContents.getFilePath(), fileContent);
             }
           }
@@ -1416,7 +1410,7 @@ public class TasStepHelper {
         UnitProgressData.builder().unitProgresses(tasStepPassThroughData.getUnitProgresses()).build());
   }
 
-  public TaskChainResponse executeTasTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public TaskChainResponse executeTasTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
       TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData,
       ManifestOutcome tasManifestOutcome) {
     if (tasStepExecutor instanceof TasCommandStep) {
@@ -1462,16 +1456,13 @@ public class TasStepHelper {
       Integer maxManifestOrder, TasManifestsPackage unresolvedTasManifestPackage, LogCallback logCallback) {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder().variableYmls(new ArrayList<>()).build();
     logCallback.saveExecutionLog("Verifying manifests", INFO);
-    CDExpressionResolveFunctor cdExpressionResolveFunctor =
-        new CDExpressionResolveFunctor(engineExpressionService, ambiance);
     for (int manifestOrder = 0; manifestOrder <= maxManifestOrder; manifestOrder++) {
       String manifestOrderId = String.valueOf(manifestOrder);
       if (!isNull(gitFetchFilesResultMap) && gitFetchFilesResultMap.containsKey(manifestOrderId)) {
         FetchFilesResult gitFetchFilesResult = gitFetchFilesResultMap.get(manifestOrderId);
         if (!isNull(gitFetchFilesResult) && !isNull(gitFetchFilesResult.getFiles())) {
           for (GitFile file : gitFetchFilesResult.getFiles()) {
-            String fileContent =
-                (String) ExpressionEvaluatorUtils.updateExpressions(file.getFileContent(), cdExpressionResolveFunctor);
+            String fileContent = (String) cdExpressionResolver.updateExpressions(ambiance, file.getFileContent());
             addToPcfManifestPackageByType(tasManifestsPackage, fileContent, file.getFilePath(), logCallback);
             addToPcfManifestPackageByType(
                 unresolvedTasManifestPackage, file.getFileContent(), file.getFilePath(), logCallback);
@@ -1483,8 +1474,7 @@ public class TasStepHelper {
         Collection<CustomSourceFile> customSourceFilesResult = customFetchContent.get(manifestOrderId);
         if (!isNull(customSourceFilesResult)) {
           for (CustomSourceFile file : customSourceFilesResult) {
-            String fileContent =
-                (String) ExpressionEvaluatorUtils.updateExpressions(file.getFileContent(), cdExpressionResolveFunctor);
+            String fileContent = (String) cdExpressionResolver.updateExpressions(ambiance, file.getFileContent());
             addToPcfManifestPackageByType(tasManifestsPackage, fileContent, file.getFilePath(), logCallback);
             addToPcfManifestPackageByType(
                 unresolvedTasManifestPackage, file.getFileContent(), file.getFilePath(), logCallback);
@@ -1496,8 +1486,8 @@ public class TasStepHelper {
         List<TasManifestFileContents> localStoreValuesFileContent = localStoreFetchFilesResultMap.get(manifestOrderId);
         if (!isNull(localStoreValuesFileContent)) {
           for (TasManifestFileContents tasManifestFileContents : localStoreValuesFileContent) {
-            String fileContent = (String) ExpressionEvaluatorUtils.updateExpressions(
-                tasManifestFileContents.getFileContent(), cdExpressionResolveFunctor);
+            String fileContent =
+                (String) cdExpressionResolver.updateExpressions(ambiance, tasManifestFileContents.getFileContent());
             addToPcfManifestPackageByType(
                 tasManifestsPackage, fileContent, tasManifestFileContents.getFilePath(), logCallback);
             addToPcfManifestPackageByType(unresolvedTasManifestPackage, tasManifestFileContents.getFileContent(),
@@ -1617,6 +1607,33 @@ public class TasStepHelper {
     return name;
   }
 
+  List<Map<String, String>> finalizeRouteSubstitution(TasManifestsPackage tasManifestsPackage, Object routeMaps) {
+    if (!(routeMaps instanceof String)) {
+      return (List<Map<String, String>>) routeMaps;
+    }
+    String routes = routeMaps.toString().trim();
+    if (routes.startsWith("((") && routes.endsWith("))")) {
+      if (isEmpty(tasManifestsPackage.getVariableYmls())) {
+        throw new InvalidRequestException(
+            "No Valid Variable file Found, please verify var file is present and has valid structure");
+      }
+      String varName;
+      Matcher m = Pattern.compile("\\(\\(([^)]+)\\)\\)").matcher(routes);
+      List<String> varFiles = tasManifestsPackage.getVariableYmls();
+      while (m.find()) {
+        varName = m.group(1);
+        for (int i = varFiles.size() - 1; i >= 0; i--) {
+          Object value = getVariableValue(varFiles.get(i), varName);
+          if (value != null) {
+            return (List<Map<String, String>>) value;
+          }
+        }
+      }
+    }
+    throw new InvalidRequestException(
+        format("Invalid format of routes, provided in the manifest, please provide correct format: %s", routeMaps));
+  }
+
   @VisibleForTesting
   Map<String, Object> getApplicationYamlMap(String applicationManifestYmlContent) {
     Map<String, Object> yamlMap;
@@ -1709,8 +1726,8 @@ public class TasStepHelper {
     return maxCount;
   }
 
-  public List<String> getRouteMaps(String applicationManifestYmlContent, List<String> additionalRoutesFromStep) {
-    Map<String, Object> applicationConfigMap = getApplicationYamlMap(applicationManifestYmlContent);
+  public List<String> getRouteMaps(TasManifestsPackage tasManifestsPackage, List<String> additionalRoutesFromStep) {
+    Map<String, Object> applicationConfigMap = getApplicationYamlMap(tasManifestsPackage.getManifestYml());
     if (applicationConfigMap.containsKey(NO_ROUTE_MANIFEST_YML_ELEMENT)
         && (boolean) applicationConfigMap.get(NO_ROUTE_MANIFEST_YML_ELEMENT)) {
       return emptyList();
@@ -1720,13 +1737,12 @@ public class TasStepHelper {
     try {
       Object routeMaps = applicationConfigMap.get(ROUTES_MANIFEST_YML_ELEMENT);
       if (routeMaps != null) {
-        allRoutes.addAll(((List<Map<String, String>>) routeMaps)
-                             .stream()
-                             .map(route -> route.get(ROUTE_MANIFEST_YML_ELEMENT))
-                             .collect(Collectors.toList()));
+        List<Map<String, String>> routeList = finalizeRouteSubstitution(tasManifestsPackage, routeMaps);
+        allRoutes.addAll(
+            routeList.stream().map(route -> route.get(ROUTE_MANIFEST_YML_ELEMENT)).collect(Collectors.toList()));
       }
     } catch (Exception e) {
-      throw new InvalidRequestException("Invalid Route Format In Manifest");
+      throw new InvalidRequestException(format("Invalid Route Format In Manifest: %s", e.getMessage()));
     }
     if (!isNull(additionalRoutesFromStep)) {
       allRoutes.addAll(additionalRoutesFromStep);

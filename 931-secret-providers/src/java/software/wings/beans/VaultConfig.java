@@ -18,6 +18,7 @@ import static io.harness.security.encryption.SecretManagerType.VAULT;
 
 import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
@@ -48,6 +49,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "VaultConfigKeys")
+@RecasterAlias("software.wings.beans.VaultConfig")
 public class VaultConfig extends BaseVaultConfig {
   public static final String VAULT_VAILDATION_URL = "harness_vault_validation";
   public static final String DEFAULT_BASE_PATH = "/harness";

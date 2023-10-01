@@ -15,6 +15,7 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
+import io.harness.cli.CliCommandRequest;
 import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
 import io.harness.cli.EmptyLogOutputStream;
@@ -48,13 +49,14 @@ public class TerragruntClientFactory {
   @Inject private CliHelper cliHelper;
 
   public TerragruntClient getClient(String tgScriptDirectory, long timeoutInMillis, LogCallback logCallback,
-      String runType, Map<String, String> ennVars) {
+      String runType, Map<String, String> ennVars, boolean skipColorLogs) {
     String terragruntInfoJson = "{}";
     String terraformPath = TERRAFORM_BINARY_VALUE;
     if (TerragruntRunType.RUN_MODULE.name().equalsIgnoreCase(runType)) {
       // When run-all from outside concrete module we don't need to run terragrunt terragrunt-info, because there might
       // be no terragrunt.hcl
-      terragruntInfoJson = getTerragruntInfoJson(tgScriptDirectory, timeoutInMillis, logCallback, ennVars);
+      terragruntInfoJson =
+          getTerragruntInfoJson(tgScriptDirectory, timeoutInMillis, logCallback, ennVars, skipColorLogs);
       try {
         terraformPath = JsonUtils.jsonPath(terragruntInfoJson, TERRAGRUNT_INFO_TF_BINARY_JSON_PATH);
       } catch (Exception e) {
@@ -64,45 +66,80 @@ public class TerragruntClientFactory {
 
     return TerragruntClientImpl.builder()
         .terragruntInfoJson(terragruntInfoJson)
-        .terraformVersion(getTerraformVersion(tgScriptDirectory, terraformPath, timeoutInMillis, logCallback, ennVars))
-        .terragruntVersion(getTerragruntVersion(tgScriptDirectory, timeoutInMillis, logCallback, ennVars))
+        .terraformVersion(
+            getTerraformVersion(tgScriptDirectory, terraformPath, timeoutInMillis, logCallback, ennVars, skipColorLogs))
+        .terragruntVersion(
+            getTerragruntVersion(tgScriptDirectory, timeoutInMillis, logCallback, ennVars, skipColorLogs))
         .cliHelper(cliHelper)
         .build();
   }
 
   private Version getTerraformVersion(String tgScriptDirectory, String terraformPath, long timeout,
-      LogCallback logCallback, Map<String, String> envVars) {
+      LogCallback logCallback, Map<String, String> envVars, boolean skipColorLogs) {
     String command = format("%s version", terraformPath);
-    String tfVersionOutput = executeLocalCommand(command, tgScriptDirectory, null, timeout, logCallback, envVars);
+    CliCommandRequest request =
+        CliCommandRequest.builder()
+            .command(command)
+            .timeoutInMillis(timeout)
+            .envVariables(envVars)
+            .directory(tgScriptDirectory)
+            .logCallback(new NoopExecutionCallback())
+            .loggingCommand(command)
+            .logOutputStream(new EmptyLogOutputStream())
+            .errorLogOutputStream(new TerraformCliErrorLogOutputStream(logCallback, skipColorLogs))
+            .secondsToWaitForGracefulShutdown(0)
+            .build();
+    String tfVersionOutput = executeLocalCommand(request, null);
     return createVersion(tfVersionOutput, TerraformVersion.TF_VERSION_REGEX);
   }
 
-  private Version getTerragruntVersion(
-      String tgScriptDirectory, long timeout, LogCallback logCallback, Map<String, String> envVars) {
-    String tgVersionOutput =
-        executeLocalCommand(TerragruntCommandUtils.version(), tgScriptDirectory, null, timeout, logCallback, envVars);
+  private Version getTerragruntVersion(String tgScriptDirectory, long timeout, LogCallback logCallback,
+      Map<String, String> envVars, boolean skipColorLogs) {
+    CliCommandRequest request =
+        CliCommandRequest.builder()
+            .command(TerragruntCommandUtils.version())
+            .timeoutInMillis(timeout)
+            .envVariables(envVars)
+            .directory(tgScriptDirectory)
+            .logCallback(new NoopExecutionCallback())
+            .loggingCommand(TerragruntCommandUtils.version())
+            .logOutputStream(new EmptyLogOutputStream())
+            .errorLogOutputStream(new TerraformCliErrorLogOutputStream(logCallback, skipColorLogs))
+            .secondsToWaitForGracefulShutdown(0)
+            .build();
+
+    String tgVersionOutput = executeLocalCommand(request, null);
     return createVersion(tgVersionOutput, TG_VERSION_REGEX);
   }
 
-  private String getTerragruntInfoJson(
-      String tgScriptDirectory, long timeout, LogCallback logCallback, Map<String, String> envVars) {
-    return executeLocalCommand(
-        TerragruntCommandUtils.info(), tgScriptDirectory, FALLBACK_TG_INFO_OUTPUT, timeout, logCallback, envVars);
+  private String getTerragruntInfoJson(String tgScriptDirectory, long timeout, LogCallback logCallback,
+      Map<String, String> envVars, boolean skipColorLogs) {
+    CliCommandRequest request =
+        CliCommandRequest.builder()
+            .command(TerragruntCommandUtils.info())
+            .timeoutInMillis(timeout)
+            .envVariables(envVars)
+            .directory(tgScriptDirectory)
+            .logCallback(new NoopExecutionCallback())
+            .loggingCommand(TerragruntCommandUtils.info())
+            .logOutputStream(new EmptyLogOutputStream())
+            .errorLogOutputStream(new TerraformCliErrorLogOutputStream(logCallback, skipColorLogs))
+            .secondsToWaitForGracefulShutdown(0)
+            .build();
+
+    return executeLocalCommand(request, FALLBACK_TG_INFO_OUTPUT);
   }
 
-  private String executeLocalCommand(String command, String pwd, String defaultOutput, long timeoutInMillis,
-      LogCallback logCallback, Map<String, String> envVars) {
+  private String executeLocalCommand(CliCommandRequest request, String defaultOutput) {
     try {
-      CliResponse result =
-          cliHelper.executeCliCommand(command, timeoutInMillis, envVars, pwd, new NoopExecutionCallback(), command,
-              new EmptyLogOutputStream(), new TerraformCliErrorLogOutputStream(logCallback), 0);
+      CliResponse result = cliHelper.executeCliCommand(request);
 
       if (result.getExitCode() != 0) {
-        log.error(format("Command [%s] failed with exit code [%d] and error: %s", command, result.getExitCode(),
-            result.getOutput()));
+        log.error(format("Command [%s] failed with exit code [%d] and error: %s", request.getCommand(),
+            result.getExitCode(), result.getOutput()));
         throw new TerragruntCliRuntimeException(
-            format("Failed to execute terraform Command %s : Reason: %s", command, result.getError()), command,
-            result.getError());
+            format("Failed to execute terraform Command %s : Reason: %s", request.getCommand(), result.getError()),
+            request.getCommand(), result.getError());
       }
 
       return result.getOutput();
@@ -110,10 +147,10 @@ public class TerragruntClientFactory {
 
     catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      log.error(format("Exception while executing [%s]", command), e);
+      log.error(format("Exception while executing [%s]", request.getCommand()), e);
       throw new TerragruntCliRuntimeException("Thread was interrupted:", e);
     } catch (IOException | TimeoutException e) {
-      log.error(format("Exception while executing [%s]", command), e);
+      log.error(format("Exception while executing [%s]", request.getCommand()), e);
       return defaultOutput;
     }
   }

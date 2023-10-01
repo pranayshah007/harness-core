@@ -50,6 +50,7 @@ public class CdSscaEnforcementStepPlanCreator extends AbstractContainerStepPlanC
         .identifier(ContainerCommandUnitConstants.SscaEnforcementStep.replaceAll("\\s", ""))
         .stepType(SscaConstants.CD_SSCA_ENFORCEMENT_STEP_TYPE)
         .group(StepOutcomeGroup.STEP.name())
+        .adviserObtainments(adviserObtainments)
         .stepParameters(stepParameters)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()

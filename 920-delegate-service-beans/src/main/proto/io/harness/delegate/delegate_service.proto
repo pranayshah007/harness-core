@@ -14,6 +14,7 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/account.proto";
 import "955-delegate-beans/src/main/proto/io/harness/delegate/capability.proto";
 import "955-delegate-beans/src/main/proto/io/harness/perpetualtask/perpetual_task.proto";
 
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/delegate_task_apis.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/progress.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
@@ -26,9 +27,7 @@ service DelegateService {
   rpc RegisterCallback(RegisterCallbackRequest) returns (RegisterCallbackResponse);
 
   rpc SubmitTaskV2(SubmitTaskRequest) returns (SubmitTaskResponse);
-  rpc SubmitTask(SubmitTaskRequest) returns (SubmitTaskResponse);
 
-  rpc CancelTask(CancelTaskRequest) returns (CancelTaskResponse);
   rpc CancelTaskV2(CancelTaskRequest) returns (CancelTaskResponse);
 
   rpc TaskProgress(TaskProgressRequest) returns (TaskProgressResponse);
@@ -36,9 +35,7 @@ service DelegateService {
 
   rpc ExecuteParkedTask(ExecuteParkedTaskRequest) returns (ExecuteParkedTaskResponse);
   rpc FetchParkedTaskStatus(FetchParkedTaskStatusRequest) returns (FetchParkedTaskStatusResponse);
-  rpc SendTaskStatus(SendTaskStatusRequest) returns (SendTaskStatusResponse);
   rpc SendTaskStatusV2(SendTaskStatusRequest) returns (SendTaskStatusResponse);
-  rpc SendTaskProgress(SendTaskProgressRequest) returns (SendTaskProgressResponse);
   rpc SendTaskProgressV2(SendTaskProgressRequest) returns (SendTaskProgressResponse);
 
   rpc CreatePerpetualTask(CreatePerpetualTaskRequest) returns (CreatePerpetualTaskResponse);
@@ -50,6 +47,9 @@ service DelegateService {
   rpc ObtainDocument(ObtainDocumentRequest) returns (ObtainDocumentResponse);
 
   rpc isTaskTypeSupported(SupportedTaskTypeRequest) returns (SupportedTaskTypeResponse);
+
+  rpc InitTask(SetupExecutionInfrastructureRequest) returns (SubmitTaskResponse);
+  rpc ExecuteTask(ScheduleTaskRequest) returns (SubmitTaskResponse);
 }
 
 // Next ID: 11

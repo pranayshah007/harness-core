@@ -6,7 +6,6 @@
  */
 
 package io.harness.artifacts.gcr.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -16,14 +15,17 @@ import static io.harness.network.Http.getOkHttpClientBuilder;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
-import io.harness.artifacts.gar.service.GARUtils;
 import io.harness.artifacts.gcr.GcrImageTagResponse;
 import io.harness.artifacts.gcr.GcrRestClient;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
@@ -66,6 +68,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -191,7 +194,7 @@ public class GcrApiServiceImpl implements GcrApiService {
     Map<String, String> metadata = new HashMap();
     metadata.put(ArtifactMetadataKeys.IMAGE,
         (registryUrl.endsWith("/") ? registryUrl : registryUrl.concat("/")) + imageName
-            + (GARUtils.isSHA(tag) ? "@" : ":") + tag);
+            + (ArtifactUtils.isSHA(tag) ? "@" : ":") + tag);
     metadata.put(ArtifactMetadataKeys.TAG, tag);
     return BuildDetailsInternal.builder()
         .uiDisplayName("Tag# " + tag)

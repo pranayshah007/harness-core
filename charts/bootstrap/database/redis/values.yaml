@@ -13,15 +13,14 @@ useAntiAffinity: true
 redis:
   resources:
     limits:
-      cpu: 0.1
       memory: 200Mi
     requests:
       cpu: 0.1
       memory: 200Mi
   image:
     registry: docker.io
-    tag: 6.2.5-alpine
-    repository: harness/redis
+    tag: 6.2.12-alpine
+    repository: redis
     pullPolicy: IfNotPresent
     digest: ""
     pullSecrets: []
@@ -29,15 +28,14 @@ redis:
 sentinel:
   resources:
     limits:
-      cpu: 100m
       memory: 200Mi
     requests:
       cpu: 100m
       memory: 200Mi
   image:
     registry: docker.io
-    tag: 6.2.5-alpine
-    repository: harness/redis
+    tag: 6.2.12-alpine
+    repository: redis
     pullPolicy: IfNotPresent
     digest: ""
     pullSecrets: []
@@ -58,8 +56,8 @@ initContainers:
   config_init:
     image:
       registry: docker.io
-      tag: 6.2.5-alpine
-      repository: harness/redis
+      tag: 6.2.12-alpine
+      repository: redis
       pullPolicy: IfNotPresent
       digest: ""
       pullSecrets: []

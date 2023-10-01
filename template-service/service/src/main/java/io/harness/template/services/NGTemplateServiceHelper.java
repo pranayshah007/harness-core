@@ -13,15 +13,18 @@ import static io.harness.encryption.Scope.ACCOUNT;
 import static io.harness.encryption.Scope.ORG;
 import static io.harness.encryption.Scope.PROJECT;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -45,6 +48,7 @@ import io.harness.ng.core.template.TemplateListType;
 import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.SpringDataMongoUtils;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -57,25 +61,27 @@ import io.harness.template.utils.TemplateUtils;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Singleton
-@AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(CDC)
 public class NGTemplateServiceHelper {
@@ -86,6 +92,53 @@ public class NGTemplateServiceHelper {
 
   private final GitAwareEntityHelper gitAwareEntityHelper;
 
+  private final TelemetryReporter telemetryReporter;
+  private final ExecutorService executorService;
+
+  public static String TEMPLATE_SAVE = "template_save";
+  public static String TEMPLATE_SAVE_ACTION_TYPE = "action";
+  public static String TEMPLATE_NAME = "templateName";
+  public static String TEMPLATE_ID = "templateId";
+  public static String ORG_ID = "orgId";
+  public static String PROJECT_ID = "projectId";
+  public static String MODULE_NAME = "moduleName";
+
+  @Inject
+  public NGTemplateServiceHelper(FilterService filterService, NGTemplateRepository templateRepository,
+      GitSyncSdkService gitSyncSdkService, TemplateGitXService templateGitXService,
+      GitAwareEntityHelper gitAwareEntityHelper, TelemetryReporter telemetryReporter,
+      @Named("TemplateServiceHelperExecutorService") ExecutorService executorService) {
+    this.filterService = filterService;
+    this.templateRepository = templateRepository;
+    this.gitSyncSdkService = gitSyncSdkService;
+    this.templateGitXService = templateGitXService;
+    this.gitAwareEntityHelper = gitAwareEntityHelper;
+    this.telemetryReporter = telemetryReporter;
+    this.executorService = executorService;
+  }
+
+  public void sendTemplatesSaveTelemetryEvent(TemplateEntity entity, String actionType) {
+    executorService.submit(() -> {
+      try {
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(TEMPLATE_ID, entity.getIdentifier());
+        properties.put(TEMPLATE_NAME, entity.getName());
+        properties.put(ORG_ID, entity.getOrgIdentifier());
+        properties.put(PROJECT_ID, entity.getProjectIdentifier());
+        properties.put(TEMPLATE_SAVE_ACTION_TYPE, actionType);
+        properties.put(MODULE_NAME, "cd");
+        telemetryReporter.sendTrackEvent(TEMPLATE_SAVE, null, entity.getAccountId(), properties,
+            Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+      } catch (Exception ex) {
+        log.error(
+            format(
+                "Exception while sending telemetry event for template save. accountId: %s, orgId: %s, projectId: %s, templateId: %s",
+                entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier(),
+                entity.getIdentifier()),
+            ex);
+      }
+    });
+  }
   public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
       boolean loadFromCache) {
@@ -113,17 +166,20 @@ public class NGTemplateServiceHelper {
     } catch (NGTemplateException e) {
       throw new NGTemplateException(e.getMessage(), e);
     } catch (Exception e) {
-      log.error(String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
+      log.error(String.format("Unable to retrieve template with identifier [%s] and versionLabel [%s]",
                     templateIdentifier, versionLabel),
           e);
       ScmException exception = TemplateUtils.getScmException(e);
       if (null != exception) {
-        throw new InvalidRequestException("Error while retrieving template with identifier " + templateIdentifier
-            + " and versionLabel " + versionLabel + " due to " + ExceptionUtils.getMessage(e));
+        throw new InvalidRequestException(
+            String.format("Unable to retrieve template with identifier [%s] and versionLabel [%s]:", templateIdentifier,
+                versionLabel),
+            e);
       } else {
         throw new InvalidRequestException(
-            String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",
-                templateIdentifier, versionLabel, e.getMessage()));
+            String.format("Unable to retrieve template with identifier [%s] and versionLabel [%s]:", templateIdentifier,
+                versionLabel),
+            e);
       }
     }
   }

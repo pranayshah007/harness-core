@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
@@ -18,7 +17,10 @@ import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplat
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateWithDefaultValuesFromPipeline;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateWithDefaultValuesFromPipelineForGivenStages;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -43,7 +45,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.PipelineGitXHelper;
 
@@ -60,6 +62,7 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -250,10 +253,10 @@ public class ValidateAndMergeHelper {
     Set<String> inputSetVersions = inputSetMetadataDTO.getInputSetVersions();
     List<JsonNode> inputSetJsonNodeList = inputSetMetadataDTO.getInputSetJsonNodeList();
     JsonNode pipelineTemplate = inputSetMetadataDTO.getPipelineTemplate();
-    if (inputSetVersions.contains(PipelineVersion.V0) && inputSetVersions.contains(PipelineVersion.V1)) {
+    if (inputSetVersions.contains(HarnessYamlVersion.V0) && inputSetVersions.contains(HarnessYamlVersion.V1)) {
       throw new InvalidRequestException("Input set versions 0 and 1 are not compatible");
     }
-    if (inputSetVersions.contains(PipelineVersion.V1)) {
+    if (inputSetVersions.contains(HarnessYamlVersion.V1)) {
       return InputSetMergeHelper.mergeInputSetsV1(inputSetJsonNodeList);
     }
 
@@ -279,7 +282,7 @@ public class ValidateAndMergeHelper {
     }
     JsonNode pipelineJsonNode = YamlUtils.readAsJsonNode(pipelineEntity.getYaml());
     JsonNode pipelineTemplate = null;
-    if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
+    if (HarnessYamlVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
       if (keepDefaultValues) {
         pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
             ? createTemplateWithDefaultValuesFromPipeline(pipelineJsonNode)

@@ -9,6 +9,7 @@ package io.harness.cdng.aws.asg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 
@@ -22,6 +23,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.cdng.aws.asg.AsgManifestFetchData")
 public class AsgManifestFetchData {
   Map<String, List<String>> harnessFetchedManifestContentMap;
   List<GitFetchFilesConfig> gitFetchFilesConfigs;

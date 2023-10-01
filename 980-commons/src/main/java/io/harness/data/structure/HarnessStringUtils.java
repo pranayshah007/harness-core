@@ -6,11 +6,13 @@
  */
 
 package io.harness.data.structure;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,8 @@ import lombok.experimental.UtilityClass;
 /*
 Aim is to make sure that java 8 String.join is used over Guava Joiner class
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @UtilityClass
 @OwnedBy(HarnessTeam.PL)
 public class HarnessStringUtils {

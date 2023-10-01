@@ -7,8 +7,6 @@
 
 package io.harness.cvng.beans.change;
 
-import io.harness.cvng.beans.MSHealthReport;
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -20,5 +18,4 @@ public class CustomChangeEvent {
   String externalLinkToEntity;
   String channelUrl;
   String webhookUrl;
-  MSHealthReport msHealthReport;
 }

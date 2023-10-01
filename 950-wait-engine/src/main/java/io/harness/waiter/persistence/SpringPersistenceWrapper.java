@@ -178,7 +178,7 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
     List<NotifyResponse> notifyResponses = mongoTemplate.find(query, NotifyResponse.class);
     for (NotifyResponse notifyResponse : notifyResponses) {
       if (notifyResponse.isError()) {
-        log.info("Failed notification response {}", notifyResponse.getUuid());
+        log.debug("Failed notification response {}", notifyResponse.getUuid());
         isError = true;
       }
       if (notifyResponse.getResponseData() != null) {

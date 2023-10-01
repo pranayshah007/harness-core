@@ -13,9 +13,12 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
 
-import org.springframework.data.repository.Repository;
+import java.util.Optional;
+import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 @OwnedBy(SSCA)
 public interface EnforcementSummaryRepo
-    extends Repository<EnforcementSummaryEntity, String>, EnforcementSummaryRepoCustom {}
+    extends PagingAndSortingRepository<EnforcementSummaryEntity, String>, EnforcementSummaryRepoCustom {
+  Optional<EnforcementSummaryEntity> findByEnforcementId(String enforcementId);
+}

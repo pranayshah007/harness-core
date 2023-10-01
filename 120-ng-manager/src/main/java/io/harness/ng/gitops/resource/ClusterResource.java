@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.gitops.resource;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
@@ -25,6 +24,9 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ScopeLevel;
 import io.harness.cdng.gitops.beans.ClusterBatchRequest;
 import io.harness.cdng.gitops.beans.ClusterBatchResponse;
@@ -85,6 +87,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @NextGenManagerAuth
 @Api("/gitops/clusters")
 @Path("/gitops/clusters")

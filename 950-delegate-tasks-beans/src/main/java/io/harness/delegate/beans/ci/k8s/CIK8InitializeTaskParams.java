@@ -28,6 +28,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Data
 @SuperBuilder
@@ -40,6 +41,7 @@ public class CIK8InitializeTaskParams
   @NotNull
   private int podMaxWaitUntilReadySecs; // Max time for pod to reach running state after its creation in seconds
   @Builder.Default private static final Type type = Type.GCP_K8;
+  private Boolean useSocketCapability; // using a boxed boolean for forward compatibility and null value handling
 
   @Override
   public Type getType() {
@@ -50,6 +52,7 @@ public class CIK8InitializeTaskParams
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     KubernetesClusterConfigDTO kubernetesClusterConfigDTO =
         (KubernetesClusterConfigDTO) k8sConnector.getConnectorConfig();
-    return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(kubernetesClusterConfigDTO, maskingEvaluator);
+    return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
+        kubernetesClusterConfigDTO, maskingEvaluator, BooleanUtils.toBoolean(useSocketCapability));
   }
 }

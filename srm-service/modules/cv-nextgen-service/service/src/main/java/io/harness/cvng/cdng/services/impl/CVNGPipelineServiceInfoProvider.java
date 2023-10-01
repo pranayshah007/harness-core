@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cvng.cdng.beans.CVNGStepType;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
@@ -81,6 +82,7 @@ public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvi
             .setName(CVNGStepType.CVNG_ANALYZE_DEPLOYMENT.getDisplayName())
             .setType(CVNGStepType.CVNG_ANALYZE_DEPLOYMENT.getType())
             .setFeatureFlag(FeatureName.SRM_ENABLE_ANALYZE_DEPLOYMENT_STEP.name())
+            .setFeatureRestrictionName(FeatureRestrictionName.ANALYZE_DEPLOYMENT_STEP.name())
             .setStepMetaData(StepMetaData.newBuilder()
                                  .addCategory(CVNGStepType.CVNG_ANALYZE_DEPLOYMENT.getFolderPath())
                                  .addFolderPaths(CVNGStepType.CVNG_ANALYZE_DEPLOYMENT.getFolderPath())

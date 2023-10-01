@@ -15,6 +15,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
+import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
+import io.harness.expression.ExpressionEvaluator;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
@@ -28,9 +30,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 public class K8sTaskParametersTest extends WingsBaseTest {
   @Mock private K8sClusterConfig clusterConfig;
+  @Mock private ExpressionEvaluator expressionEvaluator;
 
   @Before
   public void setUp() throws Exception {
@@ -73,6 +78,59 @@ public class K8sTaskParametersTest extends WingsBaseTest {
     assertThat(
         hasKustomizeCapability(k8sTaskParamsWithKustomizePluginPath("foo").fetchRequiredExecutionCapabilities(null)))
         .isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSecretManagerExecutionCapabilitiesReturnEmptyListWhenManifestConfigIsNull() {
+    final K8sApplyTaskParameters p = K8sApplyTaskParameters.builder().build();
+    assertThat(p.getSecretManagerExecutionCapabilities(expressionEvaluator, null)).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSecretManagerExecutionCapabilitiesReturnEmptyListWhenFFisDisabled() {
+    final K8sApplyTaskParameters p = K8sApplyTaskParameters.builder().build();
+    K8sDelegateManifestConfig manifestConfig =
+        K8sDelegateManifestConfig.builder().secretManagerCapabilitiesEnabled(false).build();
+    assertThat(p.getSecretManagerExecutionCapabilities(expressionEvaluator, manifestConfig)).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSecretManagerExecutionCapabilitiesReturnEmptyListWhenFFisEnabledAndEncryptedDetailsIsNull() {
+    final K8sApplyTaskParameters p = K8sApplyTaskParameters.builder().build();
+    K8sDelegateManifestConfig manifestConfig =
+        K8sDelegateManifestConfig.builder().secretManagerCapabilitiesEnabled(true).build();
+    try (MockedStatic<EncryptedDataDetailsCapabilityHelper> aMock =
+             Mockito.mockStatic(EncryptedDataDetailsCapabilityHelper.class)) {
+      assertThat(p.getSecretManagerExecutionCapabilities(expressionEvaluator, manifestConfig)).isEmpty();
+      aMock.verify(()
+                       -> EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+                           null, expressionEvaluator));
+    }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSecretManagerExecutionCapabilitiesReturnNonEmptyWhenFFisEnabled() {
+    final K8sApplyTaskParameters p = K8sApplyTaskParameters.builder().build();
+    K8sDelegateManifestConfig manifestConfig =
+        K8sDelegateManifestConfig.builder().secretManagerCapabilitiesEnabled(true).build();
+
+    try (MockedStatic<EncryptedDataDetailsCapabilityHelper> aMock =
+             Mockito.mockStatic(EncryptedDataDetailsCapabilityHelper.class)) {
+      aMock
+          .when(()
+                    -> EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+                        null, expressionEvaluator))
+          .thenReturn(List.of(Mockito.mock(ExecutionCapability.class)));
+      assertThat(p.getSecretManagerExecutionCapabilities(expressionEvaluator, manifestConfig)).isNotEmpty();
+    }
   }
 
   private boolean hasKustomizeCapability(List<ExecutionCapability> capabilityList) {

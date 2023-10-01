@@ -16,7 +16,10 @@ import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PIP
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PROJECT_IDENTIFIER;
 
 import io.harness.OrchestrationStepTypes;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -62,6 +65,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -205,9 +209,8 @@ public class PipelineExecutor {
     String executionId = generateUuid();
     ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(null);
     ExecutionMetadata originalExecutionMetadata = planExecutionService.get(originalExecutionId).getMetadata();
-    ExecutionMetadata executionMetadata =
-        rollbackModeExecutionHelper.transformExecutionMetadata(originalExecutionMetadata, executionId, triggerInfo,
-            accountId, orgIdentifier, projectIdentifier, executionMode, parentStageInfo, stageNodeExecutionIds);
+    ExecutionMetadata executionMetadata = rollbackModeExecutionHelper.transformExecutionMetadata(
+        originalExecutionMetadata, executionId, triggerInfo, executionMode, parentStageInfo, stageNodeExecutionIds);
 
     Optional<PlanExecutionMetadata> optPlanExecutionMetadata =
         planExecutionMetadataService.findByPlanExecutionId(originalExecutionId);

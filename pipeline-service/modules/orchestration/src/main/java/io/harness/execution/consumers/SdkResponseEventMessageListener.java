@@ -19,7 +19,8 @@ import io.harness.pms.events.base.PmsAbstractMessageListener;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.util.concurrent.ExecutorService;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -28,9 +29,14 @@ import lombok.extern.slf4j.Slf4j;
 public class SdkResponseEventMessageListener
     extends PmsAbstractMessageListener<SdkResponseEventProto, SdkResponseHandler> {
   @Inject
-  public SdkResponseEventMessageListener(@Named(SDK_SERVICE_NAME) String serviceName,
-      SdkResponseHandler sdkResponseHandler, @Named("EngineExecutorService") ExecutorService executorService) {
-    super(serviceName, SdkResponseEventProto.class, sdkResponseHandler, executorService);
+  public SdkResponseEventMessageListener(
+      @Named(SDK_SERVICE_NAME) String serviceName, SdkResponseHandler sdkResponseHandler) {
+    super(serviceName, SdkResponseEventProto.class, sdkResponseHandler);
+  }
+
+  @Override
+  protected SdkResponseEventProto extractEntity(ByteString message) throws InvalidProtocolBufferException {
+    return SdkResponseEventProto.parseFrom(message);
   }
 
   @Override

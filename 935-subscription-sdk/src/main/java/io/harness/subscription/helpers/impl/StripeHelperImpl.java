@@ -6,7 +6,6 @@
  */
 
 package io.harness.subscription.helpers.impl;
-
 import io.harness.ModuleType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.subscription.dto.AddressDto;
@@ -423,8 +422,8 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
-  public void deleteCard(String customerIdentifier, String creditCardIdentifier) {
-    stripeHandler.deleteCard(customerIdentifier, creditCardIdentifier);
+  public void detachPaymentMethod(String customerIdentifier, String paymentMethodIdentifier) {
+    stripeHandler.detachPaymentMethod(paymentMethodIdentifier);
   }
 
   @Override
@@ -523,8 +522,7 @@ public class StripeHelperImpl implements StripeHelper {
         .address(address)
         .billingEmail(customer.getEmail())
         .companyName(customer.getName())
-        .defaultSource(customer.getDefaultSource() != null ? customer.getDefaultSource()
-                                                           : customer.getInvoiceSettings().getDefaultPaymentMethod());
+        .defaultSource(customer.getInvoiceSettings().getDefaultPaymentMethod());
 
     return builder.build();
   }

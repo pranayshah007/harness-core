@@ -6,7 +6,6 @@
  */
 
 package software.wings.graphql.datafetcher.execution;
-
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.IN;
@@ -16,9 +15,12 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notBlankCheck;
 import static io.harness.validation.Validator.notNullCheck;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageRequest;
 import io.harness.logging.AccountLogContext;
@@ -28,6 +30,7 @@ import software.wings.beans.Pipeline;
 import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.graphql.datafetcher.service.ServiceController;
 import software.wings.graphql.schema.mutation.execution.input.QLVariableInput;
@@ -47,6 +50,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 @Singleton
@@ -65,8 +69,8 @@ public class RuntimeInputExecutionInputsController {
       notBlankCheck("Invalid pipeline execution", parameters.getPipelineExecutionId());
       notBlankCheck("Invalid pipeline stage ", parameters.getPipelineStageElementId());
 
-      WorkflowExecution pipelineExecution =
-          workflowExecutionService.getWorkflowExecution(appId, parameters.getPipelineExecutionId());
+      WorkflowExecution pipelineExecution = workflowExecutionService.getWorkflowExecution(appId,
+          parameters.getPipelineExecutionId(), WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.workflowId);
       notNullCheck("No pipeline execution for the given execution id " + parameters.getPipelineExecutionId(),
           pipelineExecution, USER);
       String pipelineId = pipelineExecution.getWorkflowId();

@@ -9,6 +9,7 @@ package io.harness.idp.events.eventlisteners.eventhandler.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.UnexpectedException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.redis.RedisPersistentLocker;
 
@@ -24,17 +25,17 @@ public class ResourceLocker {
   RedisPersistentLocker redisLocker;
 
   public AcquiredLock acquireLock(String lockName) throws InterruptedException {
-    AcquiredLock lock;
-    while (true) {
-      lock = redisLocker.tryToAcquireLock(lockName, Duration.ofMinutes(1));
+    return acquireLock(lockName, 1);
+  }
 
-      if (lock == null) {
-        log.info("Lock not acquired for {}, waiting to acquire lock", lockName);
-        Thread.sleep(1000);
-      } else {
-        log.info("Lock acquired for {}", lockName);
-        break;
-      }
+  public AcquiredLock acquireLock(String lockName, long minutes) throws InterruptedException {
+    AcquiredLock lock = redisLocker.tryToAcquireLock(lockName, Duration.ofMinutes(minutes));
+    if (lock == null) {
+      log.warn("Lock not acquired for {}, will attempt in next delivery", lockName);
+      Thread.sleep(1000);
+      throw new UnexpectedException("Unable to acquire lock " + lockName + " , will attempt in next delivery");
+    } else {
+      log.info("Lock acquired for {}", lockName);
     }
     return lock;
   }

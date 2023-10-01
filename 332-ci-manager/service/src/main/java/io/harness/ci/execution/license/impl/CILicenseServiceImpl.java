@@ -37,10 +37,10 @@ import retrofit2.Response;
 @Singleton
 public class CILicenseServiceImpl implements CILicenseService {
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
-  private final int MAX_ATTEMPTS = 3;
+  private final int MAX_ATTEMPTS = 6;
   @Inject NgLicenseHttpClient ngLicenseHttpClient;
 
-  private static final int CACHE_EVICTION_TIME_MINUTES = 10;
+  private static final int CACHE_EVICTION_TIME_MINUTES = 60;
 
   private final LoadingCache<String, LicensesWithSummaryDTO> licenseCache =
       CacheBuilder.newBuilder()

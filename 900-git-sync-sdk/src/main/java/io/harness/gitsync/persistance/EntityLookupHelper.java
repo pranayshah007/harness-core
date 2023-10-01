@@ -20,6 +20,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import javax.annotation.ParametersAreNonnullByDefault;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -67,7 +68,11 @@ public class EntityLookupHelper implements EntityKeySource {
               .retryAndProcessException(
                   harnessToGitPushInfoServiceBlockingStub::isOldGitSyncEnabledForModule, isOldGitSyncEnabledForModule)
               .getIsEnabled();
-      gitEnabledCache.put(scope, gitSyncEnabled);
+      try {
+        gitEnabledCache.put(scope, gitSyncEnabled);
+      } catch (CacheException e) {
+        log.error("Unable to set git enabled data into cache", e);
+      }
       return gitSyncEnabled;
     }
   }

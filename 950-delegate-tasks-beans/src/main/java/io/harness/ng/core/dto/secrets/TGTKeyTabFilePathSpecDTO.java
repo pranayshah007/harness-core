@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.dto.secrets;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.DecryptableEntity;
 import io.harness.ng.core.models.TGTGenerationSpec;
 import io.harness.ng.core.models.TGTKeyTabFilePathSpec;
@@ -21,6 +22,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("KeyTabFilePath")
+@RecasterAlias("io.harness.ng.core.dto.secrets.TGTKeyTabFilePathSpecDTO")
 public class TGTKeyTabFilePathSpecDTO extends TGTGenerationSpecDTO implements DecryptableEntity {
   private String keyPath;
 

@@ -6,13 +6,15 @@
  */
 
 package io.harness.ngtriggers.utils;
-
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.CommitDetails;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
@@ -51,6 +53,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton

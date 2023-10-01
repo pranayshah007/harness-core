@@ -19,4 +19,5 @@ public class BatchQueryConfig {
   private int billingDataQueryBatchSize;
   private int instanceDataBatchSize;
   private boolean syncJobDisabled;
+  private boolean disableBatchJobsInCG;
 }

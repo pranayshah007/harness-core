@@ -11,9 +11,11 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -28,7 +30,7 @@ public class ServiceSectionStepParameters implements StepParameters {
   String childNodeId;
 
   @Override
-  public String toViewJson() {
-    return RecastOrchestrationUtils.toJson(ServiceSectionStepParameters.builder().serviceRef(serviceRef).build());
+  public List<String> excludeKeysFromStepInputs() {
+    return new LinkedList<>(Arrays.asList("childNodeId"));
   }
 }

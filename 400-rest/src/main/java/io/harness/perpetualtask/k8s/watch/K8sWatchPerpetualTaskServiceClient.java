@@ -8,6 +8,7 @@
 package io.harness.perpetualtask.k8s.watch;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.task.k8s.K8sTaskType.APPLY;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -77,11 +78,12 @@ public class K8sWatchPerpetualTaskServiceClient implements PerpetualTaskServiceC
     return DelegateTask.builder()
         .accountId(accountId)
         .data(TaskData.builder()
-                  .async(false)
+                  .async(true)
                   .taskType(TaskType.K8S_WATCH_TASK.name())
                   .parameters(new Object[] {k8sTaskParameters})
                   .timeout(TimeUnit.MINUTES.toMillis(1))
                   .build())
+        .waitId(generateUuid())
         .build();
   }
 

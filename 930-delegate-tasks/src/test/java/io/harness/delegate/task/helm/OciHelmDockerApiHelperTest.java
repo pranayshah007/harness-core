@@ -8,6 +8,7 @@
 package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -36,7 +37,6 @@ import io.harness.security.encryption.SecretDecryptionService;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
 import org.junit.Before;
@@ -45,10 +45,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 
 @OwnedBy(CDP)
 public class OciHelmDockerApiHelperTest extends CategoryTest {
   @InjectMocks private OciHelmDockerApiHelper ociHelmDockerApiHelper = spy(OciHelmDockerApiHelper.class);
+  @Spy @InjectMocks private OciHelmApiHelperUtils ociHelmApiHelperUtils;
   @Mock private SecretDecryptionService decryptionService;
 
   @Rule
@@ -97,9 +99,9 @@ public class OciHelmDockerApiHelperTest extends CategoryTest {
                                                   .build();
 
     OciHelmDockerApiListTagsTaskParams ociHelmDockerApiListTagsTaskParams = OciHelmDockerApiListTagsTaskParams.builder()
+                                                                                .ociHelmConnector(ociHelmConnectorDTO)
                                                                                 .chartName(chartName)
                                                                                 .lastTag(lastTag)
-                                                                                .ociHelmConnector(ociHelmConnectorDTO)
                                                                                 .build();
 
     doReturn(null).when(decryptionService).decrypt(any(), any());
@@ -147,89 +149,44 @@ public class OciHelmDockerApiHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = MLUKIC)
+  @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testNormalizeFieldData() {
-    String normalizedData = ociHelmDockerApiHelper.normalizeFieldData("test");
-    assertThat(normalizedData).isEqualTo("test");
+  public void testGetChartVersionsWhenPathIsProvidedInConnector() {
+    String lastTag = null;
+    int pageSize = 3;
+    OciHelmAuthenticationDTO ociHelmAuthenticationDTO = OciHelmAuthenticationDTO.builder()
+                                                            .authType(OciHelmAuthType.USER_PASSWORD)
+                                                            .credentials(getOciHelmAuthenticationDTO(false))
+                                                            .build();
 
-    normalizedData = ociHelmDockerApiHelper.normalizeFieldData("/test");
-    assertThat(normalizedData).isEqualTo("test");
+    OciHelmConnectorDTO ociHelmConnectorDTO = OciHelmConnectorDTO.builder()
+                                                  .helmRepoUrl(url + "/somepath")
+                                                  .auth(ociHelmAuthenticationDTO)
+                                                  .delegateSelectors(new HashSet<>())
+                                                  .build();
 
-    normalizedData = ociHelmDockerApiHelper.normalizeFieldData("/test/");
-    assertThat(normalizedData).isEqualTo("test");
+    OciHelmDockerApiListTagsTaskParams ociHelmDockerApiListTagsTaskParams = OciHelmDockerApiListTagsTaskParams.builder()
+                                                                                .ociHelmConnector(ociHelmConnectorDTO)
+                                                                                .chartName(chartName)
+                                                                                .lastTag(lastTag)
+                                                                                .build();
 
-    normalizedData = ociHelmDockerApiHelper.normalizeFieldData("test/");
-    assertThat(normalizedData).isEqualTo("test");
+    doReturn(null).when(decryptionService).decrypt(any(), any());
 
-    normalizedData = ociHelmDockerApiHelper.normalizeFieldData("//test/");
-    assertThat(normalizedData).isEqualTo("test");
+    wireMockRule.stubFor(get(urlEqualTo(String.format("/v2/%s/tags/list?n=%d", "somepath/" + chartName, pageSize)))
+                             .willReturn(aResponse()
+                                             .withStatus(200)
+                                             .withBody("{\n"
+                                                 + "    \"name\": \"" + chartName + "\",\n"
+                                                 + "    \"tags\": [\n"
+                                                 + "        \"0.1.0\",\n"
+                                                 + "        \"0.1.1\",\n"
+                                                 + "        \"0.1.2\"\n"
+                                                 + "    ]\n"
+                                                 + "}")
+                                             .withHeader("Content-Type", "application/json")));
 
-    normalizedData = ociHelmDockerApiHelper.normalizeFieldData("//test//");
-    assertThat(normalizedData).isEqualTo("test");
-
-    normalizedData = ociHelmDockerApiHelper.normalizeFieldData("//test///");
-    assertThat(normalizedData).isEqualTo("test");
-
-    normalizedData = ociHelmDockerApiHelper.normalizeFieldData("");
-    assertThat(normalizedData).isEqualTo("");
-
-    normalizedData = ociHelmDockerApiHelper.normalizeFieldData(null);
-    assertThat(normalizedData).isEqualTo(null);
-  }
-
-  @Test
-  @Owner(developers = MLUKIC)
-  @Category(UnitTests.class)
-  public void testNormalizeUrl() throws URISyntaxException {
-    String normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("https://test.registry.io");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("https://test.registry.io/");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("http://test.registry.io");
-    assertThat(normalizedUrl).isEqualTo("http://test.registry.io");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("test.registry.io");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("oci://test.registry.io");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("test://test.registry.io");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("oci://test.registry.io:345");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io:345");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("oci://test.registry.io:123/asd/qwe/ert");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io:123");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("oci://test.registry.io/4gdfvs/dcacqwdq");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("test.registry.io/4gdfvs/dcacqwdq");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io/4gdfvs/dcacqwdq");
-
-    assertThatThrownBy(() -> ociHelmDockerApiHelper.normalizeUrl(""))
-        .isInstanceOf(OciHelmDockerApiException.class)
-        .hasMessage("Hostname provided in URL field of OCI Helm connector is invalid");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("/");
-    assertThat(normalizedUrl).isEqualTo("https:///");
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("asd");
-    assertThat(normalizedUrl).isEqualTo("https://asd");
-
-    assertThatThrownBy(() -> ociHelmDockerApiHelper.normalizeUrl("https://")).isInstanceOf(URISyntaxException.class);
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("https://a");
-    assertThat(normalizedUrl).isEqualTo("https://a");
-
-    assertThatThrownBy(() -> ociHelmDockerApiHelper.normalizeUrl("https:")).isInstanceOf(URISyntaxException.class);
-
-    normalizedUrl = ociHelmDockerApiHelper.normalizeUrl("test.registry.io/");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io/");
+    List<String> versions = ociHelmDockerApiHelper.getChartVersions(accountId, ociHelmDockerApiListTagsTaskParams, 3);
+    assertThat(versions).contains("0.1.0", "0.1.1", "0.1.2");
   }
 }

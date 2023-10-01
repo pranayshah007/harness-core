@@ -8,8 +8,11 @@
 package io.harness.cdng.ecs;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsBlueGreenCreateServiceDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
@@ -33,7 +36,6 @@ import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -50,15 +52,18 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class EcsBlueGreenSwapTargetGroupsStep extends CdTaskExecutable<EcsCommandResponse> {
@@ -79,18 +84,18 @@ public class EcsBlueGreenSwapTargetGroupsStep extends CdTaskExecutable<EcsComman
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Nothing to validate
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<EcsCommandResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier) throws Exception {
     StepResponse stepResponse = null;
     try {
       EcsBlueGreenSwapTargetGroupsResponse ecsBlueGreenSwapTargetGroupsResponse =
@@ -159,7 +164,7 @@ public class EcsBlueGreenSwapTargetGroupsStep extends CdTaskExecutable<EcsComman
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
     EcsBlueGreenSwapTargetGroupsStepParameters ecsBlueGreenSwapTargetGroupsStepParameters =
@@ -204,6 +209,8 @@ public class EcsBlueGreenSwapTargetGroupsStep extends CdTaskExecutable<EcsComman
             .stageListenerRuleArn(ecsBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
             .stageTargetGroupArn(ecsBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArn())
             .build();
+    boolean enableAutoscalingInSwapStep =
+        ecsBlueGreenPrepareRollbackDataOutcome.getEcsBGServiceDeployConfig().isEnableAutoscalingInSwapStep();
 
     EcsBlueGreenSwapTargetGroupsRequest ecsBlueGreenSwapTargetGroupsRequest =
         EcsBlueGreenSwapTargetGroupsRequest.builder()
@@ -222,6 +229,14 @@ public class EcsBlueGreenSwapTargetGroupsStep extends CdTaskExecutable<EcsComman
                 && ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue())
             .downsizeOldServiceDelayInSecs(ParameterFieldHelper.getIntegerParameterFieldValue(
                 ecsBlueGreenSwapTargetGroupsStepParameters.getDownsizeOldServiceDelayInSecs()))
+            .ecsScalableTargetManifestContentList(enableAutoscalingInSwapStep
+                    ? ecsBlueGreenPrepareRollbackDataOutcome.getEcsBGServiceDeployConfig()
+                          .getEcsScalableTargetManifestContentList()
+                    : Lists.newArrayList())
+            .ecsScalingPolicyManifestContentList(enableAutoscalingInSwapStep
+                    ? ecsBlueGreenPrepareRollbackDataOutcome.getEcsBGServiceDeployConfig()
+                          .getEcsScalingPolicyManifestContentList()
+                    : Lists.newArrayList())
             .build();
 
     EcsBlueGreenSwapTargetGroupsStartOutcome ecsBlueGreenSwapTargetGroupsStartOutcome =

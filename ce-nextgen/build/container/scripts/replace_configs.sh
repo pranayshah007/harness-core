@@ -99,6 +99,19 @@ replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
 replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
 replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
 
+replace_key_value redisLockConfig.sentinel $LOCK_CONFIG_USE_SENTINEL
+replace_key_value redisLockConfig.envNamespace $LOCK_CONFIG_ENV_NAMESPACE
+replace_key_value redisLockConfig.redisUrl $LOCK_CONFIG_REDIS_URL
+replace_key_value redisLockConfig.masterName $LOCK_CONFIG_SENTINEL_MASTER_NAME
+replace_key_value redisLockConfig.userName $LOCK_CONFIG_REDIS_USERNAME
+replace_key_value redisLockConfig.password $LOCK_CONFIG_REDIS_PASSWORD
+replace_key_value redisLockConfig.nettyThreads $REDIS_NETTY_THREADS
+replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
+replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
+replace_key_value redisLockConfig.useScriptCache $REDIS_LOCK_CONFIG_REDIS_USE_SCRIPT_CACHE
+
 replace_key_value grpcClient.target "$MANAGER_TARGET"
 replace_key_value grpcClient.authority "$MANAGER_AUTHORITY"
 replace_key_value awsConnectorCreatedInstantForPolicyCheck $AWS_CONNECTOR_CREATED_INSTANT_FOR_POLICY_CHECK
@@ -110,6 +123,15 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
+if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -156,6 +178,8 @@ replace_key_value governanceConfig.callbackApiEndpoint "$GOVERNANCE_CALLBACK_API
 replace_key_value governanceConfig.dkronJobEnabled "$GOVERNANCE_DKRON_JOB_ENABLED"
 replace_key_value governanceConfig.awsFaktoryJobType "$GOVERNANCE_AWS_FAKTORY_JOB_TYPE"
 replace_key_value governanceConfig.awsFaktoryQueueName "$GOVERNANCE_AWS_FAKTORY_QUEUE_NAME"
+replace_key_value governanceConfig.azureFaktoryJobType "$GOVERNANCE_AZURE_FAKTORY_JOB_TYPE"
+replace_key_value governanceConfig.azureFaktoryQueueName "$GOVERNANCE_AZURE_FAKTORY_QUEUE_NAME"
 replace_key_value governanceConfig.OOTBAccount "$GOVERNANCE_OOTB_ACCOUNT"
 
 replace_key_value dkronClientConfig.baseUrl "$DKRON_CLIENT_BASEURL"
@@ -173,3 +197,16 @@ replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"
 
 replace_key_value aiEngineConfig.genAIService.genAIServiceSecret "$GENAI_SERVICE_SECRET"
 replace_key_value aiEngineConfig.genAIService.apiEndpoint "$GENAI_SERVICE_ENDPOINT"
+
+replace_key_value proxy.enabled "$PROXY_ENABLED"
+replace_key_value proxy.host "$PROXY_HOST"
+replace_key_value proxy.port "$PROXY_PORT"
+replace_key_value proxy.username "$PROXY_USERNAME"
+replace_key_value proxy.password "$PROXY_PASSWORD"
+replace_key_value proxy.protocol "$PROXY_PROTOCOL"
+
+replace_key_value awsServiceEndpointUrls.enabled "$AWS_SERVICE_ENDPOINT_URLS_ENABLED"
+replace_key_value awsServiceEndpointUrls.endPointRegion "$AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION"
+replace_key_value awsServiceEndpointUrls.stsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.ecsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.cloudwatchEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL"

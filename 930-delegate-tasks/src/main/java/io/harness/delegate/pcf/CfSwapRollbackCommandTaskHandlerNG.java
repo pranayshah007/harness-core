@@ -24,8 +24,11 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -71,6 +74,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @NoArgsConstructor
 @Singleton
 @Slf4j
@@ -216,8 +220,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       executionLogCallback.saveExecutionLog("#---------- Downsizing Successfully Completed", INFO, SUCCESS);
 
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
-      cfRollbackCommandResult.setUpdatedValues(updateValues);
-      cfRollbackCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
+      cfRollbackCommandResult.setNewApplicationInfo(cfRollbackCommandRequestNG.getActiveApplicationDetails());
+      cfRollbackCommandResult.setCurrentProdInfo(cfRollbackCommandRequestNG.getNewApplicationDetails());
       if (cfRollbackCommandResult.getCfInstanceElements() != null) {
         cfRollbackCommandResult.getCfInstanceElements().addAll(cfInstanceElements);
       } else {
@@ -233,7 +237,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       executionLogCallback.saveExecutionLog("\n\n--------- PCF Route Update failed to complete successfully");
       executionLogCallback.saveExecutionLog("# Error: " + sanitizedException.getMessage(), INFO, FAILURE);
       cfRollbackCommandResponseNG.setErrorMessage(sanitizedException.getMessage());
-      cfRollbackCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.FAILURE);
     } finally {
       executionLogCallback =
@@ -385,6 +388,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       log.error("Failed to up size PCF application: " + inActiveAppName, sanitizedException);
       executionLogCallback.saveExecutionLog(
           "Failed while up sizing In Active application: " + encodeColor(inActiveAppName));
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage());
     }
   }
 
@@ -464,6 +468,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         log.error("Failed to downsize PCF application: " + appNameBeingDownsized, sanitizedException);
         executionLogCallback.saveExecutionLog(
             "Failed while downsizing old application: " + encodeColor(appNameBeingDownsized));
+        executionLogCallback.saveExecutionLog(sanitizedException.getMessage());
       }
     }
   }
@@ -530,7 +535,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               Bold));
       return;
     }
-    cfRollbackCommandResult.setInActiveAppAttachedRoutes(inActiveApplicationDetails.getUrls());
     if (isNotEmpty(inActiveApplicationDetails.getUrls())) {
       executionLogCallback.saveExecutionLog(
           String.format("%nUpdating routes for In Active application - [%s]", encodeColor(inActiveAppName)));

@@ -9,6 +9,7 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION;
 import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_API_KEY_LIMIT;
@@ -18,6 +19,7 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -27,6 +29,7 @@ import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.ng.accesscontrol.PlatformResourceTypes;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectValidator;
@@ -47,6 +50,7 @@ import io.harness.ng.core.events.ApiKeyUpdateEvent;
 import io.harness.ng.core.mapper.ApiKeyDTOMapper;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.ApiKeyRepository;
 import io.harness.security.SourcePrincipalContextBuilder;
@@ -82,11 +86,11 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Inject private AccessControlClient accessControlClient;
   @Inject private AccountService accountService;
   @Inject private NgUserService ngUserService;
-
+  @Inject private ServiceAccountService serviceAccountService;
   @Override
   public ApiKeyDTO createApiKey(ApiKeyDTO apiKeyDTO) {
-    validateApiKeyRequest(
-        apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(), apiKeyDTO.getProjectIdentifier());
+    validateApiKeyRequest(apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
+        apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier(), apiKeyDTO.getApiKeyType());
     validateApiKeyLimit(apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
         apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier());
     try {
@@ -104,11 +108,21 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
   }
 
-  private void validateApiKeyRequest(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    if (!accountOrgProjectValidator.isPresent(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      throw new InvalidArgumentsException(String.format("Project [%s] in Org [%s] and Account [%s] does not exist",
-                                              accountIdentifier, orgIdentifier, projectIdentifier),
-          USER_SRE);
+  private void validateApiKeyRequest(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String parentIdentifier, ApiKeyType apiKeyType) {
+    switch (apiKeyType) {
+      case USER:
+        if (!accountOrgProjectValidator.isPresent(accountIdentifier, orgIdentifier, projectIdentifier)) {
+          throw new InvalidArgumentsException(String.format("Project [%s] in Org [%s] and Account [%s] does not exist",
+                                                  projectIdentifier, orgIdentifier, accountIdentifier),
+              USER_SRE);
+        }
+        break;
+      case SERVICE_ACCOUNT:
+        serviceAccountService.getServiceAccountDTO(
+            accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier);
+        break;
+      default:
     }
   }
 
@@ -126,8 +140,8 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
   @Override
   public ApiKeyDTO updateApiKey(ApiKeyDTO apiKeyDTO) {
-    validateApiKeyRequest(
-        apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(), apiKeyDTO.getProjectIdentifier());
+    validateApiKeyRequest(apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
+        apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier(), apiKeyDTO.getApiKeyType());
     Optional<ApiKey> optionalApiKey =
         apiKeyRepository
             .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
@@ -151,7 +165,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Override
   public boolean deleteApiKey(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier, String identifier) {
-    validateApiKeyRequest(accountIdentifier, orgIdentifier, projectIdentifier);
+    validateApiKeyRequest(accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier, apiKeyType);
     Optional<ApiKey> optionalApiKey =
         apiKeyRepository
             .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
@@ -313,8 +327,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
           throw new InvalidArgumentsException("No user identifier present in context");
         }
         if (!userId.get().equals(parentIdentifier)) {
-          throw new InvalidArgumentsException(String.format(
-              "User [%s] not authenticated to create or list api key for user [%s]", userId.get(), parentIdentifier));
+          throw new NGAccessDeniedException(String.format("User [%s] not authenticated to create api key for user [%s]",
+                                                userId.get(), parentIdentifier),
+              WingsException.USER, null);
         }
         Optional<UserInfo> userInfo = ngUserService.getUserById(userId.get());
         if (userInfo.isEmpty()) {
@@ -328,12 +343,15 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                    .filter(account -> account.getUuid().equals(accountIdentifier))
                    .findFirst()
                    .isEmpty()) {
-          throw new InvalidArgumentsException(String.format(
-              "User [%s] is not authorized to create ApiKey for account: [%s]", userId.get(), accountIdentifier));
+          throw new NGAccessDeniedException(
+              String.format(
+                  "User [%s] is not authorized to create ApiKey for account: [%s]", userId.get(), accountIdentifier),
+              WingsException.USER, null);
         }
 
         break;
       case SERVICE_ACCOUNT:
+
         accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(PlatformResourceTypes.SERVICEACCOUNT, parentIdentifier),
             MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION);

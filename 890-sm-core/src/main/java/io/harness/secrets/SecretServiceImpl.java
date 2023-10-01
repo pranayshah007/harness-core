@@ -791,25 +791,37 @@ public class SecretServiceImpl implements SecretService {
 
     try {
       PageRequest<EncryptedData> copiedPageRequest = pageRequest.copy();
-      int offset = copiedPageRequest.getStart();
+      int offset = 0;
       int limit = copiedPageRequest.getPageSize();
-
-      copiedPageRequest.setOffset("0");
-      copiedPageRequest.setLimit(String.valueOf(PageRequest.DEFAULT_UNLIMITED));
-      PageResponse<EncryptedData> batchPageResponse = secretsDao.listSecrets(copiedPageRequest);
-      List<EncryptedData> encryptedDataList = batchPageResponse.getResponse();
-      filterSecreteDataBasedOnUsageRestrictions(accountId, appId, envId, encryptedDataList, filteredEncryptedDataList);
+      int total;
+      int numberOfRecordsRequiredToFetch = pageRequest.getStart() + pageRequest.getPageSize();
       List<EncryptedData> response;
-      if (isNotEmpty(filteredEncryptedDataList) && filteredEncryptedDataList.size() > offset) {
-        int endIdx = Math.min(offset + limit, filteredEncryptedDataList.size());
-        response = filteredEncryptedDataList.subList(offset, endIdx);
-      } else {
-        response = Collections.emptyList();
+
+      copiedPageRequest.setLimit(String.valueOf(PageRequest.DEFAULT_UNLIMITED));
+      if (limit > PageRequest.DEFAULT_UNLIMITED) {
+        copiedPageRequest.setLimit(String.valueOf(limit));
+      }
+      while (true) {
+        copiedPageRequest.setOffset(String.valueOf(offset));
+        PageResponse<EncryptedData> batchPageResponse = secretsDao.listSecrets(copiedPageRequest);
+        List<EncryptedData> encryptedDataList = batchPageResponse.getResponse();
+        filterSecreteDataBasedOnUsageRestrictions(
+            accountId, appId, envId, encryptedDataList, filteredEncryptedDataList);
+        if (filteredEncryptedDataList.size() >= numberOfRecordsRequiredToFetch
+            || encryptedDataList.size() < copiedPageRequest.getPageSize()) {
+          int endIdx = Math.min(pageRequest.getStart() + pageRequest.getPageSize(), filteredEncryptedDataList.size());
+          response = pageRequest.getStart() < endIdx ? filteredEncryptedDataList.subList(pageRequest.getStart(), endIdx)
+                                                     : Collections.emptyList();
+          total = encryptedDataList.size() < copiedPageRequest.getPageSize() ? filteredEncryptedDataList.size()
+                                                                             : filteredEncryptedDataList.size() + 1;
+          break;
+        }
+        offset = offset + copiedPageRequest.getPageSize();
       }
 
       return aPageResponse()
           .withResponse(response)
-          .withTotal(filteredEncryptedDataList.size())
+          .withTotal(total)
           .withOffset(pageRequest.getOffset())
           .withLimit(pageRequest.getLimit())
           .build();

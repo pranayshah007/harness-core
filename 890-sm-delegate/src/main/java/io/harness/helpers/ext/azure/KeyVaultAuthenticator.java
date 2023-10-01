@@ -26,6 +26,8 @@ import com.azure.core.management.profile.AzureProfile;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.azure.identity.ManagedIdentityCredentialBuilder;
 import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.keyvault.fluent.KeyVaultManagementClient;
+import com.azure.resourcemanager.keyvault.implementation.KeyVaultManagementClientBuilder;
 import com.azure.resourcemanager.resources.models.Subscription;
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.SecretClientBuilder;
@@ -117,5 +119,25 @@ public class KeyVaultAuthenticator {
     }
 
     return authenticated.withSubscription(subscriptionId);
+  }
+
+  public static KeyVaultManagementClient getAzureKeyVaultClient(
+      TokenCredential credentials, AzureKeyVaultConnectorDTO azureKeyVaultConnectorDTO, HttpClient httpClient) {
+    AzureProfile azureProfile = getAzureProfile(azureKeyVaultConnectorDTO.getTenantId(),
+        azureKeyVaultConnectorDTO.getSubscription(), azureKeyVaultConnectorDTO.getAzureEnvironmentType());
+    HttpPipeline httpPipeline = AzureUtils.getAzureHttpPipeline(credentials, azureProfile,
+        AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())), httpClient);
+    AzureResourceManager.Authenticated authenticated = AzureResourceManager.authenticate(httpPipeline, azureProfile);
+    String subscriptionId = azureKeyVaultConnectorDTO.getSubscription();
+    if (isBlank(subscriptionId)) {
+      Subscription subscription = authenticated.subscriptions().list().stream().findFirst().get();
+      subscriptionId = subscription.subscriptionId();
+    }
+
+    return new KeyVaultManagementClientBuilder()
+        .subscriptionId(subscriptionId)
+        .pipeline(httpPipeline)
+        .environment(AzureUtils.getAzureEnvironment(azureKeyVaultConnectorDTO.getAzureEnvironmentType()))
+        .buildClient();
   }
 }

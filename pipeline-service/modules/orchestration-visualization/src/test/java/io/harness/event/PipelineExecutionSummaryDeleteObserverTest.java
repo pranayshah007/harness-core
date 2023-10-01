@@ -8,6 +8,7 @@
 package io.harness.event;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -42,8 +43,17 @@ public class PipelineExecutionSummaryDeleteObserverTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testOnPlanExecutionsDelete() {
-    pipelineExecutionSummaryDeleteObserver.onPlanExecutionsDelete(Collections.emptyList());
+    pipelineExecutionSummaryDeleteObserver.onPlanExecutionsDelete(Collections.emptyList(), false);
 
     verify(pmsExecutionSummaryService, times(1)).deleteAllSummaryForGivenPlanExecutionIds(any());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testRetainPipelineExecutionDetailsAfterDeleteTrue() {
+    pipelineExecutionSummaryDeleteObserver.onPlanExecutionsDelete(Collections.emptyList(), true);
+
+    verify(pmsExecutionSummaryService, times(0)).deleteAllSummaryForGivenPlanExecutionIds(any());
   }
 }

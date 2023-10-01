@@ -17,8 +17,14 @@ import java.io.IOException;
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * @deprecated This implementation will leak threads if the total sleep time is longer than the thread timeout as it's
+ *     not interruptible
+ * Use net.jodah.failsafe.Failsafe or io.github.resilience4j.retry.Retry instead.
+ */
 @OwnedBy(DEL)
 @Slf4j
+@Deprecated
 public final class FibonacciBackOff {
   private static final int[] FIBONACCI = new int[] {1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144};
 

@@ -7,8 +7,11 @@
 
 package io.harness.delegate.task.cf.artifact;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
@@ -17,6 +20,7 @@ import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class TasDockerHubPrivateRegistrySettingsProvider extends AbstractTasRegistrySettingsProvider {

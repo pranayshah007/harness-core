@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
@@ -34,9 +35,11 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -62,6 +65,7 @@ import lombok.extern.slf4j.Slf4j;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
+@Tag(name = "Pipeline Refresh", description = "This contains APIs related to validation of templates in pipeline yaml")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
     description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
     content =
@@ -110,11 +114,20 @@ public class PipelineRefreshResource {
 
   @GET
   @Path("validate-template-inputs")
-  @ApiOperation(value = "This validates whether yaml of pipeline is valid or not", nickname = "validateTemplateInputs")
-  @Hidden
-  public ResponseDTO<ValidateTemplateInputsResponseDTO> validateTemplateInputs(
-      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+  @ApiOperation(value = "Validates the YAML specification of a pipeline", nickname = "validateTemplateInputs")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "validateTemplateInputs",
+      description =
+          "Validates the template inputs in a pipeline's YAML specification. If the template inputs are invalid, the operation returns an error summary.",
+      summary = "Validates template inputs in a pipeline's YAML specification.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns a validation result for template inputs present in a pipeline's YAML specification.")
+      })
+  public ResponseDTO<ValidateTemplateInputsResponseDTO>
+  validateTemplateInputs(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(

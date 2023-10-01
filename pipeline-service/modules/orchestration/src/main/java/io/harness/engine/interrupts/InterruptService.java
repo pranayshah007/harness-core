@@ -38,7 +38,8 @@ public interface InterruptService {
 
   List<Interrupt> fetchActivePlanLevelInterrupts(String planExecutionId);
 
-  ExecutionCheck checkInterruptsPreInvocation(String planExecutionId, String nodeExecutionId);
+  ExecutionCheck checkInterruptsPreInvocation(
+      String planExecutionId, String currentNodeExecutionId, List<String> interruptNodeExecutionIds);
 
   Interrupt save(@Valid Interrupt interrupt);
 

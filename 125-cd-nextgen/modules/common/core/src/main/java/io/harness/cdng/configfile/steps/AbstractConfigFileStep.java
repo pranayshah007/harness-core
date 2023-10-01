@@ -16,8 +16,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.configfile.ConfigFileAttributes;
@@ -59,6 +62,8 @@ import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public abstract class AbstractConfigFileStep {
@@ -112,23 +117,36 @@ public abstract class AbstractConfigFileStep {
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
 
-  protected void verifyConfigFileReference(
-      final String configFileIdentifier, ConfigFileAttributes configFileAttributes, Ambiance ambiance) {
+  protected void verifyConfigFileReference(final String configFileIdentifier, ConfigFileAttributes configFileAttributes,
+      Ambiance ambiance, String fileLocation) {
     StoreConfig storeConfig = configFileAttributes.getStore().getValue().getSpec();
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
       HarnessStore harnessStore = (HarnessStore) storeConfig;
-      verifyFilesByPathAndScope(configFileIdentifier, harnessStore.getFiles(), ambiance);
-      verifySecretFilesByRef(configFileIdentifier, harnessStore.getSecretFiles(), ambiance);
+      verifyFilesByPathAndScope(configFileIdentifier, harnessStore.getFiles(), ambiance, fileLocation);
+      verifySecretFilesByRef(configFileIdentifier, harnessStore.getSecretFiles(), ambiance, fileLocation);
     } else {
-      verifyConnectorByRef(configFileIdentifier, storeConfig, ambiance);
+      verifyConnectorByRef(configFileIdentifier, storeConfig, ambiance, fileLocation);
     }
   }
+  protected void verifyConfigFileReference(
+      final String configFileIdentifier, ConfigFileAttributes configFileAttributes, Ambiance ambiance) {
+    verifyConfigFileReference(configFileIdentifier, configFileAttributes, ambiance, null);
+  }
 
-  void verifyFileByPathAndScope(Ambiance ambiance, String scopedFilePath, final String configFileIdentifier) {
+  void verifyFileByPathAndScope(
+      Ambiance ambiance, String scopedFilePath, final String configFileIdentifier, String fileLocation) {
     if (isBlank(scopedFilePath)) {
-      throw new InvalidRequestException(
-          format("Config file reference cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
+      String errorMessage;
+      if (EmptyPredicate.isEmpty(fileLocation)) {
+        errorMessage =
+            format("Config file reference cannot be null or empty, ConfigFile identifier: [%s]", configFileIdentifier);
+      } else {
+        errorMessage = format(
+            "Config file reference cannot be null or empty, ConfigFile identifier: [%s], ConfigFile location: [%s]",
+            configFileIdentifier, fileLocation);
+      }
+      throw new InvalidRequestException(errorMessage);
     }
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -145,22 +163,24 @@ public abstract class AbstractConfigFileStep {
     }
   }
 
-  private void verifyFilesByPathAndScope(
-      final String configFileIdentifier, ParameterField<List<String>> parameterFiles, Ambiance ambiance) {
+  private void verifyFilesByPathAndScope(final String configFileIdentifier, ParameterField<List<String>> parameterFiles,
+      Ambiance ambiance, String fileLocation) {
     List<String> files = ParameterFieldHelper.getParameterFieldListValue(parameterFiles, true);
-    files.forEach(file -> verifyFileByPathAndScope(ambiance, file, configFileIdentifier));
+    files.forEach(file -> verifyFileByPathAndScope(ambiance, file, configFileIdentifier, fileLocation));
   }
 
-  private void verifySecretFilesByRef(
-      final String configFileIdentifier, ParameterField<List<String>> parameterSecretFiles, Ambiance ambiance) {
+  private void verifySecretFilesByRef(final String configFileIdentifier,
+      ParameterField<List<String>> parameterSecretFiles, Ambiance ambiance, String fileLocation) {
     List<String> secretFiles = ParameterFieldHelper.getParameterFieldListValue(parameterSecretFiles, true);
-    secretFiles.forEach(secretFileRef -> verifySecretFileByRef(ambiance, secretFileRef, configFileIdentifier));
+    secretFiles.forEach(
+        secretFileRef -> verifySecretFileByRef(ambiance, secretFileRef, configFileIdentifier, fileLocation));
   }
 
-  private void verifySecretFileByRef(Ambiance ambiance, final String fileRef, final String configFileIdentifier) {
+  private void verifySecretFileByRef(
+      Ambiance ambiance, final String fileRef, final String configFileIdentifier, String fileLocation) {
     if (isBlank(fileRef)) {
       throw new InvalidRequestException(format(
-          "Config file secret reference cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
+          "Config file secret reference cannot be null or empty, ConfigFile identifier: [%s]", configFileIdentifier));
     }
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -170,19 +190,35 @@ public abstract class AbstractConfigFileStep {
         secretFileRef.getOrgIdentifier(), secretFileRef.getProjectIdentifier(), secretFileRef.getIdentifier());
 
     if (ngEncryptedData == null) {
-      throw new InvalidRequestException(
-          format("Config file not found in Encrypted Store with secretFQN: [%s], ConfigFile identifier: [%s]",
-              secretFileRef.getFullyQualifiedName(), configFileIdentifier));
+      String errorMessage;
+      if (EmptyPredicate.isEmpty(fileLocation)) {
+        errorMessage =
+            format("Config file not found in Encrypted Store with secretFQN: [%s], ConfigFile identifier: [%s]",
+                secretFileRef.getFullyQualifiedName(), configFileIdentifier);
+      } else {
+        errorMessage = format(
+            "Config file not found in Encrypted Store with secretFQN: [%s], ConfigFile identifier: [%s], ConfigFile Location: [%s]",
+            secretFileRef.getFullyQualifiedName(), configFileIdentifier, fileLocation);
+      }
+      throw new InvalidRequestException(errorMessage);
     }
   }
 
-  private void verifyConnectorByRef(final String configFileIdentifier, StoreConfig storeConfig, Ambiance ambiance) {
+  private void verifyConnectorByRef(
+      final String configFileIdentifier, StoreConfig storeConfig, Ambiance ambiance, String fileLocation) {
     String connectorIdentifierRef =
-        ParameterFieldHelper.getParameterFieldFinalValue(storeConfig.getConnectorReference())
-            .orElseThrow(()
-                             -> new InvalidRequestException(
-                                 format("Config file connector ref cannot be null or empty, ConfigFile identifier: %s",
-                                     configFileIdentifier)));
+        ParameterFieldHelper.getParameterFieldFinalValue(storeConfig.getConnectorReference()).orElseThrow(() -> {
+          String errorMessage;
+          if (EmptyPredicate.isEmpty(fileLocation)) {
+            errorMessage = format(
+                "Config file connector ref cannot be null or empty, ConfigFile identifier: [%s]", configFileIdentifier);
+          } else {
+            errorMessage = format(
+                "Config file connector ref cannot be null or empty, ConfigFile identifier: [%s], ConfigFile Location: [%s]",
+                configFileIdentifier, fileLocation);
+          }
+          return new InvalidRequestException(errorMessage);
+        });
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorIdentifierRef,
@@ -191,7 +227,16 @@ public abstract class AbstractConfigFileStep {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
     if (!connectorDTO.isPresent()) {
-      throw new InvalidRequestException(format("Connector not found with identifier: [%s]", connectorIdentifierRef));
+      String errorMessage;
+      if (EmptyPredicate.isEmpty(fileLocation)) {
+        errorMessage = format("Connector not found with identifier: [%s], , ConfigFile identifier: [%s]",
+            connectorIdentifierRef, configFileIdentifier);
+      } else {
+        errorMessage = format(
+            "Connector not found with identifier: [%s], , ConfigFile identifier: [%s], Config file Location: [%s]",
+            connectorIdentifierRef, configFileIdentifier, fileLocation);
+      }
+      throw new InvalidRequestException(errorMessage);
     }
 
     ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());

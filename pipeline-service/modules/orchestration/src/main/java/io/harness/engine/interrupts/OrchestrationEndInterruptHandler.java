@@ -13,21 +13,24 @@ import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.logging.AutoLogContext;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class OrchestrationEndInterruptHandler implements AsyncInformObserver, OrchestrationEndObserver {
   @Inject private InterruptService interruptService;
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       long closedInterrupts = interruptService.closeActiveInterrupts(ambiance.getPlanExecutionId());
       if (closedInterrupts < 0) {

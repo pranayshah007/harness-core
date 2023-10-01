@@ -18,7 +18,10 @@ import io.harness.ng.core.user.UtmInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 
 @Value
 @Builder
@@ -26,7 +29,7 @@ import lombok.Value;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @OwnedBy(GTM)
 public class OAuthSignupDTO {
-  String email;
+  @NonFinal @Getter @Setter String email;
   String name;
   UtmInfo utmInfo;
   ModuleType intent;

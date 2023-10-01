@@ -34,6 +34,7 @@ import static software.wings.service.impl.security.AbstractSecretServiceImpl.enc
 import static dev.morphia.aggregation.Group.grouping;
 import static dev.morphia.aggregation.Projection.projection;
 import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -42,6 +43,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.EncryptedDataParent;
+import io.harness.beans.FeatureName;
 import io.harness.beans.HarnessSecret;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -58,6 +60,7 @@ import io.harness.beans.SecretUsageLog.SecretUsageLogKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.SecretService;
@@ -151,6 +154,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   @Inject private SecretService secretService;
   @Inject private SecretYamlHandler secretYamlHandler;
   @Inject private SecretsDao secretsDao;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public EncryptionType getEncryptionType(String accountId) {
@@ -811,8 +815,14 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   @Override
   public String fetchSecretValue(String accountId, String secretRecordId) {
-    EncryptedData encryptedData = getSecretById(accountId, secretRecordId);
-    return String.valueOf(secretService.fetchSecretValue(encryptedData));
+    // this flow doesn't need any permission as it's used only internally to fetch encrypted records
+    // adding permission will break download delegate flow
+    Optional<EncryptedData> encryptedDataOptional = secretsDao.getSecretById(accountId, secretRecordId);
+    if (encryptedDataOptional.isPresent()) {
+      EncryptedData encryptedData = encryptedDataOptional.get();
+      return String.valueOf(secretService.fetchSecretValue(encryptedData));
+    }
+    return EMPTY;
   }
 
   @Override
@@ -932,6 +942,10 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   public PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
       String appIdFromRequest, String envIdFromRequest, boolean details, boolean ignoreRunTimeUsage)
       throws IllegalAccessException {
+    if (pageRequest.getLimit() == null
+        && featureFlagService.isEnabled(FeatureName.SPG_3K_DEFAULT_PAGE_SIZE, accountId)) {
+      pageRequest.setLimit(PageRequest.LIMIT_3K_PAGE_SIZE);
+    }
     PageResponse<EncryptedData> pageResponse =
         secretService.listSecrets(accountId, pageRequest, appIdFromRequest, envIdFromRequest);
     if (details) {

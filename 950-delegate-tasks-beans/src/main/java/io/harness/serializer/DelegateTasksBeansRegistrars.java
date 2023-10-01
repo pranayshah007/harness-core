@@ -6,10 +6,12 @@
  */
 
 package io.harness.serializer;
-
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.morphia.CgOrchestrationBeansMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
@@ -24,6 +26,8 @@ import com.google.common.collect.ImmutableSet;
 import dev.morphia.converters.TypeConverter;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(DEL)
 @UtilityClass
 public class DelegateTasksBeansRegistrars {

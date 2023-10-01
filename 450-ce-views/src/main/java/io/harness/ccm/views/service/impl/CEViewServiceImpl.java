@@ -13,12 +13,16 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.AWS;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.AZURE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.GCP;
+import static io.harness.ccm.views.entities.ViewIdOperator.EQUALS;
 import static io.harness.ccm.views.entities.ViewIdOperator.IN;
 import static io.harness.ccm.views.entities.ViewIdOperator.NOT_IN;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.constants.ViewFieldConstants;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
@@ -39,6 +43,8 @@ import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
+import io.harness.ccm.views.entities.ViewPreferences;
+import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.entities.ViewTimeGranularity;
@@ -60,10 +66,10 @@ import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.helper.ViewFilterBuilderHelper;
 import io.harness.ccm.views.helper.ViewTimeRangeHelper;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
-import io.harness.ccm.views.utils.CEViewPreferenceUtils;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.common.collect.ImmutableSet;
@@ -82,9 +88,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.tools.StringUtils;
 import org.springframework.util.CollectionUtils;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @Singleton
 @OwnedBy(CE)
@@ -126,6 +135,7 @@ public class CEViewServiceImpl implements CEViewService {
   @Inject private ViewFilterBuilderHelper viewFilterBuilderHelper;
   @Inject private ViewsQueryHelper viewsQueryHelper;
   @Inject private BusinessMappingService businessMappingService;
+  @Inject private CEViewPreferenceService ceViewPreferenceService;
 
   @Override
   public CEView save(CEView ceView, boolean clone) {
@@ -231,16 +241,7 @@ public class CEViewServiceImpl implements CEViewService {
   private void modifyCEViewAndSetDefaults(CEView ceView) {
     Set<String> validBusinessMappingIds = null;
     if (ceView.getViewVisualization() == null || ceView.getViewVisualization().getGroupBy() == null) {
-      ceView.setViewVisualization(ViewVisualization.builder()
-                                      .granularity(ViewTimeGranularity.DAY)
-                                      .chartType(ViewChartType.STACKED_TIME_SERIES)
-                                      .groupBy(ViewField.builder()
-                                                   .fieldId("product")
-                                                   .fieldName("Product")
-                                                   .identifier(ViewFieldIdentifier.COMMON)
-                                                   .identifierName(ViewFieldIdentifier.COMMON.getDisplayName())
-                                                   .build())
-                                      .build());
+      ceView.setViewVisualization(getDefaultViewVisualization());
     } else if (ceView.getViewVisualization().getGroupBy().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
       validBusinessMappingIds = businessMappingService.getBusinessMappingIds(ceView.getAccountId());
       validateBusinessMappingId(validBusinessMappingIds, ceView.getViewVisualization().getGroupBy().getFieldId());
@@ -250,7 +251,34 @@ public class CEViewServiceImpl implements CEViewService {
       ceView.setViewTimeRange(ViewTimeRange.builder().viewTimeRangeType(ViewTimeRangeType.LAST_7).build());
     }
 
+    Set<ViewFieldIdentifier> viewFieldIdentifierSet = getViewFieldIdentifiers(ceView, validBusinessMappingIds);
+    setDataSources(ceView, viewFieldIdentifierSet);
+    ceView.setViewPreferences(ceViewPreferenceService.getCEViewPreferences(ceView, Collections.emptySet()));
+  }
+
+  private ViewVisualization getDefaultViewVisualization() {
+    return ViewVisualization.builder()
+        .granularity(ViewTimeGranularity.DAY)
+        .chartType(ViewChartType.STACKED_TIME_SERIES)
+        .groupBy(ViewField.builder()
+                     .fieldId("product")
+                     .fieldName("Product")
+                     .identifier(ViewFieldIdentifier.COMMON)
+                     .identifierName(ViewFieldIdentifier.COMMON.getDisplayName())
+                     .build())
+        .build();
+  }
+
+  @NotNull
+  private Set<ViewFieldIdentifier> getViewFieldIdentifiers(CEView ceView, Set<String> validBusinessMappingIds) {
     Set<ViewFieldIdentifier> viewFieldIdentifierSet = new HashSet<>();
+
+    ViewFieldIdentifier groupByViewFieldIdentifier = ceView.getViewVisualization().getGroupBy().getIdentifier();
+    if (groupByViewFieldIdentifier != ViewFieldIdentifier.LABEL
+        && groupByViewFieldIdentifier != ViewFieldIdentifier.COMMON) {
+      viewFieldIdentifierSet.add(groupByViewFieldIdentifier);
+    }
+
     if (ceView.getViewRules() != null) {
       for (ViewRule rule : ceView.getViewRules()) {
         for (ViewCondition condition : rule.getViewConditions()) {
@@ -292,9 +320,7 @@ public class CEViewServiceImpl implements CEViewService {
         }
       }
     }
-
-    setDataSources(ceView, viewFieldIdentifierSet);
-    ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferences(ceView));
+    return viewFieldIdentifierSet;
   }
 
   public void validateBusinessMappingId(Set<String> validBusinessMappingIds, String id) {
@@ -303,7 +329,8 @@ public class CEViewServiceImpl implements CEViewService {
     }
   }
 
-  private Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(
+  @Override
+  public Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(
       final ViewIdCondition viewIdCondition, String accountId) {
     Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     if (ViewFieldConstants.CLOUD_PROVIDER_FIELD_ID.equals(viewIdCondition.getViewField().getFieldId())) {
@@ -320,7 +347,7 @@ public class CEViewServiceImpl implements CEViewService {
           dataSourcesFromValues.add(ViewFieldIdentifier.CLUSTER);
         }
       }
-      if (operator == IN) {
+      if (operator == IN || operator == EQUALS) {
         viewFieldIdentifiers = dataSourcesFromValues;
       } else if (operator == NOT_IN) {
         Set<ViewFieldIdentifier> allDataSources = getAllPossibleDataSourcesForAccount(accountId);
@@ -431,13 +458,24 @@ public class CEViewServiceImpl implements CEViewService {
       QLCEViewTrendInfo trendData =
           viewsBillingService
               .getTrendStatsDataNg(filters, Collections.emptyList(), totalCostAggregationFunction,
-                  viewsQueryHelper.buildQueryParams(ceView.getAccountId(), false))
+                  ceView.getViewPreferences(), getViewQueryParamsForTrendStats(ceView))
               .getTotalCost();
       double totalCost = trendData.getValue().doubleValue();
       log.info("Total cost of view {}", totalCost);
       return ceViewDao.updateTotalCost(ceView.getUuid(), ceView.getAccountId(), totalCost);
     }
     return ceView;
+  }
+
+  private ViewQueryParams getViewQueryParamsForTrendStats(CEView ceView) {
+    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(ceView.getAccountId(), false);
+
+    // Group by is only needed in case of business mapping
+    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(viewsQueryHelper.getDefaultViewGroupBy(ceView))) {
+      viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
+    }
+
+    return viewQueryParams;
   }
 
   @Override
@@ -473,6 +511,21 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public List<CEView> getAllViews(String accountId) {
     return ceViewDao.list(accountId);
+  }
+
+  @Override
+  public void updateAllPerspectiveWithPerspectivePreferenceDefaultSettings(
+      String accountId, Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
+    for (CEView ceView : getAllViews(accountId)) {
+      try {
+        ViewPreferences viewPreferences =
+            ceViewPreferenceService.getCEViewPreferences(ceView, viewPreferencesFieldsToUpdateWithDefaultSettings);
+        ceViewDao.updateViewPreferences(ceView.getUuid(), accountId, viewPreferences);
+      } catch (Exception ex) {
+        log.error("Unable to update view preferences with default settings for accountId {}, viewId {}, fields {}",
+            accountId, ceView.getUuid(), viewPreferencesFieldsToUpdateWithDefaultSettings, ex);
+      }
+    }
   }
 
   @Override

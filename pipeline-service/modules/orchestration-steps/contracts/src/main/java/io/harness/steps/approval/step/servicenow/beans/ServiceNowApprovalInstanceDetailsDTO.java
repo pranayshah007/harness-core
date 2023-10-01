@@ -15,6 +15,7 @@ import io.harness.steps.approval.step.beans.ApprovalInstanceDetailsDTO;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpecDTO;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
@@ -28,6 +29,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel("ServiceNowApprovalInstanceDetails")
 @Schema(
     name = "ServiceNowApprovalInstanceDetails", description = "This contains details of ServiceNow Approval Instance")
@@ -37,4 +39,8 @@ public class ServiceNowApprovalInstanceDetailsDTO implements ApprovalInstanceDet
   @NotNull CriteriaSpecWrapperDTO approvalCriteria;
   CriteriaSpecWrapperDTO rejectionCriteria;
   ServiceNowChangeWindowSpecDTO changeWindowSpec;
+
+  // id of the delegate task created in the latest polling event
+  String latestDelegateTaskId;
+  String delegateTaskName;
 }

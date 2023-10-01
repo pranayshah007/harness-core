@@ -15,7 +15,6 @@ import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.cvng.splunk.SplunkUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.HashMap;
 import java.util.Map;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -27,9 +26,7 @@ import lombok.experimental.SuperBuilder;
 public abstract class SplunkDataCollectionRequest extends DataCollectionRequest<SplunkConnectorDTO> {
   @Override
   public Map<String, String> collectionHeaders() {
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Authorization", SplunkUtils.getAuthorizationHeader(getConnectorConfigDTO()));
-    return headers;
+    return SplunkUtils.collectionHeaders(getConnectorConfigDTO());
   }
   @Override
   public String getBaseUrl() {

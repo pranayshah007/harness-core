@@ -7,13 +7,17 @@
 
 package io.harness.ccm.views.dao;
 
+import static io.harness.beans.FeatureName.CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI;
+
 import io.harness.ccm.commons.entities.CCMSort;
 import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.Rule.RuleId;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -22,21 +26,43 @@ import com.mongodb.client.model.Collation;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
-import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Slf4j
 @Singleton
 public class RuleDAO {
   @Inject private HPersistence hPersistence;
+  @Inject private MongoTemplate mongoTemplate;
+  @Inject private FeatureFlagService featureFlagService;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final String LOCALE_EN = "en";
 
   public boolean save(Rule rule) {
-    log.info("created: {}", hPersistence.save(rule));
-    return hPersistence.save(rule) != null;
+    Rule savedRule = mongoTemplate.save(rule);
+    log.info("created: {}", savedRule);
+
+    // We are creating a OOTB rule, we explicitly update createdBy, updatedBy
+    if (rule.getAccountId().equals(GLOBAL_ACCOUNT_ID)) {
+      Criteria criteria =
+          Criteria.where(RuleId.accountId).is(savedRule.getAccountId()).and(RuleId.uuid).is(savedRule.getUuid());
+      org.springframework.data.mongodb.core.query.Query query =
+          new org.springframework.data.mongodb.core.query.Query(criteria);
+      Update update = new Update();
+      update.set(RuleId.createdBy, null);
+      update.set(RuleId.lastUpdatedBy, null);
+      FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
+      Rule updatedRule = mongoTemplate.findAndModify(query, update, options, Rule.class);
+      log.info("Updated rule {}", updatedRule);
+      return updatedRule != null;
+    }
+    return savedRule != null;
   }
 
   public boolean delete(String accountId, String uuid) {
@@ -45,14 +71,16 @@ public class RuleDAO {
     log.info("deleted rule: {}", uuid);
     return hPersistence.delete(query);
   }
-  public List<Rule> forRecommendation() {
+  public List<Rule> forRecommendation(RuleCloudProviderType ruleCloudProviderType, String accountId) {
     log.info("creating a query");
     Query<Rule> rules = hPersistence.createQuery(Rule.class)
                             .field(RuleId.accountId)
-                            .equal(GLOBAL_ACCOUNT_ID)
+                            .in(List.of(GLOBAL_ACCOUNT_ID, accountId))
                             .field(RuleId.forRecommendation)
-                            .equal(true);
-    log.info("Rule List forRecommendation: {}", rules.asList());
+                            .equal(true)
+                            .field(RuleId.cloudProvider)
+                            .equal(ruleCloudProviderType);
+    log.info("Rule List for cloud provider {} forRecommendation: {}", ruleCloudProviderType.name(), rules.asList());
     return rules.asList();
   }
   public RuleList list(GovernanceRuleFilter governancePolicyFilter) {
@@ -61,6 +89,10 @@ public class RuleDAO {
                             .field(RuleId.accountId)
                             .in(Arrays.asList(governancePolicyFilter.getAccountId(), GLOBAL_ACCOUNT_ID));
 
+    if (featureFlagService.isNotEnabled(
+            CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI, governancePolicyFilter.getAccountId())) {
+      rules.field(RuleId.cloudProvider).notEqual(RuleCloudProviderType.AZURE);
+    }
     if (governancePolicyFilter.getCloudProvider() != null) {
       rules.field(RuleId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
     }
@@ -87,6 +119,9 @@ public class RuleDAO {
             throw new InvalidRequestException("Sort field " + sort.getField() + " is not supported");
         }
       }
+    }
+    if (governancePolicyFilter.getResourceType() != null) {
+      rules.field(RuleId.resourceType).equal(governancePolicyFilter.getResourceType());
     }
     final FindOptions options = new FindOptions();
     options.collation(Collation.builder().locale(LOCALE_EN).build());
@@ -146,34 +181,67 @@ public class RuleDAO {
   }
 
   public Rule update(Rule rule, String accountId) {
-    Query<Rule> query = hPersistence.createQuery(Rule.class)
-                            .field(RuleId.accountId)
-                            .equal(accountId)
-                            .field(RuleId.uuid)
-                            .equal(rule.getUuid());
-    UpdateOperations<Rule> updateOperations = hPersistence.createUpdateOperations(Rule.class);
+    // We are updating a OOTB rule, we don't want to populate createdBy, updatedBy
+    if (accountId.equals(GLOBAL_ACCOUNT_ID)) {
+      Criteria criteria = Criteria.where(RuleId.accountId).is(accountId).and(RuleId.uuid).is(rule.getUuid());
+      org.springframework.data.mongodb.core.query.Query query =
+          new org.springframework.data.mongodb.core.query.Query(criteria);
+      Update update = new Update();
+      update.set(RuleId.createdBy, null);
+      update.set(RuleId.lastUpdatedBy, null);
+      if (rule.getName() != null) {
+        if (fetchByName(accountId, rule.getName(), true) != null) {
+          throw new InvalidRequestException("Rule with given name already exits");
+        }
+        update.set(RuleId.name, rule.getName());
+      }
+      if (rule.getDescription() != null) {
+        update.set(RuleId.description, rule.getDescription());
+      }
+      if (rule.getRulesYaml() != null) {
+        update.set(RuleId.rulesYaml, rule.getRulesYaml());
+      }
+      if (rule.getTags() != null) {
+        update.set(RuleId.tags, rule.getTags());
+      }
+      if (rule.getForRecommendation() != null) {
+        update.set(RuleId.forRecommendation, rule.getForRecommendation());
+      }
+      if (rule.getResourceType() != null) {
+        update.set(RuleId.resourceType, rule.getResourceType());
+      }
 
+      FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
+      Rule updatedRule = mongoTemplate.findAndModify(query, update, options, Rule.class);
+      log.info("Updated rule {}", updatedRule);
+      return updatedRule;
+    }
+
+    Rule existingRule = fetchById(accountId, rule.getUuid(), false);
     if (rule.getName() != null) {
       if (fetchByName(accountId, rule.getName(), true) != null) {
         throw new InvalidRequestException("Rule with given name already exits");
       }
-      updateOperations.set(RuleId.name, rule.getName());
+      existingRule.setName(rule.getName());
     }
     if (rule.getDescription() != null) {
-      updateOperations.set(RuleId.description, rule.getDescription());
+      existingRule.setDescription(rule.getDescription());
     }
     if (rule.getRulesYaml() != null) {
-      updateOperations.set(RuleId.rulesYaml, rule.getRulesYaml());
+      existingRule.setRulesYaml(rule.getRulesYaml());
     }
     if (rule.getTags() != null) {
-      updateOperations.set(RuleId.tags, rule.getTags());
+      existingRule.setTags(rule.getTags());
     }
     if (rule.getForRecommendation() != null) {
-      updateOperations.set(RuleId.forRecommendation, rule.getForRecommendation());
+      existingRule.setForRecommendation(rule.getForRecommendation());
     }
-    log.info("Updated rule: {} {} {}", rule.getUuid(), hPersistence.update(query, updateOperations), query);
-    hPersistence.update(query, updateOperations);
-    return query.asList().get(0);
+    if (rule.getResourceType() != null) {
+      existingRule.setResourceType(rule.getResourceType());
+    }
+    Rule savedRule = mongoTemplate.save(existingRule);
+    log.info("Updated rule: {} {}", rule.getUuid(), savedRule);
+    return savedRule;
   }
 
   public List<Rule> check(String accountId, List<String> rulesIdentifier) {
@@ -182,6 +250,19 @@ public class RuleDAO {
         .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
         .field(RuleId.uuid)
         .in(rulesIdentifier)
+        .asList();
+  }
+
+  public List<Rule> validateCloudProvider(
+      String accountId, Set<String> rulesIdentifier, RuleCloudProviderType ruleCloudProviderType) {
+    return hPersistence.createQuery(Rule.class)
+        .project(RuleId.uuid, true)
+        .field(RuleId.accountId)
+        .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
+        .field(RuleId.uuid)
+        .in(rulesIdentifier)
+        .field(RuleId.cloudProvider)
+        .equal(ruleCloudProviderType)
         .asList();
   }
 }

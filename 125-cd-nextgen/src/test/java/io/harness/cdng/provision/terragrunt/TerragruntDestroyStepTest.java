@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -21,7 +22,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.TerragruntCommandFlagType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
@@ -86,6 +89,7 @@ public class TerragruntDestroyStepTest extends CategoryTest {
   @InjectMocks private TerragruntDestroyStep terragruntDestroyStep = new TerragruntDestroyStep();
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
   @Mock private TerragruntConfigDAL terragruntConfigDAL;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Test
   @Owner(developers = VLICA)
@@ -182,6 +186,10 @@ public class TerragruntDestroyStepTest extends CategoryTest {
             .configuration(
                 TerragruntStepConfigurationParameters.builder()
                     .type(TerragruntStepConfigurationType.INLINE)
+                    .commandFlags(List.of(TerragruntCliOptionFlag.builder()
+                                              .commandType(TerragruntCommandFlagType.DESTROY)
+                                              .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                              .build()))
                     .spec(TerragruntExecutionDataParameters.builder()
                               .configFiles(configFilesWrapper)
                               .backendConfig(backendConfig)
@@ -218,6 +226,12 @@ public class TerragruntDestroyStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("DESTROY", "-lock-timeout=0s"); }
+    })
+        .when(terragruntStepHelper)
+        .getTerragruntCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
 
     terragruntDestroyStep.obtainTaskAfterRbac(
@@ -225,7 +239,7 @@ public class TerragruntDestroyStepTest extends CategoryTest {
 
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task V2"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerragruntDestroyTaskParameters params =
@@ -242,6 +256,7 @@ public class TerragruntDestroyStepTest extends CategoryTest {
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
         .isEqualTo("test-backend-id");
     assertThat(((GitStoreDelegateConfig) params.getConfigFilesStore()).getConnectorName()).isEqualTo("terragrunt");
+    assertThat(params.getTerragruntCommandFlags().get("DESTROY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test
@@ -256,6 +271,10 @@ public class TerragruntDestroyStepTest extends CategoryTest {
         TerragruntDestroyStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("test-provisionerId"))
             .configuration(TerragruntStepConfigurationParameters.builder()
+                               .commandFlags(List.of(TerragruntCliOptionFlag.builder()
+                                                         .commandType(TerragruntCommandFlagType.DESTROY)
+                                                         .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                                         .build()))
                                .type(TerragruntStepConfigurationType.INHERIT_FROM_PLAN)
                                .build())
             .build();
@@ -308,6 +327,12 @@ public class TerragruntDestroyStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("DESTROY", "-lock-timeout=0s"); }
+    })
+        .when(terragruntStepHelper)
+        .getTerragruntCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
 
     terragruntDestroyStep.obtainTaskAfterRbac(
@@ -315,7 +340,7 @@ public class TerragruntDestroyStepTest extends CategoryTest {
 
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task V2"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerragruntDestroyTaskParameters params =
@@ -332,6 +357,7 @@ public class TerragruntDestroyStepTest extends CategoryTest {
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
         .isEqualTo("test-backend-id");
     assertThat(((GitStoreDelegateConfig) params.getConfigFilesStore()).getConnectorName()).isEqualTo("terragrunt");
+    assertThat(params.getTerragruntCommandFlags().get("DESTROY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test
@@ -347,6 +373,10 @@ public class TerragruntDestroyStepTest extends CategoryTest {
             .provisionerIdentifier(ParameterField.createValueField("test-provisionerId"))
             .configuration(TerragruntStepConfigurationParameters.builder()
                                .type(TerragruntStepConfigurationType.INHERIT_FROM_APPLY)
+                               .commandFlags(List.of(TerragruntCliOptionFlag.builder()
+                                                         .commandType(TerragruntCommandFlagType.DESTROY)
+                                                         .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                                         .build()))
                                .build())
             .build();
 
@@ -397,6 +427,12 @@ public class TerragruntDestroyStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("DESTROY", "-lock-timeout=0s"); }
+    })
+        .when(terragruntStepHelper)
+        .getTerragruntCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
 
     terragruntDestroyStep.obtainTaskAfterRbac(
@@ -404,7 +440,7 @@ public class TerragruntDestroyStepTest extends CategoryTest {
 
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task V2"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerragruntDestroyTaskParameters params =
@@ -421,6 +457,7 @@ public class TerragruntDestroyStepTest extends CategoryTest {
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
         .isEqualTo("test-backend-id");
     assertThat(((GitStoreDelegateConfig) params.getConfigFilesStore()).getConnectorName()).isEqualTo("terragrunt");
+    assertThat(params.getTerragruntCommandFlags().get("DESTROY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test

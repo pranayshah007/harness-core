@@ -24,4 +24,13 @@ import lombok.Value;
 public class K8sRollingDeployRollbackResponse implements K8sNGTaskResponse {
   List<K8sPod> k8sPodList;
   Set<KubernetesResourceId> recreatedResourceIds;
+  List<K8sPod> previousK8sPodList;
+
+  public List<K8sPod> getPreviousK8sPodList() {
+    return previousK8sPodList;
+  }
+
+  public List<K8sPod> getTotalK8sPodList() {
+    return k8sPodList;
+  }
 }

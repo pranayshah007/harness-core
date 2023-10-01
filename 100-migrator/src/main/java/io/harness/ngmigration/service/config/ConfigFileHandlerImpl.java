@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.config;
 
+import static java.nio.charset.StandardCharsets.UTF_16;
+
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -57,7 +59,7 @@ public class ConfigFileHandlerImpl extends FileHandler<ConfigFile> {
 
   @Override
   public String getContent(MigrationContext context, ConfigFile manifestFile) {
-    return new String(fileContent);
+    return new String(fileContent, UTF_16);
   }
 
   @Override

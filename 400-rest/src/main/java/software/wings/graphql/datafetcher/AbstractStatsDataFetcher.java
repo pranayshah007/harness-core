@@ -188,44 +188,13 @@ public abstract class AbstractStatsDataFetcher<A, F, G, S> implements DataFetche
       return new StringBuilder("date_trunc('").append(unit).append("',").append(dbFieldName).append(')').toString();
     }
 
-    return new StringBuilder("time_bucket('")
+    return new StringBuilder("harness_date_bin_graphql('")
         .append(value)
         .append(' ')
         .append(unit)
         .append("',")
         .append(dbFieldName)
         .append(')')
-        .toString();
-  }
-
-  public String getGroupByTimeQueryWithGapFill(
-      QLTimeSeriesAggregation groupByTime, String dbFieldName, String from, String to) {
-    String unit;
-    int value = groupByTime.getTimeAggregationValue();
-
-    switch (groupByTime.getTimeAggregationType()) {
-      case DAY:
-        unit = "days";
-        break;
-      case HOUR:
-        unit = "hours";
-        break;
-      default:
-        log.warn("Unsupported timeAggregationType " + groupByTime.getTimeAggregationType());
-        throw new InvalidRequestException(GENERIC_EXCEPTION_MSG);
-    }
-
-    return new StringBuilder("time_bucket_gapfill('")
-        .append(value)
-        .append(' ')
-        .append(unit)
-        .append("',")
-        .append(dbFieldName)
-        .append(",'")
-        .append(from)
-        .append("','")
-        .append(to)
-        .append("')")
         .toString();
   }
 

@@ -19,6 +19,7 @@ import io.harness.service.intfc.DelegateCache;
 
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.DelegatesDownAlert;
+import software.wings.service.impl.DelegateDao;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.intfc.AlertService;
 
@@ -29,13 +30,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class DelegateDisconnectAlertHelper implements DelegateObserver {
   @Inject private AlertService alertService;
   @Inject DelegateCache delegateCache;
-  private static final long MAX_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
+  @Inject private DelegateDao delegateDao;
 
   public void checkIfAnyDelegatesAreDown(String accountId, List<Delegate> delegates) {
     for (Delegate delegate : delegates) {
@@ -48,8 +48,7 @@ public class DelegateDisconnectAlertHelper implements DelegateObserver {
                                 .hostName(delegate.getHostName())
                                 .obfuscatedIpAddress(obfuscate(delegate.getIp()))
                                 .build();
-
-      if (delegate.getLastHeartBeat() >= System.currentTimeMillis() - MAX_HB_TIMEOUT) {
+      if (delegateDao.isDelegateHeartBeatUpToDate(delegate)) {
         alertService.closeAlert(accountId, GLOBAL_APP_ID, AlertType.DelegatesDown, alertData);
       } else {
         alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.DelegatesDown, alertData);
@@ -69,7 +68,7 @@ public class DelegateDisconnectAlertHelper implements DelegateObserver {
         continue;
       }
       allScalingGroups.add(delegate.getDelegateGroupName());
-      if (delegate.getLastHeartBeat() >= System.currentTimeMillis() - MAX_HB_TIMEOUT) {
+      if (delegateDao.isDelegateHeartBeatUpToDate(delegate)) {
         connectedScalingGroups.add(delegate.getDelegateGroupName());
       }
     }

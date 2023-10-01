@@ -10,8 +10,10 @@ package io.harness.pms.plan.execution.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecution;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.mongodb.core.query.Update;
@@ -22,6 +24,7 @@ public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void update(String planExecutionId, Update update);
   // Saves PipelineExecutionSummaryEntity in planExecutionsSummary collection in harness-pms db
+  void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId);
   PipelineExecutionSummaryEntity save(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity);
 
   /**
@@ -63,4 +66,21 @@ public interface PmsExecutionSummaryService {
    * @param planExecutionIds
    */
   void deleteAllSummaryForGivenPlanExecutionIds(Set<String> planExecutionIds);
+
+  /**
+   * Updates TTL all PipelineExecutionSummaryEntity and its related metadata
+   * @param planExecutionId Id of to be updated TTL planExecutions
+   * Uses - planExecutionId_unique idx
+   */
+  void updateTTL(String planExecutionId, Date ttlDate);
+
+  /**
+   * Adds the status updates for the PipelineExecutionSummaryEntity for give planExecution. It also updates the endTs if
+   * status is terminal.
+   * @param planExecution planExecution for which we want to update the PipelineExecutionSummaryEntity.
+   * @param summaryEntityUpdate Update object that will have the update operations inside it. Caller will apply all the
+   *     updates in once.
+   * Uses - planExecutionId_unique idx
+   */
+  Update updateStatusOps(PlanExecution planExecution, Update summaryEntityUpdate);
 }

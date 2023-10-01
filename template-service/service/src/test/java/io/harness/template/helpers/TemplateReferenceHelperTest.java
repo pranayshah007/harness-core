@@ -9,6 +9,7 @@ package io.harness.template.helpers;
 
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ACCOUNT_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ORG_ID;
@@ -324,5 +325,43 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
         () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, pipelineYaml, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("The project level template cannot be used at org level. Ref: [stageTemplate]");
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testGetNestedTemplateReferencesForPipelineWithMultiServicesTemplate() throws IOException {
+    String filename = "pipeline-with-multi-service-references.yaml";
+    String pipelineYaml = readFile(filename);
+
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(PreFlightCheckMetadata.FQN, "templateInputs.stages.s1.spec.services.values");
+    metadata.put(PreFlightCheckMetadata.EXPRESSION, "<+input>");
+    metadata.put(PreFlightCheckMetadata.YAML_TYPE_REF_NAME, "serviceRef");
+
+    EntitySetupUsageDTO entitySetupUsageDTO =
+        EntitySetupUsageDTO.builder()
+            .referredEntity(EntityDetail.builder()
+                                .type(EntityType.SERVICE)
+                                .entityRef(generateIdentifierRefWithUnknownScope(
+                                    ACCOUNT_ID, ORG_ID, PROJECT_ID, "<+input>", metadata))
+                                .build())
+            .build();
+
+    when(templateSetupUsageHelper.getReferencesOfTemplate(any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singletonList(entitySetupUsageDTO));
+
+    List<EntityDetailProtoDTO> referredEntities =
+        templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+
+    assertThat(referredEntities).isNotNull().hasSize(2);
+
+    Map<String, String> metadata2 = new HashMap<>();
+    metadata2.put(PreFlightCheckMetadata.FQN,
+        "pipeline.template.templateInputs.stages.s1.spec.services.values.service1.serviceRef");
+
+    EntityDetailProtoDTO expected = TemplateReferenceTestHelper.generateIdentifierRefEntityDetailProto(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "service1", metadata2, EntityTypeProtoEnum.SERVICE);
+    assertThat(referredEntities).contains(expected);
   }
 }

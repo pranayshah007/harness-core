@@ -16,6 +16,8 @@ import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsCapab
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthCapabilityHelper;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthConnectorDTO;
 import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
@@ -88,6 +90,8 @@ public class CVConnectorCapabilitiesHelper extends ConnectorTaskParams {
       return AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorDTO, maskingEvaluator);
     } else if (connectorDTO instanceof SignalFXConnectorDTO) {
       return SignalFXCapabilityHelper.fetchRequiredExecutionCapabilities(maskingEvaluator, connectorDTO);
+    } else if (connectorDTO instanceof AzureConnectorDTO) {
+      return AzureCapabilityHelper.fetchRequiredExecutionCapabilities(connectorDTO, maskingEvaluator);
     } else {
       throw new InvalidRequestException("Connector capability not found for " + connectorDTO);
     }

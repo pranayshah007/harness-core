@@ -45,7 +45,7 @@
     },
     "name": {
       "type": "string",
-      "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+      "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
     },
     "pipelineVariables": {
       "type": "array",
@@ -169,6 +169,32 @@
                   "additionalProperties": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string"
@@ -418,11 +444,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -518,6 +553,40 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AttestationSpecV1": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AttestationV1": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignAttestationV1"
+              }
+            }
+          }
+        }
+      ]
+    },
     "AwsEcrStepInfo": {
       "allOf": [
         {
@@ -570,11 +639,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -685,11 +763,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1087,11 +1174,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1301,11 +1397,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1348,6 +1453,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "sbom": {
+              "$ref": "#/definitions/STOYamlSBOM"
             },
             "settings": {
               "oneOf": [
@@ -1416,11 +1524,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1544,7 +1661,8 @@
           "enum": [
             "branch",
             "tag",
-            "PR"
+            "PR",
+            "commitSha"
           ]
         }
       },
@@ -1578,6 +1696,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BranchBuildSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "commitSha"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CommitShaBuildSpec"
               }
             }
           }
@@ -1694,11 +1828,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1988,11 +2131,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -2103,11 +2255,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -2308,11 +2469,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -2400,6 +2570,25 @@
           "format": "int64"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CommitShaBuildSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BuildSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "commitSha"
+          ],
+          "properties": {
+            "commitSha": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ConnectorConversionInfo": {
@@ -2581,6 +2770,23 @@
             }
           ]
         },
+        "imagePullPolicy": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -2740,6 +2946,41 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CosignAttestationV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AttestationSpecV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "password": {
+              "type": "string"
+            },
+            "private_key": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignSlsaVerifyAttestation": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SlsaVerifyAttestationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "public_key": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CosignVerifyAttestation": {
       "allOf": [
         {
@@ -2802,11 +3043,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -2934,11 +3184,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -3046,11 +3305,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -3194,11 +3462,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -3292,8 +3569,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -3329,6 +3605,42 @@
     },
     "DockerRuntimeSpec": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProvenanceSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "repo",
+            "tags"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "repo": {
+              "type": "string"
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DockerStepInfo": {
@@ -3832,11 +4144,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -3950,11 +4271,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -4155,6 +4485,51 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GcrSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProvenanceSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connector",
+            "host",
+            "imageName",
+            "projectID",
+            "tags"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "host": {
+              "type": "string"
+            },
+            "imageName": {
+              "type": "string"
+            },
+            "projectID": {
+              "type": "string"
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GitCloneStepInfo": {
       "allOf": [
         {
@@ -4290,11 +4665,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -4405,11 +4789,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -4710,8 +5103,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -4848,8 +5240,7 @@
           "enum": [
             "KubernetesDirect",
             "UseFromStage",
-            "VM",
-            "KubernetesHosted"
+            "VM"
           ]
         }
       },
@@ -5005,9 +5396,6 @@
               "$ref": "#/definitions/K8sDirectInfraYaml"
             },
             {
-              "$ref": "#/definitions/K8sHostedInfraYaml"
-            },
-            {
               "$ref": "#/definitions/UseFromStageInfraYaml"
             },
             {
@@ -5064,6 +5452,9 @@
               "type": "string"
             }
           ]
+        },
+        "slsa_provenance": {
+          "$ref": "#/definitions/SlsaConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5115,7 +5506,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+          "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
         },
         "pipelineVariables": {
           "type": "array",
@@ -5278,11 +5669,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -5424,8 +5824,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -5494,6 +5893,23 @@
             {
               "type": "string",
               "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "imagePullPolicy": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -5597,47 +6013,6 @@
               "minLength": 1
             }
           ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "K8sHostedInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/K8sHostedInfraYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "K8sHostedInfraYamlSpec": {
-      "type": "object",
-      "required": [
-        "identifier"
-      ],
-      "properties": {
-        "identifier": {
-          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5829,11 +6204,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -5949,11 +6333,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6091,11 +6484,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6203,11 +6605,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6318,11 +6729,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6438,11 +6858,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6521,7 +6950,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -6650,11 +7079,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6775,11 +7213,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -7314,7 +7761,8 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python"
+            "Python",
+            "Ruby"
           ]
         },
         "executionInput": {
@@ -7345,7 +7793,8 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python"
+            "Python",
+            "Ruby"
           ]
         }
       },
@@ -7434,7 +7883,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -7451,7 +7900,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -7875,11 +8324,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -7935,6 +8393,9 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlPrismaCloudToolData"
             }
           }
         }
@@ -7957,6 +8418,76 @@
               "enum": [
                 "ProceedWithDefaultValues"
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ProvenanceSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "docker",
+            "gcr"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "docker"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DockerSourceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "gcr"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GcrSourceSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ProvenanceSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ProvenanceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "attestation": {
+              "$ref": "#/definitions/AttestationV1"
+            },
+            "source": {
+              "$ref": "#/definitions/ProvenanceSource"
             }
           }
         }
@@ -8015,11 +8546,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -8127,11 +8667,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -8239,11 +8788,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -8595,7 +9153,7 @@
           "properties": {
             "spec": {
               "readOnly": true,
-              "$ref": "#/definitions/RetryFailureSpecConfig"
+              "$ref": "#/definitions/RetryStepGroupFailureSpecConfig"
             },
             "type": {
               "type": "string",
@@ -8606,6 +9164,28 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RetryStepGroupFailureSpecConfig": {
+      "type": "object",
+      "required": [
+        "retryCount",
+        "retryIntervals"
+      ],
+      "properties": {
+        "retryCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "retryIntervals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2147483647,
+          "minItems": 1
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "RunStepInfo": {
@@ -8743,7 +9323,6 @@
         {
           "type": "object",
           "required": [
-            "args",
             "buildTool",
             "language"
           ],
@@ -8779,7 +9358,8 @@
                     "Nunitconsole",
                     "SBT",
                     "Pytest",
-                    "Unittest"
+                    "Unittest",
+                    "Rspec"
                   ]
                 },
                 {
@@ -8853,7 +9433,8 @@
                     "Kotlin",
                     "Scala",
                     "Csharp",
-                    "Python"
+                    "Python",
+                    "Ruby"
                   ]
                 },
                 {
@@ -9046,7 +9627,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -9134,7 +9715,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -9272,7 +9853,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -9351,7 +9932,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -9398,6 +9979,49 @@
         },
         "project_token": {
           "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlPrismaCloudToolData": {
+      "type": "object",
+      "properties": {
+        "image_name": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlSBOM": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "spdx-json",
+                "cyclonedx-json"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "generate": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -9685,6 +10309,15 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SbomFile": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SbomOrchestrationSpec": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -9896,7 +10529,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -10129,11 +10762,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10241,11 +10883,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10307,6 +10958,143 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SlsaConfig": {
+      "type": "object",
+      "properties": {
+        "attestation": {
+          "$ref": "#/definitions/AttestationV1"
+        },
+        "enabled": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaDockerSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SlsaVerificationSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "image_path",
+            "tag"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "image_path": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaVerificationSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Docker"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Docker"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SlsaDockerSourceSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SlsaVerificationSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaVerificationStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "source": {
+              "$ref": "#/definitions/SlsaVerificationSource"
+            },
+            "verify_attestation": {
+              "$ref": "#/definitions/SlsaVerifyAttestation"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaVerifyAttestation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignSlsaVerifyAttestation"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SlsaVerifyAttestationSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SniperStepInfo": {
       "allOf": [
         {
@@ -10353,11 +11141,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10471,11 +11268,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10586,11 +11392,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10703,8 +11518,7 @@
           "type": "object",
           "required": [
             "policy",
-            "source",
-            "verifyAttestation"
+            "source"
           ],
           "properties": {
             "policy": {
@@ -10732,13 +11546,21 @@
         {
           "type": "object",
           "required": [
-            "attestation",
-            "source",
-            "tool"
+            "source"
           ],
           "properties": {
             "attestation": {
               "$ref": "#/definitions/Attestation"
+            },
+            "ingestion": {
+              "$ref": "#/definitions/SbomFile"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "generation",
+                "ingestion"
+              ]
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"
@@ -10832,7 +11654,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+          "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
         },
         "strategy": {
           "oneOf": [
@@ -11752,6 +12574,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "SlsaVerification"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SlsaVerificationStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Sniper"
               }
             }
@@ -11960,6 +12798,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "provenance"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ProvenanceStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "script"
               }
             }
@@ -12033,7 +12887,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+          "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
         },
         "sharedPaths": {
           "oneOf": [
@@ -12276,7 +13130,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -12364,11 +13218,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -12481,7 +13344,7 @@
         },
         "versionLabel": {
           "type": "string",
-          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+          "pattern": "^[0-9a-zA-Z][^\\s/&]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -12535,11 +13398,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -12729,7 +13601,8 @@
                     "nunit_console",
                     "sbt",
                     "pytest",
-                    "unittest"
+                    "unittest",
+                    "rspec"
                   ]
                 },
                 {
@@ -13031,11 +13904,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -13214,8 +14096,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -13439,11 +14320,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {

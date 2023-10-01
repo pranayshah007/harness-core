@@ -7,6 +7,7 @@
 
 package io.harness.service;
 
+import static io.harness.beans.FeatureName.SPG_CG_WFE_PROJECTION_FIELDS;
 import static io.harness.data.encoding.EncodingUtils.compressString;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -195,6 +196,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
 
     when(appService.getAccountIdByAppId(appId)).thenReturn(accountId);
     when(featureFlagService.isEnabled(FeatureName.DISABLE_LOGML_NEURAL_NET, accountId)).thenReturn(true);
+    when(featureFlagService.isNotGlobalEnabled(SPG_CG_WFE_PROJECTION_FIELDS)).thenReturn(true);
 
     FieldUtils.writeDeclaredField(analysisService, "managerClient", verificationManagerClient, true);
     FieldUtils.writeDeclaredField(learningEngineService, "managerClient", verificationManagerClient, true);
@@ -208,6 +210,7 @@ public class LogMLAnalysisServiceTest extends VerificationBase {
     cvConfigurationService = new CVConfigurationServiceImpl();
     WorkflowExecutionService workflowExecutionService = new WorkflowExecutionServiceImpl();
     FieldUtils.writeField(workflowExecutionService, "wingsPersistence", wingsPersistence, true);
+    FieldUtils.writeField(workflowExecutionService, "featureFlagService", featureFlagService, true);
     FieldUtils.writeField(managerAnalysisService, "dataStoreService", dataStoreService, true);
     FieldUtils.writeField(managerAnalysisService, "appService", appService, true);
     FieldUtils.writeField(managerAnalysisService, "featureFlagService", featureFlagService, true);

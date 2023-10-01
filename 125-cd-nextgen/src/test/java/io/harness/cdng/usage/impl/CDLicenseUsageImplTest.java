@@ -30,12 +30,12 @@ import io.harness.cd.NgServiceInfraInfoUtils;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
 import io.harness.cdng.usage.CDLicenseUsageDAL;
+import io.harness.cdng.usage.CDLicenseUsageReportService;
 import io.harness.cdng.usage.dto.LicenseDateUsageDTO;
 import io.harness.cdng.usage.dto.LicenseDateUsageParams;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
-import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.cd.ActiveServiceDTO;
@@ -58,6 +58,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -84,6 +85,7 @@ public class CDLicenseUsageImplTest extends CategoryTest {
 
   @Mock private TimeScaleDAL timeScaleDAL;
   @Mock private CDLicenseUsageDAL utils;
+  @Mock private CDLicenseUsageReportService cdLicenseUsageReportService;
   @InjectMocks @Inject private CDLicenseUsageImpl cdLicenseUsage;
 
   private static final String accountIdentifier = "ACCOUNT_ID";
@@ -819,43 +821,47 @@ public class CDLicenseUsageImplTest extends CategoryTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
-  public void testGetServiceInstancesDateUsage() {
-    when(utils.fetchLicenseDateUsage(any())).thenReturn(getDailyServiceUsage());
-    ArgumentCaptor<LicenseDateUsageFetchData> licenseDateUsageFetchDataArgumentCaptor =
-        ArgumentCaptor.forClass(LicenseDateUsageFetchData.class);
+  public void testGetLicenseDateUsageMonthly() {
+    when(cdLicenseUsageReportService.getLicenseUsagePerMonthsReport(any(), any(), any(), any()))
+        .thenReturn(getMonthlyServiceUsageReport());
+    ArgumentCaptor<String> accountIdentifierCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<CDLicenseType> licenseTypeCaptor = ArgumentCaptor.forClass(CDLicenseType.class);
+    ArgumentCaptor<LocalDate> fromDayCaptor = ArgumentCaptor.forClass(LocalDate.class);
+    ArgumentCaptor<LocalDate> toDayCaptor = ArgumentCaptor.forClass(LocalDate.class);
 
     LicenseDateUsageDTO serviceInstancesDateUsage = cdLicenseUsage.getLicenseDateUsage(accountIdentifier,
         LicenseDateUsageParams.builder()
             .fromDate("2022-01-01")
-            .toDate("2022-01-08")
-            .reportType(LicenseDateUsageReportType.DAILY)
+            .toDate("2022-08-01")
+            .reportType(LicenseDateUsageReportType.MONTHLY)
             .build(),
         CDLicenseType.SERVICE_INSTANCES);
 
-    verify(utils, times(1)).fetchLicenseDateUsage(licenseDateUsageFetchDataArgumentCaptor.capture());
+    verify(cdLicenseUsageReportService, times(1))
+        .getLicenseUsagePerMonthsReport(accountIdentifierCaptor.capture(), licenseTypeCaptor.capture(),
+            fromDayCaptor.capture(), toDayCaptor.capture());
 
     assertThat(serviceInstancesDateUsage).isNotNull();
     assertThat(serviceInstancesDateUsage.getLicenseUsage().size()).isEqualTo(8);
-    Map<String, Integer> serviceInstances = serviceInstancesDateUsage.getLicenseUsage();
-    Integer serviceInstancesFirstDay = serviceInstances.get("2022-01-01");
-    assertThat(serviceInstancesFirstDay).isEqualTo(1);
-    Integer serviceInstancesLastDay = serviceInstances.get("2022-01-07");
-    assertThat(serviceInstancesLastDay).isEqualTo(10);
 
-    LicenseDateUsageFetchData value = licenseDateUsageFetchDataArgumentCaptor.getValue();
-    assertThat(value.getLicenseType()).isEqualTo(CDLicenseType.SERVICE_INSTANCES);
-    assertThat(value.getReportType()).isEqualTo(LicenseDateUsageReportType.DAILY);
-    assertThat(value.getFromDate()).isEqualTo("2022-01-01");
-    assertThat(value.getToDate()).isEqualTo("2022-01-08");
+    Integer serviceInstancesLastDay = serviceInstancesDateUsage.getLicenseUsage().get("2022-08-01");
+    assertThat(serviceInstancesLastDay).isEqualTo(41);
+
+    assertThat(licenseTypeCaptor.getValue()).isEqualTo(CDLicenseType.SERVICE_INSTANCES);
+    assertThat(fromDayCaptor.getValue()).isEqualTo("2022-01-01");
+    assertThat(toDayCaptor.getValue()).isEqualTo("2022-08-01");
   }
 
   @Test
   @Owner(developers = OwnerRule.IVAN)
   @Category(UnitTests.class)
-  public void testGetServicesDateUsage() {
-    when(utils.fetchLicenseDateUsage(any())).thenReturn(getDailyServiceUsage());
-    ArgumentCaptor<LicenseDateUsageFetchData> licenseDateUsageFetchDataArgumentCaptor =
-        ArgumentCaptor.forClass(LicenseDateUsageFetchData.class);
+  public void testGetLicenseDateUsageDaily() {
+    when(cdLicenseUsageReportService.getLicenseUsagePerDaysReport(any(), any(), any(), any()))
+        .thenReturn(getDailyServiceUsageReport());
+    ArgumentCaptor<String> accountIdentifierCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<CDLicenseType> licenseTypeCaptor = ArgumentCaptor.forClass(CDLicenseType.class);
+    ArgumentCaptor<LocalDate> fromDayCaptor = ArgumentCaptor.forClass(LocalDate.class);
+    ArgumentCaptor<LocalDate> toDayCaptor = ArgumentCaptor.forClass(LocalDate.class);
     LicenseDateUsageDTO serviceInstancesDateUsage = cdLicenseUsage.getLicenseDateUsage(accountIdentifier,
         LicenseDateUsageParams.builder()
             .fromDate("2022-01-01")
@@ -864,7 +870,9 @@ public class CDLicenseUsageImplTest extends CategoryTest {
             .build(),
         CDLicenseType.SERVICES);
 
-    verify(utils, times(1)).fetchLicenseDateUsage(licenseDateUsageFetchDataArgumentCaptor.capture());
+    verify(cdLicenseUsageReportService, times(1))
+        .getLicenseUsagePerDaysReport(accountIdentifierCaptor.capture(), licenseTypeCaptor.capture(),
+            fromDayCaptor.capture(), toDayCaptor.capture());
 
     assertThat(serviceInstancesDateUsage).isNotNull();
     assertThat(serviceInstancesDateUsage.getLicenseUsage().size()).isEqualTo(8);
@@ -872,15 +880,13 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     Integer serviceInstancesLastDay = serviceInstancesDateUsage.getLicenseUsage().get("2022-01-08");
     assertThat(serviceInstancesLastDay).isEqualTo(41);
 
-    LicenseDateUsageFetchData value = licenseDateUsageFetchDataArgumentCaptor.getValue();
-    assertThat(value.getLicenseType()).isEqualTo(CDLicenseType.SERVICES);
-    assertThat(value.getReportType()).isEqualTo(LicenseDateUsageReportType.DAILY);
-    assertThat(value.getFromDate()).isEqualTo("2022-01-01");
-    assertThat(value.getToDate()).isEqualTo("2022-01-08");
+    assertThat(licenseTypeCaptor.getValue()).isEqualTo(CDLicenseType.SERVICES);
+    assertThat(fromDayCaptor.getValue()).isEqualTo("2022-01-01");
+    assertThat(toDayCaptor.getValue()).isEqualTo("2022-01-08");
   }
 
   @NotNull
-  private Map<String, Integer> getDailyServiceUsage() {
+  private Map<String, Integer> getDailyServiceUsageReport() {
     Map<String, Integer> serviceInstancesUsage = new LinkedHashMap<>();
     serviceInstancesUsage.put("2022-01-01", 1);
     serviceInstancesUsage.put("2022-01-02", 2);
@@ -890,6 +896,20 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     serviceInstancesUsage.put("2022-01-06", 1);
     serviceInstancesUsage.put("2022-01-07", 10);
     serviceInstancesUsage.put("2022-01-08", 41);
+    return serviceInstancesUsage;
+  }
+
+  @NotNull
+  private Map<String, Integer> getMonthlyServiceUsageReport() {
+    Map<String, Integer> serviceInstancesUsage = new LinkedHashMap<>();
+    serviceInstancesUsage.put("2022-01-01", 1);
+    serviceInstancesUsage.put("2022-02-01", 2);
+    serviceInstancesUsage.put("2022-03-01", 3);
+    serviceInstancesUsage.put("2022-04-01", 4);
+    serviceInstancesUsage.put("2022-05-01", 5);
+    serviceInstancesUsage.put("2022-06-01", 1);
+    serviceInstancesUsage.put("2022-07-01", 10);
+    serviceInstancesUsage.put("2022-08-01", 41);
     return serviceInstancesUsage;
   }
 }

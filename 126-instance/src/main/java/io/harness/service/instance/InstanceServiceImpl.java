@@ -10,6 +10,7 @@ package io.harness.service.instance;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.entities.Instance.InstanceKeysAdditional;
+import io.harness.exception.ExceptionUtils;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
@@ -197,6 +199,13 @@ public class InstanceServiceImpl implements InstanceService {
         accountIdentifier, instanceInfoNamespace, instanceInfoPodName));
   }
 
+  @Override
+  public List<InstanceDTO> getActiveInstancesByInstanceInfoAndReleaseName(
+      String accountIdentifier, String instanceInfoNamespace, String releaseName) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByInstanceNamespaceAndReleaseName(
+        accountIdentifier, instanceInfoNamespace, releaseName));
+  }
+
   /*
     Returns aggregated result containing unique environment and build ids with instance count
   */
@@ -225,9 +234,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
-      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact) {
+      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact, String chartVersion,
+      boolean filterOnChartVersion) {
     return instanceRepository.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
-        projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact);
+        projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact, chartVersion,
+        filterOnChartVersion);
   }
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
@@ -265,9 +276,9 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard,
-      boolean isGitOps) {
-    return instanceRepository.getLastDeployedInstance(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isEnvironmentCard, isGitOps);
+      boolean isGitOps, boolean isChartVersionCard) {
+    return instanceRepository.getLastDeployedInstance(accountIdentifier, orgIdentifier, projectIdentifier,
+        serviceIdentifier, isEnvironmentCard, isGitOps, isChartVersionCard);
   }
 
   @Override
@@ -281,9 +292,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
-      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName) {
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName,
+      String chartVersion, boolean filterByChartVersion) {
     return instanceRepository.getActiveInstanceGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
-        projectIdentifier, serviceId, envId, environmentType, infraId, clusterIdentifier, displayName);
+        projectIdentifier, serviceId, envId, environmentType, infraId, clusterIdentifier, displayName, chartVersion,
+        filterByChartVersion);
   }
 
   /*
@@ -381,5 +394,19 @@ public class InstanceServiceImpl implements InstanceService {
       String projectIdentifier, String serviceIdentifier, String agentIdentifier) {
     return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByServiceId(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, agentIdentifier));
+  }
+
+  @Override
+  public boolean deleteForProject(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    try {
+      instanceRepository.getInstancesForProject(accountIdentifier, orgIdentifier, projectIdentifier)
+          .forEach(instance -> deleteById(instance.getId()));
+      return true;
+    } catch (Exception e) {
+      log.warn(format("Error while deleting InstanceNG for AccountId [%s], OrgId [%s], ProjectId [%s] : %s",
+                   accountIdentifier, orgIdentifier, projectIdentifier, ExceptionUtils.getMessage(e)),
+          e);
+      return false;
+    }
   }
 }

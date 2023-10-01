@@ -18,8 +18,8 @@ import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -28,8 +28,12 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
+import io.harness.ccm.commons.helper.ModuleLicenseHelper;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.currency.Currency;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.helper.BusinessMappingTestHelper;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewChartType;
 import io.harness.ccm.views.entities.ViewCondition;
@@ -37,6 +41,7 @@ import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewState;
@@ -62,15 +67,19 @@ import io.harness.ccm.views.graphql.QLCEViewTimeGroupType;
 import io.harness.ccm.views.graphql.QLCEViewTimeTruncGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewTrendData;
 import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
+import io.harness.ccm.views.graphql.ViewCostData;
 import io.harness.ccm.views.graphql.ViewsMetaDataFields;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.helper.BusinessMappingDataSourceHelper;
+import io.harness.ccm.views.helper.BusinessMappingSharedCostHelper;
 import io.harness.ccm.views.helper.ViewBillingServiceHelper;
 import io.harness.ccm.views.helper.ViewBusinessMappingResponseHelper;
 import io.harness.ccm.views.helper.ViewParametersHelper;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.service.DataResponseService;
 import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -87,10 +96,13 @@ import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
 import com.google.common.collect.ImmutableSet;
+import java.time.Instant;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
@@ -108,12 +120,21 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   private static final String LABEL_KEY = "labelKey";
   private static final String LABEL_KEY_NAME = "labelKeyName";
   private static final String LABEL_VALUE = "labelValue";
+  private static final String LABEL_FIELD_NAME = "labelFieldName";
+  private static final String BUSINESS_MAPPING_ID = "businessMappingId";
+  private static final String BUSINESS_MAPPING_NAME = "businessMappingName";
+  private static final String COST_BUCKET = "costBucket";
+  private static final String GCP_INVOICE_MONTH = "gcpInvoiceMonth";
+  private static final String AWS_ACCOUNT = "awsUsageaccountid";
+  private static final String AWS_ACCOUNT_ID = "awsAccountId";
   private static final String WORKLOAD_NAME = "workloadName";
   private static final String NAMESPACE = "namespace";
   private static final String ACCOUNT_ID = "accountId";
   private static final String AWS_USAGE_ACCOUNT_ID = "awsUsageAccountId";
   private static final String CLUSTER_PERSPECTIVE_ID = "clusterPerspectiveId";
   private static final String AWS_PERSPECTIVE_ID = "awsPerspectiveId";
+  private static final String LABEL_PERSPECTIVE_ID = "labelPerspectiveId";
+  private static final String BUSINESS_MAPPING_PERSPECTIVE_ID = "businessMappingPerspectiveId";
   private static final String StART_TIME_MIN = "startTime_MIN";
   private static final String StART_TIME_MAX = "startTime_MAX";
   private static final String COST = "1000";
@@ -121,16 +142,28 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   private static final String UNALLOCATED_COST = "150";
   private static final String SYSTEM_COST = "50";
   private static final String TOTAL_COUNT = "324";
+  private static final String CLOUD_PROVIDER_TABLE = "project.dataset.table";
+  private static final int LIMIT = 2;
+  private static final long ONE_DAY_IN_MILLIS = 86400000L;
+  private static final String MONTH_TWO_DIGITS_FORMAT_SPECIFIER = "%02d";
+  private static final String YYYY_MM = "%s%s";
+  private static final String COST_COLUMN = "cost";
+  private static final String ACCOUNT_FIELD_NAME = "Account";
+
   @InjectMocks @Spy private ViewsBillingServiceImpl viewsBillingService;
   @InjectMocks @Spy private ViewBillingServiceHelper viewBillingServiceHelper;
   @InjectMocks @Spy private ViewParametersHelper viewParametersHelper;
   @InjectMocks @Spy private ViewBusinessMappingResponseHelper viewBusinessMappingResponseHelper;
   @InjectMocks @Spy private ViewsQueryBuilder viewsQueryBuilder;
+  @InjectMocks @Spy private BusinessMappingSharedCostHelper businessMappingSharedCostHelper;
+  @Mock private DataResponseService dataResponseService;
   @Mock private ViewsQueryHelper viewsQueryHelper;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private CEViewService viewService;
+  @Mock private CEViewPreferenceService ceViewPreferenceService;
   @Mock private AwsAccountFieldHelper awsAccountFieldHelper;
   @Mock private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
+  @Mock private BusinessMappingService businessMappingService;
   @Mock private BigQuery bigQuery;
   @Mock private TableResult resultSet;
   @Mock private Job job;
@@ -139,19 +172,16 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private BigQueryService bigQueryService;
   @Mock private BigQueryHelper bigQueryHelper;
   @Mock private LabelFlattenedService labelFlattenedService;
+  @Mock private ModuleLicenseHelper moduleLicenseHelper;
 
   private Schema schema;
   private List<Field> fields;
-
   private static QLCEViewFieldInput clusterId;
   private static QLCEViewFieldInput labelKey;
   private static QLCEViewFieldInput labelValue;
-  private static final String CLOUD_PROVIDER_TABLE = "project.dataset.table";
-  private int count = 0;
-  private static final int LIMIT = 2;
-  private static final long ONE_DAY_IN_MILLIS = 86400000L;
   private long currentTime;
   private long startTime;
+  private int count = 0;
 
   @Before
   public void setUp() throws Exception {
@@ -165,13 +195,16 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .getQuery(any(), any(), any(), any(), any(), any(), anyString(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
+        .getQuery(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
+        .getQuery(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
+        .getQuery(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
     doCallRealMethod()
         .when(viewsQueryBuilder)
         .getTotalCountQuery(any(), any(), any(), any(), anyString(), any(), anyMap());
@@ -196,10 +229,60 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     doCallRealMethod().when(viewsQueryHelper).getTimeFilter(any(), any());
     doCallRealMethod().when(viewsQueryHelper).getTrendBillingFilter(any(), any());
     doCallRealMethod().when(viewsQueryHelper).getRoundedDoubleValue(anyDouble());
+    doCallRealMethod().when(viewsQueryHelper).getSearchValueFromBusinessMappingFilter(anyList(), anyString());
+    doCallRealMethod().when(viewsQueryHelper).getBusinessMappingIdFromFilters(anyList());
+    doCallRealMethod().when(viewsQueryHelper).isGcpInvoiceMonthFilterPresent(anyList());
+    doCallRealMethod().when(viewsQueryHelper).getBusinessMappingIdFromGroupBy(anyList());
+    doCallRealMethod().when(viewsQueryHelper).isGroupByBusinessMappingPresent(anyList());
+    doCallRealMethod().when(viewsQueryHelper).getModifiedBusinessMappingLimit(anyInt(), anyBoolean(), anyBoolean());
+    doCallRealMethod().when(viewsQueryHelper).getModifiedBusinessMappingOffset(anyInt(), anyBoolean(), anyBoolean());
+    doCallRealMethod().when(viewsQueryHelper).buildQueryParamsWithSkipGroupBy(any(), anyBoolean());
+    doCallRealMethod().when(viewsQueryHelper).getSelectedCostTargetsFromFilters(any(), anyList(), any());
+    doCallRealMethod().when(viewsQueryHelper).removeBusinessMappingFilter(anyList(), anyString());
+    doCallRealMethod().when(viewsQueryHelper).isGroupByNonePresent(anyList());
+    doCallRealMethod().when(viewsQueryHelper).removeGroupByNone(anyList());
 
     doCallRealMethod().when(viewsQueryBuilder).getViewFieldInput(any());
     doCallRealMethod().when(viewsQueryBuilder).mapConditionToFilter(any());
     doCallRealMethod().when(viewsQueryBuilder).getModifiedQLCEViewFieldInput(any(), anyBoolean());
+    doCallRealMethod()
+        .when(viewsQueryBuilder)
+        .getSharedCostQuery(anyList(), anyList(), anyMap(), anyDouble(), any(), any(), any(), anyString(), anyBoolean(),
+            any(), anyMap());
+    doCallRealMethod()
+        .when(viewsQueryBuilder)
+        .getSharedCostOuterQuery(anyList(), anyList(), anyList(), any(), anyString(), anyBoolean(), any(), anyMap());
+
+    doCallRealMethod().when(viewParametersHelper).isDataFilteredByAwsAccount(anyList());
+    doCallRealMethod().when(viewParametersHelper).getBusinessMappingIds(anyList(), anyString());
+    doCallRealMethod().when(viewParametersHelper).getStartTimeForTrendFilters(anyList());
+    doCallRealMethod().when(viewParametersHelper).getFiltersForEntityStatsCostTrend(anyList());
+    doCallRealMethod().when(viewParametersHelper).getAggregationsForEntityStatsCostTrend(anyList());
+    doCallRealMethod().when(viewParametersHelper).isClusterPerspective(anyList(), anyList());
+    doCallRealMethod().when(viewParametersHelper).addAdditionalRequiredGroupBy(anyList());
+    doCallRealMethod().when(viewParametersHelper).getModifiedAggregations(anyList());
+    doCallRealMethod().when(viewParametersHelper).getModifiedSort(anyList());
+
+    doCallRealMethod()
+        .when(viewBillingServiceHelper)
+        .getQuery(anyList(), anyList(), anyList(), anyList(), anyString(), any(), anyList(), anyMap(), any());
+    doCallRealMethod()
+        .when(viewBillingServiceHelper)
+        .getSharedCostOuterQuery(anyList(), anyList(), anyList(), anyBoolean(), any(), anyString(), any(), anyMap());
+    doCallRealMethod()
+        .when(viewBillingServiceHelper)
+        .getSharedCostUnionQuery(anyList(), anyList(), anyList(), anyString(), any(), any(), anyMap(), anyDouble(),
+            anySet(), anyBoolean(), anyMap(), any());
+
+    doCallRealMethod()
+        .when(businessMappingSharedCostHelper)
+        .getEntityStatsSharedCostDataQueryForCostTrend(
+            anyList(), anyList(), anyList(), anyList(), anyString(), any(), anyList(), anyList(), anyMap(), any());
+
+    doCallRealMethod().when(awsAccountFieldHelper).spiltAndSortAWSAccountIdListBasedOnAccountName(anyList());
+    doCallRealMethod()
+        .when(viewBusinessMappingResponseHelper)
+        .costCategoriesPostFetchResponseUpdate(any(), anyString(), anyList(), anyMap(), anyInt(), anyInt());
 
     clusterId = QLCEViewFieldInput.builder()
                     .fieldId(CLUSTER_ID)
@@ -235,7 +318,9 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     when(row.get(WORKLOAD_NAME)).thenReturn(FieldValue.of(Attribute.PRIMITIVE, WORKLOAD_NAME));
     when(row.get(NAMESPACE)).thenReturn(FieldValue.of(Attribute.PRIMITIVE, NAMESPACE));
     when(row.get(AWS_USAGE_ACCOUNT_ID)).thenReturn(FieldValue.of(Attribute.PRIMITIVE, AWS_USAGE_ACCOUNT_ID));
-    when(row.get("cost")).thenReturn(FieldValue.of(Attribute.PRIMITIVE, COST));
+    when(row.get(LABEL_KEY)).thenReturn(FieldValue.of(Attribute.PRIMITIVE, LABEL_KEY));
+    when(row.get(BUSINESS_MAPPING_NAME)).thenReturn(FieldValue.of(Attribute.PRIMITIVE, BUSINESS_MAPPING_NAME));
+    when(row.get(COST_COLUMN)).thenReturn(FieldValue.of(Attribute.PRIMITIVE, COST));
     when(row.get("billingamount")).thenReturn(FieldValue.of(Attribute.PRIMITIVE, COST));
     when(row.get("actualidlecost")).thenReturn(FieldValue.of(Attribute.PRIMITIVE, IDLE_COST));
     when(row.get("unallocatedcost")).thenReturn(FieldValue.of(Attribute.PRIMITIVE, UNALLOCATED_COST));
@@ -270,9 +355,18 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     });
 
     when(viewService.get(CLUSTER_PERSPECTIVE_ID))
-        .thenReturn(getMockPerspective(CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER));
+        .thenReturn(getMockPerspective(CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER,
+            ViewIdOperator.NOT_NULL, Collections.singletonList("")));
     when(viewService.get(AWS_PERSPECTIVE_ID))
-        .thenReturn(getMockPerspective(AWS_USAGE_ACCOUNT_ID, "Account", ViewFieldIdentifier.AWS));
+        .thenReturn(getMockPerspective(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS,
+            ViewIdOperator.NOT_NULL, Collections.singletonList("")));
+    when(viewService.get(LABEL_PERSPECTIVE_ID))
+        .thenReturn(getMockPerspective(LABEL_KEY, LABEL_FIELD_NAME, ViewFieldIdentifier.LABEL, ViewIdOperator.NOT_NULL,
+            Collections.singletonList("")));
+    when(viewService.get(BUSINESS_MAPPING_PERSPECTIVE_ID))
+        .thenReturn(getMockPerspective(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING,
+            ViewIdOperator.NOT_NULL, Collections.singletonList("")));
+    when(businessMappingService.get(anyString())).thenReturn(getMockBusinessMapping());
     when(businessMappingDataSourceHelper.getBusinessMappingViewFieldIdentifiersFromIdFilters(anyList()))
         .thenReturn(Collections.emptySet());
     when(businessMappingDataSourceHelper.getBusinessMappingViewFieldIdentifiersFromRuleFilters(anyList()))
@@ -292,13 +386,14 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   public void getFilterValueStats() {
     doReturn(Collections.singletonList(CLUSTER))
         .when(viewsBillingService)
-        .convertToFilterValuesData(resultSet, Collections.singletonList(clusterId), false);
+        .convertToFilterValuesData(resultSet, Collections.singletonList(clusterId), true);
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {""}).build())
                     .build());
-    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
-        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
+    doReturn(Collections.singletonList(filters.get(0).getIdFilter()))
+        .when(awsAccountFieldHelper)
+        .addAccountIdsByAwsAccountNameFilter(Collections.singletonList(filters.get(0).getIdFilter()), null);
     List<String> filterValueStats = viewsBillingService.getFilterValueStats(filters, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
   }
@@ -311,8 +406,9 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {CLUSTER}).build())
                     .build());
-    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
-        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
+    doReturn(Collections.singletonList(filters.get(0).getIdFilter()))
+        .when(awsAccountFieldHelper)
+        .addAccountIdsByAwsAccountNameFilter(Collections.singletonList(filters.get(0).getIdFilter()), null);
     List<String> filterValueStats = viewsBillingService.getFilterValueStats(filters, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
   }
@@ -325,8 +421,9 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(labelKey).values(new String[] {""}).build())
                     .build());
-    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
-        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
+    doReturn(Collections.singletonList(filters.get(0).getIdFilter()))
+        .when(awsAccountFieldHelper)
+        .addAccountIdsByAwsAccountNameFilter(Collections.singletonList(filters.get(0).getIdFilter()), null);
     List<String> filterValueStats = viewsBillingService.getFilterValueStats(filters, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(LABEL_KEY);
   }
@@ -339,16 +436,132 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(labelValue).values(new String[] {""}).build())
                     .build());
-    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
-        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
+    doReturn(Collections.singletonList(filters.get(0).getIdFilter()))
+        .when(awsAccountFieldHelper)
+        .addAccountIdsByAwsAccountNameFilter(Collections.singletonList(filters.get(0).getIdFilter()), null);
     List<String> filterValueStats = viewsBillingService.getFilterValueStats(filters, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(LABEL_VALUE);
   }
 
   @Test
+  @Owner(developers = SHUBHANSHU)
+  @Category(UnitTests.class)
+  public void getFilterValueStatsNg() {
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(QLCEViewFilterWrapper.builder()
+                    .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {CLUSTER}).build())
+                    .build());
+    doReturn(Collections.singletonList(filters.get(0).getIdFilter()))
+        .when(awsAccountFieldHelper)
+        .addAccountIdsByAwsAccountNameFilter(Collections.singletonList(filters.get(0).getIdFilter()), ACCOUNT_ID);
+    List<String> filterValueStats =
+        viewsBillingService.getFilterValueStatsNg(filters, 10, 0, getMockViewQueryParams(false));
+    assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
+
+    // Cluster table query
+    filterValueStats = viewsBillingService.getFilterValueStatsNg(filters, 10, 0, getMockViewQueryParams(true));
+    assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
+  }
+
+  @Test
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
-  public void clusterDatSourcesTrue() {
+  public void testGetFilterValueStatsNgBusinessMapping() {
+    QLCEViewFieldInput businessMappingFieldInput =
+        QLCEViewFieldInput.builder()
+            .fieldId(BUSINESS_MAPPING_ID)
+            .identifier(ViewFieldIdentifier.BUSINESS_MAPPING)
+            .identifierName(ViewFieldIdentifier.BUSINESS_MAPPING.getDisplayName())
+            .build();
+    doReturn(Collections.singletonList(COST_BUCKET))
+        .when(businessMappingService)
+        .getCostTargetNames(BUSINESS_MAPPING_ID, ACCOUNT_ID, "");
+    List<QLCEViewFilterWrapper> filters = Collections.singletonList(
+        QLCEViewFilterWrapper.builder()
+            .idFilter(QLCEViewFilter.builder().field(businessMappingFieldInput).values(new String[] {""}).build())
+            .build());
+    List<String> filterValueStats =
+        viewsBillingService.getFilterValueStatsNg(filters, 10, 0, getMockViewQueryParams(false));
+    assertThat(filterValueStats.get(0)).isEqualTo(COST_BUCKET);
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testGetFilterValueStatsNgGCPInvoiceMonthFreeEditionModuleLicense() {
+    QLCEViewFieldInput gcpInvoiceMonthFieldInput = QLCEViewFieldInput.builder()
+                                                       .fieldId(GCP_INVOICE_MONTH)
+                                                       .identifier(ViewFieldIdentifier.GCP)
+                                                       .identifierName(ViewFieldIdentifier.GCP.getDisplayName())
+                                                       .build();
+    doReturn(true).when(moduleLicenseHelper).isFreeEditionModuleLicense(ACCOUNT_ID);
+    List<QLCEViewFilterWrapper> filters = Collections.singletonList(
+        QLCEViewFilterWrapper.builder()
+            .idFilter(QLCEViewFilter.builder().field(gcpInvoiceMonthFieldInput).values(new String[] {""}).build())
+            .build());
+    List<String> filterValueStats =
+        viewsBillingService.getFilterValueStatsNg(filters, 100, 0, getMockViewQueryParams(false));
+    YearMonth yearMonth = YearMonth.now();
+    assertThat(filterValueStats.size()).isEqualTo(2);
+    assertThat(filterValueStats.get(0))
+        .isEqualTo(String.format(YYYY_MM, yearMonth.getYear(),
+            String.format(MONTH_TWO_DIGITS_FORMAT_SPECIFIER, yearMonth.getMonth().getValue())));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testGetFilterValueStatsNgGCPInvoiceMonthPaidEditionModuleLicense() {
+    QLCEViewFieldInput gcpInvoiceMonthFieldInput = QLCEViewFieldInput.builder()
+                                                       .fieldId(GCP_INVOICE_MONTH)
+                                                       .identifier(ViewFieldIdentifier.GCP)
+                                                       .identifierName(ViewFieldIdentifier.GCP.getDisplayName())
+                                                       .build();
+    doReturn(false).when(moduleLicenseHelper).isFreeEditionModuleLicense(ACCOUNT_ID);
+    List<QLCEViewFilterWrapper> filters = Collections.singletonList(
+        QLCEViewFilterWrapper.builder()
+            .idFilter(QLCEViewFilter.builder().field(gcpInvoiceMonthFieldInput).values(new String[] {""}).build())
+            .build());
+    List<String> filterValueStats =
+        viewsBillingService.getFilterValueStatsNg(filters, 100, 0, getMockViewQueryParams(false));
+    YearMonth yearMonth = YearMonth.now();
+    assertThat(filterValueStats.size()).isEqualTo(12);
+    assertThat(filterValueStats.get(0))
+        .isEqualTo(String.format(YYYY_MM, yearMonth.getYear(),
+            String.format(MONTH_TWO_DIGITS_FORMAT_SPECIFIER, yearMonth.getMonth().getValue())));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testGetFilterValueStatsNgAWSAccount() {
+    QLCEViewFieldInput awsInvoiceMonthFieldInput = QLCEViewFieldInput.builder()
+                                                       .fieldId(AWS_ACCOUNT)
+                                                       .identifier(ViewFieldIdentifier.AWS)
+                                                       .identifierName(ViewFieldIdentifier.AWS.getDisplayName())
+                                                       .build();
+    doReturn(Collections.singletonList(AWS_ACCOUNT_ID))
+        .when(viewsBillingService)
+        .convertToFilterValuesData(resultSet, Collections.singletonList(awsInvoiceMonthFieldInput), false);
+    List<QLCEViewFilterWrapper> filters = Collections.singletonList(
+        QLCEViewFilterWrapper.builder()
+            .idFilter(QLCEViewFilter.builder().field(awsInvoiceMonthFieldInput).values(new String[] {""}).build())
+            .build());
+    doReturn(Collections.singletonList(filters.get(0).getIdFilter()))
+        .when(awsAccountFieldHelper)
+        .addAccountIdsByAwsAccountNameFilter(Collections.singletonList(filters.get(0).getIdFilter()), ACCOUNT_ID);
+    doReturn(Collections.singletonList(AWS_ACCOUNT_ID))
+        .when(awsAccountFieldHelper)
+        .mergeAwsAccountNameWithValues(Collections.singletonList(AWS_ACCOUNT_ID), ACCOUNT_ID);
+    List<String> filterValueStats =
+        viewsBillingService.getFilterValueStatsNg(filters, 100, 0, getMockViewQueryParams(false));
+    assertThat(filterValueStats.get(0)).isEqualTo(AWS_ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testClusterDataSourcesTrue() {
     assertThat(viewParametersHelper.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.CLUSTER))).isTrue();
     assertThat(viewParametersHelper.isClusterDataSources(
                    ImmutableSet.of(ViewFieldIdentifier.CLUSTER, ViewFieldIdentifier.COMMON)))
@@ -364,7 +577,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
-  public void clusterDatSourcesFalse() {
+  public void testClusterDataSourcesFalse() {
     assertThat(viewParametersHelper.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.AWS))).isFalse();
     assertThat(viewParametersHelper.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.COMMON))).isFalse();
     assertThat(viewParametersHelper.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.LABEL))).isFalse();
@@ -382,29 +595,10 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
-  public void getFilterValueStatsNg() {
-    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
-    filters.add(QLCEViewFilterWrapper.builder()
-                    .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {CLUSTER}).build())
-                    .build());
-    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), anyString()))
-        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
-    List<String> filterValueStats =
-        viewsBillingService.getFilterValueStatsNg(filters, 10, 0, getMockViewQueryParams(false));
-    assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
-
-    // Cluster table query
-    filterValueStats = viewsBillingService.getFilterValueStatsNg(filters, 10, 0, getMockViewQueryParams(true));
-    assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
-  }
-
-  @Test
-  @Owner(developers = SHUBHANSHU)
-  @Category(UnitTests.class)
   public void testClusterPerspectiveGrid() {
     // Mock fields returned by result set
     fields = new ArrayList<>();
-    fields.add(Field.newBuilder("cost", LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder(CLUSTER_NAME, LegacySQLTypeName.STRING).build());
     schema = Schema.of(fields);
     when(resultSet.getSchema()).thenReturn(schema);
@@ -416,7 +610,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
 
     List<QLCEViewGroupBy> groupBy = new ArrayList<>();
     groupBy.add(getEntityGroupBy(CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER));
@@ -454,7 +648,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
     aggregations.add(getAggregation("actualidlecost", QLCEViewAggregateOperation.SUM));
     aggregations.add(getAggregation("memoryactualidlecost", QLCEViewAggregateOperation.SUM));
 
@@ -465,7 +659,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective grid query
     QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
-        filters, groupBy, aggregations, sortCriteria, 100, 0, getMockViewQueryParams(false));
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -482,7 +676,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   public void testCloudPerspectiveGridNg() {
     // Mock fields returned by result set
     fields = new ArrayList<>();
-    fields.add(Field.newBuilder("cost", LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder(AWS_USAGE_ACCOUNT_ID, LegacySQLTypeName.STRING).build());
     schema = Schema.of(fields);
     when(resultSet.getSchema()).thenReturn(schema);
@@ -494,16 +688,16 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
 
     List<QLCEViewGroupBy> groupBy = new ArrayList<>();
-    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, "Account", ViewFieldIdentifier.AWS));
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
 
     List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
 
     // Perspective grid query
     QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
-        filters, groupBy, aggregations, sortCriteria, 100, 0, getMockViewQueryParams(false));
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -528,14 +722,15 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Build query parameters
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
-    filters.add(getPerspectiveFilter(NAMESPACE, "Namespace", ViewFieldIdentifier.CLUSTER, new String[] {NAMESPACE}));
-    filters.add(
-        getPerspectiveFilter(CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER, new String[] {CLUSTER}));
+    filters.add(getPerspectiveFilter(
+        NAMESPACE, "Namespace", ViewFieldIdentifier.CLUSTER, QLCEViewFilterOperator.IN, new String[] {NAMESPACE}));
+    filters.add(getPerspectiveFilter(
+        CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER, QLCEViewFilterOperator.IN, new String[] {CLUSTER}));
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
     aggregations.add(getAggregation("actualidlecost", QLCEViewAggregateOperation.SUM));
     aggregations.add(getAggregation("memoryactualidlecost", QLCEViewAggregateOperation.SUM));
 
@@ -546,7 +741,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective grid query
     QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
-        filters, groupBy, aggregations, sortCriteria, 100, 0, getMockViewQueryParams(true));
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -559,12 +754,272 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testLabelPerspectiveGridNg() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(LABEL_KEY, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(LABEL_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(LABEL_KEY, LABEL_FIELD_NAME, ViewFieldIdentifier.LABEL));
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective grid query
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getData().get(0).getName()).isEqualTo(LABEL_KEY);
+    assertThat(data.getData().get(0).getCost()).isEqualTo(Double.valueOf(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveGridNgGroupByCostCategory() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(BUSINESS_MAPPING_NAME, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING));
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective grid query
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getData().get(0).getName()).isEqualTo(BUSINESS_MAPPING_NAME);
+    assertThat(data.getData().get(0).getCost()).isEqualTo(Double.valueOf(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveGridNgGroupByAccount() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(AWS_USAGE_ACCOUNT_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective grid query
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getData().get(0).getName()).isEqualTo(AWS_USAGE_ACCOUNT_ID);
+    assertThat(data.getData().get(0).getCost()).isEqualTo(Double.valueOf(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveGridNgGroupByAccountSharedCostQuery() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(AWS_USAGE_ACCOUNT_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+    when(viewParametersHelper.getSharedCostBusinessMappings(anyList()))
+        .thenReturn(Collections.singletonList(getMockBusinessMapping()));
+    when(viewService.get(BUSINESS_MAPPING_PERSPECTIVE_ID))
+        .thenReturn(getMockPerspective(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING,
+            ViewIdOperator.IN, Collections.singletonList(BusinessMappingTestHelper.TEST_NAME)));
+    when(dataResponseService.getCostBucketEntityCost(
+             anyList(), anyList(), anyList(), anyString(), any(), anyBoolean(), any(), anyMap(), any()))
+        .thenReturn(Collections.singletonMap(AWS_USAGE_ACCOUNT_ID, Double.valueOf(COST)));
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective grid query
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getData().get(0).getName()).isEqualTo(AWS_USAGE_ACCOUNT_ID);
+    assertThat(data.getData().get(0).getCost()).isEqualTo(Double.valueOf(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveGridNgNullCostCategory() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(BUSINESS_MAPPING_NAME, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+    filters.add(
+        getPerspectiveFilter(BUSINESS_MAPPING_PERSPECTIVE_ID, ViewFieldIdentifier.BUSINESS_MAPPING.getDisplayName(),
+            ViewFieldIdentifier.BUSINESS_MAPPING, QLCEViewFilterOperator.NULL, null));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective grid query
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getData().get(0).getName()).isEqualTo(BUSINESS_MAPPING_NAME);
+    assertThat(data.getData().get(0).getCost()).isEqualTo(Double.valueOf(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveGridNgNotNullCostCategory() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(BUSINESS_MAPPING_NAME, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+    filters.add(
+        getPerspectiveFilter(BUSINESS_MAPPING_PERSPECTIVE_ID, ViewFieldIdentifier.BUSINESS_MAPPING.getDisplayName(),
+            ViewFieldIdentifier.BUSINESS_MAPPING, QLCEViewFilterOperator.NOT_NULL, null));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective grid query
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getData().get(0).getName()).isEqualTo(BUSINESS_MAPPING_NAME);
+    assertThat(data.getData().get(0).getCost()).isEqualTo(Double.valueOf(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testLabelCostCategoryPerspectiveGridNg() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(BUSINESS_MAPPING_NAME, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+    when(businessMappingService.get(anyString())).thenReturn(getMockLabelBusinessMapping());
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective grid query
+    QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getData().get(0).getName()).isEqualTo(BUSINESS_MAPPING_NAME);
+    assertThat(data.getData().get(0).getCost()).isEqualTo(Double.valueOf(COST));
+  }
+
+  @Test
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
   public void testClusterPerspectiveChart() {
     // Mock fields returned by result set
     fields = new ArrayList<>();
-    fields.add(Field.newBuilder("cost", LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder(CLUSTER_NAME, LegacySQLTypeName.STRING).build());
     schema = Schema.of(fields);
     when(resultSet.getSchema()).thenReturn(schema);
@@ -576,7 +1031,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
 
     List<QLCEViewGroupBy> groupBy = new ArrayList<>();
     groupBy.add(getEntityGroupBy(CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER));
@@ -597,7 +1052,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   public void testClusterPerspectiveChartNg() {
     // Mock fields returned by result set
     fields = new ArrayList<>();
-    fields.add(Field.newBuilder("cost", LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder(CLUSTER_NAME, LegacySQLTypeName.STRING).build());
     schema = Schema.of(fields);
     when(resultSet.getSchema()).thenReturn(schema);
@@ -609,7 +1064,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
 
     List<QLCEViewGroupBy> groupBy = new ArrayList<>();
     groupBy.add(getEntityGroupBy(CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER));
@@ -619,7 +1074,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective chart query
     TableResult data = viewsBillingService.getTimeSeriesStatsNg(
-        filters, groupBy, aggregations, sortCriteria, false, 100, getMockViewQueryParams(false, true));
+        filters, groupBy, aggregations, sortCriteria, false, 12, null, getMockViewQueryParams(true, true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -631,7 +1086,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   public void testCloudPerspectiveChartNg() {
     // Mock fields returned by result set
     fields = new ArrayList<>();
-    fields.add(Field.newBuilder("cost", LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder(AWS_USAGE_ACCOUNT_ID, LegacySQLTypeName.STRING).build());
     schema = Schema.of(fields);
     when(resultSet.getSchema()).thenReturn(schema);
@@ -643,17 +1098,233 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
 
     List<QLCEViewGroupBy> groupBy = new ArrayList<>();
-    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, "Account", ViewFieldIdentifier.AWS));
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
     groupBy.add(getTimeGroupBy());
 
     List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
 
     // Perspective chart query
     TableResult data = viewsBillingService.getTimeSeriesStatsNg(
-        filters, groupBy, aggregations, sortCriteria, false, 100, getMockViewQueryParams(false, true));
+        filters, groupBy, aggregations, sortCriteria, false, 12, null, getMockViewQueryParams(true, true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testLabelPerspectiveChartNg() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(LABEL_KEY, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(LABEL_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(LABEL_KEY, LABEL_KEY_NAME, ViewFieldIdentifier.LABEL));
+    groupBy.add(getTimeGroupBy());
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective chart query
+    TableResult data = viewsBillingService.getTimeSeriesStatsNg(
+        filters, groupBy, aggregations, sortCriteria, false, 100, null, getMockViewQueryParams(false, true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveChartNgGroupByCostCategory() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(BUSINESS_MAPPING_NAME, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING));
+    groupBy.add(getTimeGroupBy());
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective chart query
+    TableResult data = viewsBillingService.getTimeSeriesStatsNg(
+        filters, groupBy, aggregations, sortCriteria, false, 12, null, getMockViewQueryParams(false, true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveChartNgGroupByAccount() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(AWS_USAGE_ACCOUNT_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective chart query
+    TableResult data = viewsBillingService.getTimeSeriesStatsNg(
+        filters, groupBy, aggregations, sortCriteria, false, 12, null, getMockViewQueryParams(false, true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveChartNgGroupByAccountSharedCostQuery() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(AWS_USAGE_ACCOUNT_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+    when(viewParametersHelper.getSharedCostBusinessMappings(anyList()))
+        .thenReturn(Collections.singletonList(getMockBusinessMapping()));
+    when(viewService.get(BUSINESS_MAPPING_PERSPECTIVE_ID))
+        .thenReturn(getMockPerspective(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING,
+            ViewIdOperator.IN, Collections.singletonList(BusinessMappingTestHelper.TEST_NAME)));
+    when(dataResponseService.getCostBucketEntityCost(
+             anyList(), anyList(), anyList(), anyString(), any(), anyBoolean(), any(), anyMap(), any()))
+        .thenReturn(Collections.singletonMap(AWS_USAGE_ACCOUNT_ID, Double.valueOf(COST)));
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective chart query
+    TableResult data = viewsBillingService.getTimeSeriesStatsNg(
+        filters, groupBy, aggregations, sortCriteria, false, 12, null, getMockViewQueryParams(false, true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveChartNgCostCategoryNull() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(AWS_USAGE_ACCOUNT_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+    filters.add(
+        getPerspectiveFilter(BUSINESS_MAPPING_PERSPECTIVE_ID, ViewFieldIdentifier.BUSINESS_MAPPING.getDisplayName(),
+            ViewFieldIdentifier.BUSINESS_MAPPING, QLCEViewFilterOperator.NULL, null));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective chart query
+    TableResult data = viewsBillingService.getTimeSeriesStatsNg(
+        filters, groupBy, aggregations, sortCriteria, false, 12, null, getMockViewQueryParams(false, true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testLabelCostCategoryPerspectiveChartNg() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(AWS_USAGE_ACCOUNT_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+    when(businessMappingService.get(anyString())).thenReturn(getMockLabelBusinessMapping());
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    List<QLCEViewSortCriteria> sortCriteria = Collections.singletonList(getSortCriteria());
+
+    // Perspective chart query
+    TableResult data = viewsBillingService.getTimeSeriesStatsNg(
+        filters, groupBy, aggregations, sortCriteria, false, 12, null, getMockViewQueryParams(false, true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -665,7 +1336,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   public void testClusterPerspectiveSummaryCard() {
     // Mock fields returned by result set
     fields = new ArrayList<>();
-    fields.add(Field.newBuilder("cost", LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.NUMERIC).build());
     fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.NUMERIC).build());
     schema = Schema.of(fields);
@@ -679,7 +1350,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
 
     // Perspective SummaryCard query
     QLCEViewTrendInfo data = viewsBillingService.getTrendStatsData(filters, aggregations);
@@ -695,7 +1366,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   public void testClusterPerspectiveSummaryCardNg() {
     // Mock fields returned by result set
     fields = new ArrayList<>();
-    fields.add(Field.newBuilder("cost", LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder("actualidlecost", LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder("unallocatedcost", LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder("systemcost", LegacySQLTypeName.FLOAT).build());
@@ -711,14 +1382,18 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
     aggregations.add(getAggregation("actualidlecost", QLCEViewAggregateOperation.SUM));
     aggregations.add(getAggregation("unallocatedcost", QLCEViewAggregateOperation.SUM));
     aggregations.add(getAggregation("systemcost", QLCEViewAggregateOperation.SUM));
 
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER));
+    groupBy.add(getTimeGroupBy());
+
     // Perspective SummaryCard query
-    QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(
-        filters, Collections.emptyList(), aggregations, getMockViewQueryParams(false));
+    QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(true), true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -734,7 +1409,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   public void testCloudPerspectiveSummaryCardNg() {
     // Mock fields returned by result set
     fields = new ArrayList<>();
-    fields.add(Field.newBuilder("cost", LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
     fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
     fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
     schema = Schema.of(fields);
@@ -747,11 +1422,231 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
 
     List<QLCEViewAggregation> aggregations = new ArrayList<>();
-    aggregations.add(getAggregation("cost", QLCEViewAggregateOperation.SUM));
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
 
     // Perspective SummaryCard query
-    QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(
-        filters, Collections.emptyList(), aggregations, getMockViewQueryParams(false));
+    QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(false), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getTotalCost().getValue()).isEqualTo(LIMIT * Double.parseDouble(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testLabelPerspectiveSummaryCardNg() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(LABEL_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(LABEL_KEY, LABEL_KEY_NAME, ViewFieldIdentifier.LABEL));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(false), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getTotalCost().getValue()).isEqualTo(LIMIT * Double.parseDouble(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveSummaryCardNgGroupByCostCategory() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    QLCEViewTrendData data =
+        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregations, null, getMockViewQueryParams(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getTotalCost().getValue()).isEqualTo(LIMIT * Double.parseDouble(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveSummaryCardNgGroupByAccount() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(false), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getTotalCost().getValue()).isEqualTo(LIMIT * Double.parseDouble(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveSummaryCardNgGroupByAccountSharedCostQuery() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+    when(viewParametersHelper.getSharedCostBusinessMappings(anyList()))
+        .thenReturn(Collections.singletonList(getMockBusinessMapping()));
+    when(viewService.get(BUSINESS_MAPPING_PERSPECTIVE_ID))
+        .thenReturn(getMockPerspective(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING,
+            ViewIdOperator.IN, Collections.singletonList(BusinessMappingTestHelper.TEST_NAME)));
+    when(dataResponseService.getCostBucketEntityCost(
+             anyList(), anyList(), anyList(), anyString(), any(), anyBoolean(), any(), anyMap(), any()))
+        .thenReturn(Collections.singletonMap(AWS_USAGE_ACCOUNT_ID, Double.valueOf(COST)));
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(false), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getTotalCost().getValue()).isEqualTo(LIMIT * Double.parseDouble(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveSummaryCardNgCostCategoryNull() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(LABEL_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+    filters.add(
+        getPerspectiveFilter(BUSINESS_MAPPING_PERSPECTIVE_ID, ViewFieldIdentifier.BUSINESS_MAPPING.getDisplayName(),
+            ViewFieldIdentifier.BUSINESS_MAPPING, QLCEViewFilterOperator.NULL, null));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(false), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getTotalCost().getValue()).isEqualTo(LIMIT * Double.parseDouble(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testLabelCostCategoryPerspectiveSummaryCardNg() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+    when(businessMappingService.get(anyString())).thenReturn(getMockLabelBusinessMapping());
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(LABEL_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(false), true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -781,11 +1676,433 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Total count query
     Integer data =
-        viewsBillingService.getTotalCountForQuery(filters, groupBy, getMockViewQueryParamsForTotalCount(false));
+        viewsBillingService.getTotalCountForQuery(filters, groupBy, null, getMockViewQueryParamsForTotalCount(true));
 
     // Assertions on result
     assertThat(data).isNotNull();
     assertThat(data).isEqualTo(Integer.valueOf(TOTAL_COUNT));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCloudPerspectiveTotalCount() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder("totalCount", LegacySQLTypeName.NUMERIC).build());
+    fields.add(Field.newBuilder(AWS_USAGE_ACCOUNT_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(AWS_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+
+    // Total count query
+    Integer data =
+        viewsBillingService.getTotalCountForQuery(filters, groupBy, null, getMockViewQueryParamsForTotalCount(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data).isEqualTo(Integer.valueOf(TOTAL_COUNT));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testLabelPerspectiveTotalCount() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder("totalCount", LegacySQLTypeName.NUMERIC).build());
+    fields.add(Field.newBuilder(LABEL_KEY, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(LABEL_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(LABEL_KEY, LABEL_KEY_NAME, ViewFieldIdentifier.LABEL));
+
+    // Total count query
+    Integer data =
+        viewsBillingService.getTotalCountForQuery(filters, groupBy, null, getMockViewQueryParamsForTotalCount(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data).isEqualTo(Integer.valueOf(TOTAL_COUNT));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveTotalCount() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder("totalCount", LegacySQLTypeName.NUMERIC).build());
+    fields.add(Field.newBuilder(BUSINESS_MAPPING_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING));
+
+    // Total count query
+    Integer data =
+        viewsBillingService.getTotalCountForQuery(filters, groupBy, null, getMockViewQueryParamsForTotalCount(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data).isEqualTo(Integer.valueOf(TOTAL_COUNT));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveTotalCountSharedCostQuery() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder("totalCount", LegacySQLTypeName.NUMERIC).build());
+    fields.add(Field.newBuilder(BUSINESS_MAPPING_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+    when(viewParametersHelper.getSharedCostBusinessMappings(anyList()))
+        .thenReturn(Collections.singletonList(getMockBusinessMapping()));
+    when(viewService.get(BUSINESS_MAPPING_PERSPECTIVE_ID))
+        .thenReturn(getMockPerspective(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING,
+            ViewIdOperator.IN, Collections.singletonList(BusinessMappingTestHelper.TEST_NAME)));
+    when(dataResponseService.getCostBucketEntityCost(
+             anyList(), anyList(), anyList(), anyString(), any(), anyBoolean(), any(), anyMap(), any()))
+        .thenReturn(Collections.singletonMap(AWS_USAGE_ACCOUNT_ID, Double.valueOf(COST)));
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+
+    // Total count query
+    Integer data =
+        viewsBillingService.getTotalCountForQuery(filters, groupBy, null, getMockViewQueryParamsForTotalCount(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data).isEqualTo(Integer.valueOf(TOTAL_COUNT));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCostCategoryPerspectiveTotalCountCostCategoryNull() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder("totalCount", LegacySQLTypeName.NUMERIC).build());
+    fields.add(Field.newBuilder(BUSINESS_MAPPING_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+    filters.add(
+        getPerspectiveFilter(BUSINESS_MAPPING_PERSPECTIVE_ID, ViewFieldIdentifier.BUSINESS_MAPPING.getDisplayName(),
+            ViewFieldIdentifier.BUSINESS_MAPPING, QLCEViewFilterOperator.NULL, null));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING));
+
+    // Total count query
+    Integer data =
+        viewsBillingService.getTotalCountForQuery(filters, groupBy, null, getMockViewQueryParamsForTotalCount(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data).isEqualTo(Integer.valueOf(TOTAL_COUNT));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testLabelCostCategoryPerspectiveTotalCount() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder("totalCount", LegacySQLTypeName.NUMERIC).build());
+    fields.add(Field.newBuilder(BUSINESS_MAPPING_ID, LegacySQLTypeName.STRING).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+    when(businessMappingService.get(anyString())).thenReturn(getMockLabelBusinessMapping());
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(BUSINESS_MAPPING_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(BUSINESS_MAPPING_ID, BUSINESS_MAPPING_NAME, ViewFieldIdentifier.BUSINESS_MAPPING));
+
+    // Total count query
+    Integer data =
+        viewsBillingService.getTotalCountForQuery(filters, groupBy, null, getMockViewQueryParamsForTotalCount(false));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data).isEqualTo(Integer.valueOf(TOTAL_COUNT));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testClusterPerspectiveUnallocatedCostDataNg() {
+    doReturn(true).when(viewBillingServiceHelper).shouldShowUnallocatedCost(anyList());
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder("unallocatedcost", LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.NUMERIC).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.NUMERIC).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(CLUSTER_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(NAMESPACE, NAMESPACE, ViewFieldIdentifier.CLUSTER));
+    groupBy.add(getTimeGroupBy());
+
+    Map<Long, Double> data = viewsBillingService.getUnallocatedCostDataNg(filters, groupBy, Collections.emptyList(),
+        null, viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(true), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data).isNotEmpty();
+    assertThat(data.get(0L).doubleValue()).isEqualTo(Double.parseDouble(UNALLOCATED_COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testClusterPerspectiveOthersTotalCostDataNg() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(CLUSTER_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(NAMESPACE, NAMESPACE, ViewFieldIdentifier.CLUSTER));
+    groupBy.add(getTimeGroupBy());
+
+    Map<Long, Double> data = viewsBillingService.getOthersTotalCostDataNg(filters, groupBy, Collections.emptyList(),
+        null, viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(true), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCloudPerspectiveOthersTotalCostDataNg() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(AWS_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    Map<Long, Double> data = viewsBillingService.getOthersTotalCostDataNg(filters, groupBy, Collections.emptyList(),
+        null, viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(false), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testClusterPerspectiveForecastCostData() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(CLUSTER_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+    when(viewsQueryHelper.getEndInstantForForecastCost(filters))
+        .thenReturn(Instant.ofEpochMilli(currentTime + ONE_DAY_IN_MILLIS));
+    when(viewBillingServiceHelper.getForecastCost(any(ViewCostData.class), any(Instant.class)))
+        .thenReturn(LIMIT * Double.parseDouble(COST));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    QLCEViewTrendInfo data = viewsBillingService.getForecastCostData(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(true), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getValue()).isEqualTo(LIMIT * Double.parseDouble(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCloudPerspectiveForecastCostData() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(CLUSTER_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+    when(viewsQueryHelper.getEndInstantForForecastCost(filters))
+        .thenReturn(Instant.ofEpochMilli(currentTime + ONE_DAY_IN_MILLIS));
+    when(viewBillingServiceHelper.getForecastCost(any(ViewCostData.class), any(Instant.class)))
+        .thenReturn(LIMIT * Double.parseDouble(COST));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    QLCEViewTrendInfo data = viewsBillingService.getForecastCostData(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(false), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getValue()).isEqualTo(LIMIT * Double.parseDouble(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testClusterPerspectiveCostData() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(CLUSTER_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(CLUSTER_NAME, "Cluster Name", ViewFieldIdentifier.CLUSTER));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    ViewCostData data = viewsBillingService.getCostData(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(true), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getCost()).isEqualTo(LIMIT * Double.parseDouble(COST));
+  }
+
+  @Test
+  @Owner(developers = SAHILDEEP)
+  @Category(UnitTests.class)
+  public void testCloudPerspectiveCostData() {
+    // Mock fields returned by result set
+    fields = new ArrayList<>();
+    fields.add(Field.newBuilder(COST_COLUMN, LegacySQLTypeName.FLOAT).build());
+    fields.add(Field.newBuilder(StART_TIME_MIN, LegacySQLTypeName.TIMESTAMP).build());
+    fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.TIMESTAMP).build());
+    schema = Schema.of(fields);
+    when(resultSet.getSchema()).thenReturn(schema);
+
+    // Build query parameters
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(getPerspectiveMetadataFilter(CLUSTER_PERSPECTIVE_ID));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.AFTER, startTime));
+    filters.add(getPerspectiveTimeFilter(QLCEViewTimeFilterOperator.BEFORE, currentTime));
+
+    List<QLCEViewAggregation> aggregations = new ArrayList<>();
+    aggregations.add(getAggregation(COST_COLUMN, QLCEViewAggregateOperation.SUM));
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(getEntityGroupBy(AWS_USAGE_ACCOUNT_ID, ACCOUNT_FIELD_NAME, ViewFieldIdentifier.AWS));
+    groupBy.add(getTimeGroupBy());
+
+    // Perspective SummaryCard query
+    ViewCostData data = viewsBillingService.getCostData(filters, groupBy, aggregations, null,
+        viewsQueryHelper.buildQueryParamsWithSkipGroupBy(getMockViewQueryParams(false), true));
+
+    // Assertions on result
+    assertThat(data).isNotNull();
+    assertThat(data.getCost()).isEqualTo(LIMIT * Double.parseDouble(COST));
   }
 
   // Methods to build aggregations
@@ -830,8 +2147,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .build();
   }
 
-  private QLCEViewFilterWrapper getPerspectiveFilter(
-      String fieldId, String fieldName, ViewFieldIdentifier identifier, String[] values) {
+  private QLCEViewFilterWrapper getPerspectiveFilter(String fieldId, String fieldName, ViewFieldIdentifier identifier,
+      QLCEViewFilterOperator operator, String[] values) {
     QLCEViewFieldInput field = QLCEViewFieldInput.builder()
                                    .fieldId(fieldId)
                                    .fieldName(fieldName)
@@ -839,7 +2156,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                                    .identifierName(identifier.getDisplayName())
                                    .build();
     return QLCEViewFilterWrapper.builder()
-        .idFilter(QLCEViewFilter.builder().field(field).values(values).operator(QLCEViewFilterOperator.IN).build())
+        .idFilter(QLCEViewFilter.builder().field(field).values(values).operator(operator).build())
         .build();
   }
 
@@ -849,7 +2166,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   }
 
   // Methods to get mock data
-  private CEView getMockPerspective(String fieldId, String fieldName, ViewFieldIdentifier identifier) {
+  private CEView getMockPerspective(String fieldId, String fieldName, ViewFieldIdentifier identifier,
+      ViewIdOperator viewIdOperator, List<String> values) {
     ViewCondition condition = ViewIdCondition.builder()
                                   .viewField(ViewField.builder()
                                                  .fieldId(fieldId)
@@ -857,8 +2175,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                                                  .identifier(identifier)
                                                  .identifierName(identifier.getDisplayName())
                                                  .build())
-                                  .viewOperator(ViewIdOperator.NOT_NULL)
-                                  .values(Collections.singletonList(""))
+                                  .viewOperator(viewIdOperator)
+                                  .values(values)
                                   .build();
     ViewRule rule = ViewRule.builder().viewConditions(Collections.singletonList(condition)).build();
 
@@ -880,6 +2198,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                                             .build())
                                .build())
         .dataSources(Collections.singletonList(identifier))
+        .viewPreferences(ViewPreferences.builder().build())
         .build();
   }
 
@@ -903,5 +2222,13 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .isTimeTruncGroupByRequired(isTimeTruncGroupByRequired)
         .timeOffsetInDays(0)
         .build();
+  }
+
+  private BusinessMapping getMockBusinessMapping() {
+    return BusinessMappingTestHelper.getBusinessMapping(BusinessMappingTestHelper.TEST_ID);
+  }
+
+  private BusinessMapping getMockLabelBusinessMapping() {
+    return BusinessMappingTestHelper.getLabelBusinessMapping(BusinessMappingTestHelper.TEST_ID);
   }
 }

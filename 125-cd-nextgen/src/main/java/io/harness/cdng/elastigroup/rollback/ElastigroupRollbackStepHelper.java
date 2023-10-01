@@ -41,7 +41,6 @@ import io.harness.exception.SkipRollbackException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -53,6 +52,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.steps.StepUtils;
@@ -80,13 +80,16 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
       Arrays.asList(UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DOWN_SCALE_COMMAND_UNIT,
           DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DELETE_NEW_ELASTI_GROUP);
 
+  private static final List<String> BASIC_AND_CANARY_ROLLBACK_SETUP_FAILED_EXECUTION_UNITS =
+      Arrays.asList(DELETE_NEW_ELASTI_GROUP);
+
   @Inject private ElastigroupEntityHelper entityHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
 
   public ElastigroupRollbackTaskParameters getElastigroupRollbackTaskParameters(
       ElastigroupRollbackStepParameters elastigroupRollbackStepParameters, Ambiance ambiance,
-      StepElementParameters stepElementParameters) {
+      StepBaseParameters stepElementParameters) {
     InfrastructureOutcome infrastructureOutcome = getInfrastructureOutcome(ambiance);
 
     ElastigroupPreFetchOutcome preFetchOutcome = getElastigroupPreFetchOutcome(ambiance);
@@ -181,6 +184,7 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
   public Collection<String> getExecutionUnits() {
     final HashSet<String> allExecutionUnits = new HashSet<>();
 
+    allExecutionUnits.addAll(BASIC_AND_CANARY_ROLLBACK_SETUP_FAILED_EXECUTION_UNITS);
     allExecutionUnits.addAll(BASIC_AND_CANARY_ROLLBACK_EXECUTION_UNITS);
     allExecutionUnits.addAll(BG_SETUP_ROLLBACK_EXECUTION_UNITS);
     allExecutionUnits.addAll(BG_SWAP_ROLLBACK_EXECUTION_UNITS);
@@ -196,11 +200,15 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
         return BG_SETUP_ROLLBACK_EXECUTION_UNITS;
       }
     } else {
-      return BASIC_AND_CANARY_ROLLBACK_EXECUTION_UNITS;
+      if (parameters.isSetupSuccessful()) {
+        return BASIC_AND_CANARY_ROLLBACK_EXECUTION_UNITS;
+      } else {
+        return BASIC_AND_CANARY_ROLLBACK_SETUP_FAILED_EXECUTION_UNITS;
+      }
     }
   }
 
-  public StepResponse handleTaskFailure(Ambiance ambiance, StepElementParameters stepElementParameters, Exception e)
+  public StepResponse handleTaskFailure(Ambiance ambiance, StepBaseParameters stepElementParameters, Exception e)
       throws Exception {
     log.error("Error in elastigroup step: {}", e.getMessage(), e);
 
@@ -237,7 +245,7 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
   }
 
   public StepResponse handleTaskResult(
-      Ambiance ambiance, StepElementParameters stepParameters, ElastigroupRollbackTaskResponse response) {
+      Ambiance ambiance, StepBaseParameters stepParameters, ElastigroupRollbackTaskResponse response) {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
 
     List<UnitProgress> unitProgresses =

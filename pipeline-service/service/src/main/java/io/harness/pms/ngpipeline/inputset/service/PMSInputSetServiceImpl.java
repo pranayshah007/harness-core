@@ -6,8 +6,8 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.HintException.HINT_INPUT_SET_ACCOUNT_SETTING;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -17,7 +17,10 @@ import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 import static java.lang.String.format;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.EntityYamlRootNames;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -61,7 +64,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -89,6 +92,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_GITX})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -152,10 +157,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       boolean hasNewYamlStructure, boolean loadFromFallbackBranch, boolean loadFromCache) {
     Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, identifier, deleted, loadFromFallbackBranch, loadFromCache);
-    if (optionalInputSetEntity.isEmpty()) {
-      throw new EntityNotFoundException(
-          String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
-    }
+    checkIfInputSetIsPresent(identifier, optionalInputSetEntity);
 
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
     if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
@@ -473,15 +475,15 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     String repoUrl = getRepoUrlAndCheckForFileUniqueness(
         accountIdentifier, orgIdentifier, projectIdentifier, inputSetIdentifier, isForceImport);
     String importedInputSetYAML =
-        gitAwareEntityHelper.fetchYAMLFromRemote(accountIdentifier, orgIdentifier, projectIdentifier);
+        gitAwareEntityHelper.fetchYAMLFromRemote(accountIdentifier, orgIdentifier, projectIdentifier, true);
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountIdentifier, importedInputSetYAML);
     InputSetEntity inputSetEntity;
     switch (inputSetVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         inputSetEntity = PMSInputSetElementMapper.toInputSetEntityV1(accountIdentifier, orgIdentifier,
             projectIdentifier, pipelineIdentifier, importedInputSetYAML, InputSetEntityType.INPUT_SET);
         break;
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         checkAndThrowMismatchInImportedInputSetMetadata(orgIdentifier, projectIdentifier, pipelineIdentifier,
             inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
         inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, importedInputSetYAML);
@@ -539,6 +541,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String inputSetIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier,
+        updateGitDetailsParams);
     Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, true);
     Update update = PMSInputSetFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
@@ -550,6 +554,32 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     }
 
     return inputSetAfterUpdate.getIdentifier();
+  }
+
+  private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    if (isEmpty(updateGitDetailsParams.getRepoName())) {
+      return;
+    }
+
+    String connectorRef = updateGitDetailsParams.getConnectorRef();
+    if (isEmpty(connectorRef)) {
+      Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountIdentifier, orgIdentifier,
+          projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
+      checkIfInputSetIsPresent(inputSetIdentifier, optionalInputSetEntity);
+
+      connectorRef = optionalInputSetEntity.get().getConnectorRef();
+    }
+
+    gitAwareEntityHelper.validateRepo(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, updateGitDetailsParams.getRepoName());
+  }
+
+  private void checkIfInputSetIsPresent(String inputSetIdentifier, Optional<InputSetEntity> optionalInputSetEntity) {
+    if (optionalInputSetEntity.isEmpty()) {
+      throw new EntityNotFoundException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+    }
   }
 
   @VisibleForTesting
@@ -758,8 +788,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
 
   @VisibleForTesting
   void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
-    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
     gitXSettingsHelper.setDefaultStoreTypeForEntities(
         accountIdentifier, orgIdentifier, projIdentifier, EntityType.INPUT_SETS);
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultRepoForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
   }
 }

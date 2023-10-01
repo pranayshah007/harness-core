@@ -5,19 +5,23 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 package io.harness.ngtriggers.eventmapper.filters.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.eventmapping.UnMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
+import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
@@ -43,6 +47,7 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton
@@ -54,6 +59,7 @@ public class MetadataConditionsTriggerFilter implements TriggerFilter {
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
     WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
     List<TriggerDetails> matchedTriggers = new ArrayList<>();
+    List<UnMatchedTriggerInfo> unMatchedTriggersInfoList = new ArrayList<>();
 
     for (TriggerDetails trigger : filterRequestData.getDetails()) {
       try {
@@ -68,12 +74,21 @@ public class MetadataConditionsTriggerFilter implements TriggerFilter {
                                             .build();
         if (checkTriggerEligibility(filterRequestData, triggerDetails)) {
           matchedTriggers.add(triggerDetails);
+        } else {
+          UnMatchedTriggerInfo unMatchedTriggerInfo =
+              UnMatchedTriggerInfo.builder()
+                  .unMatchedTriggers(trigger)
+                  .finalStatus(TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_METADATA_CONDITION)
+                  .message(trigger.getNgTriggerEntity().getIdentifier() + " didn't match conditions for metadata")
+                  .build();
+          unMatchedTriggersInfoList.add(unMatchedTriggerInfo);
         }
       } catch (Exception e) {
         log.error(getTriggerSkipMessage(trigger.getNgTriggerEntity()), e);
       }
     }
 
+    mappingResponseBuilder.unMatchedTriggerInfoList(unMatchedTriggersInfoList);
     if (isEmpty(matchedTriggers)) {
       log.info("No trigger matched polling event after condition evaluation:");
       mappingResponseBuilder.failedToFindTrigger(true)
@@ -121,7 +136,7 @@ public class MetadataConditionsTriggerFilter implements TriggerFilter {
     String jsonMetadata = "";
     jsonMetadata = JsonPipelineUtils.getJsonString(metadata);
     TriggerExpressionEvaluator expressionEvaluator =
-        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), jsonMetadata);
+        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), jsonMetadata, spec);
     for (TriggerEventDataCondition condition : triggerMetadataConditions) {
       input = condition.getKey();
       standard = condition.getValue();

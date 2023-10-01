@@ -25,6 +25,7 @@ public class EC2InstanceDTOConverter extends Converter<EC2InstanceDTO, EC2Recomm
         .cpuUtilisation(recommendation.getExpectedMaxCPU())
         .vcpu(recommendation.getVcpu())
         .monthlyCost(recommendation.getExpectedMonthlyCost())
+        .monthlySavings(recommendation.getExpectedMonthlySaving())
         .region(recommendation.getRegion())
         .memory(recommendation.getMemory())
         .build();

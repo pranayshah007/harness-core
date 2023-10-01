@@ -23,7 +23,6 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -53,12 +52,6 @@ public class ConfigManagerUtils {
       "configs/integrations/json-schemas/bitbucket-server-pat-schema.json";
   private static final String AZURE_JSON_SCHEMA_FILE = "configs/integrations/json-schemas/azure-schema.json";
 
-  private static final String KAFKA_PLUGIN_CONFIG_PATH = "configs/kafka.yaml";
-
-  private static final String PAGER_DUTY_PLUGIN_CONFIG = "configs/pager-duty.yaml";
-
-  private static final String SNYK_SECURITY_PLUGIN_CONFIG = "configs/snyk-security.yaml";
-
   private static final String KAFKA_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/kafka-schema.json";
 
   private static final String PAGER_DUTY_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/pager-duty-schema.json";
@@ -66,6 +59,7 @@ public class ConfigManagerUtils {
   private static final String SNYK_SECURITY_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/snyk-security-schema.json";
 
   private static final String CIRCLE_CI_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/circleci-schema.json";
+  private static final String CONFLUENCE_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/confluence-schema.json";
 
   private static final String JENKINS_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/jenkins-schema.json";
 
@@ -76,6 +70,9 @@ public class ConfigManagerUtils {
   private static final String HARNESS_CI_CD_JSON_SCHEMA_PATH = "configs/json-schemas/harness-ci-cd-schema.json";
 
   private static final String KUBERNETES_JSON_SCHEMA_PATH = "configs/json-schemas/kubernetes-schema.json";
+  private static final String GITHUB_CATALOG_DISCOVERY_JSON_SCHEMA_PATH =
+      "configs/json-schemas/github-catalog-discovery-schema.json";
+  private static final String GRAFANA_JSON_SCHEMA_PATH = "configs/json-schemas/grafana-schema.json";
   private static final String HARNESS_CI_CD_CONFIG_PATH = "configs/plugins/harness-ci-cd.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_COMPLIANCE = "configs/plugins/harness-ci-cd-compliance.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_PRE_QA = "configs/plugins/harness-ci-cd-preqa.yaml";
@@ -195,6 +192,8 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(SNYK_SECURITY_PLUGIN_JSON_SCHEMA_PATH);
       case "circleci":
         return readFileFromClassPath(CIRCLE_CI_PLUGIN_JSON_SCHEMA_PATH);
+      case "confluence":
+        return readFileFromClassPath(CONFLUENCE_PLUGIN_JSON_SCHEMA_PATH);
       case "jenkins":
         return readFileFromClassPath(JENKINS_PLUGIN_JSON_SCHEMA_PATH);
       case "lighthouse":
@@ -207,6 +206,10 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(HARNESS_CI_CD_JSON_SCHEMA_PATH);
       case "kubernetes":
         return readFileFromClassPath(KUBERNETES_JSON_SCHEMA_PATH);
+      case "github-catalog-discovery":
+        return readFileFromClassPath(GITHUB_CATALOG_DISCOVERY_JSON_SCHEMA_PATH);
+      case "grafana":
+        return readFileFromClassPath(GRAFANA_JSON_SCHEMA_PATH);
       default:
         return null;
     }

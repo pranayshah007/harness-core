@@ -2,6 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
+  kubeVersion: ""
   ha: false
   loadbalancerURL: ""
   database:
@@ -40,6 +43,16 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
+      extraArgs: ""
   airgap: false
   imagePullSecrets: []
   ingress:
@@ -76,7 +89,7 @@ image:
   repository: harness/verification-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "77629"
+  tag: "80209"
   digest: ""
   imagePullSecrets: []
 
@@ -127,6 +140,7 @@ securityContext:
 service:
   type: ClusterIP
   port: 7070
+  annotations: {}
 
 resources:
   limits:
@@ -151,8 +165,8 @@ autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 
@@ -164,5 +178,12 @@ appLogInfo: INFO
 # -- Specify Java memory to be used
 java:
   memory: 2048
-  
+
 additionalConfigs: {}
+
+java17flags: ""
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

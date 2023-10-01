@@ -53,6 +53,10 @@ func (b *sbtRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]
 	return tests, nil
 }
 
+func (b *sbtRunner) ReadPackages(files []types.File) []types.File {
+	return ReadPkgs(b.log, b.fs, files)
+}
+
 func (b *sbtRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// Agent arg
 	inputUserArgs := userArgs

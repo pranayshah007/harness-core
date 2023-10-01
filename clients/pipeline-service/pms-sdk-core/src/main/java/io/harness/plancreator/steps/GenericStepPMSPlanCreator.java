@@ -6,7 +6,6 @@
  */
 
 package io.harness.plancreator.steps;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
@@ -24,7 +23,10 @@ import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
@@ -90,6 +92,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(PIPELINE)
 // Todo: Refactor this so as to split into more classes (PIE-1339)
 public abstract class GenericStepPMSPlanCreator implements PartialPlanCreator<StepElementConfig> {

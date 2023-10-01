@@ -18,6 +18,8 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 
 @OwnedBy(PL)
 @HarnessRepo
-public interface AuditRetentionRepository extends PagingAndSortingRepository<AuditSettings, String> {
+public interface AuditRetentionRepository
+    extends PagingAndSortingRepository<AuditSettings, String>, AuditRetentionRepositoryCustom {
   Optional<AuditSettings> findByAccountIdentifier(String accountIdentifier);
+  void deleteByAccountIdentifier(String accountIdentifier);
 }

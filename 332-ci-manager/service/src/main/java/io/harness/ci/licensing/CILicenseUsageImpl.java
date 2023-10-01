@@ -5,11 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.licensing;
+package io.harness.ci.licensing;
 
-import static io.harness.beans.execution.ExecutionSource.Type.MANUAL;
-import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static io.harness.pms.contracts.plan.TriggerType.SCHEDULER_CRON;
+import static io.harness.pms.contracts.plan.TriggerType.WEBHOOK;
+import static io.harness.pms.contracts.plan.TriggerType.WEBHOOK_CUSTOM;
 
 import static java.lang.String.format;
 
@@ -46,6 +48,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -76,6 +79,8 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
   private static final String ASCENDING = "ASC";
   private static final String DECENDING = "DESC";
 
+  private static final String TRIGGER_TYPES =
+      String.join(",", Arrays.asList("'" + MANUAL + "'", "'" + WEBHOOK_CUSTOM + "'", "'" + SCHEDULER_CRON + "'"));
   private static final String QUERY_COLUMN_WITH_TOTAL =
       String.format("select %s, %s, %s, max(startts) as %s, count(*) over () as %s", COLUMN_NAME_AUTHOR_ID,
           COLUMN_NAME_PROJECT_ID, COLUMN_NAME_ORG_ID, COLUMN_NAME_LAST_BUILD, COLUMN_NAME_TOTAL);
@@ -87,9 +92,9 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
           + " where accountid=? and moduleinfo_type ='CI'"
           + " and %s is not null"
           + " and moduleinfo_is_private=true"
-          + " and (trigger_type='%s' OR (trigger_type='%s' AND user_source='GIT'))"
+          + " and (trigger_type='%s' OR (trigger_type IN (%s) AND user_source='GIT'))"
           + " and startts<=? and startts>=?",
-      COLUMN_NAME_AUTHOR_ID, WEBHOOK, MANUAL);
+      COLUMN_NAME_AUTHOR_ID, WEBHOOK, TRIGGER_TYPES);
   private static final String DEVELOPER_QUERY_BODY = QUERY_COLUMN_WITH_TOTAL + QUERY_BODY;
   private static final String ORDER_BY_CLAUSE = " order by %s";
   private static final String PAGER_OFFSET = " offset ? rows fetch next ? rows only";
@@ -107,9 +112,9 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
           + " and moduleinfo_type ='CI'"
           + " and %s is not null"
           + " and moduleinfo_is_private=true"
-          + " and (trigger_type='%s' OR (trigger_type='%s' AND user_source='GIT'))"
+          + " and (trigger_type='%s' OR (trigger_type IN (%s) AND user_source='GIT'))"
           + " and startts<=? and startts>=?;",
-      COLUMN_NAME_AUTHOR_ID, COLUMN_NAME_AUTHOR_ID, WEBHOOK, MANUAL);
+      COLUMN_NAME_AUTHOR_ID, COLUMN_NAME_AUTHOR_ID, WEBHOOK, TRIGGER_TYPES);
 
   private static final Map<String, String> sortToColumnMap = new HashMap<>() {
     {
@@ -170,15 +175,12 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
   public Page<ActiveDevelopersDTO> listLicenseUsage(
       String accountIdentifier, ModuleType module, long currentTsInMs, PageableUsageRequestParams usageRequestParams) {
     validateInput(accountIdentifier, module, currentTsInMs);
-    int pageNumber = 1;
+    int pageNumber = 0;
     int pageSize = 30;
     String sortQuery = null;
     if (usageRequestParams != null && usageRequestParams.getPageRequest() != null) {
       Pageable pageable = usageRequestParams.getPageRequest();
       pageNumber = pageable.getPageNumber();
-      if (pageNumber == 0) {
-        pageNumber = 1;
-      }
       pageSize = pageable.getPageSize();
       List<String> orderByFields = new ArrayList<>();
       for (Map.Entry<String, String> entry : sortToColumnMap.entrySet()) {
@@ -226,7 +228,7 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
         statement.setString(i + 4, extraParam.get(i));
       }
       if (usageRequestParams.getPageRequest() != null && usageRequestParams.getPageRequest().isPaged()) {
-        statement.setInt(extraParam.size() + 4, (pageNumber - 1) * pageSize);
+        statement.setInt(extraParam.size() + 4, pageNumber * pageSize);
         statement.setInt(extraParam.size() + 5, pageSize);
       }
       resultSet = statement.executeQuery();

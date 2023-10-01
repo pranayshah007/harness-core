@@ -9,6 +9,7 @@ package io.harness.ng.core.dto.secrets;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.encryption.SecretRefData;
@@ -31,6 +32,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "NTLMConfig", description = "This is the NTLM configuration details defined in Harness.")
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.ng.core.dto.secrets.NTLMConfigDTO")
 public class NTLMConfigDTO implements BaseWinRmSpecDTO, DecryptableEntity {
   @Schema(description = "This is the NTLM domain name.") @NotNull private String domain;
 

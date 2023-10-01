@@ -12,22 +12,31 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.InterruptHandler;
+import io.harness.engine.interrupts.InterruptProcessingFailedException;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.interrupts.helpers.ExpiryHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
+import java.util.EnumSet;
 import javax.validation.Valid;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 @Slf4j
 public class MarkExpiredInterruptHandler implements InterruptHandler {
@@ -57,17 +66,32 @@ public class MarkExpiredInterruptHandler implements InterruptHandler {
     return interruptService.save(interrupt);
   }
 
-  @Override
-  public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
+  public Interrupt handleAndMarkInterruptForNodeExecution(
+      Interrupt interrupt, String nodeExecutionId, boolean markInterruptAsProcessed) {
     try {
-      NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
+      NodeExecution nodeExecution = nodeExecutionService.updateStatusWithOps(
+          nodeExecutionId, Status.DISCONTINUING, null, EnumSet.noneOf(Status.class));
+      if (nodeExecution == null) {
+        log.error("Failed to expire node with nodeExecutionId: {}", nodeExecutionId);
+        throw new InterruptProcessingFailedException(
+            InterruptType.MARK_EXPIRED, "Failed to expire node with nodeExecutionId" + nodeExecutionId);
+      }
       expiryHelper.expireMarkedInstance(nodeExecution, interrupt);
     } catch (Exception ex) {
-      interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+      if (markInterruptAsProcessed) {
+        interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+      }
       throw ex;
     }
+    if (markInterruptAsProcessed) {
+      return interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    }
+    return interrupt;
+  }
 
-    return interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+  @Override
+  public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
+    return handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, true);
   }
 
   @Override

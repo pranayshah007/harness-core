@@ -1,7 +1,9 @@
-# Default values for ce-nextgen
+# Default values for nextgen-ce
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   loadbalancerURL: "https://test"
   database:
     postgres:
@@ -39,6 +41,20 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      certName: ""
+      certKey: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
+      extraArgs: ""
+    clickhouse:
+      enabled: false
   ingress:
     enabled: false
     className: harness
@@ -47,6 +63,8 @@ global:
     tls:
       enabled: true
       secretName: ''
+    objects:
+      annotations: {}
   istio:
     enabled: false
     gateway:
@@ -59,6 +77,19 @@ global:
   stackDriverLoggingEnabled: false
   ccm:
     gcpProjectId: "placeHolder"
+  proxy:
+    enabled: false
+    host: localhost
+    port: 80
+    username: ""
+    password: ""
+    protocol: http
+  awsServiceEndpointUrls:
+    enabled: false
+    endPointRegion: us-east-2
+    stsEndPointUrl: https://sts.us-east-2.amazonaws.com
+    ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
+    cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
 
 replicaCount: 2
 
@@ -76,7 +107,7 @@ image:
   repository: harness/ce-nextgen-signed
   pullPolicy: IfNotPresent
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "78700-000"
+  tag: "80806-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -86,7 +117,7 @@ imageClickhouseEnabled:
   repository: harness/ce-nextgen-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "78700-000"
+  tag: "80806-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -124,7 +155,7 @@ awsSecret:
 
 ceng-gcp-credentials: ""
 
-nameOverride: ""
+nameOverride: "nextgen-ce"
 fullnameOverride: ""
 
 serviceAccount:
@@ -139,6 +170,7 @@ podSecurityContext: {}
 securityContext: {}
 
 service:
+  annotations: {}
   type: ClusterIP
   port: 6340
 
@@ -148,9 +180,9 @@ ingress:
 autoscaling:
   enabled: false
   minReplicas: 1
-  maxReplicas: 2
-  targetCPUUtilizationPercentage: 80
-# targetMemoryUtilizationPercentage: 80
+  maxReplicas: 100
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 
@@ -166,7 +198,6 @@ cloudProviderConfig:
   GCP_SERVICE_ACCOUNT_EMAIL: "placeHolder"
 
 clickhouse:
-  enabled: false
   username: "default"
   password:
     name: clickhouse
@@ -177,10 +208,37 @@ workloadIdentity:
 
 resources:
   limits:
-    cpu: 1
     memory: "4Gi"
   requests:
     cpu: 1
     memory: "4Gi"
 
 additionalConfigs: {}
+java17flags: ""
+
+# extraVolumes:
+#   - name: volume-test
+#     configMap:
+#       name: test-config
+#       # readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: volume-test
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+lifecycleHooks: {}
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}
+
+distributedLockImplementation: MONGO

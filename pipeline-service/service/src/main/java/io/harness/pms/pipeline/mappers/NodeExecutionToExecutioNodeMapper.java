@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.pipeline.mappers;
-
 import io.harness.DelegateInfoHelper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateInfo;
 import io.harness.beans.ExecutionNode;
 import io.harness.data.structure.EmptyPredicate;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 public class NodeExecutionToExecutioNodeMapper {

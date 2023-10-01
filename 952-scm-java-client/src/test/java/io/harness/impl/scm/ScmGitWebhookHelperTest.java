@@ -7,6 +7,7 @@
 
 package io.harness.impl.scm;
 
+import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,9 +22,13 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.product.ci.scm.proto.AzureWebhookEvent;
 import io.harness.product.ci.scm.proto.AzureWebhookEvents;
+import io.harness.product.ci.scm.proto.HarnessWebhookEvent;
+import io.harness.product.ci.scm.proto.HarnessWebhookEvents;
 import io.harness.product.ci.scm.proto.NativeEvents;
+import io.harness.product.ci.scm.proto.WebhookResponse;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -35,6 +40,7 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(HarnessTeam.CI)
 public class ScmGitWebhookHelperTest extends CategoryTest {
   private ScmConnector scmConnector;
+  private ScmConnector harnessConnector;
   private final String repoUrl = "https://dev.azure.com/org/project/_git/repo";
 
   @Before
@@ -46,6 +52,10 @@ public class ScmGitWebhookHelperTest extends CategoryTest {
                                                 .build();
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().connectorConfig(githubConnector).build();
     scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
+
+    HarnessConnectorDTO harnessConnectorDTO = HarnessConnectorDTO.builder().url(repoUrl).build();
+    ConnectorInfoDTO connectorInfo1 = ConnectorInfoDTO.builder().connectorConfig(harnessConnectorDTO).build();
+    harnessConnector = (ScmConnector) connectorInfo1.getConnectorConfig();
   }
 
   @Test
@@ -91,5 +101,25 @@ public class ScmGitWebhookHelperTest extends CategoryTest {
     boolean result =
         ScmGitWebhookHelper.isIdenticalEvents(null, HookEventType.TRIGGER_EVENTS, scmConnector, allNativeEvents);
     assertThat(result).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void testIsIdenticalEventsForHarnessTrue() {
+    List<HarnessWebhookEvent> allNativeEvents = Arrays.asList(HarnessWebhookEvent.HARNESS_PULLREQ_CREATED,
+        HarnessWebhookEvent.HARNESS_PULLREQ_REOPENED, HarnessWebhookEvent.HARNESS_PULLREQ_BRANCH_UPDATED,
+        HarnessWebhookEvent.HARNESS_BRANCH_CREATED, HarnessWebhookEvent.HARNESS_BRANCH_UPDATED,
+        HarnessWebhookEvent.HARNESS_BRANCH_DELETED, HarnessWebhookEvent.HARNESS_TAG_CREATED,
+        HarnessWebhookEvent.HARNESS_TAG_DELETED, HarnessWebhookEvent.HARNESS_TAG_UPDATED);
+    WebhookResponse webhookResponse =
+        WebhookResponse.newBuilder()
+            .setNativeEvents(NativeEvents.newBuilder()
+                                 .setHarness(HarnessWebhookEvents.newBuilder().addAllEvents(allNativeEvents).build())
+                                 .build())
+            .build();
+    boolean result =
+        ScmGitWebhookHelper.isIdenticalEvents(webhookResponse, HookEventType.TRIGGER_EVENTS, harnessConnector, null);
+    assertThat(result).isEqualTo(true);
   }
 }

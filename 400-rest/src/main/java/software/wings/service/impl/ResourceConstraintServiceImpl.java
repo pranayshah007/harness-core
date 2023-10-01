@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -25,7 +24,10 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -74,12 +76,15 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DuplicateKeyException;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import dev.morphia.query.UpdateResults;
+import dev.morphia.query.internal.MorphiaCursor;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -90,6 +95,7 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @ValidateOnExecution
@@ -290,6 +296,14 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
         .in(asList(State.BLOCKED.name(), State.ACTIVE.name()));
   }
 
+  private Query<ResourceConstraintInstance> runnableQuery(Collection<String> constraintIds) {
+    return wingsPersistence.createQuery(ResourceConstraintInstance.class, excludeAuthority)
+        .field(ResourceConstraintInstanceKeys.resourceConstraintId)
+        .in(constraintIds)
+        .field(ResourceConstraintInstanceKeys.state)
+        .in(asList(State.BLOCKED.name(), State.ACTIVE.name()));
+  }
+
   private List<ConstraintUnit> units(ResourceConstraint constraint) {
     Set<String> units = new HashSet<>();
     try (HIterator<ResourceConstraintInstance> iterator =
@@ -302,6 +316,44 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
       }
     }
     return units.stream().map(ConstraintUnit::new).collect(toList());
+  }
+
+  private List<ConstraintUnit> units(ResourceConstraint constraint,
+      Map<String, Set<ResourceConstraintInstance>> resourceConstraintToResourceConstraintInstanceMap) {
+    Set<String> units = new HashSet<>();
+    for (ResourceConstraintInstance instance :
+        resourceConstraintToResourceConstraintInstanceMap.get(constraint.getUuid())) {
+      units.add(instance.getResourceUnit());
+    }
+    return units.stream().map(ConstraintUnit::new).collect(toList());
+  }
+
+  private Map<String, Set<ResourceConstraintInstance>> fetchResourceConstraintInstances(
+      Set<ResourceConstraint> resourceConstraints, boolean hitSecondaryNode) {
+    Map<String, Set<ResourceConstraintInstance>> resourceConstraintToResourceConstraintInstanceMap = new HashMap<>();
+    FindOptions findOptions = new FindOptions().batchSize(1000);
+    if (hitSecondaryNode) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
+    try (MorphiaCursor<ResourceConstraintInstance> cursor =
+             runnableQuery(resourceConstraints.stream().map(ResourceConstraint::getUuid).collect(toList()))
+                 .project(ResourceConstraintInstanceKeys.resourceUnit, true)
+                 .project(ResourceConstraintInstanceKeys.resourceConstraintId, true)
+                 .project("_id", false)
+                 .find(findOptions)) {
+      while (cursor.hasNext()) {
+        ResourceConstraintInstance resourceConstraintInstance = cursor.next();
+        Set<ResourceConstraintInstance> resourceConstraintInstances =
+            resourceConstraintToResourceConstraintInstanceMap.get(resourceConstraintInstance.getResourceConstraintId());
+        if (resourceConstraintInstances == null) {
+          resourceConstraintInstances = new HashSet<>();
+        }
+        resourceConstraintInstances.add(resourceConstraintInstance);
+        resourceConstraintToResourceConstraintInstanceMap.put(
+            resourceConstraintInstance.getResourceConstraintId(), resourceConstraintInstances);
+      }
+    }
+    return resourceConstraintToResourceConstraintInstanceMap;
   }
 
   @Override
@@ -325,7 +377,7 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
         log.info("Resource constraint {} has running units {}", instance.getUuid(), Joiner.on(", ").join(units));
 
         units.forEach(unit -> {
-          final RunnableConsumers runnableConsumers = constraint.runnableConsumers(unit, getRegistry());
+          final RunnableConsumers runnableConsumers = constraint.runnableConsumers(unit, getRegistry(), false);
           for (ConsumerId consumerId : runnableConsumers.getConsumerIds()) {
             if (!constraint.consumerUnblocked(unit, consumerId, null, getRegistry())) {
               break;
@@ -333,6 +385,51 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
           }
         });
       }
+    }
+  }
+
+  @Override
+  public void updateBlockedConstraintsV2(Set<String> constraintIds, boolean hitSecondaryNode) {
+    if (isEmpty(constraintIds)) {
+      return;
+    }
+
+    log.info("The number of constrains for the execution is {}", constraintIds.size());
+    FindOptions findOptions = new FindOptions();
+    if (hitSecondaryNode) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
+
+    Set<ResourceConstraint> resourceConstraints = new HashSet<>();
+    try (HIterator<ResourceConstraint> iterator =
+             new HIterator<ResourceConstraint>(wingsPersistence.createQuery(ResourceConstraint.class, excludeAuthority)
+                                                   .field(ResourceConstraintKeys.uuid)
+                                                   .in(constraintIds)
+                                                   .fetch(findOptions))) {
+      for (ResourceConstraint instance : iterator) {
+        resourceConstraints.add(instance);
+      }
+    }
+    Map<String, Set<ResourceConstraintInstance>> resourceConstraintToResourceConstraintInstanceMap =
+        fetchResourceConstraintInstances(resourceConstraints, hitSecondaryNode);
+    for (ResourceConstraint resourceConstraint : resourceConstraints) {
+      final Constraint constraint = createAbstraction(resourceConstraint);
+      final List<ConstraintUnit> units = units(resourceConstraint, resourceConstraintToResourceConstraintInstanceMap);
+      if (isEmpty(units)) {
+        continue;
+      }
+
+      log.info(
+          "Resource constraint {} has running units {}", resourceConstraint.getUuid(), Joiner.on(", ").join(units));
+
+      units.forEach(unit -> {
+        final RunnableConsumers runnableConsumers = constraint.runnableConsumers(unit, getRegistry(), hitSecondaryNode);
+        for (ConsumerId consumerId : runnableConsumers.getConsumerIds()) {
+          if (!constraint.consumerUnblocked(unit, consumerId, null, getRegistry())) {
+            break;
+          }
+        }
+      });
     }
   }
 
@@ -440,14 +537,19 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
   }
 
   @Override
-  public List<Consumer> loadConsumers(ConstraintId id, ConstraintUnit unit) {
+  public List<Consumer> loadConsumers(ConstraintId id, ConstraintUnit unit, boolean hitSecondaryNode) {
     List<Consumer> consumers = new ArrayList<>();
+
+    FindOptions findOptions = new FindOptions();
+    if (hitSecondaryNode) {
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
+    }
 
     try (HIterator<ResourceConstraintInstance> iterator = new HIterator<ResourceConstraintInstance>(
              runnableQuery(id.getValue())
                  .filter(ResourceConstraintInstanceKeys.resourceUnit, unit.getValue())
                  .order(Sort.ascending(ResourceConstraintInstanceKeys.order))
-                 .fetch())) {
+                 .fetch(findOptions))) {
       for (ResourceConstraintInstance instance : iterator) {
         consumers.add(Consumer.builder()
                           .id(new ConsumerId(instance.getUuid()))

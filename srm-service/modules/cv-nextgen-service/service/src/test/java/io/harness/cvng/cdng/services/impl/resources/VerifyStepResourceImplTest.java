@@ -109,7 +109,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
   private static VerifyStepResource verifyStepResource = new VerifyStepResourceImpl();
   private BuilderFactory builderFactory;
   private VerificationJobInstance verificationJobInstance;
-  private VerificationJobInstance testVerificationJobInstace;
+  private VerificationJobInstance testVerificationJobInstance;
   private CVNGStepTask cvngStepTask;
   private DeploymentActivitySummaryDTO deploymentActivitySummaryDTO;
   private List<MetricsAnalysis> metricsAnalyses;
@@ -339,41 +339,97 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     String testVerificationJobInstanceId = "-q3bCyfZSmyXsybsfr9t3B";
     loadVerificationRelatedDocuments(testVerificationJobInstanceId);
     String baselineVerificationJobInstanceId = generateUuid();
-    testVerificationJobInstace = builderFactory.verificationJobInstanceBuilder().build();
-    testVerificationJobInstace.setUuid(testVerificationJobInstanceId);
+    testVerificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    testVerificationJobInstance.setUuid(testVerificationJobInstanceId);
 
-    VerificationJobInstance baselineVerificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
-    baselineVerificationJobInstance.setUuid(baselineVerificationJobInstanceId);
+    VerificationJobInstance currentBaselineVerificationJobInstance =
+        builderFactory.verificationJobInstanceBuilder().build();
+    currentBaselineVerificationJobInstance.setUuid(baselineVerificationJobInstanceId);
+
+    VerificationJobInstance appliedBaselineVerificationJobInstance =
+        builderFactory.verificationJobInstanceBuilder().build();
+    appliedBaselineVerificationJobInstance.setUuid(
+        testVerificationJobInstance.getResolvedJob().getBaselineVerificationJobInstanceId());
+
     when(stepTaskService.getByCallBackId(testVerificationJobInstanceId)).thenReturn(cvngStepTask);
     when(verificationJobInstanceService.getVerificationJobInstance(testVerificationJobInstanceId))
-        .thenReturn(testVerificationJobInstace);
+        .thenReturn(testVerificationJobInstance);
+    when(verificationJobInstanceService.getVerificationJobInstance(appliedBaselineVerificationJobInstance.getUuid()))
+        .thenReturn(appliedBaselineVerificationJobInstance);
     when(stepTaskService.getDeploymentSummary(any())).thenReturn(getDeploymentActivitySummaryDTOForLoadTest());
     Optional<VerificationJobInstance> baselineVerificationJobInstanceIdOptional =
-        Optional.of(baselineVerificationJobInstance);
+        Optional.of(currentBaselineVerificationJobInstance);
     when(verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(
              ServiceEnvironmentParams.builder()
-                 .environmentIdentifier(testVerificationJobInstace.getResolvedJob().getEnvIdentifier())
-                 .serviceIdentifier(testVerificationJobInstace.getResolvedJob().getServiceIdentifier())
-                 .accountIdentifier(testVerificationJobInstace.getResolvedJob().getAccountId())
-                 .projectIdentifier(testVerificationJobInstace.getResolvedJob().getProjectIdentifier())
-                 .orgIdentifier(testVerificationJobInstace.getResolvedJob().getOrgIdentifier())
+                 .environmentIdentifier(testVerificationJobInstance.getResolvedJob().getEnvIdentifier())
+                 .serviceIdentifier(testVerificationJobInstance.getResolvedJob().getServiceIdentifier())
+                 .accountIdentifier(testVerificationJobInstance.getResolvedJob().getAccountId())
+                 .projectIdentifier(testVerificationJobInstance.getResolvedJob().getProjectIdentifier())
+                 .orgIdentifier(testVerificationJobInstance.getResolvedJob().getOrgIdentifier())
                  .build()))
         .thenReturn(baselineVerificationJobInstanceIdOptional);
     when(verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId))
-        .thenReturn(testVerificationJobInstace);
+        .thenReturn(testVerificationJobInstance);
 
     String url = "http://localhost:9998/account/" + builderFactory.getContext().getAccountId() + "/orgs/"
         + builderFactory.getContext().getOrgIdentifier() + "/projects/"
         + builderFactory.getContext().getProjectIdentifier() + "/verifications/" + testVerificationJobInstanceId;
     Response response = RESOURCES.client().target(url + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
     assertThat(response.getStatus()).isEqualTo(200);
-    VerificationOverview verificationOverview = response.readEntity(new GenericType<VerificationOverview>() {});
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<>() {});
 
     assertThat(verificationOverview.getBaselineOverview().getBaselineVerificationJobInstanceId())
-        .isEqualTo(baselineVerificationJobInstanceId);
+        .isEqualTo(appliedBaselineVerificationJobInstance.getUuid());
     assertThat(verificationOverview.getBaselineOverview().isApplicableForBaseline()).isTrue();
     assertThat(verificationOverview.getBaselineOverview().isBaselineExpired()).isFalse();
-    assertThat(verificationOverview.getBaselineOverview().isBaseline()).isEqualTo(false);
+    assertThat(verificationOverview.getBaselineOverview().isBaseline()).isFalse();
+    assertThat(verificationOverview.getBaselineOverview().getPlanExecutionId())
+        .isEqualTo(appliedBaselineVerificationJobInstance.getPlanExecutionId());
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testGetVerificationOverviewForLoadTest_isBaseline() throws IOException {
+    builderFactory = BuilderFactory.getDefault();
+    String testVerificationJobInstanceId = "-q3bCyfZSmyXsybsfr9t3B";
+    loadVerificationRelatedDocuments(testVerificationJobInstanceId);
+    String baselineVerificationJobInstanceId = generateUuid();
+    testVerificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    testVerificationJobInstance.setUuid(testVerificationJobInstanceId);
+
+    VerificationJobInstance currentBaselineVerificationJobInstance = testVerificationJobInstance;
+    currentBaselineVerificationJobInstance.setUuid(baselineVerificationJobInstanceId);
+
+    when(stepTaskService.getByCallBackId(testVerificationJobInstanceId)).thenReturn(cvngStepTask);
+    when(verificationJobInstanceService.getVerificationJobInstance(testVerificationJobInstanceId))
+        .thenReturn(testVerificationJobInstance);
+
+    when(stepTaskService.getDeploymentSummary(any())).thenReturn(getDeploymentActivitySummaryDTOForLoadTest());
+    Optional<VerificationJobInstance> baselineVerificationJobInstanceIdOptional =
+        Optional.of(currentBaselineVerificationJobInstance);
+    when(verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(
+             ServiceEnvironmentParams.builder()
+                 .environmentIdentifier(testVerificationJobInstance.getResolvedJob().getEnvIdentifier())
+                 .serviceIdentifier(testVerificationJobInstance.getResolvedJob().getServiceIdentifier())
+                 .accountIdentifier(testVerificationJobInstance.getResolvedJob().getAccountId())
+                 .projectIdentifier(testVerificationJobInstance.getResolvedJob().getProjectIdentifier())
+                 .orgIdentifier(testVerificationJobInstance.getResolvedJob().getOrgIdentifier())
+                 .build()))
+        .thenReturn(baselineVerificationJobInstanceIdOptional);
+    when(verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId))
+        .thenReturn(testVerificationJobInstance);
+
+    String url = "http://localhost:9998/account/" + builderFactory.getContext().getAccountId() + "/orgs/"
+        + builderFactory.getContext().getOrgIdentifier() + "/projects/"
+        + builderFactory.getContext().getProjectIdentifier() + "/verifications/" + testVerificationJobInstanceId;
+    Response response = RESOURCES.client().target(url + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<>() {});
+
+    assertThat(verificationOverview.getBaselineOverview().isApplicableForBaseline()).isTrue();
+    assertThat(verificationOverview.getBaselineOverview().isBaselineExpired()).isFalse();
+    assertThat(verificationOverview.getBaselineOverview().isBaseline()).isTrue();
   }
 
   @Test
@@ -390,7 +446,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(verificationOverview.getControlDataStartTimestamp()).isEqualTo(1000);
     assertThat(verificationOverview.getTestDataStartTimestamp()).isEqualTo(1000);
 
-    assertThat(verificationOverview.getAppliedDeploymentAnalysisType()).isEqualTo(AppliedDeploymentAnalysisType.CANARY);
+    assertThat(verificationOverview.getAppliedDeploymentAnalysisType()).isEqualTo(AppliedDeploymentAnalysisType.TEST);
 
     assertThat(verificationOverview.getControlNodes().getNodeType()).isEqualTo(AnalysedNodeType.PRIMARY);
     AnalysedDeploymentNode analysedDeploymentControlNode =
@@ -407,6 +463,131 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(analysedDeploymentTestNode.getFailedMetrics()).isEqualTo(1);
 
     assertThat(verificationOverview.getSpec().getAnalysisType()).isEqualTo(VerificationJobType.TEST);
+    assertThat(verificationOverview.getSpec().getDurationInMinutes()).isEqualTo(10);
+    assertThat(verificationOverview.getSpec().getIsFailOnNoAnalysis()).isFalse();
+    assertThat(verificationOverview.getSpec().getSensitivity()).isEqualTo(Sensitivity.MEDIUM);
+    assertThat(verificationOverview.getSpec().getAnalysedServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getAnalysedEnvIdentifier())
+        .isEqualTo(builderFactory.getContext().getEnvIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getMonitoredServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateIdentifier()).isNull();
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateVersionLabel()).isNull();
+    assertThat(verificationOverview.getSpec().getMonitoredServiceType()).isEqualTo(MonitoredServiceSpecType.DEFAULT);
+
+    assertThat(verificationOverview.getMetricsAnalysis().getNoAnalysis()).isEqualTo(1);
+    assertThat(verificationOverview.getMetricsAnalysis().getHealthy()).isEqualTo(1);
+    assertThat(verificationOverview.getMetricsAnalysis().getWarning()).isEqualTo(1);
+    assertThat(verificationOverview.getMetricsAnalysis().getUnhealthy()).isEqualTo(1);
+
+    assertThat(verificationOverview.getLogClusters().getKnownClustersCount()).isEqualTo(1);
+    assertThat(verificationOverview.getLogClusters().getUnknownClustersCount()).isEqualTo(1);
+    assertThat(verificationOverview.getLogClusters().getUnexpectedFrequencyClustersCount()).isEqualTo(1);
+
+    assertThat(verificationOverview.getErrorClusters().getKnownClustersCount()).isEqualTo(1);
+    assertThat(verificationOverview.getErrorClusters().getUnknownClustersCount()).isEqualTo(1);
+    assertThat(verificationOverview.getErrorClusters().getUnexpectedFrequencyClustersCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetVerificationOverviewForVerifyStepExecutionId_forVerificationTypeAuto() {
+    verificationJobInstance.setResolvedJob(
+        builderFactory.getAutoVerificationJob(verificationJobInstance.getResolvedJob().getCvConfigs()));
+    Response response = RESOURCES.client().target(baseUrl + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<VerificationOverview>() {});
+
+    assertThat(verificationOverview.getVerificationStatus()).isEqualTo(ActivityVerificationStatus.VERIFICATION_PASSED);
+    assertThat(verificationOverview.getVerificationProgressPercentage()).isEqualTo(1);
+    assertThat(verificationOverview.getVerificationStartTimestamp()).isEqualTo(1);
+    assertThat(verificationOverview.getControlDataStartTimestamp()).isEqualTo(1000);
+    assertThat(verificationOverview.getTestDataStartTimestamp()).isEqualTo(1000);
+
+    assertThat(verificationOverview.getAppliedDeploymentAnalysisType())
+        .isEqualTo(AppliedDeploymentAnalysisType.ROLLING);
+
+    assertThat(verificationOverview.getControlNodes().getNodeType()).isEqualTo(AnalysedNodeType.PRIMARY);
+    AnalysedDeploymentNode analysedDeploymentControlNode =
+        (AnalysedDeploymentNode) verificationOverview.getControlNodes().getNodes().get(0);
+    assertThat(analysedDeploymentControlNode.getNodeIdentifier()).isEqualTo("primary");
+
+    assertThat(verificationOverview.getTestNodes().getNodeType()).isEqualTo(AnalysedNodeType.CANARY);
+    AnalysedDeploymentNode analysedDeploymentTestNode =
+        (AnalysedDeploymentNode) verificationOverview.getTestNodes().getNodes().get(0);
+    assertThat(analysedDeploymentTestNode.getNodeIdentifier()).isEqualTo("canary");
+    assertThat(analysedDeploymentTestNode.getVerificationResult()).isEqualTo(VerificationResult.PASSED);
+    assertThat(analysedDeploymentTestNode.getFailedErrorClusters()).isNull();
+    assertThat(analysedDeploymentTestNode.getFailedLogClusters()).isEqualTo(1);
+    assertThat(analysedDeploymentTestNode.getFailedMetrics()).isEqualTo(1);
+
+    assertThat(verificationOverview.getSpec().getAnalysisType()).isEqualTo(VerificationJobType.AUTO);
+    assertThat(verificationOverview.getSpec().getDurationInMinutes()).isEqualTo(10);
+    assertThat(verificationOverview.getSpec().getIsFailOnNoAnalysis()).isFalse();
+    assertThat(verificationOverview.getSpec().getSensitivity()).isEqualTo(Sensitivity.MEDIUM);
+    assertThat(verificationOverview.getSpec().getAnalysedServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getAnalysedEnvIdentifier())
+        .isEqualTo(builderFactory.getContext().getEnvIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getMonitoredServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateIdentifier()).isNull();
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateVersionLabel()).isNull();
+    assertThat(verificationOverview.getSpec().getMonitoredServiceType()).isEqualTo(MonitoredServiceSpecType.DEFAULT);
+
+    assertThat(verificationOverview.getMetricsAnalysis().getNoAnalysis()).isEqualTo(1);
+    assertThat(verificationOverview.getMetricsAnalysis().getHealthy()).isEqualTo(1);
+    assertThat(verificationOverview.getMetricsAnalysis().getWarning()).isEqualTo(1);
+    assertThat(verificationOverview.getMetricsAnalysis().getUnhealthy()).isEqualTo(1);
+
+    assertThat(verificationOverview.getLogClusters().getKnownClustersCount()).isEqualTo(1);
+    assertThat(verificationOverview.getLogClusters().getUnknownClustersCount()).isEqualTo(1);
+    assertThat(verificationOverview.getLogClusters().getUnexpectedFrequencyClustersCount()).isEqualTo(1);
+
+    assertThat(verificationOverview.getErrorClusters().getKnownClustersCount()).isEqualTo(1);
+    assertThat(verificationOverview.getErrorClusters().getUnknownClustersCount()).isEqualTo(1);
+    assertThat(verificationOverview.getErrorClusters().getUnexpectedFrequencyClustersCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetVerificationOverviewForVerifyStepExecutionId_forFinalAnalysisAsNoAnalysis() {
+    verificationJobInstance.setResolvedJob(
+        builderFactory.getAutoVerificationJob(verificationJobInstance.getResolvedJob().getCvConfigs()));
+    deploymentActivitySummaryDTO = getDeploymentActivitySummaryDTO();
+    deploymentActivitySummaryDTO.getDeploymentVerificationJobInstanceSummary().setRisk(Risk.NO_ANALYSIS);
+    when(stepTaskService.getDeploymentSummary(any())).thenReturn(deploymentActivitySummaryDTO);
+    Response response = RESOURCES.client().target(baseUrl + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<VerificationOverview>() {});
+
+    assertThat(verificationOverview.getVerificationStatus()).isEqualTo(ActivityVerificationStatus.VERIFICATION_PASSED);
+    assertThat(verificationOverview.getVerificationProgressPercentage()).isEqualTo(1);
+    assertThat(verificationOverview.getVerificationStartTimestamp()).isEqualTo(1);
+    assertThat(verificationOverview.getControlDataStartTimestamp()).isEqualTo(1000);
+    assertThat(verificationOverview.getTestDataStartTimestamp()).isEqualTo(1000);
+
+    assertThat(verificationOverview.getAppliedDeploymentAnalysisType())
+        .isEqualTo(AppliedDeploymentAnalysisType.NO_ANALYSIS);
+
+    assertThat(verificationOverview.getControlNodes().getNodeType()).isEqualTo(AnalysedNodeType.PRIMARY);
+    AnalysedDeploymentNode analysedDeploymentControlNode =
+        (AnalysedDeploymentNode) verificationOverview.getControlNodes().getNodes().get(0);
+    assertThat(analysedDeploymentControlNode.getNodeIdentifier()).isEqualTo("primary");
+
+    assertThat(verificationOverview.getTestNodes().getNodeType()).isEqualTo(AnalysedNodeType.CANARY);
+    AnalysedDeploymentNode analysedDeploymentTestNode =
+        (AnalysedDeploymentNode) verificationOverview.getTestNodes().getNodes().get(0);
+    assertThat(analysedDeploymentTestNode.getNodeIdentifier()).isEqualTo("canary");
+    assertThat(analysedDeploymentTestNode.getVerificationResult()).isEqualTo(VerificationResult.PASSED);
+    assertThat(analysedDeploymentTestNode.getFailedErrorClusters()).isNull();
+    assertThat(analysedDeploymentTestNode.getFailedLogClusters()).isEqualTo(1);
+    assertThat(analysedDeploymentTestNode.getFailedMetrics()).isEqualTo(1);
+
+    assertThat(verificationOverview.getSpec().getAnalysisType()).isEqualTo(VerificationJobType.AUTO);
     assertThat(verificationOverview.getSpec().getDurationInMinutes()).isEqualTo(10);
     assertThat(verificationOverview.getSpec().getIsFailOnNoAnalysis()).isFalse();
     assertThat(verificationOverview.getSpec().getSensitivity()).isEqualTo(Sensitivity.MEDIUM);

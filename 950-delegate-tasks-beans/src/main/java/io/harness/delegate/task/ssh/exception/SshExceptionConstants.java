@@ -6,12 +6,16 @@
  */
 
 package io.harness.delegate.task.ssh.exception;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 public class SshExceptionConstants {
@@ -43,11 +47,6 @@ public class SshExceptionConstants {
       "destination path is missing from step copy command unit: %s";
   public final String NO_DESTINATION_DOWNLOAD_ARTIFACT_PATH_SPECIFIED_EXPLANATION =
       "destination path is missing from step download artifact command unit: %s";
-
-  public final String NO_CONFIG_FILE_PROVIDED = "Config file not provided for copy config command unit";
-  public final String NO_CONFIG_FILE_PROVIDED_HINT = "Please provide the config file with the service definition";
-  public final String NO_CONFIG_FILE_PROVIDED_EXPLANATION =
-      "Selected copy config option requires config file to be specified with the service definition";
 
   public final String ARTIFACT_SIZE_EXCEEDED = "Artifact file size exceeds 4GB. Not downloading file.";
   public final String ARTIFACT_SIZE_EXCEEDED_HINT = "Please make sure the file size is not exceeding 4GB.";
@@ -142,4 +141,40 @@ public class SshExceptionConstants {
       "Copy and Download Artifact for package type `%s` is not supported for Github Package Repository artifacts defined in service";
   public final String COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED =
       "Copy and Download Artifact for package type `%s` is not supported for Github Package Repository artifacts";
+
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_HINT =
+      "Please make sure there is no copy artifact command unit specified and use download command unit instead";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_EXPLANATION =
+      "Copy Artifact for package type `universal` is not supported for Azure artifacts defined in service. Please use download artifact and make sure Azure CLI and devops extension is installed";
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_FAILED =
+      "Copy Artifact for package type `universal` is not supported for Azure artifacts";
+
+  public final String AZURE_CLI_INSTALLATION_CHECK_FAILED = "Azure CLI or devops extension not installed";
+  public final String AZURE_CLI_INSTALLATION_CHECK_HINT =
+      "Please install Azure CLI and devops extension in order to download Azure Universal packages.\nYou can use this guide https://learn.microsoft.com/en-us/azure/devops/artifacts/quickstarts/universal-packages?view=azure-devops&tabs=Windows";
+  public final String AZURE_CLI_INSTALLATION_CHECK_EXPLANATION = "Azure CLI check failed";
+
+  public final String GCS_INVALID_ARTIFACT_PATH =
+      "Failed while trying to download GCS artifact, missing artifact path. ";
+  public final String GCS_INVALID_ARTIFACT_PATH_HINT = "Please review the GCS Artifact Details and check the "
+      + "GCS artifact path and bucket.";
+  public final String GCS_INVALID_ARTIFACT_PATH_EXPLANATION = "GCS Artifact file path not provided";
+
+  public final String GCS_ARTIFACT_DOWNLOAD_FAILED = "Failed while trying to download GCS artifact with path: %s "
+      + "from bucket: %s and project: %s";
+  public final String GCS_ARTIFACT_DOWNLOAD_HINT = GCS_INVALID_ARTIFACT_PATH_HINT;
+  public final String GCS_ARTIFACT_DOWNLOAD_EXPLANATION = "Failed to download GCS artifact with path: %s from"
+      + " %s bucket and %s project";
+
+  public final String GCS_ARTIFACT_CALCULATE_SIZE_FAILED =
+      "Failed while trying to calculate GCS artifact file size. Artifact details: path: %s "
+      + "from bucket: %s and project: %s";
+  public final String GCS_ARTIFACT_CALCULATE_SIZE_FAILED_HINT = GCS_INVALID_ARTIFACT_PATH_HINT;
+  public final String GCS_ARTIFACT_CALCULATE_SIZE_FAILED_EXPLANATION =
+      "Failed to calculate GCS artifact file size. Artifacat details: path: %s from"
+      + " %s bucket and %s project";
+
+  public final String BAD_ARTIFACT_TYPE = "Please contact harness support team";
+  public final String BAD_ARTIFACT_TYPE_HINT = "Unexpected artifact configuration of type %s";
+  public final String BAD_ARTIFACT_TYPE_EXPLANATION = "Invalid artifact type, expected %s";
 }

@@ -27,6 +27,7 @@ public class RuleRecommendationService {
         .isValid(ruleRecommendation.getIsValid())
         .executions(ruleRecommendation.getExecutions())
         .jiraDetails(ruleRecommendation.getJiraDetails())
+        .serviceNowDetails(ruleRecommendation.getServiceNowDetails())
         .build();
   }
 }

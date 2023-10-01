@@ -19,3 +19,4 @@ pipeline:
                       imagePath: <+input>
                       region: <+input>
                       tag: <+input>
+                      registryId: <+input>

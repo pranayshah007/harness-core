@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.services.api;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.EnvironmentIdentifierResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
@@ -33,6 +34,9 @@ public interface SLODashboardService {
 
   SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);
   PageResponse<MSDropdownResponse> getSLOAssociatedMonitoredServices(
+      ProjectParams projectParams, PageParams pageParams);
+
+  PageResponse<EnvironmentIdentifierResponse> getSLOAssociatedEnvironmentIdentifiers(
       ProjectParams projectParams, PageParams pageParams);
 
   List<SecondaryEventsResponse> getSecondaryEvents(

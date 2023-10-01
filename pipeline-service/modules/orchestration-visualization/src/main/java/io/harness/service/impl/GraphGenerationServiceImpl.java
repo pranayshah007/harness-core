@@ -38,9 +38,9 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.service.GraphGenerationService;
@@ -163,12 +163,24 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     boolean updateRequired = false;
     Update executionSummaryUpdate = new Update();
     Set<String> nodeExecutionIds = new HashSet<>();
+    PlanExecution planExecution = null;
     for (OrchestrationEventLog orchestrationEventLog : unprocessedEventLogs) {
       String nodeExecutionId = orchestrationEventLog.getNodeExecutionId();
       OrchestrationEventType orchestrationEventType = orchestrationEventLog.getOrchestrationEventType();
+      // lastUpdatedAt is updated initially as this was not getting updating in case we have multiple event log of same
+      // nodeExecution Id. If you check the default case in the below switch case, we continue if a particular node
+      // execution is already processed without updating the lastUpdatedAt. For more details, you can refer CDS-75792
+      lastUpdatedAt = orchestrationEventLog.getCreatedAt();
       switch (orchestrationEventType) {
         case PLAN_EXECUTION_STATUS_UPDATE:
-          orchestrationGraph = planExecutionStatusUpdateEventHandler.handleEvent(planExecutionId, orchestrationGraph);
+          if (planExecution != null) {
+            // If planExecution is notNull then the PLAN_EXECUTION_STATUS_UPDATE has already been applied.
+            break;
+          }
+          planExecution = planExecutionService.get(planExecutionId);
+          executionSummaryUpdate = pmsExecutionSummaryService.updateStatusOps(planExecution, executionSummaryUpdate);
+          orchestrationGraph = planExecutionStatusUpdateEventHandler.handleEvent(planExecution, orchestrationGraph);
+          updateRequired = true;
           break;
         case STEP_DETAILS_UPDATE:
           orchestrationGraph = stepDetailsUpdateEventHandler.handleEvent(
@@ -186,9 +198,6 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           }
           nodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-          if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
-            log.info("Status" + nodeExecution.getStatus());
-          }
 
           updateRequired = pmsExecutionSummaryService.handleNodeExecutionUpdateFromGraphUpdate(
                                planExecutionId, nodeExecution, executionSummaryUpdate)
@@ -196,11 +205,11 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           orchestrationGraph =
               graphStatusUpdateHelper.handleEventV2(planExecutionId, nodeExecution, orchestrationGraph);
       }
-      lastUpdatedAt = orchestrationEventLog.getCreatedAt();
     }
 
     cachePartialOrchestrationGraph(orchestrationGraph.withLastUpdatedAt(lastUpdatedAt), lastUpdatedAt);
     if (updateRequired) {
+      executionSummaryUpdate.set(PlanExecutionSummaryKeys.lastUpdatedAt, lastUpdatedAt);
       pmsExecutionSummaryService.update(planExecutionId, executionSummaryUpdate);
     }
     log.info("[PMS_GRAPH] Processing of [{}] orchestration event logs completed in [{}ms]", unprocessedEventLogs.size(),
@@ -268,16 +277,19 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   @Override
-  public void deleteAllGraphMetadataForGivenExecutionIds(Set<String> planExecutionIds) {
+  public void deleteAllGraphMetadataForGivenExecutionIds(
+      Set<String> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete) {
     // Delete all related orchestration logs
     orchestrationEventLogRepository.deleteAllOrchestrationLogEvents(planExecutionIds);
     // Delete related cache entities
     List<OrchestrationGraph> cacheEntities = new LinkedList<>();
-    for (String planExecutionId : planExecutionIds) {
-      OrchestrationGraph graph = OrchestrationGraph.builder().cacheKey(planExecutionId).cacheParams(null).build();
-      cacheEntities.add(graph);
+    if (!retainPipelineExecutionDetailsAfterDelete) {
+      for (String planExecutionId : planExecutionIds) {
+        OrchestrationGraph graph = OrchestrationGraph.builder().cacheKey(planExecutionId).cacheParams(null).build();
+        cacheEntities.add(graph);
+      }
+      mongoStore.delete(cacheEntities);
     }
-    mongoStore.delete(cacheEntities);
   }
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
@@ -348,6 +360,18 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
       throw new InvalidRequestException(
           "Could not fetch graph for the given execution. It might have been deleted or does not exist");
     }
+  }
+
+  public OrchestrationGraph buildOrchestrationGraphForNodeExecution(
+      String planExecutionId, String nodeExecutionId, List<NodeExecution> nodeExecutions) {
+    return OrchestrationGraph.builder()
+        .cacheKey(planExecutionId)
+        .cacheContextOrder(System.currentTimeMillis())
+        .cacheParams(null)
+        .planExecutionId(planExecutionId)
+        .rootNodeIds(Lists.newArrayList(nodeExecutionId))
+        .adjacencyList(orchestrationAdjacencyListGenerator.generateAdjacencyList(nodeExecutionId, nodeExecutions, true))
+        .build();
   }
 
   private OrchestrationGraphDTO generatePartialGraph(String startId, OrchestrationGraph orchestrationGraph) {

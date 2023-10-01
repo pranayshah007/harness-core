@@ -23,7 +23,7 @@ import java.util.Set;
  * @author praveensugavanam
  */
 public interface LogClusterService {
-  List<String> scheduleL1ClusteringTasks(AnalysisInput input);
+  List<String> scheduleL1ClusteringTasks(AnalysisInput input, boolean isTaskForDeployment);
   Optional<String> scheduleDeploymentL2ClusteringTask(AnalysisInput analysisInput);
   Optional<String> scheduleServiceGuardL2ClusteringTask(AnalysisInput analysisInput);
   Map<String, ExecutionStatus> getTaskStatus(Set<String> taskIds);

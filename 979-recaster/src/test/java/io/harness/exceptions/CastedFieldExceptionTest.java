@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.exception.CastedFieldException;
 import io.harness.rule.Owner;
 
 import org.junit.Test;

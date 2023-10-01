@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.jenkins;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -16,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -63,8 +65,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import org.junit.Before;
@@ -111,6 +115,11 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
       JenkinsConfig.builder().jenkinsUrl(jenkinsUrl).username(userName).password(password).build();
   private Map<String, String> parameters = new HashMap<>();
   private Map<String, String> assertions = new HashMap<>();
+  private static final BuildDetails BUILD_DETAILS_1 = BuildDetails.Builder.aBuildDetails().withNumber("tag1").build();
+  private static final BuildDetails BUILD_DETAILS_2 = BuildDetails.Builder.aBuildDetails().withNumber("tag11").build();
+  private static final BuildDetails BUILD_DETAILS_3 = BuildDetails.Builder.aBuildDetails().withNumber("tag22").build();
+  private static final List<BuildDetails> BUILD_DETAILS_LIST =
+      Arrays.asList(BUILD_DETAILS_1, BUILD_DETAILS_2, BUILD_DETAILS_3);
 
   @Before
   public void setUp() throws Exception {
@@ -118,13 +127,13 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     when(jenkins.getBuild(any(QueueReference.class), any(JenkinsConfig.class))).thenReturn(jenkinsBuild);
     when(jenkinsBuild.getUrl()).thenReturn(buildUrl);
     when(jenkinsBuild.details()).thenReturn(buildWithDetails);
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     when(buildWithDetails.getClient()).thenReturn(jenkinsHttpConnection);
     when(customBuildWithDetails.details()).thenReturn(customBuildWithDetails);
     when(jenkinsHttpConnection.get(any(), any())).thenReturn(customBuildWithDetails);
     when(buildWithDetails.isBuilding()).thenReturn(false);
     when(buildWithDetails.getConsoleOutputText()).thenReturn("console output");
-    when(buildWithDetails.getNumber()).thenReturn(20);
+    when(buildWithDetails.getNumber()).thenReturn(20l);
     when(buildWithDetails.getDescription()).thenReturn("Jenkins Build");
     when(buildWithDetails.getDisplayName()).thenReturn("Jenkins# 20");
     when(buildWithDetails.getFullDisplayName()).thenReturn("Jenkins# 20");
@@ -346,20 +355,54 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
             .artifactPaths(Collections.singletonList("artifactPath"))
             .jobName(jobName)
             .jenkinsConnectorDTO(jenkinsConnectorDTO)
-            .buildNumber("tag")
+            .buildNumber("tag1")
             .build();
-    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag").build();
     JenkinsInternalConfig jenkinsInternalConfig =
         JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
-    doReturn(Collections.singletonList(buildDetails))
+    doReturn(BUILD_DETAILS_1)
         .when(jenkinsRegistryService)
-        .getBuildsForJob(jenkinsInternalConfig, jobName, jenkinsArtifactDelegateRequest.getArtifactPaths(), 25);
+        .verifyBuildForJob(jenkinsInternalConfig, jobName, jenkinsArtifactDelegateRequest.getArtifactPaths(), "tag1");
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild =
         jenkinsArtifactTaskHandler.getLastSuccessfulBuild(jenkinsArtifactDelegateRequest);
     assertThat(lastSuccessfulBuild).isNotNull();
     assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0).getBuildDetails().getNumber())
+        .isEqualTo("tag1");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildForVerify_BuildRegex() throws UnsupportedEncodingException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .buildRegex("tag1")
+            .build();
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    doReturn(BUILD_DETAILS_LIST)
+        .when(jenkinsRegistryService)
+        .getBuildsForJob(
+            jenkinsInternalConfig, jobName, jenkinsArtifactDelegateRequest.getArtifactPaths(), Integer.MAX_VALUE);
+
+    ArtifactTaskExecutionResponse lastSuccessfulBuild =
+        jenkinsArtifactTaskHandler.getLastSuccessfulBuild(jenkinsArtifactDelegateRequest);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0).getBuildDetails().getNumber())
+        .isEqualTo("tag11");
   }
 
   @Test
@@ -413,26 +456,25 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
             .artifactPaths(Collections.singletonList("artifactPath"))
             .jobName(jobName)
             .jenkinsConnectorDTO(jenkinsConnectorDTO)
-            .buildNumber("oldertag")
+            .buildNumber("olderTag")
             .build();
-    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag").build();
-    BuildDetails buildDetailsForOlderBuild = BuildDetails.Builder.aBuildDetails().withNumber("tag").build();
+
+    BuildDetails buildDetailsForOlderBuild = BuildDetails.Builder.aBuildDetails().withNumber("olderTag").build();
     JenkinsInternalConfig jenkinsInternalConfig =
         JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
-    doReturn(Collections.singletonList(buildDetails))
-        .when(jenkinsRegistryService)
-        .getBuildsForJob(jenkinsInternalConfig, jobName, jenkinsArtifactDelegateRequest.getArtifactPaths(), 25);
 
     doReturn(buildDetailsForOlderBuild)
         .when(jenkinsRegistryService)
         .verifyBuildForJob(
-            jenkinsInternalConfig, jobName, jenkinsArtifactDelegateRequest.getArtifactPaths(), "oldertag");
+            jenkinsInternalConfig, jobName, jenkinsArtifactDelegateRequest.getArtifactPaths(), "olderTag");
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild =
         jenkinsArtifactTaskHandler.getLastSuccessfulBuild(jenkinsArtifactDelegateRequest);
     assertThat(lastSuccessfulBuild).isNotNull();
     assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0).getBuildDetails().getNumber())
+        .isEqualTo("olderTag");
   }
 
   @Test
@@ -526,10 +568,10 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
       JenkinsInternalConfig jenkinsInternalConfig =
           JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
       jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
-      when(jenkinsBuild.getNumber()).thenReturn(20);
+      when(jenkinsBuild.getNumber()).thenReturn(20l);
       doReturn(new QueueReference(jenkinsUrl))
           .when(jenkinsRegistryUtils)
-          .trigger(jobName, jenkinsInternalConfig, jenkinsArtifactDelegateRequest.getJobParameter());
+          .trigger(jobName, jenkinsInternalConfig, jenkinsArtifactDelegateRequest.getJobParameter(), logCallback);
       Build build = new Build();
       doReturn(build).when(jenkinsRegistryUtils).waitForJobToStartExecution(queueReference, jenkinsInternalConfig);
       CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
@@ -565,7 +607,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     JenkinsInternalConfig jenkinsInternalConfig =
         JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     Build jenkinsBuild = new Build(220, buildUrl);
     when(jenkinsRegistryUtils.getBuild(new QueueReference(queueItemUrlPart), jenkinsInternalConfig))
         .thenReturn(jenkinsBuild);
@@ -594,6 +636,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
             .jenkinsConnectorDTO(jenkinsConnectorDTO)
             .useConnectorUrlForJobExecution(true)
             .buildNumber("tag")
+            .consoleLogFrequency(7)
             .queuedBuildUrl(queueItemUrlPart)
             .captureEnvironmentVariable(true)
             .build();
@@ -604,8 +647,10 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
         JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
     when(buildWithDetails.getResult()).thenReturn(BuildResult.SUCCESS);
-    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    doReturn(buildWithDetails)
+        .when(jenkinsArtifactTaskHandler)
+        .waitForJobExecutionToFinish(any(), any(), any(), any(), eq(7l));
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
     when(jenkinsRegistryUtils.getEnvVars(any(), any())).thenReturn(Collections.singletonMap("envVar", "test"));
 
@@ -633,6 +678,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
             .jenkinsConnectorDTO(jenkinsConnectorDTO)
             .useConnectorUrlForJobExecution(true)
             .buildNumber("tag")
+            .consoleLogFrequency(3)
             .queuedBuildUrl(queueItemUrlPart)
             .unstableStatusAsSuccess(true)
             .captureEnvironmentVariable(true)
@@ -645,8 +691,10 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
     when(buildWithDetails.getResult()).thenReturn(BuildResult.UNSTABLE);
 
-    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    doReturn(buildWithDetails)
+        .when(jenkinsArtifactTaskHandler)
+        .waitForJobExecutionToFinish(any(), any(), any(), any(), eq(3l));
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
 
     when(jenkinsBuild.details()).thenReturn(buildWithDetails);
@@ -684,8 +732,10 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
     when(buildWithDetails.getResult()).thenReturn(BuildResult.UNSTABLE);
 
-    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    doReturn(buildWithDetails)
+        .when(jenkinsArtifactTaskHandler)
+        .waitForJobExecutionToFinish(any(), any(), any(), any(), any());
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
 
     when(jenkinsBuild.details()).thenReturn(buildWithDetails);
@@ -723,8 +773,10 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
     when(buildWithDetails.getResult()).thenReturn(BuildResult.FAILURE);
 
-    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    doReturn(buildWithDetails)
+        .when(jenkinsArtifactTaskHandler)
+        .waitForJobExecutionToFinish(any(), any(), any(), any(), any());
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
 
     when(jenkinsBuild.details()).thenReturn(buildWithDetails);
@@ -761,7 +813,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
         JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
     when(buildWithDetails.getResult()).thenReturn(BuildResult.SUCCESS);
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
     when(jenkinsBuild.details()).thenReturn(buildWithDetails);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
@@ -797,11 +849,13 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
         JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
     when(buildWithDetails.getResult()).thenReturn(BuildResult.SUCCESS);
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
     when(jenkinsBuild.details()).thenReturn(buildWithDetails);
     when(buildWithDetails.getParameters()).thenThrow(RuntimeException.class);
-    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
+    doReturn(buildWithDetails)
+        .when(jenkinsArtifactTaskHandler)
+        .waitForJobExecutionToFinish(any(), any(), any(), any(), any());
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
     assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
@@ -835,10 +889,12 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
         JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
     when(buildWithDetails.getResult()).thenThrow(RuntimeException.class);
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
     when(jenkinsBuild.details()).thenReturn(buildWithDetails);
-    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
+    doReturn(buildWithDetails)
+        .when(jenkinsArtifactTaskHandler)
+        .waitForJobExecutionToFinish(any(), any(), any(), any(), any());
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
     assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
@@ -862,6 +918,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
             .jenkinsConnectorDTO(jenkinsConnectorDTO)
             .useConnectorUrlForJobExecution(true)
             .buildNumber("tag")
+            .consoleLogFrequency(7)
             .queuedBuildUrl(queueItemUrlPart)
             .captureEnvironmentVariable(true)
             .build();
@@ -872,8 +929,10 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
         JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
     jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
     when(buildWithDetails.getResult()).thenReturn(BuildResult.SUCCESS);
-    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
-    when(jenkinsBuild.getNumber()).thenReturn(20);
+    doReturn(buildWithDetails)
+        .when(jenkinsArtifactTaskHandler)
+        .waitForJobExecutionToFinish(any(), any(), any(), any(), eq(7l));
+    when(jenkinsBuild.getNumber()).thenReturn(20l);
     when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
     when(jenkinsRegistryUtils.getEnvVars(any(), any())).thenReturn(Collections.singletonMap("envVar", "test"));
 

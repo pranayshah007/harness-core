@@ -9,6 +9,7 @@ package io.harness.engine.interrupts;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.interrupts.Interrupt;
 
 import java.util.List;
@@ -20,21 +21,22 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class InterruptUtils {
   public Optional<Interrupt> obtainOptionalInterruptFromActiveInterrupts(
-      List<Interrupt> interrupts, String planExecutionId, String nodeExecutionId) {
+      List<Interrupt> interrupts, List<String> nodeExecutionIds) {
     Optional<Interrupt> optionalInterrupt;
-    if (interrupts.stream().anyMatch(interrupt
-            -> interrupt.getNodeExecutionId() != null && interrupt.getNodeExecutionId().equals(nodeExecutionId))) {
-      optionalInterrupt = interrupts.stream()
-                              .filter(interrupt
-                                  -> interrupt.getPlanExecutionId().equals(planExecutionId)
-                                      && interrupt.getNodeExecutionId().equals(nodeExecutionId))
-                              .findFirst();
-    } else {
-      optionalInterrupt =
-          interrupts.stream().filter(interrupt -> interrupt.getPlanExecutionId().equals(planExecutionId)).findFirst();
+
+    // Handles nodeExecution level interrupts. If any nodeExecution level interrupt present that applies on the current
+    // nodeExecution then return that.
+    optionalInterrupt =
+        interrupts.stream()
+            .filter(interrupt
+                -> interrupt.getNodeExecutionId() != null && nodeExecutionIds.contains(interrupt.getNodeExecutionId()))
+            .findFirst();
+    if (optionalInterrupt.isPresent()) {
+      return optionalInterrupt;
     }
 
-    return optionalInterrupt;
+    // Return plan level interrupts if any.
+    return interrupts.stream().filter(interrupt -> EmptyPredicate.isEmpty(interrupt.getNodeExecutionId())).findFirst();
   }
 
   public Optional<Interrupt> obtainOptionalInterruptFromActiveInterruptsWithPredicates(List<Interrupt> interrupts,

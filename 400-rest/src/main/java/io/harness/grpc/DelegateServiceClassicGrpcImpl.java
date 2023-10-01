@@ -43,22 +43,6 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
   @Inject private PerpetualTaskService perpetualTaskService;
 
   @Override
-  public void queueTask(DelegateClassicTaskRequest request, StreamObserver<QueueTaskResponse> responseObserver) {
-    try {
-      DelegateTask task = (DelegateTask) kryoSerializer.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
-
-      delegateTaskServiceClassic.queueTask(task);
-
-      responseObserver.onNext(QueueTaskResponse.newBuilder().setUuid(task.getUuid()).build());
-      responseObserver.onCompleted();
-
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing queue task request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
   public void queueTaskV2(DelegateClassicTaskRequest request, StreamObserver<QueueTaskResponse> responseObserver) {
     try {
       DelegateTask task =
@@ -71,23 +55,6 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
 
     } catch (Exception ex) {
       log.error("Unexpected error occurred while processing queue task request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
-  public void executeTask(DelegateClassicTaskRequest request, StreamObserver<ExecuteTaskResponse> responseObserver) {
-    try {
-      DelegateTask task = (DelegateTask) kryoSerializer.asInflatedObject(request.getDelegateTaskKryo().toByteArray());
-      DelegateResponseData delegateResponseData = delegateTaskServiceClassic.executeTask(task);
-      responseObserver.onNext(
-          ExecuteTaskResponse.newBuilder()
-              .setDelegateTaskResponseKryo(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(delegateResponseData)))
-              .build());
-      responseObserver.onCompleted();
-
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing execute task request.", ex);
       responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
     }
   }
@@ -106,25 +73,6 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
 
     } catch (Exception ex) {
       log.error("Unexpected error occurred while processing execute task request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
-  public void abortTask(AbortExpireTaskRequest request, StreamObserver<AbortTaskResponse> responseObserver) {
-    try {
-      String accountId = request.getAccountId();
-      String delegateTaskId = request.getDelegateTaskId();
-
-      DelegateTask delegateTask = delegateTaskServiceClassic.abortTask(accountId, delegateTaskId);
-      responseObserver.onNext(
-          AbortTaskResponse.newBuilder()
-              .setDelegateTaskKryo(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(delegateTask)))
-              .build());
-      responseObserver.onCompleted();
-
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing abort task request.", ex);
       responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
     }
   }
@@ -149,22 +97,6 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
   }
 
   @Override
-  public void expireTask(AbortExpireTaskRequest request, StreamObserver<ExpireTaskResponse> responseObserver) {
-    try {
-      String accountId = request.getAccountId();
-      String delegateTaskId = request.getDelegateTaskId();
-
-      String message = delegateTaskServiceClassic.expireTask(accountId, delegateTaskId);
-      responseObserver.onNext(ExpireTaskResponse.newBuilder().setMessage(message).build());
-      responseObserver.onCompleted();
-
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing expire task request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
   public void expireTaskV2(AbortExpireTaskRequest request, StreamObserver<ExpireTaskResponse> responseObserver) {
     try {
       String accountId = request.getAccountId();
@@ -176,28 +108,6 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
 
     } catch (Exception ex) {
       log.error("Unexpected error occurred while processing expire task request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
-  public void createPerpetualTaskClassic(
-      CreatePerpetualTaskRequestClassic request, StreamObserver<CreatePerpetualTaskResponseClassic> responseObserver) {
-    try {
-      String perpetualTaskType = request.getPerpetualTaskType();
-      String accountId = request.getAccountId();
-      PerpetualTaskClientContext clientContext =
-          (PerpetualTaskClientContext) kryoSerializer.asInflatedObject(request.getClientContextKryo().toByteArray());
-      PerpetualTaskSchedule schedule =
-          (PerpetualTaskSchedule) kryoSerializer.asInflatedObject(request.getPerpetualTaskScheduleKryo().toByteArray());
-      boolean allowDuplicate = request.getAllowDuplicate();
-      String taskDescription = request.getTaskDescription();
-      String taskId = perpetualTaskService.createPerpetualTaskInternal(
-          perpetualTaskType, accountId, clientContext, schedule, allowDuplicate, taskDescription);
-      responseObserver.onNext(CreatePerpetualTaskResponseClassic.newBuilder().setMessage(taskId).build());
-      responseObserver.onCompleted();
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while creating perpetual task classic request.", ex);
       responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
     }
   }

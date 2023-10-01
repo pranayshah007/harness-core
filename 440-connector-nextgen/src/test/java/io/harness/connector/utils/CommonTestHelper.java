@@ -28,6 +28,7 @@ public class CommonTestHelper {
   public String connectorIdentifier = "identifier_ph";
   public String name = "name_ph";
   public String description = "description_ph";
+  public String accountIdentifier = "accountIdentifier_ph";
   public String projectIdentifier = "projectIdentifier_ph";
   public String orgIdentifier = "orgIdentifier_ph";
   public Map<String, String> tags = ImmutableMap.of("company", "Harness", "env", "dev");
@@ -39,6 +40,7 @@ public class CommonTestHelper {
                                                   .description(description)
                                                   .identifier(connectorIdentifier)
                                                   .name(name)
+                                                  .accountIdentifier(accountIdentifier)
                                                   .orgIdentifier(orgIdentifier)
                                                   .projectIdentifier(projectIdentifier)
                                                   .tags(tags)

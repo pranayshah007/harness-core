@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
@@ -14,6 +15,9 @@ import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -74,6 +78,8 @@ import okhttp3.RequestBody;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Slf4j
 public class TemplateMigrationService extends NgMigrationService {
   @Inject TemplateService templateService;
@@ -152,6 +158,14 @@ public class TemplateMigrationService extends NgMigrationService {
                 RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.writeYamlString(yamlFile.getYaml())),
                 StoreType.INLINE)
             .execute();
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      resp =
+          templateClient
+              .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                  RequestBody.create(MediaType.parse("application/yaml"), getYamlStringV2(yamlFile)), StoreType.INLINE)
+              .execute();
+    }
     log.info("Template creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
@@ -211,19 +225,22 @@ public class TemplateMigrationService extends NgMigrationService {
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
     if (TemplateType.CUSTOM_DEPLOYMENT_TYPE.name().equals(template.getType())) {
       return configSpec;
-    } else {
-      return JsonUtils.asTree(ImmutableMap.<String, Object>builder()
-                                  .put("spec", configSpec)
-                                  .put("type", ngTemplateService.getNgTemplateStepName(template))
-                                  .put("timeout", ngTemplateService.getTimeoutString(template))
-                                  .put("failureStrategies", RUNTIME_INPUT)
-                                  .put("when",
-                                      ImmutableMap.<String, String>builder()
-                                          .put("stageStatus", "Success")
-                                          .put("condition", RUNTIME_INPUT)
-                                          .build())
-                                  .build());
     }
+    if (TemplateType.ARTIFACT_SOURCE.name().equals(template.getType())) {
+      return JsonUtils.asTree(
+          ImmutableMap.<String, Object>builder().put("spec", configSpec).put("type", CUSTOM_ARTIFACT_NAME).build());
+    }
+    return JsonUtils.asTree(ImmutableMap.<String, Object>builder()
+                                .put("spec", configSpec)
+                                .put("type", ngTemplateService.getNgTemplateStepName(template))
+                                .put("timeout", ngTemplateService.getTimeoutString(template))
+                                .put("failureStrategies", RUNTIME_INPUT)
+                                .put("when",
+                                    ImmutableMap.<String, String>builder()
+                                        .put("stageStatus", "Success")
+                                        .put("condition", RUNTIME_INPUT)
+                                        .build())
+                                .build());
   }
 
   @Override
@@ -245,7 +262,7 @@ public class TemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 }

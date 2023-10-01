@@ -9,6 +9,9 @@ package io.harness.freeze.service.impl;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.EntityConfig;
@@ -38,6 +41,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @Singleton
 @Slf4j
 public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {

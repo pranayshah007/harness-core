@@ -44,6 +44,8 @@ enum Action {
   UNPUBLISH = 13;
   PRERELEASE = 14;
   RELEASE = 15;
+  // pull request
+  REVIEWREADY = 16;
 }
 
 // User represents a user account.
@@ -552,6 +554,11 @@ message ListBranchesWithDefaultRequest {
   string slug = 1;
   PageRequest pagination = 2;
   Provider provider = 3;
+  BranchFilterParams branchFilterParams = 4;
+}
+
+message BranchFilterParams {
+  string branchName = 1;
 }
 
 message ListBranchesResponse {
@@ -772,10 +779,22 @@ message GetAuthenticatedUserResponse {
   string error = 2;
 }
 
+/*
+  In the GetUserReposRequest,
+  If no version is passed by the client, by default the ListV1 apis are called
+  If the version is passed as 2, we route to the ListV2 apis
+*/
 message GetUserReposRequest {
   PageRequest pagination = 1;
   Provider provider = 2;
   bool fetchAllRepos = 3;
+  RepoFilterParams repoFilterParams = 4;
+  int32 version = 5;
+}
+
+message RepoFilterParams {
+  string repoName = 1;
+  string userName = 2;
 }
 
 message GetUserReposResponse {

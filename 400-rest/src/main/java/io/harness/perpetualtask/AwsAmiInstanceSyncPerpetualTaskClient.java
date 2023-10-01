@@ -10,6 +10,7 @@ package io.harness.perpetualtask;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.DelegateTask.DELEGATE_QUEUE_TIMEOUT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.service.InstanceSyncConstants.HARNESS_APPLICATION_ID;
@@ -81,7 +82,7 @@ public class AwsAmiInstanceSyncPerpetualTaskClient implements PerpetualTaskServi
                 ? singletonList(perpetualTaskData.getAwsConfig().getTag())
                 : null)
         .data(TaskData.builder()
-                  .async(false)
+                  .async(true)
                   .taskType(TaskType.AWS_ASG_TASK.name())
                   .parameters(new Object[] {AwsAsgListInstancesRequest.builder()
                                                 .awsConfig(perpetualTaskData.getAwsConfig())
@@ -92,6 +93,7 @@ public class AwsAmiInstanceSyncPerpetualTaskClient implements PerpetualTaskServi
                   .timeout(TimeUnit.MINUTES.toMillis(InstanceSyncConstants.VALIDATION_TIMEOUT_MINUTES))
                   .build())
         .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
+        .waitId(generateUuid())
         .build();
   }
 

@@ -8,6 +8,9 @@
 package io.harness.serializer;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.morphia.FreezeMorphiaClassesRegistrar;
@@ -16,6 +19,8 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 public class FreezeRegistrars {
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(FreezeMorphiaClassesRegistrar.class).build();

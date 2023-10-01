@@ -20,8 +20,6 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.stripEnd;
-import static org.apache.commons.lang3.StringUtils.stripStart;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -79,6 +77,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   private final NGTriggerService ngTriggerService;
   private final GitProviderDataObtainmentManager additionalDataObtainmentManager;
   @Inject PmsFeatureFlagService featureFlagService;
+  private final GitClientHelper gitClientHelper;
 
   @Override
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
@@ -107,7 +106,6 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       }
     }
 
-    // check for harness scm triggers
     if (featureFlagService.isEnabled(originalEvent.getAccountId(), FeatureName.CODE_ENABLED)) {
       evaluateWrapperForSCMConnector(urls, eligibleTriggers, filterRequestData);
     }
@@ -141,8 +139,10 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       String sshUrl = isEmpty(repository.getSshURL()) ? GitClientHelper.getCompleteSSHUrlFromHttpUrlForAzure(httpUrl)
                                                       : repository.getSshURL();
       httpUrl = GitClientHelper.convertToNewHTTPUrlForAzure(httpUrl);
+      String alternateHttpUrl = GitClientHelper.convertToAlternateHTTPUrlForAzure(httpUrl);
       sshUrl = GitClientHelper.convertToNewSSHUrlForAzure(sshUrl);
       urls.add(httpUrl);
+      urls.add(alternateHttpUrl);
       urls.add(sshUrl);
       return urls;
     }
@@ -263,9 +263,10 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       if (webhook == null || webhook.getGit() == null) {
         continue;
       }
-
       if (StringUtil.isBlank(webhook.getGit().getConnectorIdentifier())) {
-        String completeHarnessRepoName = getCompleteHarnessRepoName(ngTriggerEntity, webhook.getGit().getRepoName());
+        String completeHarnessRepoName = GitClientHelper.convertToHarnessRepoName(ngTriggerEntity.getAccountId(),
+            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), webhook.getGit().getRepoName());
+        // todo(abhinav): make changes here if code repo is supported at different scopes.
         String finalUrl =
             urls.stream().filter(u -> u.contains(completeHarnessRepoName.toLowerCase())).findAny().orElse(null);
 
@@ -298,20 +299,6 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
     }
 
     return modifiedUrl;
-  }
-
-  public String getCompleteHarnessRepoName(NGTriggerEntity ngTriggerEntity, String repo) {
-    repo = stripStart(repo, "/");
-    repo = stripEnd(repo, "/");
-    String parts[] = repo.split("/");
-    if (parts.length == 3) {
-      return ngTriggerEntity.getAccountId() + "/" + repo;
-    } else if (parts.length == 2) {
-      return ngTriggerEntity.getAccountId() + "/" + ngTriggerEntity.getOrgIdentifier() + "/" + repo;
-    } else {
-      return ngTriggerEntity.getAccountId() + "/" + ngTriggerEntity.getOrgIdentifier() + "/"
-          + ngTriggerEntity.getProjectIdentifier() + "/" + repo;
-    }
   }
 
   @VisibleForTesting
@@ -348,6 +335,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       } else if (urlType == AwsCodeCommitUrlType.REPO) {
         wrapper.setGitConnectionType(GitConnectionType.REPO);
       }
+      // todo(abhinav): work here
     }
   }
 

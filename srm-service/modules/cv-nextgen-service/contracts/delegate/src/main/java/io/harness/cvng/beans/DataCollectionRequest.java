@@ -14,6 +14,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
+import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthCapabilityHelper;
 import io.harness.delegate.beans.connector.datadogconnector.DatadogCapabilityHelper;
 import io.harness.delegate.beans.connector.dynatraceconnector.DynatraceCapabilityHelper;
@@ -131,6 +132,9 @@ public abstract class DataCollectionRequest<T extends ConnectorConfigDTO> implem
       case SIGNALFX:
         return SignalFXCapabilityHelper.fetchRequiredExecutionCapabilities(
             maskingEvaluator, connectorInfoDTO.getConnectorConfig());
+      case AZURE:
+        return AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
+            connectorInfoDTO.getConnectorConfig(), maskingEvaluator);
       default:
         throw new InvalidRequestException("Connector capability not found");
     }

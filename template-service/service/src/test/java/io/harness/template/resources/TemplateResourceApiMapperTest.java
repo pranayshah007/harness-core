@@ -8,15 +8,21 @@
 package io.harness.template.resources;
 
 import static io.harness.rule.OwnerRule.TARUN_UBA;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -26,19 +32,29 @@ import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.rule.Owner;
 import io.harness.spec.server.template.v1.model.GitCreateDetails;
+import io.harness.spec.server.template.v1.model.GitFindDetails;
 import io.harness.spec.server.template.v1.model.GitUpdateDetails;
 import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.v1.model.TemplateResponse;
 import io.harness.spec.server.template.v1.model.TemplateWithInputsResponse;
 
+import io.dropwizard.jersey.validation.JerseyViolationException;
+import java.util.HashSet;
 import java.util.Set;
 import javax.validation.ConstraintViolation;
+import javax.validation.Path;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import javax.validation.metadata.ConstraintDescriptor;
+import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 public class TemplateResourceApiMapperTest extends CategoryTest {
   private final String ACCOUNT_ID = "account_id";
@@ -60,19 +76,23 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
   String versionLabel = randomAlphabetic(10);
 
   private TemplateResourceApiMapper templateResourceApiMapper;
+  @Spy @InjectMocks TemplateResourceApiMapper templateResourceApiMapperWithMockedValidator;
   private Validator validator;
+  @Mock Validator mockedValidator;
 
   @Before
   public void setUp() {
+    MockitoAnnotations.initMocks(this);
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
     templateResourceApiMapper = new TemplateResourceApiMapper(validator);
+    templateResourceApiMapperWithMockedValidator = new TemplateResourceApiMapper(mockedValidator);
   }
 
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
-  public void testEntityGitDetails() {
+  public void testEntityGitDetailsWithAndWithoutJerseyError() {
     EntityGitDetails entityGitDetails = EntityGitDetails.builder()
                                             .branch(BRANCH)
                                             .filePath(FILE_PATH)
@@ -93,6 +113,17 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(OBJECT_ID, responseGitDetails.getObjectId());
     assertEquals(FILE_URL, responseGitDetails.getFileUrl());
     assertEquals(REPO_URL, responseGitDetails.getRepoUrl());
+
+    Set<ConstraintViolation<Object>> violations = new HashSet<>();
+    ConstraintViolation<Object> violation1 = createDummyViolation("Field1", "Value is too short");
+    violations.add(violation1);
+    violations.add(violation1);
+    doReturn(violations)
+        .when(mockedValidator)
+        .validate(any(io.harness.spec.server.template.v1.model.EntityGitDetails.class));
+    assertThatThrownBy(() -> templateResourceApiMapperWithMockedValidator.toEntityGitDetails(entityGitDetails))
+        .isInstanceOf(JerseyViolationException.class)
+        .hasMessage("Field1: Value is too short");
   }
 
   @Test
@@ -152,9 +183,108 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testToTemplateWithInputResponseWithJersayValdationError() {
+    TemplateResponseDTO templateResponseDTO = TemplateResponseDTO.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .orgIdentifier(ORG_IDENTIFIER)
+                                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                                  .identifier(OBJECT_ID)
+                                                  .name(name)
+                                                  .description(description)
+                                                  .versionLabel(versionLabel)
+                                                  .templateScope(Scope.fromString("project"))
+                                                  .templateEntityType(TemplateEntityType.getTemplateType("STAGE"))
+                                                  .storeType(StoreType.getFromStringOrNull("INLINE"))
+                                                  .gitDetails(null)
+                                                  .lastUpdatedAt(123456789L)
+                                                  .gitDetails(EntityGitDetails.builder().build())
+                                                  .isStableTemplate(true)
+                                                  .yaml("example_yaml")
+                                                  .build();
+    TemplateWithInputsResponseDTO templateWithInputsResponseDTO = TemplateWithInputsResponseDTO.builder()
+                                                                      .templateResponseDTO(templateResponseDTO)
+                                                                      .templateInputs("inputs")
+                                                                      .build();
+    Set<ConstraintViolation<Object>> violations = new HashSet<>();
+    ConstraintViolation<Object> violation1 = createDummyViolation("Field1", "Value is too short");
+    violations.add(violation1);
+    violations.add(violation1);
+    doReturn(violations).when(mockedValidator).validate(any(TemplateResponseDTO.class));
+    assertThatThrownBy(
+        () -> templateResourceApiMapperWithMockedValidator.toTemplateWithInputResponse(templateWithInputsResponseDTO))
+        .isInstanceOf(JerseyViolationException.class)
+        .hasMessage("Field1: Value is too short");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testToTemplateResponseDefaultWithJersayValdationError() {
+    TemplateResponseDTO templateResponseDTO = TemplateResponseDTO.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .orgIdentifier(ORG_IDENTIFIER)
+                                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                                  .identifier(OBJECT_ID)
+                                                  .name(name)
+                                                  .description(description)
+                                                  .versionLabel(versionLabel)
+                                                  .templateScope(Scope.fromString("project"))
+                                                  .templateEntityType(TemplateEntityType.getTemplateType("STAGE"))
+                                                  .storeType(StoreType.getFromStringOrNull("INLINE"))
+                                                  .gitDetails(null)
+                                                  .lastUpdatedAt(123456789L)
+                                                  .gitDetails(EntityGitDetails.builder().build())
+                                                  .isStableTemplate(true)
+                                                  .yaml("example_yaml")
+                                                  .build();
+    Set<ConstraintViolation<Object>> violations = new HashSet<>();
+    ConstraintViolation<Object> violation1 = createDummyViolation("Field1", "Value is too short");
+    violations.add(violation1);
+    violations.add(violation1);
+    doReturn(violations).when(mockedValidator).validate(any(TemplateWithInputsResponse.class));
+    assertThatThrownBy(
+        () -> templateResourceApiMapperWithMockedValidator.toTemplateResponseDefault(templateResponseDTO))
+        .isInstanceOf(JerseyViolationException.class)
+        .hasMessage("Field1: Value is too short");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testToTemplateResponseWithJersayValdationError() {
+    TemplateResponseDTO templateResponseDTO = TemplateResponseDTO.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .orgIdentifier(ORG_IDENTIFIER)
+                                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                                  .identifier(OBJECT_ID)
+                                                  .name(name)
+                                                  .description(description)
+                                                  .versionLabel(versionLabel)
+                                                  .templateScope(Scope.fromString("project"))
+                                                  .templateEntityType(TemplateEntityType.getTemplateType("STAGE"))
+                                                  .storeType(StoreType.getFromStringOrNull("INLINE"))
+                                                  .gitDetails(null)
+                                                  .lastUpdatedAt(123456789L)
+                                                  .gitDetails(EntityGitDetails.builder().build())
+                                                  .isStableTemplate(true)
+                                                  .yaml("example_yaml")
+                                                  .build();
+    Set<ConstraintViolation<Object>> violations = new HashSet<>();
+    ConstraintViolation<Object> violation1 = createDummyViolation("Field1", "Value is too short");
+    violations.add(violation1);
+    violations.add(violation1);
+    doReturn(violations).when(mockedValidator).validate(any(TemplateResponse.class));
+    assertThatThrownBy(() -> templateResourceApiMapperWithMockedValidator.toTemplateResponse(templateResponseDTO))
+        .isInstanceOf(JerseyViolationException.class)
+        .hasMessage("Field1: Value is too short");
+  }
+
+  @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
-  public void testTemplateMetadataResponseWithNullStoreType() {
+  public void testTemplateMetadataResponseWithNullStoreTypeAndJerseyValidationError() {
     EntityGitDetails entityGitDetails = EntityGitDetails.builder()
                                             .branch(BRANCH)
                                             .filePath(FILE_PATH)
@@ -204,6 +334,16 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(entityGitDetails.getFileUrl(), templateMetadataSummaryResponse.getGitDetails().getFileUrl());
     assertEquals(entityGitDetails.getRepoUrl(), templateMetadataSummaryResponse.getGitDetails().getRepoUrl());
     assertEquals(entityGitDetails.getObjectId(), templateMetadataSummaryResponse.getGitDetails().getObjectId());
+
+    violations = new HashSet<>();
+    ConstraintViolation<Object> violation1 = createDummyViolation("Field1", "Value is too short");
+    violations.add(violation1);
+    doReturn(violations).when(mockedValidator).validate(any(TemplateMetadataSummaryResponseDTO.class));
+    assertThatThrownBy(()
+                           -> templateResourceApiMapperWithMockedValidator.mapToTemplateMetadataResponse(
+                               templateMetadataSummaryResponseDTO))
+        .isInstanceOf(JerseyViolationException.class)
+        .hasMessage("Field1: Value is too short");
   }
 
   @Test
@@ -386,6 +526,8 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     gitCreateDetails.setStoreType(null);
     GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitCreateDetails(gitCreateDetails);
     assertEquals(gitEntityInfo.getStoreType(), StoreType.INLINE);
+    GitEntityInfo gitEntityInfo1 = templateResourceApiMapper.populateGitCreateDetails(null);
+    assertNull(gitEntityInfo1.getStoreType());
   }
   @Test
   @Owner(developers = TARUN_UBA)
@@ -416,6 +558,8 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     gitUpdateDetails.setStoreType(null);
     GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitUpdateDetails(gitUpdateDetails);
     assertEquals(gitEntityInfo.getStoreType(), StoreType.INLINE);
+    gitEntityInfo = templateResourceApiMapper.populateGitUpdateDetails(null);
+    assertNull(gitEntityInfo.getStoreType());
   }
   @Test
   @Owner(developers = TARUN_UBA)
@@ -436,5 +580,99 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     gitUpdateDetails.setStoreType(GitUpdateDetails.StoreTypeEnum.INLINE);
     GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitUpdateDetails(gitUpdateDetails);
     assertEquals(gitEntityInfo.getStoreType(), StoreType.INLINE);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testPopulateGitFindDetails() {
+    GitFindDetails gitFindDetails = new GitFindDetails();
+    gitFindDetails.setBranchName("main");
+    GitEntityInfo gitEntityInfo = templateResourceApiMapper.populateGitFindDetails(gitFindDetails);
+    assertThat(gitEntityInfo.getBranch()).isEqualTo("main");
+    gitEntityInfo = templateResourceApiMapper.populateGitFindDetails(null);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testMapSort() {
+    String order = templateResourceApiMapper.mapSort("", "");
+    assertThat(order).isEqualTo("lastUpdatedAt,DESC");
+
+    order = templateResourceApiMapper.mapSort("", "DESC");
+    assertThat(order).isEqualTo("lastUpdatedAt,DESC");
+
+    order = templateResourceApiMapper.mapSort("identifier", "");
+    assertThat(order).isEqualTo("identifier,DESC");
+
+    order = templateResourceApiMapper.mapSort("name", "");
+    assertThat(order).isEqualTo("name,DESC");
+
+    order = templateResourceApiMapper.mapSort("updated", "");
+    assertThat(order).isEqualTo("lastUpdatedAt,DESC");
+
+    assertThatThrownBy(() -> templateResourceApiMapper.mapSort("xyz", ""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Field provided for sorting unidentified. Accepted values: identifier / name / updated");
+  }
+
+  private static ConstraintViolation<Object> createDummyViolation(String propertyPath, String message) {
+    return new ConstraintViolation<Object>() {
+      @Override
+      public Object getRootBean() {
+        return null;
+      }
+
+      @Override
+      public Class<Object> getRootBeanClass() {
+        return Object.class;
+      }
+
+      @Override
+      public Object getLeafBean() {
+        return null;
+      }
+
+      @Override
+      public Object[] getExecutableParameters() {
+        return new Object[0];
+      }
+
+      @Override
+      public Object getExecutableReturnValue() {
+        return null;
+      }
+
+      @Override
+      public Path getPropertyPath() {
+        return PathImpl.createPathFromString(propertyPath);
+      }
+
+      @Override
+      public Object getInvalidValue() {
+        return null;
+      }
+
+      @Override
+      public ConstraintDescriptor<?> getConstraintDescriptor() {
+        return null;
+      }
+
+      @Override
+      public <U> U unwrap(Class<U> type) {
+        return null;
+      }
+
+      @Override
+      public String getMessage() {
+        return message;
+      }
+
+      @Override
+      public String getMessageTemplate() {
+        return null;
+      }
+    };
   }
 }

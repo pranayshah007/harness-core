@@ -9,17 +9,17 @@ package io.harness.ccm.remote.resources.perspectives;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.TelemetryConstants.DATA_SOURCES;
+import static io.harness.ccm.TelemetryConstants.IS_CLONE;
+import static io.harness.ccm.TelemetryConstants.MODULE;
+import static io.harness.ccm.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.TelemetryConstants.PERSPECTIVE_CREATED;
+import static io.harness.ccm.TelemetryConstants.PERSPECTIVE_ID;
 import static io.harness.ccm.budget.utils.BudgetUtils.MONTHS;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
 import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_CREATE_AND_EDIT;
 import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_VIEW;
-import static io.harness.ccm.remote.resources.TelemetryConstants.DATA_SOURCES;
-import static io.harness.ccm.remote.resources.TelemetryConstants.IS_CLONE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
-import static io.harness.ccm.remote.resources.TelemetryConstants.PERSPECTIVE_CREATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.PERSPECTIVE_ID;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -27,7 +27,10 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessDeniedException;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.audittrails.events.PerspectiveCreateEvent;
 import io.harness.ccm.audittrails.events.PerspectiveDeleteEvent;
 import io.harness.ccm.audittrails.events.PerspectiveUpdateEvent;
@@ -108,6 +111,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @Service
 @OwnedBy(CE)

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer.vm;
+package io.harness.ci.execution.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
@@ -19,11 +19,11 @@ import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.serializer.SerializerUtils;
-import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
@@ -51,6 +51,7 @@ public class VmRunStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries, String delegateId,
@@ -86,6 +87,9 @@ public class VmRunStepSerializer {
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
 
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
+
     List<String> outputVarNames = new ArrayList<>();
     if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {
       outputVarNames = runStepInfo.getOutputVariables()
@@ -102,7 +106,7 @@ public class VmRunStepSerializer {
       command = earlyExitCommand + System.lineSeparator()
           + SerializerUtils.getVmDebugCommand(ngAccess.getAccountIdentifier(),
               ciExecutionServiceConfig.getRemoteDebugTimeout(), runStepInfo, stageInfraDetails,
-              envVars.get("TMATE_PATH"))
+              envVars.get("TMATE_PATH"), ciExecutionServiceConfig.getTmateEndpoint())
           + System.lineSeparator() + command;
     } else {
       command = earlyExitCommand + command;

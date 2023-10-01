@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terragrunt;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.terragrunt.TerragruntTaskService.createCliRequest;
@@ -20,7 +19,10 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -61,6 +63,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.lang.JoseException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(CDP)
 public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
@@ -89,8 +93,15 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
         ? applyTaskParameters.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
     LogCallback applyLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), APPLY, commandUnitsProgress);
-    String baseDir =
-        TerragruntTaskService.getBaseDir(applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId());
+
+    String baseDir;
+    if (applyTaskParameters.isUseUniqueDirectoryForBaseDir()) {
+      baseDir = TerragruntTaskService.getBaseDirWithUniqueDirectory(
+          applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId());
+    } else {
+      baseDir = TerragruntTaskService.getBaseDir(applyTaskParameters.getAccountId(), applyTaskParameters.getEntityId());
+    }
+
     TerragruntApplyTaskResponse applyTaskResponse;
 
     try {
@@ -114,6 +125,7 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
       CommandUnitsProgress commandUnitsProgress, LogCallback applyLogCallback, String baseDir)
       throws IOException, InterruptedException {
     try (PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
+      taskService.mapGitConfig(applyTaskParameters);
       taskService.decryptTaskParameters(applyTaskParameters);
 
       LogCallback fetchFilesLogCallback =

@@ -6,7 +6,6 @@
  */
 
 package software.wings.helpers.ext.nexus;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -14,8 +13,11 @@ import static io.harness.nexus.NexusHelper.handleException;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.ListNotifyResponseData;
@@ -55,6 +57,8 @@ import retrofit2.Retrofit;
 /**
  * Created by srinivas on 3/28/17.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._960_API_SERVICES)
 @Singleton

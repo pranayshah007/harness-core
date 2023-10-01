@@ -21,6 +21,7 @@ import static io.harness.security.encryption.SecretManagerType.KMS;
 
 import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.beans.SecretManagerConfig;
@@ -62,6 +63,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "GcpKmsConfigKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("software.wings.beans.GcpKmsConfig")
 public class GcpKmsConfig extends SecretManagerConfig {
   private static final String TASK_SELECTORS = "Task Selectors";
   @Attributes(title = "Name", required = true) private String name;

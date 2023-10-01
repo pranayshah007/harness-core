@@ -28,9 +28,11 @@ import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
+import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.TaskClientParams;
 import io.harness.rule.Owner;
 
+import com.google.protobuf.util.Durations;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,18 +71,23 @@ public class ConnectorHeartbeatServiceImplTest extends CategoryTest {
     ArgumentCaptor<AccountId> accountIdArgumentCaptor = ArgumentCaptor.forClass(AccountId.class);
     ArgumentCaptor<PerpetualTaskClientContextDetails> perpetualTaskClientContextDetailsCaptor =
         ArgumentCaptor.forClass(PerpetualTaskClientContextDetails.class);
+    ArgumentCaptor<PerpetualTaskSchedule> perpetualTaskScheduleCaptor =
+        ArgumentCaptor.forClass(PerpetualTaskSchedule.class);
     verify(delegateServiceGrpcClient, times(1))
-        .createPerpetualTask(accountIdArgumentCaptor.capture(), eq("CONNECTOR_TEST_CONNECTION"), any(),
-            perpetualTaskClientContextDetailsCaptor.capture(), anyBoolean(), any());
+        .createPerpetualTask(accountIdArgumentCaptor.capture(), eq("CONNECTOR_TEST_CONNECTION"),
+            perpetualTaskScheduleCaptor.capture(), perpetualTaskClientContextDetailsCaptor.capture(), anyBoolean(),
+            any());
     AccountId accountId = accountIdArgumentCaptor.getValue();
     assertThat(accountId.getId()).isEqualTo(accountIdentifier);
     PerpetualTaskClientContextDetails clientContextDetails = perpetualTaskClientContextDetailsCaptor.getValue();
+    PerpetualTaskSchedule schedule = perpetualTaskScheduleCaptor.getValue();
     TaskClientParams taskClientParams = clientContextDetails.getTaskClientParams();
     Map<String, String> contextMap = taskClientParams.getParamsMap();
     assertThat(contextMap.get(ACCOUNT_KEY)).isEqualTo(accountIdentifier);
     assertThat(contextMap.get(ORG_KEY)).isEqualTo(orgIdentifier);
     assertThat(contextMap.get(PROJECT_KEY)).isEqualTo(projectIdentifier);
     assertThat(contextMap.get(CONNECTOR_IDENTIFIER_KEY)).isEqualTo(connectorIdentifier);
+    assertThat(schedule.getInterval()).isEqualTo(Durations.fromMinutes(30));
   }
 
   @Test

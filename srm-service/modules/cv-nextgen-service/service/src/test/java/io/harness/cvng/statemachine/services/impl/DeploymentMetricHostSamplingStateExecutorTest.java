@@ -14,7 +14,7 @@ import static io.harness.rule.OwnerRule.NAVEEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import io.harness.CategoryTest;
+import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
@@ -22,6 +22,8 @@ import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.core.beans.TimeRange;
+import io.harness.cvng.core.entities.VerificationTask;
+import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
@@ -31,8 +33,10 @@ import io.harness.cvng.statemachine.services.api.DeploymentMetricHostSamplingSta
 import io.harness.cvng.statemachine.services.api.HostSamplingStateExecutor;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
+import com.google.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -52,7 +56,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest {
+public class DeploymentMetricHostSamplingStateExecutorTest extends CvNextGenTestBase {
   private String verificationTaskId;
   private Instant startTime;
   private Instant endTime;
@@ -61,6 +65,9 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
   @Mock private VerificationJobInstanceService verificationJobInstanceService;
   @Mock private TimeSeriesRecordService timeSeriesRecordService;
   @Mock private TimeSeriesAnalysisService timeSeriesAnalysisService;
+
+  @Inject private ExecutionLogService executionLogService;
+  @Inject private HPersistence hPersistence;
 
   private HostSamplingState hostSamplingState;
   private HostSamplingStateExecutor hostSamplingStateExecutor = new DeploymentMetricHostSamplingStateExecutor();
@@ -87,6 +94,8 @@ public class DeploymentMetricHostSamplingStateExecutorTest extends CategoryTest 
         hostSamplingStateExecutor, "verificationJobInstanceService", verificationJobInstanceService, true);
     FieldUtils.writeField(hostSamplingStateExecutor, "timeSeriesRecordService", timeSeriesRecordService, true);
     FieldUtils.writeField(hostSamplingStateExecutor, "timeSeriesAnalysisService", timeSeriesAnalysisService, true);
+    FieldUtils.writeField(hostSamplingStateExecutor, "executionLogService", executionLogService, true);
+    hPersistence.save(VerificationTask.builder().accountId("accountId").uuid(verificationTaskId).build());
   }
 
   @Test

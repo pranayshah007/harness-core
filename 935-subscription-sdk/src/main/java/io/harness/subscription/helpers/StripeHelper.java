@@ -6,7 +6,6 @@
  */
 
 package io.harness.subscription.helpers;
-
 import io.harness.ModuleType;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
@@ -45,7 +44,7 @@ public interface StripeHelper {
   InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
   InvoiceDetailDTO previewInvoice(StripeSubscriptionRequest stripeSubscriptionRequest);
   void payInvoice(String invoiceId, String accountIdentifier);
-  void deleteCard(String customerIdentifier, String creditCardIdentifier);
+  void detachPaymentMethod(String customerIdentifier, String paymentMethodIdentifier);
 
   PaymentMethodCollectionDTO listPaymentMethods(String customerId);
   InvoiceDetailDTO finalizeInvoice(String invoiceId);

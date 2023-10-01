@@ -45,6 +45,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -118,6 +119,7 @@ public class ServerlessTaskHelperBase {
   @Inject private ServerlessInfraConfigHelper serverlessInfraConfigHelper;
   @Inject protected AwsApiHelperService awsApiHelperService;
   @Inject private DecryptionHelper decryptionHelper;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private static final String ARTIFACTORY_ARTIFACT_PATH = "artifactPath";
   private static final String ARTIFACTORY_ARTIFACT_NAME = "artifactName";
@@ -163,7 +165,8 @@ public class ServerlessTaskHelperBase {
         gitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
         scmFetchFilesHelper.downloadFilesUsingScm(workingDirectory, gitStoreDelegateConfig, executionLogCallback);
       } else {
-        GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+        GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+            gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
         gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
         ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
             gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());

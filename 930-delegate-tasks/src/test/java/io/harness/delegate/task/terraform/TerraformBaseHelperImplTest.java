@@ -50,6 +50,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.service.git.NGGitService;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateFileManagerBase;
@@ -75,6 +76,7 @@ import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientHelper;
 import io.harness.git.GitClientV2;
 import io.harness.git.model.GitBaseRequest;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanJsonLogOutputStream;
 import io.harness.logging.PlanLogOutputStream;
@@ -87,6 +89,7 @@ import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 import io.harness.terraform.TerraformClientImpl;
+import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformApplyCommandRequest;
 import io.harness.terraform.request.TerraformDestroyCommandRequest;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
@@ -154,6 +157,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Mock ObjectMetadata objectMetadata;
   @Mock HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
   @Mock HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNG;
+  @Mock ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private File tfBackendConfig;
   private final EncryptedRecordData encryptedPlanContent =
@@ -164,6 +168,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     spyTerraformBaseHelper = spy(terraformBaseHelper);
     tfBackendConfig = createBackendConfigFile("a1 = b1\na2 = b2\na3 = b3", "backendConfigFile.txt");
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
   }
 
   @After
@@ -184,13 +189,14 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testexecuteTerraformApplyStep() throws InterruptedException, TimeoutException, IOException {
-    TerraformExecuteStepRequest terraformExecuteStepRequest = getTerraformExecuteStepRequest().build();
+    TerraformExecuteStepRequest terraformExecuteStepRequest =
+        getTerraformExecuteStepRequest().skipColorLogs(true).build();
 
     doReturn(Arrays.asList("w1")).when(spyTerraformBaseHelper).parseOutput("* w1\n");
 
     when(terraformClient.getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(),
              terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-             terraformExecuteStepRequest.getLogCallback()))
+             terraformExecuteStepRequest.getLogCallback(), true))
         .thenReturn(CliResponse.builder().output("workspace").build());
 
     spyTerraformBaseHelper.executeTerraformApplyStep(terraformExecuteStepRequest);
@@ -203,11 +209,11 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
     Mockito.verify(terraformClient, times(1))
         .getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(), true);
     Mockito.verify(terraformClient, times(1))
         .workspace(terraformExecuteStepRequest.getWorkspace(), true, terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags());
+            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags(), true);
     Mockito.verify(terraformClient, times(1))
         .apply(TerraformApplyCommandRequest.builder().planName("tfplan").build(),
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
@@ -229,7 +235,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     when(terraformClient.getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(),
              terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-             terraformExecuteStepRequest.getLogCallback()))
+             terraformExecuteStepRequest.getLogCallback(), false))
         .thenReturn(CliResponse.builder().output("workspace").build());
 
     spyTerraformBaseHelper.executeTerraformApplyStep(terraformExecuteStepRequest);
@@ -242,11 +248,12 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
     Mockito.verify(terraformClient, times(1))
         .getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(), false);
     Mockito.verify(terraformClient, times(1))
         .workspace(terraformExecuteStepRequest.getWorkspace(), true, terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags());
+            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags(),
+            terraformExecuteStepRequest.isSkipColorLogs());
 
     Mockito.verify(terraformClient, times(0)).refresh(any(), anyLong(), any(), anyString(), any());
 
@@ -273,9 +280,9 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     spyTerraformBaseHelper.executeTerraformApplyStep(terraformExecuteStepRequest);
 
     Mockito.verify(terraformClient, times(1)).init(any(), anyLong(), any(), anyString(), any());
-    Mockito.verify(terraformClient, times(0)).getWorkspaceList(anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(0)).getWorkspaceList(anyLong(), any(), anyString(), any(), anyBoolean());
     Mockito.verify(terraformClient, times(0))
-        .workspace(anyString(), anyBoolean(), anyLong(), any(), anyString(), any(), anyMap());
+        .workspace(anyString(), anyBoolean(), anyLong(), any(), anyString(), any(), anyMap(), anyBoolean());
     Mockito.verify(terraformClient, times(0)).refresh(any(), anyLong(), any(), anyString(), any());
     Mockito.verify(terraformClient, times(0)).plan(any(), anyLong(), any(), anyString(), any());
     Mockito.verify(terraformClient, times(1)).apply(any(), anyLong(), any(), anyString(), any());
@@ -291,7 +298,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     when(terraformClient.getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(),
              terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-             terraformExecuteStepRequest.getLogCallback()))
+             terraformExecuteStepRequest.getLogCallback(), false))
         .thenReturn(CliResponse.builder().output("workspace").build());
 
     terraformBaseHelper.executeTerraformPlanStep(terraformExecuteStepRequest);
@@ -305,12 +312,13 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     Mockito.verify(terraformClient, times(1))
         .getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(), false);
 
     Mockito.verify(terraformClient, times(1))
         .workspace(terraformExecuteStepRequest.getWorkspace(), true, terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags());
+            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags(),
+            terraformExecuteStepRequest.isSkipColorLogs());
 
     Mockito.verify(terraformClient, times(1))
         .refresh(TerraformRefreshCommandRequest.builder().build(), terraformExecuteStepRequest.getTimeoutInMillis(),
@@ -334,7 +342,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     when(terraformClient.getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(),
              terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-             terraformExecuteStepRequest.getLogCallback()))
+             terraformExecuteStepRequest.getLogCallback(), false))
         .thenReturn(CliResponse.builder().output("workspace").build());
 
     terraformBaseHelper.executeTerraformPlanStep(terraformExecuteStepRequest);
@@ -348,12 +356,13 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     Mockito.verify(terraformClient, times(1))
         .getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(), false);
 
     Mockito.verify(terraformClient, times(1))
         .workspace(terraformExecuteStepRequest.getWorkspace(), true, terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags());
+            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags(),
+            terraformExecuteStepRequest.isSkipColorLogs());
 
     Mockito.verify(terraformClient, times(0)).refresh(any(), anyLong(), any(), anyString(), any());
 
@@ -381,7 +390,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
 
-    Mockito.verify(terraformClient, times(0)).getWorkspaceList(anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(0)).getWorkspaceList(anyLong(), any(), anyString(), any(), anyBoolean());
 
     Mockito.verify(terraformClient, times(0)).refresh(any(), anyLong(), any(), anyString(), any());
 
@@ -399,7 +408,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     when(terraformClient.getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(),
              terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-             terraformExecuteStepRequest.getLogCallback()))
+             terraformExecuteStepRequest.getLogCallback(), false))
         .thenReturn(CliResponse.builder().output("workspace").build());
 
     terraformBaseHelper.executeTerraformDestroyStep(terraformExecuteStepRequest);
@@ -412,15 +421,37 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
     Mockito.verify(terraformClient, times(1))
         .getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(), false);
     Mockito.verify(terraformClient, times(1))
         .workspace(terraformExecuteStepRequest.getWorkspace(), true, terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags());
+            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags(),
+            terraformExecuteStepRequest.isSkipColorLogs());
     Mockito.verify(terraformClient, times(1))
         .destroy(TerraformDestroyCommandRequest.builder().targets(terraformExecuteStepRequest.getTargets()).build(),
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testExecuteTerraformPlanAndWeGetExitCodeFromPlanCommand()
+      throws IOException, InterruptedException, TimeoutException {
+    TerraformExecuteStepRequest terraformExecuteStepRequest =
+        getTerraformExecuteStepRequest().isSaveTerraformJson(true).build();
+
+    doReturn(CliResponse.builder().exitCode(2).commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+        .when(terraformClient)
+        .plan(any(), anyLong(), any(), anyString(), any());
+    doReturn(CliResponse.builder().exitCode(0).commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+        .when(terraformClient)
+        .show(any(), anyLong(), any(), anyString(), any(), (PlanJsonLogOutputStream) any(), anyBoolean());
+
+    TerraformStepResponse stepResponse = terraformBaseHelper.executeTerraformPlanCommand(terraformExecuteStepRequest);
+    Mockito.verify(terraformClient, times(1))
+        .show(anyString(), anyLong(), anyMap(), anyString(), any(), (PlanJsonLogOutputStream) any(), anyBoolean());
+    assertThat(stepResponse.getCliResponse().getExitCode()).isEqualTo(2);
   }
 
   @Test
@@ -434,7 +465,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
     when(terraformClient.getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(),
              terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-             terraformExecuteStepRequest.getLogCallback()))
+             terraformExecuteStepRequest.getLogCallback(), false))
         .thenReturn(CliResponse.builder().output("workspace").build());
 
     terraformBaseHelper.executeTerraformDestroyStep(terraformExecuteStepRequest);
@@ -447,11 +478,12 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
     Mockito.verify(terraformClient, times(1))
         .getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(), false);
     Mockito.verify(terraformClient, times(1))
         .workspace(terraformExecuteStepRequest.getWorkspace(), true, terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags());
+            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getAdditionalCliFlags(),
+            terraformExecuteStepRequest.isSkipColorLogs());
     Mockito.verify(terraformClient, times(0)).refresh(any(), anyLong(), any(), anyString(), any());
     Mockito.verify(terraformClient, times(1))
         .destroy(TerraformDestroyCommandRequest.builder().targets(terraformExecuteStepRequest.getTargets()).build(),
@@ -476,9 +508,9 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
                   .build(),
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
-    Mockito.verify(terraformClient, times(0)).getWorkspaceList(anyLong(), any(), anyString(), any());
+    Mockito.verify(terraformClient, times(0)).getWorkspaceList(anyLong(), any(), anyString(), any(), anyBoolean());
     Mockito.verify(terraformClient, times(0))
-        .workspace(anyString(), anyBoolean(), anyLong(), any(), anyString(), any(), anyMap());
+        .workspace(anyString(), anyBoolean(), anyLong(), any(), anyString(), any(), anyMap(), anyBoolean());
     Mockito.verify(terraformClient, times(0)).refresh(any(), anyLong(), any(), anyString(), any());
     Mockito.verify(terraformClient, times(1)).destroy(any(), anyLong(), any(), anyString(), any());
   }

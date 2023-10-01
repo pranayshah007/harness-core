@@ -5,14 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer.vm;
+package io.harness.ci.execution.serializer.vm;
 
 import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.execution.CIExecutionConfigService;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.utils.HarnessImageUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
+import io.harness.ci.execution.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep.VmPluginStepBuilder;
@@ -35,6 +36,7 @@ public class VmIACMStepSerializer {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmPluginStep serialize(Ambiance ambiance, IACMTerraformPluginInfo stepInfo,
       StageInfraDetails stageInfraDetails, ParameterField<Timeout> parameterFieldTimeout) {
@@ -56,16 +58,22 @@ public class VmIACMStepSerializer {
       image = ciExecutionConfigService.getPluginVersionForVM(
           stepInfo.getNonYamlInfo().getStepInfoType(), ngAccess.getAccountIdentifier());
     }
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
 
-    ConnectorDetails harnessInternalImageConnector =
-        harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
+    ConnectorDetails imageConnector;
+    if (stepInfo.getConnectorRef().getValue() != null) {
+      imageConnector = connectorUtils.getConnectorDetails(ngAccess, stepInfo.getConnectorRef().getValue());
+    } else {
+      imageConnector = harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
+    }
 
     VmPluginStepBuilder vmPluginStepBuilder =
         VmPluginStep.builder()
-            .image(IntegrationStageUtils.getFullyQualifiedImageName(image, harnessInternalImageConnector))
+            .image(IntegrationStageUtils.getFullyQualifiedImageName(image, imageConnector))
             .envVariables(envVars)
             .timeoutSecs(timeout)
-            .imageConnector(harnessInternalImageConnector);
+            .imageConnector(imageConnector);
 
     String connectorRef;
     String provider;

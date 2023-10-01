@@ -38,7 +38,6 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -52,6 +51,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -75,11 +75,11 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     AzureAppServicePreDeploymentData azureAppServicePreDeploymentData =
         azureWebAppStepHelper.getPreDeploymentData(ambiance,
             ((AzureWebAppRollbackStepParameters) stepParameters.getSpec()).slotDeploymentStepFqn + "."
@@ -100,8 +100,11 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
       ArtifactOutcome artifactOutcome = azureWebAppStepHelper.getPrimaryArtifactOutcome(ambiance);
       boolean isPackageType = azureWebAppStepHelper.isPackageArtifactType(artifactOutcome);
       AzureArtifactConfig previousArtifactConfig = null;
+      boolean cleanDeploymentEnabled = false;
       if (isPackageType) {
-        previousArtifactConfig = getPreviousArtifactConfig(ambiance, infraDelegateConfig);
+        AzureWebAppsStageExecutionDetails executionDetails =
+            azureWebAppStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
+        previousArtifactConfig = getPreviousArtifactConfig(executionDetails);
         if (previousArtifactConfig == null && !swapSlotsSweepingOutput.isFound()) {
           return getSkipTaskRequest("No swap slots done and previous artifact not found, skipping rollback");
         }
@@ -110,6 +113,8 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
           return getSkipTaskRequest(
               "Rollback is not possible when previous artifact is of type Docker and current artifact is of type package");
         }
+
+        cleanDeploymentEnabled = getCleanDeploymentEnabled(executionDetails);
       }
 
       AzureWebAppRollbackRequest azureWebAppRollbackRequest =
@@ -123,6 +128,7 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
                       azureAppServicePreDeploymentData.getAppName()))
               .artifact(previousArtifactConfig)
               .azureArtifactType(isPackageType ? AzureArtifactType.PACKAGE : AzureArtifactType.CONTAINER)
+              .cleanDeployment(cleanDeploymentEnabled)
               .build();
 
       List<String> units = getUnits(swapSlotsSweepingOutput, azureWebAppRollbackRequest.getArtifact() != null);
@@ -137,11 +143,14 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
         .build();
   }
 
-  private AzureArtifactConfig getPreviousArtifactConfig(
-      Ambiance ambiance, AzureWebAppInfraDelegateConfig infraDelegateConfig) {
-    AzureWebAppsStageExecutionDetails executionDetails =
-        azureWebAppStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, infraDelegateConfig);
+  private AzureArtifactConfig getPreviousArtifactConfig(AzureWebAppsStageExecutionDetails executionDetails) {
     return executionDetails != null ? executionDetails.getArtifactConfig() : null;
+  }
+
+  private boolean getCleanDeploymentEnabled(AzureWebAppsStageExecutionDetails executionDetails) {
+    return executionDetails != null && executionDetails.getCleanDeployment() != null
+        ? executionDetails.getCleanDeployment()
+        : false;
   }
 
   private String getTargetSlotFromSweepingOutput(OptionalSweepingOutput swapSlotsSweepingOutput) {
@@ -152,8 +161,9 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<AzureWebAppTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<AzureWebAppTaskResponse> responseDataSupplier)
+      throws Exception {
     StepResponseBuilder builder = StepResponse.builder();
     AzureWebAppTaskResponse response;
     try {
@@ -185,7 +195,7 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
   }
 
   private String getDeploymentProgressMarker(
-      Ambiance ambiance, StepElementParameters stepParameters, OptionalSweepingOutput swapSlotsSweepingOutput) {
+      Ambiance ambiance, StepBaseParameters stepParameters, OptionalSweepingOutput swapSlotsSweepingOutput) {
     if (swapSlotsSweepingOutput.isFound()) {
       return ((AzureWebAppSwapSlotsDataOutput) swapSlotsSweepingOutput.getOutput()).getDeploymentProgressMarker();
     }
@@ -201,7 +211,7 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
     return null;
   }
 
-  private OptionalSweepingOutput getSwapSlotsSweepingOutput(Ambiance ambiance, StepElementParameters stepParameters) {
+  private OptionalSweepingOutput getSwapSlotsSweepingOutput(Ambiance ambiance, StepBaseParameters stepParameters) {
     return executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(
             ((AzureWebAppRollbackStepParameters) stepParameters.getSpec()).getSwapSlotStepFqn() + "."
@@ -209,7 +219,7 @@ public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskRes
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

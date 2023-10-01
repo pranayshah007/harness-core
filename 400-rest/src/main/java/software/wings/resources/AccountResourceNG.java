@@ -22,9 +22,9 @@ import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.security.UserGroup;
 import software.wings.helpers.ext.url.SubdomainUrlHelper;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
@@ -81,14 +81,6 @@ public class AccountResourceNG {
                                .build());
 
     return new RestResponse<>(AccountMapper.toAccountDTO(accountService.save(account, false)));
-  }
-
-  @GET
-  @Path("/list")
-  @Deprecated
-  public RestResponse<List<AccountDTO>> getAllAccounts() {
-    List<AccountDTO> accountList = accountService.getAllAccounts();
-    return new RestResponse<>(accountList);
   }
 
   @GET
@@ -269,6 +261,13 @@ public class AccountResourceNG {
   }
 
   @PUT
+  @Path("/{accountId}/harness-support-access")
+  public RestResponse<Boolean> updateHarnessSupportAccess(
+      @PathParam("accountId") @AccountIdentifier String accountId, @Body boolean isHarnessSupportAccessAllowed) {
+    return new RestResponse(accountService.updateHarnessSupportAccess(accountId, isHarnessSupportAccessAllowed));
+  }
+
+  @PUT
   @Hidden
   @Path("/{accountId}/cross-generation-access")
   @InternalApi
@@ -289,5 +288,19 @@ public class AccountResourceNG {
   public RestResponse<Boolean> updateAccountTrustLevel(
       @QueryParam("accountId") String accountId, @QueryParam("trustLevel") Integer trustLevel) {
     return new RestResponse<>(accountService.updateTrustLevel(accountId, trustLevel));
+  }
+
+  @GET
+  @Path("public-access")
+  public RestResponse<Boolean> getPublicAccessEnabled(@QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse(accountService.getPublicAccessEnabled(accountId));
+  }
+
+  @PUT
+  @Path("public-access")
+  public RestResponse<Boolean> setPublicAccessEnabled(
+      @QueryParam("accountId") @NotEmpty String accountId, @Valid @NotNull Boolean publicAccessEnabled) {
+    accountService.setPublicAccessEnabled(accountId, Boolean.TRUE.equals(publicAccessEnabled));
+    return new RestResponse(Boolean.TRUE);
   }
 }

@@ -8,6 +8,8 @@
 package io.harness.delegate.service.core.k8s;
 
 import static io.harness.delegate.service.core.util.K8SConstants.DELEGATE_FIELD_MANAGER;
+import static io.harness.delegate.service.core.util.LabelHelper.HARNESS_TASK_GROUP_LABEL;
+import static io.harness.delegate.service.core.util.LabelHelper.normalizeLabel;
 
 import com.google.common.base.Charsets;
 import io.kubernetes.client.openapi.ApiException;
@@ -18,16 +20,23 @@ import java.util.Map;
 import lombok.NonNull;
 
 public class K8SSecret extends V1Secret {
-  public static K8SSecret secret(@NonNull final String name, @NonNull final String namespace) {
-    return new K8SSecret(name, namespace, "Opaque");
+  public static K8SSecret secret(
+      @NonNull final String name, @NonNull final String namespace, final @NonNull String taskGroupId) {
+    return new K8SSecret(name, namespace, "Opaque", taskGroupId);
   }
 
-  public static K8SSecret imagePullSecret(@NonNull final String name, @NonNull final String namespace) {
-    return new K8SSecret(name, namespace, "kubernetes.io/dockercfg");
+  public static K8SSecret imagePullSecret(
+      @NonNull final String name, @NonNull final String namespace, final @NonNull String taskGroupId) {
+    return new K8SSecret(name, namespace, "kubernetes.io/dockercfg", taskGroupId);
   }
 
-  private K8SSecret(@NonNull final String name, @NonNull final String namespace, @NonNull final String type) {
-    metadata(new V1ObjectMeta().name(name).namespace(namespace)).type(type).apiVersion("v1").kind("Secret");
+  private K8SSecret(@NonNull final String name, @NonNull final String namespace, @NonNull final String type,
+      @NonNull final String taskGroupId) {
+    metadata(new V1ObjectMeta().name(name).namespace(namespace).putLabelsItem(
+                 HARNESS_TASK_GROUP_LABEL, normalizeLabel(taskGroupId)))
+        .type(type)
+        .apiVersion("v1")
+        .kind("Secret");
   }
 
   @Override

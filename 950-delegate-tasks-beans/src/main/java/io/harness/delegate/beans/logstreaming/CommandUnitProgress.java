@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.logstreaming;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Builder;
@@ -16,6 +17,7 @@ import lombok.experimental.FieldNameConstants;
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "CommandUnitProgressKeys")
+@RecasterAlias("io.harness.delegate.beans.logstreaming.CommandUnitProgress")
 public class CommandUnitProgress {
   CommandExecutionStatus status;
   long startTime;

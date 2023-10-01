@@ -97,7 +97,13 @@ public class ResourceFileAnnotationsTest extends CategoryTest {
             foundPathParams.add(value);
           }
         }
-        pathParams.forEach(pathParam -> assertThat(foundPathParams.contains(pathParam)).isTrue());
+        pathParams.forEach(pathParam -> {
+          boolean contains = foundPathParams.contains(pathParam);
+          if (!contains) {
+            System.out.println("test");
+          }
+          assertThat(contains).isTrue();
+        });
       }
     }
   }

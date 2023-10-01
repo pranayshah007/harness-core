@@ -17,8 +17,10 @@ import static io.harness.cvng.beans.DataCollectionExecutionStatus.WAITING;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.cvng.core.entities.DeploymentDataCollectionTask.MAX_RETRY_COUNT;
 import static io.harness.cvng.core.services.CVNextGenConstants.DATA_COLLECTION_DELAY;
+import static io.harness.cvng.core.utils.DateTimeUtils.roundUpTo5MinBoundary;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
@@ -43,6 +45,7 @@ import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
@@ -137,9 +140,6 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private CVNGLogService cvngLogService;
-
-  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
-
   @Inject private MonitoredServiceService monitoredServiceService;
 
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
@@ -153,12 +153,9 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   private String dataCollectionWorkerId;
   private String verificationTaskId;
 
-  private String sliVerificationTaskId;
+  private Optional<String> sliVerificationTaskId;
   private CVConfig cvConfig;
   private BuilderFactory builderFactory;
-
-  private String monitoredServiceIdentifier;
-
   private ServiceLevelIndicator serviceLevelIndicator;
   @Inject private Map<Type, DataCollectionTaskManagementService> dataCollectionTaskManagementServiceMapBinder;
 
@@ -302,6 +299,40 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     assertThat(nextTask.get().getDataCollectionInfo()).isEqualTo(dataCollectionTask.getDataCollectionInfo());
     assertThat(nextTask.get().getStartTime()).isEqualTo(dataCollectionTask.getStartTime());
     assertThat(nextTask.get().getEndTime()).isEqualTo(dataCollectionTask.getEndTime());
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testGetNextTaskDTO_dtoCreationWithFirstPickedAt() throws IllegalAccessException {
+    DataCollectionTask dataCollectionTask = create();
+    dataCollectionTaskService.save(dataCollectionTask);
+    clock = Clock.fixed(clock.instant().plus(5, ChronoUnit.MINUTES), ZoneOffset.UTC);
+    FieldUtils.writeField(dataCollectionTaskService, "clock", clock, true);
+    Optional<DataCollectionTaskDTO> nextTask =
+        dataCollectionTaskService.getNextTaskDTO(dataCollectionTask.getAccountId(), dataCollectionWorkerId);
+    clock = Clock.fixed(clock.instant().plus(3, ChronoUnit.MINUTES), ZoneOffset.UTC);
+    FieldUtils.writeField(dataCollectionTaskService, "clock", clock, true);
+    DataCollectionTaskResult result = DataCollectionTaskDTO.DataCollectionTaskResult.builder()
+                                          .status(SUCCESS)
+                                          .dataCollectionTaskId(dataCollectionTask.getUuid())
+                                          .build();
+    dataCollectionTaskService.updateTaskStatus(result);
+    assertThat(nextTask.isPresent()).isTrue();
+    List<ExecutionLogDTO> cvngLogs =
+        cvngLogService.getExecutionLogDTOs(accountId, dataCollectionTask.getVerificationTaskId());
+    ExecutionLogDTO executionLogDTO = cvngLogs.get(0);
+    assertThat(cvngLogs.size()).isEqualTo(2);
+    assertThat(executionLogDTO.getTags().get(0).getKey()).isEqualTo(CVNGTaskMetadataConstants.TASK_ID);
+    assertThat(executionLogDTO.getTags().get(0).getValue()).isNotEmpty();
+    assertThat(executionLogDTO.getTags().get(1).getKey()).isEqualTo(CVNGTaskMetadataConstants.RETRY_COUNT);
+    assertThat(executionLogDTO.getTags().get(1).getValue()).isEqualTo("1");
+    assertThat(executionLogDTO.getTags().get(2).getKey()).isEqualTo(CVNGTaskMetadataConstants.TASK_TYPE);
+    assertThat(executionLogDTO.getTags().get(2).getValue()).isEqualTo("SERVICE_GUARD");
+    assertThat(executionLogDTO.getTags().get(3).getKey()).isEqualTo(CVNGTaskMetadataConstants.WAIT_DURATION);
+    assertThat(executionLogDTO.getTags().get(3).getValue()).isEqualTo("00:05:00.000");
+    assertThat(executionLogDTO.getTags().get(4).getKey()).isEqualTo(CVNGTaskMetadataConstants.RUNNING_DURATION);
+    assertThat(executionLogDTO.getTags().get(4).getValue()).isEqualTo("00:03:00.000");
   }
 
   @Test
@@ -927,10 +958,10 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     dataCollectionTaskService.updateTaskStatus(result);
     DataCollectionTask updated = dataCollectionTaskService.getDataCollectionTask(dataCollectionTask.getUuid());
     verify(serviceLevelIndicatorServiceMock)
-        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId,
+        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId.get(),
             fakeNow.minus(Duration.ofMinutes(7)), fakeNow.minus(Duration.ofMinutes(2)), serviceLevelIndicator);
     verify(serviceLevelIndicatorServiceMock)
-        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId,
+        .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId.get(),
             fakeNow.minus(Duration.ofMinutes(2)), fakeNow.plus(Duration.ofMinutes(300)), serviceLevelIndicator);
     assertThat(updated.getStatus()).isEqualTo(DataCollectionExecutionStatus.FAILED);
     assertThat(updated.getRetryCount()).isEqualTo(1);
@@ -941,9 +972,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     assertThat(newTask.getRetryCount()).isEqualTo(0);
     assertThat(newTask.getStartTime())
         .isEqualTo(CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(5, ChronoUnit.HOURS));
-    assertThat(newTask.getEndTime())
-        .isEqualTo(
-            CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(5, ChronoUnit.HOURS).plus(5, ChronoUnit.MINUTES));
+    assertThat(newTask.getEndTime()).isEqualTo(roundUpTo5MinBoundary(clock.instant()));
     assertThat(newTask.getValidAfter())
         .isEqualTo(
             CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(29, ChronoUnit.HOURS).plus(5, ChronoUnit.SECONDS));
@@ -1274,10 +1303,11 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
           .status(executionStatus)
           .dataCollectionInfo(createDataCollectionInfo())
           .lastPickedAt(executionStatus == RUNNING ? fakeNow.minus(Duration.ofMinutes(5)) : null)
+          .createdAt(fakeNow.minus(Duration.ofMinutes(10)).toEpochMilli())
           .build();
     } else if (type == Type.SLI) {
       return SLIDataCollectionTask.builder()
-          .verificationTaskId(sliVerificationTaskId)
+          .verificationTaskId(sliVerificationTaskId.get())
           .type(Type.SLI)
           .dataCollectionWorkerId(dataCollectionWorkerId)
           .accountId(accountId)
@@ -1286,6 +1316,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
           .status(executionStatus)
           .dataCollectionInfo(createDataCollectionInfo())
           .lastPickedAt(executionStatus == RUNNING ? fakeNow.minus(Duration.ofMinutes(5)) : null)
+          .createdAt(fakeNow.minus(Duration.ofMinutes(10)).toEpochMilli())
           .build();
     } else {
       return DeploymentDataCollectionTask.builder()
@@ -1298,6 +1329,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
           .status(executionStatus)
           .dataCollectionInfo(createDataCollectionInfo())
           .lastPickedAt(executionStatus == RUNNING ? fakeNow.minus(Duration.ofMinutes(5)) : null)
+          .createdAt(fakeNow.minus(Duration.ofMinutes(10)).toEpochMilli())
           .build();
     }
   }

@@ -12,8 +12,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
@@ -62,7 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 @Slf4j
@@ -150,9 +154,13 @@ public class ServiceStepsHelper {
   }
 
   public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
-    return new NGLogCallback(logStreamingStepClientFactory, prepareServiceAmbiance(ambiance), null, shouldOpenStream);
+    return getServiceLogCallback(prepareServiceAmbiance(ambiance), shouldOpenStream, null);
   }
 
+  public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream, String commandUnit) {
+    return new NGLogCallback(
+        logStreamingStepClientFactory, prepareServiceAmbiance(ambiance), commandUnit, shouldOpenStream);
+  }
   private Ambiance prepareServiceAmbiance(Ambiance ambiance) {
     List<Level> levels = ambiance.getLevelsList();
     for (int i = levels.size() - 1; i >= 0; i--) {

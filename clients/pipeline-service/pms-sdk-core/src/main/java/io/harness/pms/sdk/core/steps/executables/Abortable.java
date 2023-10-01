@@ -16,4 +16,12 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 @OwnedBy(CDC)
 public interface Abortable<T extends StepParameters, V> {
   void handleAbort(Ambiance ambiance, T stepParameters, V executableResponse);
+  default void handleAbortAndUserMarkedFailure(
+      Ambiance ambiance, T stepParameters, V executableResponse, boolean isUserMarkedFailureInterrupt) {
+    // By default, we are calling the handleAbort because in general steps handle the UserMarkedFailure in same way as
+    // abort and steps had adopted the abort only.
+    // But if any step want to differ the implementation for userMarkedFailure, they can override this method in the
+    // step.
+    handleAbort(ambiance, stepParameters, executableResponse);
+  }
 }

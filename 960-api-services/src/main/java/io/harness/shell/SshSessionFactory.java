@@ -6,7 +6,6 @@
  */
 
 package io.harness.shell;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.shell.AccessType.USER_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
@@ -14,6 +13,9 @@ import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
 import static java.util.Collections.emptyMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.network.Http;
@@ -36,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Created by anubhaw on 2/8/16.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @UtilityClass
 @Slf4j
 public class SshSessionFactory {
@@ -175,6 +179,12 @@ public class SshSessionFactory {
       }
     }
     session.setConfig("StrictHostKeyChecking", "no");
+
+    //    Ref:
+    //    https://github.com/mwiede/jsch/blob/master/Readme.md#why-do-ssh-rsa-type-keys-not-work-with-this-jsch-fork-and-my-server
+    session.setConfig("server_host_key", session.getConfig("server_host_key") + ",ssh-rsa");
+    session.setConfig("PubkeyAcceptedAlgorithms", session.getConfig("PubkeyAcceptedAlgorithms") + ",ssh-rsa");
+
     session.setTimeout(config.getSshSessionTimeout());
     session.setServerAliveInterval(10 * 1000); // Send noop packet every 10 sec
 

@@ -10,8 +10,11 @@ package io.harness.cdng.tas.outcome;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.tas.TasInstanceCountType;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
@@ -28,6 +31,7 @@ import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder

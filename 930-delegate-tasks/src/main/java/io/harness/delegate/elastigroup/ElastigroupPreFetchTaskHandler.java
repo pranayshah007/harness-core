@@ -7,6 +7,8 @@
 
 package io.harness.delegate.elastigroup;
 
+import static software.wings.beans.LogHelper.color;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
@@ -25,8 +27,12 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -83,6 +89,9 @@ public class ElastigroupPreFetchTaskHandler extends ElastigroupCommandTaskHandle
 
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      deployLogCallback.saveExecutionLog(sanitizedException.getMessage());
+      deployLogCallback.saveExecutionLog(
+          color("Deployment Failed.", LogColor.Red, LogWeight.Bold), LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       return ElastigroupPreFetchResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(sanitizedException.getMessage())

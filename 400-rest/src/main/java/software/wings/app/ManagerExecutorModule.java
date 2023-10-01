@@ -66,5 +66,9 @@ public class ManagerExecutorModule extends AbstractModule {
         .annotatedWith(Names.named("stateMachineExecutor-handler"))
         .toInstance(ThreadPool.create(10, 100, 500L, TimeUnit.SECONDS,
             new ThreadFactoryBuilder().setNameFormat("stateMachineExecutor-handler-%d").build()));
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("cgCdLicenseUsageExecutor"))
+        .toInstance(ThreadPool.create(5, 20, 1L, TimeUnit.SECONDS,
+            new ThreadFactoryBuilder().setNameFormat("cgCdLicenseUsageExecutor-%d").build()));
   }
 }

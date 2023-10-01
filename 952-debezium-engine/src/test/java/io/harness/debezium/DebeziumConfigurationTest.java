@@ -31,8 +31,9 @@ public class DebeziumConfigurationTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetDebeziumProperties() {
-    DebeziumConfig debeziumConfig = new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "mongo",
-        "shop", "false", "products", 1000, "initial", "4", "1", 1000, "1000", "100", "", "uri", null);
+    DebeziumConfig debeziumConfig =
+        new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "mongo", "shop", "false", "products", 1000,
+            "initial", "4", "1", 1000, "1000", "100", "db1.coll1.field1,db2.coll2.field2", "uri", null);
     RedisConfig redisConfig = new RedisConfig();
     Properties expectedProps = new Properties();
     expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_ARRAY_ENCODING, "document");
@@ -77,6 +78,8 @@ public class DebeziumConfigurationTest extends CategoryTest {
         DebeziumConstants.DEBEZIUM_OFFSET_PREFIX + debeziumConfig.getConnectorName() + "-"
             + "coll1");
     expectedProps.setProperty(DebeziumConfiguration.COLLECTION_INCLUDE_LIST, "coll1");
+    expectedProps.setProperty(DebeziumConfiguration.CURSOR_PIPELINE,
+        "[{ $project: { \"fullDocument.field1\": 0, \"fullDocument.field2\": 0 } } ]");
     assertEquals(expectedProps, DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisConfig, "coll1"));
   }
 }

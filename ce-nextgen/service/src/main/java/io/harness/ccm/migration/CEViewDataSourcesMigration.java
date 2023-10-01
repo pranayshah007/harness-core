@@ -7,9 +7,9 @@
 
 package io.harness.ccm.migration;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
-import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.entities.CEView;
@@ -17,6 +17,8 @@ import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewType;
+import io.harness.ccm.views.entities.ViewVisualization;
+import io.harness.ccm.views.service.CEViewService;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;
 
@@ -29,8 +31,9 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@OwnedBy(HarnessTeam.CE)
+@OwnedBy(CE)
 public class CEViewDataSourcesMigration implements NGMigration {
+  @Inject private CEViewService ceViewService;
   @Inject private CEViewDao ceViewDao;
   @Inject private HPersistence hPersistence;
 
@@ -64,10 +67,19 @@ public class CEViewDataSourcesMigration implements NGMigration {
     if (Objects.isNull(ceView.getViewRules())) {
       ceView.setViewRules(new ArrayList<>());
     }
-    ceView.setDataSources(getCEViewDataSources(ceView.getViewRules()));
+    ceView.setDataSources(
+        getCEViewDataSources(ceView.getViewRules(), ceView.getViewVisualization(), ceView.getAccountId()));
   }
 
-  private List<ViewFieldIdentifier> getCEViewDataSources(final List<ViewRule> viewRules) {
+  private List<ViewFieldIdentifier> getCEViewDataSources(
+      final List<ViewRule> viewRules, final ViewVisualization viewVisualization, final String accountId) {
+    final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
+    viewFieldIdentifiers.addAll(getViewFieldIdentifiersFromRules(viewRules, accountId));
+    viewFieldIdentifiers.addAll(getViewFieldIdentifiersFromGroupBy(viewVisualization));
+    return new ArrayList<>(viewFieldIdentifiers);
+  }
+
+  private Set<ViewFieldIdentifier> getViewFieldIdentifiersFromRules(List<ViewRule> viewRules, String accountId) {
     final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     if (Objects.nonNull(viewRules)) {
       viewRules.forEach(viewRule -> {
@@ -75,13 +87,29 @@ public class CEViewDataSourcesMigration implements NGMigration {
           viewRule.getViewConditions().forEach(viewCondition -> {
             final ViewIdCondition viewIdCondition = (ViewIdCondition) viewCondition;
             final ViewFieldIdentifier viewFieldIdentifier = viewIdCondition.getViewField().getIdentifier();
-            if (viewFieldIdentifier != ViewFieldIdentifier.COMMON && viewFieldIdentifier != ViewFieldIdentifier.LABEL) {
-              viewFieldIdentifiers.add(viewIdCondition.getViewField().getIdentifier());
+            if (viewFieldIdentifier != ViewFieldIdentifier.LABEL) {
+              if (viewFieldIdentifier == ViewFieldIdentifier.COMMON) {
+                viewFieldIdentifiers.addAll(
+                    ceViewService.getDataSourcesFromCloudProviderField(viewIdCondition, accountId));
+              } else {
+                viewFieldIdentifiers.add(viewIdCondition.getViewField().getIdentifier());
+              }
             }
           });
         }
       });
     }
-    return new ArrayList<>(viewFieldIdentifiers);
+    return viewFieldIdentifiers;
+  }
+
+  private Set<ViewFieldIdentifier> getViewFieldIdentifiersFromGroupBy(final ViewVisualization viewVisualization) {
+    final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
+    if (Objects.nonNull(viewVisualization) && Objects.nonNull(viewVisualization.getGroupBy())
+        && Objects.nonNull(viewVisualization.getGroupBy().getIdentifier())
+        && viewVisualization.getGroupBy().getIdentifier() != ViewFieldIdentifier.LABEL
+        && viewVisualization.getGroupBy().getIdentifier() != ViewFieldIdentifier.COMMON) {
+      viewFieldIdentifiers.add(viewVisualization.getGroupBy().getIdentifier());
+    }
+    return viewFieldIdentifiers;
   }
 }

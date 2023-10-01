@@ -9,7 +9,11 @@ package io.harness.eventsframework.impl.redis;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.AbstractConsumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -22,6 +26,7 @@ import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.vavr.control.Try;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.PendingEntry;
 import org.redisson.api.RStream;
@@ -40,6 +46,7 @@ import org.redisson.api.StreamGroup;
 import org.redisson.api.StreamMessageId;
 import org.redisson.client.RedisException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PL)
 @Slf4j
 public abstract class RedisAbstractConsumer extends AbstractConsumer {
@@ -49,7 +56,7 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   protected RedissonClient redissonClient;
   protected Duration maxProcessingTime;
   protected Set<String> consumerGroupNames;
-  protected int batchSize;
+  @Getter protected int batchSize;
   private Retry retry;
   @Inject RedisEventMetricPublisher redisEventMetricPublisher;
 
@@ -241,9 +248,12 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
   }
 
   @Override
-  public void acknowledge(String messageId) {
+  public void acknowledge(String... messageIds) {
     Supplier<Void> acknowledgeSupplier = () -> {
-      acknowledgeInternal(messageId);
+      if (EmptyPredicate.isEmpty(messageIds)) {
+        return null;
+      }
+      acknowledgeInternal(messageIds);
       return null;
     };
 
@@ -257,8 +267,10 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
         .get();
   }
 
-  private void acknowledgeInternal(String messageId) {
-    stream.ack(getGroupName(), RedisUtils.getStreamId(messageId));
+  private void acknowledgeInternal(String... messageIds) {
+    StreamMessageId[] streamMessageIds =
+        Arrays.stream(messageIds).map(RedisUtils::getStreamId).toArray(StreamMessageId[] ::new);
+    stream.ack(getGroupName(), streamMessageIds);
   }
 
   private void createConsumerGroupIfNotPresent(Throwable e) {

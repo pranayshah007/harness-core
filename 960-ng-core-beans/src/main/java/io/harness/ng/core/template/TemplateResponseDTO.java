@@ -9,7 +9,10 @@ package io.harness.ng.core.template;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.validator.EntityName;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.StoreType;
@@ -28,6 +31,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -63,4 +68,5 @@ public class TemplateResponseDTO {
   String connectorRef;
   String icon;
   CacheResponseMetadataDTO cacheResponseMetadata;
+  String yamlVersion;
 }

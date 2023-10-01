@@ -86,6 +86,13 @@ public class TerragruntTestUtils {
         .configFilesStore(GitStoreDelegateConfig.builder().build())
         .stateFileId("test-state-file-id")
         .planName("test-plan-name")
+        .terragruntCommandFlags(new HashMap<>() {
+          {
+            put("PLAN", "-lock-timeout=10s");
+            put("INIT", "-lock-timeout=10s");
+          }
+        })
+        .skipColorLogs(true)
         .build();
   }
 
@@ -115,6 +122,9 @@ public class TerragruntTestUtils {
         .varFiles(Collections.singletonList(varFiles))
         .backendFilesStore(backendFileStore)
         .configFilesStore(GitStoreDelegateConfig.builder().build())
+        .terragruntCommandFlags(new HashMap<>() {
+          { put("APPLY", "-lock-timeout=10s"); }
+        })
         .build();
   }
 
@@ -144,6 +154,10 @@ public class TerragruntTestUtils {
         .varFiles(Collections.singletonList(varFiles))
         .backendFilesStore(backendFileStore)
         .configFilesStore(GitStoreDelegateConfig.builder().build())
+        .terragruntCommandFlags(new HashMap<>() {
+          { put("APPLY", "-lock-timeout=10s"); }
+          { put("DESTROY", "-lock-timeout=10s"); }
+        })
         .build();
   }
 

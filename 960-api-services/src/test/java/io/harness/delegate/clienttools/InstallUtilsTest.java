@@ -50,7 +50,7 @@ public class InstallUtilsTest extends CategoryTest {
 
   private static final String DEFAULT_KUSTOMIZE_3_PATH = PWD + "/client-tools/kustomize/v3.5.4/kustomize";
   private static final String DEFAULT_KUSTOMIZE_4_PATH = PWD + "/client-tools/kustomize/v4.0.0/kustomize";
-  private static final String DEFAULT_SCM_PATH = PWD + "/client-tools/scm/0c5acd02/scm";
+  private static final String DEFAULT_SCM_PATH = PWD + "/client-tools/scm/93b3c9f1/scm";
   private static final String DEFAULT_OC_PATH = PWD + "/client-tools/oc/v4.2.16/oc";
   private static final String DEFAULT_TFCONFIG_INSPECT_1_0_PATH =
       PWD + "/client-tools/tf-config-inspect/v1.0/terraform-config-inspect";
@@ -62,7 +62,7 @@ public class InstallUtilsTest extends CategoryTest {
   private static final String DEFAULT_HELM_3_PATH = PWD + "/client-tools/helm/v3.1.2/helm";
   private static final String DEFAULT_HELM_2_PATH = PWD + "/client-tools/helm/v2.13.1/helm";
   private static final String DEFAULT_PYWINRM_PATH = PWD + "/client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm";
-  private static final String DEFAULT_GOTEMPLATE_PATH = PWD + "/client-tools/go-template/v0.4.2/go-template";
+  private static final String DEFAULT_GOTEMPLATE_PATH = PWD + "/client-tools/go-template/v0.4.4/go-template";
   private static final String DEFAULT_KUBECTL_1_19_PATH = PWD + "/client-tools/kubectl/v1.19.2/kubectl";
   private static final String DEFAULT_KUBECTL_1_13_PATH = PWD + "/client-tools/kubectl/v1.13.2/kubectl";
 
@@ -196,7 +196,7 @@ public class InstallUtilsTest extends CategoryTest {
 
     assertThat(getPath(KUBECTL, KubectlVersion.V1_13)).isEqualTo(KUBECTL.getBinaryName());
     assertThat(getPath(KUBECTL, KubectlVersion.V1_19)).isEqualTo(KUBECTL.getBinaryName());
-    assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4_2)).isEqualTo(GO_TEMPLATE.getBinaryName());
+    assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4_4)).isEqualTo(GO_TEMPLATE.getBinaryName());
     assertThat(getPath(HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4)).isEqualTo(HARNESS_PYWINRM.getBinaryName());
     assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(HELM.getBinaryName());
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(HELM.getBinaryName());
@@ -229,7 +229,7 @@ public class InstallUtilsTest extends CategoryTest {
 
     assertThat(getPath(KUBECTL, KubectlVersion.V1_13)).isEqualTo(DEFAULT_KUBECTL_1_13_PATH);
     assertThat(getPath(KUBECTL, KubectlVersion.V1_19)).isEqualTo(DEFAULT_KUBECTL_1_19_PATH);
-    assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4_2)).isEqualTo(DEFAULT_GOTEMPLATE_PATH);
+    assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4_4)).isEqualTo(DEFAULT_GOTEMPLATE_PATH);
     assertThat(getPath(HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4)).isEqualTo(DEFAULT_PYWINRM_PATH);
     assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(DEFAULT_HELM_2_PATH);
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(DEFAULT_HELM_3_PATH);
@@ -263,7 +263,7 @@ public class InstallUtilsTest extends CategoryTest {
 
     assertThat(getPath(KUBECTL, KubectlVersion.V1_13)).isEqualTo(DEFAULT_KUBECTL_1_13_PATH);
     assertThat(getPath(KUBECTL, KubectlVersion.V1_19)).isEqualTo(DEFAULT_KUBECTL_1_19_PATH);
-    assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4_2)).isEqualTo(DEFAULT_GOTEMPLATE_PATH);
+    assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4_4)).isEqualTo(DEFAULT_GOTEMPLATE_PATH);
     assertThat(getPath(HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4)).isEqualTo(DEFAULT_PYWINRM_PATH);
     assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(DEFAULT_HELM_2_PATH);
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(DEFAULT_HELM_3_PATH);

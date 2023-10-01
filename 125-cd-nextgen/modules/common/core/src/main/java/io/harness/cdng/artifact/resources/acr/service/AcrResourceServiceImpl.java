@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.artifact.resources.acr.service;
-
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
@@ -50,6 +52,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutablePair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class AcrResourceServiceImpl implements AcrResourceService {
@@ -128,6 +131,9 @@ public class AcrResourceServiceImpl implements AcrResourceService {
   @Override
   public AcrResponseDTO getBuildDetails(IdentifierRef connectorRef, String subscription, String registry,
       String repository, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGCommonEntityConstants.SUBSCRIPTION_ID, subscription),
+        MutablePair.of(NGArtifactConstants.REGISTRY, registry),
+        MutablePair.of(NGArtifactConstants.REPOSITORY, repository));
     AzureConnectorDTO connector = azureHelperService.getConnector(connectorRef);
     BaseNGAccess baseNGAccess =
         azureHelperService.getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

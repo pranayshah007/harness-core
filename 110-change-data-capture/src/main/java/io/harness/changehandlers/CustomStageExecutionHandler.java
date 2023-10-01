@@ -6,16 +6,15 @@
  */
 
 package io.harness.changehandlers;
-
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.changehandlers.helper.ChangeHandlerHelper;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.changestreamsframework.ChangeType;
 import io.harness.execution.stage.StageExecutionEntity.StageExecutionEntityKeys;
 
 import com.google.inject.Inject;
-import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import java.util.HashMap;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
   @Inject ChangeHandlerHelper changeHandlerHelper;
@@ -37,18 +37,7 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
 
     columnValueMapping.put("id", dbObject.get(StageExecutionEntityKeys.stageExecutionId).toString());
     BasicDBObject failureInfo = (BasicDBObject) dbObject.get(StageExecutionEntityKeys.failureInfo);
-    if (failureInfo.get("errorMessage") != null) {
-      changeHandlerHelper.addKeyValuePairToMapFromDBObject(
-          failureInfo, columnValueMapping, "errorMessage", "failure_message");
-    } else if (failureInfo.get("failureData") != null) {
-      BasicDBList failureData = (BasicDBList) failureInfo.get("failureData");
-      if (!isEmpty(failureData)) {
-        if (((BasicDBObject) failureData.get(0)).get("message") != null) {
-          changeHandlerHelper.addKeyValuePairToMapFromDBObject(
-              (BasicDBObject) failureData.get(0), columnValueMapping, "message", "failure_message");
-        }
-      }
-    }
+    changeHandlerHelper.parseFailureMessageFromFailureInfo(failureInfo, columnValueMapping, "failure_message");
     return columnValueMapping;
   }
 

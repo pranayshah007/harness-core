@@ -15,6 +15,7 @@ import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlBlackduckToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlSBOM;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -45,6 +46,8 @@ public class BlackDuckStepInfo extends STOGenericStepInfo {
   @JsonProperty protected STOYamlImage image;
 
   @JsonProperty("tool") protected STOYamlBlackduckToolData tool;
+
+  @JsonProperty protected STOYamlSBOM sbom;
 
   @NotNull
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")

@@ -8,8 +8,10 @@
 package io.harness.artifactory;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -31,8 +33,10 @@ import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
@@ -55,6 +59,14 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
   @Mock ArtifactoryClientImpl artifactoryClient;
 
   @InjectMocks ArtifactoryNgServiceImpl artifactoryNgService;
+
+  private static final ArtifactoryConfigRequest ARTIFACTORY_CONFIG_REQUEST = ArtifactoryConfigRequest.builder().build();
+  private static final String REPO_NAME = "repoName";
+  private static final String FULL_ARTIFACT_PATH = "abc/artifactPath.exe.temp";
+  private static final String FULL_ARTIFACT_PATH_2 = "artifactPath.exe";
+  private static final String FILTER = "filter";
+  private static final int MAX_VERSION = 10;
+  private static final String ARTIFACT_PATH_REGEX = "[a-zA-Z.]+(exe)";
 
   @Before
   public void setup() {
@@ -113,7 +125,23 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
 
     List<BuildDetails> result =
-        artifactoryNgService.getArtifactList(artifactoryConfigRequest, "repoName", "artifactPath", 10);
+        artifactoryNgService.getArtifactList(artifactoryConfigRequest, "repoName", "artifactPath", 10, null, null);
+
+    verify(artifactoryClient, times(1)).getArtifactList(any(), any(), any(), anyInt());
+    assertThat(result).isEqualTo(buildDetails);
+  }
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetArtifactListWithArtifactFilter() {
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    List<BuildDetails> buildDetails = new ArrayList<>();
+    buildDetails.add(
+        BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactDirectory/artifactPathFilter.exe.temp").build());
+    doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
+
+    List<BuildDetails> result = artifactoryNgService.getArtifactList(
+        artifactoryConfigRequest, "repoName", null, 10, "artifactPathFilter.*", "artifactDirectory");
 
     verify(artifactoryClient, times(1)).getArtifactList(any(), any(), any(), anyInt());
     assertThat(result).isEqualTo(buildDetails);
@@ -152,16 +180,16 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
 
     assertThat(artifactoryNgService.getLatestArtifact(
-                   artifactoryConfigRequest, "repoName", "artifactDirectory", "(artifactPath.exe.temp)", "", 10))
+                   artifactoryConfigRequest, "repoName", "artifactDirectory", "(artifactPath.exe.temp)", "", 10, null))
         .isEqualTo(
             buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
 
     assertThatThrownBy(
-        () -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "", 10))
+        () -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "", 10, null))
         .hasMessage("Please check ArtifactPath/ArtifactPathFilter field in Artifactory artifact configuration.");
     BuildDetails expectedresult = BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath").build();
     BuildDetails actualresult =
-        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "artifactpath", 10);
+        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "artifactpath", 10, null);
 
     assertThat(actualresult).isEqualTo(expectedresult);
     String artifactDirectory = "/artifactDirectory/";
@@ -170,14 +198,14 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails = Collections.emptyList();
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
     assertThatThrownBy(()
-                           -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
-                               artifactDirectory, artifactPathFilter, "artifactpath", 10))
+                           -> artifactoryNgService.getLatestArtifact(
+                               artifactoryConfigRequest, "repoName", artifactDirectory, "", "artifactpath", 10, null))
         .hasMessage(
             "Please check artifactPath or artifactDirectory or repository field in Artifactory artifact configuration.");
 
     assertThatThrownBy(()
-                           -> artifactoryNgService.getLatestArtifact(
-                               artifactoryConfigRequest, "repoName", artifactDirectory, artifactPathFilter, "", 10))
+                           -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
+                               artifactDirectory, artifactPathFilter, "artifact", 10, null))
         .hasMessage(
             "Please check artifactPathFilter or artifactDirectory or repository field in Artifactory artifact .");
   }
@@ -196,8 +224,30 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
                           .build());
     doReturn(buildDetails1).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
+    assertThat(artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
+                   "artifactDirectory/subfolder", null, "artifactPath.exe.", 10, null))
+        .isEqualTo(
+            buildDetails1.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testGetLatestArtifact_RecursiveRegex() {
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    List<BuildDetails> buildDetails1 = new ArrayList<>();
+    buildDetails1.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("A/B/C.zip").build());
+    buildDetails1.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("A/B/C1.zip").build());
+    doReturn(List.of()).when(artifactoryClient).getArtifactList(any(), anyString(), eq("A/*/*/B/C.zip"), anyInt());
+    doReturn(List.of()).when(artifactoryClient).getArtifactList(any(), anyString(), eq("A/B/*/C.zip"), anyInt());
+    doReturn(buildDetails1).when(artifactoryClient).getArtifactList(any(), anyString(), eq("A/B/C.zip"), anyInt());
+
     assertThat(artifactoryNgService.getLatestArtifact(
-                   artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", null, "artifactPath.exe.", 10))
+                   artifactoryConfigRequest, "repoName", "A/*/*", null, "B/C.zip", 10, null))
+        .isEqualTo(
+            buildDetails1.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+    assertThat(
+        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "A/B/*", null, "C.zip", 10, null))
         .isEqualTo(
             buildDetails1.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
   }
@@ -218,13 +268,13 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
                           .build());
     doReturn(buildDetails2).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
-    assertThat(artifactoryNgService.getLatestArtifact(
-                   artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "", "artifactPath.exe", 10))
+    assertThat(artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
+                   "artifactDirectory/subfolder", "", "artifactPath.exe", 10, null))
         .isEqualTo(
             buildDetails2.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(1));
 
     assertThat(artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
-                   "artifactDirectory/subfolder", "", "artifactPath.exe.hash", 10))
+                   "artifactDirectory/subfolder", "", "artifactPath.exe.hash", 10, null))
         .isEqualTo(
             buildDetails2.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(2));
   }
@@ -246,7 +296,7 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     doReturn(buildDetails4).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
     BuildDetails result4 = artifactoryNgService.getLatestArtifact(
-        artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "[a-zA-Z.]+(exe).*", "", 10);
+        artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "[a-zA-Z.]+(exe).*", "", 10, null);
     assertThat(result4.getArtifactPath()).endsWith("artifactPath.exe.temp");
   }
 
@@ -264,11 +314,29 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails5.add(BuildDetails.Builder.aBuildDetails()
                           .withArtifactPath("artifactDirectory/subfolder/artifactPath.exe.hash")
                           .build());
+    doReturn(buildDetails5)
+        .when(artifactoryClient)
+        .getArtifactList(any(), anyString(), eq("artifactDirectory/subfolder/*"), anyInt());
+
+    BuildDetails result5 = artifactoryNgService.getLatestArtifact(
+        artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "[a-zA-Z.]+(exe)", "", 10, null);
+    assertThat(result5.getArtifactPath()).endsWith("artifactPath.exe");
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testGetLatestArtifactRegex_WithFilteringOnArtifactorySide() {
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    List<BuildDetails> buildDetails5 = new ArrayList<>();
+    buildDetails5.add(BuildDetails.Builder.aBuildDetails()
+                          .withArtifactPath("artifactDirectory/subfolder/www-202345457459.tar.gz")
+                          .build());
     doReturn(buildDetails5).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
 
     BuildDetails result5 = artifactoryNgService.getLatestArtifact(
-        artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "[a-zA-Z.]+(exe)", "", 10);
-    assertThat(result5.getArtifactPath()).endsWith("artifactPath.exe");
+        artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", "www-*.tar.gz", "", 10, null);
+    assertThat(result5.getArtifactPath()).endsWith("www-202345457459.tar.gz");
   }
 
   @Test
@@ -283,10 +351,10 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.bin.asd").build());
     buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.asd").build());
     buildDetails6.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.zip").build());
-    doReturn(buildDetails6).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
+    doReturn(buildDetails6).when(artifactoryClient).getArtifactList(any(), anyString(), eq("/*"), anyInt());
 
-    BuildDetails result6 =
-        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "/", "[a-zA-Z.]+(exe)", "", 10);
+    BuildDetails result6 = artifactoryNgService.getLatestArtifact(
+        artifactoryConfigRequest, "repoName", "/", "[a-zA-Z.]+(exe)", "", 10, null);
     assertThat(result6.getArtifactPath()).endsWith("artifactPath.exe");
   }
 
@@ -299,10 +367,10 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.temp").build());
     buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe").build());
     buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath.exe.hash").build());
-    doReturn(buildDetails7).when(artifactoryClient).getArtifactList(any(), anyString(), anyString(), anyInt());
+    doReturn(buildDetails7).when(artifactoryClient).getArtifactList(any(), anyString(), eq("*"), anyInt());
 
-    BuildDetails result7 =
-        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "[a-zA-Z.]+(exe)", "", 10);
+    BuildDetails result7 = artifactoryNgService.getLatestArtifact(
+        artifactoryConfigRequest, "repoName", "", "[a-zA-Z.]+(exe)", "", 10, null);
     assertThat(result7.getArtifactPath()).endsWith("artifactPath.exe");
   }
 
@@ -313,11 +381,82 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
     assertThatThrownBy(()
                            -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
-                               "artifactDirectory/subfolder", "[a-zA-Z.]+(exe)[.a-zA-Z]+)", "", 10))
+                               "artifactDirectory/subfolder", "[a-zA-Z.]+(exe)[.a-zA-Z]+)", "", 10, null))
         .isInstanceOf(WingsException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class)
         .getCause()
         .isInstanceOf(ArtifactoryRegistryException.class);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLatestArtifact_ArtifactFilterArtifactPathFixed() {
+    doReturn(getBuildDetailsList().get(0))
+        .when(artifactoryClient)
+        .getBuildDetailWithFullPath(any(), anyString(), anyString());
+
+    BuildDetails result7 = artifactoryNgService.getLatestArtifact(
+        ARTIFACTORY_CONFIG_REQUEST, REPO_NAME, null, null, FULL_ARTIFACT_PATH, MAX_VERSION, FILTER);
+    verify(artifactoryClient).getBuildDetailWithFullPath(ARTIFACTORY_CONFIG_REQUEST, REPO_NAME, FULL_ARTIFACT_PATH);
+    assertThat(result7.getArtifactPath()).isEqualTo(FULL_ARTIFACT_PATH);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLatestArtifact_ArtifactFilterArtifactPathRegex() {
+    doReturn(getBuildDetailsList()).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
+
+    BuildDetails result7 = artifactoryNgService.getLatestArtifact(
+        ARTIFACTORY_CONFIG_REQUEST, REPO_NAME, null, ARTIFACT_PATH_REGEX, null, MAX_VERSION, FILTER);
+    verify(artifactoryClient).getArtifactList(ARTIFACTORY_CONFIG_REQUEST, REPO_NAME, FILTER, MAX_VERSION);
+    assertThat(result7.getArtifactPath()).isEqualTo(FULL_ARTIFACT_PATH_2);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLatestArtifact_ArtifactFilterArtifactPathFixed_EmptyList() {
+    doReturn(null).when(artifactoryClient).getBuildDetailWithFullPath(any(), anyString(), anyString());
+
+    assertThatThrownBy(()
+                           -> artifactoryNgService.getLatestArtifact(ARTIFACTORY_CONFIG_REQUEST, REPO_NAME, null, null,
+                               FULL_ARTIFACT_PATH, MAX_VERSION, FILTER))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Please check artifactPath or artifactFilter or repository field in Artifactory artifact.")
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(ArtifactoryRegistryException.class);
+
+    verify(artifactoryClient).getBuildDetailWithFullPath(ARTIFACTORY_CONFIG_REQUEST, REPO_NAME, FULL_ARTIFACT_PATH);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLatestArtifact_ArtifactFilterArtifactPathRegex_EmptyList() {
+    doReturn(new ArrayList<>()).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
+    assertThatThrownBy(()
+                           -> artifactoryNgService.getLatestArtifact(ARTIFACTORY_CONFIG_REQUEST, REPO_NAME, null,
+                               ARTIFACT_PATH_REGEX, null, MAX_VERSION, FILTER))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Please check artifactPathFilter or artifactFilter or repository field in Artifactory artifact.")
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(ArtifactoryRegistryException.class);
+
+    verify(artifactoryClient).getArtifactList(ARTIFACTORY_CONFIG_REQUEST, REPO_NAME, FILTER, MAX_VERSION);
+  }
+
+  private List<BuildDetails> getBuildDetailsList() {
+    List<BuildDetails> buildDetails7 = new ArrayList<>();
+    buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath(FULL_ARTIFACT_PATH).build());
+    buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath(FULL_ARTIFACT_PATH_2).build());
+    buildDetails7.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("abc/artifactPath.exe.hash").build());
+    return buildDetails7;
   }
 }

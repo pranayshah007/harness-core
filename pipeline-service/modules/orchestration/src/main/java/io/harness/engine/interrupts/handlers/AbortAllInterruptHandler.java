@@ -8,7 +8,6 @@
 package io.harness.engine.interrupts.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.CollectionUtils.isPresent;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.ABORT_ALL_ALREADY;
@@ -19,7 +18,11 @@ import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSING;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptHandler;
 import io.harness.engine.interrupts.InterruptService;
@@ -41,6 +44,8 @@ import javax.validation.Valid;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 @OwnedBy(PIPELINE)
 public class AbortAllInterruptHandler extends InterruptPropagatorHandler implements InterruptHandler {
@@ -81,7 +86,7 @@ public class AbortAllInterruptHandler extends InterruptPropagatorHandler impleme
   }
 
   private Interrupt processInterrupt(@Valid @NonNull Interrupt interrupt, List<Interrupt> interrupts) {
-    if (isPresent(interrupts, presentInterrupt -> presentInterrupt.getType() == InterruptType.ABORT_ALL)) {
+    if (checkIfInterruptAlreadyPresent(interrupt, interrupts)) {
       throw new InvalidRequestException("Execution already has ABORT_ALL interrupt", ABORT_ALL_ALREADY, USER);
     }
     if (isEmpty(interrupts)) {
@@ -92,6 +97,21 @@ public class AbortAllInterruptHandler extends InterruptPropagatorHandler impleme
         -> interruptService.markProcessed(
             savedInterrupt.getUuid(), savedInterrupt.getState() == PROCESSING ? PROCESSED_SUCCESSFULLY : DISCARDED));
     return interruptService.save(interrupt);
+  }
+
+  private boolean checkIfInterruptAlreadyPresent(Interrupt interrupt, List<Interrupt> interrupts) {
+    for (Interrupt presentInterrupt : interrupts) {
+      if (presentInterrupt.getType() == InterruptType.ABORT_ALL) {
+        if (EmptyPredicate.isEmpty(presentInterrupt.getNodeExecutionId())) {
+          // Checking if any plan level AbortAll interrupt present.
+          return true;
+        } else if (presentInterrupt.getNodeExecutionId().equals(interrupt.getNodeExecutionId())) {
+          // Checking if AbortAll interrupt present on the same nodeExecutionId;
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /**
@@ -131,7 +151,7 @@ public class AbortAllInterruptHandler extends InterruptPropagatorHandler impleme
     }
 
     waitNotifyEngine.waitForAllOnInList(
-        publisherName, AbortAllInterruptCallback.builder().interrupt(updatedInterrupt).build(), notifyIds);
+        publisherName, AllInterruptCallback.builder().interrupt(updatedInterrupt).build(), notifyIds);
     return updatedInterrupt;
   }
 

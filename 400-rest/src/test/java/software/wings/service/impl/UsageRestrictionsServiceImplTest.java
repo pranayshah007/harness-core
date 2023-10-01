@@ -38,6 +38,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -54,7 +55,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.PageResponse.PageResponseBuilder;
@@ -62,7 +62,6 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Application;
@@ -142,7 +141,6 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
   @Mock private SettingServiceHelper settingServiceHelper;
   @Mock private SecretManager secretManager;
   @Mock private Query<SettingAttribute> query;
-  @Mock private FeatureFlagService featureFlagService;
 
   private static Set<Action> readAction = newHashSet(Action.READ);
   private static Set<Action> updateAndReadAction = newHashSet(Action.UPDATE, Action.READ);
@@ -182,7 +180,6 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     when(application.getAccountId()).thenReturn("ACCOUNT_ID");
     when(appService.get(TARGET_APP_ID)).thenReturn(Application.Builder.anApplication().accountId(ACCOUNT_ID).build());
     when(appService.get(APP_ID)).thenReturn(Application.Builder.anApplication().accountId(ACCOUNT_ID).build());
-    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS), anyString());
   }
 
   private List<UserGroup> setUserGroupMocks(AppPermission appPermission, List<String> appIds) {
@@ -194,7 +191,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
         asList(UserGroup.builder().accountId(ACCOUNT_ID).appPermissions(newHashSet(appPermissions)).build());
     pageResponse = aPageResponse().withResponse(userGroups).build();
     when(userGroupService.listByAccountId(anyString(), any(User.class), anyBoolean())).thenReturn(userGroups);
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any(), anyBoolean()))
         .thenReturn(pageResponse);
     when(authHandler.getAppIdsByFilter(anyString(), any(AppFilter.class))).thenReturn(newHashSet(appIds));
     return userGroups;
@@ -1216,6 +1213,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     when(query1.filter(anyString(), any())).thenReturn(query1);
     when(query1.field(any())).thenReturn(fieldEnd1);
     when(fieldEnd1.exists()).thenReturn(query1);
+    when(query1.limit(anyInt())).thenReturn(query1);
     when(query1.fetch()).thenReturn(iterator1);
     when(iterator1.hasNext()).thenReturn(true).thenReturn(false).thenReturn(true).thenReturn(false);
     when(iterator1.next()).thenReturn(settingAttribute);
@@ -1229,6 +1227,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     when(query2.field(any())).thenReturn(fieldEnd2);
     when(fieldEnd2.equal(any())).thenReturn(query2);
     when(fieldEnd2.exists()).thenReturn(query2);
+    when(query2.limit(anyInt())).thenReturn(query2);
     when(query2.fetch()).thenReturn(iterator2);
     doReturn(false).when(iterator2).hasNext();
 
@@ -1240,6 +1239,7 @@ public class UsageRestrictionsServiceImplTest extends CategoryTest {
     when(query3.filter(anyString(), anyString())).thenReturn(query3);
     when(query3.field(any())).thenReturn(fieldEnd3);
     when(fieldEnd3.equal(any())).thenReturn(query3);
+    when(query3.limit(anyInt())).thenReturn(query3);
     when(query3.fetch()).thenReturn(iterator3);
     doReturn(false).when(iterator3).hasNext();
 

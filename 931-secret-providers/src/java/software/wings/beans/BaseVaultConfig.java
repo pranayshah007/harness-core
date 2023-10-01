@@ -80,6 +80,7 @@ public abstract class BaseVaultConfig extends SecretManagerConfig {
   @Attributes(title = "k8sAuthEndpoint") private String k8sAuthEndpoint;
 
   @Attributes(title = "renewAppRoleToken") @Builder.Default private Boolean renewAppRoleToken = Boolean.TRUE;
+  @Attributes(title = "enableCache") private Boolean enableCache;
 
   public boolean isCertValidationRequired() {
     return isCertValidationRequired;
@@ -119,6 +120,12 @@ public abstract class BaseVaultConfig extends SecretManagerConfig {
   @SchemaIgnore
   public boolean getRenewAppRoleToken() {
     return renewAppRoleToken == null ? Boolean.TRUE : renewAppRoleToken;
+  }
+
+  @JsonIgnore
+  @SchemaIgnore
+  public boolean getEnableCache() {
+    return enableCache == null ? Boolean.FALSE : enableCache;
   }
 
   @Override

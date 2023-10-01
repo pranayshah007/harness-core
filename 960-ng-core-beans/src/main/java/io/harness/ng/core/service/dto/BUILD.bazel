@@ -6,12 +6,19 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
+filegroup(
+    name = "java_srcs",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+)
+
 java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/template:module",
         "//970-ng-commons:module",
         "//980-commons:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",

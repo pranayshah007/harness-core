@@ -25,7 +25,6 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.remote.dto.EmailDTO;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -36,6 +35,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
@@ -75,7 +75,7 @@ public class EmailStep extends PipelineSyncExecutable {
   }
 
   @Override
-  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepBaseParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     long startTime = System.currentTimeMillis();
     NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
@@ -111,10 +111,16 @@ public class EmailStep extends PipelineSyncExecutable {
       log.error("Failed to fetch setting value for {}", EMAIL_TO_NON_HARNESS_USERS_SETTING_KEY, ex);
     }
 
+    String[] lines = emailStepParameters.body.getValue().split("\n");
+    StringBuilder body = new StringBuilder();
+    for (String line : lines) {
+      body.append("<br>").append(line).append("</br>");
+    }
+
     EmailDTO emailDTO = EmailDTO.builder()
                             .toRecipients(toRecipients)
                             .ccRecipients(ccRecipients)
-                            .body(emailStepParameters.body.getValue())
+                            .body(body.toString())
                             .subject(emailStepParameters.subject.getValue())
                             .accountId(accountId)
                             .notificationId(notificationId)
@@ -183,7 +189,7 @@ public class EmailStep extends PipelineSyncExecutable {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

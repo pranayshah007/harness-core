@@ -7,8 +7,12 @@
 
 package io.harness.pms.notification.orchestration.handlers;
 
+import io.harness.AbortInfoHelper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
@@ -24,7 +28,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.notification.orchestration.NodeExecutionEventUtils;
-import io.harness.pms.notification.orchestration.helpers.AbortInfoHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -35,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  * sends them to Outbox for audits.
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, NodeStatusUpdateObserver {
@@ -48,11 +52,13 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
       return;
     }
 
-    NodeOutboxInfo nodeOutboxInfo = NodeOutboxInfo.builder()
-                                        .nodeExecution(nodeStartInfo.getNodeExecution())
-                                        .updatedTs(nodeStartInfo.getUpdatedTs())
-                                        .type(NodeExecutionOutboxEventConstants.NODE_START_INFO)
-                                        .build();
+    NodeOutboxInfo nodeOutboxInfo =
+        NodeOutboxInfo.builder()
+            .nodeExecution(nodeStartInfo.getNodeExecution())
+            .updatedTs(nodeStartInfo.getUpdatedTs())
+            .type(NodeExecutionOutboxEventConstants.NODE_START_INFO)
+            .runSequence(nodeStartInfo.getNodeExecution().getAmbiance().getMetadata().getRunSequence())
+            .build();
     sendOutboxEvents(nodeOutboxInfo);
   }
 
@@ -62,11 +68,13 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
       return;
     }
 
-    NodeOutboxInfo nodeOutboxInfo = NodeOutboxInfo.builder()
-                                        .nodeExecution(nodeUpdateInfo.getNodeExecution())
-                                        .updatedTs(nodeUpdateInfo.getUpdatedTs())
-                                        .type(NodeExecutionOutboxEventConstants.NODE_UPDATE_INFO)
-                                        .build();
+    NodeOutboxInfo nodeOutboxInfo =
+        NodeOutboxInfo.builder()
+            .nodeExecution(nodeUpdateInfo.getNodeExecution())
+            .updatedTs(nodeUpdateInfo.getUpdatedTs())
+            .type(NodeExecutionOutboxEventConstants.NODE_UPDATE_INFO)
+            .runSequence(nodeUpdateInfo.getNodeExecution().getAmbiance().getMetadata().getRunSequence())
+            .build();
     sendOutboxEvents(nodeOutboxInfo);
   }
 

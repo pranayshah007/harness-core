@@ -10,10 +10,11 @@ package io.harness.cvng.core.resources;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.ng.beans.PageRequest;
@@ -52,7 +53,6 @@ public interface ChangeEventNgResource {
       @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
-      @QueryParam("searchText") String searchText,
       @ApiParam(required = true) @NotNull @QueryParam("st"
           + "artTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime, @BeanParam PageRequest pageRequest);
@@ -69,7 +69,6 @@ public interface ChangeEventNgResource {
       @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
-      @QueryParam("searchText") String searchText,
       @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime,
       @ApiParam @QueryParam("pointCount") @DefaultValue("48") Integer pointCount);
@@ -87,4 +86,17 @@ public interface ChangeEventNgResource {
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
       @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime);
+
+  @GET
+  @Timed
+  @NextGenManagerAuth
+  @ExceptionMetered
+  @Path("/report")
+  RestResponse<PageResponse<SRMAnalysisStepDetailDTO>> get(@Valid @BeanParam ProjectPathParams projectPathParams,
+      @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers,
+      @QueryParam("envIdentifiers") List<String> envIdentifiers,
+      @QueryParam("monitoredServiceIdentifiers") List<String> monitoredServiceIdentifiers,
+      @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
+      @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
+      @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime, @BeanParam PageRequest pageRequest);
 }

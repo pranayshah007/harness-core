@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.PageRequest.DEFAULT_UNLIMITED;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -54,8 +53,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
 
 import io.harness.alert.AlertData;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
@@ -98,7 +100,6 @@ import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.APMVerificationConfig;
 import software.wings.beans.Account;
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.Application;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsS3BucketDetails;
@@ -120,6 +121,7 @@ import software.wings.beans.ValidationResult;
 import software.wings.beans.Variable;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.Workflow;
+import software.wings.beans.account.AccountEventType;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.SettingAttributeValidationFailedAlert;
 import software.wings.beans.appmanifest.ApplicationManifest;
@@ -210,6 +212,8 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 /**
  * Created by anubhaw on 5/17/16.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @ValidateOnExecution
 @Singleton
@@ -498,9 +502,6 @@ public class SettingsServiceImpl implements SettingsService {
 
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMap = envService.getAppIdEnvMap(appsByAccountId, accountId);
-    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-      log.info("[GetAppIdEnvMap] SettingsServiceImpl:getFilteredSettingAttributes - debug log");
-    }
 
     Set<SettingAttribute> helmRepoSettingAttributes = new HashSet<>();
     boolean isAccountAdmin;

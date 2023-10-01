@@ -7,9 +7,13 @@
 
 package io.harness.steps.container;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -20,16 +24,19 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
+import io.harness.steps.container.utils.ContainerSpecUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.InitialiseTaskUtils;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.SerializationFormat;
@@ -41,6 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InitContainerStep implements TaskExecutableWithRbac<StepElementParameters, K8sTaskExecutionResponse> {
@@ -50,6 +58,7 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
   @Inject private ContainerStepRbacHelper containerStepRbacHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private InitialiseTaskUtils initialiseTaskUtils;
+  @Inject private PmsFeatureFlagService featureFlagService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -67,16 +76,20 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     String logPrefix = initialiseTaskUtils.getLogPrefix(ambiance, "STEP");
-    ContainerStepSpec containerStepInfo = (ContainerStepSpec) stepElementParameters.getSpec();
+    ContainerStepSpec containerStepSpec = (ContainerStepSpec) stepElementParameters.getSpec();
+
     CIInitializeTaskParams buildSetupTaskParams =
-        containerStepInitHelper.getK8InitializeTaskParams(containerStepInfo, ambiance, logPrefix);
+        containerStepInitHelper.getK8InitializeTaskParams(containerStepSpec, ambiance, logPrefix);
     String stageId = ambiance.getStageExecutionId();
-    List<TaskSelector> taskSelectors = new ArrayList<>();
 
     TaskData taskData = getTaskData(stepElementParameters, buildSetupTaskParams);
+    final List<TaskSelector> delegateSelectors = featureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance),
+                                                     FeatureName.CD_CONTAINER_STEP_DELEGATE_SELECTOR)
+        ? ContainerSpecUtils.getStepDelegateSelectors(containerStepSpec)
+        : new ArrayList<>();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
-        taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+        delegateSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
   }
 
   @Override

@@ -45,18 +45,6 @@ features:
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
-  - name: SECURITY
-    description: Security Test Orchestration
-    restrictions:
-      FREE:
-        restrictionType: AVAILABILITY
-        enabled: false
-      TEAM:
-        restrictionType: AVAILABILITY
-        enabled: false
-      ENTERPRISE:
-        restrictionType: AVAILABILITY
-        enabled: true
   - name: ACTIVE_COMMITTERS
     description: Number of active committers
     restrictions:

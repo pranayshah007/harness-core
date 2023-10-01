@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -218,6 +219,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
 
     when(artifactService.create(ARTIFACT_1)).thenReturn(ARTIFACT_1);
     when(artifactService.create(ARTIFACT_2)).thenReturn(ARTIFACT_2);
+    doNothing().when(artifactIterator).close();
   }
 
   @Test
@@ -227,7 +229,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.limit(NO_LIMIT)).thenReturn(query);
-    when(query.fetch()).thenReturn(artifactIterator);
+    when(query.fetch(any())).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -243,7 +245,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.limit(NO_LIMIT)).thenReturn(query);
-    when(query.fetch()).thenReturn(artifactIterator);
+    when(query.fetch(any())).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -259,7 +261,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.limit(NO_LIMIT)).thenReturn(query);
-    when(query.fetch()).thenReturn(artifactIterator);
+    when(query.fetch(any())).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -275,7 +277,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.limit(NO_LIMIT)).thenReturn(query);
-    when(query.fetch()).thenReturn(artifactIterator);
+    when(query.fetch(any())).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -292,7 +294,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.limit(anyInt())).thenReturn(query);
-    when(query.fetch()).thenReturn(artifactIterator);
+    when(query.fetch(any())).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -316,7 +318,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
   public void withAMIDeleteArtifacts() {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
-    when(query.fetch()).thenReturn(artifactIterator);
+    when(query.fetch(any())).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -332,7 +334,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
     when(artifactService.prepareCleanupQuery(any())).thenReturn(query);
     when(query.limit(NO_LIMIT)).thenReturn(query);
-    when(query.fetch()).thenReturn(artifactIterator);
+    when(query.fetch(any())).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(artifact);
@@ -362,7 +364,7 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSkipDeleteWithEmptyArtifacts() {
     when(artifactService.prepareArtifactWithMetadataQuery(any(), anyBoolean())).thenReturn(query);
-    when(query.fetch()).thenReturn(artifactIterator);
+    when(query.fetch(any())).thenReturn(artifactIterator);
 
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     when(artifactIterator.next()).thenReturn(null);

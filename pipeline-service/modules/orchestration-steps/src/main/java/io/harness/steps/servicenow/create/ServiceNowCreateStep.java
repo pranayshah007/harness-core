@@ -8,22 +8,32 @@
 package io.harness.steps.servicenow.create;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
-import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.TaskExecutableResponse;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
@@ -38,14 +48,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(CDC)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SERVICE_NOW_CREATE_STEP_TYPE;
 
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private ServiceNowStepHelperService serviceNowStepHelperService;
-
+  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -61,8 +72,11 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     ServiceNowCreateSpecParameters specParameters = (ServiceNowCreateSpecParameters) stepParameters.getSpec();
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
+    logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
 
     ServiceNowTaskNGParametersBuilder paramsBuilder =
         ServiceNowTaskNGParameters.builder()
@@ -72,20 +86,35 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
             .useServiceNowTemplate(specParameters.getUseServiceNowTemplate().getValue())
             .delegateSelectors(
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
-            .fields(ServiceNowStepUtils.processServiceNowFieldsInSpec(specParameters.getFields()));
+            .fields(ServiceNowStepUtils.processServiceNowFieldsInSpec(specParameters.getFields(), logCallback));
     return serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
         specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
-        "ServiceNow Task: Create Ticket");
+        "ServiceNow Task: Create Ticket", TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier) throws Exception {
-    return serviceNowStepHelperService.prepareStepResponse(responseSupplier);
+    try {
+      return serviceNowStepHelperService.prepareStepResponse(responseSupplier);
+    } finally {
+      closeLogStream(ambiance);
+    }
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
+  }
+
+  @Override
+  public void handleAbort(
+      Ambiance ambiance, StepBaseParameters stepParameters, TaskExecutableResponse executableResponse) {
+    closeLogStream(ambiance);
+  }
+
+  private void closeLogStream(Ambiance ambiance) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.closeStream(COMMAND_UNIT);
   }
 }

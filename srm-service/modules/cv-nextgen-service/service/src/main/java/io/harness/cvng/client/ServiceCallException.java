@@ -32,7 +32,7 @@ public class ServiceCallException extends WingsException {
   }
 
   public ServiceCallException(int responseCode, String message, String errorBody) {
-    super("Response code: " + responseCode + ", Message: " + message + ", Error: " + errorBody);
+    super("Response code: " + responseCode + ", Message: " + message);
     this.responseCode = responseCode;
     this.errorMessage = message;
     this.errorBody = errorBody;
@@ -44,7 +44,7 @@ public class ServiceCallException extends WingsException {
 
   public ServiceCallException(
       ErrorCode errorCode, int responseCode, String message, String errorBody, List<ResponseMessage> responseMessages) {
-    super(errorCode, "Response code: " + responseCode + ", Message: " + message + ", Error: " + errorBody);
+    super(errorCode, "Response code: " + responseCode + ", Message: " + message);
     this.errorCode = errorCode;
     this.responseCode = responseCode;
     this.errorMessage = message;

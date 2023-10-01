@@ -9,8 +9,11 @@ package io.harness.ng.overview.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeBase;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -39,4 +42,8 @@ public class ServiceDetailsDTOV2 {
   ChangeRate frequencyChangeRate;
   InstanceCountDetailsByEnvTypeBase instanceCountDetails;
   ServicePipelineInfo lastPipelineExecuted;
+  @Schema(hidden = true) EntityGitDetails entityGitDetails;
+  @Schema(hidden = true) String connectorRef;
+  @Schema(hidden = true) StoreType storeType;
+  @Schema(hidden = true) String fallbackBranch;
 }

@@ -16,6 +16,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -29,8 +30,14 @@ public class AsgBlueGreenSwapServiceRequest implements AsgCommandRequest, Nested
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  @NonFinal @Expression(ALLOW_SECRETS) AsgLoadBalancerConfig asgLoadBalancerConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) @Deprecated AsgLoadBalancerConfig asgLoadBalancerConfig;
   String prodAsgName;
   String stageAsgName;
   boolean downsizeOldAsg;
+  List<AsgLoadBalancerConfig> loadBalancers;
+
+  @Override
+  public String getAsgName() {
+    return null;
+  }
 }

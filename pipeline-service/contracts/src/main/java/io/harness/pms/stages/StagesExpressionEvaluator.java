@@ -6,13 +6,16 @@
  */
 
 package io.harness.pms.stages;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class StagesExpressionEvaluator extends EngineExpressionEvaluator {
   private final Map<String, String> expressionValues;

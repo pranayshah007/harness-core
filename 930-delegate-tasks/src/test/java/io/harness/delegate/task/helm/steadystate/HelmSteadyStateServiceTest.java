@@ -8,6 +8,7 @@
 package io.harness.delegate.task.helm.steadystate;
 
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.BUHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -116,6 +117,20 @@ public class HelmSteadyStateServiceTest extends CategoryTest {
     assertThat(workloadsIds.stream().map(KubernetesResourceId::kindNameRef))
         .containsExactlyInAnyOrder("Deployment/my-hello", "StatefulSet/my-hello", "Job/my-hello-job",
             "DaemonSet/my-hello-daemon-set", "DeploymentConfig/my-hello-deployment-config");
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testFindEligibleWorkloads() {
+    List<KubernetesResource> resources =
+        HelmClientUtils.readManifestFromHelmOutput(readResource(RES_HELM_MANIFEST_ALL));
+
+    List<KubernetesResource> workloads = helmSteadyStateService.findEligibleWorkloads(resources);
+
+    assertThat(workloads.stream().map(resource -> resource.getResourceId().getKind()))
+        .containsExactlyInAnyOrder("Deployment", "StatefulSet", "Job", "DaemonSet", "DeploymentConfig");
   }
 
   @SneakyThrows

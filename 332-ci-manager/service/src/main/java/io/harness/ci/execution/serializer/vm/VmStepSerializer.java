@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer.vm;
+package io.harness.ci.execution.serializer.vm;
 
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
@@ -20,7 +20,7 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
-import io.harness.ci.utils.CIVmSecretEvaluator;
+import io.harness.ci.execution.utils.CIVmSecretEvaluator;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -92,9 +92,9 @@ public class VmStepSerializer {
         return vmIACMApprovalStepSerializer.serialize(
             ambiance, (IACMApprovalInfo) stepInfo, stageInfraDetails, parameterFieldTimeout);
       case ACTION:
-        return vmActionStepSerializer.serialize((ActionStepInfo) stepInfo, identifier, stageInfraDetails);
+        return vmActionStepSerializer.serialize((ActionStepInfo) stepInfo, identifier, stageInfraDetails, ambiance);
       case BITRISE:
-        return vmBitriseStepSerializer.serialize((BitriseStepInfo) stepInfo, identifier, stageInfraDetails);
+        return vmBitriseStepSerializer.serialize((BitriseStepInfo) stepInfo, identifier, stageInfraDetails, ambiance);
       case CLEANUP:
       case TEST:
       case BUILD:
@@ -106,15 +106,15 @@ public class VmStepSerializer {
     }
   }
 
-  public Set<String> preProcessStep(
-      Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails, String identifier) {
+  public Set<String> preProcessStep(Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails,
+      String identifier, boolean isBareMetalUsed) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case DOCKER:
       case ECR:
       case GCR:
-        return vmPluginCompatibleStepSerializer.preProcessStep(
-            ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier);
       case ACR:
+        return vmPluginCompatibleStepSerializer.preProcessStep(
+            ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, isBareMetalUsed);
       default:
         return new HashSet<>();
     }

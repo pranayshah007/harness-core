@@ -38,7 +38,8 @@ import java.util.Map;
  */
 @OwnedBy(PIPELINE)
 public interface AsyncExecutable<T extends StepParameters>
-    extends Step<T>, Abortable<T, AsyncExecutableResponse>, Failable<T>, Progressable<T> {
+    extends Step<T>, Abortable<T, AsyncExecutableResponse>, Failable<T>, Expirable<T, AsyncExecutableResponse>,
+            Progressable<T> {
   AsyncExecutableResponse executeAsync(
       Ambiance ambiance, T stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData);
 
@@ -57,5 +58,10 @@ public interface AsyncExecutable<T extends StepParameters>
   @Override
   default void handleFailureInterrupt(Ambiance ambiance, T stepParameters, Map<String, String> metadata) {
     // NOOP : By default this is noop as task failure is handled by the PMS but you are free to override it
+  }
+
+  @Override
+  default void handleExpire(Ambiance ambiance, T stepParameters, AsyncExecutableResponse executableResponse) {
+    // NOOP : By default this is noop as task expire is handled by the PMS but you are free to override it
   }
 }

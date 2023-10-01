@@ -11,11 +11,15 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.gitops.revertpr.RevertPROutcome;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -39,7 +43,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.impl.scm.ScmGitProviderHelper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -53,6 +56,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -70,6 +74,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
 public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
@@ -87,13 +92,13 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
                                                .build();
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Nothing to validate
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
 
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
@@ -101,8 +106,9 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
       MergePROutcome mergePROutcome = MergePROutcome.builder().commitId(ngGitOpsResponse.getCommitId()).build();
 
-      executionSweepingOutputService.consume(
-          ambiance, OutcomeExpressionConstants.MERGE_PR_OUTCOME, mergePROutcome, StepOutcomeGroup.STAGE.name());
+      String outcomeName = ngGitOpsResponse.isRevertPR() ? OutcomeExpressionConstants.MERGE_REVERT_PR_OUTCOME
+                                                         : OutcomeExpressionConstants.MERGE_PR_OUTCOME;
+      executionSweepingOutputService.consume(ambiance, outcomeName, mergePROutcome, StepOutcomeGroup.STAGE.name());
 
       return StepResponse.builder()
           .unitProgressList(ngGitOpsResponse.getUnitProgressData().getUnitProgresses())
@@ -123,19 +129,29 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     MergePRStepParams gitOpsSpecParams = (MergePRStepParams) stepParameters.getSpec();
 
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME));
+    OptionalSweepingOutput optionalSweepingOutputRevertPR = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.REVERT_PR_OUTCOME));
 
     int prNumber;
     String prLink;
     String sha;
     String ref;
-    if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
+    boolean isRevertPR = false;
+    if (optionalSweepingOutputRevertPR != null && optionalSweepingOutputRevertPR.isFound()) {
+      RevertPROutcome revertPROutcome = (RevertPROutcome) optionalSweepingOutputRevertPR.getOutput();
+      prNumber = revertPROutcome.getPrNumber();
+      prLink = revertPROutcome.getPrlink();
+      sha = revertPROutcome.getCommitId();
+      ref = revertPROutcome.getRef();
+      isRevertPR = true;
+    } else if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
       UpdateReleaseRepoOutcome updateReleaseRepoOutcome = (UpdateReleaseRepoOutcome) optionalSweepingOutput.getOutput();
       prNumber = updateReleaseRepoOutcome.getPrNumber();
       prLink = updateReleaseRepoOutcome.getPrlink();
@@ -225,6 +241,7 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
                                                 .connectorInfoDTO(connectorInfoDTO)
                                                 .gitApiTaskParams(gitApiTaskParams)
                                                 .prLink(prLink)
+                                                .isRevertPR(isRevertPR)
                                                 .build();
 
     final TaskData taskData = TaskData.builder()
@@ -247,18 +264,18 @@ public class MergePRStep extends CdTaskExecutable<NGGitOpsResponse> {
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
     ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
 
-    return cdStepHelper.getGitStoreDelegateConfig(
-        gitStoreConfig, connectorDTO, manifestOutcome, new ArrayList<>(), ambiance);
+    return cdStepHelper.getGitStoreDelegateConfigWithApiAccess(
+        gitStoreConfig, connectorDTO, new ArrayList<>(), ambiance, manifestOutcome);
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
+  public Class<StepBaseParameters> getStepParametersClass() {
     return null;
   }
 
   private GitApiTaskParams getTaskParamsForBitbucket(BitbucketConnectorDTO bitbucketConnectorDTO,
       ConnectorDetails connectorDetails, int prNumber, String sha, String ref,
-      ParameterField<Boolean> deleteSourceBranch, StepElementParameters stepParameters) {
+      ParameterField<Boolean> deleteSourceBranch, StepBaseParameters stepParameters) {
     return GitApiTaskParams.builder()
         .gitRepoType(GitRepoType.BITBUCKET)
         .requestType(GitApiRequestType.MERGE_PR)

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_IP_ALLOWLIST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NG_USER_CLEANUP_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
@@ -27,6 +28,7 @@ import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.repositories.ipallowlist.custom.IPAllowlistRepositoryCustom;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -46,6 +48,8 @@ public class AccountSetupListener implements MessageListener {
   private final OrganizationService organizationService;
   private final NGAccountSetupService ngAccountSetupService;
   private final AccountClient accountClient;
+
+  private final IPAllowlistRepositoryCustom ipAllowlistRepositoryCustom;
 
   @Override
   public boolean handleMessage(Message message) {
@@ -85,6 +89,8 @@ public class AccountSetupListener implements MessageListener {
         return processAccountUpdateEvent(accountEntityChangeDTO);
       case NG_USER_CLEANUP_ACTION:
         return processNGUserCleanupEvent(accountEntityChangeDTO);
+      case DISABLE_IP_ALLOWLIST:
+        return processDisableIpAllowListEvent(accountEntityChangeDTO);
       default:
     }
     return true;
@@ -100,6 +106,7 @@ public class AccountSetupListener implements MessageListener {
     }
     return true;
   }
+
   private boolean processSyncNGWithCG(AccountEntityChangeDTO accountEntityChangeDTO) {
     ngAccountSetupService.setupAccountForNG(accountEntityChangeDTO.getAccountId());
     return true;
@@ -110,6 +117,13 @@ public class AccountSetupListener implements MessageListener {
         "[AccountSetupListener]: Received account cleanup event for account %s. Staring the cleanUp event",
         accountEntityChangeDTO.getAccountId()));
     ngAccountSetupService.cleanUsersFromAccountForNg(accountEntityChangeDTO.getAccountId());
+    return true;
+  }
+
+  private boolean processDisableIpAllowListEvent(AccountEntityChangeDTO accountEntityChangeDTO) {
+    log.info(String.format("[AccountSetupListener]: Received Disable Ip Allow-List event for account %s.",
+        accountEntityChangeDTO.getAccountId()));
+    ipAllowlistRepositoryCustom.disableIPAllowListWithAccountId(accountEntityChangeDTO.getAccountId());
     return true;
   }
 

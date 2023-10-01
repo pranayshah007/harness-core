@@ -8,7 +8,9 @@
 package io.harness.cdng.service.steps;
 
 import static io.harness.cdng.manifest.ManifestType.SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT_GLOBAL_OVERRIDES;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDES_COMMAND_UNIT;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDE_IN_REVERSE_PRIORITY;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_CONFIGURATION_NOT_FOUND;
@@ -21,8 +23,11 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput;
@@ -43,6 +48,7 @@ import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
@@ -71,6 +77,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ServiceStepOverrideHelper {
@@ -104,6 +112,8 @@ public class ServiceStepOverrideHelper {
                 ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
                     ? StringUtils.EMPTY
                     : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier())
+            .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
+                ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -133,6 +143,8 @@ public class ServiceStepOverrideHelper {
             .environmentIdentifier(environmentRef)
             .svcManifests(svcManifests)
             .manifestsFromOverride(manifestsFromOverride)
+            .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
+                ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -295,22 +307,24 @@ public class ServiceStepOverrideHelper {
       throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
     }
     List<ConfigFileWrapper> finalConfigFiles;
+    Map<String, String> configFileLocation = new HashMap<>();
     // Processing envGroups. EnvironmentConfig and serviceOverrideConfig is null for envGroup. GitOps Flow
     if (serviceOverrideConfig == null && ngEnvironmentConfig == null) {
       final Map<String, ConfigFileWrapper> svcConfigFiles =
           getSvcConfigFiles(serviceV2Config.getNgServiceV2InfoConfig());
       Map<String, ConfigFileWrapper> finalConfigFilesMap = new HashMap<>();
-      finalConfigFilesMap.putAll(svcConfigFiles);
+      createConfigFileMap(configFileLocation, svcConfigFiles, finalConfigFilesMap, SERVICE);
       finalConfigFiles = new ArrayList<>(finalConfigFilesMap.values());
     } else {
       finalConfigFiles = prepareFinalConfigFiles(ngServiceV2InfoConfig, serviceOverrideConfig,
-          ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
+          ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), configFileLocation);
     }
 
     final NgConfigFilesMetadataSweepingOutput configFileSweepingOutput =
         NgConfigFilesMetadataSweepingOutput.builder()
             .finalSvcConfigFiles(finalConfigFiles)
             .serviceIdentifier(ngServiceV2InfoConfig.getIdentifier())
+            .configFileLocation(configFileLocation)
             .environmentIdentifier(
                 ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
                     ? StringUtils.EMPTY
@@ -320,17 +334,27 @@ public class ServiceStepOverrideHelper {
         ambiance, configFilesSweepingOutputName, configFileSweepingOutput, StepCategory.STAGE.name());
   }
 
+  private static void createConfigFileMap(Map<String, String> configFileLocation,
+      Map<String, ConfigFileWrapper> configFiles, Map<String, ConfigFileWrapper> finalConfigFilesMap,
+      String fileLocation) {
+    for (Map.Entry<String, ConfigFileWrapper> configFile : configFiles.entrySet()) {
+      finalConfigFilesMap.put(configFile.getKey(), configFile.getValue());
+      configFileLocation.put(configFile.getKey(), fileLocation);
+    }
+  }
+
   // This is for overrides V2
   public void saveFinalConfigFilesToSweepingOutputV2(@NonNull NGServiceV2InfoConfig ngServiceV2InfoConfig,
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs, String environmentRef,
       Ambiance ambiance, String configFilesSweepingOutputName) {
     List<ConfigFileWrapper> finalConfigFiles = new ArrayList<>();
-
-    finalConfigFiles = prepareFinalConfigFilesV2(ngServiceV2InfoConfig, overrideV2Configs);
+    Map<String, String> configFileLocation = new HashMap<>();
+    finalConfigFiles = prepareFinalConfigFilesV2(ngServiceV2InfoConfig, overrideV2Configs, configFileLocation);
 
     final NgConfigFilesMetadataSweepingOutput configFileSweepingOutput =
         NgConfigFilesMetadataSweepingOutput.builder()
             .finalSvcConfigFiles(finalConfigFiles)
+            .configFileLocation(configFileLocation)
             .serviceIdentifier(ngServiceV2InfoConfig.getIdentifier())
             .environmentIdentifier(environmentRef)
             .build();
@@ -338,22 +362,19 @@ public class ServiceStepOverrideHelper {
         ambiance, configFilesSweepingOutputName, configFileSweepingOutput, StepCategory.STAGE.name());
   }
 
-  private List<ConfigFileWrapper> prepareFinalConfigFilesV2(
-      NGServiceV2InfoConfig serviceV2Config, Map<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs) {
+  private List<ConfigFileWrapper> prepareFinalConfigFilesV2(NGServiceV2InfoConfig serviceV2Config,
+      Map<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs, Map<String, String> configFileLocation) {
     Map<String, ConfigFileWrapper> finalConfigFiles = new HashMap<>(getSvcConfigFiles(serviceV2Config));
+    for (ConfigFileWrapper configFileWrapper : finalConfigFiles.values()) {
+      configFileLocation.put(configFileWrapper.getConfigFile().getIdentifier(), "Service");
+    }
 
     for (ServiceOverridesType overridesType : OVERRIDE_IN_REVERSE_PRIORITY) {
       if (overrideV2Configs.containsKey(overridesType)
           && isNotEmpty(overrideV2Configs.get(overridesType).getSpec().getConfigFiles())) {
-        Map<String, ConfigFileWrapper> configFilesOverrides =
-            overrideV2Configs.get(overridesType)
-                .getSpec()
-                .getConfigFiles()
-                .stream()
-                .collect(Collectors.toMap(
-                    configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
-        if (isNotEmpty(configFilesOverrides)) {
-          finalConfigFiles.putAll(configFilesOverrides);
+        for (ConfigFileWrapper configFileWrapper : overrideV2Configs.get(overridesType).getSpec().getConfigFiles()) {
+          finalConfigFiles.put(configFileWrapper.getConfigFile().getIdentifier(), configFileWrapper);
+          configFileLocation.put(configFileWrapper.getConfigFile().getIdentifier(), overridesType.toString());
         }
       }
     }
@@ -586,17 +607,17 @@ public class ServiceStepOverrideHelper {
 
   @VisibleForTesting
   public static List<ConfigFileWrapper> prepareFinalConfigFiles(NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride) {
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride,
+      Map<String, String> configFileLocation) {
     final Map<String, ConfigFileWrapper> svcConfigFiles = getSvcConfigFiles(serviceV2Config);
     final Map<String, ConfigFileWrapper> envGlobalConfigFiles =
         getEnvironmentGlobalConfigFiles(environmentGlobalOverride);
     final Map<String, ConfigFileWrapper> svcOverrideConfigFiles = getSvcOverrideConfigFiles(serviceOverrideConfig);
 
     Map<String, ConfigFileWrapper> finalConfigFilesMap = new HashMap<>();
-    finalConfigFilesMap.putAll(svcConfigFiles);
-    finalConfigFilesMap.putAll(envGlobalConfigFiles);
-    finalConfigFilesMap.putAll(svcOverrideConfigFiles);
-
+    createConfigFileMap(configFileLocation, svcConfigFiles, finalConfigFilesMap, "Service");
+    createConfigFileMap(configFileLocation, envGlobalConfigFiles, finalConfigFilesMap, ENVIRONMENT);
+    createConfigFileMap(configFileLocation, svcOverrideConfigFiles, finalConfigFilesMap, OVERRIDES_COMMAND_UNIT);
     return new ArrayList<>(finalConfigFilesMap.values());
   }
 

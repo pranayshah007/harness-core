@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
@@ -22,14 +21,18 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -118,6 +121,7 @@ import io.harness.git.model.GitFile;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.mappers.SecretManagerConfigMapper;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -127,7 +131,6 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -141,6 +144,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.remote.client.CGRestUtils;
@@ -193,6 +197,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
@@ -317,8 +323,6 @@ public class TerraformStepHelper {
     SSHKeySpecDTO sshKeySpecDTO =
         gitConfigAuthenticationInfoHelper.getSSHKey(gitConfigDTO, AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-    List<EncryptedDataDetail> encryptedDataDetails =
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
     String repoName = gitStoreConfig.getRepoName() != null ? gitStoreConfig.getRepoName().getValue() : null;
     if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
       String repoUrl = getGitRepoUrl(gitConfigDTO, repoName);
@@ -331,8 +335,12 @@ public class TerraformStepHelper {
     } else {
       paths.addAll(getParameterFieldValue(gitStoreConfig.getPaths()));
     }
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(
+        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    List<EncryptedDataDetail> encryptedDataDetails =
+        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-                                                        .gitConfigDTO(gitConfigDTO)
+                                                        .gitConfigDTO(scmConnector)
                                                         .sshKeySpecDTO(sshKeySpecDTO)
                                                         .encryptedDataDetails(encryptedDataDetails)
                                                         .fetchType(gitStoreConfig.getGitFetchType())
@@ -577,11 +585,13 @@ public class TerraformStepHelper {
       outputKeys.put(TF_CONFIG_FILES, commitIdForConfigFilesMap.get(TF_CONFIG_FILES));
       outputKeys.put(TF_BACKEND_CONFIG_FILE, commitIdForConfigFilesMap.get(TF_BACKEND_CONFIG_FILE));
       int i = 0;
-      for (TerraformVarFileConfig file : varFileConfigs) {
-        if (file instanceof TerraformRemoteVarFileConfig && isNotEmpty(file.getIdentifier())) {
-          i++;
-          if (((TerraformRemoteVarFileConfig) file).getGitStoreConfigDTO() != null) {
-            outputKeys.put(file.getIdentifier(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+      if (isNotEmpty(varFileConfigs)) {
+        for (TerraformVarFileConfig file : varFileConfigs) {
+          if (file instanceof TerraformRemoteVarFileConfig && isNotEmpty(file.getIdentifier())) {
+            i++;
+            if (((TerraformRemoteVarFileConfig) file).getGitStoreConfigDTO() != null) {
+              outputKeys.put(file.getIdentifier(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+            }
           }
         }
       }
@@ -1090,6 +1100,7 @@ public class TerraformStepHelper {
             .fileStoreConfig(rollbackConfig.getFileStoreConfig())
             .varFileConfigs(rollbackConfig.getVarFileConfigs())
             .backendConfig(rollbackConfig.getBackendConfig())
+            .backendConfigFileConfig(rollbackConfig.getBackendConfigFileConfig())
             .environmentVariables(rollbackConfig.getEnvironmentVariables())
             .workspace(rollbackConfig.getWorkspace())
             .targets(rollbackConfig.getTargets())
@@ -1422,6 +1433,13 @@ public class TerraformStepHelper {
 
   private void runCleanupTerraformSecretTask(Ambiance ambiance, EncryptionConfig encryptionConfig,
       List<EncryptedRecordData> encryptedRecordDataList, String cleanupSecretUuid) {
+    BaseNGAccess ngAccess = BaseNGAccess.builder()
+                                .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+                                .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+                                .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+                                .build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
+
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -1432,7 +1450,7 @@ public class TerraformStepHelper {
                                 .build())
             .taskType(TaskType.TERRAFORM_SECRET_CLEANUP_TASK_NG.name())
             .executionTimeout(Duration.ofMinutes(10))
-            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
+            .taskSetupAbstractions(abstractions)
             .logStreamingAbstractions(new LinkedHashMap<>() {
               { put(SetupAbstractionKeys.accountId, AmbianceUtils.getAccountId(ambiance)); }
             })
@@ -1512,15 +1530,12 @@ public class TerraformStepHelper {
   }
 
   public void validateSecretManager(Ambiance ambiance, IdentifierRef identifierRef) {
-    if (cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN)) {
-      boolean isSecretManagerReadOnly =
-          ngEncryptedDataService.isSecretManagerReadOnly(identifierRef.getAccountIdentifier(),
-              identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
-      if (isSecretManagerReadOnly) {
-        throw new InvalidRequestException(
-            "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
-      }
+    boolean isSecretManagerReadOnly =
+        ngEncryptedDataService.isSecretManagerReadOnly(identifierRef.getAccountIdentifier(),
+            identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
+    if (isSecretManagerReadOnly) {
+      throw new InvalidRequestException(
+          "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
     }
   }
 
@@ -1679,7 +1694,7 @@ public class TerraformStepHelper {
   }
 
   public TaskChainResponse executeTerraformTask(TerraformTaskNGParameters terraformTaskNGParameters,
-      StepElementParameters stepElementParameters, Ambiance ambiance, TerraformPassThroughData terraformPassThroughData,
+      StepBaseParameters stepElementParameters, Ambiance ambiance, TerraformPassThroughData terraformPassThroughData,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String commandUnitName) {
     TaskData taskData =
         TaskData.builder()
@@ -1702,7 +1717,7 @@ public class TerraformStepHelper {
   }
 
   private TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
-      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
+      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepBaseParameters stepElementParameters,
       TerraformPassThroughData passThroughData, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
@@ -1731,7 +1746,7 @@ public class TerraformStepHelper {
   }
 
   private TaskChainResponse getS3FetchFileTaskChainResponse(Ambiance ambiance,
-      List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs, StepElementParameters stepElementParameters,
+      List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs, StepBaseParameters stepElementParameters,
       TerraformPassThroughData passThroughData, CommandUnitsProgress commandUnitsProgress, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     AwsS3FetchFilesTaskParams awsS3FetchFilesTaskParams = AwsS3FetchFilesTaskParams.builder()
@@ -1761,7 +1776,7 @@ public class TerraformStepHelper {
   }
 
   public TaskChainResponse fetchRemoteVarFiles(TerraformPassThroughData terraformPassThroughData,
-      List<TerraformVarFileInfo> varFilesInfo, Ambiance ambiance, StepElementParameters stepElementParameters,
+      List<TerraformVarFileInfo> varFilesInfo, Ambiance ambiance, StepBaseParameters stepElementParameters,
       String commandUnitName, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     TaskChainResponse response = null;
     List<GitFetchFilesConfig> gitFetchFilesConfigs;
@@ -1786,7 +1801,7 @@ public class TerraformStepHelper {
     return response;
   }
 
-  private TaskChainResponse handleGitFetchResponse(Ambiance ambiance, StepElementParameters stepElementParameters,
+  private TaskChainResponse handleGitFetchResponse(Ambiance ambiance, StepBaseParameters stepElementParameters,
       TerraformPassThroughData terraformPassThroughData, GitFetchResponse responseData, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     terraformPassThroughData.setFetchedCommitIdsMap(responseData.getFetchedCommitIdsMap());
@@ -1820,7 +1835,7 @@ public class TerraformStepHelper {
         builder.build(), stepElementParameters, ambiance, terraformPassThroughData, delegateSelectors, commandUnitName);
   }
 
-  private TaskChainResponse handleAwsS3FetchFileResponse(Ambiance ambiance, StepElementParameters stepElementParameters,
+  private TaskChainResponse handleAwsS3FetchFileResponse(Ambiance ambiance, StepBaseParameters stepElementParameters,
       TerraformPassThroughData terraformPassThroughData, AwsS3FetchFilesResponse responseData, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     UnitProgressData unitProgressData;
@@ -1917,7 +1932,7 @@ public class TerraformStepHelper {
 
   public TaskChainResponse executeNextLink(Ambiance ambiance, ThrowingSupplier<ResponseData> responseSupplier,
       PassThroughData passThroughData, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      StepElementParameters stepElementParameters, String commandUnitName) {
+      StepBaseParameters stepElementParameters, String commandUnitName) {
     TerraformPassThroughData terraformPassThroughData = (TerraformPassThroughData) passThroughData;
 
     UnitProgressData unitProgressData = null;

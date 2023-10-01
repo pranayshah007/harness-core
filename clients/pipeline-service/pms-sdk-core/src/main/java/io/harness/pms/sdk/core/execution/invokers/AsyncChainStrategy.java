@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.sdk.core.execution.invokers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.sdk.core.execution.invokers.StrategyHelper.buildResponseDataSupplier;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutableResponse;
@@ -37,6 +39,7 @@ import com.google.protobuf.ByteString;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class AsyncChainStrategy extends ProgressableStrategy {

@@ -31,4 +31,9 @@ public class AsgCanaryDeleteRequest implements AsgCommandRequest, NestedAnnotati
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 
   @Expression(ALLOW_SECRETS) String canaryAsgName;
+
+  @Override
+  public String getAsgName() {
+    return canaryAsgName;
+  }
 }

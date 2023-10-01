@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.artifact.service.impl;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.service.ArtifactSourceService;
 import io.harness.repositories.artifact.ArtifactRepository;
@@ -18,6 +20,7 @@ import com.google.inject.Singleton;
 import javax.validation.executable.ValidateOnExecution;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @ValidateOnExecution
 public class ArtifactSourceServiceImpl implements ArtifactSourceService {

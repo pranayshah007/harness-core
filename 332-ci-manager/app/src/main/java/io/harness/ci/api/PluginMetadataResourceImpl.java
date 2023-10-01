@@ -12,9 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.api.PluginMetadataResource;
 import io.harness.beans.plugin.api.PluginMetadataResponse;
+import io.harness.ci.plugin.PluginMetadataService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.plugin.PluginMetadataService;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;

@@ -7,12 +7,12 @@
 
 package io.harness.idp.onboarding.mappers;
 
-import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_OWNER;
+import static io.harness.idp.backstagebeans.Constants.ENTITY_UNKNOWN_OWNER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogDomainEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.ng.core.dto.OrganizationDTO;
 
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ public class HarnessOrgToBackstageDomain
 
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
     metadata.setMetadata(organizationDTO.getIdentifier(), organizationDTO.getIdentifier(),
-        truncateName(organizationDTO.getIdentifier()), organizationDTO.getDescription(),
+        truncateName(organizationDTO.getIdentifier()), organizationDTO.getName(), organizationDTO.getDescription(),
         getTags(organizationDTO.getTags()), null);
     backstageCatalogDomainEntity.setMetadata(metadata);
 

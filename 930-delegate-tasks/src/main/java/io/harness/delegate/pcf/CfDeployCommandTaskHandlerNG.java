@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.pcf;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -20,7 +19,10 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -41,6 +43,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
@@ -59,6 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @NoArgsConstructor
 @Singleton
 @Slf4j
@@ -160,6 +164,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       } catch (IOException e) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
         log.warn("Failed to delete Temp Directory created for CF CLI login", sanitizedException);
+        executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
       }
     }
     if (noExceptionOccured) {

@@ -120,6 +120,7 @@ public class ConnectorMapper {
         .name(connector.getName())
         .identifier(connector.getIdentifier())
         .description(connector.getDescription())
+        .accountIdentifier(connector.getAccountIdentifier())
         .orgIdentifier(connector.getOrgIdentifier())
         .projectIdentifier(connector.getProjectIdentifier())
         .connectorConfig(connectorConfigDTO)

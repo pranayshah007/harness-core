@@ -23,6 +23,7 @@ import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.lang.String.format;
@@ -45,6 +46,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.istio.IstioTaskHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -94,6 +96,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDP)
 public class K8sCanaryBaseHandlerTest extends CategoryTest {
   @Mock private K8sTaskHelperBase k8sTaskHelperBase;
+  @Mock private IstioTaskHelper istioTaskHelper;
   @InjectMocks private K8sCanaryBaseHandler k8sCanaryBaseHandler;
 
   @Mock private LogCallback logCallback;
@@ -449,9 +452,22 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     k8sCanaryBaseHandler.updateDestinationRuleManifestFilesWithSubsets(
         kubernetesResources, kubernetesConfig, logCallback);
 
-    verify(k8sTaskHelperBase, times(1))
+    verify(istioTaskHelper, times(1))
         .updateDestinationRuleManifestFilesWithSubsets(kubernetesResources,
             asList(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable), kubernetesConfig, logCallback);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testUpdateDestinationRuleManifestFilesWithSubsetsWithoutFabric8() throws IOException {
+    List<KubernetesResource> kubernetesResources = Collections.emptyList();
+
+    k8sCanaryBaseHandler.updateDestinationRuleManifestFilesWithSubsets(kubernetesResources, null, logCallback);
+
+    verify(istioTaskHelper, times(1))
+        .updateDestinationRuleManifestFilesWithSubsets(kubernetesResources,
+            asList(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable), null, logCallback);
   }
 
   @Test

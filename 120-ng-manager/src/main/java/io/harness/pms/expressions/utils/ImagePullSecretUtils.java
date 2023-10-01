@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.expressions.utils;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -16,7 +15,10 @@ import static io.harness.k8s.model.ImageDetails.ImageDetailsBuilder;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
@@ -110,6 +112,8 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)

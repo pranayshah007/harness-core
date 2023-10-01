@@ -6,8 +6,10 @@
  */
 
 package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.helm;
-
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
@@ -24,6 +26,7 @@ import io.harness.k8s.model.HelmVersion;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
+import io.harness.perpetualtask.instancesync.LabelSelectors;
 import io.harness.perpetualtask.instancesync.NativeHelmDeploymentRelease;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParamsV2;
@@ -36,11 +39,13 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jooq.tools.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
   @Inject private K8sEntityHelper k8sEntityHelper;
   @Inject private AccountClient accountClient;
@@ -95,6 +100,7 @@ public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerp
         .namespaces(deploymentInfoDTO.getNamespaces())
         .releaseName(deploymentInfoDTO.getReleaseName())
         .helmChartInfo(deploymentInfoDTO.getHelmChartInfo())
+        .workloadLabelSelectors(deploymentInfoDTO.getWorkloadLabelSelectors())
         .build();
   }
 
@@ -160,6 +166,10 @@ public class NativeHelmInstanceSyncPerpetualTaskHandler extends InstanceSyncPerp
         .addAllNamespaces(releaseData.getNamespaces())
         .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
         .setHelmChartInfo(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getHelmChartInfo())))
+        .putAllWorkloadLabelSelectors(releaseData.getWorkloadLabelSelectors() != null
+                ? releaseData.getWorkloadLabelSelectors().entrySet().stream().collect(Collectors.toMap(
+                    Map.Entry::getKey, e -> LabelSelectors.newBuilder().addAllLabelSelectors(e.getValue()).build()))
+                : Collections.emptyMap())
         .build();
   }
 

@@ -29,6 +29,7 @@ public class HttpInternalConfig {
   boolean useProxy;
   boolean isCertValidationRequired;
   boolean throwErrorIfNoProxySetWithDelegateProxy; // We need to throw this error in cg but not in ng
+  boolean supportNonTextResponse;
   HttpCertificate certificate;
   List<EncryptedDataDetail> encryptedDataDetails;
 }

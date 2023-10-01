@@ -6,9 +6,11 @@
  */
 
 package io.harness.polling.mapper;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.polling.bean.PollingDocument;
@@ -25,6 +27,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.CDC)
 public class PollingDocumentMapper {
   @Inject PollingInfoBuilderRegistry pollingInfoBuilderRegistry;

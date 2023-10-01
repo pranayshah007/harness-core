@@ -8,7 +8,7 @@
 
 trap 'clean_up_files' EXIT
 
-trap 'report_error' ERR
+#trap 'report_error' ERR
 
 function clean_temp_files() {
   local_files=( $1 )
@@ -66,7 +66,7 @@ MODULES_TESTS_FILE="modules_tests.txt"
 PR_SRCS_FILE="pr_srcs.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
 STARTUP_ARGS="--output_base=/tmp"
-TEST_ARGS="--discard_analysis_cache --notrack_incremental_state --nokeep_state_after_build --test_verbose_timeout_warnings --test_output=errors"
+TEST_ARGS="--discard_analysis_cache --notrack_incremental_state --nokeep_state_after_build"
 
 # This script is required to generate the test util bzl file in root directory.
 scripts/bazel/generate_credentials.sh
@@ -185,8 +185,9 @@ LIBS_BINS=$(get_info_from_file $LIBS_FILE)
 
 # Preparing Sonar Properties file
 [ -f "${SONAR_PROP_FILE_PATH}" ] \
+&& echo -e "\nsonar.scm.revision=$COMMIT_SHA" >> ${SONAR_PROP_FILE_PATH} \
 && echo -e "\nsonar.java.binaries=$JARS_BINS" >> ${SONAR_PROP_FILE_PATH} \
-&& echo -e "\nsonar.java.libraries=$LIBS_BINS" >> ${SONAR_PROP_FILE_PATH} \
+&& echo -e "\nsonar.java.libraries=$JARS_BINS" >> ${SONAR_PROP_FILE_PATH} \
 && echo -e "\nsonar.coverageReportPaths=$COVERAGE_REPORT_PATH" >> ${SONAR_PROP_FILE_PATH} \
 && echo -e "\nsonar.pullrequest.key=$PR_NUMBER" >> ${SONAR_PROP_FILE_PATH} \
 && echo -e "\nsonar.pullrequest.branch=$PR_BRANCH" >> ${SONAR_PROP_FILE_PATH} \

@@ -7,15 +7,24 @@
 
 package io.harness.ngsettings.services.impl;
 
+import static io.harness.NGConstants.SETTINGS_STRING;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.EventsFrameworkMetadataConstants;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.producer.Message;
+import io.harness.eventsframework.schemas.entity_crud.settings.SettingsEntityChangeDTO;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
@@ -45,9 +54,11 @@ import io.harness.repositories.ngsettings.spring.SettingRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.StringValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,13 +83,15 @@ public class SettingsServiceImpl implements SettingsService {
   private final Map<String, SettingValidator> settingValidatorMap;
   private final Map<String, SettingEnforcementValidator> settingEnforcementValidatorMap;
   private final LicenseService licenseService;
+  private final Producer eventProducer;
 
   @Inject
   public SettingsServiceImpl(SettingConfigurationRepository settingConfigurationRepository,
       SettingRepository settingRepository, SettingsMapper settingsMapper,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       Map<String, SettingValidator> settingValidatorMap,
-      Map<String, SettingEnforcementValidator> settingEnforcementValidatorMap, LicenseService licenseService) {
+      Map<String, SettingEnforcementValidator> settingEnforcementValidatorMap, LicenseService licenseService,
+      @Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer) {
     this.settingConfigurationRepository = settingConfigurationRepository;
     this.settingRepository = settingRepository;
     this.settingsMapper = settingsMapper;
@@ -87,6 +100,7 @@ public class SettingsServiceImpl implements SettingsService {
     this.settingValidatorMap = settingValidatorMap;
     this.settingEnforcementValidatorMap = settingEnforcementValidatorMap;
     this.licenseService = licenseService;
+    this.eventProducer = eventProducer;
   }
 
   @Override
@@ -125,6 +139,7 @@ public class SettingsServiceImpl implements SettingsService {
   public List<SettingUpdateResponseDTO> update(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<SettingRequestDTO> settingRequestDTOList) {
     List<SettingUpdateResponseDTO> settingResponses = new ArrayList<>();
+    Map<Pair<SettingCategory, String>, Map<String, String>> settingEventData = new HashMap<>();
     Scope currentScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     settingRequestDTOList.forEach(settingRequestDTO -> {
       try {
@@ -136,11 +151,14 @@ public class SettingsServiceImpl implements SettingsService {
           settingResponseDTO = updateSetting(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
         }
         settingResponses.add(settingsMapper.writeBatchResponseDTO(settingResponseDTO));
+        addSettingEventData(settingEventData, settingResponseDTO);
       } catch (Exception exception) {
         log.error("Error when updating setting:", exception);
         settingResponses.add(settingsMapper.writeBatchResponseDTO(settingRequestDTO.getIdentifier(), exception));
       }
     });
+    publishSettingEventData(accountIdentifier, orgIdentifier, projectIdentifier, settingEventData,
+        EventsFrameworkMetadataConstants.UPDATE_ACTION);
     return settingResponses;
   }
 
@@ -479,5 +497,72 @@ public class SettingsServiceImpl implements SettingsService {
       throw new InvalidRequestException(String.format(
           "Your current account plan does not support editing the setting- %s", settingConfiguration.getIdentifier()));
     }
+  }
+
+  private void addSettingEventData(
+      Map<Pair<SettingCategory, String>, Map<String, String>> settingEventData, SettingResponseDTO settingResponseDTO) {
+    try {
+      SettingDTO settingDTO = settingResponseDTO.getSetting();
+      Pair<SettingCategory, String> settingEventDataKey =
+          new ImmutablePair<>(settingDTO.getCategory(), settingDTO.getGroupIdentifier());
+      Map<String, String> settingEventDataValue = settingEventData.getOrDefault(settingEventDataKey, new HashMap<>());
+      settingEventDataValue.put(settingDTO.getIdentifier(), settingDTO.getValue());
+      settingEventData.put(settingEventDataKey, settingEventDataValue);
+    } catch (Exception ex) {
+      log.error(
+          "Exception while collecting setting data for redis event. SettingResponseDTO: {}", settingResponseDTO, ex);
+    }
+  }
+
+  private void publishSettingEventData(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Map<Pair<SettingCategory, String>, Map<String, String>> settingEventData, String updateAction) {
+    for (Map.Entry<Pair<SettingCategory, String>, Map<String, String>> settingEventDataEntry :
+        settingEventData.entrySet()) {
+      publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, settingEventDataEntry.getValue(),
+          settingEventDataEntry.getKey().getLeft(), settingEventDataEntry.getKey().getRight(), updateAction);
+    }
+  }
+
+  private void publishEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Map<String, String> settingIdentifiers, SettingCategory category, String groupIdentifier, String action) {
+    try {
+      SettingsEntityChangeDTO settingEntityChangeDTO =
+          getSettingEntityChangeDTO(accountIdentifier, orgIdentifier, projectIdentifier, settingIdentifiers);
+      eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(getSettingsEventMetadata(accountIdentifier, category, groupIdentifier, action))
+              .setData(settingEntityChangeDTO.toByteString())
+              .build());
+    } catch (Exception ex) {
+      log.error("Exception while publishing the event of settings {} for {}", action,
+          String.format(SETTINGS_STRING, settingIdentifiers, accountIdentifier, orgIdentifier, projectIdentifier), ex);
+    }
+  }
+
+  private SettingsEntityChangeDTO getSettingEntityChangeDTO(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Map<String, String> settingIdentifiers) {
+    SettingsEntityChangeDTO.Builder settingEntityChangeDTOBuilder =
+        SettingsEntityChangeDTO.newBuilder()
+            .putAllSettingIdentifiers(settingIdentifiers)
+            .setAccountIdentifier(StringValue.of(accountIdentifier));
+    if (isNotBlank(orgIdentifier)) {
+      settingEntityChangeDTOBuilder.setOrgIdentifier(StringValue.of(orgIdentifier));
+    }
+    if (isNotBlank(projectIdentifier)) {
+      settingEntityChangeDTOBuilder.setProjectIdentifier(StringValue.of(projectIdentifier));
+    }
+    return settingEntityChangeDTOBuilder.build();
+  }
+
+  private Map<String, String> getSettingsEventMetadata(
+      String accountIdentifier, SettingCategory category, String groupIdentifier, String action) {
+    Map<String, String> settingsEventMetadata = new HashMap<>(
+        Map.of(ACCOUNT_IDENTIFIER_METRICS_KEY, accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
+            EventsFrameworkMetadataConstants.SETTINGS, EventsFrameworkMetadataConstants.ACTION, action,
+            EventsFrameworkMetadataConstants.SETTINGS_CATEGORY, category.name()));
+    if (isNotBlank(groupIdentifier)) {
+      settingsEventMetadata.put(EventsFrameworkMetadataConstants.SETTINGS_GROUP_IDENTIFIER, groupIdentifier);
+    }
+    return settingsEventMetadata;
   }
 }

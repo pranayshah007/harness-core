@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.pipeline.executions;
-
 import static io.harness.executions.steps.StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_APPLY;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_DESTROY;
@@ -17,9 +16,11 @@ import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import static io.harness.reflection.ReflectionUtils.getFieldValuesByType;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
@@ -55,6 +56,8 @@ import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
@@ -73,10 +76,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     if (isDeploymentStageStep(event.getAmbiance())) {
       processDeploymentStageEvent(event);
     } else if (isRollbackStepNode(event.getAmbiance())) {
-      if (ngFeatureFlagHelperService.isEnabled(
-              AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-        processRollbackStepEvent(event);
-      }
+      processRollbackStepEvent(event);
     }
 
     try {
@@ -161,16 +161,13 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
             ex);
       }
 
-      if (ngFeatureFlagHelperService.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-        try {
-          Map<String, Object> updates = new HashMap<>();
-          updates.put(StageExecutionInfoKeys.status, status);
-          updates.put(StageExecutionInfoKeys.endts, event.getEndTs());
-          stageExecutionInfoService.update(scope, stageExecutionId, updates);
-        } catch (Exception ex) {
-          log.error(failureToUpdateStageExecutionSummary, ex);
-        }
+      try {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put(StageExecutionInfoKeys.status, status);
+        updates.put(StageExecutionInfoKeys.endts, event.getEndTs());
+        stageExecutionInfoService.update(scope, stageExecutionId, updates);
+      } catch (Exception ex) {
+        log.error(failureToUpdateStageExecutionSummary, ex);
       }
 
       InstanceDeploymentInfoStatus instanceDeploymentInfoStatus = status.equals(Status.SUCCEEDED)

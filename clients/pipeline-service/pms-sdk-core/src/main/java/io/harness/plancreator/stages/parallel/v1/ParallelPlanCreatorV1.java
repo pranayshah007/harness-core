@@ -9,17 +9,15 @@ package io.harness.plancreator.stages.parallel.v1;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
-import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
-import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -27,7 +25,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -36,7 +34,6 @@ import io.harness.steps.fork.ForkStepParameters;
 import io.harness.steps.fork.NGForkStep;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -115,10 +112,7 @@ public class ParallelPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     if (children.isEmpty()) {
       return GraphLayoutResponse.builder().build();
     }
-    String nextNodeId = null;
-    if (ctx.getDependency() != null && ctx.getDependency().getMetadataMap().get("nextId") != null) {
-      nextNodeId = (String) kryoSerializer.asObject(ctx.getDependency().getMetadataMap().get("nextId").toByteArray());
-    }
+    String nextNodeId = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, ctx.getDependency());
     List<String> childrenUuids =
         children.stream().map(YamlField::getNode).map(YamlNode::getUuid).collect(Collectors.toList());
     EdgeLayoutList.Builder stagesEdgesBuilder = EdgeLayoutList.newBuilder().addAllCurrentNodeChildren(childrenUuids);
@@ -149,27 +143,15 @@ public class ParallelPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   private List<AdviserObtainment> getAdviserObtainmentFromMetaData(PlanCreationContext ctx, YamlField currentField) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    String nextNodeId = null;
-    if (ctx.getDependency() != null && ctx.getDependency().getMetadataMap().get("nextId") != null) {
-      nextNodeId = (String) kryoSerializer.asObject(ctx.getDependency().getMetadataMap().get("nextId").toByteArray());
-    }
-
-    if (currentField != null && currentField.getNode() != null) {
-      if (nextNodeId != null) {
-        AdviserObtainment adviserObtainment =
-            AdviserObtainment.newBuilder()
-                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-                .setParameters(ByteString.copyFrom(
-                    kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextNodeId).build())))
-                .build();
-        adviserObtainments.add(adviserObtainment);
-      }
+    AdviserObtainment nextStepAdviser = PlanCreatorUtilsV1.getNextStepAdviser(kryoSerializer, ctx.getDependency());
+    if (nextStepAdviser != null) {
+      adviserObtainments.add(nextStepAdviser);
     }
     return adviserObtainments;
   }
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V1);
+    return Set.of(HarnessYamlVersion.V1);
   }
 }

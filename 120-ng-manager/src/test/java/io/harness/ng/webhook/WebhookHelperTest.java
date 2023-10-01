@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.security.PrincipalProtoMapper.toPrincipalProto;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doThrow;
 
 import io.harness.CategoryTest;
 import io.harness.beans.HeaderConfig;
@@ -43,8 +44,11 @@ import io.harness.product.ci.scm.proto.ReleaseHook;
 import io.harness.rule.Owner;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.service.WebhookParserSCMService;
 
 import com.google.inject.name.Named;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,6 +69,7 @@ public class WebhookHelperTest extends CategoryTest {
   @Mock @Named(GIT_PUSH_EVENT_STREAM) private Producer gitPushEventProducer;
   @Mock @Named(GIT_PR_EVENT_STREAM) private Producer gitPrEventProducer;
   @Mock @Named(GIT_BRANCH_HOOK_EVENT_STREAM) private Producer gitBranchHookEventProducer;
+  @Mock WebhookParserSCMService webhookParserSCMService;
   private String accountId = "accountId";
   private String payload = "payload";
 
@@ -115,6 +120,22 @@ public class WebhookHelperTest extends CategoryTest {
     assertThat(webhookHelper.generateWebhookDTO(webhookEvent, parseWebhookResponse, SourceRepoType.GITHUB)
                    .getWebhookTriggerType())
         .isEqualTo(WebhookTriggerType.GIT);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testInvokeScmServiceException() {
+    WebhookEvent webhookEvent =
+        WebhookEvent.builder()
+            .payload("payload")
+            .headers(Collections.singletonList(
+                HeaderConfig.builder().key("key").values(Collections.singletonList("value")).build()))
+            .build();
+    doThrow(new StatusRuntimeException(Status.UNAVAILABLE))
+        .when(webhookParserSCMService)
+        .parseWebhookUsingSCMAPI(webhookEvent.getHeaders(), "payload");
+    assertThat(webhookHelper.invokeScmService(webhookEvent)).isNull();
   }
 
   @Test

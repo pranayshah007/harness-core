@@ -7,9 +7,11 @@
 
 package io.harness.cvng.cdng.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
+import com.google.common.base.Preconditions;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,10 +21,25 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @AllArgsConstructor
 @TypeAlias("deploymentImpactStepParameter")
+@RecasterAlias("io.harness.cvng.cdng.beans.CVNGDeploymentImpactStepParameter")
 public class CVNGDeploymentImpactStepParameter implements SpecParameters {
   ParameterField<String> serviceIdentifier;
   ParameterField<String> envIdentifier;
   ParameterField<String> duration;
 
   DefaultAndConfiguredMonitoredServiceNode monitoredService;
+
+  public String getServiceIdentifier() {
+    Preconditions.checkNotNull(serviceIdentifier.getValue());
+    return serviceIdentifier.getValue();
+  }
+  public String getEnvIdentifier() {
+    Preconditions.checkNotNull(envIdentifier.getValue());
+    return envIdentifier.getValue();
+  }
+
+  public String getDuration() {
+    Preconditions.checkNotNull(duration.getValue());
+    return duration.getValue();
+  }
 }

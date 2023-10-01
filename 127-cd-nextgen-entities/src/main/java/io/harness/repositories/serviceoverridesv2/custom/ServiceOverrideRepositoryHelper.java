@@ -7,13 +7,17 @@
 
 package io.harness.repositories.serviceoverridesv2.custom;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @UtilityClass
 public class ServiceOverrideRepositoryHelper {
   public static Update getUpdateOperationsForServiceOverrideV2(NGServiceOverridesEntity serviceOverridesEntity) {

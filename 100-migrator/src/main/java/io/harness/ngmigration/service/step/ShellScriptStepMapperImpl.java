@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
@@ -63,6 +65,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class ShellScriptStepMapperImpl extends StepMapper {
   @Inject SecretRefUtils secretRefUtils;
@@ -217,6 +220,29 @@ public class ShellScriptStepMapperImpl extends StepMapper {
                        MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
                    .stepGroupIdentifier(
                        MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
+                   .expression(exp)
+                   .build())
+        .map(ShellScriptStepFunctor::new)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, String stepGroupName, GraphNode graphNode) {
+    String sweepingOutputName = getSweepingOutputName(graphNode);
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
+                   .stepIdentifier(
+                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(
+                       MigratorUtility.generateIdentifier(stepGroupName, context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(ShellScriptStepFunctor::new)

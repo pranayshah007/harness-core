@@ -361,7 +361,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 0c5acd02
+  scmVersion: 93b3c9f1
 
   ngAuthUIEnabled: false
 
@@ -710,11 +710,26 @@ cg:
     enableQueueAndDequeue: false
     queueServiceClientConfig:
       httpClientConfig:
-        baseUrl: http://localhost:9091/
+        baseUrl: http://localhost:9544/
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
       queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
       envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+  notificationClient:
+    messageBroker:
+      type: MONGO
+      uri: mongodb://localhost:27017/notification
+      connectTimeout: 30000
+      serverSelectionTimeout: 90000
+      socketTimeout: 360000
+      maxConnectionIdleTime: 600000
+      connectionsPerHost: 300
+    httpClient:
+      baseUrl: http://localhost:9005
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    secrets:
+      notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090

@@ -1,2 +1,2 @@
-DOCKER_FILE_PATH: /harness/harness-core/dist/accesscontrol-service/Dockerfile-cie-jdk
+DOCKER_FILE_PATH: /harness/harness-core/access-control/build/container/Dockerfile-accesscontrol-service-multistage
 HELM_CHART_SOURCE_DIRECTORY: harness-core/access-control/chart

@@ -6,7 +6,10 @@
  */
 
 package io.harness.delegate.task.k8s;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResourceId;
 
@@ -14,11 +17,21 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 @Builder
 public class K8sRollingDeployResponse implements K8sNGTaskResponse {
   Integer releaseNumber;
   List<K8sPod> k8sPodList;
+  List<K8sPod> previousK8sPodList;
   String loadBalancer;
   List<KubernetesResourceId> prunedResourceIds;
+  HelmChartInfo helmChartInfo;
+  public List<K8sPod> getPreviousK8sPodList() {
+    return previousK8sPodList;
+  }
+
+  public List<K8sPod> getTotalK8sPodList() {
+    return k8sPodList;
+  }
 }

@@ -8,7 +8,9 @@
 package io.debezium.embedded;
 
 import io.debezium.engine.ChangeEvent;
+import io.debezium.engine.Header;
 import io.debezium.engine.RecordChangeEvent;
+import java.util.List;
 import lombok.ToString;
 import org.apache.kafka.connect.source.SourceRecord;
 
@@ -20,14 +22,16 @@ import org.apache.kafka.connect.source.SourceRecord;
  */
 
 @ToString
-public class EmbeddedEngineChangeEvent<K, V> implements ChangeEvent<K, V>, RecordChangeEvent<V> {
+public class EmbeddedEngineChangeEvent<K, V, H> implements ChangeEvent<K, V>, RecordChangeEvent<V> {
   private final K key;
   private final V value;
+  private final List<Header<H>> headers;
   private final SourceRecord sourceRecord;
 
-  public EmbeddedEngineChangeEvent(K key, V value, SourceRecord sourceRecord) {
+  public EmbeddedEngineChangeEvent(K key, V value, List<Header<H>> headers, SourceRecord sourceRecord) {
     this.key = key;
     this.value = value;
+    this.headers = headers;
     this.sourceRecord = sourceRecord;
   }
 
@@ -37,6 +41,11 @@ public class EmbeddedEngineChangeEvent<K, V> implements ChangeEvent<K, V>, Recor
 
   public V value() {
     return this.value;
+  }
+
+  @Override
+  public List<Header<H>> headers() {
+    return headers;
   }
 
   public V record() {

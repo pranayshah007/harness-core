@@ -6,6 +6,7 @@ category: Incident Management
 source: https://github.com/backstage/backstage/blob/master/plugins/firehydrant/README.md
 iconUrl: https://raw.githubusercontent.com/backstage/backstage/master/plugins/firehydrant/doc/firehydrant_logo.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/firehydrant/
 config: |-
   proxy:
     '/firehydrant/api':

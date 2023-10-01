@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -18,14 +17,18 @@ import static software.wings.sm.StateType.PHASE;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.EventPayload;
 import io.harness.beans.EventType;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.WorkflowType;
 import io.harness.beans.event.cg.CgPipelineCompletePayload;
 import io.harness.beans.event.cg.CgPipelinePausePayload;
@@ -105,6 +108,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author Rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Slf4j
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -279,71 +284,77 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
     }
     if (ExecutionStatus.isFinalStatus(status)) {
       try {
-        WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
-        alertService.deploymentCompleted(appId, context.getWorkflowExecutionId());
-        if (workflowExecution == null) {
-          log.warn("No workflowExecution for workflowExecution:[{}], appId:[{}],", workflowExecutionId, appId);
-          return;
-        }
-        final Application applicationDataForReporting = usageMetricsHelper.getApplication(appId);
-        String accountID = applicationDataForReporting.getAccountId();
-        /**
-         * PL-2326 : Workflow execution did not even start -> was in queued state. In
-         * this case, startTS and endTS are not populated. Ignoring these events.
-         */
-        if (workflowExecution.getStartTs() != null && workflowExecution.getEndTs() != null) {
-          updateDeploymentInformation(workflowExecution);
-          workflowExecution =
-              workflowExecutionService.getWorkflowExecutionWithFailureDetails(appId, workflowExecutionId);
-          /**
-           * Had to do a double check on the finalStatus since workflowStatus is still not in finalStatus while
-           * the callBack says it is finalStatus (Check with Srinivas)
-           */
-          if (ExecutionStatus.isFinalStatus(workflowExecution.getStatus())) {
-            usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(
-                accountID, workflowExecution, Collections.emptyMap());
-            if (workflowExecution.isOnDemandRollback() && workflowExecution.getOriginalExecution() != null
-                && workflowExecution.getOriginalExecution().getExecutionId() != null
-                && workflowExecution.getStatus() == SUCCESS) {
-              WorkflowExecution originalExecution = workflowExecutionService.getUpdatedWorkflowExecution(
-                  appId, workflowExecution.getOriginalExecution().getExecutionId());
-              originalExecution.setRollbackDuration(workflowExecution.getDuration());
-              try {
-                Map<String, Object> metadata = new HashMap<>();
-                metadata.put("manuallyRolledBack", true);
-                usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, originalExecution, metadata);
-              } catch (Exception e) {
-                log.error("Exception while syncing the data for original workflow execution", e);
-              }
-            }
-          } else {
-            log.warn("Workflow [{}] has executionStatus:[{}], different status:[{}]", workflowExecutionId,
-                workflowExecution.getStatus(), status);
-          }
-        }
+        generateEventsForWorkflowExecution(context, status);
 
-        eventPublishHelper.handleDeploymentCompleted(workflowExecution);
-        if (workflowExecution.getPipelineExecutionId() == null) {
-          String applicationName = applicationDataForReporting.getName();
-          Account account = accountService.getFromCache(accountID);
-          // The null check is in case the account has been physical deleted.
-          if (account == null) {
-            log.warn("Workflow execution in application {} is associated with deleted account {}", applicationName,
-                accountID);
-          }
-        }
-        if (WorkflowType.PIPELINE != context.getWorkflowType()) {
-          if (workflowExecution.getPipelineExecutionId() != null) {
-            workflowExecutionService.refreshCollectedArtifacts(
-                appId, workflowExecution.getPipelineExecutionId(), workflowExecutionId);
-          }
-        }
-
-        reportDeploymentEventToSegment(workflowExecution);
       } catch (Exception e) {
         log.error("Failed to generate events for workflowExecution:[{}], appId:[{}],", workflowExecutionId, appId, e);
       }
     }
+  }
+
+  private void generateEventsForWorkflowExecution(ExecutionContext context, ExecutionStatus status) {
+    alertService.deploymentCompleted(appId, context.getWorkflowExecutionId());
+
+    // MULTIPLE FIELDS OF WORKFLOW EXECUTION ARE USED, LEAVE IT WITHOUT PROJECTION AT FIRST MOMENT.
+    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    if (workflowExecution == null) {
+      log.warn("No workflowExecution for workflowExecution:[{}], appId:[{}],", workflowExecutionId, appId);
+      return;
+    }
+    final Application applicationDataForReporting = usageMetricsHelper.getApplication(appId);
+    String accountID = applicationDataForReporting.getAccountId();
+    /**
+     * PL-2326 : Workflow execution did not even start -> was in queued state. In
+     * this case, startTS and endTS are not populated. Ignoring these events.
+     */
+    if (workflowExecution.getStartTs() != null && workflowExecution.getEndTs() != null) {
+      updateDeploymentInformation(workflowExecution);
+      workflowExecution = workflowExecutionService.getWorkflowExecutionWithFailureDetails(appId, workflowExecutionId);
+      /**
+       * Had to do a double check on the finalStatus since workflowStatus is still not in finalStatus while
+       * the callBack says it is finalStatus (Check with Srinivas)
+       */
+      if (ExecutionStatus.isFinalStatus(workflowExecution.getStatus())) {
+        usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(
+            accountID, workflowExecution, Collections.emptyMap());
+        if (workflowExecution.isOnDemandRollback() && workflowExecution.getOriginalExecution() != null
+            && workflowExecution.getOriginalExecution().getExecutionId() != null
+            && workflowExecution.getStatus() == SUCCESS) {
+          WorkflowExecution originalExecution = workflowExecutionService.getUpdatedWorkflowExecution(
+              appId, workflowExecution.getOriginalExecution().getExecutionId());
+          originalExecution.setRollbackDuration(workflowExecution.getDuration());
+          try {
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("manuallyRolledBack", true);
+            usageMetricsEventPublisher.publishDeploymentTimeSeriesEvent(accountID, originalExecution, metadata);
+          } catch (Exception e) {
+            log.error("Exception while syncing the data for original workflow execution", e);
+          }
+        }
+      } else {
+        log.warn("Workflow [{}] has executionStatus:[{}], different status:[{}]", workflowExecutionId,
+            workflowExecution.getStatus(), status);
+      }
+    }
+
+    eventPublishHelper.handleDeploymentCompleted(workflowExecution);
+    if (workflowExecution.getPipelineExecutionId() == null) {
+      String applicationName = applicationDataForReporting.getName();
+      Account account = accountService.getFromCache(accountID);
+      // The null check is in case the account has been physical deleted.
+      if (account == null) {
+        log.warn(
+            "Workflow execution in application {} is associated with deleted account {}", applicationName, accountID);
+      }
+    }
+    if (WorkflowType.PIPELINE != context.getWorkflowType()) {
+      if (workflowExecution.getPipelineExecutionId() != null) {
+        workflowExecutionService.refreshCollectedArtifacts(
+            appId, workflowExecution.getPipelineExecutionId(), workflowExecutionId);
+      }
+    }
+
+    reportDeploymentEventToSegment(workflowExecution);
   }
 
   private void deliverWorkflowEvent(WorkflowExecution execution, ExecutionStatus status, Long endTs) {
@@ -471,7 +482,6 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
     if (execution == null) {
       return;
     }
-    String accountId = execution.getAccountId();
     Application application = appService.get(execution.getAppId());
     if (application == null) {
       return;
@@ -696,7 +706,7 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
   @VisibleForTesting
   public List<NameValuePair> resolveDeploymentTags(ExecutionContext context, String workflowId) {
     String accountId = appService.getAccountIdByAppId(appId);
-    List<HarnessTagLink> harnessTagLinks = harnessTagService.getTagLinksWithEntityId(accountId, workflowId);
+    List<HarnessTagLink> harnessTagLinks = harnessTagService.getTagLinksWithEntityId(accountId, workflowId, false);
     List<NameValuePair> resolvedTags = new ArrayList<>();
     if (isNotEmpty(harnessTagLinks)) {
       for (HarnessTagLink harnessTagLink : harnessTagLinks) {
@@ -857,12 +867,17 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
 
     // TODO: this is temporary. this should be part of its own callback and with more precise filter
     try {
-      log.info("Update Active Resource constraints");
+      log.debug("Update Active Resource constraints");
       final Set<String> constraintIds =
           resourceConstraintService.updateActiveConstraints(context.getAppId(), workflowExecutionId);
 
-      log.info("Update Blocked Resource constraints");
-      resourceConstraintService.updateBlockedConstraints(constraintIds);
+      log.debug("Update Blocked Resource constraints");
+      if (featureFlagService.isEnabled(
+              FeatureName.CDS_RESOURCE_CONSTRAINT_INSTANCE_OPTIMIZATION, context.getAccountId())) {
+        resourceConstraintService.updateBlockedConstraintsV2(constraintIds, false);
+      } else {
+        resourceConstraintService.updateBlockedConstraints(constraintIds);
+      }
 
     } catch (RuntimeException exception) {
       // Do not block the execution for possible exception in the barrier update

@@ -26,6 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   String ciImageTag;
   CIStepConfig stepConfig;
+  GitnessConfig gitnessConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
   CICacheIntelligenceS3Config cacheIntelligenceS3Config;
   ExecutionLimits executionLimits;
@@ -37,6 +38,7 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   Integer remoteDebugTimeout;
   CIDockerLayerCachingConfig dockerLayerCachingConfig;
   CIDockerLayerCachingGCSConfig dockerLayerCachingGCSConfig;
+  String tmateEndpoint;
 
   @Builder
   public CIExecutionServiceConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,
@@ -46,7 +48,7 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
       CICacheIntelligenceS3Config cacheIntelligenceS3Config, ExecutionLimits executionLimits,
       QueueServiceClientConfig queueServiceClientConfig, HostedVmConfig hostedVmConfig, STOStepConfig stoStepConfig,
       Integer remoteDebugTimeout, CIDockerLayerCachingConfig dockerLayerCachingConfig,
-      CIDockerLayerCachingGCSConfig dockerLayerCachingGCSConfig) {
+      CIDockerLayerCachingGCSConfig dockerLayerCachingGCSConfig, String tmateEndpoint) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
         defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
     this.ciImageTag = ciImageTag;
@@ -60,5 +62,6 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
     this.remoteDebugTimeout = remoteDebugTimeout;
     this.dockerLayerCachingConfig = dockerLayerCachingConfig;
     this.dockerLayerCachingGCSConfig = dockerLayerCachingGCSConfig;
+    this.tmateEndpoint = tmateEndpoint;
   }
 }

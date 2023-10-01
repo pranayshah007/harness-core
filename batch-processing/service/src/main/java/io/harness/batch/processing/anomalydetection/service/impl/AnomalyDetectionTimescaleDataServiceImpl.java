@@ -108,7 +108,6 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
         AnomalyDetectionHelper.logInvalidTimeSeries(currentTimeSeries);
       }
     }
-
     return listTimeSeries;
   }
 
@@ -127,6 +126,9 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
     }
     if (groupByList.contains(QLCCMEntityGroupBy.WorkloadType)) {
       currentTimeSeries.setWorkloadType(resultSet.getString(tableSchema.getWorkloadType().getColumnNameSQL()));
+    }
+    if (groupByList.contains(QLCCMEntityGroupBy.Service)) {
+      currentTimeSeries.setService(resultSet.getString(tableSchema.getServiceId().getColumnNameSQL()));
     }
   }
 }

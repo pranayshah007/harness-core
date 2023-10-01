@@ -47,19 +47,19 @@ orchestrationVisualizationThreadPoolConfig:
 orchestrationPoolConfig:
   corePoolSize: ${ORCHESTRATION_POOL_CORE_SIZE:-20}
   maxPoolSize: ${ORCHESTRATION_POOL_MAX_SIZE:-100}
-  idleTime: ${ORCHESTRATION_POOL_IDLE_TIME:-500}
+  idleTime: ${ORCHESTRATION_POOL_IDLE_TIME:-60}
   timeUnit: ${ORCHESTRATION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-20}
   maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-100}
-  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkOrchestrationEventPoolConfig:
   corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-10}
   maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-50}
-  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 podCleanUpThreadPoolConfig:
@@ -107,6 +107,9 @@ grpcClientConfigs:
   iacm:
     target: localhost:15301
     authority: localhost
+  idp:
+    target: ${IDP_SERVICE_TARGET:-localhost:12501}
+    authority: ${IDP_SERVICE_AUTHORITY:-localhost}
 
 yamlSchemaClientConfig:
   yamlSchemaHttpClientMap:
@@ -224,11 +227,12 @@ ciServiceClientConfig:
 
 queueServiceClientConfig:
   httpClientConfig:
-    baseUrl: http://localhost:9091/
+    baseUrl: ${HSQS_BASE_URL:-http://localhost:9544/}
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
-  queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+  queueServiceSecret: ${HSQS_AUTH_TOKEN:-ThisIsMyUniqueJwtQueueServiceSecret}
   envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+  topic: ${HSQS_TOPIC:-pipeline}
 
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
@@ -258,6 +262,11 @@ triggerConfig:
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079
   serviceToken: token
+  threadPoolConfig:
+    corePoolSize: ${LOG_STREAMING_CLIENT_POOL_CORE_SIZE:-1}
+    maxPoolSize: ${LOG_STREAMING_CLIENT_POOL_MAX_SIZE:-50}
+    idleTime: ${LOG_STREAMING_CLIENT_POOL_IDLE_TIME:-30}
+    timeUnit: ${LOG_STREAMING_CLIENT_POOL_TIME_UNIT:-SECONDS}
 
 # remove in a few cycles
 opaServerConfig:
@@ -284,6 +293,13 @@ iteratorsConfig:
     threadPoolCount: 5
     enabled: true
     targetIntervalInSeconds: 10
+  timeoutEngineRedisMode:
+    threadPoolSize: ${TIMEOUT_ITERATOR_REDIS_MODE_THREAD_POOL_SIZE:-5}
+    enabled: true
+    targetIntervalInSeconds: 10
+    threadPoolIntervalInSeconds: 2
+    redisLockTimeout: 5
+    redisBatchSize: ${TIMEOUT_ITERATOR_REDIS_BATCH_SIZE:-10}
   barrier:
     threadPoolCount: 2
     enabled: true
@@ -313,23 +329,23 @@ orchestrationStepConfig:
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
     delegateServiceEndpointVariableValue: "delegate-service:8080"
-    addonImage: harness/ci-addon:1.16.8
-    liteEngineImage: harness/ci-lite-engine:1.16.8
+    addonImage: harness/ci-addon:1.16.20
+    liteEngineImage: harness/ci-lite-engine:1.16.20
     isLocal: false
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
       sscaOrchestrationConfig:
-        image: ${SSCA_ORCHESTRATION_IMAGE:-harness/ssca-plugin:latest}
+        image: ${SSCA_ORCHESTRATION_IMAGE:-harness/ssca-plugin:0.3.0}
         entrypoint:
           - /bin/ssca-plugin
       sscaEnforcementConfig:
-        image: ${SSCA_ENFORCEMENT_IMAGE:-harness/ssca-plugin:latest}
+        image: ${SSCA_ENFORCEMENT_IMAGE:-harness/ssca-plugin:0.3.0}
         entrypoint:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
-      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2" ]
-      ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "AwsCdkDiff", "ServerlessAwsLambdaRollbackV2", "AwsCdkDeploy", "AwsCdkDestroy", "AwsCdkRollback"]
+      ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action", "SlsaVerification"]
 
 
 shouldDeployWithGitSync: true
@@ -433,7 +449,7 @@ pipelineEventConsumersConfig:
   pollingEvent:
     threads: 1
   triggerExecutionEvent:
-    threads: 1
+    threads: ${TRIGGER_EXECUTION_EVENT_CONSUMER_THREAD_COUNT:-1}
 
 delegatePollingConfig:
   syncDelay: 2000
@@ -512,6 +528,7 @@ allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
 
 orchestrationLogConfiguration:
   orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
+  shouldUseExpiredListener: ${SHOULD_USE_ORCHESTRATION_LOG_EXPIRED_LISTENER:-true}
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}
 
@@ -530,6 +547,7 @@ jsonExpansionRequestBatchSize: ${JSON_EXPANSION_BATCH_SIZE:-50}
 #############################################################
 
 orchestrationRestrictionConfiguration:
+  maxNestedLevelsCount: ${MAX_NESTED_LEVELS_COUNT:-25}
   useRestrictionForFree: ${USE_RESTRICTION_FOR_FREE:-false}
   useRestrictionForTeam: ${USE_RESTRICTION_FOR_TEAM:-false}
   useRestrictionForEnterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-false}
@@ -593,7 +611,7 @@ eventsFrameworkSnapshotDebezium:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-true}
 
 cfClientConfig:
   apiKey: ""
@@ -615,6 +633,7 @@ sscaServiceConfig:
     baseUrl: http://localhost:8186
     connectTimeOutSeconds: 40
     readTimeOutSeconds: 40
+  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-false}
   serviceSecret: secret
 
 pipelineAsyncValidationPoolConfig:
@@ -639,3 +658,18 @@ expandedJsonConfig:
   lockTimeOutInMinutes: 2
 
 staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}
+timeoutIteratorMode : ${TIMEOUT_ITERATOR_MODE:-LOOP}
+
+webhookEventHsqsDequeueConfig:
+  batchSize: ${WEBHOOK_EVENT_DEQUE_BATCH_SIZE:-20}
+  threadSleepTimeInMillis: ${WEBHOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
+
+useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
+
+useNewNodeEntityConfiguration: ${USE_NEW_NODE_ENTITY_CONFIGURATION:-false}
+
+graphConsumerSleepIntervalMs: ${GRAPH_CONSUMER_SLEEP_INTERVAL_MS:-0}
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
+publishAdviserEventForCustomAdvisers: ${PUBLISH_ADVISER_EVENT_FOR_CUSTOM_ADVISERS:-false}

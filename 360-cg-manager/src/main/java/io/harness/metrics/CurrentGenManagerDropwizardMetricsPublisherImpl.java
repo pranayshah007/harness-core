@@ -32,11 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 public class CurrentGenManagerDropwizardMetricsPublisherImpl implements MetricsPublisher {
   private final MetricRegistry metricRegistry;
   private final MetricService metricService;
-  private static final String METRIC_PREFIX = "currentgen_manager_";
   private static final Double SNAPSHOT_FACTOR = 1.0D / (double) TimeUnit.SECONDS.toNanos(1L);
   private static final Pattern METRIC_NAME_RE = Pattern.compile("[^a-zA-Z0-9:_]");
   private static final String NAMESPACE = System.getenv("NAMESPACE");
   private static final String CONTAINER_NAME = System.getenv("CONTAINER_NAME");
+  private static final String SERVICE_NAME = "cg-manager";
   private static final MetricFilter meterMetricFilter =
       MetricFilter.startsWith("io.dropwizard.jetty.MutableServletContextHandler");
 
@@ -53,7 +53,7 @@ public class CurrentGenManagerDropwizardMetricsPublisherImpl implements MetricsP
   }
 
   private void recordMeter(String metricName, Meter meter) {
-    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME)) {
+    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME, SERVICE_NAME)) {
       recordMetric(metricName + "_count", meter.getCount());
       recordMetric(metricName + "_fifteenMinuteRate", meter.getFifteenMinuteRate());
       recordMetric(metricName + "_fiveMinuteRate", meter.getFiveMinuteRate());
@@ -63,13 +63,13 @@ public class CurrentGenManagerDropwizardMetricsPublisherImpl implements MetricsP
   }
 
   private void recordCounter(String metricName, Counter counter) {
-    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME)) {
+    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME, SERVICE_NAME)) {
       recordMetric(metricName, counter.getCount());
     }
   }
 
   private void recordGauge(String metricName, Gauge gauge) {
-    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME)) {
+    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME, SERVICE_NAME)) {
       Object obj = gauge.getValue();
       double value;
       if (obj instanceof Number) {
@@ -87,7 +87,7 @@ public class CurrentGenManagerDropwizardMetricsPublisherImpl implements MetricsP
   }
 
   private void recordTimer(String metricName, Timer timer) {
-    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME)) {
+    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME, SERVICE_NAME)) {
       recordMetric(metricName + "_count", timer.getCount());
       recordMetric(metricName + "_fifteenMinuteRate", timer.getFifteenMinuteRate());
       recordMetric(metricName + "_fiveMinuteRate", timer.getFiveMinuteRate());
@@ -98,7 +98,7 @@ public class CurrentGenManagerDropwizardMetricsPublisherImpl implements MetricsP
   }
 
   private void recordSnapshot(String metricName, Snapshot snapshot) {
-    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME)) {
+    try (CurrentGenMetricsContext ignore = new CurrentGenMetricsContext(NAMESPACE, CONTAINER_NAME, SERVICE_NAME)) {
       recordMetric(metricName + "_mean", snapshot.getMean() * SNAPSHOT_FACTOR);
       recordMetric(metricName + "_95thPercentile", snapshot.get95thPercentile() * SNAPSHOT_FACTOR);
       recordMetric(metricName + "_99thPercentile", snapshot.get99thPercentile() * SNAPSHOT_FACTOR);
@@ -107,7 +107,7 @@ public class CurrentGenManagerDropwizardMetricsPublisherImpl implements MetricsP
   }
 
   private void recordMetric(String name, double value) {
-    metricService.recordMetric(METRIC_PREFIX + name, value);
+    metricService.recordMetric(name, value);
   }
 
   private static String sanitizeMetricName(String dropwizardName) {

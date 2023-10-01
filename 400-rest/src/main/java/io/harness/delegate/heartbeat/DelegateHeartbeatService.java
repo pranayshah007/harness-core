@@ -13,6 +13,10 @@ import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME;
 import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DESTROYED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_CONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_EVENT;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECEIVED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECONNECTED;
 
 import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.delegate.beans.Delegate;
@@ -20,6 +24,7 @@ import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateNotRegisteredException;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.DuplicateDelegateException;
+import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.WingsException;
 import io.harness.logging.Misc;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -33,6 +38,8 @@ import software.wings.service.intfc.AccountService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.mongodb.MongoTimeoutException;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -62,7 +69,10 @@ public abstract class DelegateHeartbeatService<T extends Object> {
   @Inject private BroadcasterFactory broadcasterFactory;
 
   @Inject private DelegateSetupService delegateSetupService;
+  @Inject private DelegateHeartBeatMetricsHelper delegateHeartBeatMetricsHelper;
+
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 
   public Optional<T> precheck(@NotNull final Delegate existingDelegate, @NotNull final DelegateHeartbeatParams params) {
     if (isNotEmpty(existingDelegate.getDelegateConnectionId())) {
@@ -82,6 +92,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   public abstract T buildHeartbeatResponseOnSuccess(DelegateHeartbeatParams params, Delegate existingDelegate);
   public abstract T buildHeartbeatResponseOnFailure(DelegateHeartbeatParams params, WingsException e);
+  public abstract T buildHeartBeatResponseOnMongoException(DelegateHeartbeatParams params, MongoTimeoutException e);
 
   public T processHeartbeatRequest(@NotNull final Delegate existingDelegate, @NotNull DelegateHeartbeatParams params) {
     logLastHeartbeatSkew(existingDelegate.getUuid(), params.getLastHeartBeat());
@@ -110,7 +121,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   private Delegate getExistingDelegateExceptionIfNullOrDeleted(
       @NotNull final String accountId, @NotNull final String delegateId) {
-    final Delegate delegate = delegateCache.get(accountId, delegateId, true);
+    final Delegate delegate = delegateCache.get(accountId, delegateId, !enableRedisForDelegateService);
     if (Objects.isNull(delegate) || (delegate.getStatus() == DelegateInstanceStatus.DELETED)) {
       log.warn("Sending self destruct command from register delegate because the existing delegate "
           + (Objects.isNull(delegate) ? "is not found" : "has status deleted."));
@@ -127,16 +138,45 @@ public abstract class DelegateHeartbeatService<T extends Object> {
       final T response =
           precheck(existingDelegate, params).orElseGet(() -> processHeartbeatRequest(existingDelegate, params));
       finish(response, params);
+      long currentTime = clock.millis();
+      String orgId = (null != existingDelegate.getOwner())
+          ? DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+          : null;
+      String projectId = (null != existingDelegate.getOwner())
+          ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+          : null;
       boolean isDelegateReconnectingAfterLongPause =
-          clock.millis() > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
+          currentTime > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
       if (isDelegateReconnectingAfterLongPause) {
         subject.fireInform(DelegateObserver::onReconnected, existingDelegate);
+        try {
+          delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(currentTime, existingDelegate.getAccountId(), orgId,
+              projectId, existingDelegate.getDelegateName(), existingDelegate.getUuid(), existingDelegate.getVersion(),
+              HEARTBEAT_RECONNECTED, HEARTBEAT_EVENT, existingDelegate.isNg(), existingDelegate.isImmutable(),
+              existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
+        } catch (Exception ex) {
+          log.error("Exception occurred while recording heartBeat metric", ex);
+        }
+      } else {
+        try {
+          delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(currentTime, existingDelegate.getAccountId(), orgId,
+              projectId, existingDelegate.getDelegateName(), existingDelegate.getUuid(), existingDelegate.getVersion(),
+              HEARTBEAT_CONNECTED, HEARTBEAT_EVENT, existingDelegate.isNg(), existingDelegate.isImmutable(),
+              existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
+        } catch (Exception ex) {
+          log.error("Exception occurred while recording heartBeat metric", ex);
+        }
       }
       return response;
     } catch (WingsException e) {
       log.error("Heartbeat failed for delegate {}.", params.getDelegateId(), e);
       // If the exception is not handled, it will fail the process early
       final T failureResponse = Optional.ofNullable(buildHeartbeatResponseOnFailure(params, e)).orElseThrow(() -> e);
+      finish(failureResponse, params);
+      return failureResponse;
+    } catch (MongoTimeoutException e) {
+      final T failureResponse =
+          Optional.ofNullable(buildHeartBeatResponseOnMongoException(params, e)).orElseThrow(() -> e);
       finish(failureResponse, params);
       return failureResponse;
     }
@@ -160,7 +200,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   private void destroyTheCurrentDelegate(
       String accountId, String delegateId, String delegateConnectionId, boolean isPollingMode) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
     delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DESTROYED);
     if (isPollingMode) {
       log.warn("Sent self destruct command to delegate {}, with connectionId {}.", delegateId, delegateConnectionId);

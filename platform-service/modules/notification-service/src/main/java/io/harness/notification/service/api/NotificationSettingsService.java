@@ -39,4 +39,6 @@ public interface NotificationSettingsService {
   Map<String, String> buildTaskAbstractions(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   void deleteByAccount(String accountId);
+
+  boolean checkIfHeadersHasAnySecretValue(Map<String, String> headers);
 }

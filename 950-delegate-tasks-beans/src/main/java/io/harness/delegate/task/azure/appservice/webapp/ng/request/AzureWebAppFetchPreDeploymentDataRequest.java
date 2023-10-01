@@ -53,6 +53,11 @@ public class AzureWebAppFetchPreDeploymentDataRequest extends AbstractSlotDataRe
   }
 
   @Override
+  public boolean isCleanDeployment() {
+    return false;
+  }
+
+  @Override
   public AzureWebAppRequestType getRequestType() {
     return AzureWebAppRequestType.FETCH_PRE_DEPLOYMENT_DATA;
   }

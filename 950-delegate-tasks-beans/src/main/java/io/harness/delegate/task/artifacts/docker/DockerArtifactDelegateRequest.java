@@ -7,8 +7,11 @@
 
 package io.harness.delegate.task.artifacts.docker;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.docker.DockerCapabilityHelper;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -27,6 +30,9 @@ import lombok.Value;
 /**
  * DTO object to be passed to delegate tasks.
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = false)
@@ -47,8 +53,6 @@ public class DockerArtifactDelegateRequest implements ArtifactSourceDelegateRequ
   List<EncryptedDataDetail> encryptedDataDetails;
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
-  /** If shouldFetchDockerV2DigestSHA256 is true, metainfo will be populated with V2 SHA256 of the docker image too.*/
-  @Builder.Default Boolean shouldFetchDockerV2DigestSHA256 = false;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

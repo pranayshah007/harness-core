@@ -8,7 +8,7 @@
 package io.harness.app;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 import static io.harness.ng.DbAliases.DMS;
@@ -89,9 +89,9 @@ import io.harness.service.intfc.AgentMtlsEndpointService;
 import software.wings.app.CharsetResponseFilter;
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo.LicenseInfoKeys;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.alert.Alert;
 import software.wings.beans.alert.AlertType;
 import software.wings.common.VerificationConstants;
@@ -260,7 +260,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
       @Singleton
       DistributedLockImplementation distributedLockImplementation() {
         return configuration.getDistributedLockImplementation() == null
-            ? MONGO
+            ? REDIS
             : configuration.getDistributedLockImplementation();
       }
     });
@@ -622,9 +622,9 @@ public class VerificationServiceApplication extends Application<VerificationServ
             .filterExpander(query
                 -> query.or(query.criteria(AccountKeys.licenseInfo).doesNotExist(),
                     query.and(query.criteria(AccountKeys.licenseInfo + "." + LicenseInfoKeys.accountStatus)
-                                  .equal(AccountStatus.ACTIVE)),
-                    query.criteria(AccountKeys.licenseInfo + "." + LicenseInfoKeys.accountType)
-                        .in(Sets.newHashSet(AccountType.TRIAL, AccountType.PAID))))
+                                  .equal(AccountStatus.ACTIVE),
+                        query.criteria(AccountKeys.licenseInfo + "." + LicenseInfoKeys.accountType)
+                            .in(Sets.newHashSet(AccountType.TRIAL, AccountType.PAID)))))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

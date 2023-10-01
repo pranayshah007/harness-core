@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.ssh.utils;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,7 +13,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.encoding.EncodingUtils;
@@ -38,6 +40,7 @@ import javax.annotation.Nonnull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDP)
 @UtilityClass
 @Slf4j

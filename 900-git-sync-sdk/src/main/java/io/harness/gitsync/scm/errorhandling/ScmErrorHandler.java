@@ -6,11 +6,13 @@
  */
 
 package io.harness.gitsync.scm.errorhandling;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.ScmBadRequestException;
@@ -25,12 +27,31 @@ import io.harness.gitsync.scm.beans.ScmGitMetaData;
 
 import groovy.lang.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Singleton
 @OwnedBy(HarnessTeam.PL)
 public class ScmErrorHandler {
   public final void processAndThrowException(
       int statusCode, ScmErrorDetails errorDetails, ScmGitMetaData errorMetadata) {
     handleError(statusCode, errorDetails, errorMetadata);
+  }
+
+  public final void processAndThrowException(int statusCode, ScmErrorDetails errorDetails) {
+    handleError(statusCode, errorDetails);
+  }
+
+  void handleError(int statusCode, ScmErrorDetails errorDetails) {
+    switch (statusCode) {
+      case 400:
+      case 401:
+        throw prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails);
+      case 409:
+        throw prepareException(new ScmConflictException(errorDetails.getErrorMessage()), errorDetails);
+      case 500:
+        throw prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails);
+      default:
+        throw prepareException(new ScmUnexpectedException(errorDetails.getErrorMessage()), errorDetails);
+    }
   }
 
   void handleError(int statusCode, ScmErrorDetails errorDetails, ScmGitMetaData errorMetadata) {

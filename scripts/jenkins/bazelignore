@@ -36,6 +36,7 @@ toolset
 .*.Lock$
 .*.tgz$
 .*.go$
+.*.lock$
 100-migrator/chart/Chart.yaml
 100-migrator/chart/templates/config.yaml
 100-migrator/chart/templates/deployment.yaml

@@ -9,8 +9,12 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.windows.CmdUtils.WIN_RM_MARKER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -21,6 +25,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmUtils;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
@@ -44,6 +49,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Slf4j
 @OwnedBy(CDP)
 public class CommandTaskNG extends AbstractDelegateRunnableTask {
@@ -87,6 +94,10 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private DelegateResponseData runWinRm(WinrmTaskParameters parameters) {
+    if (!WinRmUtils.shouldDisableWinRmEnvVarsEscaping(parameters)) {
+      getLogStreamingTaskClient().getMarkers().add(WIN_RM_MARKER);
+    }
+
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
     try {

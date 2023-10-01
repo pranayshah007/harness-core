@@ -91,6 +91,7 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
     when(scriptSshExecutor.executeCommandString(COMMAND, outputVariables, secretOutputVariables, null))
         .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
+    when(scriptSshExecutor.getLogCallback()).thenReturn(logCallback);
 
     CommandExecutionStatus status =
         sshScriptCommandHandler

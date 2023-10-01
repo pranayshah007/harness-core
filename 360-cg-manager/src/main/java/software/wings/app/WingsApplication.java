@@ -150,10 +150,9 @@ import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.queue.RedisConsumerControllerCg;
 import io.harness.queue.TimerScheduledExecutorService;
-import io.harness.queue.consumers.GeneralEventConsumerCg;
-import io.harness.queue.consumers.NotifyEventConsumerCg;
 import io.harness.queue.publishers.CgGeneralEventPublisher;
 import io.harness.queue.publishers.CgNotifyEventPublisher;
+import io.harness.redis.DelegateHeartBeatSyncFromRedis;
 import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.reflection.HarnessReflections;
 import io.harness.request.RequestContextFilter;
@@ -207,6 +206,7 @@ import software.wings.exception.JsonProcessingExceptionMapper;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.filter.AuditRequestFilter;
 import software.wings.filter.AuditResponseFilter;
+import software.wings.filter.DisableFirstGenFilter;
 import software.wings.jersey.JsonViews;
 import software.wings.jersey.KryoFeature;
 import software.wings.licensing.LicenseService;
@@ -260,6 +260,7 @@ import software.wings.service.impl.ExecutionEventListener;
 import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
 import software.wings.service.impl.SettingsServiceImpl;
+import software.wings.service.impl.UpdateHeartBeatIntervalAndResetPerpetualTaskJob;
 import software.wings.service.impl.UserAccountLevelDataMigrationJob;
 import software.wings.service.impl.WorkflowExecutionServiceHelper;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
@@ -278,6 +279,7 @@ import software.wings.service.impl.instance.AuditCleanupJob;
 import software.wings.service.impl.instance.DeploymentEventListener;
 import software.wings.service.impl.instance.InstanceEventListener;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskMigrationJob;
+import software.wings.service.impl.instance.StaleAuditCleanupJob;
 import software.wings.service.impl.trigger.ScheduledTriggerHandler;
 import software.wings.service.impl.workflow.WorkflowServiceImpl;
 import software.wings.service.impl.yaml.YamlPushServiceImpl;
@@ -700,6 +702,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
     registerRequestContextFilter(environment);
+    registerDisableFirstGenFilter(environment, injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -1210,6 +1213,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage(injector.getInstance(AuditCleanupJob.class));
     environment.lifecycle().manage(injector.getInstance(RedisConsumerControllerCg.class));
     environment.lifecycle().manage(injector.getInstance(UserAccountLevelDataMigrationJob.class));
+    environment.lifecycle().manage(injector.getInstance(UpdateHeartBeatIntervalAndResetPerpetualTaskJob.class));
+    environment.lifecycle().manage(injector.getInstance(StaleAuditCleanupJob.class));
   }
 
   private void registerManagedBeansManager(
@@ -1254,6 +1259,12 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.jersey().register(new RequestContextFilter());
   }
 
+  private void registerDisableFirstGenFilter(Environment environment, Injector injector) {
+    if (isManager()) {
+      environment.jersey().register(injector.getInstance(DisableFirstGenFilter.class));
+    }
+  }
+
   private void registerQueueListeners(MainConfiguration configuration, Injector injector) {
     log.info("Initializing queue listeners...");
 
@@ -1288,8 +1299,6 @@ public class WingsApplication extends Application<MainConfiguration> {
         listenerConfig.getOrchestrationNotifyEventListenerCount());
 
     RedisConsumerControllerCg controller = injector.getInstance(RedisConsumerControllerCg.class);
-    controller.register(injector.getInstance(NotifyEventConsumerCg.class), listenerConfig.getNotifyConsumerCount());
-    controller.register(injector.getInstance(GeneralEventConsumerCg.class), listenerConfig.getGeneralConsumerCount());
     controller.register(injector.getInstance(ApplicationTimeScaleRedisChangeEventConsumer.class),
         configuration.getDebeziumConsumerConfigs().getApplicationTimescaleStreaming().getThreads());
   }
@@ -1385,6 +1394,14 @@ public class WingsApplication extends Application<MainConfiguration> {
           new Schedulable("Failed while auto revoking delegate tokens",
               () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
           1L, 1L, TimeUnit.HOURS);
+
+      if (configuration.isEnableRedisForDelegateService()) {
+        // Sync HB from redis cache to mongo
+        delegateExecutor.scheduleWithFixedDelay(
+            new Schedulable(
+                "Sync delegate HB from redis", () -> injector.getInstance(DelegateHeartBeatSyncFromRedis.class).run()),
+            3L, 3L, TimeUnit.MINUTES);
+      }
     }
   }
 

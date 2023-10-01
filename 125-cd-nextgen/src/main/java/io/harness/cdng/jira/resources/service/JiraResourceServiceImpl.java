@@ -13,7 +13,10 @@ import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
@@ -43,6 +46,7 @@ import io.harness.jira.JiraActionNG;
 import io.harness.jira.JiraFieldNG;
 import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraIssueCreateMetadataNG;
+import io.harness.jira.JiraIssueTransitionNG;
 import io.harness.jira.JiraIssueUpdateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
 import io.harness.jira.JiraStatusNG;
@@ -68,6 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class JiraResourceServiceImpl implements JiraResourceService {
   private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
@@ -102,12 +107,24 @@ public class JiraResourceServiceImpl implements JiraResourceService {
   }
 
   @Override
-  public List<JiraStatusNG> getStatuses(
-      IdentifierRef jiraConnectorRef, String orgId, String projectId, String projectKey, String issueType) {
-    JiraTaskNGParametersBuilder paramsBuilder =
-        JiraTaskNGParameters.builder().action(JiraActionNG.GET_STATUSES).projectKey(projectKey).issueType(issueType);
+  public List<JiraStatusNG> getStatuses(IdentifierRef jiraConnectorRef, String orgId, String projectId,
+      String projectKey, String issueType, String issueKey) {
+    JiraTaskNGParametersBuilder paramsBuilder = JiraTaskNGParameters.builder()
+                                                    .action(JiraActionNG.GET_STATUSES)
+                                                    .projectKey(projectKey)
+                                                    .issueType(issueType)
+                                                    .issueKey(issueKey);
     JiraTaskNGResponse jiraTaskResponse = obtainJiraTaskNGResponse(jiraConnectorRef, orgId, projectId, paramsBuilder);
     return jiraTaskResponse.getStatuses();
+  }
+
+  @Override
+  public List<JiraIssueTransitionNG> getTransitions(
+      IdentifierRef jiraConnectorRef, String orgId, String projectId, String issueKey) {
+    JiraTaskNGParametersBuilder paramsBuilder =
+        JiraTaskNGParameters.builder().action(JiraActionNG.GET_TRANSITIONS).issueKey(issueKey);
+    JiraTaskNGResponse jiraTaskResponse = obtainJiraTaskNGResponse(jiraConnectorRef, orgId, projectId, paramsBuilder);
+    return jiraTaskResponse.getJiraIssueTransitionsNG();
   }
 
   @Override
@@ -243,7 +260,6 @@ public class JiraResourceServiceImpl implements JiraResourceService {
         .accountId(baseNGAccess.getAccountIdentifier())
         .taskType(NGTaskType.JIRA_TASK_NG.name())
         .taskParameters(taskNGParameters)
-        .taskSelectors(taskNGParameters.getDelegateSelectors())
         .executionTimeout(TIMEOUT)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .build();

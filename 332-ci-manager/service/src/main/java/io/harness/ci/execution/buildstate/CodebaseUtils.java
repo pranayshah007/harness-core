@@ -5,28 +5,65 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_BUILD_EVENT;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_BUILD_LINK;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_AUTHOR;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_AUTHOR_AVATAR;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_AUTHOR_EMAIL;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_AUTHOR_NAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_MESSAGE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_REF;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_SHA;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_REMOTE_URL;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_REPO;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_REPO_LINK;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_REPO_REMOTE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_AWS_REGION;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BRANCH;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_LINK;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_TRIGGER;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_AVATAR;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_EMAIL;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_AUTHOR_NAME;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BEFORE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_LINK;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_MESSAGE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_GIT_HTTP_URL;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_GIT_SSH_URL;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_PORT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_USERNAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_PULL_REQUEST;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_PULL_REQUEST_TITLE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_LINK;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_NAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_NAMESPACE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_OWNER;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_PRIVATE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_SCM;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REPO_VISIBILITY;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_SOURCE_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_KIND;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_SYSTEM_HOST;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_SYSTEM_HOSTNAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_SYSTEM_PROTO;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TARGET_BRANCH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.AWS_CODE_COMMIT;
 import static io.harness.ci.commonconstants.CIExecutionConstants.AWS_CODE_COMMIT_URL_REGEX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
@@ -46,10 +83,11 @@ import static org.apache.commons.lang3.StringUtils.stripEnd;
 import static org.apache.commons.lang3.StringUtils.stripStart;
 
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
-import io.harness.ci.execution.GitBuildStatusUtility;
-import io.harness.ci.integrationstage.BuildEnvironmentUtils;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.execution.GitBuildStatusUtility;
+import io.harness.ci.execution.integrationstage.BuildEnvironmentUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -90,6 +128,7 @@ import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -112,8 +151,19 @@ public class CodebaseUtils {
     return envVars;
   }
 
+  private static Map<String, String> getDroneSystemEnvVars() {
+    Map<String, String> envVarMap = new HashMap<>();
+    // Added this caused regression since users can rely on CI env value to do some operations.
+    // envVarMap.put(CI, "true"); // hardcoded to true in drone
+    envVarMap.put(DRONE, "true"); // actually false but possibly required in some plugin - hardcoded to true in drone
+    envVarMap.put(DRONE_STAGE_KIND, "pipeline");
+
+    return envVarMap;
+  }
   public Map<String, String> getRuntimeCodebaseVars(Ambiance ambiance, ConnectorDetails gitConnectorDetails) {
     Map<String, String> codebaseRuntimeVars = new HashMap<>();
+
+    codebaseRuntimeVars.putAll(getDroneSystemEnvVars());
 
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputResolver.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CODEBASE));
@@ -143,11 +193,22 @@ public class CodebaseUtils {
     String commitMessage = codebaseSweeping.getCommitMessage();
     if (isNotEmpty(commitMessage)) {
       codebaseRuntimeVars.put(DRONE_COMMIT_MESSAGE, commitMessage);
+      codebaseRuntimeVars.put(CI_COMMIT_MESSAGE, commitMessage);
     }
 
     String buildLink = gitBuildStatusUtility.getBuildDetailsUrl(ambiance);
     if (isNotEmpty(buildLink)) {
       codebaseRuntimeVars.put(DRONE_BUILD_LINK, buildLink);
+      codebaseRuntimeVars.put(CI_BUILD_LINK, buildLink);
+      try {
+        URL url = new URL(buildLink);
+        codebaseRuntimeVars.put(DRONE_SYSTEM_PROTO, url.getProtocol());
+        codebaseRuntimeVars.put(DRONE_SYSTEM_HOST, url.getHost());
+        codebaseRuntimeVars.put(DRONE_SYSTEM_HOSTNAME, url.getHost());
+      } catch (Exception e) {
+        log.error("Failed tp parse Drone URL env vars", e);
+        e.printStackTrace();
+      }
     }
 
     if (isNotEmpty(codebaseSweeping.getPrTitle())) {
@@ -156,24 +217,41 @@ public class CodebaseUtils {
 
     if (isNotEmpty(commitRef)) {
       codebaseRuntimeVars.put(DRONE_COMMIT_REF, commitRef);
+      codebaseRuntimeVars.put(CI_COMMIT_REF, commitRef);
     }
 
     if (isNotEmpty(codebaseSweeping.getBranch())) {
       codebaseRuntimeVars.put(DRONE_COMMIT_BRANCH, codebaseSweeping.getBranch());
+      codebaseRuntimeVars.put(CI_COMMIT_BRANCH, codebaseSweeping.getBranch());
+      codebaseRuntimeVars.put(DRONE_REPO_BRANCH, codebaseSweeping.getBranch());
+      codebaseRuntimeVars.put(DRONE_BRANCH, codebaseSweeping.getBranch());
+      codebaseRuntimeVars.put(DRONE_SOURCE_BRANCH, codebaseSweeping.getBranch());
+      codebaseRuntimeVars.put(DRONE_TARGET_BRANCH, codebaseSweeping.getBranch());
+      codebaseRuntimeVars.put(DRONE_BUILD_EVENT, "push");
     }
 
     if (codebaseSweeping.getBuild() != null && isNotEmpty(codebaseSweeping.getBuild().getType())
         && codebaseSweeping.getBuild().getType().equals("PR")) {
       codebaseRuntimeVars.put(DRONE_BUILD_EVENT, "pull_request");
+      codebaseRuntimeVars.put(CI_BUILD_EVENT, "pull_request");
     }
+    codebaseRuntimeVars.put(DRONE_REPO_PRIVATE, "true");
+    codebaseRuntimeVars.put(DRONE_REPO_VISIBILITY, "private");
 
     if (!isEmpty(codebaseSweeping.getTag())) {
       codebaseRuntimeVars.put(DRONE_TAG, codebaseSweeping.getTag());
       codebaseRuntimeVars.put(DRONE_BUILD_EVENT, "tag");
+      codebaseRuntimeVars.put(CI_BUILD_EVENT, "tag");
     }
 
     if (!isEmpty(codebaseSweeping.getTargetBranch())) {
       codebaseRuntimeVars.put(DRONE_TARGET_BRANCH, codebaseSweeping.getTargetBranch());
+    }
+    if (!isEmpty(codebaseSweeping.getCommits())) {
+      codebaseRuntimeVars.put(DRONE_COMMIT_LINK, codebaseSweeping.getCommits().get(0).getLink());
+    }
+    if (!isEmpty(codebaseSweeping.getPullRequestLink())) {
+      codebaseRuntimeVars.put(DRONE_COMMIT_LINK, codebaseSweeping.getPullRequestLink());
     }
 
     if (!isEmpty(codebaseSweeping.getSourceBranch())) {
@@ -182,19 +260,50 @@ public class CodebaseUtils {
 
     if (!isEmpty(codebaseSweeping.getGitUserEmail())) {
       codebaseRuntimeVars.put(DRONE_COMMIT_AUTHOR_EMAIL, codebaseSweeping.getGitUserEmail());
+      codebaseRuntimeVars.put(CI_COMMIT_AUTHOR_EMAIL, codebaseSweeping.getGitUserEmail());
     }
     if (!isEmpty(codebaseSweeping.getGitUserAvatar())) {
       codebaseRuntimeVars.put(DRONE_COMMIT_AUTHOR_AVATAR, codebaseSweeping.getGitUserAvatar());
+      codebaseRuntimeVars.put(CI_COMMIT_AUTHOR_AVATAR, codebaseSweeping.getGitUserAvatar());
     }
 
     if (!isEmpty(codebaseSweeping.getGitUserId())) {
       codebaseRuntimeVars.put(DRONE_COMMIT_AUTHOR, codebaseSweeping.getGitUserId());
+      codebaseRuntimeVars.put(CI_COMMIT_AUTHOR, codebaseSweeping.getGitUserId());
+      codebaseRuntimeVars.put(DRONE_REPO_NAMESPACE, codebaseSweeping.getGitUserId());
+      codebaseRuntimeVars.put(DRONE_REPO_OWNER, codebaseSweeping.getGitUserId());
     }
+    if (!isEmpty(codebaseSweeping.getGitUser())) {
+      codebaseRuntimeVars.put(DRONE_COMMIT_AUTHOR_NAME, codebaseSweeping.getGitUser());
+      codebaseRuntimeVars.put(CI_COMMIT_AUTHOR_NAME, codebaseSweeping.getGitUser());
+      codebaseRuntimeVars.put(DRONE_BUILD_TRIGGER, codebaseSweeping.getGitUser());
+    }
+
     if (isNotEmpty(codebaseSweeping.getBaseCommitSha())) {
       codebaseRuntimeVars.put(DRONE_COMMIT_BEFORE, codebaseSweeping.getBaseCommitSha());
     }
     if (isNotEmpty(commitSha)) {
       codebaseRuntimeVars.put(DRONE_COMMIT_SHA, commitSha);
+      codebaseRuntimeVars.put(DRONE_COMMIT, commitSha);
+      codebaseRuntimeVars.put(CI_COMMIT_SHA, commitSha);
+    }
+    if (isNotEmpty(codebaseSweeping.getRepoUrl())) {
+      codebaseRuntimeVars.put(DRONE_REPO_LINK, codebaseSweeping.getRepoUrl());
+      codebaseRuntimeVars.put(CI_REPO_LINK, codebaseSweeping.getRepoUrl());
+      codebaseRuntimeVars.put(CI_REPO_REMOTE, codebaseSweeping.getRepoUrl());
+      codebaseRuntimeVars.put(CI_REMOTE_URL, codebaseSweeping.getRepoUrl());
+      codebaseRuntimeVars.put(DRONE_GIT_SSH_URL, transformToSshUrl(codebaseSweeping.getRepoUrl()));
+
+      String repoName = GitClientHelper.getGitRepo(codebaseSweeping.getRepoUrl());
+      codebaseRuntimeVars.put(DRONE_REPO_NAME, repoName);
+      codebaseRuntimeVars.put(CI_REPO, repoName);
+
+      if (!isEmpty(codebaseSweeping.getGitUserId())) {
+        codebaseRuntimeVars.put(DRONE_REPO, codebaseSweeping.getGitUserId() + "/" + repoName);
+      }
+    }
+    if (isNotEmpty(codebaseSweeping.getPrNumber())) {
+      codebaseRuntimeVars.put(DRONE_PULL_REQUEST, codebaseSweeping.getPrNumber());
     }
 
     return codebaseRuntimeVars;
@@ -270,6 +379,13 @@ public class CodebaseUtils {
 
     envVars.put(DRONE_REMOTE_URL, gitUrl);
     envVars.put(DRONE_NETRC_MACHINE, domain);
+    envVars.put(DRONE_REPO_SCM, gitConnector.getConnectorType().toString());
+
+    if (GitClientHelper.isHTTPProtocol(gitUrl)) {
+      envVars.put(DRONE_GIT_HTTP_URL, gitUrl);
+    } else if (GitClientHelper.isSSHProtocol(gitUrl)) {
+      envVars.put(DRONE_GIT_SSH_URL, gitUrl);
+    }
     return envVars;
   }
 
@@ -279,7 +395,8 @@ public class CodebaseUtils {
         GithubHttpCredentialsDTO gitAuth = (GithubHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
         if (gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_PASSWORD
             && gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_TOKEN
-            && gitAuth.getType() != GithubHttpAuthenticationType.OAUTH) {
+            && gitAuth.getType() != GithubHttpAuthenticationType.OAUTH
+            && gitAuth.getType() != GithubHttpAuthenticationType.GITHUB_APP) {
           throw new CIStageExecutionException("Unsupported github connector auth type" + gitAuth.getType());
         }
         break;
@@ -364,14 +481,17 @@ public class CodebaseUtils {
         IntegrationStageUtils.getGitURL(repoName, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
     String domain = GitClientHelper.getGitSCM(gitUrl);
 
+    envVars.put(DRONE_REPO_SCM, String.valueOf(GIT));
     envVars.put(DRONE_REMOTE_URL, gitUrl);
     envVars.put(DRONE_NETRC_MACHINE, domain);
     switch (gitConfigDTO.getGitAuthType()) {
       case HTTP:
         GitHTTPAuthenticationDTO gitAuth = (GitHTTPAuthenticationDTO) gitConfigDTO.getGitAuth();
         envVars.put(DRONE_NETRC_USERNAME, gitAuth.getUsername());
+        envVars.put(DRONE_GIT_HTTP_URL, gitUrl);
         break;
       case SSH:
+        envVars.put(DRONE_GIT_SSH_URL, gitUrl);
         break;
       default:
         throw new CIStageExecutionException("Unsupported bitbucket connector auth" + gitConfigDTO.getGitAuthType());
@@ -385,6 +505,7 @@ public class CodebaseUtils {
         gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO : GitConnectionType.ACCOUNT;
     String gitUrl = IntegrationStageUtils.getGitURL(repoName, gitConnectionType, gitConfigDTO.getUrl());
 
+    envVars.put(DRONE_REPO_SCM, AWS_CODE_COMMIT);
     envVars.put(DRONE_REMOTE_URL, gitUrl);
     envVars.put(DRONE_AWS_REGION, getAwsCodeCommitRegion(gitConfigDTO.getUrl()));
     if (gitConfigDTO.getAuthentication().getAuthType() == AwsCodeCommitAuthType.HTTPS) {
@@ -435,7 +556,8 @@ public class CodebaseUtils {
     //    }
   }
 
-  public ConnectorDetails getGitConnector(NGAccess ngAccess, CodeBase codeBase, boolean skipGitClone) {
+  public ConnectorDetails getGitConnector(
+      NGAccess ngAccess, CodeBase codeBase, boolean skipGitClone, Ambiance ambiance) {
     if (skipGitClone) {
       return null;
     }
@@ -444,17 +566,32 @@ public class CodebaseUtils {
       throw new CIStageExecutionException("CI codebase is mandatory in case git clone is enabled");
     }
 
-    String connectorRefValue = codeBase.getConnectorRef().getValue();
-    return getGitConnector(ngAccess, connectorRefValue);
+    String connectorRefValue = RunTimeInputHandler.resolveString(codeBase.getConnectorRef());
+    String repoName = RunTimeInputHandler.resolveString(codeBase.getRepoName());
+
+    return getGitConnector(ngAccess, connectorRefValue, ambiance, repoName);
   }
 
-  public ConnectorDetails getGitConnector(NGAccess ngAccess, String gitConnectorRefValue) {
+  public ConnectorDetails getGitConnector(
+      NGAccess ngAccess, String gitConnectorRefValue, Ambiance ambiance, String repoName) {
     if (gitConnectorRefValue == null) {
       log.warn("GitConnectorRefValue is empty");
     }
-    return connectorUtils.getConnectorDetails(ngAccess, gitConnectorRefValue, true);
+    return connectorUtils.getConnectorDetailsWithToken(ngAccess, gitConnectorRefValue, true, ambiance, repoName);
   }
 
+  public static String transformToSshUrl(String gitUrl) {
+    if (gitUrl.startsWith("https://")) {
+      String repoPath = gitUrl.substring(8);
+      int indexOfSlash = repoPath.indexOf("/");
+      String domainWithUser = repoPath.substring(0, indexOfSlash);
+      String repoName = repoPath.substring(indexOfSlash + 1);
+      String sshUrl = "git@" + domainWithUser + ":" + repoName + ".git";
+      return sshUrl;
+    } else {
+      return gitUrl; // Already in SSH format or unsupported
+    }
+  }
   public static String getCompleteURLFromConnector(ConnectorDetails connectorDetails, String repoName) {
     ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
     GitConnectionType gitConnectionType = getGitConnectionType(connectorDetails);

@@ -21,4 +21,5 @@ import lombok.Value;
 public class EventsConfig {
   @JsonProperty("redis") RedisConfig redisConfig;
   boolean enabled;
+  int threads;
 }

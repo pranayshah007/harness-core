@@ -8,14 +8,16 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.TelemetryConstants.CLOUD_PROVIDER;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_CREATED;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_DELETE;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_UPDATED;
+import static io.harness.ccm.TelemetryConstants.MODULE;
+import static io.harness.ccm.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.TelemetryConstants.RESOURCE_TYPE;
+import static io.harness.ccm.TelemetryConstants.RULE_NAME;
 import static io.harness.ccm.rbac.CCMRbacPermissions.CONNECTOR_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_CREATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_DELETE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_UPDATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
-import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_NAME;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -43,10 +45,8 @@ import io.harness.ccm.views.entities.RuleClone;
 import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleSet;
-import io.harness.ccm.views.helper.GovernanceJobDetailsAWS;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
-import io.harness.ccm.views.helper.RuleExecutionStatusType;
 import io.harness.ccm.views.helper.RuleExecutionType;
 import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.helper.RuleStoreType;
@@ -59,9 +59,7 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.faktory.FaktoryProducer;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -77,8 +75,6 @@ import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
@@ -227,8 +223,8 @@ public class GovernanceRuleResource {
       ruleEnforcementDAO.updateCount(ruleEnforcementUpdate);
       RuleCloudProviderType ruleCloudProviderType = ruleEnforcement.getCloudProvider();
       accountId = ruleEnforcement.getAccountId();
-      if (ruleEnforcement.getCloudProvider() != RuleCloudProviderType.AWS) {
-        log.error("Support for non AWS cloud providers is not present atm. Skipping enqueuing in faktory");
+      if (ruleCloudProviderType != RuleCloudProviderType.AWS && ruleCloudProviderType != RuleCloudProviderType.AZURE) {
+        log.error("Support for non AWS/AZURE cloud providers is not present atm. Skipping enqueuing in faktory");
         // TO DO: Return simple response to dkron instead of empty for debugging purposes
         return ResponseDTO.newResponse();
       }
@@ -260,65 +256,20 @@ public class GovernanceRuleResource {
       }
       // Step-3 Figure out roleArn and externalId from the connector listv2 api call for all target accounts.
       Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
-          accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
+          accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
       log.info(
           "For rule enforcement setting {}: Got connector data: {}", ruleEnforcementUuid, nextGenConnectorResponses);
 
       // Step-4 Enqueue in faktory
       for (ConnectorInfoDTO connectorInfoDTO : nextGenConnectorResponses) {
-        CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
-        List<RuleExecution> ruleExecutions = new ArrayList<>();
-        for (String region : ruleEnforcement.getTargetRegions()) {
-          for (Rule rule : rulesList) {
-            try {
-              GovernanceJobDetailsAWS governanceJobDetailsAWS =
-                  GovernanceJobDetailsAWS.builder()
-                      .accountId(accountId)
-                      .awsAccountId(ceAwsConnectorDTO.getAwsAccountId())
-                      .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
-                      .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
-                      .isDryRun(ruleEnforcement.getIsDryRun())
-                      .ruleId(rule.getUuid())
-                      .region(region)
-                      .ruleEnforcementId(ruleEnforcementUuid)
-                      .policy(rule.getRulesYaml())
-                      .executionType(RuleExecutionType.EXTERNAL)
-                      .build();
-              Gson gson = new GsonBuilder().create();
-              String json = gson.toJson(governanceJobDetailsAWS);
-              log.info("For rule enforcement setting {}: Enqueuing job in Faktory {}", ruleEnforcementUuid, json);
-              // Bulk enqueue in faktory can lead to difficulties in error handling and retry.
-              // order: jobType, jobQueue, json
-              String jid = FaktoryProducer.push(configuration.getGovernanceConfig().getAwsFaktoryJobType(),
-                  configuration.getGovernanceConfig().getAwsFaktoryQueueName(), json);
-              log.info("For rule enforcement setting {}: Pushed job in Faktory: {}", ruleEnforcementUuid, jid);
-              // Make a record in Mongo
-              // TO DO: We can bulk insert in mongo for all successful faktory job pushes
-              ruleExecutions.add(RuleExecution.builder()
-                                     .accountId(accountId)
-                                     .jobId(jid)
-                                     .cloudProvider(ruleCloudProviderType)
-                                     .executionLogPath("") // Updated by worker when execution finishes
-                                     .isDryRun(ruleEnforcement.getIsDryRun())
-                                     .ruleEnforcementIdentifier(ruleEnforcementUuid)
-                                     .ruleEnforcementName(ruleEnforcement.getName())
-                                     .executionCompletedAt(null) // Updated by worker when execution finishes
-                                     .ruleIdentifier(rule.getUuid())
-                                     .targetAccount(ceAwsConnectorDTO.getAwsAccountId())
-                                     .targetRegions(Arrays.asList(region))
-                                     .executionLogBucketType("")
-                                     .ruleName(rule.getName())
-                                     .OOTB(rule.getIsOOTB())
-                                     .executionStatus(RuleExecutionStatusType.ENQUEUED)
-                                     .executionType(RuleExecutionType.EXTERNAL)
-                                     .build());
-            } catch (Exception e) {
-              log.warn(
-                  "Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
-                  ruleEnforcementUuid, ceAwsConnectorDTO.getAwsAccountId(), region, e);
-            }
-          }
+        String faktoryJobType = configuration.getGovernanceConfig().getAwsFaktoryJobType();
+        String faktoryQueueName = configuration.getGovernanceConfig().getAwsFaktoryQueueName();
+        if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AZURE) {
+          faktoryJobType = configuration.getGovernanceConfig().getAzureFaktoryJobType();
+          faktoryQueueName = configuration.getGovernanceConfig().getAzureFaktoryQueueName();
         }
+        List<RuleExecution> ruleExecutions = governanceRuleService.enqueue(accountId, ruleEnforcement, rulesList,
+            connectorInfoDTO.getConnectorConfig(), connectorInfoDTO.getIdentifier(), faktoryJobType, faktoryQueueName);
         enqueuedRuleExecutionIds.addAll(ruleExecutionService.save(ruleExecutions));
       }
     }
@@ -349,10 +300,17 @@ public class GovernanceRuleResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     Rule rule = createRuleDTO.getRule();
+    if (rule.getCloudProvider() == null) {
+      throw new InvalidRequestException("cloudProvider is a required field.");
+    }
     if (!rule.getIsOOTB()) {
       rule.setAccountId(accountId);
-    } else if (rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      rule.setAccountId(GLOBAL_ACCOUNT_ID);
+    } else if (accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      if (rule.getAccountId() == null) {
+        rule.setAccountId(GLOBAL_ACCOUNT_ID);
+      } else {
+        rule.setAccountId(rule.getAccountId());
+      }
     } else {
       throw new InvalidRequestException("Not authorised to create OOTB rules. Make a custom rule instead");
     }
@@ -369,13 +327,22 @@ public class GovernanceRuleResource {
     rule.setStoreType(RuleStoreType.INLINE);
     rule.setVersionLabel("0.0.1");
     rule.setDeleted(false);
-    rule.setForRecommendation(false);
+    rule.setResourceType(governanceRuleService.getResourceType(rule.getRulesYaml()));
+    rule.setUuid(null);
+    if (rule.getIsOOTB() && rule.getForRecommendation()
+        && accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      rule.setForRecommendation(true);
+    } else {
+      rule.setForRecommendation(false);
+    }
     governanceRuleService.validateAWSSchema(rule);
     governanceRuleService.custodianValidate(rule);
     governanceRuleService.save(rule);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_NAME, rule.getName());
+    properties.put(CLOUD_PROVIDER, rule.getCloudProvider());
+    properties.put(RESOURCE_TYPE, rule.getResourceType());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_CREATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(
@@ -447,23 +414,27 @@ public class GovernanceRuleResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     Rule rule = createRuleDTO.getRule();
-    rule.toDTO();
     Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
     if (oldRule.getIsOOTB()) {
       throw new InvalidRequestException("Editing OOTB rule is not allowed");
     }
-    HashMap<String, Object> properties = new HashMap<>();
-    properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_NAME, oldRule.getName());
     if (rule.getRulesYaml() != null) {
       Rule testSchema = Rule.builder().build();
       testSchema.setName(oldRule.getName());
       testSchema.setRulesYaml(rule.getRulesYaml());
       governanceRuleService.validateAWSSchema(testSchema);
       governanceRuleService.custodianValidate(testSchema);
+      rule.setResourceType(governanceRuleService.getResourceType(rule.getRulesYaml()));
     }
+    rule.setForRecommendation(false);
     governanceRuleService.update(rule, accountId);
     Rule updatedRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(RULE_NAME, updatedRule.getName());
+    properties.put(CLOUD_PROVIDER, updatedRule.getCloudProvider());
+    properties.put(RESOURCE_TYPE, updatedRule.getResourceType());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
@@ -497,19 +468,20 @@ public class GovernanceRuleResource {
     }
 
     Rule rule = createRuleDTO.getRule();
-    rule.toDTO();
-    if (!rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+    if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       throw new InvalidRequestException("Editing OOTB rule is not allowed");
     }
-    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    String updateAccountId = rule.getAccountId() == null ? GLOBAL_ACCOUNT_ID : rule.getAccountId();
+    Rule oldRule = governanceRuleService.fetchById(updateAccountId, rule.getUuid(), true);
     if (rule.getRulesYaml() != null) {
       Rule testSchema = Rule.builder().build();
       testSchema.setName(oldRule.getName());
       testSchema.setRulesYaml(rule.getRulesYaml());
       governanceRuleService.validateAWSSchema(testSchema);
       governanceRuleService.custodianValidate(testSchema);
+      rule.setResourceType(governanceRuleService.getResourceType(rule.getRulesYaml()));
     }
-    return ResponseDTO.newResponse(governanceRuleService.update(rule, GLOBAL_ACCOUNT_ID));
+    return ResponseDTO.newResponse(governanceRuleService.update(rule, updateAccountId));
   }
   // Internal API for deletion of OOTB rules
   @NextGenManagerAuth
@@ -535,12 +507,15 @@ public class GovernanceRuleResource {
   deleteOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("ruleID") @Parameter(
-          required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
+          required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid,
+      @QueryParam("customAccountId") @Parameter(
+          description = "Custom rule account identifier") String customAccountId) {
     if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       throw new InvalidRequestException("Deleting OOTB rule is not allowed");
     }
-    governanceRuleService.fetchById(GLOBAL_ACCOUNT_ID, uuid, false);
-    boolean result = governanceRuleService.delete(GLOBAL_ACCOUNT_ID, uuid);
+    String deleteRuleAccountId = customAccountId == null ? GLOBAL_ACCOUNT_ID : customAccountId;
+    governanceRuleService.fetchById(deleteRuleAccountId, uuid, false);
+    boolean result = governanceRuleService.delete(deleteRuleAccountId, uuid);
     return ResponseDTO.newResponse(result);
   }
   @NextGenManagerAuth
@@ -569,6 +544,8 @@ public class GovernanceRuleResource {
     Rule rule = governanceRuleService.fetchById(accountId, uuid, false);
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_NAME, rule.getName());
+    properties.put(CLOUD_PROVIDER, rule.getCloudProvider());
+    properties.put(RESOURCE_TYPE, rule.getResourceType());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
@@ -627,11 +604,15 @@ public class GovernanceRuleResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(description = "View governance connector list") @QueryParam("view") boolean view,
       @QueryParam("connectorType") ConnectorType connectorType) {
+    List<ConnectorType> connectorTypes = new ArrayList<>();
     if (connectorType == null) {
-      connectorType = ConnectorType.CE_AWS;
+      connectorTypes.add(ConnectorType.CE_AWS);
+      connectorTypes.add(ConnectorType.CE_AZURE);
+    } else {
+      connectorTypes.add(connectorType);
     }
-    List<ConnectorResponseDTO> nextGenConnectorResponses = connectorDetailsService.listNgConnectors(
-        accountId, Arrays.asList(connectorType), Arrays.asList(CEFeatures.GOVERNANCE), null);
+    List<ConnectorResponseDTO> nextGenConnectorResponses =
+        connectorDetailsService.listNgConnectors(accountId, connectorTypes, Arrays.asList(CEFeatures.GOVERNANCE), null);
     Set<String> allowedAccountIds = null;
     List<ConnectorResponseDTO> connectorResponse = new ArrayList<>();
     if (nextGenConnectorResponses != null) {
@@ -679,7 +660,7 @@ public class GovernanceRuleResource {
     for (String targetAccount : governanceAdhocEnqueueDTO.getTargetAccountDetails().keySet()) {
       RecommendationAdhocDTO recommendationAdhocDTO =
           governanceAdhocEnqueueDTO.getTargetAccountDetails().get(targetAccount);
-      rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getIdentifier());
+      rbacHelper.checkAccountExecutePermission(accountId, null, null, recommendationAdhocDTO.getCloudConnectorId());
       for (String targetRegion : governanceAdhocEnqueueDTO.getTargetRegions()) {
         GovernanceJobEnqueueDTO governanceJobEnqueueDTO =
             GovernanceJobEnqueueDTO.builder()
@@ -742,7 +723,6 @@ public class GovernanceRuleResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     Rule validateRule = generateRule.getRule();
-    validateRule.toDTO();
     governanceRuleService.validateAWSSchema(validateRule);
     governanceRuleService.custodianValidate(validateRule);
   }

@@ -76,7 +76,7 @@ public class OrchestrationUtilsTest extends CategoryTest {
 
     Ambiance ambiance =
         Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode)).build();
-    NodeExecution nodeExecution = NodeExecution.builder().ambiance(ambiance).planNode(planNode).build();
+    NodeExecution nodeExecution = NodeExecution.builder().ambiance(ambiance).build();
     assertThat(OrchestrationUtils.isStageNode(nodeExecution)).isTrue();
     assertThat(OrchestrationUtils.isPipelineNode(nodeExecution)).isFalse();
   }
@@ -103,7 +103,7 @@ public class OrchestrationUtilsTest extends CategoryTest {
                             .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesPlanNode))
                             .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode))
                             .build();
-    NodeExecution nodeExecution = NodeExecution.builder().ambiance(ambiance).planNode(planNode).build();
+    NodeExecution nodeExecution = NodeExecution.builder().ambiance(ambiance).build();
     assertThat(OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)).isTrue();
     assertThat(OrchestrationUtils.isPipelineNode(nodeExecution)).isFalse();
 
@@ -117,7 +117,7 @@ public class OrchestrationUtilsTest extends CategoryTest {
                    .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesPlanNode))
                    .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode))
                    .build();
-    nodeExecution = NodeExecution.builder().ambiance(ambiance).planNode(planNode).build();
+    nodeExecution = NodeExecution.builder().ambiance(ambiance).build();
     assertThat(OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)).isTrue();
     assertThat(OrchestrationUtils.isStageNode(nodeExecution)).isFalse();
     assertThat(OrchestrationUtils.isPipelineNode(nodeExecution)).isFalse();
@@ -132,7 +132,7 @@ public class OrchestrationUtilsTest extends CategoryTest {
                    .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stepGroupPlanNode))
                    .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode))
                    .build();
-    nodeExecution = NodeExecution.builder().ambiance(ambiance).planNode(planNode).build();
+    nodeExecution = NodeExecution.builder().ambiance(ambiance).build();
     assertThat(OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)).isFalse();
     assertThat(OrchestrationUtils.isStageNode(nodeExecution)).isFalse();
     assertThat(OrchestrationUtils.isPipelineNode(nodeExecution)).isFalse();
@@ -151,7 +151,7 @@ public class OrchestrationUtilsTest extends CategoryTest {
 
     Ambiance ambiance =
         Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode)).build();
-    NodeExecution nodeExecution = NodeExecution.builder().ambiance(ambiance).planNode(planNode).build();
+    NodeExecution nodeExecution = NodeExecution.builder().ambiance(ambiance).build();
     assertThat(OrchestrationUtils.isPipelineNode(nodeExecution)).isTrue();
     assertThat(OrchestrationUtils.isStageNode(nodeExecution)).isFalse();
   }

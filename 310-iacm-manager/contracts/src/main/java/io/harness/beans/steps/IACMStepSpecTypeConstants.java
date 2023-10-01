@@ -13,5 +13,5 @@ public interface IACMStepSpecTypeConstants {
   String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
   String IACM_APPROVAL = "IACMApproval";
   String IACM_CLONE_CODEBASE = "harness-git-clone";
-  String IACM_LITE_EMNGINE = "liteEngineTask";
+  String IACM_LITE_ENGINE = "liteEngineTask";
 }

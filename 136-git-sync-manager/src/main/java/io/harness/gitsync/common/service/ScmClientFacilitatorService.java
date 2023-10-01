@@ -10,7 +10,9 @@ package io.harness.gitsync.common.service;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.beans.request.GitFileBatchRequest;
@@ -85,6 +87,9 @@ public interface ScmClientFacilitatorService {
   GitDiffResultFileListDTO listCommitsDiffFiles(
       YamlGitConfigDTO yamlGitConfigDTO, String initialCommitId, String finalCommitId);
 
+  GitDiffResultFileListDTO listCommitsDiffFiles(
+      Scope scope, ScmConnector scmConnector, String initialCommitId, String finalCommitId);
+
   List<String> listCommits(YamlGitConfigDTO yamlGitConfigDTO, String branch);
 
   Commit getLatestCommit(YamlGitConfigDTO yamlGitConfigDTO, String branch);
@@ -103,10 +108,10 @@ public interface ScmClientFacilitatorService {
   CreateBranchResponse createBranch(InfoForGitPush infoForGitPush, String yamlGitConfigIdentifier);
 
   GetUserReposResponse listUserRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      ScmConnector scmConnector, PageRequestDTO pageRequest);
+      ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO);
 
   ListBranchesWithDefaultResponse listBranches(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      ScmConnector scmConnector, PageRequestDTO pageRequest);
+      ScmConnector scmConnector, PageRequestDTO pageRequest, BranchFilterParamsDTO branchFilterParamsDTO);
 
   GetUserRepoResponse getRepoDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ScmConnector scmConnector);

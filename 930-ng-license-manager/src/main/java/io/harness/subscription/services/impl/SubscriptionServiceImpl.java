@@ -6,7 +6,6 @@
  */
 
 package io.harness.subscription.services.impl;
-
 import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_ENTERPRISE_PAID;
 import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_ENTERPRISE_TRIAL;
 import static io.harness.licensing.checks.ModuleLicenseState.ACTIVE_FREE;

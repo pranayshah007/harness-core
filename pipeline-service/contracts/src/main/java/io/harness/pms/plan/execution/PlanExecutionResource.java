@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.execution;
-
 import static io.harness.pms.pipeline.PipelineResourceConstants.NOTES_FOR_PLAN_EXECUTION_PARAM_MESSAGE;
 
 import io.harness.NGCommonEntityConstants;
@@ -16,8 +15,11 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
@@ -63,6 +65,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Tag(name = "Pipeline Execute", description = "This contains APIs for Executing a Pipeline")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =

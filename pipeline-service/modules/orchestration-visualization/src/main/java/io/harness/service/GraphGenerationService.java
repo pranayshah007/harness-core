@@ -11,8 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationGraph;
 import io.harness.dto.OrchestrationGraphDTO;
+import io.harness.execution.NodeExecution;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
+import java.util.List;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -30,6 +32,9 @@ public interface GraphGenerationService {
   void sendUpdateEventIfAny(PipelineExecutionSummaryEntity executionSummaryEntity);
   OrchestrationGraph buildOrchestrationGraph(String planExecutionId);
 
+  OrchestrationGraph buildOrchestrationGraphForNodeExecution(
+      String planExecutionId, String nodeExecutionId, List<NodeExecution> nodeExecutions);
+
   boolean updateGraph(String planExecutionId);
 
   boolean updateGraphWithWaitLock(String planExecutionId);
@@ -39,5 +44,6 @@ public interface GraphGenerationService {
    * It will delete all related OrchestrationEventLog, cacheEntities
    * @param planExecutionIds
    */
-  void deleteAllGraphMetadataForGivenExecutionIds(Set<String> planExecutionIds);
+  void deleteAllGraphMetadataForGivenExecutionIds(
+      Set<String> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete);
 }

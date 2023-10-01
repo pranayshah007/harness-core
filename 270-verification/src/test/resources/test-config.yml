@@ -73,3 +73,5 @@ serviceGuardIteratorConfig:
   threadPoolCount: 3
   enabled: true
   targetIntervalInSeconds: 60
+
+distributedLockImplementation: NOOP

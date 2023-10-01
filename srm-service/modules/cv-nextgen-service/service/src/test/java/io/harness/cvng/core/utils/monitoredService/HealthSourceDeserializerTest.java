@@ -22,11 +22,15 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.RiskCategory;
 import io.harness.cvng.core.beans.RiskProfile;
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamsDTO;
+import io.harness.cvng.core.beans.healthsource.QueryDefinition;
+import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.ELKHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDeserializer;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceVersion;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
@@ -56,9 +60,13 @@ public class HealthSourceDeserializerTest extends CvNextGenTestBase {
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
   public void deserializev1HealthSourceSpecToCorrectHealthSourceType() throws IOException {
-    String logJsonAsString =
+    String logJsonAsStringV1 =
         Resources.toString(Objects.requireNonNull(HealthSourceDeserializerTest.class.getResource(
                                "/monitoredservice/healthsources/health-source-elasticsearch-v1.json")),
+            Charsets.UTF_8);
+    String logJsonAsString =
+        Resources.toString(Objects.requireNonNull(HealthSourceDeserializerTest.class.getResource(
+                               "/monitoredservice/healthsources/health-source-elasticsearch-v2.json")),
             Charsets.UTF_8);
     String metricJsonAsString =
         Resources.toString(Objects.requireNonNull(HealthSourceDeserializerTest.class.getResource(
@@ -66,25 +74,31 @@ public class HealthSourceDeserializerTest extends CvNextGenTestBase {
             Charsets.UTF_8);
 
     HealthSource logHealthSourceDeserialized = JsonUtils.asObject(logJsonAsString, HealthSource.class);
+    HealthSource logHealthSourceDeserializedV1 = JsonUtils.asObject(logJsonAsStringV1, HealthSource.class);
     HealthSource metricHealthSourceDeserialized = JsonUtils.asObject(metricJsonAsString, HealthSource.class);
     HealthSource elasticSearchHealthSource =
         HealthSource.builder()
             .type(MonitoredServiceDataSourceType.ELASTICSEARCH)
-            .identifier("elk_test")
-            .name("elk test")
-            .version(null)
-            .spec(ELKHealthSourceSpec.builder()
-                      .queries(List.of(ELKHealthSourceSpec.ELKHealthSourceQueryDTO.builder()
-                                           .query("*")
-                                           .index("integration-test-1")
-                                           .name("ElasticSearch Logs Query")
-                                           .messageIdentifier("['_source'].['message']")
-                                           .serviceInstanceIdentifier("['_source'].['hostname']")
-                                           .timeStampFormat("yyyy MMM dd HH:mm:ss.SSS zzz")
-                                           .timeStampIdentifier("['_source'].['@timestamp']")
-                                           .build()))
-                      .connectorRef("account.ELK_Connector")
-                      .feature("ElasticSearch Logs")
+            .identifier("elktest")
+            .name("elk-test")
+            .version(HealthSourceVersion.V2)
+            .spec(NextGenHealthSourceSpec.builder()
+                      .healthSourceParams(HealthSourceParamsDTO.builder().build())
+                      .dataSourceType(DataSourceType.ELASTICSEARCH)
+                      .queryDefinitions(List.of(QueryDefinition.builder()
+                                                    .name("Q")
+                                                    .identifier("Q")
+                                                    .groupName("Logs Group")
+                                                    .query("error")
+                                                    .queryParams(QueryParamsDTO.builder()
+                                                                     .serviceInstanceField("['_source'].['hostname']")
+                                                                     .index("integration-test")
+                                                                     .timeStampFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
+                                                                     .timeStampIdentifier("['_source'].@timestamp")
+                                                                     .messageIdentifier("['_source'].['message']")
+                                                                     .build())
+                                                    .build()))
+                      .connectorRef("org.ELK_Org_Level_Connector")
                       .build())
             .build();
     HealthSource prometheusHealthSource =
@@ -138,9 +152,30 @@ public class HealthSourceDeserializerTest extends CvNextGenTestBase {
                     .connectorRef("account.prometheus_do_not_delete")
                     .build())
             .build();
+    HealthSource elasticSearchHealthSourceV1 =
+        HealthSource.builder()
+            .type(MonitoredServiceDataSourceType.ELASTICSEARCH)
+            .identifier("elk_test")
+            .name("elk test")
+            .version(null)
+            .spec(ELKHealthSourceSpec.builder()
+                      .queries(List.of(ELKHealthSourceSpec.ELKHealthSourceQueryDTO.builder()
+                                           .query("*")
+                                           .index("integration-test-1")
+                                           .name("ElasticSearch Logs Query")
+                                           .messageIdentifier("['_source'].['message']")
+                                           .serviceInstanceIdentifier("['_source'].['hostname']")
+                                           .timeStampFormat("yyyy MMM dd HH:mm:ss.SSS zzz")
+                                           .timeStampIdentifier("['_source'].['@timestamp']")
+                                           .build()))
+                      .connectorRef("account.ELK_Connector")
+                      .feature("ElasticSearch Logs")
+                      .build())
+            .build();
+    System.out.println();
     assertThat(elasticSearchHealthSource).isEqualTo(logHealthSourceDeserialized);
+    assertThat(elasticSearchHealthSourceV1).isEqualTo(logHealthSourceDeserializedV1);
     assertThat(prometheusHealthSource).isEqualTo(metricHealthSourceDeserialized);
-    // Add another log one
   }
 
   @Test

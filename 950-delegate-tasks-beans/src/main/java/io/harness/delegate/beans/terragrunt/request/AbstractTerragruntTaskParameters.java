@@ -6,11 +6,18 @@
  */
 
 package io.harness.delegate.beans.terragrunt.request;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import static software.wings.beans.TaskType.TERRAGRUNT_APPLY_TASK_NG_V2;
+import static software.wings.beans.TaskType.TERRAGRUNT_DESTROY_TASK_NG_V2;
+import static software.wings.beans.TaskType.TERRAGRUNT_PLAN_TASK_NG_V2;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -29,6 +36,8 @@ import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
 
+import software.wings.beans.TaskType;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +50,11 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @OwnedBy(CDP)
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public abstract class AbstractTerragruntTaskParameters
     implements TaskParameters, ExecutionCapabilityDemander, NestedAnnotationResolver {
@@ -54,11 +65,11 @@ public abstract class AbstractTerragruntTaskParameters
   @Expression(ALLOW_SECRETS) StoreDelegateConfig backendFilesStore;
   @Expression(ALLOW_SECRETS) List<StoreDelegateConfig> varFiles;
   EncryptionConfig planSecretManager;
-
   @Expression(ALLOW_SECRETS) List<String> targets;
   @Expression(ALLOW_SECRETS) String workspace;
   @Expression(ALLOW_SECRETS) Map<String, String> envVars;
   String stateFileId;
+  @Expression(ALLOW_SECRETS) Map<String, String> terragruntCommandFlags;
 
   long timeoutInMillis;
 
@@ -67,6 +78,9 @@ public abstract class AbstractTerragruntTaskParameters
   List<EncryptedDataDetail> encryptedDataDetailList;
   boolean tgModuleSourceInheritSSH;
   boolean encryptDecryptPlanForHarnessSMOnManager;
+  boolean useUniqueDirectoryForBaseDir;
+
+  boolean skipColorLogs;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -111,9 +125,8 @@ public abstract class AbstractTerragruntTaskParameters
   private void addStoreCapabilities(StoreDelegateConfig storeConfig, List<ExecutionCapability> executionCapabilities) {
     if (storeConfig.getType() == StoreDelegateConfigType.GIT) {
       GitStoreDelegateConfig gitStoreConfig = (GitStoreDelegateConfig) storeConfig;
-      executionCapabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ScmConnectorMapper.toGitConfigDTO(gitStoreConfig.getGitConfigDTO()), encryptedDataDetailList,
-          gitStoreConfig.getSshKeySpecDTO()));
+      executionCapabilities.addAll(
+          GitCapabilityHelper.fetchRequiredExecutionCapabilities(gitStoreConfig, encryptedDataDetailList));
     }
   }
 
@@ -126,5 +139,18 @@ public abstract class AbstractTerragruntTaskParameters
     }
 
     return Optional.empty();
+  }
+
+  public TaskType getDelegateTaskTypeForPlanStep() {
+    return isNotEmpty(this.terragruntCommandFlags) ? TERRAGRUNT_PLAN_TASK_NG_V2 : TaskType.TERRAGRUNT_PLAN_TASK_NG;
+  }
+
+  public TaskType getDelegateTaskTypeForApplyStep() {
+    return isNotEmpty(this.terragruntCommandFlags) ? TERRAGRUNT_APPLY_TASK_NG_V2 : TaskType.TERRAGRUNT_APPLY_TASK_NG;
+  }
+
+  public TaskType getDelegateTaskTypeForDestroyStep() {
+    return isNotEmpty(this.terragruntCommandFlags) ? TERRAGRUNT_DESTROY_TASK_NG_V2
+                                                   : TaskType.TERRAGRUNT_DESTROY_TASK_NG;
   }
 }

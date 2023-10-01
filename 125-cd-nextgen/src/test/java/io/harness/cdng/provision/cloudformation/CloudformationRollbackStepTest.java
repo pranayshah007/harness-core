@@ -27,6 +27,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.provision.cloudformation.beans.CloudFormationInheritOutput;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.connector.ConnectorInfoDTO;
@@ -44,7 +45,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -92,7 +92,7 @@ public class CloudformationRollbackStepTest extends CategoryTest {
   @Mock CloudformationConfigDAL cloudformationConfigDAL;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private StepHelper stepHelper;
-  @Mock private EngineExpressionService engineExpressionService;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private CDStepHelper cdStepHelper;
   @InjectMocks private CloudformationRollbackStep cloudformationRollbackStep;
 

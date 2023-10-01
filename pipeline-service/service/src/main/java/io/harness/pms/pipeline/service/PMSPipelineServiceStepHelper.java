@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.pipeline.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.InvalidRequestException;
@@ -34,6 +36,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j

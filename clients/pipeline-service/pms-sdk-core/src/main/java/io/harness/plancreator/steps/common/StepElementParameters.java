@@ -13,12 +13,12 @@ import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.policy.PolicyConfig;
-import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import java.util.LinkedList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -32,7 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("stepElementParameters")
 @RecasterAlias("io.harness.plancreator.steps.common.StepElementParameters")
-public class StepElementParameters implements StepParameters {
+public class StepElementParameters implements StepBaseParameters {
   String uuid;
   String identifier;
   String name;
@@ -49,32 +49,15 @@ public class StepElementParameters implements StepParameters {
 
   ParameterField<List<String>> delegateSelectors;
 
+  @Deprecated
   // Only for rollback failures
   OnFailRollbackParameters rollbackParameters;
 
   @Override
-  public String toViewJson() {
-    StepElementParameters stepElementParameters = cloneParameters(false, false);
+  public List<String> excludeKeysFromStepInputs() {
     if (spec != null) {
-      stepElementParameters.setSpec(spec.getViewJsonObject());
+      return spec.stepInputsKeyExclude();
     }
-    return RecastOrchestrationUtils.toJson(stepElementParameters);
-  }
-
-  public StepElementParameters cloneParameters(boolean includeUuid, boolean includeSpec) {
-    return StepElementParameters.builder()
-        .uuid(includeUuid ? this.uuid : null)
-        .type(this.type)
-        .name(this.name)
-        .spec(includeSpec ? this.spec : null)
-        .description(this.description)
-        .identifier(this.identifier)
-        .timeout(this.timeout)
-        .enforce(this.enforce)
-        .failureStrategies(this.failureStrategies)
-        .when(this.when)
-        .skipCondition(this.skipCondition)
-        .delegateSelectors(this.delegateSelectors)
-        .build();
+    return new LinkedList<>();
   }
 }

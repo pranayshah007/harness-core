@@ -1,0 +1,186 @@
+{
+  "data": {
+    "pairs": [
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/b229b2bb-5f33-4d22-bce0-730f6474e906/oauth2/token"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "login.microsoftonline.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "body": [
+            {
+              "matcher": "exact",
+              "value": "grant_type=client_credentials&resource=https%3A%2F%2Fapi.loganalytics.io%2F&client_secret=***&client_id=***"
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "{\"token_type\":\"Bearer\",\"expires_in\":\"3599\",\"ext_expires_in\":\"3599\",\"expires_on\":\"1689353972\",\"not_before\":\"1689350072\",\"resource\":\"https://api.loganalytics.io/\",\"access_token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiJodHRwczovL2FwaS5sb2dhbmFseXRpY3MuaW8vIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvYjIyOWIyYmItNWYzMy00ZDIyLWJjZTAtNzMwZjY0NzRlOTA2LyIsImlhdCI6MTY4OTM1MDA3MiwibmJmIjoxNjg5MzUwMDcyLCJleHAiOjE2ODkzNTM5NzIsImFpbyI6IkUyWmdZTmpPT3pQb2ZIYks4cjhaa3Z0dTdHdDFCZ0E9IiwiYXBwaWQiOiJiYWNhMTg0MS1jNTkzLTQwN2ItODc5My05OGQzNzgxZjRmYmYiLCJhcHBpZGFjciI6IjEiLCJncm91cHMiOlsiMWI2Yjg5ZGEtNjdhOS00NGNiLTliOWMtY2ZhMTc0NjI4M2M0Il0sImlkcCI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0L2IyMjliMmJiLTVmMzMtNGQyMi1iY2UwLTczMGY2NDc0ZTkwNi8iLCJvaWQiOiJkODg3MjdlZi1kYjI1LTRkMDItYTQyNy1jNjcwNjU2OGEzYzAiLCJyaCI6IjAuQVNrQXU3SXBzak5mSWsyODRITVBaSFRwQmdzX2Y4cVJmU3hJamduRjJFRFE2c1VwQUFBLiIsInN1YiI6ImQ4ODcyN2VmLWRiMjUtNGQwMi1hNDI3LWM2NzA2NTY4YTNjMCIsInRpZCI6ImIyMjliMmJiLTVmMzMtNGQyMi1iY2UwLTczMGY2NDc0ZTkwNiIsInV0aSI6InE1UXlBZGNfVlV5UEtPNTdGeTJUQUEiLCJ2ZXIiOiIxLjAifQ.SII1Q_ZBgv-WNbduHMAK4gaH6YSQIwtE7gsXoAsUiz_IMAdd9dKd9IE5HedlFZ25bpRAqYUfDAjWete5Lpz7sD7R8IlFUNagTJOQtMH9Y47aO5bAJpWwDNWAPCwx_vyhSIkXNaO4Ezjii8bL0u9R5xtsiRFNnT99dQx8IVRefINdmuuCcheJuQE3yHA7YzorLIwtF4Odu5GU2r_cojlO25yiOyE--6rMKo57xctbR1mTvZ8E3QFRkVyhXsQr0Kuv2sNPK6BXv0bmSL8NFud7YM_v0LDJ2SYc4arfFrggPLdopW2pZA44CELDC3FHHC78W09Ys18UVoiDo094gxIw-Q\"}",
+          "encodedBody": false,
+          "templated": false,
+          "headers": {
+            "Cache-Control": [
+              "no-store, no-cache"
+            ],
+            "Content-Length": [
+              "1485"
+            ],
+            "Content-Type": [
+              "application/json; charset=utf-8"
+            ],
+            "Date": [
+              "Fri, 14 Jul 2023 15:59:32 GMT"
+            ],
+            "Expires": [
+              "-1"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "P3p": [
+              "CP=\"DSP CUR OTPi IND OTRi ONL FIN\""
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Set-Cookie": [
+              "fpc=Auq5cJtuOMJGhvZ5_IJKOhNY3UP3AQAAAORnQ9wOAAAA; expires=Sun, 13-Aug-2023 15:59:32 GMT; path=/; secure; HttpOnly; SameSite=None",
+              "x-ms-gateway-slice=estsfd; path=/; secure; samesite=none; httponly",
+              "stsservicecookie=estsfd; path=/; secure; samesite=none; httponly"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=31536000; includeSubDomains"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Ms-Ests-Server": [
+              "2.1.15771.4 - SCUS ProdSlices"
+            ],
+            "X-Ms-Request-Id": [
+              "013294ab-3fd7-4c55-8f28-ee7b172d9300"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          }
+        }
+      },
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/subscriptions/12d2db62-5aa9-471d-84bb-faa489b3e319/resourceGroups/srm-test/providers/Microsoft.ContainerService/managedClusters/srm-test/query"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.loganalytics.io"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "query": {
+            "scope": [
+              {
+                "matcher": "exact",
+                "value": "hierarchy"
+              }
+            ],
+            "timespan": [
+              {
+                "matcher": "exact",
+                "value": "2023-07-13T20:00:00Z/2023-07-13T20:30:00Z"
+              }
+            ]
+          },
+          "body": [
+            {
+              "matcher": "json",
+              "value": "{\"query\":\"let FindString = \\\"\\\";\\nContainerLog \\n| where LogEntry has FindString \\n|take 100\\n\"}"
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "{\"tables\":[{\"name\":\"PrimaryResult\",\"columns\":[{\"name\":\"TenantId\",\"type\":\"string\"},{\"name\":\"SourceSystem\",\"type\":\"string\"},{\"name\":\"TimeGenerated\",\"type\":\"datetime\"},{\"name\":\"Computer\",\"type\":\"string\"},{\"name\":\"TimeOfCommand\",\"type\":\"datetime\"},{\"name\":\"ContainerID\",\"type\":\"string\"},{\"name\":\"Image\",\"type\":\"string\"},{\"name\":\"ImageTag\",\"type\":\"string\"},{\"name\":\"Repository\",\"type\":\"string\"},{\"name\":\"Name\",\"type\":\"string\"},{\"name\":\"LogEntry\",\"type\":\"string\"},{\"name\":\"LogEntrySource\",\"type\":\"string\"},{\"name\":\"Type\",\"type\":\"string\"},{\"name\":\"_ResourceId\",\"type\":\"string\"}],\"rows\":[[\"2d460fbc-6405-47d8-a10b-4691b4b20049\",\"Containers\",\"2023-07-13T20:18:16.3584036Z\",\"aks-agentpool-23619906-vmss000000\",\"2023-07-13T20:18:30Z\",\"504aa13e3acf197a84e1f8aa7aa5d1d2626451749ba29f7871789b426a997ad7\",\"\",\"\",\"\",\"\",\"[pid: 14|app: 0|req: 12/35] 10.224.0.4 () {30 vars in 576 bytes} [Thu Jul 13 20:18:16 2023] GET / => generated 950 bytes in 1 msecs (HTTP/1.1 200) 2 headers in 80 bytes (2 switches on core 0)\",\"stderr\",\"ContainerLog\",\"/subscriptions/12d2db62-5aa9-471d-84bb-faa489b3e319/resourcegroups/srm-test/providers/microsoft.containerservice/managedclusters/srm-test\"],[\"2d460fbc-6405-47d8-a10b-4691b4b20049\",\"Containers\",\"2023-07-13T20:18:16.3588065Z\",\"aks-agentpool-23619906-vmss000000\",\"2023-07-13T20:18:30Z\",\"504aa13e3acf197a84e1f8aa7aa5d1d2626451749ba29f7871789b426a997ad7\",\"\",\"\",\"\",\"\",\"10.224.0.4 - - [13/Jul/2023:20:18:16 +0000] \\\"GET / HTTP/1.1\\\" 200 950 \\\"-\\\" \\\"Expanse, a Palo Alto Networks company, searches across the global IPv4 space multiple times per day to identify customers&#39  presences on the Internet. If you would like to be excluded from our scans, please send IP addresses/domains to: scaninfo@paloaltonetworks.com\\\" \\\"-\\\"\",\"stdout\",\"ContainerLog\",\"/subscriptions/12d2db62-5aa9-471d-84bb-faa489b3e319/resourcegroups/srm-test/providers/microsoft.containerservice/managedclusters/srm-test\"],[\"2d460fbc-6405-47d8-a10b-4691b4b20049\",\"Containers\",\"2023-07-13T20:21:41.6193525Z\",\"aks-agentpool-23619906-vmss000000\",\"2023-07-13T20:21:45Z\",\"504aa13e3acf197a84e1f8aa7aa5d1d2626451749ba29f7871789b426a997ad7\",\"\",\"\",\"\",\"\",\"10.224.0.4 - - [13/Jul/2023:20:21:41 +0000] \\\"POST /HNAP1/ HTTP/1.0\\\" 400 0 \\\"-\\\" \\\"-\\\" \\\"-\\\"\",\"stdout\",\"ContainerLog\",\"/subscriptions/12d2db62-5aa9-471d-84bb-faa489b3e319/resourcegroups/srm-test/providers/microsoft.containerservice/managedclusters/srm-test\"]]}]}",
+          "encodedBody": false,
+          "templated": false,
+          "headers": {
+            "Access-Control-Allow-Origin": [
+              "*"
+            ],
+            "Access-Control-Expose-Headers": [
+              "Retry-After,Age,WWW-Authenticate,x-resource-identities,x-ms-status-location"
+            ],
+            "Connection": [
+              "keep-alive"
+            ],
+            "Content-Length": [
+              "2393"
+            ],
+            "Content-Type": [
+              "application/json; charset=utf-8"
+            ],
+            "Date": [
+              "Fri, 14 Jul 2023 15:59:37 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=15724800; includeSubDomains"
+            ],
+            "Via": [
+              "1.1 draft-oms-b497589f6-78dcb"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ]
+          }
+        }
+      }
+    ],
+    "globalActions": {
+      "delays": []
+    }
+  },
+  "meta": {
+    "schemaVersion": "v5",
+    "hoverflyVersion": "v1.1.5",
+    "timeExported": "2023-07-14T15:59:37Z"
+  }
+}

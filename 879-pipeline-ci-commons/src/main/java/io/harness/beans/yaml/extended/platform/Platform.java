@@ -8,7 +8,7 @@
 package io.harness.beans.yaml.extended.platform;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,10 +33,10 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.yaml.extended.platform.Platform")
 @OwnedBy(CI)
 public class Platform {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.OSType")
   private ParameterField<OSType> os;
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.platform.ArchType")
   private ParameterField<ArchType> arch;
   @ApiModelProperty(hidden = true) String uuid;

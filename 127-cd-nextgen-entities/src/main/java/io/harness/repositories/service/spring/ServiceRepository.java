@@ -18,7 +18,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface ServiceRepository extends PagingAndSortingRepository<ServiceEntity, String>, ServiceRepositoryCustom {
   Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
-      boolean notDeleted);
+      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly);
 
   Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);

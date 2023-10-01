@@ -6,13 +6,17 @@
  */
 
 package io.harness.pms.sdk.core.plugin;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ErrorResponse;
 import io.harness.pms.contracts.plan.PluginCreationBatchRequest;
 import io.harness.pms.contracts.plan.PluginCreationBatchResponse;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
+import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginInfoProviderServiceGrpc.PluginInfoProviderServiceImplBase;
@@ -26,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PluginInfoProviderService extends PluginInfoProviderServiceImplBase {
@@ -45,7 +50,15 @@ public class PluginInfoProviderService extends PluginInfoProviderServiceImplBase
           pluginCreationResponse = pluginInfoProvider.getPluginInfo(request, usedPorts, ambiance);
         } catch (Exception ex) {
           log.error("Got error in getting plugin info", ex);
-          pluginCreationResponse = PluginCreationResponseList.newBuilder().build();
+          pluginCreationResponse =
+              PluginCreationResponseList.newBuilder()
+                  .addResponse(
+                      PluginCreationResponseWrapper.newBuilder()
+                          .setResponse(PluginCreationResponse.newBuilder()
+                                           .setError(ErrorResponse.newBuilder().addMessages(ex.toString()).build())
+                                           .build())
+                          .build())
+                  .build();
         }
         for (PluginCreationResponseWrapper wrapper : pluginCreationResponse.getResponseList()) {
           usedPorts.addAll(wrapper.getResponse().getPluginDetails().getPortUsedList());

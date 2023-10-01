@@ -91,7 +91,7 @@ public class K8sApplyTaskHandler extends K8sTaskHandler {
     boolean success;
     if (k8sApplyTaskParameters.isInheritManifests()) {
       success = k8sTaskHelper.restore(k8sApplyTaskParameters.getKubernetesResources(),
-          k8sApplyTaskParameters.getK8sClusterConfig(), k8sDelegateTaskParams, k8sApplyHandlerConfig,
+          k8sApplyTaskParameters.getK8sClusterConfig(), k8sDelegateTaskParams, k8sApplyHandlerConfig, null,
           k8sTaskHelper.getExecutionLogCallback(k8sApplyTaskParameters, Init));
       if (!success) {
         return getFailureResponse();

@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.yaml.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
@@ -15,6 +17,7 @@ import io.harness.utils.YamlPipelineUtils;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 public class ParameterFieldUtils {
   public static String getValueFromParameterFieldWithInputSetValidator(String value, String fqnForNode) {

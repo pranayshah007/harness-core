@@ -19,6 +19,8 @@ import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.ArtifactDetails.ArtifactDetailsKeys;
+import io.harness.exception.ExceptionUtils;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
@@ -26,6 +28,9 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -33,6 +38,7 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDP)
+@Slf4j
 public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeploymentInfoRepositoryCustom {
   private final MongoTemplate mongoTemplate;
 
@@ -119,6 +125,21 @@ public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeplo
     return mongoTemplate.find(query, InstanceDeploymentInfo.class);
   }
 
+  @Override
+  public boolean deleteByScope(Scope scope) {
+    Criteria scopeCriteria = createScopeCriteria(scope);
+    try {
+      Failsafe.with(getDeleteRetryPolicy())
+          .get(() -> mongoTemplate.remove(new Query(scopeCriteria), InstanceDeploymentInfo.class));
+      return true;
+    } catch (Exception e) {
+      log.warn(format("Error while deleting InstanceDeploymentInfo for Criteria [%s] : %s", scopeCriteria,
+                   ExceptionUtils.getMessage(e)),
+          e);
+      return false;
+    }
+  }
+
   private Criteria createExecutionCriteria(ExecutionInfoKey key) {
     Criteria criteria = new Criteria();
     criteria.and(InstanceDeploymentInfoKeys.accountIdentifier).is(key.getScope().getAccountIdentifier());
@@ -139,5 +160,10 @@ public class InstanceDeploymentInfoRepositoryCustomImpl implements InstanceDeplo
     criteria.and(InstanceDeploymentInfoKeys.orgIdentifier).is(scope.getOrgIdentifier());
     criteria.and(InstanceDeploymentInfoKeys.projectIdentifier).is(scope.getProjectIdentifier());
     return criteria;
+  }
+
+  private RetryPolicy<Object> getDeleteRetryPolicy() {
+    return PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting InstanceDeploymentInfo; attempt: {}",
+        "[Failed]: Failed InstanceDeploymentInfo; attempt: {}");
   }
 }

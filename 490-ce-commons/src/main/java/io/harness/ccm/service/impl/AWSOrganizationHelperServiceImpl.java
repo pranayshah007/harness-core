@@ -14,6 +14,8 @@ import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.remote.CEAwsServiceEndpointConfig;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 
@@ -37,10 +39,12 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
 
   @Override
   public List<CECloudAccount> getAWSAccounts(String accountId, String connectorId, CEAwsConnectorDTO ceAwsConnectorDTO,
-      String awsAccessKey, String awsSecretKey) {
+      String awsAccessKey, String awsSecretKey, CEProxyConfig ceProxyConfig,
+      CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
     List<CECloudAccount> ceCloudAccounts = new ArrayList<>();
     CrossAccountAccessDTO crossAccountAccess = ceAwsConnectorDTO.getCrossAccountAccess();
-    List<Account> accountList = listAwsAccounts(crossAccountAccess, awsAccessKey, awsSecretKey);
+    List<Account> accountList =
+        listAwsAccounts(crossAccountAccess, awsAccessKey, awsSecretKey, ceProxyConfig, ceAwsServiceEndpointConfig);
     String masterAwsAccountId = getMasterAccountIdFromArn(crossAccountAccess.getCrossAccountRoleArn());
     accountList.forEach(account -> {
       String awsAccountId = getAccountIdFromArn(account.getArn());
@@ -66,10 +70,11 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
     return ceCloudAccounts;
   }
 
-  public List<Account> listAwsAccounts(
-      CrossAccountAccessDTO crossAccountAccess, String awsAccessKey, String awsSecretKey) {
-    AWSOrganizationsClient awsOrganizationsClient = awsClient.getAWSOrganizationsClient(
-        crossAccountAccess.getCrossAccountRoleArn(), crossAccountAccess.getExternalId(), awsAccessKey, awsSecretKey);
+  public List<Account> listAwsAccounts(CrossAccountAccessDTO crossAccountAccess, String awsAccessKey,
+      String awsSecretKey, CEProxyConfig ceProxyConfig, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
+    AWSOrganizationsClient awsOrganizationsClient =
+        awsClient.getAWSOrganizationsClient(crossAccountAccess.getCrossAccountRoleArn(),
+            crossAccountAccess.getExternalId(), awsAccessKey, awsSecretKey, ceProxyConfig, ceAwsServiceEndpointConfig);
     return listAwsAccounts(awsOrganizationsClient);
   }
 

@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.artifact.resources.artifactory.service;
-
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_BUILDS;
 import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_IMAGE_PATHS;
@@ -17,8 +16,11 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import static software.wings.beans.TaskType.NG_ARTIFACTORY_TASK;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
@@ -70,6 +72,8 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
+import software.wings.utils.RepositoryType;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -86,6 +90,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.MutablePair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -229,17 +234,23 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   @Override
   public ArtifactoryResponseDTO getBuildDetails(IdentifierRef artifactoryConnectorRef, String repositoryName,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
-      String projectIdentifier) {
-    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REPOSITORY, repositoryName),
-        MutablePair.of(NGArtifactConstants.ARTIFACT_PATH, artifactPath));
+      String projectIdentifier, String tagRegex, String artifactFilter) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REPOSITORY, repositoryName));
+    if (RepositoryType.generic.name().equals(repositoryFormat)) {
+      ArtifactUtils.validateIfAnyValueAssigned(MutablePair.of(NGArtifactConstants.ARTIFACT_DIRECTORY, artifactPath),
+          MutablePair.of(NGArtifactConstants.ARTIFACT_FILTER, artifactFilter));
+    } else {
+      ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.ARTIFACT_PATH, artifactPath));
+    }
+
     ArtifactoryConnectorDTO connector = getConnector(artifactoryConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(artifactoryConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     ArtifactSourceDelegateRequest artifactoryRequest =
         ArtifactDelegateRequestUtils.getArtifactoryArtifactDelegateRequest(repositoryName, artifactPath,
-            repositoryFormat, artifactRepositoryUrl, null, null, null, connector, encryptionDetails,
-            ArtifactSourceType.ARTIFACTORY_REGISTRY);
+            repositoryFormat, artifactRepositoryUrl, null, tagRegex, null, connector, encryptionDetails,
+            ArtifactSourceType.ARTIFACTORY_REGISTRY, artifactFilter);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(artifactoryRequest,
           ArtifactTaskType.GET_BUILDS, baseNGAccess, "Artifactory Artifact Get Builds task failure due to error");
@@ -267,7 +278,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
         (ArtifactoryArtifactDelegateRequest) ArtifactDelegateRequestUtils.getArtifactoryArtifactDelegateRequest(
             repositoryName, artifactPath, repositoryFormat, artifactRepositoryUrl, artifactoryRequestDTO.getTag(),
             artifactoryRequestDTO.getTagRegex(), null, connector, encryptionDetails,
-            ArtifactSourceType.ARTIFACTORY_REGISTRY);
+            ArtifactSourceType.ARTIFACTORY_REGISTRY, null);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         executeSyncTask(artifactoryRequest, ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD, baseNGAccess,
             "Artifactory Get last successful build task failure due to error");
@@ -289,7 +300,8 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     ArtifactoryArtifactDelegateRequest artifactoryRequest =
         (ArtifactoryArtifactDelegateRequest) ArtifactDelegateRequestUtils.getArtifactoryArtifactDelegateRequest(null,
-            null, null, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY);
+            null, null, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY,
+            null);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         executeSyncTask(artifactoryRequest, ArtifactTaskType.VALIDATE_ARTIFACT_SERVER, baseNGAccess,
             "Artifactory validate artifact server task failure due to error");

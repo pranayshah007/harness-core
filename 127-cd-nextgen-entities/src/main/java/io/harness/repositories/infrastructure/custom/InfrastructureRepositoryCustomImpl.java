@@ -7,8 +7,11 @@
 
 package io.harness.repositories.infrastructure.custom;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
@@ -27,13 +30,15 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.PIPELINE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -149,7 +154,7 @@ public class InfrastructureRepositoryCustomImpl implements InfrastructureReposit
                                 .and(InfrastructureEntityKeys.deploymentType)
                                 .is(deploymentType);
 
-    Query query = new Query(baseCriteria);
+    Query query = new Query(baseCriteria).with(Sort.by(Sort.Direction.DESC, InfrastructureEntityKeys.createdAt));
     return mongoTemplate.find(query, InfrastructureEntity.class);
   }
 

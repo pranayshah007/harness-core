@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.k8Connector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 import io.harness.validation.OneOfField;
@@ -25,6 +26,7 @@ import lombok.EqualsAndHashCode;
 @JsonTypeName(KubernetesConfigConstants.USERNAME_PASSWORD)
 @OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "KubernetesUserNamePassword", description = "This contains kubernetes username password details")
+@RecasterAlias("io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO")
 public class KubernetesUserNamePasswordDTO extends KubernetesAuthCredentialDTO {
   String username;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;

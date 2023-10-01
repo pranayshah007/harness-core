@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.UNRESOLVED_PARAMETER;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
@@ -14,19 +14,11 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveNumberParameterWithDefaultValue;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
-import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_ARCHIVE_TYPE_TAR;
-import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_GCS_BACKEND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MEMORY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
-import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
-import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
-import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
@@ -37,8 +29,11 @@ import static io.harness.pms.yaml.ParameterField.isNull;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -59,18 +54,17 @@ import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.buildstate.StepContainerUtils;
-import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.PortFinder;
 import io.harness.ci.utils.QuantityUtils;
-import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
@@ -98,9 +92,6 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.utils.Strings;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -110,8 +101,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
@@ -329,6 +323,10 @@ public class K8InitializeStepUtils {
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
+      case PROVENANCE:
+      case SLSA_VERIFICATION:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, stageNode,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
@@ -378,7 +376,6 @@ public class K8InitializeStepUtils {
       envVarMap.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
       envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
       envVarMap.putAll(PluginSettingUtils.getBuildEnvironmentVariables(stepInfo, ciExecutionArgs));
-      setEnvVariablesForHostedBuids(stageNode, stepInfo, envVarMap);
     }
     envVarMap.putAll(pluginSettingUtils.getPluginCompatibleEnvVariables(
         stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, false, true));
@@ -413,53 +410,10 @@ public class K8InitializeStepUtils {
         .containerType(CIContainerType.PLUGIN)
         .stepIdentifier(identifier)
         .stepName(stepName)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(CIStepInfoUtils.getImagePullPolicy(stepInfo)))
+        .imagePullPolicy(getImagePullPolicy(stageNode, stepInfo))
         .privileged(privileged)
         .runAsUser(runAsUser)
         .build();
-  }
-
-  private void setEnvVariablesForHostedBuids(
-      IntegrationStageNode stageNode, PluginCompatibleStep stepInfo, Map<String, String> envVarMap) {
-    IntegrationStageConfig stage = stageNode.getIntegrationStageConfig();
-    if (stage != null && stage.getInfrastructure() != null
-        && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-      switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
-        case ECR:
-        case ACR:
-        case GCR:
-        case DOCKER:
-          envVarMap.put("container", "docker");
-          break;
-        default:
-          break;
-      }
-    }
-  }
-
-  private void setEnvVariablesForHostedCachingSteps(
-      IntegrationStageNode stageNode, String identifier, Map<String, String> envVarMap) {
-    IntegrationStageConfig stage = stageNode.getIntegrationStageConfig();
-    if (stage != null && stage.getInfrastructure() != null
-        && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-      switch (identifier) {
-        case SAVE_CACHE_STEP_ID:
-        case RESTORE_CACHE_STEP_ID:
-          CICacheIntelligenceConfig cacheIntelligenceConfig = ciExecutionServiceConfig.getCacheIntelligenceConfig();
-          try {
-            String cacheKeyString = new String(Files.readAllBytes(Paths.get(cacheIntelligenceConfig.getServiceKey())));
-            envVarMap.put(PLUGIN_JSON_KEY, cacheKeyString);
-          } catch (IOException e) {
-            log.error("Cannot read storage key file for Cache Intelligence steps");
-          }
-          envVarMap.put(PLUGIN_BUCKET, cacheIntelligenceConfig.getBucket());
-          envVarMap.put(PLUGIN_BACKEND, CACHE_GCS_BACKEND);
-          envVarMap.put(PLUGIN_ARCHIVE_FORMAT, CACHE_ARCHIVE_TYPE_TAR);
-          break;
-        default:
-          break;
-      }
-    }
   }
 
   private ContainerDefinitionInfo createRunStepContainerDefinition(RunStepInfo runStepInfo,
@@ -523,7 +477,7 @@ public class K8InitializeStepUtils {
         .stepName(name)
         .privileged(runStepInfo.getPrivileged().getValue())
         .runAsUser(runAsUser)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(runStepInfo.getImagePullPolicy()))
+        .imagePullPolicy(getImagePullPolicy(stageNode, runStepInfo))
         .build();
   }
 
@@ -590,7 +544,7 @@ public class K8InitializeStepUtils {
         .stepName(name)
         .privileged(backgroundStepInfo.getPrivileged().getValue())
         .runAsUser(runAsUser)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(backgroundStepInfo.getImagePullPolicy()))
+        .imagePullPolicy(getImagePullPolicy(stageNode, backgroundStepInfo))
         .build();
   }
 
@@ -644,7 +598,7 @@ public class K8InitializeStepUtils {
         .containerType(CIContainerType.TEST_INTELLIGENCE)
         .privileged(runTestsStepInfo.getPrivileged().getValue())
         .runAsUser(runAsUser)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(runTestsStepInfo.getImagePullPolicy()))
+        .imagePullPolicy(getImagePullPolicy(stageNode, runTestsStepInfo))
         .build();
   }
 
@@ -662,7 +616,6 @@ public class K8InitializeStepUtils {
 
     envVarMap.putAll(resolveMapParameterV2("envs", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
 
-    setEnvVariablesForHostedCachingSteps(stageNode, identifier, envVarMap);
     Integer runAsUser = resolveIntegerParameter(pluginStepInfo.getRunAsUser(), null);
 
     Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
@@ -690,7 +643,7 @@ public class K8InitializeStepUtils {
         .stepName(name)
         .privileged(pluginStepInfo.getPrivileged().getValue())
         .runAsUser(runAsUser)
-        .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(pluginStepInfo.getImagePullPolicy()))
+        .imagePullPolicy(getImagePullPolicy(stageNode, pluginStepInfo))
         .build();
   }
 
@@ -1116,6 +1069,10 @@ public class K8InitializeStepUtils {
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
+      case PROVENANCE:
+      case SLSA_VERIFICATION:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(
@@ -1329,5 +1286,44 @@ public class K8InitializeStepUtils {
       default:
         return null;
     }
+  }
+
+  private String getImagePullPolicy(IntegrationStageNode stageNode, CIStepInfo ciStepInfo) {
+    String imagePullPolicy = null;
+    if (ciStepInfo != null) {
+      switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
+        case RUN:
+          RunStepInfo runStepInfo = (RunStepInfo) ciStepInfo;
+          imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(runStepInfo.getImagePullPolicy());
+          break;
+        case BACKGROUND:
+          BackgroundStepInfo backgroundStepInfo = (BackgroundStepInfo) ciStepInfo;
+          imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(backgroundStepInfo.getImagePullPolicy());
+          break;
+        case RUN_TESTS:
+          RunTestsStepInfo runTestsStepInfo = (RunTestsStepInfo) ciStepInfo;
+          imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(runTestsStepInfo.getImagePullPolicy());
+          break;
+        case PLUGIN:
+          PluginStepInfo pluginStepInfo = (PluginStepInfo) ciStepInfo;
+          imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(pluginStepInfo.getImagePullPolicy());
+          break;
+        default:
+          if (ciStepInfo instanceof PluginCompatibleStep) {
+            PluginCompatibleStep pluginCompatibleStep = (PluginCompatibleStep) ciStepInfo;
+            imagePullPolicy =
+                RunTimeInputHandler.resolveImagePullPolicy(CIStepInfoUtils.getImagePullPolicy(pluginCompatibleStep));
+          }
+      }
+    }
+
+    if (stageNode != null && stageNode.getIntegrationStageConfig() != null) {
+      Infrastructure infra = stageNode.getIntegrationStageConfig().getInfrastructure();
+      if (infra.getType() == Infrastructure.Type.KUBERNETES_DIRECT && StringUtils.isBlank(imagePullPolicy)) {
+        K8sDirectInfraYaml k8Infra = (K8sDirectInfraYaml) infra;
+        imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(k8Infra.getSpec().getImagePullPolicy());
+      }
+    }
+    return imagePullPolicy;
   }
 }

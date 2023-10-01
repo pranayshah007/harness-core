@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.aws.s3;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -18,6 +19,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode
 @SuperBuilder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.beans.aws.s3.S3FileDetailResponse")
 public class S3FileDetailResponse {
   private String bucketName;
   private String fileKey;

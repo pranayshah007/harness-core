@@ -6,15 +6,18 @@
  */
 
 package io.harness.pms.sdk.execution.events;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.waiter.NotifyEventListenerHelper;
 import io.harness.waiter.notify.NotifyEventProto;
 
 import com.google.inject.Inject;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NotifyEventHandler implements PmsCommonsBaseEventHandler<NotifyEventProto> {
   @Inject NotifyEventListenerHelper notifyEventListenerHelper;

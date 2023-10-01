@@ -60,6 +60,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -142,7 +143,7 @@ public class TasSwapRollbackStepTest extends CDNGTestBase {
     StepElementParameters stepElementParameters =
         StepElementParameters.builder().type("BasicAppSetup").spec(parameters).build();
     assertThatThrownBy(() -> tasSwapRollbackStep.validateResources(ambiance, stepElementParameters))
-        .hasMessage("CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.");
+        .hasMessage("NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.");
   }
 
   private Ambiance getAmbiance() {
@@ -161,7 +162,7 @@ public class TasSwapRollbackStepTest extends CDNGTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(tasSwapRollbackStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(tasSwapRollbackStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

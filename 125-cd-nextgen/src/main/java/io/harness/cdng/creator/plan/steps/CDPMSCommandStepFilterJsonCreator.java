@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.creator.plan.steps;
-
 import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -15,6 +14,9 @@ import static io.harness.pms.yaml.ParameterField.isNotNull;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileReference;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.ssh.CommandStepNode;
@@ -50,6 +52,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreatorV2 {
   @Inject private SshWinRmConfigFileHelper sshWinRmConfigFileHelper;
 

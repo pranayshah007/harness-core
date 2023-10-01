@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.utils;
-
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
@@ -20,7 +19,10 @@ import static software.wings.beans.TaskType.SCM_GIT_REF_TASK;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
@@ -75,6 +77,7 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 @Singleton
 @OwnedBy(CI)

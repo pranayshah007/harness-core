@@ -38,4 +38,5 @@ public class AccountDetails {
   private CgActiveServicesUsageInfo activeServicesUsageInfo;
   private CgLicenseModel licenseModel;
   private Integer sessionTimeOutInMinutes;
+  private boolean publicAccessEnabled;
 }

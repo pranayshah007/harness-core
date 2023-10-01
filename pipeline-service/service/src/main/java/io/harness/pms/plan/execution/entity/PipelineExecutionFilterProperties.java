@@ -11,6 +11,7 @@ import static io.harness.filter.FilterConstants.PIPELINE_SETUP_FILTER;
 
 import io.harness.filter.entity.FilterProperties;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.TimeRange;
 
@@ -41,4 +42,6 @@ public class PipelineExecutionFilterProperties extends FilterProperties {
   private TimeRange timeRange;
   private String pipelineName;
   private org.bson.Document moduleProperties;
+  private List<TriggerType> triggerTypes;
+  private List<String> triggerIdentifiers;
 }

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.environment.helper;
 
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,5 +104,33 @@ public class FilterTagsUtilsTest extends CategoryTest {
         .assertThatThrownBy(() -> FilterTagsUtils.areTagsFilterMatching(Arrays.asList(t1, t2, t3), wrongTagsFilter))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("TagFilter of type [wrong] is not supported");
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testAreTagsFilterMatchingWithInvalidTagValue() {
+    NGTag t1 = NGTag.builder().key("k1").value("v1").build();
+
+    TagsFilter anyTagsFilter = TagsFilter.builder()
+                                   .matchType(ParameterField.createValueField(MatchType.any.name()))
+                                   .tags(ParameterField.createValueField(null))
+                                   .build();
+    TagsFilter anyTagsFilter2 = TagsFilter.builder()
+                                    .matchType(ParameterField.createValueField(MatchType.any.name()))
+                                    .tags(ParameterField.createExpressionField(true, "<+abcd>", null, false))
+                                    .build();
+
+    Assertions.assertThatThrownBy(() -> FilterTagsUtils.areTagsFilterMatching(Arrays.asList(t1), anyTagsFilter))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(String.format(
+            "Invalid filter tags value found [%s]. Filter tags should be non-empty key-value pairs of string values.",
+            null));
+
+    Assertions.assertThatThrownBy(() -> FilterTagsUtils.areTagsFilterMatching(Arrays.asList(t1), anyTagsFilter2))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(String.format(
+            "Invalid filter tags value found [%s]. Filter tags should be non-empty key-value pairs of string values.",
+            null));
   }
 }

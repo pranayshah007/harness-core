@@ -23,6 +23,7 @@ import io.harness.repositories.PlanExecutionMetadataRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 import net.jodah.failsafe.Failsafe;
@@ -61,14 +62,26 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
     });
   }
 
+  @Override
+  public void updateTTL(String planExecutionId, Date ttlDate) {
+    if (EmptyPredicate.isEmpty(planExecutionId)) {
+      return;
+    }
+
+    Criteria criteria = where(PlanExecutionMetadataKeys.planExecutionId).is(planExecutionId);
+    Update update = new Update();
+    update.set(PlanExecutionMetadataKeys.validUntil, ttlDate);
+    planExecutionMetadataRepository.multiUpdatePlanExecution(criteria, update);
+  }
+
   public String getNotesForExecution(String planExecutionId) {
-    PlanExecutionMetadata planExecutionMetadata =
-        planExecutionMetadataRepository.getWithFieldsIncluded(planExecutionId, Set.of(PlanExecutionMetadataKeys.notes));
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataRepository.getWithFieldsIncludedFromSecondary(
+        planExecutionId, Set.of(PlanExecutionMetadataKeys.notes));
     return getNotesOrEmptyString(planExecutionMetadata);
   }
 
   public RetryStagesMetadata getRetryStagesMetadata(String planExecutionId) {
-    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataRepository.getWithFieldsIncluded(
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataRepository.getWithFieldsIncludedFromSecondary(
         planExecutionId, Set.of(PlanExecutionMetadataKeys.retryStagesMetadata));
     return planExecutionMetadata.getRetryStagesMetadata();
   }
@@ -79,7 +92,7 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
     update.set(PlanExecutionMetadataKeys.notes, notes);
 
     Optional<PlanExecutionMetadata> planExecutionMetadata =
-        Optional.ofNullable(planExecutionMetadataRepository.updateExecutionNotes(criteria, update));
+        Optional.ofNullable(planExecutionMetadataRepository.updatePlanExecution(criteria, update));
     if (!planExecutionMetadata.isPresent()) {
       throw new InvalidRequestException(format("Execution with id [%s] is not present or deleted", planExecutionId));
     }
@@ -92,5 +105,10 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
       return "";
     }
     return planExecutionMetadata.getNotes();
+  }
+
+  @Override
+  public PlanExecutionMetadata getWithFieldsIncludedFromSecondary(String planExecutionId, Set<String> fieldsToInclude) {
+    return planExecutionMetadataRepository.getWithFieldsIncludedFromSecondary(planExecutionId, fieldsToInclude);
   }
 }

@@ -2033,7 +2033,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
             .addOrder(Workflow.NAME_KEY, SortOrder.OrderType.ASC)
             .addFieldsIncluded(Pipeline.UUID_KEY, Pipeline.NAME_KEY, Pipeline.APP_ID_KEY2)
             .build();
-    List<Workflow> workflows = workflowService.listWorkflowsWithoutOrchestration(pageRequest).getResponse();
+    List<Workflow> workflows = workflowService.listWorkflowsWithoutOrchestration(pageRequest, false).getResponse();
 
     if (workflows != null) {
       // iterate over workflows
@@ -2072,7 +2072,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
       pageRequest.setLimit(PageRequest.LIMIT_2K_PAGE_SIZE);
     }
 
-    List<Pipeline> pipelines = pipelineService.listPipelines(pageRequest).getResponse();
+    List<Pipeline> pipelines = pipelineService.listPipelines(pageRequest, false, accountId).getResponse();
 
     if (pipelines != null) {
       // iterate over pipelines

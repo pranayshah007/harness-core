@@ -46,6 +46,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -272,7 +273,7 @@ public class CloudformationDeleteStackStepTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(cloudformationDeleteStackStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(cloudformationDeleteStackStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   private Ambiance getAmbiance() {

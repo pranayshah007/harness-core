@@ -8,6 +8,7 @@
 package io.harness.accesscontrol.principals.users;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -84,6 +85,26 @@ public class HarnessUserServiceImplTest extends AccessControlTestBase {
     when(userService.deleteIfPresent(identifier, scope.toString())).thenReturn(Optional.of(user));
     harnessUserService.sync(identifier, scope);
     verify(userMembershipClient, atLeastOnce()).isUserInScope(identifier, accountIdentifier, null, null);
+    verify(userService, times(1)).deleteIfPresent(identifier, scope.toString());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldNotFailIfUserMetadataIsNull() throws IOException {
+    String identifier = randomAlphabetic(10);
+    String accountIdentifier = randomAlphabetic(11);
+    Scope scope =
+        Scope.builder().level(HarnessScopeLevel.ACCOUNT).parentScope(null).instanceId(accountIdentifier).build();
+    when(userMembershipClient.isUserInScope(identifier, accountIdentifier, null, null).execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(Boolean.TRUE)));
+    when(userMembershipClient.getUser(identifier, accountIdentifier).execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(null)));
+
+    harnessUserService.sync(identifier, scope);
+
+    verify(userMembershipClient, atLeastOnce()).isUserInScope(identifier, accountIdentifier, null, null);
+    verify(userMembershipClient, atLeastOnce()).getUser(identifier, accountIdentifier);
     verify(userService, times(1)).deleteIfPresent(identifier, scope.toString());
   }
 }

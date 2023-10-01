@@ -10,7 +10,9 @@ package io.harness.ccm.views.utils;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.APP_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_BILLING_ENTITY;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_INSTANCE_TYPE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_LINE_ITEM_TYPE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_SERVICE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_USAGE_TYPE_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_PROVIDER_FIELD_ID;
@@ -25,7 +27,6 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.INSTANCE_NAME_
 import static io.harness.ccm.commons.constants.ViewFieldConstants.LAUNCH_TYPE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NONE_FIELD;
-import static io.harness.ccm.commons.constants.ViewFieldConstants.PRODUCT_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.REGION_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.SERVICE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.STORAGE_FIELD_ID;
@@ -53,7 +54,9 @@ public class ViewFieldUtils {
     return ImmutableList.of(QLCEViewField.builder().fieldId(AWS_SERVICE_FIELD_ID).fieldName("Service").build(),
         QLCEViewField.builder().fieldId(AWS_ACCOUNT_FIELD_ID).fieldName("Account").build(),
         QLCEViewField.builder().fieldId(AWS_INSTANCE_TYPE_FIELD_ID).fieldName("Instance Type").build(),
-        QLCEViewField.builder().fieldId(AWS_USAGE_TYPE_ID).fieldName("Usage Type").build());
+        QLCEViewField.builder().fieldId(AWS_USAGE_TYPE_ID).fieldName("Usage Type").build(),
+        QLCEViewField.builder().fieldId(AWS_BILLING_ENTITY).fieldName("Billing Entity").build(),
+        QLCEViewField.builder().fieldId(AWS_LINE_ITEM_TYPE).fieldName("Line Item Type").build());
   }
   public static List<QLCEViewField> getGcpFields() {
     return ImmutableList.of(QLCEViewField.builder().fieldId(GCP_PRODUCT_FIELD_ID).fieldName("Product").build(),
@@ -132,11 +135,6 @@ public class ViewFieldUtils {
     return "Cost categories default";
   }
 
-  public static List<String> getAllFieldNames() {
-    return ImmutableList.of(AWS_SERVICE_FIELD_ID, AWS_ACCOUNT_FIELD_ID, AWS_INSTANCE_TYPE_FIELD_ID, AWS_USAGE_TYPE_ID,
-        REGION_FIELD_ID, PRODUCT_FIELD_ID, "cost");
-  }
-
   public static Map<String, String> getClickHouseColumnMapping() {
     Map<String, String> columnMapping = new HashMap<>();
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "starttime"), "startTime");
@@ -145,6 +143,8 @@ public class ViewFieldUtils {
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpskuid"), "gcpSkuId");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpskudescription"), "gcpSkuDescription");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpprojectid"), "gcpProjectId");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpinvoicemonth"), "gcpInvoiceMonth");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpcosttype"), "gcpCostType");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "region"), "region");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "zone"), "zone");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "gcpbillingaccountid"), "gcpBillingAccountId");
@@ -152,6 +152,10 @@ public class ViewFieldUtils {
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsblendedrate"), "awsBlendedRate");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsblendedcost"), "awsBlendedCost");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsunblendedrate"), "awsUnblendedRate");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awseffectivecost"), "awsEffectiveCost");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsamortisedcost"), "awsAmortisedCost");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsnetamortisedcost"), "awsNetAmortisedCost");
+    columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awslineitemtype"), "awsLineItemType");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsunblendedcost"), "awsUnblendedCost");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsservicecode"), "awsServicecode");
     columnMapping.put(String.format(COLUMN_MAPPING_KEY, UNIFIED_TABLE, "awsavailabilityzone"), "awsAvailabilityZone");

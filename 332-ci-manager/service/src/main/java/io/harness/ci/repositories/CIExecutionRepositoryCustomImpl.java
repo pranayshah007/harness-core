@@ -7,8 +7,8 @@
 
 package io.harness.repositories;
 
-import io.harness.ci.execution.CIExecutionMetadata;
-import io.harness.ci.execution.CIExecutionMetadata.CIExecutionMetadataKeys;
+import io.harness.ci.execution.execution.CIExecutionMetadata;
+import io.harness.ci.execution.execution.CIExecutionMetadata.CIExecutionMetadataKeys;
 
 import com.google.inject.Inject;
 import lombok.AccessLevel;
@@ -24,6 +24,19 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 public class CIExecutionRepositoryCustomImpl implements CIExecutionRepositoryCustom {
   MongoTemplate mongoTemplate;
+
+  @Override
+  public void updateExecutionStatus(String accountID, String runtimeId, String status) {
+    Criteria criteria = Criteria.where(CIExecutionMetadataKeys.accountId)
+                            .is(accountID)
+                            .and(CIExecutionMetadataKeys.stageExecutionId)
+                            .is(runtimeId);
+    Query query = new Query(criteria);
+    Update update = new Update();
+    update.set(CIExecutionMetadataKeys.status, status);
+    mongoTemplate.findAndModify(
+        query, update, new FindAndModifyOptions().returnNew(true).upsert(true), CIExecutionMetadata.class);
+  }
 
   @Override
   public void updateQueueId(String accountID, String runtimeId, String queueId) {

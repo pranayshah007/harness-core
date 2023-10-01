@@ -13,6 +13,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
@@ -65,4 +66,7 @@ public interface NextGenService {
       String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdListWithScope);
 
   List<ProjectDTO> listAccessibleProjects(String accountIdentifier);
+
+  List<StepExecutionInstanceInfo> getCDStageInstanceInfo(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineExecutionId, String stageExecutionId);
 }

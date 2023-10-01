@@ -22,11 +22,11 @@ import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
-import io.harness.ccm.views.graphql.QLCEViewPreferences;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 
 import com.google.inject.Inject;
@@ -56,10 +56,12 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "filters") List<QLCEViewFilterWrapper> filters,
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "aggregateFunction") List<QLCEViewAggregation> aggregateFunction,
+      @GraphQLArgument(name = "preferences") ViewPreferences viewPreferences,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return perspectiveService.perspectiveTrendStats(filters, groupBy, aggregateFunction, isClusterQuery, accountId);
+    return perspectiveService.perspectiveTrendStats(
+        filters, groupBy, aggregateFunction, viewPreferences, isClusterQuery, accountId);
   }
 
   @GraphQLQuery(name = "perspectiveForecastCost", description = "Forecast cost for perspective")
@@ -67,10 +69,12 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "filters") List<QLCEViewFilterWrapper> filters,
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "aggregateFunction") List<QLCEViewAggregation> aggregateFunction,
+      @GraphQLArgument(name = "preferences") ViewPreferences viewPreferences,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return perspectiveService.perspectiveForecastCost(filters, groupBy, aggregateFunction, isClusterQuery, accountId);
+    return perspectiveService.perspectiveForecastCost(
+        filters, groupBy, aggregateFunction, viewPreferences, isClusterQuery, accountId);
   }
 
   @GraphQLQuery(name = "perspectiveGrid", description = "Table for perspective")
@@ -80,12 +84,13 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "sortCriteria") List<QLCEViewSortCriteria> sortCriteria,
       @GraphQLArgument(name = "limit") Integer limit, @GraphQLArgument(name = "offset") Integer offset,
+      @GraphQLArgument(name = "preferences") ViewPreferences viewPreferences,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLArgument(name = "skipRoundOff") Boolean skipRoundOff,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return perspectiveService.perspectiveGrid(
-        aggregateFunction, filters, groupBy, sortCriteria, limit, offset, isClusterQuery, skipRoundOff, accountId);
+    return perspectiveService.perspectiveGrid(aggregateFunction, filters, groupBy, sortCriteria, limit, offset,
+        viewPreferences, isClusterQuery, skipRoundOff, accountId);
   }
 
   @GraphQLQuery(name = "perspectiveFilters", description = "Filter values for perspective")
@@ -115,12 +120,12 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "sortCriteria") List<QLCEViewSortCriteria> sortCriteria,
       @GraphQLArgument(name = "limit") Integer limit, @GraphQLArgument(name = "offset") Integer offset,
-      @GraphQLArgument(name = "preferences") QLCEViewPreferences preferences,
+      @GraphQLArgument(name = "preferences") ViewPreferences viewPreferences,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
     return perspectiveService.perspectiveTimeSeriesStats(
-        aggregateFunction, filters, groupBy, sortCriteria, limit, offset, preferences, isClusterQuery, accountId);
+        aggregateFunction, filters, groupBy, sortCriteria, limit, offset, viewPreferences, isClusterQuery, accountId);
   }
 
   @GraphQLQuery(name = "perspectiveFields", description = "Fields for perspective explorer")
@@ -157,10 +162,11 @@ public class PerspectivesQuery {
   @GraphQLQuery(name = "perspectiveTotalCount", description = "Get total count of rows for query")
   public Integer perspectiveTotalCount(@GraphQLArgument(name = "filters") List<QLCEViewFilterWrapper> filters,
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
+      @GraphQLArgument(name = "preferences") ViewPreferences viewPreferences,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return perspectiveService.perspectiveTotalCount(filters, groupBy, isClusterQuery, accountId);
+    return perspectiveService.perspectiveTotalCount(filters, groupBy, viewPreferences, isClusterQuery, accountId);
   }
 
   @GraphQLQuery(name = "workloadLabels", description = "Labels for workloads")

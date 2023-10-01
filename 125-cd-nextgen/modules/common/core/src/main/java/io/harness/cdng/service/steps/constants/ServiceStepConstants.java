@@ -12,6 +12,9 @@ import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.EN
 import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_GLOBAL_OVERRIDE;
 import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_SERVICE_OVERRIDE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -19,9 +22,12 @@ import io.harness.pms.contracts.steps.StepType;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 public class ServiceStepConstants {
   public static final String SERVICE = "service";
   public static final String SERVICE_OVERRIDES = "service overrides";
+  public static final String ENVIRONMENT = "Environment";
   public static final String ENVIRONMENT_GLOBAL_OVERRIDES = "environment global overrides";
 
   public static final StepType STEP_TYPE =
@@ -38,4 +44,7 @@ public class ServiceStepConstants {
 
   public static final List<ServiceOverridesType> OVERRIDE_IN_REVERSE_PRIORITY =
       List.of(ENV_GLOBAL_OVERRIDE, ENV_SERVICE_OVERRIDE, INFRA_GLOBAL_OVERRIDE, INFRA_SERVICE_OVERRIDE);
+
+  public static final String SERVICE_STEP_COMMAND_UNIT = "Service Step";
+  public static final String OVERRIDES_COMMAND_UNIT = "Service Overrides";
 }

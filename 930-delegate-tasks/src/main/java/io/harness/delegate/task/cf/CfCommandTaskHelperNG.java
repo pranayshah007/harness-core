@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.cf;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_EXPLANATION;
 import static io.harness.artifacts.azureartifacts.beans.AzureArtifactsExceptionConstants.DOWNLOAD_FROM_AZURE_ARTIFACTS_FAILED;
@@ -41,7 +40,10 @@ import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
@@ -149,6 +151,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -240,9 +243,10 @@ public class CfCommandTaskHelperNG {
 
       return artifactResponseBuilder.build();
     } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       logCallback.saveExecutionLog(
           format("Failed to download artifact '%s' due to: %s", artifactConfig.getArtifactDetails().getArtifactName(),
-              ExceptionUtils.getMessage(e)),
+              ExceptionUtils.getMessage(sanitizedException)),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw e;
     }
@@ -260,10 +264,11 @@ public class CfCommandTaskHelperNG {
           "Artifact '%s' successfully copied to '%s'", artifactDetails.getArtifactName(), artifactFile.getPath()));
       return artifactFile;
     } catch (IOException exception) {
+      IOException sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
       throw NestedExceptionUtils.hintWithExplanationException(HintException.HINT_FILE_CREATION_ERROR,
           ExplanationException.EXPLANATION_FILE_CREATION_ERROR,
           new FileCopyException(format("Failed to copy artifact file '%s' from input stream to path '%s' due to: %s",
-              artifactDetails.getArtifactName(), artifactFile.getPath(), exception.getMessage())));
+              artifactDetails.getArtifactName(), artifactFile.getPath(), sanitizedException.getMessage())));
     }
   }
 

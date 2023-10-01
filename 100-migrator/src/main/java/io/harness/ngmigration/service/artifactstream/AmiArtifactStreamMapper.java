@@ -8,7 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -44,7 +44,7 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     AmiArtifactStream amiArtifactStream = (AmiArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(amiArtifactStream.getSettingId()).build())
@@ -72,7 +72,7 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
                   .region(ParameterField.createValueField(amiArtifactStream.getRegion()))
                   .tags(ParameterField.createValueField(tags))
                   .filters(ParameterField.createValueField(filters))
-                  .version(ParameterField.createValueField("<+input>"))
+                  .version(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }
@@ -86,11 +86,11 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
   public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String connectorRef = getConnectorRef(migratedEntities, artifactStream);
-    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
     String region = "us-east-1";
     List<AMITag> tags = Collections.emptyList();
     List<AMIFilter> filters = Collections.emptyList();
-    String version = PLEASE_FIX_ME;
+    String version = TRIGGER_TAG_VALUE_DEFAULT;
 
     if (artifactStream != null) {
       AmiArtifactStream amiArtifactStream = (AmiArtifactStream) artifactStream;

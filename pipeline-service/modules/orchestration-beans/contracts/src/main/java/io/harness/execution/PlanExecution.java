@@ -110,6 +110,12 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
         PlanExecutionKeys.metadata + ".triggerInfo.triggeredBy.extraInfo." + EXEC_TAG_SET_BY_TRIGGER;
   }
 
+  @UtilityClass
+  public static class PlanExecutionKeys {
+    public static final String accountId = PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId;
+    public static final String planId = PlanExecutionKeys.ambiance + ".planId";
+  }
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList
         .<MongoIndex>builder()
@@ -122,6 +128,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
                  .field(PlanExecutionKeys.status)
                  .descSortField(PlanExecutionKeys.createdAt)
                  .build())
+        // countRunningExecutionsForGivenPipelineInAccount
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_status_createdAt_idx")
                  .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)

@@ -16,8 +16,11 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudTaskType.GET
 import static java.lang.String.format;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.executions.RunDetails;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudConstants;
@@ -58,7 +61,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -72,6 +74,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -90,6 +93,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRbac {
@@ -106,12 +110,12 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -138,7 +142,7 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, StepInputPackage inputPackage) {
     log.info("Starting execution ObtainTask after Rbac for the Terraform Cloud Run Step");
     TerraformCloudRunStepParameters runStepParameters =
         (TerraformCloudRunStepParameters) stepElementParameters.getSpec();
@@ -158,7 +162,7 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
 
   @Override
   public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     TerraformCloudRunStepParameters runStepParameters =
         (TerraformCloudRunStepParameters) stepElementParameters.getSpec();
@@ -184,9 +188,8 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
-      ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
+  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepBaseParameters stepElementParameters,
+      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     log.info("Handling Task result with Security Context for the Terraform Cloud Run Step");
     TerraformCloudRunStepParameters runStepParameters =
         (TerraformCloudRunStepParameters) stepElementParameters.getSpec();
@@ -344,7 +347,7 @@ public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRba
         .build();
   }
 
-  private TaskChainResponse getTaskChainResponse(StepElementParameters stepElementParameters,
+  private TaskChainResponse getTaskChainResponse(StepBaseParameters stepElementParameters,
       TerraformCloudTaskParams terraformCloudTaskParams, TerraformCloudRunStepParameters runStepParameters,
       Ambiance ambiance) {
     TaskData taskData = TaskData.builder()

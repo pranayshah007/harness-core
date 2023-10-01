@@ -104,7 +104,6 @@ import io.harness.validation.PersistenceValidator;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.Activity;
 import software.wings.beans.Activity.ActivityKeys;
 import software.wings.beans.Base;
@@ -136,6 +135,7 @@ import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.WorkflowPhase;
+import software.wings.beans.account.AccountEventType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ApplicationManifest.AppManifestSource;
@@ -225,6 +225,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.ReadPreference;
 import de.danielbechler.diff.ObjectDifferBuilder;
 import de.danielbechler.diff.node.DiffNode;
 import dev.morphia.query.CriteriaContainer;
@@ -382,7 +383,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
       }
     }
     PageResponse<Service> pageResponse =
-        resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.SERVICE, withTags, false);
+        resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.SERVICE, withTags, false, false);
 
     List<Service> services = pageResponse.getResponse();
     if (withServiceCommands) {
@@ -404,7 +405,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
   public List<Service> list(String accountId, List<String> projectFields) {
     Query<Service> svcQuery = wingsPersistence.createQuery(Service.class).filter(ServiceKeys.accountId, accountId);
     emptyIfNull(projectFields).forEach(field -> { svcQuery.project(field, true); });
-    return emptyIfNull(svcQuery.asList());
+    return emptyIfNull(svcQuery.asList(createFindOptionsToHitSecondaryNode(accountId)));
   }
 
   private void applyInfraBasedFilters(PageRequest<Service> request) {
@@ -1211,7 +1212,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     service.setServiceVariables(
         serviceVariableService.getServiceVariablesForEntity(appId, service.getUuid(), OBTAIN_VALUE));
     service.setServiceCommands(getServiceCommands(appId, service.getUuid()));
-    service.setTagLinks(harnessTagService.getTagLinksWithEntityId(service.getAccountId(), service.getUuid()));
+    service.setTagLinks(harnessTagService.getTagLinksWithEntityId(service.getAccountId(), service.getUuid(), false));
 
     customDeploymentTypeService.putCustomDeploymentTypeNameIfApplicable(service);
   }
@@ -3355,5 +3356,12 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
           break;
       }
     }
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

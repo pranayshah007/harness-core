@@ -10,7 +10,6 @@ package io.harness.ng.webhook.services.impl;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM;
 import static io.harness.rule.OwnerRule.MEET;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -39,8 +38,6 @@ import io.harness.rule.Owner;
 import io.harness.service.WebhookParserSCMService;
 
 import com.google.inject.name.Named;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -87,8 +84,7 @@ public class WebhookEventProcessingServiceImplTest extends CategoryTest {
     WebhookDTO webhookDTO = WebhookDTO.newBuilder().build();
     ParseWebhookResponse parseWebhookResponse = ParseWebhookResponse.newBuilder().build();
     when(webhookHelper.getSourceRepoType(webhookEvent)).thenReturn(SourceRepoType.GITHUB);
-    when(webhookParserSCMService.parseWebhookUsingSCMAPI(webhookEvent.getHeaders(), webhookEvent.getPayload()))
-        .thenReturn(parseWebhookResponse);
+    when(webhookHelper.invokeScmService(webhookEvent)).thenReturn(parseWebhookResponse);
     when(webhookHelper.generateWebhookDTO(webhookEvent, parseWebhookResponse, SourceRepoType.GITHUB))
         .thenReturn(WebhookDTO.newBuilder().build());
     producers.add(gitPushEventProducer);
@@ -105,22 +101,6 @@ public class WebhookEventProcessingServiceImplTest extends CategoryTest {
         .generateWebhookDTO(webhookEvent, parseWebhookResponse, SourceRepoType.GITHUB);
     webhookEventProcessingService.handle(webhookEvent);
     verify(webhookHelper, times(1)).getProducerListForEvent(webhookDTO);
-  }
-
-  @Test
-  @Owner(developers = MEET)
-  @Category(UnitTests.class)
-  public void testInvokeScmServiceException() {
-    WebhookEvent webhookEvent =
-        WebhookEvent.builder()
-            .payload("payload")
-            .headers(Collections.singletonList(
-                HeaderConfig.builder().key("key").values(Collections.singletonList("value")).build()))
-            .build();
-    doThrow(new StatusRuntimeException(Status.UNAVAILABLE))
-        .when(webhookParserSCMService)
-        .parseWebhookUsingSCMAPI(webhookEvent.getHeaders(), "payload");
-    assertThat(webhookEventProcessingService.invokeScmService(webhookEvent)).isNull();
   }
 
   @Test

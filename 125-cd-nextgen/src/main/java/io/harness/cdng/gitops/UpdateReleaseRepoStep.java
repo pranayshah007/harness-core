@@ -17,10 +17,13 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.k8s.K8sStepHelper;
@@ -38,14 +41,12 @@ import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -57,6 +58,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -76,6 +78,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(GITOPS)
 @Slf4j
 public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
@@ -85,6 +88,8 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
                                                .build();
 
   @Inject private EngineExpressionService engineExpressionService;
+
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private StepHelper stepHelper;
@@ -94,11 +99,11 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
   @Inject private GitOpsStepHelper gitOpsStepHelper;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
 
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
@@ -133,7 +138,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     /*
   TODO:
    2. Handle the case when PR already exists
@@ -213,13 +218,11 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
         List<String> files = new ArrayList<>();
         files.add(file);
         // Resolve any other expressions in the filepaths. eg. service variables
-        ExpressionEvaluatorUtils.updateExpressions(
-            files, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+        cdExpressionResolver.updateExpressions(ambiance, files);
 
         file = files.get(0);
 
-        ExpressionEvaluatorUtils.updateExpressions(
-            cluster.getVariables(), new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+        cdExpressionResolver.updateExpressions(ambiance, cluster.getVariables());
 
         Map<String, String> flattennedVariables = new HashMap<>();
         // Convert variables map from Map<String, Object> to Map<String, String>
@@ -262,9 +265,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
             }
           }
 
-          ExpressionEvaluatorUtils.updateExpressions(copyParameter,
-              new CDExpressionResolveFunctor(
-                  engineExpressionService, ambiance, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED));
+          cdExpressionResolver.updateExpressions(ambiance, copyParameter, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
 
           if (copyParameter.getValue() != null) {
             populateVariables(
@@ -301,7 +302,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
+  public Class<StepBaseParameters> getStepParametersClass() {
     return null;
   }
 
@@ -314,8 +315,8 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
     List<String> gitFilePaths = new ArrayList<>();
     gitFilePaths.addAll(resolvedFilePaths);
 
-    GitStoreDelegateConfig gitStoreDelegateConfig =
-        cdStepHelper.getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfigWithApiAccess(
+        gitStoreConfig, connectorDTO, gitFilePaths, ambiance, manifestOutcome);
 
     ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
 

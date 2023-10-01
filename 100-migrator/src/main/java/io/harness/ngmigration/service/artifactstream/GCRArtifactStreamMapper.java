@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -23,6 +24,7 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.ngtriggers.beans.source.artifact.GcrSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.ArtifactStream;
@@ -31,7 +33,7 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,7 +42,7 @@ public class GCRArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     GcrArtifactStream gcrArtifactStream = (GcrArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(gcrArtifactStream.getSettingId()).build())
@@ -51,7 +53,7 @@ public class GCRArtifactStreamMapper implements ArtifactStreamMapper {
                   .registryHostname(ParameterField.createValueField(gcrArtifactStream.getRegistryHostName()))
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .imagePath(ParameterField.createValueField(gcrArtifactStream.getDockerImageName()))
-                  .tag(ParameterField.createValueField("<+input>"))
+                  .tag(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }
@@ -66,15 +68,16 @@ public class GCRArtifactStreamMapper implements ArtifactStreamMapper {
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String registryHostname = PLEASE_FIX_ME;
     String imagePath = PLEASE_FIX_ME;
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
     if (artifactStream != null) {
       GcrArtifactStream gcrArtifactStream = (GcrArtifactStream) artifactStream;
       registryHostname = gcrArtifactStream.getRegistryHostName();
       imagePath = gcrArtifactStream.getDockerImageName();
     }
     return GcrSpec.builder()
-        .tag(PLEASE_FIX_ME)
+        .tag(TRIGGER_TAG_VALUE_DEFAULT)
         .connectorRef(getConnectorRef(migratedEntities, artifactStream))
-        .eventConditions(Collections.emptyList())
+        .eventConditions(eventConditions)
         .registryHostname(registryHostname)
         .imagePath(imagePath)
         .build();

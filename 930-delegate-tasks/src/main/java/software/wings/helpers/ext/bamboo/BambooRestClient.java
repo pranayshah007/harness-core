@@ -9,7 +9,10 @@ package software.wings.helpers.ext.bamboo;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
@@ -27,6 +30,9 @@ import retrofit2.http.Url;
 /**
  * Created by anubhaw on 11/29/16.
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface BambooRestClient {
   /**
@@ -80,7 +86,7 @@ public interface BambooRestClient {
    */
   @GET("rest/api/latest/result/{planKey}.json?authType=basic&buildstate=Successful&expand=results.result")
   Call<JsonNode> listBuildsForJob(@Header("Authorization") String authorization, @Path("planKey") String planKey,
-      @Query("max-result") int maxResult);
+      @Query("max-result") int maxResult, @Query("start-index") int startIndex);
 
   /**
    * Gets build artifacts.

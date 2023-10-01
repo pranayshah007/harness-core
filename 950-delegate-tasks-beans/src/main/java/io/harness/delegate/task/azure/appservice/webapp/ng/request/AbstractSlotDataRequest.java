@@ -42,7 +42,9 @@ public abstract class AbstractSlotDataRequest extends AbstractWebAppTaskRequest 
   public abstract Set<String> getPrevExecUserAddedAppSettingNames();
   public abstract Set<String> getPrevExecUserAddedConnStringNames();
   public abstract boolean isPrevExecUserChangedStartupCommand();
-
+  public boolean isCleanDeployment() {
+    return false;
+  }
   protected AbstractSlotDataRequest(String accountId, CommandUnitsProgress commandUnitsProgress,
       AzureWebAppInfraDelegateConfig infrastructure, AppSettingsFile startupCommand,
       AppSettingsFile applicationSettings, AppSettingsFile connectionStrings, AzureArtifactConfig artifact,

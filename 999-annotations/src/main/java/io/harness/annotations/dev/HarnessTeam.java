@@ -31,5 +31,6 @@ public enum HarnessTeam {
   IDP,
   SSCA,
   CDB,
-  CET
+  CET,
+  SEI
 }

@@ -14,8 +14,11 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -33,6 +36,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
@@ -63,5 +67,5 @@ public class AwsSamBaseStepInfo {
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
 
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samVersion;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samVersion;
 }

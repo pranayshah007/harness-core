@@ -29,6 +29,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
@@ -78,7 +79,6 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -130,8 +130,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
   private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+artifacts.sidecars.";
   private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "harnessArtifact/sidecar-artifact-";
-
-  @Mock private EngineExpressionService engineExpressionService;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private OutcomeService outcomeService;
   @Mock private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
@@ -740,7 +739,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
     sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
     sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
-    doReturn(manifestFileContent).when(engineExpressionService).renderExpression(ambiance, manifestFileContent);
+    doReturn(manifestFileContent).when(cdExpressionResolver).renderExpression(ambiance, manifestFileContent);
     assertThat(serverlessStepCommonHelper.renderManifestContent(
                    ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(manifestFileContent);
@@ -756,7 +755,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
     sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
     sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
-    doReturn(ARTIFACT_ACTUAL_PATH).when(engineExpressionService).renderExpression(ambiance, ARTIFACT_ACTUAL_PATH);
+    doReturn(ARTIFACT_ACTUAL_PATH).when(cdExpressionResolver).renderExpression(ambiance, ARTIFACT_ACTUAL_PATH);
     assertThat(serverlessStepCommonHelper.renderManifestContent(
                    ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(ARTIFACT_ACTUAL_PATH);
@@ -773,7 +772,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
     sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
     sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
-    doReturn(replacedContent).when(engineExpressionService).renderExpression(ambiance, replacedContent);
+    doReturn(replacedContent).when(cdExpressionResolver).renderExpression(ambiance, replacedContent);
     assertThat(serverlessStepCommonHelper.renderManifestContent(
                    ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(replacedContent);
@@ -796,7 +795,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
     sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig1);
     sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig2);
-    doReturn(replacedManifestContent).when(engineExpressionService).renderExpression(ambiance, replacedManifestContent);
+    doReturn(replacedManifestContent).when(cdExpressionResolver).renderExpression(ambiance, replacedManifestContent);
     assertThat(serverlessStepCommonHelper.renderManifestContent(
                    ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(replacedManifestContent);
@@ -837,7 +836,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
     sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
     sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
-    doReturn(ARTIFACT_ACTUAL_PATH).when(engineExpressionService).renderExpression(ambiance, ARTIFACT_ACTUAL_PATH);
+    doReturn(ARTIFACT_ACTUAL_PATH).when(cdExpressionResolver).renderExpression(ambiance, ARTIFACT_ACTUAL_PATH);
     assertThat(serverlessStepCommonHelper.renderManifestContent(
                    ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(ARTIFACT_ACTUAL_PATH);

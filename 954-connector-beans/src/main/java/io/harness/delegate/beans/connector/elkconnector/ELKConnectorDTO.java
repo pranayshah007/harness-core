@@ -76,6 +76,8 @@ public class ELKConnectorDTO extends ConnectorConfigDTO implements DecryptableEn
       throw new InvalidRequestException("Username and Password cannot be empty for UsernamePassword Auth type");
     } else if (getAuthType().equals(ELKAuthType.API_CLIENT_TOKEN) && (isEmpty(apiKeyId) || apiKeyRef.isNull())) {
       throw new InvalidRequestException("Client ID or Client Secret cannot be empty for ApiClientToken Auth type");
+    } else if (getAuthType().equals(ELKAuthType.BEARER_TOKEN) && (apiKeyRef.isNull())) {
+      throw new InvalidRequestException("API Key Ref cannot be empty for BearerToken Auth type");
     }
   }
 

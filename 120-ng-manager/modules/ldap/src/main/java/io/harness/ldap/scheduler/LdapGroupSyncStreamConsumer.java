@@ -88,6 +88,8 @@ public class LdapGroupSyncStreamConsumer extends RedisTraceConsumer {
       LdapGroupSyncDTO ldapGroupSyncDTO;
       try {
         ldapGroupSyncDTO = LdapGroupSyncDTO.parseFrom(message.getMessage().getData());
+        log.info("EVENT_LDAP_GROUP_SYNC: Ldap Group sync event with msgId {} received for accountId {} and ssoId {}",
+            message.getId(), ldapGroupSyncDTO.getAccountIdentifier(), ldapGroupSyncDTO.getSsoId());
         ngLdapService.syncUserGroupsJob(ldapGroupSyncDTO.getAccountIdentifier(), null, null);
       } catch (InvalidProtocolBufferException e) {
         log.error("EVENT_LDAP_GROUP_SYNC: Exception in unpacking ldapGroupSyncDTO for key {}", message.getId(), e);

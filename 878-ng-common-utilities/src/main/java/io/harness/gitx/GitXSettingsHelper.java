@@ -9,9 +9,13 @@ package io.harness.gitx;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
@@ -24,6 +28,7 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.NGRestUtils;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
@@ -33,6 +38,9 @@ import lombok.extern.slf4j.Slf4j;
 /***
  * This Class fetches settings for GitExperience.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(PIPELINE)
 @Singleton
@@ -55,11 +63,11 @@ public class GitXSettingsHelper {
     }
   }
 
-  public void setConnectorRefForRemoteEntity(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+  public void setConnectorRefForRemoteEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (GitAwareContextHelper.isRemoteEntity(gitEntityInfo)
         && GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getConnectorRef())) {
-      String defaultConnectorForGitX = getDefaultConnectorForGitX(accountIdentifier, orgIdentifier, projIdentifier);
+      String defaultConnectorForGitX = getDefaultConnectorForGitX(accountIdentifier, orgIdentifier, projectIdentifier);
 
       if (!isEmpty(defaultConnectorForGitX)) {
         gitEntityInfo.setConnectorRef(defaultConnectorForGitX);
@@ -88,6 +96,19 @@ public class GitXSettingsHelper {
 
       gitEntityInfo.setStoreType(defaultStoreTypeForEntities);
       GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+    }
+  }
+
+  public void setDefaultRepoForRemoteEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (GitAwareContextHelper.isRemoteEntity(gitEntityInfo)
+        && GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getRepoName())) {
+      String defaultRepoForGitX = getDefaultRepoForGitX(accountIdentifier, orgIdentifier, projectIdentifier);
+
+      if (isNotEmpty(defaultRepoForGitX)) {
+        gitEntityInfo.setRepoName(defaultRepoForGitX);
+        GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+      }
     }
   }
 
@@ -120,6 +141,9 @@ public class GitXSettingsHelper {
   }
 
   public List<String> getGitRepoAllowlist(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    orgIdentifier = Strings.emptyToNull(orgIdentifier);
+    projectIdentifier = Strings.emptyToNull(projectIdentifier);
+
     String repoAllowlist =
         NGRestUtils
             .getResponse(ngSettingsClient.getSetting(GitSyncConstants.REPO_ALLOWLIST_FOR_GIT_EXPERIENCE,
@@ -133,5 +157,12 @@ public class GitXSettingsHelper {
 
     List<String> listOfRepos = List.of(repoAllowlist.split(","));
     return HarnessStringUtils.removeLeadingAndTrailingSpacesInListOfStrings(listOfRepos);
+  }
+
+  private String getDefaultRepoForGitX(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    return NGRestUtils
+        .getResponse(ngSettingsClient.getSetting(
+            GitSyncConstants.DEFAULT_REPO_FOR_GIT_EXPERIENCE, accountIdentifier, orgIdentifier, projIdentifier))
+        .getValue();
   }
 }

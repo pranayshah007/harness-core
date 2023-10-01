@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -22,6 +23,7 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.ngtriggers.beans.source.artifact.JenkinsRegistrySpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.ArtifactStream;
@@ -30,7 +32,7 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,7 +40,7 @@ public class JenkinsArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     JenkinsArtifactStream jenkinsArtifactStream = (JenkinsArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(jenkinsArtifactStream.getSettingId()).build())
@@ -51,7 +53,7 @@ public class JenkinsArtifactStreamMapper implements ArtifactStreamMapper {
                   .artifactPath(jenkinsArtifactStream.getArtifactPaths() != null
                           ? ParameterField.createValueField(jenkinsArtifactStream.getArtifactPaths().get(0))
                           : null)
-                  .build(ParameterField.createValueField("<+input>"))
+                  .build(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }
@@ -66,6 +68,7 @@ public class JenkinsArtifactStreamMapper implements ArtifactStreamMapper {
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String artifactPath = PLEASE_FIX_ME;
     String jobName = PLEASE_FIX_ME;
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
     if (artifactStream != null) {
       JenkinsArtifactStream jenkinsArtifactStream = (JenkinsArtifactStream) artifactStream;
       jobName = jenkinsArtifactStream.getJobname();
@@ -76,9 +79,9 @@ public class JenkinsArtifactStreamMapper implements ArtifactStreamMapper {
     return JenkinsRegistrySpec.builder()
         .connectorRef(getConnectorRef(migratedEntities, artifactStream))
         .jobName(jobName)
-        .eventConditions(Collections.emptyList())
+        .eventConditions(eventConditions)
         .artifactPath(artifactPath)
-        .build(PLEASE_FIX_ME)
+        .build(TRIGGER_TAG_VALUE_DEFAULT)
         .build();
   }
 }

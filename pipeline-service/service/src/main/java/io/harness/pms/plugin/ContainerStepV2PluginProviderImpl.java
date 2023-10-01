@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.plugin;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.execution.StepsExecutionConfig;
@@ -53,6 +55,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
 @Singleton
 public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginProvider {
@@ -251,6 +254,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
       }
       updatedResponseList.addResponse(PluginCreationResponseWrapper.newBuilder()
                                           .setStepInfo(responseV2.getStepInfo())
+                                          .setShouldSkip(responseV2.getShouldSkip())
                                           .setResponse(pluginInfo)
                                           .build());
       usedPorts.addAll(pluginInfo.getPluginDetails().getTotalPortUsedDetails().getUsedPortsList());

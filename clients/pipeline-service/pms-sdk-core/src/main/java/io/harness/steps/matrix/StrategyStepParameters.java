@@ -7,6 +7,7 @@
 
 package io.harness.steps.matrix;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.yaml.ParameterField;
@@ -16,6 +17,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.steps.matrix.StrategyStepParameters")
 public class StrategyStepParameters extends StrategyAbstractStepParameters {
   StrategyConfig strategyConfig;
   String childNodeId;

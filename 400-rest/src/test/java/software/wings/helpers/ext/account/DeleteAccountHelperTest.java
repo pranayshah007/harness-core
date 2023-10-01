@@ -46,13 +46,13 @@ import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.DeletedEntity;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.licensing.LicenseService;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext;
@@ -316,8 +316,7 @@ public class DeleteAccountHelperTest extends WingsBaseTest {
     when(licenseService.updateAccountLicense(anyString(), any())).thenReturn(true);
     persistence.save(account);
 
-    deleteAccountHelperSpy.deleteAccount(ACCOUNT_ID);
-
+    deleteAccountHelperSpy.deleteAccount(ACCOUNT_ID, true);
     verify(persistentScheduler, times(1)).deleteAllQuartzJobsForAccount(ACCOUNT_ID);
     verify(perpetualTaskService, times(1)).deleteAllTasksForAccount(ACCOUNT_ID);
   }
@@ -339,8 +338,7 @@ public class DeleteAccountHelperTest extends WingsBaseTest {
     when(licenseService.updateAccountLicense(anyString(), any())).thenReturn(true);
     persistence.save(account);
 
-    deleteAccountHelperSpy.deleteAccount(ACCOUNT_ID);
-
+    deleteAccountHelperSpy.deleteAccount(ACCOUNT_ID, true);
     List<DeletedEntity> deletedEntities =
         persistence.createQuery(DeletedEntity.class, excludeAuthority).field("entityId").equal(ACCOUNT_ID).asList();
 

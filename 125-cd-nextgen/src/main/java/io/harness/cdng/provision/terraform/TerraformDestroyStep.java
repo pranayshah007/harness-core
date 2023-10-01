@@ -7,11 +7,15 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -30,7 +34,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -41,6 +44,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.serializer.KryoSerializer;
@@ -61,6 +65,8 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGResponse> {
@@ -77,12 +83,12 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
   @Inject public TerraformConfigDAL terraformConfigDAL;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -116,20 +122,20 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     log.info("Running Obtain Inline Task for the Destroy Step");
-    TerraformDestroyStepParameters parameters = (TerraformDestroyStepParameters) stepElementParameters.getSpec();
+    TerraformDestroyStepParameters parameters = (TerraformDestroyStepParameters) StepBaseParameters.getSpec();
     helper.validateDestroyStepParamsInline(parameters);
 
     if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
             TerraformStepConfigurationType.INLINE.getDisplayName())) {
-      return obtainInlineTask(ambiance, parameters, stepElementParameters);
+      return obtainInlineTask(ambiance, parameters, StepBaseParameters);
     } else if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
                    TerraformStepConfigurationType.INHERIT_FROM_PLAN.getDisplayName())) {
-      return obtainInheritedTask(ambiance, parameters, stepElementParameters);
+      return obtainInheritedTask(ambiance, parameters, StepBaseParameters);
     } else if (parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
                    TerraformStepConfigurationType.INHERIT_FROM_APPLY.getDisplayName())) {
-      return obtainLastApplyTask(ambiance, parameters, stepElementParameters);
+      return obtainLastApplyTask(ambiance, parameters, StepBaseParameters);
     } else {
       throw new InvalidRequestException(
           String.format("Unknown configuration Type: [%s]", parameters.getConfiguration().getType().getDisplayName()));
@@ -137,7 +143,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
   }
 
   private TaskRequest obtainInlineTask(
-      Ambiance ambiance, TerraformDestroyStepParameters parameters, StepElementParameters stepElementParameters) {
+      Ambiance ambiance, TerraformDestroyStepParameters parameters, StepBaseParameters StepBaseParameters) {
     log.info("Running Obtain Inline Task for the Destroy Step");
     boolean isTerraformCloudCli = parameters.getConfiguration().getSpec().getIsTerraformCloudCli().getValue();
 
@@ -169,7 +175,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .terraformCommandUnit(TerraformCommandUnit.Destroy)
             .entityId(entityId)
             .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
-                parameters.getConfiguration().getSpec().getConfigFiles(), stepElementParameters.getType()))
+                parameters.getConfiguration().getSpec().getConfigFiles(), StepBaseParameters.getType()))
             .configFile(helper.getGitFetchFilesConfig(
                 spec.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
             .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
@@ -184,16 +190,18 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
                     ? new HashMap<>()
                     : helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
             .timeoutInMillis(
-                StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+                StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
             .isTerraformCloudCli(isTerraformCloudCli)
+            .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+
             .build();
 
     TaskData taskData =
         TaskData.builder()
             .async(true)
             .taskType(terraformTaskNGParameters.getDelegateTaskType().name())
-            .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+            .timeout(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {terraformTaskNGParameters})
             .build();
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
@@ -203,7 +211,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
   }
 
   private TaskRequest obtainInheritedTask(
-      Ambiance ambiance, TerraformDestroyStepParameters parameters, StepElementParameters stepElementParameters) {
+      Ambiance ambiance, TerraformDestroyStepParameters parameters, StepBaseParameters StepBaseParameters) {
     log.info("Running Obtain Inherited Task for the Destroy Step");
     TerraformTaskNGParametersBuilder builder = TerraformTaskNGParameters.builder().taskType(TFTaskType.DESTROY);
     builder.terraformCommandUnit(TerraformCommandUnit.Destroy);
@@ -243,15 +251,17 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .encryptDecryptPlanForHarnessSMOnManager(
                 helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
             .timeoutInMillis(
-                StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+                StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
+            .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+
             .build();
 
     TaskData taskData =
         TaskData.builder()
             .async(true)
             .taskType(terraformTaskNGParameters.getDelegateTaskType().name())
-            .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+            .timeout(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {terraformTaskNGParameters})
             .build();
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
@@ -261,7 +271,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
   }
 
   private TaskRequest obtainLastApplyTask(
-      Ambiance ambiance, TerraformDestroyStepParameters parameters, StepElementParameters stepElementParameters) {
+      Ambiance ambiance, TerraformDestroyStepParameters parameters, StepBaseParameters StepBaseParameters) {
     log.info("Getting the Last Apply Task for the Destroy Step");
     TerraformTaskNGParametersBuilder builder = TerraformTaskNGParameters.builder().taskType(TFTaskType.DESTROY);
     builder.terraformCommandUnit(TerraformCommandUnit.Destroy);
@@ -287,7 +297,8 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
                 ? new HashMap<>()
                 : terraformConfig.getEnvironmentVariables())
         .timeoutInMillis(
-            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+            StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
         .useOptimizedTfPlan(true);
     if (terraformConfig.getConfigFiles() != null) {
       builder.configFile(helper.getGitFetchFilesConfig(
@@ -307,7 +318,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
         TaskData.builder()
             .async(true)
             .taskType(terraformTaskNGParameters.getDelegateTaskType().name())
-            .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+            .timeout(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {terraformTaskNGParameters})
             .build();
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
@@ -317,11 +328,11 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<TerraformTaskNGResponse> responseSupplier)
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<TerraformTaskNGResponse> responseSupplier)
       throws Exception {
     log.info("Handling Task Result With Security Context for the Destroy Step");
-    TerraformDestroyStepParameters parameters = (TerraformDestroyStepParameters) stepElementParameters.getSpec();
+    TerraformDestroyStepParameters parameters = (TerraformDestroyStepParameters) StepBaseParameters.getSpec();
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     TerraformTaskNGResponse terraformTaskNGResponse = responseSupplier.get();
     List<UnitProgress> unitProgresses = terraformTaskNGResponse.getUnitProgressData() == null

@@ -8,6 +8,7 @@
 package io.harness.idp.gitintegration.processor.impl;
 
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_PROXY;
+import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static junit.framework.TestCase.assertEquals;
@@ -96,6 +97,18 @@ public class GitlabConnectorProcessorTest {
   public void testGetConnectorSecretsInfoForInvalidSecretIdentifier() {
     ConnectorDTO connectorDTO = getGitlabConnectorDTO(true, true, false);
     gitlabConnectorProcessor.getConnectorAndSecretsInfo(ACCOUNT_IDENTIFIER, connectorDTO.getConnectorInfo());
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testGetConnectorSecretsInfoWithConfigUpdate() {
+    ConnectorDTO connectorDTO = getGitlabConnectorDTO(true, true, true);
+    doNothing().when(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
+    MockedStatic<ConfigManagerUtils> mockRestUtils = mockStatic(ConfigManagerUtils.class);
+    gitlabConnectorProcessor.createOrUpdateIntegrationConfig(ACCOUNT_IDENTIFIER, connectorDTO.getConnectorInfo());
+    verify(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
+    mockRestUtils.close();
   }
 
   @Test

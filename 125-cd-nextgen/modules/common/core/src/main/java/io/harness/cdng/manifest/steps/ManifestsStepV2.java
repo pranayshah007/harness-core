@@ -7,28 +7,44 @@
 
 package io.harness.cdng.manifest.steps;
 
+import static io.harness.cdng.manifest.ManifestType.MULTIPLE_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniqueness;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniquenessV2;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT_GLOBAL_OVERRIDES;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDE_IN_REVERSE_PRIORITY;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_OVERRIDES;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
+import io.harness.cdng.manifest.mappers.ManifestSummaryMapper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutput;
+import io.harness.cdng.manifest.steps.task.FetchManifestTaskContext;
+import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -36,16 +52,20 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.summary.ManifestSummary;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifierValidator;
+import io.harness.delegate.beans.TaskData;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -55,16 +75,20 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator;
+import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.tasks.TaskCategory;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
@@ -74,7 +98,10 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.serializer.KryoSerializer;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -85,7 +112,10 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -96,8 +126,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, AsyncExecutable<EmptyStepParameters> {
@@ -116,6 +149,12 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Inject private NGSettingsClient ngSettingsClient;
 
   @Inject NGFeatureFlagHelperService featureFlagHelperService;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private ManifestTaskService manifestTaskService;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private CDStepHelper cdStepHelper;
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private StrategyHelper strategyHelper;
 
   private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
 
@@ -127,11 +166,14 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
+    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
-    manifestsOutcome.ifPresent(outcome -> saveManifestsOutcome(ambiance, outcome, new HashMap<>()));
+    List<String> callbackIds = new ArrayList<>();
+    manifestsOutcome.ifPresent(manifests -> handleManifests(ambiance, manifests, callbackIds, logCallback));
 
-    return AsyncExecutableResponse.newBuilder().build();
+    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(callbackIds).build();
   }
 
   @Override
@@ -144,7 +186,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
       if (!manifestsOutcomeOutput.isFound()) {
         return StepResponse.builder().status(Status.SKIPPED).build();
       }
-
+      saveManifestExecutionDataToStageInfo(ambiance, (ManifestsOutcome) manifestsOutcomeOutput.getOutput());
       return StepResponse.builder().status(Status.SUCCEEDED).build();
     }
 
@@ -158,8 +200,17 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     UnresolvedManifestsOutput unresolvedManifestsOutput =
         (UnresolvedManifestsOutput) unresolvedManifestsOutcomeOutput.getOutput();
 
-    sweepingOutputService.consume(ambiance, OutcomeExpressionConstants.MANIFESTS,
-        unresolvedManifestsOutput.getManifestsOutcome(), StepCategory.STAGE.name());
+    ManifestsOutcome manifestsOutcome = unresolvedManifestsOutput.getManifestsOutcome();
+    Map<String, String> taskIdMapping = unresolvedManifestsOutput.getTaskIdMapping();
+
+    try {
+      manifestTaskService.handleTaskResponses(responseDataMap, manifestsOutcome, taskIdMapping);
+    } catch (Exception e) {
+      return strategyHelper.handleException(e);
+    }
+
+    sweepingOutputService.consume(
+        ambiance, OutcomeExpressionConstants.MANIFESTS, manifestsOutcome, StepCategory.STAGE.name());
 
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
@@ -171,14 +222,57 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   }
 
   @Override
+  @Deprecated // Can be removed with next releases
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
-    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
+    Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
     manifestsOutcome.ifPresent(outcome -> saveManifestsOutcome(ambiance, outcome, new HashMap<>()));
+    manifestsOutcome.ifPresent(outcome -> saveManifestExecutionDataToStageInfo(ambiance, outcome));
 
     return manifestsOutcome.map(ignored -> StepResponse.builder().status(Status.SUCCEEDED).build())
         .orElseGet(() -> StepResponse.builder().status(Status.SKIPPED).build());
+  }
+
+  private void handleManifests(
+      Ambiance ambiance, ManifestsOutcome manifests, List<String> callbackIds, NGLogCallback logCallback) {
+    Map<String, String> taskIdMapping = new HashMap<>();
+
+    manifests.forEach((identifier, manifest) -> {
+      final FetchManifestTaskContext context = FetchManifestTaskContext.builder()
+                                                   .ambiance(ambiance)
+                                                   .manifestOutcome(manifest)
+                                                   .logCallback(logCallback)
+                                                   .build();
+
+      if (manifestTaskService.isSupported(context)) {
+        Optional<TaskData> taskData = manifestTaskService.createTaskData(context);
+        taskData.ifPresent(task -> {
+          String taskId = queueTask(ambiance, task);
+          logCallback.saveExecutionLog(
+              LogHelper.color(String.format("Queued delegate task id: %s to fetch metadata for manifest: %s", taskId,
+                                  manifest.getIdentifier()),
+                  LogColor.Cyan, LogWeight.Bold));
+          taskIdMapping.put(taskId, identifier);
+          callbackIds.add(taskId);
+        });
+      }
+    });
+
+    saveManifestsOutcome(ambiance, manifests, taskIdMapping);
+  }
+
+  private String queueTask(Ambiance ambiance, TaskData taskData) {
+    TaskRequest taskRequest =
+        TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
+            TaskCategory.DELEGATE_TASK_V2, emptyList(), false, taskData.getTaskType(), emptyList());
+
+    DelegateTaskRequest delegateTaskRequest =
+        cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);
+
+    return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
   }
 
   private void saveManifestsOutcome(
@@ -194,18 +288,27 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     }
   }
 
-  private Optional<ManifestsOutcome> resolveManifestsOutcome(Ambiance ambiance) {
+  private Optional<ManifestsOutcome> resolveManifestsOutcome(Ambiance ambiance, NGLogCallback logCallback) {
     final NgManifestsMetadataSweepingOutput ngManifestsMetadataSweepingOutput =
         fetchManifestsMetadataFromSweepingOutput(ambiance);
 
     boolean isOverridesV2Enabled = isOverridesV2(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+    final boolean isMultipleManifestEnabled = isMultipleManifestEnabled(
+        AmbianceUtils.getAccountId(ambiance), ngManifestsMetadataSweepingOutput.getManifestConfigurations());
 
     List<ManifestConfigWrapper> manifests;
     Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMapV1 = new HashMap<>();
     Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
     List<ManifestConfigWrapper> svcManifests = new ArrayList<>();
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    String primaryManifestId = StringUtils.EMPTY;
+
+    if (isMultipleManifestEnabled) {
+      ParameterField<String> primaryManifestRef =
+          ngManifestsMetadataSweepingOutput.getManifestConfigurations().getPrimaryManifestRef();
+      resolve(ambiance, primaryManifestRef);
+      primaryManifestId = getResolvedPrimaryManifestRef(primaryManifestRef);
+    }
 
     if (isOverridesV2Enabled) {
       svcManifests = ngManifestsMetadataSweepingOutput.getSvcManifests();
@@ -217,6 +320,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
         return Optional.empty();
       }
+      svcManifests = filterServiceManifest(svcManifests, primaryManifestId, isMultipleManifestEnabled);
       manifests = aggregateManifestsFromAllLocationsV2(svcManifests, manifestsFromOverride, logCallback);
 
     } else {
@@ -228,6 +332,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
         return Optional.empty();
       }
+      finalSvcManifestsMapV1.replace(SERVICE,
+          filterServiceManifest(finalSvcManifestsMapV1.get(SERVICE), primaryManifestId, isMultipleManifestEnabled));
       manifests = aggregateManifestsFromAllLocations(finalSvcManifestsMapV1);
     }
 
@@ -235,6 +341,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
                                                       .map(ManifestConfigWrapper::getManifest)
                                                       .map(ManifestConfig::getSpec)
                                                       .collect(Collectors.toList());
+
+    // rendering expressions with mode RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED to keep step group overrides as it is
+    // these will be rendered by each step
     cdExpressionResolver.updateExpressions(ambiance, manifestAttributes);
 
     if (isOverridesV2Enabled) {
@@ -508,5 +617,79 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
                    ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
                .getValue()
                .equals("true");
+  }
+
+  public void saveManifestExecutionDataToStageInfo(Ambiance ambiance, ManifestsOutcome manifestsOutcome) {
+    if (isNull(manifestsOutcome)) {
+      return;
+    }
+    try {
+      List<ManifestSummary> manifestsSummary = mapManifestOutcomeToSummary(manifestsOutcome);
+      if (isNotEmpty(manifestsSummary)) {
+        stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+            StageExecutionInfoUpdateDTO.builder()
+                .manifestsSummary(ServiceExecutionSummaryDetails.ManifestsSummary.builder()
+                                      .manifestSummaries(manifestsSummary)
+                                      .build())
+                .build());
+      }
+    } catch (Exception e) {
+      log.error(String.format(
+          "[CustomDashboard]: Error while saving manifest info to StageExecutionInfo for accountIdentifier %s, orgIdentifier %s, projectIdentifier %s and stageExecutionId %s",
+          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getStageExecutionId()));
+    }
+  }
+
+  private List<ManifestSummary> mapManifestOutcomeToSummary(ManifestsOutcome manifestsOutcome) {
+    List<ManifestSummary> manifestSummaries = new ArrayList<>();
+    Collection<ManifestOutcome> manifestOutcomeList = manifestsOutcome.values();
+    for (ManifestOutcome manifestOutcome : manifestOutcomeList) {
+      ManifestSummary manifestSummary = ManifestSummaryMapper.toManifestSummary(manifestOutcome);
+      if (manifestSummary != null) {
+        manifestSummaries.add(manifestSummary);
+      }
+    }
+    return manifestSummaries;
+  }
+
+  private boolean isMultipleManifestEnabled(String accountId, ManifestConfigurations manifestConfigurations) {
+    return ManifestFilterHelper.hasPrimaryManifestRef(manifestConfigurations)
+        && featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG);
+  }
+
+  private void resolve(Ambiance ambiance, Object... objects) {
+    final List<Object> toResolve = new ArrayList<>(Arrays.asList(objects));
+    cdExpressionResolver.updateExpressions(ambiance, toResolve);
+  }
+
+  private String getResolvedPrimaryManifestRef(ParameterField<String> primaryManifestRef) {
+    String primaryManifestId = ParameterFieldHelper.getParameterFieldValue(primaryManifestRef);
+    if (isEmpty(primaryManifestId)) {
+      throw new InvalidRequestException(
+          String.format("Unable to resolve primaryManifestRef. Please check the expression %s",
+              primaryManifestRef.isExpression() ? primaryManifestRef.getExpressionValue() : StringUtils.EMPTY));
+    }
+    return primaryManifestId;
+  }
+
+  private List<ManifestConfigWrapper> filterServiceManifest(
+      List<ManifestConfigWrapper> svcManifests, String primaryManifestId, boolean isMultipleManifestEnabled) {
+    if (!isMultipleManifestEnabled) {
+      return svcManifests;
+    }
+    List<ManifestConfigWrapper> updatedSvcManifests =
+        svcManifests.stream()
+            .filter(manifest
+                -> !MULTIPLE_SUPPORTED_MANIFEST_TYPES.contains(manifest.getManifest().getType().getDisplayName())
+                    || manifest.getManifest().getIdentifier().equals(primaryManifestId))
+            .collect(Collectors.toList());
+
+    if (updatedSvcManifests.stream().noneMatch(manifest
+            -> MULTIPLE_SUPPORTED_MANIFEST_TYPES.contains(manifest.getManifest().getType().getDisplayName()))) {
+      throw new InvalidRequestException(String.format("primaryManifestRef: %s does not match to any [%S] manifests",
+          primaryManifestId, String.join(", ", MULTIPLE_SUPPORTED_MANIFEST_TYPES)));
+    }
+    return updatedSvcManifests;
   }
 }

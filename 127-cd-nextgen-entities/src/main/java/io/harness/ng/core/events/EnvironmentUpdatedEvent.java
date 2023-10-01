@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.events;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -15,7 +14,10 @@ import static io.harness.ng.core.ResourceConstants.RESOURCE_TYPE;
 import static io.harness.ng.core.ResourceConstants.SERVICE_OVERRIDE_NAME;
 import static io.harness.ng.core.ResourceConstants.STATUS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.event.Event;
 import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.OrgScope;
@@ -37,6 +39,8 @@ import lombok.Builder;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @Getter
 @Builder

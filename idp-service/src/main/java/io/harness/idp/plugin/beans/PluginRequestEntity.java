@@ -27,7 +27,9 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -75,5 +77,17 @@ public class PluginRequestEntity
                  .field(PluginRequestKeys.createdAt)
                  .build())
         .build();
+  }
+
+  public Map<String, String> toMap() {
+    Map<String, String> pluginRequestEntityMap = new HashMap<>();
+
+    pluginRequestEntityMap.put(PluginRequestKeys.accountIdentifier, accountIdentifier);
+    pluginRequestEntityMap.put(PluginRequestKeys.name, name);
+    pluginRequestEntityMap.put(PluginRequestKeys.creator, creator);
+    pluginRequestEntityMap.put(PluginRequestKeys.packageLink, packageLink);
+    pluginRequestEntityMap.put(PluginRequestKeys.docLink, docLink);
+
+    return pluginRequestEntityMap;
   }
 }

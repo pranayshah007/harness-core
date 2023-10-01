@@ -6,15 +6,17 @@
  */
 
 package software.wings.instancesyncv2;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.ExceptionUtils;
@@ -82,6 +84,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -216,7 +219,8 @@ public class CgInstanceSyncServiceV2 {
   }
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
-    log.info("Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);
+    log.debug(
+        "Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);
 
     if (!result.getExecutionStatus().isEmpty()
         && !result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
@@ -311,8 +315,6 @@ public class CgInstanceSyncServiceV2 {
       Optional<InstanceHandler> instanceHandler = Optional.of(instanceHandlerFactory.getInstanceHandler(infraMapping));
       InstanceSyncByPerpetualTaskHandler instanceSyncHandler =
           (InstanceSyncByPerpetualTaskHandler) instanceHandler.get();
-
-      instanceSyncHandler.cleanupInvalidV1PerpetualTask(taskDetails.getAccountId());
 
       try (AcquiredLock lock = persistentLocker.tryToAcquireLock(
                InfrastructureMapping.class, infraMapping.getUuid(), Duration.ofSeconds(180))) {

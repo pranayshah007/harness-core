@@ -6,7 +6,6 @@
  */
 
 package io.harness.artifactory;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -26,7 +25,10 @@ import static org.jfrog.artifactory.client.ArtifactoryRequest.ContentType.TEXT;
 import static org.jfrog.artifactory.client.ArtifactoryRequest.Method.GET;
 import static org.jfrog.artifactory.client.ArtifactoryRequest.Method.POST;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -74,9 +76,12 @@ import org.jfrog.artifactory.client.httpClient.http.ProxyConfig;
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl;
 import org.jfrog.artifactory.client.model.RepoPath;
 import org.jfrog.artifactory.client.model.Repository;
+import org.jfrog.artifactory.client.model.impl.FileImpl;
 import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 import org.jfrog.artifactory.client.model.repository.settings.RepositorySettings;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 @OwnedBy(CDC)
 public class ArtifactoryClientImpl {
@@ -350,8 +355,12 @@ public class ArtifactoryClientImpl {
 
   public List<BuildDetails> getArtifactList(
       ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactPath, int maxVersions) {
-    return getBuildDetails(artifactoryConfig, repositoryName, artifactPath, maxVersions)
-        .stream()
+    List<BuildDetails> buildDetailsList = getBuildDetails(artifactoryConfig, repositoryName, artifactPath, maxVersions);
+    return getArtifactListHelper(repositoryName, buildDetailsList);
+  }
+
+  private List<BuildDetails> getArtifactListHelper(String repositoryName, List<BuildDetails> buildDetails) {
+    return buildDetails.stream()
         .map(buildDetail -> {
           buildDetail.setArtifactPath(buildDetail.getArtifactPath().replaceFirst(repositoryName, "").substring(1));
           Map<String, String> metadata = new HashMap<>();
@@ -459,6 +468,38 @@ public class ArtifactoryClientImpl {
       handleAndRethrow(e, USER);
     }
     return new ArrayList<>();
+  }
+
+  public BuildDetails getBuildDetailWithFullPath(
+      ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactPath) {
+    if (log.isDebugEnabled()) {
+      log.debug("Retrieving file paths for repositoryName {} artifactPath {}", repositoryName, artifactPath);
+    }
+    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
+    FileImpl item;
+    try {
+      item = artifactory.repository(repositoryName).file(artifactPath).info();
+    } catch (Exception e) {
+      log.error(String.format("Could not fetch Artifactory Generic artifact with artifactPath [%s] in repository [%s]",
+                    artifactPath, repositoryName),
+          e);
+      return null;
+    }
+
+    if (item == null) {
+      return null;
+    }
+
+    String path = item.getPath();
+    BuildDetails buildDetails = aBuildDetails()
+                                    .withNumber(path)
+                                    .withArtifactPath(path)
+                                    .withBuildUrl(getBaseUrl(artifactoryConfig) + path)
+                                    .withArtifactFileSize(Long.toString(item.getSize()))
+                                    .withUiDisplayName("Build# " + path)
+                                    .build();
+
+    return getArtifactListHelper(repositoryName, List.of(buildDetails)).get(0);
   }
 
   public InputStream downloadArtifacts(ArtifactoryConfigRequest artifactoryConfig, String repoKey,

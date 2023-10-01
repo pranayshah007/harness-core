@@ -28,6 +28,7 @@ go_test(
     srcs = [
         "engine_client_test.go",
         "logproxy_client_test.go",
+        "tiproxy_client_test.go",
     ],
     embed = [":client"],
     deps = [

@@ -42,9 +42,9 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(
+            .serviceInstanceDetails(
                 ServiceInstanceDetails.builder()
-                    .valid(true)
+                    .shouldUseNodesFromCD(true)
                     .deployedServiceInstances(
                         IntStream.range(0, 100).boxed().map(i -> "c" + i).collect(Collectors.toList()))
                     .serviceInstancesBeforeDeployment(
@@ -59,7 +59,7 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
     List<String> testNodes = VerificationJobInstanceServiceInstanceUtils.getSampledTestNodes(verificationJobInstance);
     assertThat(testNodes).hasSize(VerificationJobInstanceServiceInstanceUtils.MAX_TEST_NODE_COUNT);
     assertThat(testNodes).allMatch(
-        tn -> verificationJobInstance.getServiceInstanceDetailsFromCD().getDeployedServiceInstances().contains(tn));
+        tn -> verificationJobInstance.getServiceInstanceDetails().getDeployedServiceInstances().contains(tn));
   }
 
   @Test
@@ -69,9 +69,9 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(
+            .serviceInstanceDetails(
                 ServiceInstanceDetails.builder()
-                    .valid(true)
+                    .shouldUseNodesFromCD(true)
                     .deployedServiceInstances(
                         IntStream.range(0, 200).boxed().map(i -> "c" + i).collect(Collectors.toList()))
                     .serviceInstancesBeforeDeployment(
@@ -98,9 +98,9 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(
+            .serviceInstanceDetails(
                 ServiceInstanceDetails.builder()
-                    .valid(true)
+                    .shouldUseNodesFromCD(true)
                     .deployedServiceInstances(Arrays.asList("c1", "c2"))
                     .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
                     .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "p3", "p4", "c1", "c2"))
@@ -118,9 +118,9 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.autoVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(
+            .serviceInstanceDetails(
                 ServiceInstanceDetails.builder()
-                    .valid(true)
+                    .shouldUseNodesFromCD(true)
                     .deployedServiceInstances(Arrays.asList("c1", "c2"))
                     .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
                     .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "p3", "p4", "c1", "c2"))
@@ -138,12 +138,12 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.autoVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(true)
-                                              .deployedServiceInstances(Arrays.asList("c1", "c2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2", "c3"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(true)
+                                        .deployedServiceInstances(Arrays.asList("c1", "c2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("c1", "c2", "c3"))
+                                        .build())
             .build();
 
     List<String> testNodes = VerificationJobInstanceServiceInstanceUtils.getTestNodes(verificationJobInstance);
@@ -157,12 +157,12 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.blueGreenVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(true)
-                                              .deployedServiceInstances(Arrays.asList("p1", "p2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(true)
+                                        .deployedServiceInstances(Arrays.asList("p1", "p2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2"))
+                                        .build())
             .build();
 
     List<String> testNodes = VerificationJobInstanceServiceInstanceUtils.getTestNodes(verificationJobInstance);
@@ -176,12 +176,12 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.blueGreenVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(true)
-                                              .deployedServiceInstances(Arrays.asList("p1", "p2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(true)
+                                        .deployedServiceInstances(Arrays.asList("p1", "p2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2"))
+                                        .build())
             .build();
 
     List<String> controlNodes = VerificationJobInstanceServiceInstanceUtils.getControlNodes(verificationJobInstance);
@@ -195,12 +195,12 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
-            .serviceInstanceDetailsFromCD(ServiceInstanceDetails.builder()
-                                              .valid(true)
-                                              .deployedServiceInstances(Arrays.asList("c1", "c2"))
-                                              .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
-                                              .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
-                                              .build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(true)
+                                        .deployedServiceInstances(Arrays.asList("c1", "c2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
+                                        .build())
             .build();
 
     List<String> controlNodes = VerificationJobInstanceServiceInstanceUtils.getControlNodes(verificationJobInstance);
@@ -213,7 +213,7 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
   public void isValidCanaryDeployment_valid() {
     ServiceInstanceDetails serviceInstanceDetails =
         ServiceInstanceDetails.builder()
-            .valid(true)
+            .shouldUseNodesFromCD(true)
             .deployedServiceInstances(Arrays.asList("c1", "c2"))
             .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
             .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
@@ -228,7 +228,7 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
   public void isValidCanaryDeployment_noBeforeNodes() {
     ServiceInstanceDetails serviceInstanceDetails =
         ServiceInstanceDetails.builder()
-            .valid(true)
+            .shouldUseNodesFromCD(true)
             .deployedServiceInstances(Arrays.asList("c1", "c2"))
             .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
             .serviceInstancesAfterDeployment(Arrays.asList("p4", "p5", "c1", "c2"))
@@ -242,7 +242,7 @@ public class VerificationJobInstanceServiceInstanceUtilTest extends CvNextGenTes
   @Category(UnitTests.class)
   public void isValidCanaryDeployment_AllNodesGotDeployedAgain() {
     ServiceInstanceDetails serviceInstanceDetails = ServiceInstanceDetails.builder()
-                                                        .valid(true)
+                                                        .shouldUseNodesFromCD(true)
                                                         .deployedServiceInstances(Arrays.asList("p1", "p2"))
                                                         .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2"))
                                                         .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2"))

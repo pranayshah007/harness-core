@@ -7,8 +7,11 @@
 
 package io.harness.cdng.manifest.yaml.oci;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -16,8 +19,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 
 @OwnedBy(HarnessTeam.CDP)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 public enum OciHelmChartStoreConfigType {
-  @JsonProperty(OciStoreConfigType.GENERIC) GENERIC(OciStoreConfigType.GENERIC);
+  @JsonProperty(OciStoreConfigType.GENERIC) GENERIC(OciStoreConfigType.GENERIC),
+  @JsonProperty(OciStoreConfigType.ECR) ECR(OciStoreConfigType.ECR);
 
   private final String displayName;
 

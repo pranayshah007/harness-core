@@ -27,13 +27,16 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import software.wings.app.JobsFrequencyConfig;
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
-import software.wings.beans.AccountStatus;
+import software.wings.beans.account.AccountStatus;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.Collections;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
+@Slf4j
 public class DeleteAccountHandler extends IteratorPumpAndRedisModeHandler implements Handler<Account> {
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(Integer.MAX_VALUE);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(120);
@@ -56,6 +59,7 @@ public class DeleteAccountHandler extends IteratorPumpAndRedisModeHandler implem
                            .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
                            .persistenceProvider(persistenceProvider)
+                           .filterExpander(getFilterQuery())
                            .handler(this)
                            .schedulingType(REGULAR)
                            .redistribute(true));
@@ -73,8 +77,16 @@ public class DeleteAccountHandler extends IteratorPumpAndRedisModeHandler implem
                            .targetInterval(targetInterval)
                            .acceptableNoAlertDelay(ACCEPTABLE_NO_ALERT_DELAY)
                            .acceptableExecutionTime(ACCEPTABLE_EXECUTION_TIME)
+                           .filterExpander(getFilterQuery())
                            .persistenceProvider(persistenceProvider)
                            .handler(this));
+  }
+
+  private MorphiaFilterExpander<Account> getFilterQuery() {
+    return query -> {
+      query.and(
+          query.criteria(AccountKeys.accountStatusKey).in(Collections.singleton(AccountStatus.MARKED_FOR_DELETION)));
+    };
   }
 
   @Override

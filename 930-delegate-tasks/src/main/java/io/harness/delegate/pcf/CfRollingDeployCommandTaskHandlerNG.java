@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.pcf;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -36,7 +35,10 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -97,6 +99,7 @@ import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.cloudfoundry.operations.applications.InstanceDetail;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @NoArgsConstructor
 @Singleton
 @Slf4j
@@ -129,13 +132,16 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
     File artifactFile = null;
     File workingDirectory = null;
+    File trailingLogsDirectory = null;
     TasApplicationInfo currentProdInfo = null;
     CfRollingDeployResponseNGBuilder cfRollingDeployResponseNGBuilder = CfRollingDeployResponseNG.builder();
     try {
       List<ApplicationSummary> previousReleases = cfDeploymentManager.getPreviousReleasesForRolling(
           cfRequestConfig, ((CfRollingDeployRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
+      trailingLogsDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
       cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
+      cfRequestConfig.setTrailingLogsDirPath(trailingLogsDirectory.getAbsolutePath());
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
           workingDirectory, ((CfRollingDeployRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
       cfRollingDeployResponseNGBuilder.currentProdInfo(currentProdInfo);
@@ -163,9 +169,10 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
               .pcfManifestFileData(pcfManifestFileData)
               .varsYmlFilePresent(varsYmlPresent)
               .dockerBasedDeployment(isDockerArtifact(cfRollingDeployRequestNG.getTasArtifactConfig()))
-              .strategy("rolling")
               .build();
-
+      if (!isEmpty(previousReleases)) {
+        requestData.setStrategy("rolling");
+      }
       requestData.setFinalManifestYaml(generateManifestYamlForPush(cfRollingDeployRequestNG, requestData));
       // Create manifest.yaml file
       prepareManifestYamlFile(requestData);
@@ -224,7 +231,8 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
           CommandExecutionStatus.FAILURE);
 
       Misc.logAllMessages(sanitizedException, logCallback);
-      return cfRollingDeployResponseNGBuilder.commandExecutionStatus(CommandExecutionStatus.FAILURE)
+      return cfRollingDeployResponseNGBuilder.newApplicationInfo(currentProdInfo)
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(ExceptionUtils.getMessage(sanitizedException))
           .build();
     } finally {
@@ -287,6 +295,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.warn("Failed to remove temp files created", sanitizedException);
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
     }
   }
 
@@ -475,6 +484,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
         .cfCliPath(cfRequestConfig.getCfCliPath())
         .cfCliVersion(cfRequestConfig.getCfCliVersion())
         .cfHomeDirPath(cfRequestConfig.getCfHomeDirPath())
+        .trailingLogsDirPath(cfRequestConfig.getTrailingLogsDirPath())
         .loggedin(cfRequestConfig.isLoggedin())
         .limitPcfThreads(cfRequestConfig.isLimitPcfThreads())
         .useNumbering(cfRequestConfig.isUseNumbering())
@@ -504,8 +514,10 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     try {
       isAutoScalarEnabled = cfDeploymentManager.checkIfAppHasAutoscalarEnabled(cfAppAutoscalarRequestData, logCallback);
     } catch (PivotalClientApiException e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       logCallback.saveExecutionLog(
           "Failed while fetching autoscalar state: " + encodeColor(currentActiveApplication.getName()), LogLevel.ERROR);
+      logCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.ERROR);
     }
     return TasApplicationInfo.builder()
         .applicationName(currentActiveApplication.getName())

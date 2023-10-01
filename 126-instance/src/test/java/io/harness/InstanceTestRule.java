@@ -6,13 +6,15 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import static org.mockito.Mockito.mock;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.factory.ClosingFactory;
@@ -64,6 +66,7 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.springframework.core.convert.converter.Converter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(DX)
 

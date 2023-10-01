@@ -46,7 +46,8 @@ import java.util.Map;
 
 @OwnedBy(PIPELINE)
 public interface TaskChainExecutable<T extends StepParameters>
-    extends Step<T>, Abortable<T, TaskChainExecutableResponse>, Failable<T>, Progressable<T> {
+    extends Step<T>, Abortable<T, TaskChainExecutableResponse>, Failable<T>, Expirable<T, TaskChainExecutableResponse>,
+            Progressable<T> {
   TaskChainResponse startChainLink(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage);
 
   TaskChainResponse executeNextLink(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage,
@@ -62,5 +63,10 @@ public interface TaskChainExecutable<T extends StepParameters>
   @Override
   default void handleFailureInterrupt(Ambiance ambiance, T stepParameters, Map<String, String> metadata) {
     // NOOP : By default this is noop as task failure is handled by the PMS but you are free to override it
+  }
+
+  @Override
+  default void handleExpire(Ambiance ambiance, T stepParameters, TaskChainExecutableResponse executableResponse) {
+    // NOOP : By default this is noop as task expire is handled by the PMS but you are free to override it
   }
 }

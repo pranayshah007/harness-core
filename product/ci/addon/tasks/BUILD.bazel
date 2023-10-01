@@ -9,6 +9,7 @@ go_library(
     name = "tasks",
     srcs = [
         "common.go",
+        "execute_task.go",
         "plugin.go",
         "run.go",
         "runtests.go",
@@ -29,6 +30,7 @@ go_library(
         "//product/ci/addon/testintelligence/csharp",
         "//product/ci/addon/testintelligence/java",
         "//product/ci/addon/testintelligence/python",
+        "//product/ci/addon/testintelligence/ruby",
         "//product/ci/addon/testreports",
         "//product/ci/addon/testreports/junit",
         "//product/ci/common/external",

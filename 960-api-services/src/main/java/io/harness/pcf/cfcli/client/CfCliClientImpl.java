@@ -741,16 +741,19 @@ public class CfCliClientImpl implements CfCliClient {
   public StartedProcess tailLogsForPcf(CfRequestConfig pcfRequestConfig, LogCallback logCallback)
       throws PivotalClientApiException {
     try {
-      boolean loginSuccessful = pcfRequestConfig.isLoggedin()
-          ? pcfRequestConfig.isLoggedin()
-          : doLogin(pcfRequestConfig, logCallback, pcfRequestConfig.getCfHomeDirPath());
+      String configVarPath = pcfRequestConfig.getCfHomeDirPath();
+      if (!isEmpty(pcfRequestConfig.getTrailingLogsDirPath())) {
+        configVarPath = pcfRequestConfig.getTrailingLogsDirPath();
+      }
+      boolean loginSuccessful = pcfRequestConfig.isLoggedin() ? pcfRequestConfig.isLoggedin()
+                                                              : doLogin(pcfRequestConfig, logCallback, configVarPath);
 
       if (!loginSuccessful) {
         logCallback.saveExecutionLog(color("Failed to login", Red, Bold));
         throw new PivotalClientApiException("Failed to login");
       }
 
-      ProcessExecutor processExecutor = getProcessExecutorForLogTailing(pcfRequestConfig, logCallback);
+      ProcessExecutor processExecutor = getProcessExecutorForLogTailing(pcfRequestConfig, logCallback, configVarPath);
       return processExecutor.start();
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "Failed while tailing logs", e);
@@ -789,15 +792,15 @@ public class CfCliClientImpl implements CfCliClient {
   }
 
   @VisibleForTesting
-  ProcessExecutor getProcessExecutorForLogTailing(CfRequestConfig pcfRequestConfig, LogCallback logCallback) {
+  ProcessExecutor getProcessExecutorForLogTailing(
+      CfRequestConfig pcfRequestConfig, LogCallback logCallback, String configPathVar) {
     String logsCommand = CfCliCommandResolver.getLogsCommand(
         pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), pcfRequestConfig.getApplicationName());
     return new ProcessExecutor()
         .timeout(pcfRequestConfig.getTimeOutIntervalInMins(), TimeUnit.MINUTES)
         .command(BIN_BASH, "-c", logsCommand)
         .readOutput(true)
-        .environment(
-            getEnvironmentMapForCfExecutor(pcfRequestConfig.getEndpointUrl(), pcfRequestConfig.getCfHomeDirPath()))
+        .environment(getEnvironmentMapForCfExecutor(pcfRequestConfig.getEndpointUrl(), configPathVar))
         .redirectOutput(new LogOutputStream() {
           @Override
           protected void processLine(String line) {

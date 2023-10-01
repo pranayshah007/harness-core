@@ -22,7 +22,10 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -42,6 +45,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.pcf.CfDeploymentManager;
@@ -62,6 +66,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @NoArgsConstructor
 @Singleton
 @Slf4j
@@ -130,6 +135,9 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       cfCommandTaskHelperNG.downSizeListOfInstancesAndUnmapRoutes(executionLogCallback, cfRequestConfig,
           cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRollbackCommandRequestNG, autoscalarRequestData);
       cfRollbackCommandResult.setCfInstanceElements(oldAppInstances);
+      cfRollbackCommandResult.setCurrentProdInfo(cfRollbackCommandRequestNG.getNewApplicationDetails());
+      cfRollbackCommandResult.setNewApplicationInfo(cfRollbackCommandRequestNG.getActiveApplicationDetails());
+      cfRollbackCommandResult.setCfInstanceElements(oldAppInstances);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
 
       if (isRollbackCompleted(cfRollbackCommandRequestNG, cfRequestConfig)) {
@@ -156,6 +164,7 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         } catch (IOException e) {
           Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
           log.warn("Failed to delete temp cf home folder", sanitizedException);
+          executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
         }
       }
     }

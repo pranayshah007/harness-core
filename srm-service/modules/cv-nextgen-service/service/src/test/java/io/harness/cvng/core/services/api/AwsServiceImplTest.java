@@ -81,7 +81,7 @@ public class AwsServiceImplTest extends CvNextGenTestBase {
         .thenReturn(JsonUtils.asJson(awsWorkspacesDataResponse));
     List<AwsPrometheusWorkspaceDTO> workspaces = awsService.fetchAllWorkspaces(
         ProjectParams.builder().accountIdentifier(accountId).projectIdentifier("").orgIdentifier("").build(),
-        connectorIdentifier, "", "");
+        connectorIdentifier, "", "tracingId");
     assertThat(workspaces).isNotNull();
     assertThat(workspaces).hasSize(1);
     assertThat(workspaces.get(0).getWorkspaceId()).isEqualTo("ws-bd297196-b5ca-48c5-9857-972fe759354f");

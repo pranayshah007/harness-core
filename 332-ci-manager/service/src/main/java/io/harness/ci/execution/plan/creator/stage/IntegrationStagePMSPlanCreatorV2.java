@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.plan.creator.stage;
+package io.harness.ci.execution.plan.creator.stage;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -23,14 +23,14 @@ import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.integrationstage.CIIntegrationStageModifier;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.plan.creator.codebase.CodebasePlanCreator;
+import io.harness.ci.execution.states.CISpecStep;
+import io.harness.ci.execution.states.IntegrationStageStepPMS;
+import io.harness.ci.execution.utils.CIStagePlanCreationUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.integrationstage.CIIntegrationStageModifier;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
-import io.harness.ci.states.CISpecStep;
-import io.harness.ci.states.IntegrationStageStepPMS;
-import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -55,8 +55,8 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -314,6 +314,6 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+    return Set.of(HarnessYamlVersion.V0);
   }
 }

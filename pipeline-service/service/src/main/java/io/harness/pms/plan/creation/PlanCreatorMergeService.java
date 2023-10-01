@@ -10,8 +10,11 @@ package io.harness.pms.plan.creation;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.async.plan.PlanNotifyEventConsumer.PMS_PLAN_CREATION;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.exception.InvalidRequestException;
@@ -26,6 +29,8 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ErrorResponse;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.plan.PartialPlanResponse;
 import io.harness.pms.contracts.plan.PlanCreationBlobRequest;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
@@ -37,7 +42,7 @@ import io.harness.pms.plan.creation.validator.PlanCreationValidator;
 import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.utils.PmsGrpcClientUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
@@ -61,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -136,10 +142,10 @@ public class PlanCreatorMergeService {
 
       YamlField pipelineField;
       switch (version) {
-        case PipelineVersion.V1:
+        case HarnessYamlVersion.V1:
           pipelineField = YamlUtils.readTree(planExecutionMetadata.getProcessedYaml());
           break;
-        case PipelineVersion.V0:
+        case HarnessYamlVersion.V0:
           pipelineField = YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml());
           break;
         default:
@@ -154,6 +160,13 @@ public class PlanCreatorMergeService {
           Dependencies.newBuilder()
               .setYaml(planExecutionMetadata.getProcessedYaml())
               .putDependencies(pipelineField.getNode().getUuid(), pipelineField.getNode().getYamlPath())
+              .putDependencyMetadata(pipelineField.getNode().getUuid(),
+                  Dependency.newBuilder()
+                      .setParentInfo(HarnessStruct.newBuilder()
+                                         .putData(PlanCreatorConstants.YAML_VERSION,
+                                             HarnessValue.newBuilder().setStringValue(version).build())
+                                         .build())
+                      .build())
               .build();
 
       PlanCreationBlobResponse finalResponse = createPlanForDependenciesRecursive(
@@ -170,7 +183,7 @@ public class PlanCreatorMergeService {
       String projectIdentifier, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
     String pipelineVersion = metadata != null && EmptyPredicate.isNotEmpty(metadata.getHarnessVersion())
         ? metadata.getHarnessVersion()
-        : PipelineVersion.V0;
+        : HarnessYamlVersion.V0;
     // TODO(BRIJESH): Remove the isExecutionInputEnabled field from PlanCreationContextValue. Once the change to remove
     // its usages is deployed in all services.
     Map<String, PlanCreationContextValue> planCreationContextMap = new HashMap<>();

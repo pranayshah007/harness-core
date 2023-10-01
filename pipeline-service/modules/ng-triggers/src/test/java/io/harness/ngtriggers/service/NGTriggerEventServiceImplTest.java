@@ -14,27 +14,37 @@ import static io.harness.rule.OwnerRule.VINICIUS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
+import io.harness.dto.PolledResponse;
+import io.harness.dto.PollingInfoForTriggers;
+import io.harness.network.SafeHttpCall;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.service.impl.NGTriggerEventServiceImpl;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.polling.client.PollingResourceClient;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
 
 import com.mongodb.client.result.DeleteResult;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.data.domain.Page;
@@ -43,6 +53,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
+import retrofit2.Call;
 
 public class NGTriggerEventServiceImplTest {
   private final String ACCOUNT_ID = "account_id";
@@ -51,11 +62,13 @@ public class NGTriggerEventServiceImplTest {
   private final String IDENTIFIER = "first_trigger";
   private final String NAME = "first trigger";
   private final String PIPELINE_IDENTIFIER = "myPipeline";
+  Call<ResponseDTO<PollingInfoForTriggers>> request;
+  private MockedStatic<SafeHttpCall> safeHttpCallMockedStatic;
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @InjectMocks NGTriggerEventServiceImpl ngTriggerEventService;
 
   @Mock TriggerEventHistoryRepository triggerEventHistoryRepository;
-
+  @Mock PollingResourceClient pollingResourceClient;
   @Before
   public void setup() throws Exception {}
 
@@ -85,6 +98,27 @@ public class NGTriggerEventServiceImplTest {
     Criteria criteria = ngTriggerEventService.formTriggerEventCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
         PIPELINE_IDENTIFIER, IDENTIFIER, "a^s", Arrays.asList(ExecutionStatus.ABORTED));
     assertThat(criteria).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetPollingInfo() throws IOException {
+    safeHttpCallMockedStatic = mockStatic(SafeHttpCall.class);
+    when(pollingResourceClient.getPollingInfoForTriggers(ACCOUNT_ID, "pollingDocId")).thenReturn(request);
+    Set<String> allPolledKeys = new HashSet<>();
+    allPolledKeys.add("key1");
+    allPolledKeys.add("key2");
+    ResponseDTO<PollingInfoForTriggers> pollingInfoForTriggersResponseDTO =
+        ResponseDTO.newResponse(PollingInfoForTriggers.builder()
+                                    .polledResponse(PolledResponse.builder().allPolledKeys(allPolledKeys).build())
+                                    .build());
+    when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> pollingInfoForTriggersResponseDTO);
+    assertThat(ngTriggerEventService.getPollingInfo(ACCOUNT_ID, "pollingDocId")
+                   .getData()
+                   .getPolledResponse()
+                   .getAllPolledKeys())
+        .isEqualTo(allPolledKeys);
   }
 
   @Test

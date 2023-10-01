@@ -7,6 +7,7 @@
 
 package io.harness.expression;
 
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.HINGER;
 
@@ -30,8 +31,11 @@ import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.logging.impl.NoOpLog;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -60,6 +64,35 @@ public class ExpressionEvaluatorUtilsTest extends CategoryTest {
     assertThat(optional.get()).isEqualTo(1);
 
     optional = ExpressionEvaluatorUtils.fetchField(dummyA, "pairVal");
+    assertThat(optional).isPresent();
+    assertThat(optional.get()).isEqualTo(Pair.of("b", "c"));
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testFetchFieldV1() {
+    JexlEngine engine = new JexlBuilder().logger(new NoOpLog()).create();
+    Map<String, Object> map = ImmutableMap.of("a", "aVal", "b", DummyA.builder().strVal("bVal").build());
+    Optional<Object> optional = ExpressionEvaluatorUtils.fetchField(engine, map, "a");
+    assertThat(optional).isPresent();
+    assertThat(optional.get()).isEqualTo("aVal");
+
+    optional = ExpressionEvaluatorUtils.fetchField(engine, map, "b");
+    assertThat(optional).isPresent();
+    assertThat(optional.get()).isInstanceOf(DummyA.class);
+    assertThat(((DummyA) optional.get()).getStrVal()).isEqualTo("bVal");
+
+    DummyA dummyA = DummyA.builder().strVal("a").intVal(1).pairVal(Pair.of("b", "c")).build();
+    optional = ExpressionEvaluatorUtils.fetchField(engine, dummyA, "strVal");
+    assertThat(optional).isPresent();
+    assertThat(optional.get()).isEqualTo("a");
+
+    optional = ExpressionEvaluatorUtils.fetchField(engine, dummyA, "intVal");
+    assertThat(optional).isPresent();
+    assertThat(optional.get()).isEqualTo(1);
+
+    optional = ExpressionEvaluatorUtils.fetchField(engine, dummyA, "pairVal");
     assertThat(optional).isPresent();
     assertThat(optional.get()).isEqualTo(Pair.of("b", "c"));
   }

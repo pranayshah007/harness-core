@@ -24,7 +24,10 @@ import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.Pipelines;
 import io.harness.timescaledb.tables.PodInfo;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
+import io.harness.timescaledb.tables.ServiceInstancesLicenseDailyReport;
 import io.harness.timescaledb.tables.Services;
+import io.harness.timescaledb.tables.ServicesLicenseDailyReport;
+import io.harness.timescaledb.tables.TimeBucketListCdStatus;
 import io.harness.timescaledb.tables.UtilizationData;
 import io.harness.timescaledb.tables.WorkloadInfo;
 
@@ -99,10 +102,22 @@ public class Public extends SchemaImpl {
       PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD;
 
   /**
+   * The table <code>public.service_instances_license_daily_report</code>.
+   */
+  public final ServiceInstancesLicenseDailyReport SERVICE_INSTANCES_LICENSE_DAILY_REPORT =
+      ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT;
+
+  /**
    * The table <code>public.pipeline_execution_summary_ci</code>.
    */
   public final PipelineExecutionSummaryCi PIPELINE_EXECUTION_SUMMARY_CI =
       PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI;
+
+  /**
+   * The table <code>public.services_license_daily_report</code>.
+   */
+  public final ServicesLicenseDailyReport SERVICES_LICENSE_DAILY_REPORT =
+      ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT;
 
   /**
    * The table <code>public.pipelines</code>.
@@ -123,6 +138,11 @@ public class Public extends SchemaImpl {
    * The table <code>public.services</code>.
    */
   public final Services SERVICES = Services.SERVICES;
+
+  /**
+   * The table <code>public.time_bucket_list_cd_status</code>.
+   */
+  public final TimeBucketListCdStatus TIME_BUCKET_LIST_CD_STATUS = TimeBucketListCdStatus.TIME_BUCKET_LIST_CD_STATUS;
 
   /**
    * The table <code>public.utilization_data</code>.
@@ -154,7 +174,9 @@ public class Public extends SchemaImpl {
         NodeInfo.NODE_INFO, NodePoolAggregated.NODE_POOL_AGGREGATED,
         PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD,
         PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI, Pipelines.PIPELINES, PodInfo.POD_INFO,
-        ServiceInfraInfo.SERVICE_INFRA_INFO, Services.SERVICES, UtilizationData.UTILIZATION_DATA,
-        WorkloadInfo.WORKLOAD_INFO);
+        ServiceInfraInfo.SERVICE_INFRA_INFO, Services.SERVICES,
+        ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT,
+        ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT, UtilizationData.UTILIZATION_DATA,
+        WorkloadInfo.WORKLOAD_INFO, TimeBucketListCdStatus.TIME_BUCKET_LIST_CD_STATUS);
   }
 }

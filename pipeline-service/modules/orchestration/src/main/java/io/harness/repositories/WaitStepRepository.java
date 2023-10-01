@@ -19,7 +19,7 @@ import org.springframework.data.repository.CrudRepository;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
-public interface WaitStepRepository extends CrudRepository<WaitStepInstance, String>, ExecutionInputRepositoryCustom {
+public interface WaitStepRepository extends CrudRepository<WaitStepInstance, String> {
   Optional<WaitStepInstance> findByNodeExecutionId(String nodeExecutionId);
 
   /**

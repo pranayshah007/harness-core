@@ -6,10 +6,13 @@
  */
 
 package io.harness.filestore.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.filestore.entities.NGFile;
 import io.harness.ng.core.filestore.dto.FileDTO;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 public interface FileFailsafeService {
   /**
    * Save NG file in DB and publish file crete event
@@ -32,7 +35,8 @@ public interface FileFailsafeService {
    * Delete NG file in DB and publish file delete event
    *
    * @param ngFile the NG file
+   * @param forceDelete
    * @return if file delete event is published and file deleted form DB
    */
-  boolean deleteAndPublish(NGFile ngFile);
+  boolean deleteAndPublish(NGFile ngFile, boolean forceDelete);
 }

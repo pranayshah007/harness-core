@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.utils;
+package io.harness.ci.execution.utils;
 
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.HOSTED_VM;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
@@ -23,12 +23,13 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.nodes.BackgroundStepNode;
 import io.harness.beans.steps.nodes.RunStepNode;
 import io.harness.beans.steps.nodes.RunTestStepNode;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.K8InitializeStepUtils;
+import io.harness.ci.execution.integrationstage.K8InitializeTaskUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.integrationstage.K8InitializeStepUtils;
-import io.harness.ci.integrationstage.K8InitializeTaskUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -82,6 +83,14 @@ public class ValidationUtils {
 
     for (ExecutionWrapperConfig executionWrapper : steps) {
       validateStageUtil(executionWrapper, infrastructure);
+    }
+  }
+
+  public void validateCacheIntel(Caching caching, Infrastructure infrastructure) {
+    if (caching != null && caching.getEnabled() != null && caching.getEnabled().getValue() != null) {
+      if (caching.getEnabled().getValue() && infrastructure.getType() != HOSTED_VM) {
+        throw new CIStageExecutionException("Cache Intelligence is only available on Harness Cloud Infrastructure");
+      }
     }
   }
 

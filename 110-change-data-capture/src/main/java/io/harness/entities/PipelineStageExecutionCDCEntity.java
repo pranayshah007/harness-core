@@ -6,8 +6,10 @@
  */
 
 package io.harness.entities;
-
 import io.harness.ChangeHandler;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.changehandlers.CustomStageExecutionHandler;
 import io.harness.changehandlers.PipelineStageExecutionHandler;
 import io.harness.changehandlers.TagsInfoNGCDChangeDataHandler;
@@ -15,6 +17,7 @@ import io.harness.execution.stage.StageExecutionEntity;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 public class PipelineStageExecutionCDCEntity implements CDCEntity<StageExecutionEntity> {
   @Inject private PipelineStageExecutionHandler pipelineStageExecutionHandler;
   @Inject private CustomStageExecutionHandler customStageExecutionHandler;

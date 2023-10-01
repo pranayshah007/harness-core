@@ -6,9 +6,11 @@
  */
 
 package io.harness.favorites.remote;
-
 import static java.util.Objects.nonNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
@@ -28,6 +30,7 @@ import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class OrgFavoritesApiImpl implements OrgFavoritesApi {

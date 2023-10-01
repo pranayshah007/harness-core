@@ -12,8 +12,11 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.ScopeLevel;
 import io.harness.cdng.CDStepHelper;
@@ -48,7 +51,6 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.BaseUrls;
 import io.harness.ng.beans.PageResponse;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -65,6 +67,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -89,6 +92,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
 public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResponse> {
@@ -115,11 +119,12 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<GitOpsFetchAppTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<GitOpsFetchAppTaskResponse> responseDataSupplier)
+      throws Exception {
     log.info("Started handling delegate task result");
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     try {
@@ -240,7 +245,7 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     try {
       log.info("Started executing Fetch Linked Apps Step");
       ILogStreamingStepClient logStreamingStepClient =
@@ -311,8 +316,8 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
     ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
-        gitStoreConfig, connectorDTO, manifestOutcome, getParameterFieldValue(gitStoreConfig.getPaths()), ambiance);
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfigWithApiAccess(
+        gitStoreConfig, connectorDTO, getParameterFieldValue(gitStoreConfig.getPaths()), ambiance, manifestOutcome);
 
     return GitFetchFilesConfig.builder()
         .identifier(manifestOutcome.getIdentifier())

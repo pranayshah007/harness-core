@@ -24,7 +24,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public interface UserGroupDao {
   UserGroup upsert(@NotNull @Valid UserGroup userGroupUpdate);
 
-  List<UserGroup> list(String userIdentifier);
+  List<UserGroup> list(@NotEmpty String scopeIdentifier, String userIdentifier);
 
   PageResponse<UserGroup> list(@NotNull PageRequest pageRequest, @NotEmpty String scopeIdentifier);
 

@@ -9,7 +9,7 @@ package io.harness.idp.onboarding.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 
 import java.util.Collections;
 import java.util.List;

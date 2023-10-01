@@ -11,6 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_MAX_EVENTS_POLLED;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_UNBLOCK_RETRY_INTERVAL_IN_MINUTES;
+import static io.harness.outbox.OutboxSDKConstants.OUTBOX_EVENT_PROCESSING_TIME_METRIC_NAME;
+import static io.harness.outbox.TransactionOutboxModule.SERVICE_ID_FOR_OUTBOX;
+
+import static java.time.Duration.ofMillis;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnexpectedException;
@@ -19,8 +23,10 @@ import io.harness.lock.PersistentLocker;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.filter.OutboxEventFilter;
+import io.harness.outbox.monitor.OutboxMetricsServiceImpl;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
@@ -41,14 +47,19 @@ public class OutboxEventPollJob implements Runnable {
   private final Retry retry;
   private static final String OUTBOX_POLL_JOB_LOCK = "OUTBOX_POLL_JOB_LOCK";
   private final String outboxLockId;
+  private final OutboxMetricsServiceImpl outboxMetricsService;
+  private final String serviceId;
 
   @Inject
   public OutboxEventPollJob(OutboxService outboxService, OutboxEventHandler outboxEventHandler,
-      PersistentLocker persistentLocker, OutboxPollConfiguration outboxPollConfiguration) {
+      PersistentLocker persistentLocker, OutboxPollConfiguration outboxPollConfiguration,
+      OutboxMetricsServiceImpl outboxMetricsService, @Named(SERVICE_ID_FOR_OUTBOX) String serviceId) {
     this.outboxService = outboxService;
     this.outboxEventHandler = outboxEventHandler;
     this.persistentLocker = persistentLocker;
     this.outboxPollConfiguration = outboxPollConfiguration;
+    this.outboxMetricsService = outboxMetricsService;
+    this.serviceId = serviceId;
     this.outboxLockId = OUTBOX_POLL_JOB_LOCK + "_" + this.outboxPollConfiguration.getLockId();
     this.outboxEventFilter = OutboxEventFilter.builder().maximumEventsPolled(DEFAULT_MAX_EVENTS_POLLED).build();
     RetryConfig retryConfig = RetryConfig.custom()
@@ -86,9 +97,15 @@ public class OutboxEventPollJob implements Runnable {
       for (int i = 0; i < outboxEvents.size() && !Thread.currentThread().isInterrupted(); i++) {
         OutboxEvent outbox = outboxEvents.get(i);
         long startTime = System.currentTimeMillis();
+        long outboxEventWaitingTime = startTime - outbox.getCreatedAt();
         boolean success = handle(outbox);
-        log.info(String.format("Took %d milliseconds for outbox event handling for id %s and eventType %s.",
-            System.currentTimeMillis() - startTime, outbox.getId(), outbox.getEventType()));
+        long outboxEventProcessingTime = System.currentTimeMillis() - startTime;
+        log.info(String.format(
+            "[OutboxEventPollJob] id: %s, eventType: %s, resourceType: %s, waitingTime: %d, processingTime: %d",
+            outbox.getId(), outbox.getEventType(), outbox.getResource().getType(), outboxEventWaitingTime,
+            outboxEventProcessingTime));
+        outboxMetricsService.recordMetricsWithDuration(serviceId, outbox.getEventType(), outbox.getResource().getType(),
+            ofMillis(outboxEventProcessingTime), OUTBOX_EVENT_PROCESSING_TIME_METRIC_NAME);
         try {
           if (success) {
             outboxService.delete(outbox.getId());

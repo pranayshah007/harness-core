@@ -21,10 +21,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -66,6 +66,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public static final int GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT = 10;
 
@@ -183,7 +184,8 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
       gitFetchFilesResult =
           scmFetchFilesHelper.fetchFilesFromRepoWithScm(identifier, gitStoreDelegateConfig, filePathsToFetch);
     } else {
-      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+      GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+          gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
       SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
           gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());

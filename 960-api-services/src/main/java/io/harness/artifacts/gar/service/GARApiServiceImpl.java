@@ -6,17 +6,20 @@
  */
 
 package io.harness.artifacts.gar.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
 import io.harness.artifacts.gar.GarDockerRestClient;
 import io.harness.artifacts.gar.GarRestClient;
@@ -50,6 +53,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -160,7 +164,7 @@ public class GARApiServiceImpl implements GarApiService {
     Map<String, String> metadata = new HashMap();
     String registryHostname = String.format("%s-docker.pkg.dev", region);
     String image;
-    if (GARUtils.isSHA(version)) {
+    if (ArtifactUtils.isSHA(version)) {
       image = String.format("%s-docker.pkg.dev/%s/%s/%s@%s", region, project, repositories, pkg, version);
     } else {
       image = String.format("%s-docker.pkg.dev/%s/%s/%s:%s", region, project, repositories, pkg, version);
@@ -312,9 +316,9 @@ public class GARApiServiceImpl implements GarApiService {
   }
 
   private ArtifactMetaInfo getArtifactMetaInfoHelper(Response<DockerImageManifestResponse> response, String image) {
-    if (!GARUtils.checkIfResponseNull(response) && response.isSuccessful()) {
+    if (!ArtifactUtils.checkIfResponseNull(response) && response.isSuccessful()) {
       return dockerRegistryUtils.parseArtifactMetaInfoResponse(response, image);
-    } else if (!GARUtils.checkIfResponseNull(response)
+    } else if (!ArtifactUtils.checkIfResponseNull(response)
         && !isSuccessful(response.code(), response.errorBody().toString())) {
       throw new InvalidRequestException(COULD_NOT_FETCH_IMAGE_MANIFEST);
     }

@@ -38,7 +38,10 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.beans.IdentifierRef;
@@ -133,6 +136,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -516,7 +520,6 @@ public class NGTriggerElementMapper {
       }
       webhookTriggerType = CUSTOM;
     }
-
     TriggerWebhookEventBuilder triggerWebhookEventBuilder =
         TriggerWebhookEvent.builder()
             .accountId(accountIdentifier)
@@ -526,7 +529,8 @@ public class NGTriggerElementMapper {
             .headers(headerConfigs)
             .payload(payload)
             .isSubscriptionConfirmation(isConfirmationMessage);
-    if (principal != null) {
+    if (principal != null
+        && !principal.getPrincipalCase().equals(io.harness.security.Principal.PrincipalCase.PRINCIPAL_NOT_SET)) {
       triggerWebhookEventBuilder.principal(toPrincipalDTO(accountIdentifier, principal));
     }
 
@@ -547,16 +551,23 @@ public class NGTriggerElementMapper {
       List<HeaderConfig> headerConfigs) {
     WebhookTriggerType webhookTriggerType = CUSTOM;
 
-    return TriggerWebhookEvent.builder()
-        .accountId(accountIdentifier)
-        .orgIdentifier(orgIdentifier)
-        .projectIdentifier(projectIdentifier)
-        .triggerIdentifier(triggerIdentifier)
-        .pipelineIdentifier(pipelineIdentifier)
-        .sourceRepoType(webhookTriggerType.getEntityMetadataName())
-        .headers(headerConfigs)
-        .payload(payload)
-        .principal(SecurityContextBuilder.getPrincipal());
+    TriggerWebhookEventBuilder triggerWebhookEventBuilder =
+        TriggerWebhookEvent.builder()
+            .accountId(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .triggerIdentifier(triggerIdentifier)
+            .pipelineIdentifier(pipelineIdentifier)
+            .sourceRepoType(webhookTriggerType.getEntityMetadataName())
+            .headers(headerConfigs)
+            .payload(payload);
+    if (!pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK)) {
+      /* If Feature flag CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK is enabled, it means we should not set
+         user's principal for trigger execution.
+       */
+      triggerWebhookEventBuilder.principal(SecurityContextBuilder.getPrincipal());
+    }
+    return triggerWebhookEventBuilder;
   }
 
   public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,
@@ -796,11 +807,20 @@ public class NGTriggerElementMapper {
 
   public Optional<TriggerEventHistory> fetchLatestExecutionForTrigger(NGTriggerEntity ngTriggerEntity) {
     List<TriggerEventHistory> triggerEventHistoryList =
-        triggerEventHistoryRepository
-            .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
-                ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-                ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getTargetIdentifier(),
-                ngTriggerEntity.getIdentifier(), Sort.by(TriggerEventHistoryKeys.createdAt).descending());
+        triggerEventHistoryRepository.findAllWithSort(Criteria.where(TriggerEventHistoryKeys.accountId)
+                                                          .is(ngTriggerEntity.getAccountId())
+                                                          .and(TriggerEventHistoryKeys.orgIdentifier)
+                                                          .is(ngTriggerEntity.getOrgIdentifier())
+                                                          .and(TriggerEventHistoryKeys.projectIdentifier)
+                                                          .is(ngTriggerEntity.getProjectIdentifier())
+                                                          .and(TriggerEventHistoryKeys.targetIdentifier)
+                                                          .is(ngTriggerEntity.getTargetIdentifier())
+                                                          .and(TriggerEventHistoryKeys.triggerIdentifier)
+                                                          .is(ngTriggerEntity.getIdentifier())
+                                                          .and(TriggerEventHistoryKeys.executionNotAttempted)
+                                                          .ne(true),
+            Sort.by(TriggerEventHistoryKeys.createdAt).descending());
+
     if (!isEmpty(triggerEventHistoryList)) {
       return Optional.of(triggerEventHistoryList.get(0));
     }

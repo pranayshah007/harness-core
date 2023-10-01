@@ -158,7 +158,8 @@ public class CiCodebaseUtils {
         GithubHttpCredentialsDTO gitAuth = (GithubHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
         if (gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_PASSWORD
             && gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_TOKEN
-            && gitAuth.getType() != GithubHttpAuthenticationType.OAUTH) {
+            && gitAuth.getType() != GithubHttpAuthenticationType.OAUTH
+            && gitAuth.getType() != GithubHttpAuthenticationType.GITHUB_APP) {
           throw new CIStageExecutionException("Unsupported github connector auth type" + gitAuth.getType());
         }
         break;
@@ -383,7 +384,7 @@ public class CiCodebaseUtils {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String baseUrl = getNgBaseUrl(getVanityUrl(ngAccess.getAccountIdentifier()), ngBaseUrl);
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
-    String executionId = ambiance.getMetadata().getExecutionUuid();
+    String executionId = ambiance.getPlanExecutionId();
     return getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl, stageSetupId, stageExecutionId);
   }
 

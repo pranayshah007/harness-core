@@ -15,6 +15,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.utils.ScopedInformation;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.OrganizationDTO;
@@ -272,6 +273,15 @@ public class NextGenServiceImpl implements NextGenService {
   }
 
   @Override
+  public List<StepExecutionInstanceInfo> getCDStageInstanceInfo(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineExecutionId, String stageExecutionId) {
+    return requestExecutor
+        .execute(nextGenPrivilegedClient.getCDStageInstanceInfo(
+            accountId, orgIdentifier, projectIdentifier, pipelineExecutionId, stageExecutionId))
+        .getData();
+  }
+
+  @Override
   public Map<String, String> getServiceIdNameMap(ProjectParams projectParams, List<String> serviceIdentifiers) {
     Map<String, String> serviceIdNameMap = new HashMap<>();
     listService(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
@@ -304,11 +314,11 @@ public class NextGenServiceImpl implements NextGenService {
     while (morePages) {
       List<ProjectDTO> projects =
           requestExecutor
-              .execute(nextGenNonPrivilegedClient.listAccessibleProjects(accountIdentifier, null, page, pageSize))
+              .execute(nextGenNonPrivilegedClient.listProjectsForUser(accountIdentifier, null, page, pageSize))
               .getData()
               .getContent()
               .stream()
-              .map(projectAggregateDTO -> projectAggregateDTO.getProjectResponse().getProject())
+              .map(projectResponse -> projectResponse.getProject())
               .collect(Collectors.toList());
 
       projectDTOList.addAll(projects);

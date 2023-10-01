@@ -44,6 +44,8 @@ import io.harness.notification.NotificationClientConfiguration;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
+import io.harness.remote.CEAwsServiceEndpointConfig;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.scheduler.SchedulerConfig;
 import io.harness.secret.ConfigSecret;
@@ -233,6 +235,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(value = "disableDelegateMgmtInManager", defaultValue = "false")
   private boolean disableDelegateMgmtInManager;
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
+  @JsonProperty("saasDelegateHelmChartRepo") private String saasDelegateHelmChartRepo;
   @JsonProperty("ldapSyncJobConfig") private LdapSyncJobConfig ldapSyncJobConfig;
   @JsonProperty("eventListenersCountConfig") private EventListenersCountConfig eventListenersCountConfig;
   @JsonProperty(value = "useGlobalKMSAsBaseAlgo", defaultValue = "false") private boolean useGlobalKMSAsBaseAlgo;
@@ -253,6 +256,8 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("notificationClient")
   @ConfigSecret
   private NotificationClientConfiguration notificationClientConfiguration;
+  @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
+  @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
 
   private int applicationPort;
   private boolean sslEnabled;

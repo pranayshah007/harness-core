@@ -7,7 +7,6 @@
 
 package io.harness.resourcegroup.framework.v2.service.impl;
 
-import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.resourcegroup.ResourceGroupPermissions.VIEW_RESOURCEGROUP_PERMISSION;
@@ -21,19 +20,15 @@ import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO.AccessControlDTOBuilder;
-import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -53,7 +48,6 @@ import io.harness.resourcegroup.v2.model.ResourceGroup;
 import io.harness.resourcegroup.v2.model.ResourceGroup.ResourceGroupBuilder;
 import io.harness.resourcegroup.v2.model.ResourceGroup.ResourceGroupKeys;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
-import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 import io.harness.rule.Owner;
 import io.harness.utils.PageTestUtils;
 
@@ -64,13 +58,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -79,7 +70,6 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
   @Inject private ResourceGroupV2Repository resourceGroupV2Repository;
   @Inject private ResourceGroupValidatorImpl resourceGroupValidatorImpl;
   private ResourceGroupV2Repository resourceGroupV2RepositoryMock;
-  private io.harness.resourcegroup.framework.v1.service.ResourceGroupService resourceGroupV1ServiceMock;
   private OutboxService outboxService;
   private TransactionTemplate transactionTemplate;
   private ResourceGroupServiceImpl resourceGroupService;
@@ -98,7 +88,6 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
   @Before
   public void setup() {
     resourceGroupV2RepositoryMock = mock(ResourceGroupV2Repository.class);
-    resourceGroupV1ServiceMock = mock(io.harness.resourcegroup.framework.v1.service.ResourceGroupService.class);
     outboxService = mock(OutboxService.class);
     transactionTemplate = mock(TransactionTemplate.class);
     accessControlClient = mock(AccessControlClient.class);
@@ -594,81 +583,6 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
     expectedCriteria.andOperator(new Criteria().orOperator(scopeExpectedCriteria, expectedManagedCriteria));
     assertEquals(expectedCriteria, criteria);
     verify(resourceGroupV2RepositoryMock, times(1)).findAll(criteria, getPageRequest(pageRequest));
-  }
-
-  @Test
-  @Owner(developers = MEENAKSHI)
-  @Category(UnitTests.class)
-  public void testListFilter_withSelectedViewPermission_withNoIdentifierFilter() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    Criteria criteria = new Criteria();
-    ResourceGroupFilterDTO resourceGroupFilterDTO =
-        ResourceGroupFilterDTO.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
-    AccessCheckResponseDTO accessCheckResponseDTO =
-        AccessCheckResponseDTO.builder()
-            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
-            .accessControlList(accessControlDTOS)
-            .build();
-    ArgumentCaptor<ResourceGroupFilterDTO> resourceGroupFilterDTOArgumentCaptor =
-        ArgumentCaptor.forClass(ResourceGroupFilterDTO.class);
-    when(accessControlClient.hasAccess(
-             ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
-                 resourceGroupFilterDTO.getProjectIdentifier()),
-             Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION))
-        .thenReturn(false);
-    when(resourceGroupServiceMockRepo.getResourceGroupFilterCriteria(resourceGroupFilterDTO)).thenReturn(criteria);
-    when(resourceGroupV2RepositoryMock.findAll(criteria, Pageable.unpaged()))
-        .thenReturn(PageTestUtils.getPage(resourceGroupList, 0));
-    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
-
-    Page<ResourceGroupResponse> result = resourceGroupServiceMockRepo.list(resourceGroupFilterDTO, pageRequest);
-
-    verify(resourceGroupServiceMockRepo, times(1))
-        .getResourceGroupFilterCriteria(resourceGroupFilterDTOArgumentCaptor.capture());
-    verify(resourceGroupV2RepositoryMock, times(1)).findAll(criteria, Pageable.unpaged());
-    assertThat(result.getTotalElements()).isEqualTo(permittedResourceGroups.size());
-    assertThat(
-        result.getContent().stream().map(item -> item.getResourceGroup().getIdentifier()).collect(Collectors.toList()))
-        .isEqualTo(permittedResourceGroups.stream().map(ResourceGroup::getIdentifier).collect(Collectors.toList()));
-  }
-
-  @Test
-  @Owner(developers = MEENAKSHI)
-  @Category(UnitTests.class)
-  public void testListFilter_withSelectedViewPermission_withIdentifierFilter() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    ResourceGroupFilterDTO resourceGroupFilterDTO = ResourceGroupFilterDTO.builder()
-                                                        .accountIdentifier(accountIdentifier)
-                                                        .orgIdentifier(orgIdentifier)
-                                                        .identifierFilter(Set.of("RG1", "RG2", "RG3"))
-                                                        .build();
-    AccessCheckResponseDTO accessCheckResponseDTO =
-        AccessCheckResponseDTO.builder()
-            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
-            .accessControlList(accessControlDTOS)
-            .build();
-
-    when(accessControlClient.hasAccess(
-             ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
-                 resourceGroupFilterDTO.getProjectIdentifier()),
-             Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION))
-        .thenReturn(false);
-
-    when(resourceGroupV2RepositoryMock.findAll(any(), eq(getPageRequest(pageRequest))))
-        .thenReturn(PageTestUtils.getPage(permittedResourceGroups, 0));
-    when(resourceGroupV2RepositoryMock.findAll(any(), eq(Pageable.unpaged())))
-        .thenReturn(PageTestUtils.getPage(resourceGroupList, 0));
-    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
-
-    final Criteria resourceGroupFilterCriteria =
-        resourceGroupServiceMockRepo.getResourceGroupFilterCriteria(resourceGroupFilterDTO);
-
-    Page<ResourceGroupResponse> result = resourceGroupServiceMockRepo.list(resourceGroupFilterDTO, pageRequest);
-
-    verify(resourceGroupV2RepositoryMock, times(1)).findAll(resourceGroupFilterCriteria, Pageable.unpaged());
-    verify(resourceGroupV2RepositoryMock, times(0)).findAll(resourceGroupFilterCriteria, getPageRequest(pageRequest));
   }
 
   @Test(expected = InvalidRequestException.class)

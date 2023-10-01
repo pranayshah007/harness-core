@@ -5,9 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer.morphia;
+package io.harness.ci.execution.serializer.morphia;
 
-import io.harness.ci.execution.CIAccountExecutionMetadata;
+import io.harness.ci.execution.execution.CIAccountExecutionMetadata;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 

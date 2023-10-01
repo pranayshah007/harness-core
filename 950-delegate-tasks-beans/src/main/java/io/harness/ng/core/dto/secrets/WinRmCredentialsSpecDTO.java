@@ -9,6 +9,7 @@ package io.harness.ng.core.dto.secrets;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.ng.core.models.SecretSpec;
@@ -39,6 +40,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "WinRmCredentialsSpec", description = "This is the WinRm authentication details defined in Harness.")
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO")
 public class WinRmCredentialsSpecDTO extends SecretSpecDTO {
   @Schema(description = "WinRm port") @DefaultValue("5986") int port = 5986;
   @Valid @NotNull WinRmAuthDTO auth;

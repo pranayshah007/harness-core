@@ -16,6 +16,7 @@ import io.harness.cvng.beans.activity.ActivityStatusDTO;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
+import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.CVNGStepParameter;
 import io.harness.cvng.cdng.beans.CVNGStepType;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
@@ -26,6 +27,7 @@ import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
+import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.sidekick.DemoActivitySideKickData;
 import io.harness.cvng.core.entities.CVConfig;
@@ -34,17 +36,19 @@ import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.verificationjob.entities.ServiceInstanceDetails;
+import io.harness.cvng.verificationjob.entities.ServiceInstanceDetails.ServiceInstanceDetailsBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.cvng.verificationjob.utils.VerificationJobInstanceServiceInstanceUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.opaclient.OpaServiceClient;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -58,6 +62,7 @@ import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.executable.AsyncExecutableWithCapabilities;
 import io.harness.tasks.ProgressData;
@@ -81,7 +86,7 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -102,9 +107,11 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
 
   @Inject private OpaServiceClient opaServiceClient;
 
+  @Inject private NextGenService nextGenService;
+
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, StepInputPackage inputPackage) {
     log.info("ExecuteAsync called for CVNGStep");
     CVNGStepParameter stepParameters = (CVNGStepParameter) stepElementParameters.getSpec();
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -127,7 +134,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
 
     ResolvedCVConfigInfo resolvedCVConfigInfo =
         verifyStepCvConfigServiceMap.get(monitoredServiceType)
-            .fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+            .fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode);
     String monitoredServiceIdentifier = resolvedCVConfigInfo.getMonitoredServiceIdentifier();
     String monitoredServiceTemplateIdentifier = resolvedCVConfigInfo.getMonitoredServiceTemplateIdentifier();
     String monitoredServiceTemplateVersionLabel = resolvedCVConfigInfo.getMonitoredServiceTemplateVersionLabel();
@@ -190,13 +197,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
                 monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceBuilder.monitoredServiceType(monitoredServiceType);
-        if (stepParameters.getShouldUseCDNodes() != null && stepParameters.getShouldUseCDNodes().getValue() != null) {
-          verificationJobInstanceBuilder.serviceInstanceDetailsFromCD(
-              ServiceInstanceDetails.builder().valid(stepParameters.getShouldUseCDNodes().getValue()).build());
-        } else {
-          verificationJobInstanceBuilder.serviceInstanceDetailsFromCD(
-              ServiceInstanceDetails.builder().valid(false).build());
-        }
+        verificationJobInstanceBuilder.serviceInstanceDetails(getServiceInstanceDetails(
+            ambiance, stepParameters, verificationJobInstanceBuilder.getResolvedJob().getType()));
         verificationJobInstanceBuilder.nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
@@ -237,6 +239,70 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
       return Sensitivity.HIGH.getValue().equalsIgnoreCase(sensitivity.getValue());
     }
     return identifier.endsWith("_dev");
+  }
+
+  private ServiceInstanceDetails getServiceInstanceDetails(
+      Ambiance ambiance, CVNGStepParameter cvngStepParameter, VerificationJobType verificationJobType) {
+    ServiceInstanceDetailsBuilder serviceInstanceDetailsBuilder =
+        ServiceInstanceDetails.builder()
+            .shouldUseNodesFromCD(getValueFromParameterisedField(cvngStepParameter.getShouldUseCDNodes(), false))
+            .testNodeRegExPattern(getValueFromParameterisedField(cvngStepParameter.getTestNodeRegExPattern(), null))
+            .controlNodeRegExPattern(
+                getValueFromParameterisedField(cvngStepParameter.getControlNodeRegExPattern(), null));
+
+    List<StepExecutionInstanceInfo> stepExecutionInstanceInfos = null;
+    try {
+      stepExecutionInstanceInfos = nextGenService.getCDStageInstanceInfo(AmbianceUtils.getAccountId(ambiance),
+          AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+          AmbianceUtils.getPipelineExecutionIdentifier(ambiance),
+          AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance));
+    } catch (Exception ex) {
+      log.error("Error while getting Service Instances from CD", ex);
+    }
+    if (CollectionUtils.isEmpty(stepExecutionInstanceInfos)) {
+      return serviceInstanceDetailsBuilder.build();
+    }
+
+    List<String> instanceNamesAfterDeployment =
+        CollectionUtils
+            .emptyIfNull(
+                stepExecutionInstanceInfos.get(stepExecutionInstanceInfos.size() - 1).getServiceInstancesAfter())
+            .stream()
+            .map(stepInstanceInfo -> stepInstanceInfo.getInstanceName())
+            .collect(Collectors.toList());
+    List<String> instanceNamesBeforeDeployment =
+        CollectionUtils.emptyIfNull(stepExecutionInstanceInfos.get(0).getServiceInstancesBefore())
+            .stream()
+            .map(stepInstanceInfo -> stepInstanceInfo.getInstanceName())
+            .collect(Collectors.toList());
+    List<String> deployedServiceInstanceDetails =
+        stepExecutionInstanceInfos.stream()
+            .flatMap(stepExecutionInstanceInfo
+                -> stepExecutionInstanceInfo.getDeployedServiceInstances().stream().map(
+                    stepInstanceInfo -> stepInstanceInfo.getInstanceName()))
+            .filter(instanceName -> instanceNamesAfterDeployment.contains(instanceName))
+            .distinct()
+            .collect(Collectors.toList());
+
+    serviceInstanceDetailsBuilder.deployedServiceInstances(deployedServiceInstanceDetails)
+        .serviceInstancesBeforeDeployment(instanceNamesBeforeDeployment)
+        .serviceInstancesAfterDeployment(instanceNamesAfterDeployment);
+
+    ServiceInstanceDetails preSamplingServiceInstanceDetails = serviceInstanceDetailsBuilder.build();
+
+    return serviceInstanceDetailsBuilder
+        .sampledTestNodes(
+            VerificationJobInstanceServiceInstanceUtils.getSampledTestNodes(preSamplingServiceInstanceDetails))
+        .sampledControlNodes(VerificationJobInstanceServiceInstanceUtils.getSampledControlNodes(
+            verificationJobType, preSamplingServiceInstanceDetails))
+        .build();
+  }
+
+  private <T> T getValueFromParameterisedField(ParameterField<T> parameterField, T defaultValue) {
+    if (parameterField != null && parameterField.getValue() != null) {
+      return parameterField.getValue();
+    }
+    return defaultValue;
   }
 
   private VerificationJobInstanceBuilder getVerificationJobInstanceBuilder(String stepName,
@@ -319,6 +385,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             .stageId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getIdentifier())
             .stageStepId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getSetupId())
             .pipelineId(ambiance.getMetadata().getPipelineIdentifier())
+            .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
             .planExecutionId(ambiance.getPlanExecutionId())
             .build();
     deploymentActivity.setVerificationJobs(Collections.singletonList(verificationJob));
@@ -366,7 +433,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
 
   @Override
   public StepResponse handleAsyncResponseInternal(
-      Ambiance ambiance, StepElementParameters stepElementParameters, Map<String, ResponseData> responseDataMap) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, Map<String, ResponseData> responseDataMap) {
     log.info("handleAsyncResponse async response");
     CVNGStepParameter stepParameters = (CVNGStepParameter) stepElementParameters.getSpec();
     CVNGResponseData cvngResponseData = (CVNGResponseData) responseDataMap.values().iterator().next();
@@ -406,6 +473,12 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
           failureType = FailureType.UNKNOWN_FAILURE;
           failureMessage = "Verification could not complete due to an unknown error";
           break;
+        case ABORTED:
+          status = Status.FAILED;
+          errorCode = ErrorCode.ABORT_ALL_ALREADY;
+          failureType = FailureType.USER_MARKED_FAILURE;
+          failureMessage = "Verification could not complete due to it being aborted";
+          break;
         default:
           throw new IllegalStateException(
               "Invalid status value: " + cvngResponseData.getActivityStatusDTO().getStatus());
@@ -438,7 +511,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
 
   @Override
   public ProgressData handleProgress(
-      Ambiance ambiance, StepElementParameters stepElementParameters, ProgressData progressData) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, ProgressData progressData) {
     CVNGResponseData cvngResponseData = (CVNGResponseData) progressData;
     return VerifyStepOutcome.builder()
         .progressPercentage(cvngResponseData.getActivityStatusDTO().getProgressPercentage())
@@ -449,13 +522,13 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepElementParameters, AsyncExecutableResponse executableResponse) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, AsyncExecutableResponse executableResponse) {
     CVNGStepTask cvngStepTask = cvngStepTaskService.getByCallBackId(executableResponse.getCallbackIds(0));
     activityService.abort(cvngStepTask.getActivityId());
   }
@@ -474,11 +547,11 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
   public StepResponse postAsyncValidate(
-      Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepResponse stepResponse) {
     if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {
       return PolicyEvalUtils.evalPolicies(ambiance, stepParameters, stepResponse, opaServiceClient);
     }

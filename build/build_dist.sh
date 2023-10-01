@@ -83,7 +83,8 @@ function copy_ng_dashboard_jars(){
 
 	cp ${BAZEL_BIN}/290-dashboard-service/module_deploy.jar ng-dashboard-service.jar
 	cp ../../290-dashboard-service/config.yml .
-	cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-cie-jdk Dockerfile-cie-jdk
+	cp ../../290-dashboard-service/src/main/resources/jfr/default.jfc .
+	cp ../../290-dashboard-service/src/main/resources/jfr/profile.jfc .
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/ng-dashboard-service/scripts/ .
@@ -175,6 +176,23 @@ function copy_command_library_server_jars(){
 
 }
 
+function copy_event_server_jars(){
+
+	cp ${BAZEL_BIN}/350-event-server/module_deploy.jar event-server-capsule.jar
+	cp ../../350-event-server/keystore.jks .
+	cp ../../350-event-server/key.pem .
+	cp ../../350-event-server/cert.pem .
+	cp ../../350-event-server/event-service-config.yml .
+	cp ../../dockerization/event-server/Dockerfile-event-server-cie-jdk Dockerfile-cie-jdk
+	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+	cp -r ../../dockerization/event-server/scripts/ .
+
+	copy_common_files
+
+	cd ../..
+}
+
 function copy_verification_service_jars(){
 
   cp ${HOME}/.bazel-dirs/bin/270-verification/module_deploy.jar verification-capsule.jar
@@ -201,4 +219,8 @@ elif [ "${SERVICE_NAME}" == "idp-service" ]; then
     copy_change_data_capture_jars
 elif [ "${SERVICE_NAME}" == "verification-service" ]; then
     copy_verification_service_jars
+elif [ "${SERVICE_NAME}" == "event-server" ]; then
+    copy_event_server_jars
+elif [ "${SERVICE_NAME}" == "ng-dashboard-aggregator" ]; then
+    copy_ng_dashboard_jars
 fi

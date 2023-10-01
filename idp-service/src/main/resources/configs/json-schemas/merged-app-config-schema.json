@@ -14,7 +14,10 @@
     "kafka",
     "integrations",
     "lighthouse",
-    "jenkins"
+    "jenkins",
+    "confluence",
+    "catalog",
+    "grafana"
   ],
   "properties": {
     "app": {
@@ -52,6 +55,18 @@
     "jenkins": {
       "$id": "#root/jenkins",
       "title": "Jenkins"
+    },
+    "confluence": {
+      "$id": "#root/confluence",
+      "title": "Confluence"
+    },
+    "catalog": {
+      "$id": "#root/catalog",
+      "title": "Catalog"
+    },
+    "grafana": {
+      "$id": "#root/grafana",
+      "title": "Grafana"
     }
   }
 }

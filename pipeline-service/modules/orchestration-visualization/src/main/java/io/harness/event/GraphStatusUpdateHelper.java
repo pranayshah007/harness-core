@@ -6,15 +6,17 @@
  */
 
 package io.harness.event;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_WAITING;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
 import static io.harness.pms.contracts.execution.Status.WAIT_STEP_RUNNING;
 
 import io.harness.DelegateInfoHelper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.GraphVertex;
 import io.harness.beans.GraphVertex.GraphVertexBuilder;
 import io.harness.beans.OrchestrationGraph;
@@ -23,7 +25,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.execution.NodeExecution;
 import io.harness.generator.OrchestrationAdjacencyListGenerator;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
@@ -46,7 +49,7 @@ public class GraphStatusUpdateHelper {
   @Inject private OrchestrationAdjacencyListGenerator orchestrationAdjacencyListGenerator;
   @Inject private DelegateInfoHelper delegateInfoHelper;
 
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
 
   public OrchestrationGraph handleEvent(
       String planExecutionId, String nodeExecutionId, OrchestrationGraph orchestrationGraph) {
@@ -70,16 +73,15 @@ public class GraphStatusUpdateHelper {
       }
 
       Map<String, GraphVertex> graphVertexMap = orchestrationGraph.getAdjacencyList().getGraphVertexMap();
-      if (graphVertexMap.containsKey(nodeExecutionId)) {
-        if (nodeExecution.getOldRetry()) {
-          log.info("[PMS_GRAPH]  Removing graph vertex with id [{}] and status [{}]. PlanExecutionId: [{}]",
-              nodeExecutionId, nodeExecution.getStatus(), planExecutionId);
-          orchestrationAdjacencyListGenerator.removeVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
-        } else {
-          updateGraphVertex(graphVertexMap, nodeExecution, planExecutionId);
-        }
+      if (graphVertexMap.containsKey(nodeExecutionId) && nodeExecution.getOldRetry()) {
+        log.info("[PMS_GRAPH]  Removing graph vertex with id [{}] and status [{}]. PlanExecutionId: [{}]",
+            nodeExecutionId, nodeExecution.getStatus(), planExecutionId);
+        orchestrationAdjacencyListGenerator.removeVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
       } else if (!nodeExecution.getOldRetry()) {
-        orchestrationAdjacencyListGenerator.addVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
+        if (!graphVertexMap.containsKey(nodeExecutionId)) {
+          orchestrationAdjacencyListGenerator.addVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
+        }
+        updateGraphVertex(graphVertexMap, nodeExecution, planExecutionId);
       }
     } catch (Exception e) {
       log.error(
@@ -111,7 +113,7 @@ public class GraphStatusUpdateHelper {
     GraphVertexBuilder prevValueBuilder =
         prevValue.toBuilder()
             .uuid(nodeExecution.getUuid())
-            .ambiance(nodeExecution.getAmbiance())
+            .currentLevel(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()))
             .planNodeId(level.getSetupId())
             .identifier(level.getIdentifier())
             .name(nodeExecution.getName())
@@ -129,7 +131,8 @@ public class GraphStatusUpdateHelper {
             .retryIds(nodeExecution.getRetryIds())
             .skipType(nodeExecution.getSkipGraphType())
             .unitProgresses(nodeExecution.getUnitProgresses())
-            .progressData(nodeExecution.getPmsProgressData());
+            .progressData(nodeExecution.getPmsProgressData())
+            .baseFqn(AmbianceUtils.getFQNUsingLevels(nodeExecution.getAmbiance().getLevelsList()));
     if (prevValue.getStepParameters() == null) {
       prevValueBuilder.stepParameters(nodeExecution.getResolvedParams());
     }

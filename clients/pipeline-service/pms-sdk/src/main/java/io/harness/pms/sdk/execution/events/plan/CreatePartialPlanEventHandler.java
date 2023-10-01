@@ -7,8 +7,11 @@
 
 package io.harness.pms.sdk.execution.events.plan;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.async.AsyncCreatorBaseEventHandler;
 import io.harness.async.AsyncCreatorResponse;
 import io.harness.data.structure.EmptyPredicate;
@@ -36,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class CreatePartialPlanEventHandler
     extends AsyncCreatorBaseEventHandler<CreatePartialPlanEvent, PlanCreationContext> {
   private final Executor executor = new ManagedExecutorService(Executors.newFixedThreadPool(2));

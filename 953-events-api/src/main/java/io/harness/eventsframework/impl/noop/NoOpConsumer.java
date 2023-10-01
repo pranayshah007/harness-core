@@ -29,10 +29,15 @@ public class NoOpConsumer extends AbstractConsumer {
   }
 
   @Override
-  public void acknowledge(String messageId) {}
+  public void acknowledge(String... messageId) {}
 
   @Override
   public void shutdown() {}
+
+  @Override
+  public int getBatchSize() {
+    return 0;
+  }
 
   public static NoOpConsumer of(String topicName, String groupName) {
     return new NoOpConsumer(topicName, groupName);

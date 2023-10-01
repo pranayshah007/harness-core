@@ -9,6 +9,7 @@ package io.harness.delegate.exceptionhandler.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Message.GENERIC_NO_TERRAFORM_ERROR;
 import static io.harness.delegate.task.terragrunt.TerragruntExceptionConstants.CliErrorMessages.CANT_READ_REMOTE_REPOSITORY;
 import static io.harness.delegate.task.terragrunt.TerragruntExceptionConstants.CliErrorMessages.DOWNLOADING_ERROR;
 import static io.harness.delegate.task.terragrunt.TerragruntExceptionConstants.CliErrorMessages.FUNCTION_CALL_ERROR;
@@ -33,6 +34,7 @@ import static io.harness.delegate.task.terragrunt.TerragruntExceptionConstants.M
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.TerragruntCommandExecutionException;
@@ -57,7 +59,11 @@ public class TerragruntRuntimeExceptionHandler implements ExceptionHandler {
   @Override
   public WingsException handleException(Exception exception) {
     TerragruntCliRuntimeException cliRuntimeException = (TerragruntCliRuntimeException) exception;
-    String error = cliRuntimeException.getCliError();
+    String error = EmptyPredicate.isNotEmpty(cliRuntimeException.getCliError()) ? cliRuntimeException.getCliError()
+                                                                                : cliRuntimeException.getMessage();
+    if (EmptyPredicate.isEmpty(error)) {
+      error = GENERIC_NO_TERRAFORM_ERROR;
+    }
     Set<String> explanations = new HashSet<>();
     Set<String> hints = new HashSet<>();
     Set<String> structuredErrors = new HashSet<>();
@@ -97,8 +103,8 @@ public class TerragruntRuntimeExceptionHandler implements ExceptionHandler {
     TerraformExceptionHelper.handleTerraformCliErrorOutput(explanations, hints, structuredErrors, error);
 
     if (hints.isEmpty() && explanations.isEmpty()) {
-      return ExceptionMessageSanitizer.sanitizeException(new TerragruntCommandExecutionException(
-          TerraformExceptionHelper.cleanError(cliRuntimeException.getCliError()), WingsException.USER_SRE));
+      return ExceptionMessageSanitizer.sanitizeException(
+          new TerragruntCommandExecutionException(TerraformExceptionHelper.cleanError(error), WingsException.USER_SRE));
     }
 
     return ExceptionMessageSanitizer.sanitizeException(

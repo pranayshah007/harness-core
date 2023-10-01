@@ -6,17 +6,20 @@
  */
 
 package io.harness.ngtriggers.utils;
-
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toSet;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
 import io.harness.exception.ConnectorNotFoundException;
@@ -44,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton
@@ -64,6 +68,10 @@ public class SCMFilePathEvaluatorOnManager extends SCMFilePathEvaluator {
           getScmPathFilterEvaluationTaskParams(filterRequestData, pathCondition, connectorDetails, scmConnector);
       decrypt(scmConnector, connectorDetails.getEncryptedDataDetails());
       Set<String> changedFiles = getChangedFileset(params, scmConnector, connectorDetails.getIdentifier());
+
+      if (scmConnector instanceof AzureRepoConnectorDTO) {
+        changedFiles = GitClientHelper.sanitiseFilesForAzureRepo(changedFiles);
+      }
 
       for (String filepath : changedFiles) {
         if (ConditionEvaluator.evaluate(filepath, params.getStandard(), params.getOperator())) {

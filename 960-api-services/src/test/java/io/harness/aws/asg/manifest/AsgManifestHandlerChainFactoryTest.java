@@ -20,11 +20,13 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -130,5 +132,29 @@ public class AsgManifestHandlerChainFactoryTest extends CategoryTest {
             AsgScalingPolicyManifestRequest.builder()
                 .manifests(Arrays.asList(scalingPolicyManifestContent1, scalingPolicyManifestContent2))
                 .build());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getNrOfAlreadyRunningInstances() {
+    AsgConfigurationManifestHandler asgConfigurationManifestHandler = new AsgConfigurationManifestHandler(null, null);
+    AutoScalingGroup autoScalingGroup = new AutoScalingGroup().withDesiredCapacity(3).withMinSize(1).withMaxSize(5);
+    AsgConfigurationManifestRequest asgConfigurationManifestRequest = AsgConfigurationManifestRequest.builder().build();
+    AsgInstanceCapacity ret =
+        asgConfigurationManifestHandler.getRunningInstanceCapacity(autoScalingGroup, asgConfigurationManifestRequest);
+    assertThat(ret.getDesiredCapacity()).isEqualTo(3);
+    assertThat(ret.getMinCapacity()).isEqualTo(1);
+    assertThat(ret.getMaxCapacity()).isEqualTo(5);
+
+    ret = asgConfigurationManifestHandler.getRunningInstanceCapacity(null, asgConfigurationManifestRequest);
+    assertThat(ret.getDesiredCapacity()).isNull();
+
+    asgConfigurationManifestRequest =
+        AsgConfigurationManifestRequest.builder()
+            .alreadyRunningInstanceCapacity(AsgInstanceCapacity.builder().desiredCapacity(7).build())
+            .build();
+    ret = asgConfigurationManifestHandler.getRunningInstanceCapacity(null, asgConfigurationManifestRequest);
+    assertThat(ret.getDesiredCapacity()).isEqualTo(7);
   }
 }

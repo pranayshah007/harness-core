@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.k8s.k8sbase;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -26,7 +25,10 @@ import static io.harness.kustomize.KustomizeExceptionConstants.RESOURCE_NOT_FOUN
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileData;
 import io.harness.cli.CliResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -34,6 +36,7 @@ import io.harness.delegate.task.k8s.K8sTaskManifestValidator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.kustomize.KustomizeClient;
 import io.harness.kustomize.KustomizeClientFactory;
 import io.harness.logging.CommandExecutionStatus;
@@ -53,6 +56,7 @@ import javax.annotation.Nonnull;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @Singleton
 public class KustomizeTaskHelper {
@@ -63,12 +67,12 @@ public class KustomizeTaskHelper {
   @Inject private K8sTaskManifestValidator k8sTaskManifestValidator;
 
   @Nonnull
-  public List<FileData> build(@Nonnull String manifestFilesDirectory, @Nonnull String kustomizeBinaryPath,
-      String pluginRootDir, String kustomizeDirPath, LogCallback executionLogCallback,
-      Map<String, String> commandFlags) {
+  public List<FileData> build(@Nonnull String manifestFilesDirectory,
+      @Nonnull K8sDelegateTaskParams k8sDelegateTaskParams, String pluginRootDir, String kustomizeDirPath,
+      LogCallback executionLogCallback, Map<String, String> commandFlags) {
     CliResponse cliResponse;
     // ToDo: set command-flags correctly
-    KustomizeClient kustomizeClient = kustomizeClientFactory.getClient(kustomizeBinaryPath, commandFlags);
+    KustomizeClient kustomizeClient = kustomizeClientFactory.getClient(k8sDelegateTaskParams, commandFlags);
     try {
       if (isBlank(pluginRootDir)) {
         cliResponse = kustomizeClient.build(manifestFilesDirectory, kustomizeDirPath, executionLogCallback);
@@ -79,21 +83,21 @@ public class KustomizeTaskHelper {
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new InvalidRequestException("Kustomize build interrupted", e, WingsException.USER);
+      throw new InvalidRequestException("Kustomize command interrupted", e, WingsException.USER);
     } catch (TimeoutException e) {
       throw NestedExceptionUtils.hintWithExplanationException(KUSTOMIZE_TIMEOUT_EXCEPTION_HINT,
           KUSTOMIZE_TIMEOUT_EXPLANATION,
-          new InvalidRequestException("Kustomize build timed out", e, WingsException.USER));
+          new InvalidRequestException("Kustomize command timed out", e, WingsException.USER));
     } catch (IOException e) {
       throw NestedExceptionUtils.hintWithExplanationException(KUSTOMIZE_IO_EXCEPTION_HINT, KUSTOMIZE_IO_EXPLANATION,
-          new InvalidRequestException("IO Failure occurred while running kustomize build", e, WingsException.USER));
+          new InvalidRequestException("IO Failure occurred while running kustomize command", e, WingsException.USER));
     }
 
     if (cliResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
       return Collections.singletonList(
           FileData.builder().fileName("manifest.yaml").fileContent(cliResponse.getOutput()).build());
     } else {
-      StringBuilder stringBuilder = new StringBuilder("Kustomize build failed.");
+      StringBuilder stringBuilder = new StringBuilder("Kustomize command failed.");
       String cliErrorMessage = cliResponse.getError();
       if (isNotBlank(cliResponse.getOutput())) {
         stringBuilder.append(" Msg: ").append(cliResponse.getOutput());
@@ -115,7 +119,7 @@ public class KustomizeTaskHelper {
   }
 
   @NotNull
-  public List<FileData> buildForApply(@Nonnull String kustomizeBinaryPath, String pluginRootDir,
+  public List<FileData> buildForApply(@Nonnull K8sDelegateTaskParams k8sDelegateTaskParams, String pluginRootDir,
       @Nonnull String manifestFilesDirectory, @NotEmpty List<String> filesToApply, boolean useLatestKustomizeVersion,
       List<String> kustomizePatchesFiles, LogCallback executionLogCallback, Map<String, String> commandFlags) {
     if (isEmpty(filesToApply)) {
@@ -132,7 +136,7 @@ public class KustomizeTaskHelper {
       k8sTaskHelperBase.savingPatchesToDirectory(kustomizePath, kustomizePatchesFiles, executionLogCallback);
     }
     String kustomizeDirPath = filesToApply.get(0);
-    return build(manifestFilesDirectory, kustomizeBinaryPath, pluginRootDir, kustomizeDirPath, executionLogCallback,
+    return build(manifestFilesDirectory, k8sDelegateTaskParams, pluginRootDir, kustomizeDirPath, executionLogCallback,
         commandFlags);
   }
 

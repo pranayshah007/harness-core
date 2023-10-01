@@ -353,13 +353,14 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     if (isClickHouseEnabled) {
       return clickHouseViewsBillingService
           .getClickHouseTimeSeriesStatsNg(filters, groupBy, aggregationFunction, Collections.emptyList(), true, 100,
+              null,
               viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays, false, false),
               perspectiveTimeSeriesHelper.getTimePeriod(groupBy), null, null, null, false)
           .getStats();
     } else {
       return perspectiveTimeSeriesHelper
           .fetch(viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregationFunction,
-                     Collections.emptyList(), true, 100,
+                     Collections.emptyList(), true, 100, null,
                      viewsQueryHelper.buildQueryParams(
                          accountId, true, false, false, false, timeOffsetInDays, false, false)),
               perspectiveTimeSeriesHelper.getTimePeriod(groupBy), groupBy)

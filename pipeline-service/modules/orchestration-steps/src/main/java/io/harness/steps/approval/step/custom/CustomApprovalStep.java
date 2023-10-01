@@ -12,7 +12,10 @@ import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskNG;
@@ -22,7 +25,6 @@ import io.harness.exception.ApprovalStepNGException;
 import io.harness.execution.step.approval.custom.CustomApprovalStepExecutionDetails;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -32,6 +34,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
@@ -52,24 +55,25 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
 @Slf4j
 public class CustomApprovalStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.CUSTOM_APPROVAL_STEP_TYPE;
 
   @Inject private ApprovalInstanceService approvalInstanceService;
-  @Inject private CustomApprovalInstanceHandler customApprovalInstanceHandler;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     CustomApprovalInstance approvalInstance = CustomApprovalInstance.fromStepParameters(ambiance, stepParameters);
     openLogStream(ambiance, approvalInstance);
     approvalInstance = (CustomApprovalInstance) approvalInstanceService.save(approvalInstance);
-    customApprovalInstanceHandler.wakeup();
+    irregularApprovalInstanceHandler.wakeup();
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())
         .addAllLogKeys(CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
@@ -93,7 +97,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
 
   @Override
   public StepResponse handleAsyncResponseInternal(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+      Ambiance ambiance, StepBaseParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     try {
       CustomApprovalResponseData customApprovalResponseData =
           (CustomApprovalResponseData) responseDataMap.values().iterator().next();
@@ -110,8 +114,8 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
                                                           .build())
                                       .build();
         dashboardExecutorService.submit(()
-                                            -> stepExecutionEntityService.updateStepExecutionEntity(ambiance,
-                                                failureInfo, null, stepParameters.getName(), Status.APPROVAL_WAITING));
+                                            -> stepExecutionEntityService.updateStepExecutionEntity(
+                                                ambiance, failureInfo, null, stepParameters.getName(), Status.FAILED));
         throw new ApprovalStepNGException(errorMsg);
       }
       CustomApprovalOutcome outcome = instance.toCustomApprovalOutcome(customApprovalResponseData.getTicket());
@@ -119,7 +123,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
           ()
               -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, instance.getFailureInfo(),
                   createCustomApprovalStepExecutionDetailsFromCustomApprovalOutcome(outcome), stepParameters.getName(),
-                  Status.APPROVAL_WAITING));
+                  instance.getStatus().toFinalExecutionStatus()));
       return StepResponse.builder()
           .status(instance.getStatus().toFinalExecutionStatus())
           .failureInfo(instance.getFailureInfo())
@@ -141,14 +145,14 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
+      Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse) {
     approvalInstanceService.abortByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     closeLogStream(ambiance);
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   private void closeLogStream(Ambiance ambiance) {

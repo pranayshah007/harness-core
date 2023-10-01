@@ -11,8 +11,6 @@ import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 
-import static software.wings.beans.AccountStatus.MARKED_FOR_DELETION;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureFlag;
@@ -163,8 +161,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
 
   @Override
   public boolean delete(String accountId) {
-    accountService.updateAccountStatus(accountId, MARKED_FOR_DELETION);
-    return true;
+    return accountService.delete(accountId);
   }
 
   @Override
@@ -188,8 +185,8 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   }
 
   @Override
-  public boolean enableOrDisableNextGen(String accountId, boolean enabled) {
-    accountService.updateNextGenEnabled(accountId, enabled);
+  public boolean enableOrDisableNextGen(String accountId, boolean isNextGenEnabled) {
+    accountService.updateNextGenEnabled(accountId, isNextGenEnabled, true);
     return true;
   }
 
@@ -204,6 +201,14 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     return accountService.cleanUpNextGen(accountId);
   }
 
+  @Override
+  public boolean disableIpAllowList(String accountId) {
+    return accountService.disableIpAllowList(accountId);
+  }
+  @Override
+  public String disableTriggers(String accountId, String orgIdentifier, String projectIdentifier) {
+    return accountService.disableTriggers(accountId, orgIdentifier, projectIdentifier);
+  }
   @Override
   public boolean updateIsProductLed(String accountId, boolean isProductLed) {
     accountService.updateIsProductLed(accountId, isProductLed);

@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.pdcconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
@@ -36,6 +37,7 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
 @Schema(name = "PhysicalDataCenterConnectorDTO", description = "This contains Physical Data Center connector details")
+@RecasterAlias("io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO")
 public class PhysicalDataCenterConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   @JsonDeserialize(using = HostDTOsDeserializer.class) @JsonProperty("hosts") @Valid List<HostDTO> hosts;
   Set<String> delegateSelectors;

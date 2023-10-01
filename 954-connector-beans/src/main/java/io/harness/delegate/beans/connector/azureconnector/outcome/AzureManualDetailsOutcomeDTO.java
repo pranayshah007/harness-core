@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.azureconnector.outcome;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.azureconnector.AzureConstants;
@@ -20,6 +21,7 @@ import lombok.Value;
 @Value
 @Builder
 @JsonTypeName(AzureConstants.MANUAL_CONFIG)
+@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOutcomeDTO")
 public class AzureManualDetailsOutcomeDTO implements AzureCredentialSpecOutcomeDTO {
   @NotNull String applicationId;
 

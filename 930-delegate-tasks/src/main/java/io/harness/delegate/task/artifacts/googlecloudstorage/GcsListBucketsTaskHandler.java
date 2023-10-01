@@ -6,13 +6,15 @@
  */
 
 package io.harness.delegate.task.artifacts.googlecloudstorage;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.gcp.request.GcpRequest;
 import io.harness.delegate.task.gcp.request.GcsListBucketsRequest;
@@ -32,6 +34,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Slf4j
 @OwnedBy(CDP)
 public class GcsListBucketsTaskHandler implements TaskHandler {

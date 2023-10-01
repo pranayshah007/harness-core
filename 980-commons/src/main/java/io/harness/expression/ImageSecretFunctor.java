@@ -6,17 +6,20 @@
  */
 
 package io.harness.expression;
-
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.functors.ExpressionFunctor;
 
 import java.util.concurrent.Future;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDC)
 public class ImageSecretFunctor implements ExpressionFunctor {
   public static final String FUNCTOR_NAME = "imageSecret";
@@ -40,5 +43,18 @@ public class ImageSecretFunctor implements ExpressionFunctor {
       throw new InvalidRequestException("Unable to interpret Future ", e);
     }
     return create(registryUrl, userName, evaluatedPassword);
+  }
+
+  // This variation will be used in case of nested secrets, which has not been evaluated yet.
+  public String create(String registryUrl, Future userName, Future password) {
+    String evaluatedPassword;
+    String evaluatedUsername;
+    try {
+      evaluatedPassword = String.valueOf(password.get());
+      evaluatedUsername = String.valueOf(userName.get());
+    } catch (Exception e) {
+      throw new InvalidRequestException("Unable to interpret Future ", e);
+    }
+    return create(registryUrl, evaluatedUsername, evaluatedPassword);
   }
 }

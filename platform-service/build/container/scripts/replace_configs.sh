@@ -90,6 +90,24 @@ if [[ "" != "$MONGO_CONNECTIONS_PER_HOST" ]]; then
   export MONGO_CONNECTIONS_PER_HOST; yq -i '.notificationServiceConfig.mongo.connectionsPerHost=env(MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.notificationServiceConfig.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.notificationServiceConfig.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT; yq -i '.resourceGroupServiceConfig.mongo.maxDocumentsToBeFetched=env(RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$RESOURCEGROUP_MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export RESOURCEGROUP_MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.resourceGroupServiceConfig.mongo.maxOperationTimeInMillis=env(RESOURCEGROUP_MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
+
+
 if [[ "" != "$MANAGER_CLIENT_SECRET" ]]; then
   export MANAGER_CLIENT_SECRET; yq -i '.secrets.managerServiceSecret=env(MANAGER_CLIENT_SECRET)' $CONFIG_FILE
 fi
@@ -169,6 +187,14 @@ if [[ "" != "$AUDIT_MONGO_CONNECT_TIMEOUT" ]]; then
   export AUDIT_MONGO_CONNECT_TIMEOUT; yq -i '.auditServiceConfig.mongo.connectTimeout=env(AUDIT_MONGO_CONNECT_TIMEOUT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$AUDIT_MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export AUDIT_MONGO_MAX_DOCUMENT_LIMIT; yq -i '.auditServiceConfig.mongo.maxDocumentsToBeFetched=env(AUDIT_MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AUDIT_MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export AUDIT_MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.auditServiceConfig.mongo.maxOperationTimeInMillis=env(AUDIT_MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$AUDIT_MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
   export AUDIT_MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.auditServiceConfig.mongo.serverSelectionTimeout=env(AUDIT_MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
@@ -245,6 +271,15 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.resourceGroupServiceConfig.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -373,4 +408,19 @@ replace_key_value auditServiceConfig.enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 replace_key_value notificationServiceConfig.enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 
 replace_key_value resourceGroupServiceConfig.resourceClients.ce-nextgen.baseUrl "$CE_NEXTGEN_CLIENT_BASEURL"
+replace_key_value resourceGroupServiceConfig.resourceClients.code.baseUrl "$CODE_SERVICE_CLIENT_BASEURL"
+replace_key_value resourceGroupServiceConfig.resourceClients.code.secret "$CODE_SERVICE_SECRET"
 replace_key_value resourceGroupServiceConfig.resourceClients.ce-nextgen.secret "$CE_NEXTGEN_SECRET"
+
+replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
+replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
+replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL
+replace_key_value eventsFramework.redis.masterName $EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME
+replace_key_value eventsFramework.redis.userName $EVENTS_FRAMEWORK_REDIS_USERNAME
+replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWORD
+replace_key_value eventsFramework.redis.nettyThreads $EVENTS_FRAMEWORK_NETTY_THREADS
+replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
+replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
+replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL

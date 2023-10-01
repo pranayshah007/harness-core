@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.artifact.resources.gcr.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class GcrResourceMapper {
   public GcrResponseDTO toGcrResponse(List<GcrArtifactDelegateResponse> gcrArtifactDelegateResponseList) {

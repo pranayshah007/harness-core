@@ -85,11 +85,12 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
     if (getDistinctFromBranches) {
       return EntityDistinctElementHelper.getDistinctElementPage(mongoTemplate, criteria, pageable, PipelineEntity.class,
-          PipelineEntityKeys.accountId, PipelineEntityKeys.orgIdentifier, PipelineEntityKeys.projectIdentifier,
+          true, PipelineEntityKeys.accountId, PipelineEntityKeys.orgIdentifier, PipelineEntityKeys.projectIdentifier,
           PipelineEntityKeys.identifier);
     }
     List<PipelineEntity> pipelineEntities = gitAwarePersistence.find(
-        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class);
+        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class, true);
+
     return PageableExecutionUtils.getPage(pipelineEntities, pageable,
         ()
             -> gitAwarePersistence.count(
@@ -474,6 +475,11 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
         .get(()
                  -> mongoTemplate.findAndModify(
                      query, update, new FindAndModifyOptions().returnNew(true), PipelineEntity.class));
+  }
+
+  @Override
+  public List<String> findAllPipelineIdentifiers(Criteria criteria) {
+    return pipelineEntityReadHelper.findAllIdentifiers(criteria);
   }
 
   @VisibleForTesting

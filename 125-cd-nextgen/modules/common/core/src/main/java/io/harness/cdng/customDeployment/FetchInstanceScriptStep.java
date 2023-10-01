@@ -15,21 +15,27 @@ import static software.wings.sm.states.customdeploymentng.InstanceMapperUtils.ge
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.instance.outcome.HostOutcome;
 import io.harness.cdng.instance.outcome.InstanceOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.ssh.output.HostsOutput;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.CustomDeploymentServerInstanceInfo;
 import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNG;
@@ -45,11 +51,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -57,11 +61,11 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
@@ -78,6 +82,7 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -87,6 +92,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScriptTaskNGResponse> {
@@ -104,7 +111,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   static Function<InstanceMapperUtils.HostProperties, CustomDeploymentServerInstanceInfo> instanceElementMapper =
@@ -117,7 +124,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   };
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_SVC_ENV_REDESIGN)) {
       throw new AccessDeniedException(
           "NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.",
@@ -150,14 +157,12 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
         }
       }
     }
-
-    return (String) ExpressionEvaluatorUtils.updateExpressions(
-        fetchInstanceScript, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    return (String) cdExpressionResolver.updateExpressions(ambiance, fetchInstanceScript);
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     FetchInstanceScriptStepParameters stepSpec = (FetchInstanceScriptStepParameters) stepParameters.getSpec();
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
@@ -188,8 +193,9 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier)
+      throws Exception {
     try {
       FetchInstanceScriptTaskNGResponse response;
       try {
@@ -214,13 +220,28 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
       instanceElements =
           InstanceMapperUtils.mapJsonToInstanceElements(INSTANCE_NAME, infrastructureOutcome.getInstanceAttributes(),
               infrastructureOutcome.getInstancesListPath(), response.getOutput(), instanceElementMapper);
+
+      String resolvedFetchScript = getResolvedFetchInstanceScript(ambiance, infrastructureOutcome);
       instanceElements.forEach(serverInstanceInfo -> {
-        serverInstanceInfo.setInstanceFetchScript(getResolvedFetchInstanceScript(ambiance, infrastructureOutcome));
+        serverInstanceInfo.setInstanceFetchScript(resolvedFetchScript);
         serverInstanceInfo.setInfrastructureKey(infrastructureOutcome.getInfrastructureKey());
       });
+
+      CustomDeploymentOutcomeMetadata customDeploymentOutcomeMetadata =
+          CustomDeploymentOutcomeMetadata.builder()
+              .instanceFetchScript(resolvedFetchScript)
+              .delegateSelectors(getDelegateSelectors(stepParameters))
+              .build();
+
+      DeploymentInfoOutcome deploymentInfoOutcome =
+          DeploymentInfoOutcome.builder()
+              .serverInstanceInfoList(
+                  instanceElements.stream().map(element -> (ServerInstanceInfo) element).collect(Collectors.toList()))
+              .deploymentOutcomeMetadata(customDeploymentOutcomeMetadata)
+              .build();
       validateInstanceElements(instanceElements, infrastructureOutcome);
-      StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
-          instanceElements.stream().map(element -> (ServerInstanceInfo) element).collect(Collectors.toList()));
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveDeploymentInfoOutcomeIntoSweepingOutput(ambiance, deploymentInfoOutcome);
       InstancesOutcome instancesOutcome = buildInstancesOutcome(instanceElements);
       executionSweepingOutputService.consume(
           ambiance, OutputExpressionConstants.INSTANCES, instancesOutcome, StepCategory.STAGE.name());
@@ -231,6 +252,12 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
     } finally {
       closeLogStream(ambiance);
     }
+  }
+
+  private Set<String> getDelegateSelectors(StepBaseParameters stepParameters) {
+    FetchInstanceScriptStepParameters stepSpec = (FetchInstanceScriptStepParameters) stepParameters.getSpec();
+    List<TaskSelector> delegateSelectors = TaskSelectorYaml.toTaskSelector(stepSpec.getDelegateSelectors());
+    return delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet());
   }
 
   private Set<String> getInstances(List<CustomDeploymentServerInstanceInfo> instanceElements) {
@@ -280,7 +307,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

@@ -45,7 +45,6 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
   public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
-    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.AZURE_REPO_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not AzureRepo connector for accountId: [%s]", connectorIdentifier,
@@ -72,8 +71,6 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
 
     secrets.put(Constants.AZURE_REPO_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.AZURE_REPO_TOKEN));
-    configManagerService.createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO,
-        ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString), connectorTypeAsString);
     return secrets;
   }
 

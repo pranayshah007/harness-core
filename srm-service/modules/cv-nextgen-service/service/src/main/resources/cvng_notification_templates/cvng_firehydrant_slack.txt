@@ -31,12 +31,12 @@
 		{
 			"type": "divider"
 		},
-		{
+        {
 			"type": "section",
 			"fields": [
 				{
 					"type": "mrkdwn",
-					"text": "*Change events (${TOTAL_CE_COUNT})*"
+					"text": "<${URL}|Change events (${TOTAL_CE_COUNT})>"
 				}
 			]
 		},
@@ -69,34 +69,41 @@
 			"type": "divider"
 		},
 		{
-			"type": "section",
-			"text": {
-                "type": "mrkdwn",
-                    "text": "*Service Health*"
-            }
-		},
+        			"type": "section",
+        			"text": {
+        				"type": "mrkdwn",
+        				"text": "<${URL}|Service Health>"
+        			}
+        },
 		{
-			"type": "section",
-			"text": {
-				"type": "mrkdwn",
-				"text": "The service remained healthy with a score of ${CURRENT_HEALTH_SCORE}%"
-			}
-		},
+        			"type": "section",
+        			"text": {
+        				"type": "mrkdwn",
+        				"text": "${SERVICE_HEALTH_SUMMARY}"
+        			}
+        },
         {
-          	"type": "divider"
+        			"type": "divider"
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*SLO Performance*"
+                "text": "<${SLO_URL}|SLO Performance>"
             }
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "${SLO_PERFORMANCE}"
+                "text": "${SLO_SUMMARY}"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "${SLO_PERFORMANCE_SLACK}"
             }
         },
         {
@@ -109,7 +116,7 @@
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "Anomalous Metrics and Logs"
+                        "text": "Metrics and Logs"
                     },
                     "url": "${URL}"
                 }

@@ -28,6 +28,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
@@ -66,6 +67,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -99,6 +101,8 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
   @Mock private TerraformConfigHelper terraformConfigHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private StepHelper stepHelper;
+
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private AccountService accountService;
   @Mock private TelemetryReporter telemetryReporter;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -558,7 +562,7 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(terraformRollbackStepV2.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(terraformRollbackStepV2.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

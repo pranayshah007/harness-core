@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 public interface RecommendationAdhocDTO {
   String getRoleInfo(); // AWS: RoleArn ,Azure: null
   String getRoleId(); // AWS: ExternalID ,Azure: ClientId
-  String getIdentifier();
   String getTargetInfo(); // AWS: AwsAccountId ,Azure: SubscriptionId
   String getTenantInfo(); // AWS: null ,Azure: TenantId
+  String getCloudConnectorId(); // AWS: cloudConnectorId ,Azure: cloudConnectorId
 }

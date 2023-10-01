@@ -56,6 +56,8 @@ mongo:
   indexManagerMode: ${MONGO_INDEX_MANAGER_MODE:-AUTO}
   transactionsEnabled: ${MONGO_TRANSACTIONS_ENABLED:-true}
   aliasDBName: ${MONGO_ALIAS_DB_NAME:-accesscontrol}
+  maxDocumentsToBeFetched: 2147483647
+  maxOperationTimeInMillis: 900000
 
 eventsConfig:
   redis:
@@ -77,6 +79,7 @@ eventsConfig:
       CATrustStorePath: ${EVENTS_CONFIG_REDIS_SSL_CA_TRUST_STORE_PATH:-""}
       CATrustStorePassword: ${EVENTS_CONFIG_REDIS_SSL_CA_TRUST_STORE_PASSWORD:-""}
   enabled: true
+  threads: ${EVENTS_CONFIG_CONSUMER_THREADS:-1}
 
 redisLockConfig:
   sentinel: ${LOCK_CONFIG_USE_SENTINEL:-false}
@@ -275,4 +278,5 @@ featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
 
-disableRedundantACLs: ${DISABLE_REDUNDANT_ACLS:-false}
+enableParallelProcessingOfUserGroupUpdates: ${ENABLE_PARALLEL_PROCESSING_OF_USERGROUP_UPDATES:-false}
+enableAclProcessingThroughOutbox: ${ENABLE_ACL_PROCESSING_THROUGH_OUTBOX:-false}

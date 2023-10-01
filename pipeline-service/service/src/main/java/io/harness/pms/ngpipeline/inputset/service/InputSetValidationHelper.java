@@ -10,7 +10,10 @@ package io.harness.pms.ngpipeline.inputset.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.utils.PipelineExceptionsHelper.ERROR_PIPELINE_BRANCH_NOT_PROVIDED;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -32,13 +35,15 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class InputSetValidationHelper {
@@ -55,9 +60,9 @@ public class InputSetValidationHelper {
   public void validateInputSet(
       PMSInputSetService inputSetService, InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
     switch (inputSetEntity.getHarnessVersion()) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return;
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         break;
       default:
         throw new IllegalStateException("version not supported");
@@ -183,6 +188,7 @@ public class InputSetValidationHelper {
     }
 
     yamlDiffDTO.setGitDetails(entityGitDetails);
+    yamlDiffDTO.setYamlDiffPresent(!Objects.equals(yamlDiffDTO.getOldYAML(), yamlDiffDTO.getNewYAML()));
     return yamlDiffDTO;
   }
 

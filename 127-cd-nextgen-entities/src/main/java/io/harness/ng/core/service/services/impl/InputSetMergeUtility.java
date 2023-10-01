@@ -9,8 +9,11 @@ package io.harness.ng.core.service.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
@@ -24,7 +27,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 @Slf4j

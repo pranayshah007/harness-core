@@ -30,6 +30,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
@@ -59,6 +60,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -89,8 +91,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 @PrepareForTest({StepUtils.class})
 public class TerraformRollbackStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-
   @Mock private TerraformStepHelper terraformStepHelper;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private TerraformConfigDAL terraformConfigDAL;
   @Mock private TerraformConfigHelper terraformConfigHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -446,7 +448,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(terraformRollbackStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(terraformRollbackStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

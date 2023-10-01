@@ -8,11 +8,13 @@
 package io.harness.transformers.simplevalue;
 
 import io.harness.beans.CastedField;
+import io.harness.core.Recaster;
 import io.harness.transformers.RecastTransformer;
 import io.harness.utils.RecastReflectionUtils;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import java.util.Map;
 
 public class BooleanRecastTransformer extends RecastTransformer implements SimpleValueTransformer {
   public BooleanRecastTransformer() {
@@ -42,6 +44,12 @@ public class BooleanRecastTransformer extends RecastTransformer implements Simpl
     if (val instanceof List) {
       final Class<?> type = targetClass.isArray() ? targetClass.getComponentType() : targetClass;
       return RecastReflectionUtils.convertToArray(type, (List<?>) val);
+    }
+
+    // Handling first class recast encoded value
+    if (val instanceof Map) {
+      Object decodedObject = ((Map<String, Object>) val).get(Recaster.ENCODED_VALUE);
+      return decode(targetClass, decodedObject, castedField);
     }
 
     return Boolean.parseBoolean(val.toString());

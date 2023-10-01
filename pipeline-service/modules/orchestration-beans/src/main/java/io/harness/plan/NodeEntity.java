@@ -11,14 +11,19 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.UUIDGenerator;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
 
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -39,9 +44,32 @@ public class NodeEntity implements PersistentEntity, UuidAccess {
   @Wither @Id @dev.morphia.annotations.Id String uuid;
   Node node;
   String planId;
+  String nodeId;
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 
-  public static NodeEntity fromNode(Node node, String planId) {
-    return NodeEntity.builder().node(node).uuid(node.getUuid()).planId(planId).build();
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList
+        .<MongoIndex>builder()
+        // pipeline get call
+        .add(CompoundMongoIndex.builder()
+                 .name("planNodeId_nodeId")
+                 .field(NodeEntityKeys.planId)
+                 .field(NodeEntityKeys.nodeId)
+                 .build())
+        .add(CompoundMongoIndex.builder().name("nodeId_idx").field(NodeEntityKeys.nodeId).build())
+        .build();
+  }
+
+  public static NodeEntity fromNode(Node node, String planId, Boolean useNewNodeEntityConfiguration) {
+    if (useNewNodeEntityConfiguration) {
+      return NodeEntity.builder()
+          .node(node)
+          .uuid(UUIDGenerator.generateUuid())
+          .nodeId(node.getUuid())
+          .planId(planId)
+          .build();
+    } else {
+      return NodeEntity.builder().node(node).uuid(node.getUuid()).nodeId(node.getUuid()).planId(planId).build();
+    }
   }
 }

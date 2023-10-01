@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -803,8 +804,12 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
         startTime = endTime + BudgetUtils.ONE_DAY_MILLIS;
       }
     } else {
-      for (BudgetCostData historyBudgetGroupCostData : budgetGroup.getBudgetGroupHistory().values()) {
-        budgetGroupCostDataList.add(historyBudgetGroupCostData);
+      if (budgetGroup.getBudgetGroupHistory() != null) {
+        TreeMap<Long, BudgetCostData> sortedBudgetGroupHistory = new TreeMap<>();
+        sortedBudgetGroupHistory.putAll(budgetGroup.getBudgetGroupHistory());
+        for (BudgetCostData historyBudgetGroupCostData : sortedBudgetGroupHistory.values()) {
+          budgetGroupCostDataList.add(historyBudgetGroupCostData);
+        }
       }
       double budgetGroupAmount = budgetGroup.getBudgetGroupAmount();
       double budgetGroupVariance = BudgetUtils.getBudgetVariance(budgetGroupAmount, budgetGroup.getActualCost());
@@ -850,6 +855,14 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       } else {
         Budget childBudget = budgetDao.get(budgetGroupChildEntityDTO.getId(), accountId);
         childHistory = childBudget != null ? childBudget.getBudgetHistory() : null;
+      }
+      // This will happen when cost data was actually not present, we skip that child.
+      // The history will be adjusted/ updated when group expires and renewed.
+      if (childHistory == null) {
+        log.info("There is no history associated with {} id {} accountId {}",
+            budgetGroupChildEntityDTO.isBudgetGroup() ? "budget group" : "budget", budgetGroupChildEntityDTO.getId(),
+            accountId);
+        continue;
       }
       for (Long startTime : childHistory.keySet()) {
         double actualCost;
@@ -949,6 +962,10 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     Comparator comparator;
     if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_AMOUNT) {
       comparator = Comparator.comparingDouble(BudgetSummary::getBudgetAmount);
+    } else if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_ACTUAL_COST) {
+      comparator = Comparator.comparingDouble(BudgetSummary::getActualCost);
+    } else if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_FORECASTED_COST) {
+      comparator = Comparator.comparingDouble(BudgetSummary::getForecastCost);
     } else {
       comparator = Comparator.comparing(BudgetSummary::getName, String.CASE_INSENSITIVE_ORDER);
     }

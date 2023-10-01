@@ -6,10 +6,15 @@
  */
 
 package io.harness.beans.constants;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_DASHBOARD,
+        HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDC)
 public class JsonConstants {
   public static final String RESOLVE_OBJECTS_VIA_JSON_SELECT = "resolveObjectsViaJSONSelect";

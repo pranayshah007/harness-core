@@ -12,6 +12,7 @@ import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.validation.Validator.nullCheck;
@@ -313,8 +314,8 @@ public class InstanceServiceImpl implements InstanceService {
 
   @Override
   public boolean purgeDeletedUpTo(Instant timestamp) {
-    try (HIterator<Account> accounts =
-             new HIterator<>(wingsPersistence.createQuery(Account.class).project(Account.ID_KEY2, true).fetch())) {
+    try (HIterator<Account> accounts = new HIterator<>(
+             wingsPersistence.createQuery(Account.class).project(Account.ID_KEY2, true).limit(NO_LIMIT).fetch())) {
       while (accounts.hasNext()) {
         final Account account = accounts.next();
         try (AutoLogContext ignore1 = new AccountLogContext(account.getUuid(), OverrideBehavior.OVERRIDE_NESTS)) {

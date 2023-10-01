@@ -6,30 +6,37 @@
  */
 
 package io.harness.serializer.kryo;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.concurrency.MaxConcurrentChildCallback;
 import io.harness.engine.execution.ExecutionInputData;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.execution.WaitForExecutionInputCallback;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.engine.interrupts.AbortInterruptCallback;
+import io.harness.engine.interrupts.ExpiryInterruptCallback;
 import io.harness.engine.interrupts.InterruptProcessingFailedException;
 import io.harness.engine.interrupts.UserMarkedFailureInterruptCallback;
 import io.harness.engine.interrupts.callback.FailureInterruptCallback;
 import io.harness.engine.interrupts.handlers.AbortAllInterruptCallback;
+import io.harness.engine.interrupts.handlers.AllInterruptCallback;
 import io.harness.engine.interrupts.handlers.UserMarkedFailAllInterruptCallback;
 import io.harness.engine.pms.execution.strategy.plan.PlanExecutionResumeCallback;
 import io.harness.engine.pms.resume.EngineResumeAllCallback;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.engine.pms.resume.EngineWaitRetryCallback;
+import io.harness.engine.pms.resume.EngineWaitRetryCallbackV2;
 import io.harness.engine.progress.EngineProgressCallback;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 public class OrchestrationKryoRegistrar implements KryoRegistrar {
   @Override
@@ -50,5 +57,8 @@ public class OrchestrationKryoRegistrar implements KryoRegistrar {
     kryo.register(UserMarkedFailureInterruptCallback.class, 87017);
     kryo.register(UserMarkedFailAllInterruptCallback.class, 87018);
     kryo.register(InterruptProcessingFailedException.class, 87019);
+    kryo.register(ExpiryInterruptCallback.class, 87020);
+    kryo.register(AllInterruptCallback.class, 87021);
+    kryo.register(EngineWaitRetryCallbackV2.class, 870022);
   }
 }

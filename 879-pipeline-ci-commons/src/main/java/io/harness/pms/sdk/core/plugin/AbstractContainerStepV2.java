@@ -17,20 +17,19 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepConstants;
@@ -44,7 +43,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.fabric8.utils.Strings;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -60,7 +58,6 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   @Inject private CIDelegateTaskExecutor taskExecutor;
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-  @Inject OutcomeService outcomeService;
   @Inject ContainerPortHelper containerPortHelper;
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
@@ -71,13 +68,17 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, T stepElementParameters, StepInputPackage inputPackage) {
+    if (shouldSkip(ambiance, stepElementParameters)) {
+      return AsyncExecutableResponse.newBuilder().build();
+    }
+
     log.info("Starting run in container step");
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
     long timeout = getTimeout(ambiance, stepElementParameters);
     timeout = Math.max(timeout, 100);
 
-    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId);
+    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId, List.of());
 
     TaskData runStepTaskData = getStepTask(ambiance, stepElementParameters, AmbianceUtils.getAccountId(ambiance),
         getLogPrefix(ambiance), timeout, parkedTaskId);
@@ -107,10 +108,10 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     if (response instanceof K8sTaskExecutionResponse
         && (((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
             || ((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED)) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
     if (response instanceof ErrorNotifyResponseData) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
   }
 
@@ -122,10 +123,10 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, StepCategory.STEP.name());
   }
-  private void abortTasks(List<String> allCallbackIds, String callbackId, Ambiance ambiance) {
+
+  private void abortTasks(List<String> allCallbackIds, String callbackId) {
     List<String> callBackIds =
         allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());
     callBackIds.forEach(callbackId1
@@ -161,6 +162,10 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
       stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
     }
     return containerPortHelper.getPort(ambiance, stepIdentifier, false);
+  }
+
+  public boolean shouldSkip(Ambiance ambiance, T stepElementParameters) {
+    return false;
   }
 
   public abstract long getTimeout(Ambiance ambiance, T stepElementParameters);

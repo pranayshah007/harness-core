@@ -53,6 +53,7 @@ public class NGExpressionUtils {
 
   public static final Pattern GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX =
       Pattern.compile(".*" + EXPR_START_ESC + ".+" + EXPR_END_ESC + ".*");
+  public static final String NULL = "null";
 
   public boolean matchesInputSetPattern(String expression) {
     if (isEmpty(expression)) {

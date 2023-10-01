@@ -12,10 +12,17 @@ import static io.harness.annotations.dev.HarnessTeam.SSCA;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.entities.ArtifactEntity;
 
-import java.util.Optional;
+import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(SSCA)
 public interface ArtifactRepositoryCustom {
-  ArtifactEntity save(ArtifactEntity entity);
-  Optional<ArtifactEntity> findFirstByUrl(String url);
+  void invalidateOldArtifact(ArtifactEntity artifact);
+  ArtifactEntity findOne(Criteria criteria);
+  Page<ArtifactEntity> findAll(Criteria criteria, Pageable pageable);
+  List<ArtifactEntity> findAll(Aggregation aggregation);
+  long getCount(Aggregation aggregation);
 }

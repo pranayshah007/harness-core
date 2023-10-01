@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 
 import io.harness.CategoryTest;
+import io.harness.EntityType;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.activityhistory.ActivityHistoryTestHelper;
 import io.harness.ng.core.activityhistory.NGActivityStatus;
@@ -51,14 +52,14 @@ public class NGActivityResourceTest extends CategoryTest {
     String projectIdentifier = "projectIdentifier";
     String identifier = "identifier";
     ngActivityResource.list(100, 100, accountIdentifier, orgIdentifier, projectIdentifier, identifier, 0L, 100L,
-        NGActivityStatus.SUCCESS, CONNECTORS, null, null);
+        NGActivityStatus.SUCCESS, CONNECTORS, null, null, null, null);
 
     Set<NGActivityType> ngActivityTypes = new HashSet<>(List.of(NGActivityType.values()));
     ngActivityTypes.remove(NGActivityType.CONNECTIVITY_CHECK);
 
     Mockito.verify(activityService, times(1))
         .list(eq(100), eq(100), eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), eq(0L),
-            eq(100L), eq(NGActivityStatus.SUCCESS), eq(CONNECTORS), eq(null), eq(ngActivityTypes));
+            eq(100L), eq(NGActivityStatus.SUCCESS), eq(CONNECTORS), eq(null), eq(ngActivityTypes), eq(null), eq(null));
   }
 
   @Test
@@ -69,9 +70,10 @@ public class NGActivityResourceTest extends CategoryTest {
     String orgIdentifier = "orgIdentifier";
     String projectIdentifier = "projectIdentifier";
     String identifier = "identifier";
-    NGActivityDTO activityHistoryDTO =
-        ActivityHistoryTestHelper.createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier,
-            identifier, NGActivityStatus.SUCCESS, System.currentTimeMillis(), NGActivityType.ENTITY_USAGE);
+    NGActivityDTO activityHistoryDTO = ActivityHistoryTestHelper.createActivityHistoryDTO(accountIdentifier,
+
+        orgIdentifier, projectIdentifier, identifier, null, NGActivityStatus.SUCCESS, System.currentTimeMillis(),
+        NGActivityType.ENTITY_USAGE, EntityType.PIPELINES, null);
     ngActivityResource.save(activityHistoryDTO);
     Mockito.verify(activityService, times(1)).save(eq(activityHistoryDTO));
   }

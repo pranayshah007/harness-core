@@ -7,6 +7,7 @@
 
 package io.harness.idp.events.eventlisteners.messagehandler;
 
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -24,17 +25,17 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
 public class SecretMessageHandler implements EventMessageHandler {
-  private static final String ACCOUNT_ID = "accountId";
   private BackstageEnvVariableService backstageEnvVariableService;
 
   @Override
   public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) {
     EventListenerLogger.logForEventReceived(message);
-    String secretIdentifier = entityChangeDTO.getIdentifier().getValue();
-    String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     switch (action) {
       case UPDATE_ACTION:
         backstageEnvVariableService.processSecretUpdate(entityChangeDTO);
+        break;
+      case DELETE_ACTION:
+        backstageEnvVariableService.processSecretDelete(entityChangeDTO);
         break;
       default:
         log.warn("ACTION - {} is not to be handled by IDP secret event handler", action);

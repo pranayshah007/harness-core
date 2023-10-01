@@ -10,6 +10,9 @@ package io.harness.freeze.beans;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -20,6 +23,8 @@ import lombok.Data;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @Data
 @Builder
 public class FreezeDuration {

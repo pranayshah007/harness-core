@@ -18,4 +18,5 @@ import lombok.Value;
 @Builder
 public class NgIteratorConfig {
   int threadPoolSize;
+  long targetIntervalInSeconds;
 }

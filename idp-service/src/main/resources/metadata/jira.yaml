@@ -6,6 +6,7 @@ category: Agile Planning
 source: https://roadie.io/backstage/plugins/jira/?utm_source=backstage.io&utm_medium=marketplace&utm_campaign=jira
 iconUrl: https://roadie.io/images/logos/jira.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/jira/
 config: |-
   proxy:
     '/jira/api':

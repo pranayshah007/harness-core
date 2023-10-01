@@ -338,7 +338,7 @@ public class SegmentHandler implements EventHandler {
   }
 
   public boolean reportTrackEvent(EventType eventType, List<String> identityList) {
-    log.info("Reporting track for event {} with leads {}", eventType, identityList);
+    log.debug("Reporting track for event {} with leads {}", eventType, identityList);
     if (isEmpty(identityList)) {
       log.error("No identities reported for event {}", eventType);
       return false;
@@ -346,7 +346,7 @@ public class SegmentHandler implements EventHandler {
     Map<String, String> properties = new HashMap<>();
     properties.put("original_timestamp", String.valueOf(System.currentTimeMillis()));
     segmentHelper.reportTrackEvent(identityList, eventType.name(), properties);
-    log.info("Reported track for event {} with leads {}", eventType, identityList);
+    log.debug("Reported track for event {} with leads {}", eventType, identityList);
     return true;
   }
 
@@ -362,7 +362,7 @@ public class SegmentHandler implements EventHandler {
     try (AutoLogContext ignore = new UserLogContext(accountId, uuid, OVERRIDE_ERROR)) {
       String userId = user.getUuid();
       String identity = user.getSegmentIdentity();
-      log.info("Reporting track for event {} with lead {}", event, userId);
+      log.debug("Reporting track for event {} with lead {}", event, userId);
       if (isEmpty(identity) || !identity.equals(userId)) {
         identity = reportIdentity(account, user, true);
         if (isEmpty(identity)) {
@@ -383,7 +383,7 @@ public class SegmentHandler implements EventHandler {
       if (reported) {
         updateUserEvents(user, event);
       }
-      log.info("Reported track for event {} with lead {}", event, userId);
+      log.debug("Reported track for event {} with lead {}", event, userId);
     }
   }
 
@@ -398,7 +398,7 @@ public class SegmentHandler implements EventHandler {
         return;
       }
       identity = user.getSegmentIdentity();
-      log.info("Reporting track for event {} with lead {}", event, userId);
+      log.debug("Reporting track for event {} with lead {}", event, userId);
       if (isEmpty(identity) || !identity.equals(userId)) {
         identity = reportIdentity(account, user, true);
         if (isEmpty(identity)) {
@@ -422,6 +422,6 @@ public class SegmentHandler implements EventHandler {
     if (user != null && reported) {
       updateUserEvents(user, event);
     }
-    log.info("Reported track for event {} with lead {}", event, identity);
+    log.debug("Reported track for event {} with lead {}", event, identity);
   }
 }

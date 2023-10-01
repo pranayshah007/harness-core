@@ -29,7 +29,6 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
-import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -54,7 +53,6 @@ import lombok.extern.slf4j.Slf4j;
 public class PipelineRbacHelper {
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject @Named("PRIVILEGED") AccessControlClient accessControlClient;
-  @Inject InternalReferredEntityExtractor internalReferredEntityExtractor;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
 
@@ -83,11 +81,6 @@ public class PipelineRbacHelper {
     if (EmptyPredicate.isEmpty(principal)) {
       throw new NGAccessDeniedException("Execution with empty principal found. Please contact harness customer care.",
           WingsException.USER, permissionCheckDTOList);
-    }
-
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    if (shouldExtractInternalEntities) {
-      entityDetails.addAll(internalReferredEntityExtractor.extractInternalEntities(accountId, entityDetails));
     }
 
     PrincipalType principalType = PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(

@@ -20,9 +20,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
+import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.Infrastructure;
+import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
@@ -83,6 +89,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
@@ -93,6 +101,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -895,6 +905,67 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     } catch (Exception ex) {
       throw new InvalidRequestException("Error occurred while merging old and new infrastructure inputs", ex);
     }
+  }
+
+  @Override
+  public Page<InfrastructureEntity> getScopedInfrastructures(
+      Page<InfrastructureEntity> infrastructureEntities, List<String> serviceRefs) {
+    if (CollectionUtils.isEmpty(serviceRefs) || infrastructureEntities.getTotalElements() == 0) {
+      return infrastructureEntities;
+    }
+    // filter out invalid infrastructures from the list
+    List<InfrastructureEntity> scopedInfrastructureEntities =
+        infrastructureEntities.get()
+            .filter(infrastructureEntity -> validateInfrastructureScopes(infrastructureEntity, serviceRefs))
+            .collect(Collectors.toList());
+    return new PageImpl<>(
+        scopedInfrastructureEntities, infrastructureEntities.getPageable(), scopedInfrastructureEntities.size());
+  }
+
+  @Override
+  public List<String> filterServicesByScopedInfrastructures(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, Map<String, List<String>> envRefInfraRefsMapping) {
+    if (MapUtils.isEmpty(envRefInfraRefsMapping) || CollectionUtils.isEmpty(serviceRefs)) {
+      return serviceRefs;
+    }
+
+    // looping over to each env and filtering out invalid services from the list by validating scopes in infras
+    envRefInfraRefsMapping.forEach((key, value)
+                                       -> filterServicesForScopedInfra(accountIdentifier, orgIdentifier,
+                                           projectIdentifier, serviceRefs, key, value));
+    return serviceRefs;
+  }
+
+  private void filterServicesForScopedInfra(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceRefs, String envRef, List<String> infraRefs) {
+    List<InfrastructureEntity> infrastructureEntities =
+        getAllInfrastructureFromIdentifierList(accountIdentifier, orgIdentifier, projectIdentifier, envRef, infraRefs);
+    if (CollectionUtils.isEmpty(infrastructureEntities)) {
+      return;
+    }
+    for (InfrastructureEntity infrastructureEntity : infrastructureEntities) {
+      List<String> scopedToServices = getScopedToServicesField(infrastructureEntity);
+      // if there is no scoping, then all services are valid
+      if (CollectionUtils.isEmpty(scopedToServices)) {
+        continue;
+      }
+      // if there is scoping, filtering out invalid services
+      serviceRefs = serviceRefs.stream().filter(scopedToServices::contains).collect(Collectors.toList());
+    }
+  }
+
+  private boolean validateInfrastructureScopes(
+      InfrastructureEntity infrastructureEntity, @NotNull List<String> serviceRefs) {
+    List<String> scopedToServices = getScopedToServicesField(infrastructureEntity);
+    // here infra is valid if it is scoped to atleast all given services or if it is not scoped at all.
+    return CollectionUtils.isEmpty(scopedToServices) || scopedToServices.containsAll(serviceRefs);
+  }
+
+  private List<String> getScopedToServicesField(InfrastructureEntity infrastructureEntity) {
+    InfrastructureConfig infrastructureConfig =
+        InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
+    Infrastructure infrastructure = infrastructureConfig.getInfrastructureDefinitionConfig().getSpec();
+    return infrastructure.getScopedToServices();
   }
 
   InfrastructureEntity getInfrastructureFromEnvAndInfraIdentifier(

@@ -1,8 +1,8 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
 /*
@@ -37,6 +37,10 @@ public class CeRecommendations implements Serializable {
   private String recommendationstate;
   private String governanceruleid;
   private String cloudprovider;
+  private String servicenowconnectorref;
+  private String servicenowissuekey;
+  private String servicenowstatus;
+  private String servicenowtickettype;
 
   public CeRecommendations() {}
 
@@ -58,12 +62,17 @@ public class CeRecommendations implements Serializable {
     this.recommendationstate = value.recommendationstate;
     this.governanceruleid = value.governanceruleid;
     this.cloudprovider = value.cloudprovider;
+    this.servicenowconnectorref = value.servicenowconnectorref;
+    this.servicenowissuekey = value.servicenowissuekey;
+    this.servicenowstatus = value.servicenowstatus;
+    this.servicenowtickettype = value.servicenowtickettype;
   }
 
   public CeRecommendations(String id, String name, String namespace, Double monthlycost, Double monthlysaving,
       String clustername, String resourcetype, String accountid, Boolean isvalid, OffsetDateTime lastprocessedat,
       OffsetDateTime updatedat, String jiraconnectorref, String jiraissuekey, String jirastatus,
-      String recommendationstate, String governanceruleid, String cloudprovider) {
+      String recommendationstate, String governanceruleid, String cloudprovider, String servicenowconnectorref,
+      String servicenowissuekey, String servicenowstatus, String servicenowtickettype) {
     this.id = id;
     this.name = name;
     this.namespace = namespace;
@@ -81,6 +90,10 @@ public class CeRecommendations implements Serializable {
     this.recommendationstate = recommendationstate;
     this.governanceruleid = governanceruleid;
     this.cloudprovider = cloudprovider;
+    this.servicenowconnectorref = servicenowconnectorref;
+    this.servicenowissuekey = servicenowissuekey;
+    this.servicenowstatus = servicenowstatus;
+    this.servicenowtickettype = servicenowtickettype;
   }
 
   /**
@@ -338,6 +351,66 @@ public class CeRecommendations implements Serializable {
     return this;
   }
 
+  /**
+   * Getter for <code>public.ce_recommendations.servicenowconnectorref</code>.
+   */
+  public String getServicenowconnectorref() {
+    return this.servicenowconnectorref;
+  }
+
+  /**
+   * Setter for <code>public.ce_recommendations.servicenowconnectorref</code>.
+   */
+  public CeRecommendations setServicenowconnectorref(String servicenowconnectorref) {
+    this.servicenowconnectorref = servicenowconnectorref;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.ce_recommendations.servicenowissuekey</code>.
+   */
+  public String getServicenowissuekey() {
+    return this.servicenowissuekey;
+  }
+
+  /**
+   * Setter for <code>public.ce_recommendations.servicenowissuekey</code>.
+   */
+  public CeRecommendations setServicenowissuekey(String servicenowissuekey) {
+    this.servicenowissuekey = servicenowissuekey;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.ce_recommendations.servicenowstatus</code>.
+   */
+  public String getServicenowstatus() {
+    return this.servicenowstatus;
+  }
+
+  /**
+   * Setter for <code>public.ce_recommendations.servicenowstatus</code>.
+   */
+  public CeRecommendations setServicenowstatus(String servicenowstatus) {
+    this.servicenowstatus = servicenowstatus;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.ce_recommendations.servicenowtickettype</code>.
+   */
+  public String getServicenowtickettype() {
+    return this.servicenowtickettype;
+  }
+
+  /**
+   * Setter for <code>public.ce_recommendations.servicenowtickettype</code>.
+   */
+  public CeRecommendations setServicenowtickettype(String servicenowtickettype) {
+    this.servicenowtickettype = servicenowtickettype;
+    return this;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj)
@@ -432,6 +505,26 @@ public class CeRecommendations implements Serializable {
         return false;
     } else if (!cloudprovider.equals(other.cloudprovider))
       return false;
+    if (servicenowconnectorref == null) {
+      if (other.servicenowconnectorref != null)
+        return false;
+    } else if (!servicenowconnectorref.equals(other.servicenowconnectorref))
+      return false;
+    if (servicenowissuekey == null) {
+      if (other.servicenowissuekey != null)
+        return false;
+    } else if (!servicenowissuekey.equals(other.servicenowissuekey))
+      return false;
+    if (servicenowstatus == null) {
+      if (other.servicenowstatus != null)
+        return false;
+    } else if (!servicenowstatus.equals(other.servicenowstatus))
+      return false;
+    if (servicenowtickettype == null) {
+      if (other.servicenowtickettype != null)
+        return false;
+    } else if (!servicenowtickettype.equals(other.servicenowtickettype))
+      return false;
     return true;
   }
 
@@ -456,6 +549,10 @@ public class CeRecommendations implements Serializable {
     result = prime * result + ((this.recommendationstate == null) ? 0 : this.recommendationstate.hashCode());
     result = prime * result + ((this.governanceruleid == null) ? 0 : this.governanceruleid.hashCode());
     result = prime * result + ((this.cloudprovider == null) ? 0 : this.cloudprovider.hashCode());
+    result = prime * result + ((this.servicenowconnectorref == null) ? 0 : this.servicenowconnectorref.hashCode());
+    result = prime * result + ((this.servicenowissuekey == null) ? 0 : this.servicenowissuekey.hashCode());
+    result = prime * result + ((this.servicenowstatus == null) ? 0 : this.servicenowstatus.hashCode());
+    result = prime * result + ((this.servicenowtickettype == null) ? 0 : this.servicenowtickettype.hashCode());
     return result;
   }
 
@@ -480,6 +577,10 @@ public class CeRecommendations implements Serializable {
     sb.append(", ").append(recommendationstate);
     sb.append(", ").append(governanceruleid);
     sb.append(", ").append(cloudprovider);
+    sb.append(", ").append(servicenowconnectorref);
+    sb.append(", ").append(servicenowissuekey);
+    sb.append(", ").append(servicenowstatus);
+    sb.append(", ").append(servicenowtickettype);
 
     sb.append(")");
     return sb.toString();

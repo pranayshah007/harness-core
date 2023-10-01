@@ -10,8 +10,10 @@ package io.harness.service;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
@@ -81,7 +83,8 @@ public interface ScmClient {
 
   ListBranchesResponse listBranches(ScmConnector scmConnector);
 
-  ListBranchesWithDefaultResponse listBranchesWithDefault(ScmConnector scmConnector, PageRequestDTO pageRequest);
+  ListBranchesWithDefaultResponse listBranchesWithDefault(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, BranchFilterParamsDTO branchFilterParamsDTO);
 
   ListCommitsResponse listCommits(ScmConnector scmConnector, String branchName);
 
@@ -110,6 +113,8 @@ public interface ScmClient {
   FindCommitResponse findCommit(ScmConnector scmConnector, String commitId);
 
   GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest);
+  GetUserReposResponse getUserRepos(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO);
 
   UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO);
 

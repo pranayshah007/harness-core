@@ -28,7 +28,7 @@ import static com.google.common.collect.ImmutableMap.of;
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
 import io.harness.Microservice;
-import io.harness.accesscontrol.acl.worker.DisableRedundantACLService;
+import io.harness.accesscontrol.acl.worker.RemoveRedundantACLService;
 import io.harness.accesscontrol.commons.bootstrap.AccessControlManagementJob;
 import io.harness.accesscontrol.commons.events.EntityCrudEventListenerService;
 import io.harness.accesscontrol.commons.events.UserMembershipEventListenerService;
@@ -38,7 +38,6 @@ import io.harness.accesscontrol.principals.serviceaccounts.iterators.ServiceAcco
 import io.harness.accesscontrol.principals.usergroups.iterators.UserGroupReconciliationIterator;
 import io.harness.accesscontrol.principals.users.iterators.UserReconciliationIterator;
 import io.harness.accesscontrol.resources.resourcegroups.iterators.ResourceGroupReconciliationIterator;
-import io.harness.accesscontrol.roleassignments.worker.DefaultViewerRoleACLCreationService;
 import io.harness.accesscontrol.roleassignments.worker.ProjectOrgBasicRoleCreationService;
 import io.harness.accesscontrol.roleassignments.worker.UserRoleAssignmentRemovalService;
 import io.harness.accesscontrol.scopes.harness.iterators.ScopeReconciliationIterator;
@@ -197,6 +196,10 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     });
     Injector injector = Guice.createInjector(modules);
     injector.getInstance(HPersistence.class);
+
+    AccessControlManagementJob accessControlManagementJob = injector.getInstance(AccessControlManagementJob.class);
+    accessControlManagementJob.run();
+
     registerCorsFilter(appConfig, environment);
     registerResources(environment, injector);
     registerJerseyProviders(environment);
@@ -217,8 +220,6 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     }
 
     initializeEnforcementFramework(injector);
-    AccessControlManagementJob accessControlManagementJob = injector.getInstance(AccessControlManagementJob.class);
-    accessControlManagementJob.run();
 
     if (appConfig.getAggregatorConfiguration().isEnabled()) {
       environment.lifecycle().manage(injector.getInstance(AggregatorService.class));
@@ -289,10 +290,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     environment.lifecycle().manage(injector.getInstance(SupportRoleAssignmentsReconciliationService.class));
     environment.lifecycle().manage(injector.getInstance(UserRoleAssignmentRemovalService.class));
     environment.lifecycle().manage(injector.getInstance(ProjectOrgBasicRoleCreationService.class));
-    environment.lifecycle().manage(injector.getInstance(DefaultViewerRoleACLCreationService.class));
-    if (configuration.isDisableRedundantACLs()) {
-      environment.lifecycle().manage(injector.getInstance(DisableRedundantACLService.class));
-    }
+    environment.lifecycle().manage(injector.getInstance(RemoveRedundantACLService.class));
   }
 
   private void registerJerseyProviders(Environment environment) {

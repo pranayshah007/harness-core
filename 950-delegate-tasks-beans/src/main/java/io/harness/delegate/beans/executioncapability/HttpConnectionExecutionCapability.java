@@ -6,11 +6,13 @@
  */
 
 package io.harness.delegate.beans.executioncapability;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.KeyValuePair;
 
 import java.time.Duration;
@@ -19,6 +21,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.http.client.utils.URIBuilder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_K8S})
 @Data
 @Builder
 public class HttpConnectionExecutionCapability implements ExecutionCapability {

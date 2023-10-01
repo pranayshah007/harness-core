@@ -7,6 +7,9 @@
 
 package io.harness.freeze.beans.response;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.freeze.beans.CurrentOrUpcomingWindow;
 import io.harness.freeze.beans.FreezeWindow;
@@ -16,6 +19,8 @@ import javax.validation.constraints.NotEmpty;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @Data
 @Builder
 public class FreezeBannerDetails {

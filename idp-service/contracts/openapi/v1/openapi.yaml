@@ -1,6 +1,6 @@
 openapi: 3.0.3
 x-stoplight:
-  id: q0pbqzd9uictu
+  id: gg55tpug5k0ba
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -162,6 +162,40 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       tags:
         - BackstageEnvVariable
+  /v1/backstage-env-variables/resolve:
+    get:
+      summary: Resolve Backstage Environment Variables
+      tags:
+        - BackstageEnvVariable
+      responses:
+        '200':
+          $ref: '#/components/responses/ResolvedEnvVariableResponse'
+      operationId: resolve-backstage-env-variables
+      description: Returns a list of backstage env variables with their decrypted values for the given account
+      x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Namespace'
+      security:
+        - x-api-key: []
+  '/v1/backstage-env-variables/reload/{namespace}':
+    put:
+      summary: Reload backstage env variables
+      operationId: reload-backstage-env-variables
+      responses:
+        '204':
+          description: No Content
+      x-stoplight:
+        id: ct454yf4n2qb9
+      description: Reload backstage env variables
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - BackstageEnvVariable
+    parameters:
+      - $ref: '#/components/parameters/NamespacePathParam'
   /v1/backstage-permissions:
     get:
       summary: Get Backstage Permissions
@@ -753,6 +787,7 @@ paths:
       description: Get backend url allow list
     post:
       summary: Save backend url allow list
+      description: Save backend url allow list
       tags:
         - AllowList
       operationId: save-allow-list
@@ -786,12 +821,421 @@ paths:
       x-internal: true
       tags:
         - MergedPluginsConfig
+      x-stoplight:
+        id: u6si9ugykvjou
+  /v1/data-sources:
+    get:
+      summary: Get Datasources Present In Account
+      tags:
+        - DataSource
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourcesResponse'
+      operationId: get-all-datasources-for-account
+      x-stoplight:
+        id: hz71s44kvksfz
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: API for getting all the datasources present in account.
+      x-internal: true
+      security:
+        - x-api-key: []
+  '/v1/data-sources/{data-source}/datapoints':
+    parameters:
+      - schema:
+          type: string
+        name: data-source
+        in: path
+        required: true
+        description: Identifier for datasource
+    get:
+      summary: Get DataPoints present in DataSources for an account
+      tags:
+        - DataSource
+      responses:
+        '200':
+          $ref: '#/components/responses/DatapointResponse'
+      operationId: get-data-points-for-data-source
+      x-stoplight:
+        id: fcspn0nw53blu
+      description: Get DataPoints Present in DataSources
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  /v1/scores/summary:
+    get:
+      summary: Get Score Summary for Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardSummaryInfoResponse'
+      operationId: get-all-scorecard-summary
+      x-stoplight:
+        id: 9sq5kku4emwrl
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/EntityIdentifier'
+      x-internal: true
+      tags:
+        - Scores
+    parameters: []
+  /v1/scores:
+    get:
+      summary: Get Scores for Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardScoreResponse'
+      operationId: get-scorecards-scores-overview
+      x-stoplight:
+        id: nzb5eljk5d7w6
+      security:
+        - x-api-key: []
+      x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/EntityIdentifier'
+      tags:
+        - Scores
+    parameters: []
+  /v1/scores/aggregate:
+    post:
+      summary: Get Aggregated Scores for backstage entities
+      responses:
+        '200':
+          $ref: '#/components/responses/EntityScoresResponseList'
+      operationId: get-aggregated-scores
+      x-stoplight:
+        id: xikww4mbsu6lj
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScorecardFilter'
+      x-internal: true
+      tags:
+        - Scores
+  /v1/scores/graph:
+    get:
+      summary: Get Data for check status for graph
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardGraphSummaryResponse'
+      operationId: get-scorecards-graphs-score-summary
+      x-stoplight:
+        id: 99p4rx7rvtxdb
+      x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/EntityIdentifier'
+        - schema:
+            type: string
+          in: query
+          name: scorecard_identifier
+          description: 'Identifier for scorecard '
+      security:
+        - x-api-key: []
+      tags:
+        - Scores
+    parameters: []
+  /v1/scores/recalibrate:
+    parameters: []
+    post:
+      summary: 'Trigger recalibration of scores for a scorecard'
+      operationId: scorecard-recalibrate
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardRecalibrateResponse'
+      x-stoplight:
+        id: ovevc0tsakmzl
+      description: API for Recalibrating the score for scorecard of entity
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/ScorecardRecalibrateRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Scores
+  /v1/checks:
+    get:
+      summary: Get all checks available
+      parameters:
+        - $ref: '#/components/parameters/CheckType'
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/SearchTerm'
+      tags:
+        - Checks
+      x-stoplight:
+        id: wd12mc8sauyoe
+      operationId: get-checks
+      description: Get all checks available
+      x-internal: true
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CheckResponseList'
+    post:
+      summary: Create a custom check
+      tags:
+        - Checks
+      operationId: create-check
+      responses:
+        '201':
+          $ref: '#/components/responses/DefaultSaveResponse'
+      x-stoplight:
+        id: sbr5lr91gugjj
+      description: Create a custom check
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckDetailsRequest'
+      x-internal: true
+  '/v1/checks/{check-id}':
+    get:
+      summary: Get check details for given checkId
+      tags:
+        - Checks
+      responses:
+        '200':
+          $ref: '#/components/responses/CheckDetailsResponse'
+      operationId: get-check
+      x-stoplight:
+        id: pfdjb7itfnnsp
+      description: Get check details for given checkId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CheckIdentifier'
+        - $ref: '#/components/parameters/CheckType'
+      x-internal: true
+    put:
+      summary: Update check details for given checkId
+      tags:
+        - Checks
+      operationId: update-check
+      responses:
+        '200':
+          $ref: '#/components/responses/DefaultSaveResponse'
+      x-stoplight:
+        id: xbys960tmv9lf
+      description: Update check details for given checkId
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CheckIdentifier'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckDetailsRequest'
+    delete:
+      summary: Delete check details for given checkId
+      operationId: delete-check
+      description: Delete check details for given checkId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CheckIdentifier'
+        - $ref: '#/components/parameters/ForceDelete'
+      x-internal: true
+      responses:
+        '204':
+          description: No Content
+      tags:
+        - Checks
+      x-stoplight:
+        id: prcwpfrw381ls
+  /v1/scorecards:
+    get:
+      summary: Get all scorecards available
+      tags:
+        - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardResponseList'
+      operationId: get-scorecards
+      x-stoplight:
+        id: y1hi18r0jwxpx
+      description: Get all scorecards available
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    post:
+      summary: Create scorecard
+      tags:
+        - Scorecards
+      operationId: create-scorecard
+      responses:
+        '201':
+          $ref: '#/components/responses/DefaultSaveResponse'
+      x-stoplight:
+        id: ex73p1p7j4kkq
+      description: Create scorecard
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScorecardDetailsRequest'
+      x-internal: true
+  '/v1/scorecards/{scorecard-id}':
+    get:
+      summary: Get scorecard details for given scorecardId
+      tags:
+        - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardDetailsResponse'
+      operationId: get-scorecard
+      description: Get scorecard details for given scorecardId
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ScorecardIdentifier'
+      x-stoplight:
+        id: pwzri4qh9wcfc
+    put:
+      summary: Update scorecard details for given scorecardId
+      tags:
+        - Scorecards
+      operationId: update-scorecard
+      responses:
+        '200':
+          $ref: '#/components/responses/DefaultSaveResponse'
+      x-stoplight:
+        id: k1wvfwhv2thqa
+      description: Update scorecard details for given scorecardId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ScorecardIdentifier'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScorecardDetailsRequest'
+      x-internal: true
+    delete:
+      summary: Delete scorecard details for given scorecardId
+      operationId: delete-scorecard
+      description: Delete scorecard details for given scorecardId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ScorecardIdentifier'
+      x-internal: true
+      responses:
+        '204':
+          description: No Content
+      tags:
+        - Scorecards
+      x-stoplight:
+        id: bet0frvc14hjn
+  /v1/entity-facets:
+    get:
+      summary: Get all entity facets for given kind
+      tags:
+        - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/FacetsResponse'
+      operationId: get-entity-facets
+      x-stoplight:
+        id: 42logxa1h0eqd
+      description: Get all entity facets for given kind
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CatalogKind'
+  /v1/data-sources/harness/data-point/values:
+    parameters: []
+    post:
+      summary: Get data points data for harness data source
+      operationId: get-harness-data-point-values
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointInfoResponse'
+      x-stoplight:
+        id: mm3x5w7zginky
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/DataSourceDataPointInfoRequest'
+      x-internal: true
+      tags:
+        - HarnessDataPoints
+  /v1/data-sources/data-points/map:
+    get:
+      summary: Get Data Sources and Data Points Map for Account
+      tags:
+        - DataSource
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointsMapResponse'
+      operationId: get-data-sources-data-points-map
+      x-stoplight:
+        id: kyhn4b6706oa5
+      description: API for getting the map of data sources and data points for account
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  /v1/data-sources/kubernetes/data-point/values:
+    post:
+      summary: Get data points data for kubernetes data source
+      operationId: get-k8s-data-point-values
+      tags:
+        - KubernetesDataPoints
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointInfoResponse'
+      x-stoplight:
+        id: f0rc1xrznx50m
+      requestBody:
+        $ref: '#/components/requestBodies/KubernetesConfigRequest'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
 components:
   schemas:
     BackstageEnvVariable:
       title: BackstageEnvVariable
       x-stoplight:
-        id: mx4577z6q5ui0
+        id: c0snhpo0t72gu
       type: object
       description: Backstage Env Variable
       discriminator:
@@ -804,26 +1248,25 @@ components:
         identifier:
           type: string
           x-stoplight:
-            id: ifbqbz1jlv275
+            id: dxei4xi4zqqan
         env_name:
           type: string
           x-stoplight:
-            id: 4zuc9epeyht73
+            id: u9l4qcsh7br98
         created:
           type: integer
           x-stoplight:
-            id: 77v995uneakvt
+            id: pg6iguuorqil6
           format: int64
         updated:
           type: integer
           x-stoplight:
-            id: pj181njip2pmz
+            id: dxifmlxrztfq4
           format: int64
         type:
           type: string
           x-stoplight:
-            id: sjviqf7m7oeff
-            type: null
+            id: kgfc4sedxemdu
           description: This specifies the type of backstage env variable
           enum:
             - Config
@@ -834,12 +1277,12 @@ components:
     BackstageEnvSecretVariable:
       title: BackstageEnvSecretVariable
       x-stoplight:
-        id: vnn39er7ngivm
+        id: fxyvql91whmoq
       x-discriminator-value: Secret
       allOf:
         - $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
-            id: hf1o5948xcd93
+            id: ifrrjp5t2ivvs
         - type: object
           properties:
             type:
@@ -849,7 +1292,12 @@ components:
             harness_secret_identifier:
               type: string
               x-stoplight:
-                id: pu8uqht14yg13
+                id: nkzeflj6cec60
+            is_deleted:
+              type: boolean
+              x-stoplight:
+                id: crif0s44fzg1m
+              default: false
           required:
             - type
             - harness_secret_identifier
@@ -857,12 +1305,12 @@ components:
     BackstageEnvConfigVariable:
       title: BackstageEnvConfigVariable
       x-stoplight:
-        id: 070pc2aob4jhc
+        id: zcqwehv9n1pxo
       x-discriminator-value: Config
       allOf:
         - $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
-            id: roe9dk8ktccbi
+            id: n4u0ugsjb8qtv
         - type: object
           properties:
             type:
@@ -872,50 +1320,50 @@ components:
             value:
               type: string
               x-stoplight:
-                id: 5juxk5r0hnhr5
+                id: cxw8rp8cqw0lb
           required:
             - type
             - value
       x-examples: {}
     BackstageEnvVariableRequest:
       x-stoplight:
-        id: a94746e067851
+        id: wxr7eiewc41dv
       type: object
       properties:
         env_variable:
           $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
-            id: r2xgjoclqancb
+            id: h43hpup0dz4j6
     BackstageEnvVariableBatchRequest:
       type: object
       x-stoplight:
-        id: m9tpxiklbpfzk
+        id: 5on8h8ctgnv98
       properties:
         env_variables:
           x-stoplight:
-            id: r2xgjoclqancb
+            id: ewrp0al8tgvlh
           type: array
           items:
             $ref: '#/components/schemas/BackstageEnvVariable'
             x-stoplight:
-              id: i9tsq5o4dan8z
+              id: 9d0hvp9grto8a
       required:
         - env_variables
     BackstageEnvVariableResponse:
       x-stoplight:
-        id: e8875709fc5b1
+        id: ka3vl84oprh04
       type: object
       properties:
         env_variable:
           $ref: '#/components/schemas/BackstageEnvVariable'
           x-stoplight:
-            id: h1ub7r23fswfs
+            id: fuv39d1n7330b
       required:
         - env_variable
     BackstagePermissions:
       title: BackstagePermissions
       x-stoplight:
-        id: mc6dey4g3grx5
+        id: 19f39rmy8fxuv
       type: object
       properties:
         identifer:
@@ -935,7 +1383,7 @@ components:
     BackstagePermissionsRequest:
       title: BackstagePermissionsRequest
       x-stoplight:
-        id: ixq59j5xh1mr3
+        id: law81hl9gs6ku
       type: object
       properties:
         data:
@@ -943,7 +1391,7 @@ components:
     BackstagePermissionsResponse:
       title: BackstagePermissionsResponse
       x-stoplight:
-        id: iy9wq68joydm6
+        id: 29i7uz78pehrw
       type: object
       properties:
         data:
@@ -951,7 +1399,7 @@ components:
     StatusInfo:
       title: StatusInfo
       x-stoplight:
-        id: ae1f1702dd443
+        id: 53652g9b7905i
       type: object
       properties:
         current_status:
@@ -963,18 +1411,18 @@ components:
             - FAILED
             - NOT_FOUND
           x-stoplight:
-            id: qq4g9e4sf19tc
+            id: m6yrc9lmj75cg
         reason:
           type: string
         updated_at:
           type: integer
           format: int64
           x-stoplight:
-            id: fsj3mx8ld952o
+            id: 14r3gw26sgjqk
     StatusInfoResponse:
       title: StatusInfoResponse
       x-stoplight:
-        id: d5b32dc406018
+        id: hbg7vuzydygl6
       type: object
       properties:
         status:
@@ -982,7 +1430,7 @@ components:
     StatusInfoRequest:
       title: StatusInfoRequest
       x-stoplight:
-        id: m2r87gp8mfed7
+        id: zps9hx6160ymc
       type: object
       properties:
         status:
@@ -990,32 +1438,32 @@ components:
     NamespaceInfo:
       title: NamespaceInfo
       x-stoplight:
-        id: 8ba4gj00yfwre
+        id: kkouo42j1e5w5
       type: object
       description: Namespace response body content
       properties:
         account_identifier:
           type: string
           x-stoplight:
-            id: f1hxp57bn8wis
+            id: kffg467s2tuw0
         namespace:
           type: string
     NamespaceResponse:
       $ref: '#/components/schemas/NamespaceInfo'
       x-stoplight:
-        id: 06dd99ce217ed
+        id: 8svp6e238jgb3
       description: Namespace response body
     CatalogConnectorInfo:
       title: CatalogConnectorInfo
       x-stoplight:
-        id: k72jbjtz6j5jh
+        id: fbs3igd8uo1bj
       type: object
       description: Details of IDP catalog connector
       properties:
         connector:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
-            id: 218l3eejs3pvn
+            id: voh7zhycxtt64
         repo:
           type: string
         branch:
@@ -1030,7 +1478,7 @@ components:
     HarnessEntitiesCountResponse:
       title: HarnessEntitiesCountResponse
       x-stoplight:
-        id: ijtq5yp7m5eim
+        id: jg3dd2ev0br8x
       type: object
       x-examples: {}
       description: Response for harness entities count that can be imported to IDP
@@ -1038,11 +1486,11 @@ components:
         org_count:
           type: integer
           x-stoplight:
-            id: lcwk3hlcrqlse
+            id: 1fahox5cpl5fq
         project_count:
           type: integer
           x-stoplight:
-            id: 9iy8ubk7olrqn
+            id: g1dhrh86dd0yu
         service_count:
           type: integer
       required:
@@ -1052,25 +1500,25 @@ components:
     HarnessEntitiesResponse:
       title: HarnessEntitiesResponse
       x-stoplight:
-        id: 06ugy0j5318dr
+        id: 4y4vx0cdu3t2k
       type: object
       x-examples: {}
       description: Response for harness entities mapping with backstage entities
       properties:
         harness_backstage_entities:
           x-stoplight:
-            id: xrciue3ek36e6
+            id: 23m66beonr6zu
           type: array
           items:
             $ref: '#/components/schemas/HarnessBackstageEntities'
             x-stoplight:
-              id: o4ipievo4uguh
+              id: d8t8vh27c0na3
       required:
         - harness_backstage_entities
     ImportEntitiesResponse:
       title: ImportEntitiesResponse
       x-stoplight:
-        id: mbqihy6732hau
+        id: 73yotkjnzjzwg
       type: object
       description: Response for import / save harness entities to IDP
       properties:
@@ -1081,7 +1529,7 @@ components:
     EntitiesForImport:
       title: EntitiesForImport
       x-stoplight:
-        id: 0gdm8g08cv51p
+        id: 3nkcsrar4t799
       type: object
       description: Details of Harness Entities to import
       x-examples: {}
@@ -1097,7 +1545,7 @@ components:
     HarnessBackstageEntities:
       title: HarnessBackstageEntities
       x-stoplight:
-        id: 7ox4rwh5ho9ue
+        id: f3nzej7e29xdz
       type: object
       description: Harness entities mapping with backstage entities
       properties:
@@ -1123,7 +1571,7 @@ components:
     ConnectorDetails:
       title: ConnectorDetails
       x-stoplight:
-        id: t8ug6b9zgqgup
+        id: lxztesfxo0y85
       type: object
       properties:
         identifier:
@@ -1142,54 +1590,58 @@ components:
     LayoutResponse:
       title: LayoutResponse
       x-stoplight:
-        id: 4120n8fn8dfkx
+        id: jljclft9aa87u
       type: object
     PluginInfo:
       title: PluginInfo
       x-stoplight:
-        id: kpoyftiybzwns
+        id: y8vk0efkd4eay
       type: object
       properties:
         id:
           type: string
           x-stoplight:
-            id: 7bgn328jvn58s
+            id: 5sza3kvspas4l
         name:
           type: string
           x-stoplight:
-            id: ql3oqpkls4fft
+            id: v3u4uazfejnje
         created_by:
           type: string
           x-stoplight:
-            id: l22ptpcecyfoe
+            id: p8k5apw5ayq2z
         icon_url:
           type: string
           x-stoplight:
-            id: 4arnqctb1wfyl
+            id: i5tt4o054wpcg
         description:
           type: string
           x-stoplight:
-            id: ql3oqpkls4fft
+            id: vcxopm89tdf2u
         category:
           type: string
           x-stoplight:
-            id: 8rqc7h1vyq7sh
+            id: t18le1m6f89fm
         source:
           type: string
           x-stoplight:
-            id: 4arnqctb1wfyl
+            id: 0pyuzfloq1psx
         image_url:
           type: string
           x-stoplight:
-            id: 93hv7yj3dpbnu
+            id: lh9dkmt7tjrf0
+        documentation:
+          type: string
+          x-stoplight:
+            id: lh9dkot7tjrf0
         core:
           type: boolean
           x-stoplight:
-            id: m6jhd4hiady4t
+            id: 4en33o199omhf
         enabled:
           type: boolean
           x-stoplight:
-            id: 6opetnwiiai53
+            id: mnqjd0ip86l11
       required:
         - id
         - name
@@ -1204,48 +1656,48 @@ components:
     PluginInfoResponse:
       title: PluginInfoResponse
       x-stoplight:
-        id: pjaj5msyanbfi
+        id: bjap3du542573
       type: object
       properties:
         plugin:
           $ref: '#/components/schemas/PluginInfo'
           x-stoplight:
-            id: ogk72ix9uoil2
+            id: ljl97ual46vcv
       required:
         - plugin
     PluginDetailedInfoResponse:
       title: PluginDetailedInfoResponse
       x-stoplight:
-        id: rp4p3xfki8wrk
+        id: kjemj0sdebcpg
       type: object
       properties:
         plugin:
           $ref: '#/components/schemas/PluginDetailedInfo'
           x-stoplight:
-            id: ogk72ix9uoil3
+            id: qnsee4d2yvyan
       required:
         - plugin
     PluginDetailedInfo:
       title: PluginDetailedInfo
       x-stoplight:
-        id: ggn3lgk0pl7jx
+        id: plcalr1x76tf9
       allOf:
         - $ref: '#/components/schemas/PluginDetails'
         - type: object
           properties:
             env_variables:
               x-stoplight:
-                id: 4tj9fofa4b3hn
+                id: dx4ix6nxyzuy2
               type: array
               items:
                 $ref: '#/components/schemas/BackstageEnvSecretVariable'
             saved:
               type: boolean
               x-stoplight:
-                id: b06clr6ww9ku0
+                id: 7f7f7x53hae63
             proxy:
               x-stoplight:
-                id: cxtlzxhi15ly8
+                id: u757t9bjflfbo
               type: array
               items:
                 $ref: '#/components/schemas/ProxyHostDetail'
@@ -1255,82 +1707,82 @@ components:
     LayoutRequest:
       title: LayoutRequest
       x-stoplight:
-        id: jfyco0hsivo6b
+        id: dlc413amvk608
       type: object
       description: LayoutRequest
       properties:
         name:
           type: string
           x-stoplight:
-            id: zvjshp9bal6kq
+            id: a5nvhy7k9z96t
         id:
           type: string
           x-stoplight:
-            id: vy53h9a7l4ij3
+            id: 5dgiplyvkyen1
         yaml:
           type: string
           x-stoplight:
-            id: vrsrw3pv5ga85
+            id: try72uzkya8b3
         display_name:
           type: string
           x-stoplight:
-            id: iubyqrukqnryx
+            id: lz7xrnig77bld
         default_yaml:
           type: string
           x-stoplight:
-            id: 9juzgzieo6qnl
+            id: 8isokvic5lctb
         type:
           type: string
           x-stoplight:
-            id: jb3f4rk78x16r
+            id: nljjbtyn4ia85
     AppConfig:
       title: AppConfig
       x-stoplight:
-        id: lxr5mwvtpsibp
+        id: 9ym42x4okcnai
       type: object
       x-examples: {}
       properties:
         config_id:
           type: string
           x-stoplight:
-            id: 4c46nx9p25z4g
+            id: 6p7rrai0ntsdi
         configs:
           type: string
           x-stoplight:
-            id: c376cmcok0i1w
+            id: zn90bn6o7wd2e
         enabled:
           type: boolean
           x-stoplight:
-            id: 5k0msvhe7qhhd
+            id: mtyup2fd38zi0
         enabled_disabled_at:
           type: integer
           x-stoplight:
-            id: 2kot35661my5o
+            id: 6d5hnvuzev4ik
           format: int64
         created:
           type: integer
           x-stoplight:
-            id: 55sswchn2dgls
+            id: 50t6enpzl0q5d
           format: int64
         updated:
           type: integer
           x-stoplight:
-            id: gjoqaxs5xj4g5
+            id: 72jrvw6wafgzk
           format: int64
         env_variables:
           type: array
           x-stoplight:
-            id: rbsynehqc2icl
+            id: k62xkii5e9m15
           items:
             $ref: '#/components/schemas/BackstageEnvSecretVariable'
         config_name:
           type: string
           x-stoplight:
-            id: jqz82xb7khx5d
+            id: dud597655ceys
         proxy:
           type: array
           x-stoplight:
-            id: vvman59mk8g63
+            id: xawh332wig7uk
           items:
             $ref: '#/components/schemas/ProxyHostDetail'
       required:
@@ -1341,83 +1793,86 @@ components:
     AppConfigRequest:
       title: AppConfigRequest
       x-stoplight:
-        id: xohgavxbwlfjc
+        id: b3niyi5z09lhr
       type: object
       properties:
         app_config:
           $ref: '#/components/schemas/AppConfig'
           x-stoplight:
-            id: mvm9nhd3eenq6
+            id: l88wpairljwwf
       required:
         - app_config
     AppConfigResponse:
       title: AppConfigResponse
       x-stoplight:
-        id: bu5i92md2mome
+        id: j9jkrd5pek3ij
       type: object
       properties:
         app_config:
           $ref: '#/components/schemas/AppConfig'
           x-stoplight:
-            id: 7rhhzvrxp6grz
+            id: jetf63qmwak51
       required:
         - app_config
     ConnectorInfoRequest:
       title: ConnectorInfoRequest
       x-stoplight:
-        id: ac9uhio4r21e5
+        id: 3gr9qrbt594dc
       type: object
       properties:
         connector_details:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
-            id: cfx70t6ohuzrc
+            id: 9pjpobm7iu8qm
     ConnectorInfoResponse:
       title: ConnectorInfoResponse
       x-stoplight:
-        id: iq2fsejvdmg8g
+        id: aopvqvzy1oo7b
       type: object
       properties:
         connector_details:
           $ref: '#/components/schemas/ConnectorDetails'
           x-stoplight:
-            id: ictqwjgoxe2bc
+            id: vsaa2ulok8bca
       required:
         - connector_details
     Exports:
       title: Exports
       x-stoplight:
-        id: qxll6vxpyv7r3
+        id: 759nwew1pz7b7
       type: object
       properties:
         pages:
           type: integer
           x-stoplight:
-            id: z84hfxygvrde5
+            id: k0od4wwglr49s
+          default: 0
         tab_contents:
           type: integer
           x-stoplight:
-            id: xsao98zphpvue
+            id: 6wxr0zy3bangw
+          default: 0
         cards:
           type: integer
           x-stoplight:
-            id: ksifiqe7f9p5w
+            id: 9wm9ckixh3561
+          default: 0
         default_entity_types:
           type: array
           x-stoplight:
-            id: rubpg21bu2st4
+            id: udwz3iuq57jc0
           items:
             x-stoplight:
-              id: kth23yj667xa3
+              id: fwkq1mz6nf62k
             type: string
         export_details:
           x-stoplight:
-            id: xszvlkfetqvdo
+            id: 9t35kep1fcddx
           type: array
           items:
             $ref: '#/components/schemas/ExportDetails'
             x-stoplight:
-              id: ypu1bnoyc701c
+              id: lszi7h94em3ec
       required:
         - pages
         - tab_contents
@@ -1427,24 +1882,24 @@ components:
     MergedPluginConfigs:
       title: MergedPluginConfigs
       x-stoplight:
-        id: vc33058szl2a4
+        id: pgv5u2u9y35lc
       type: object
       description: Merged Config for all Enabled Plugins.
       properties:
         config:
           type: string
           x-stoplight:
-            id: 9tuk5lnb9qem9
+            id: fnihkor738xsq
         env_variables:
           type: array
           x-stoplight:
-            id: rvzbk4sw9nxvp
+            id: kzy5jsgxjlytg
           items:
             $ref: '#/components/schemas/BackstageEnvSecretVariable'
         proxy:
           type: array
           x-stoplight:
-            id: mwvxo7zsdc5zo
+            id: lezuhikms1e8e
           items:
             $ref: '#/components/schemas/ProxyHostDetail'
       required:
@@ -1454,19 +1909,19 @@ components:
     MergedPluginConfigResponse:
       title: MergedPluginConfigResponse
       x-stoplight:
-        id: cggq7dvi6muti
+        id: 2f0flknbtu1wd
       type: object
       description: Merged Config for all Enabled Plugins Response.
       properties:
         merged_config:
           $ref: '#/components/schemas/MergedPluginConfigs'
           x-stoplight:
-            id: 4cbw2qu8gjz0n
+            id: liz17n0naph2c
       required:
         - merged_config
     RequestPlugin:
       x-stoplight:
-        id: 9hysqi3bqen2g
+        id: p5p2yaguep6qz
       type: object
       title: RequestPluginRequest
       description: Details of the plugin being requested
@@ -1474,19 +1929,19 @@ components:
         name:
           type: string
           x-stoplight:
-            id: 36cfc6be33iuq
+            id: kfo1n597a6357
         creator:
           type: string
           x-stoplight:
-            id: 1rpevk6nasps4
+            id: sp3kikhtr6e7v
         package_link:
           type: string
           x-stoplight:
-            id: 06dejnewki48v
+            id: 2y5dqg6to0s3p
         doc_link:
           type: string
           x-stoplight:
-            id: kjp2dblyv5l0j
+            id: oh5ndmypx7eet
       required:
         - name
         - creator
@@ -1495,67 +1950,67 @@ components:
     PluginRequestResponseList:
       title: PluginRequestResponseList
       x-stoplight:
-        id: l8pxjbva9kd77
+        id: of1qwwvt4tkru
       type: object
       properties:
         plugin_requests:
           type: array
           x-stoplight:
-            id: 7p55aiahqzgfc
+            id: h91xvoxi8xfx1
           items:
             $ref: '#/components/schemas/RequestPlugin'
             x-stoplight:
-              id: djchso9u50p2u
+              id: bs5jqtiexc7as
       required:
         - plugin_requests
       description: Returns all plugin requests for an account
     ExportDetails:
       title: ExportDetails
       x-stoplight:
-        id: dg5ogyutt74c2
+        id: 1190eue1p2zrf
       type: object
       properties:
         type:
           type: string
           x-stoplight:
-            id: aurd52xhuftpn
+            id: kgbyzr07lnmmu
         name:
           type: string
           x-stoplight:
-            id: sq45ohcxqr9do
+            id: glzfn69yav65x
         add_by_default:
           type: boolean
           x-stoplight:
-            id: 6tc18j0qbdoes
+            id: igz0pgs516jr3
         default_route:
           type: string
           x-stoplight:
-            id: oyrgvybpm6nik
+            id: x747kv73638cs
         layout_schema_specs:
           type: object
           x-stoplight:
-            id: aqq2o3sg33kiz
+            id: tt6he55k8vbt8
       required:
         - type
         - name
     PluginDetails:
       title: PluginDetails
       x-stoplight:
-        id: 4rsv9twy48kan
+        id: 8xot0gtc3l45p
       type: object
       properties:
         plugin_details:
           $ref: '#/components/schemas/PluginInfo'
           x-stoplight:
-            id: 78o6cgyocvp5q
+            id: 1dpbxh1spkn7y
         config:
           type: string
           x-stoplight:
-            id: knh0tubwda57c
+            id: pp1dwup6c3tu9
         exports:
           $ref: '#/components/schemas/Exports'
           x-stoplight:
-            id: d75z7rk3lvcbb
+            id: nxlolqi61h413
       required:
         - plugin_details
         - config
@@ -1563,13 +2018,13 @@ components:
     LayoutIngestRequest:
       title: LayoutIngestRequest
       x-stoplight:
-        id: e8du2q55p26u5
+        id: mjz0j4vqhkfpq
       type: object
       properties:
         operation_type:
           type: string
           x-stoplight:
-            id: nv99llfqqfl3n
+            id: n1zg26wvxde3l
         exports:
           $ref: '#/components/schemas/Exports'
       required:
@@ -1578,31 +2033,31 @@ components:
     GenerateYamlRequest:
       title: GenerateYamlRequest
       x-stoplight:
-        id: 6afrksdt6yzf8
+        id: 4ygh4h97m18c4
       type: object
       properties:
         entities:
           type: array
           x-stoplight:
-            id: x1bjzeq0xhqe9
+            id: xgbotrd69k212
           items:
             $ref: '#/components/schemas/EntitiesForImport'
             x-stoplight:
-              id: mn1sipjammn91
+              id: fs5el8cjznogq
       required:
         - entities
       description: Request to generate yaml for any one entity if provided or generate sample entity yaml definition
     GenerateYamlResponse:
       title: GenerateYamlResponse
       x-stoplight:
-        id: lu8lnvc5d1ycn
+        id: zjplwst7t3x0z
       type: object
       description: Response contianing entity yaml definition and description about the entity
       properties:
         generated_yaml:
           type: object
           x-stoplight:
-            id: qlgqwff9xljw9
+            id: 53bmrzuvz6vp5
           required:
             - yaml_def
             - description
@@ -1610,64 +2065,64 @@ components:
             yaml_def:
               type: string
               x-stoplight:
-                id: 06z2bq0czhdmr
+                id: uqtzpms3uic8o
             description:
               type: string
               x-stoplight:
-                id: ywrkefgdppyrp
+                id: xej47kvuyxaxx
       required:
         - generated_yaml
       x-examples: {}
     AllEntitiesImport:
       title: AllEntitiesImport
       x-stoplight:
-        id: icn79gqklynqb
+        id: 5w1sol2ffehgs
       allOf:
         - $ref: '#/components/schemas/ImportEntitiesBase'
         - type: object
           x-stoplight:
-            id: befy5yjyk1mho
+            id: 52o3gdcze6cix
       x-discriminator-value: All
       description: Import all harness entities
     SampleEntitiesImport:
       title: SampleEntitiesImport
       x-stoplight:
-        id: 0n4jic9y62wnk
+        id: 6yjrp4arhgasu
       description: Import sample entities
       x-discriminator-value: Sample
       allOf:
         - $ref: '#/components/schemas/ImportEntitiesBase'
           x-stoplight:
-            id: ow59y8dd42ark
+            id: bx7iil4g1xt7d
         - type: object
           x-stoplight:
-            id: a3pg2s49ri981
+            id: x48ysdjleaia2
     IndividualEntitiesImport:
       title: IndividualEntitiesImport
       x-stoplight:
-        id: sef7xljum4s1e
+        id: vv2v4dp2q4nvm
       x-discriminator-value: Individual
       description: Import selected harness entities
       allOf:
         - $ref: '#/components/schemas/ImportEntitiesBase'
         - type: object
           x-stoplight:
-            id: r3bpmjiqu80hs
+            id: 28jk9yfz9dnli
           properties:
             entities:
               x-stoplight:
-                id: wpilxcdq1y8fu
+                id: sgikq3na3va6s
               type: array
               items:
                 $ref: '#/components/schemas/EntitiesForImport'
                 x-stoplight:
-                  id: ig9bbn1ayo7ou
+                  id: y6zpj4xdu164f
           required:
             - entities
     ImportEntitiesBase:
       title: ImportEntitiesBase
       x-stoplight:
-        id: 8yii7dwgw6iq4
+        id: g43d5klfv57i7
       type: object
       description: Abstract base for import entities
       discriminator:
@@ -1680,7 +2135,7 @@ components:
         type:
           type: string
           x-stoplight:
-            id: ivlkqhisxcx6w
+            id: vrozbu64blhms
           enum:
             - All
             - Individual
@@ -1688,14 +2143,14 @@ components:
         catalog_connector_info:
           $ref: '#/components/schemas/CatalogConnectorInfo'
           x-stoplight:
-            id: 2g3sd1omi2h4x
+            id: vnlsqiq4xz6gb
       required:
         - type
         - catalog_connector_info
     AuthInfoResponse:
       title: AuthInfoResponse
       x-stoplight:
-        id: zl71x322v2f97
+        id: ebnkp1thehjfl
       type: object
       properties:
         authInfo:
@@ -1705,16 +2160,16 @@ components:
     AuthInfo:
       title: AuthInfo
       x-stoplight:
-        id: v6t3w7hydbjp3
+        id: bjqkzyjl1v4l3
       type: object
       properties:
         namespace:
           x-stoplight:
-            id: fp9ttpkqvfppc
+            id: kva3v4vrotqfc
           type: string
         env_variables:
           x-stoplight:
-            id: srzbmdfx793md
+            id: mgsixkdoy9ukq
           type: array
           items:
             $ref: '#/components/schemas/BackstageEnvVariable'
@@ -1724,33 +2179,33 @@ components:
     HostInfo:
       title: HostInfo
       x-stoplight:
-        id: ep3jvjucdina8
+        id: f77pro2cpo4i1
       type: object
       properties:
         host:
           type: string
           x-stoplight:
-            id: ztb1a9uvhi3la
+            id: fhk2jl70udmu5
         paths:
           type: array
           x-stoplight:
-            id: e9ukqgpupvls0
+            id: g98xtv0gip8y5
           items:
             x-stoplight:
-              id: x7pr16tq4n7ck
+              id: ghan0cozx8hd6
             type: string
       required:
         - host
     AllowListRequest:
       title: AllowListRequest
       x-stoplight:
-        id: xfurar7bwajs8
+        id: owy372erg6qso
       type: object
       properties:
         allow:
           type: array
           x-stoplight:
-            id: sxxcmr0vzwe89
+            id: vv8y7f8xj5do0
           items:
             $ref: '#/components/schemas/HostInfo'
       required:
@@ -1758,12 +2213,12 @@ components:
     AllowListResponse:
       title: AllowListResponse
       x-stoplight:
-        id: ijattu5dxrl7a
+        id: 2xkt85jpevqb8
       type: object
       properties:
         allow:
           x-stoplight:
-            id: 5wy6szxaizdr9
+            id: bxppprh1ltbwl
           type: array
           items:
             $ref: '#/components/schemas/HostInfo'
@@ -1772,24 +2227,24 @@ components:
     ProxyHostDetail:
       title: ProxyHostDetail
       x-stoplight:
-        id: qzvmc7ygi53g8
+        id: ljs3drztom0fy
       type: object
       properties:
         host:
           type: string
           x-stoplight:
-            id: cd7j4zdyj0wqa
+            id: 727ej6i69aj4m
         proxy:
           type: boolean
           x-stoplight:
-            id: hida2jcczo9jn
+            id: rf6fpkoduxfw2
         selectors:
           type: array
           x-stoplight:
-            id: 6t6308uuj8wrp
+            id: e3u28f9ojboj5
           items:
             x-stoplight:
-              id: 0sgdczdy6graq
+              id: nallsx0kcechh
             type: string
       required:
         - host
@@ -1798,24 +2253,977 @@ components:
     ConfigurationEntities:
       title: ConfigurationEntities
       x-stoplight:
-        id: f0upqtv6bktce
+        id: cmayd09uoeaad
       type: object
       properties:
         env_variables:
           type: array
           x-stoplight:
-            id: evwoa6kfuf4zg
+            id: tg5inl71av179
           items:
             $ref: '#/components/schemas/BackstageEnvVariable'
         proxy:
           type: array
           x-stoplight:
-            id: fin6y5q4eggxu
+            id: f5176g6ns5ioq
           items:
             $ref: '#/components/schemas/ProxyHostDetail'
       required:
         - env_variables
         - proxy
+    ResolvedEnvVariable:
+      title: ResolvedEnvVariable
+      x-stoplight:
+        id: duiduqde3kumw
+      type: object
+      x-examples:
+        Example 1:
+          env_name: GITHUB_TOKEN
+          decrypted_value: abc
+      properties:
+        env_name:
+          type: string
+          x-stoplight:
+            id: zo46iheg97f91
+        decrypted_value:
+          type: string
+          x-stoplight:
+            id: xdkuztpoq0yv2
+    ResolvedEnvVariableResponse:
+      title: ResolvedEnvVariableResponse
+      x-stoplight:
+        id: r881vspjuu2uq
+      type: object
+      x-examples:
+        Example 1:
+          resolved_env_variable:
+            env_name: GITHUB_TOKEN
+            decrypted_value: abc
+      properties:
+        resolved_env_variables:
+          type: string
+    Check:
+      title: Check
+      x-stoplight:
+        id: wudk9v6hh6owc
+      type: object
+      description: Check
+      properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: x70i13ziki38i
+        name:
+          type: string
+          x-stoplight:
+            id: ysy25udn8y54l
+        description:
+          type: string
+          x-stoplight:
+            id: whaxglpl2q7kn
+        expression:
+          type: string
+          x-stoplight:
+            id: 32y7kuapuluhw
+        tags:
+          type: array
+          x-stoplight:
+            id: x0le360bhf4jg
+          items:
+            x-stoplight:
+              id: 8ft1d325idog3
+            type: string
+        custom:
+          type: boolean
+          x-stoplight:
+            id: dcukrwqjojoe6
+      required:
+        - identifier
+        - name
+        - custom
+      x-internal: true
+    CheckListItem:
+      title: CheckListItem
+      x-stoplight:
+        id: p96v5vy0buoqo
+      description: CheckListItem
+      allOf:
+        - $ref: '#/components/schemas/Check'
+        - type: object
+          x-stoplight:
+            id: a9327emj2z68a
+          properties:
+            data_source:
+              type: array
+              x-stoplight:
+                id: 5lzw4eyebcwv8
+              items:
+                x-stoplight:
+                  id: bwp36fvy8t3jj
+                type: string
+          required:
+            - data_source
+      x-internal: true
+    CheckResponse:
+      title: CheckResponse
+      x-stoplight:
+        id: u5q7sfp4ejv6n
+      type: object
+      properties:
+        check:
+          $ref: '#/components/schemas/CheckListItem'
+      x-internal: true
+    CheckDetails:
+      title: CheckDetails
+      x-stoplight:
+        id: lfq7ne00rbyn7
+      allOf:
+        - $ref: '#/components/schemas/Check'
+        - type: object
+          properties:
+            rule_strategy:
+              x-stoplight:
+                id: jo2xn1f9mwpg3
+              type: string
+              enum:
+                - ALL_OF
+                - ANY_OF
+            rules:
+              type: array
+              items:
+                $ref: '#/components/schemas/Rule'
+            harness_managed:
+              type: boolean
+              x-stoplight:
+                id: 1y3kd5i9vf0ni
+            default_behaviour:
+              x-stoplight:
+                id: gyfw9jsw46c4j
+              type: string
+              enum:
+                - PASS
+                - FAIL
+            fail_message:
+              type: string
+              x-stoplight:
+                id: eex34k9gn7w1c
+          required:
+            - rule_strategy
+            - rules
+            - default_behaviour
+      x-internal: true
+    CheckDetailsRequest:
+      title: CheckDetailsRequest
+      x-stoplight:
+        id: mhdjax2rkuzl2
+      type: object
+      properties:
+        check_details:
+          $ref: '#/components/schemas/CheckDetails'
+      x-internal: true
+    CheckDetailsResponse:
+      title: CheckDetailsResponse
+      x-stoplight:
+        id: 617bfow4s2ukb
+      type: object
+      properties:
+        check_details:
+          $ref: '#/components/schemas/CheckDetails'
+      required:
+        - check_details
+      x-internal: true
+    Rule:
+      title: Rule
+      x-stoplight:
+        id: hf2g9izpthuwl
+      type: object
+      x-internal: true
+      properties:
+        data_source_identifier:
+          type: string
+          x-stoplight:
+            id: zyo0xhogyid95
+        data_point_identifier:
+          type: string
+          x-stoplight:
+            id: k4afnsdtp1kth
+        operator:
+          type: string
+          x-stoplight:
+            id: lzl4um67nik40
+        value:
+          type: string
+          x-stoplight:
+            id: rqr3ggxdccmdx
+        conditional_input_value:
+          type: string
+          x-stoplight:
+            id: 1ymygm8l8xmcu
+      required:
+        - data_source_identifier
+        - data_point_identifier
+        - operator
+        - value
+    ScorecardChecks:
+      title: ScorecardChecks
+      x-stoplight:
+        id: a04k8x0j3i1d6
+      type: object
+      properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: 9f1zpbi3l7p2k
+        weightage:
+          type: number
+          x-stoplight:
+            id: afuqutau9w8zj
+          format: double
+        custom:
+          type: boolean
+          x-stoplight:
+            id: w5yhggqe7xtqf
+      required:
+        - identifier
+        - custom
+    ScorecardChecksDetails:
+      title: ScorecardChecksDetails
+      x-stoplight:
+        id: uowyidynkl4xx
+      allOf:
+        - $ref: '#/components/schemas/ScorecardChecks'
+        - type: object
+          x-stoplight:
+            id: auqfmjnhj9hgj
+          properties:
+            name:
+              type: string
+              x-stoplight:
+                id: 97awmopn6s0xa
+            description:
+              type: string
+              x-stoplight:
+                id: j80il17x3kvju
+          required:
+            - name
+    Scorecard:
+      title: Scorecard
+      x-stoplight:
+        id: p3o1p0fl46el2
+      type: object
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: m0p946xwnmj96
+        identifier:
+          type: string
+          x-stoplight:
+            id: 2jb7g6iu9xo99
+        description:
+          type: string
+          x-stoplight:
+            id: hlfsd0niglhhh
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Check'
+        published:
+          type: boolean
+          x-stoplight:
+            id: 8t5gxbgtptxl9
+        checks_missing:
+          type: array
+          x-stoplight:
+            id: ls662f996zbtw
+          items:
+            x-stoplight:
+              id: 1u2kb3xf9qzej
+            type: string
+      required:
+        - name
+        - identifier
+        - checks
+    ScorecardDetails:
+      title: ScorecardDetails
+      x-stoplight:
+        id: pcvi4f3hmfld0
+      type: object
+      properties:
+        name:
+          type: string
+        identifier:
+          type: string
+        description:
+          type: string
+        filter:
+          $ref: '#/components/schemas/ScorecardFilter'
+        weightage_strategy:
+          type: string
+          x-stoplight:
+            id: opruzz8mnaqov
+          enum:
+            - EQUAL_WEIGHTS
+            - CUSTOM
+          default: EQUAL_WEIGHTS
+        published:
+          type: boolean
+          x-stoplight:
+            id: cjvcb4oa2hq6n
+        checks_missing:
+          type: array
+          x-stoplight:
+            id: 1i2sgyk6gixse
+          items:
+            x-stoplight:
+              id: r3bpiw8gpjhvu
+            type: string
+      required:
+        - name
+        - identifier
+        - filter
+        - published
+    ScorecardFilter:
+      title: ScorecardFilter
+      x-stoplight:
+        id: x6nhq0ob4uk3f
+      type: object
+      properties:
+        kind:
+          type: string
+          x-stoplight:
+            id: 5jzuqz3v0sj1o
+        type:
+          type: string
+          x-stoplight:
+            id: 5l23cfx587kzv
+        owners:
+          type: array
+          x-stoplight:
+            id: fzqe0vnrrrdky
+          items:
+            x-stoplight:
+              id: smgxhy9gdrb0o
+            type: string
+        tags:
+          type: array
+          x-stoplight:
+            id: frr1ja6sy6izc
+          items:
+            x-stoplight:
+              id: l37eoqkzx65kn
+            type: string
+        lifecycle:
+          type: array
+          x-stoplight:
+            id: 8xmzo73y93bf4
+          items:
+            x-stoplight:
+              id: l33sntio5w4vl
+            type: string
+      required:
+        - kind
+        - type
+    ScorecardResponse:
+      title: ScorecardResponse
+      x-stoplight:
+        id: 6iuxzpep010ta
+      type: object
+      properties:
+        scorecard:
+          $ref: '#/components/schemas/Scorecard'
+    ScorecardDetailsResponse:
+      title: ScorecardDetailsResponse
+      x-stoplight:
+        id: najy5rermkzjl
+      type: object
+      properties:
+        scorecard:
+          $ref: '#/components/schemas/ScorecardDetails'
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScorecardChecksDetails'
+      required:
+        - scorecard
+        - checks
+    ScorecardDetailsRequest:
+      title: ScorecardDetailsRequest
+      x-stoplight:
+        id: sp72c0jx8kfav
+      type: object
+      properties:
+        scorecard:
+          $ref: '#/components/schemas/ScorecardDetails'
+        checks:
+          type: array
+          x-stoplight:
+            id: a6kna38hbtagc
+          items:
+            $ref: '#/components/schemas/ScorecardChecks'
+      required:
+        - scorecard
+        - checks
+    Facets:
+      title: Facets
+      x-stoplight:
+        id: 020nzfdqnba0b
+      type: object
+      properties:
+        type:
+          type: array
+          x-stoplight:
+            id: qm85z66dtlqqk
+          items:
+            x-stoplight:
+              id: v57vt5imms99f
+            type: string
+        owners:
+          type: array
+          x-stoplight:
+            id: 0153runsa2r3h
+          items:
+            x-stoplight:
+              id: uy6jgn8vd6162
+            type: string
+        tags:
+          type: array
+          x-stoplight:
+            id: fcmyi1cdoc3cb
+          items:
+            x-stoplight:
+              id: 738dcp7b4gaoo
+            type: string
+        lifecycle:
+          type: array
+          x-stoplight:
+            id: 7g2c73e8xy2y8
+          items:
+            x-stoplight:
+              id: swzkit6b0rajb
+            type: string
+      required:
+        - type
+        - owners
+        - tags
+        - lifecycle
+    DataSource:
+      title: DataSource
+      x-stoplight:
+        id: 0h2zuhctum6f0
+      type: object
+      description: Contains Details for Single Data source
+      x-internal: true
+      properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: g379w5gty052p
+        name:
+          type: string
+          x-stoplight:
+            id: edwgtraxg1f05
+        description:
+          type: string
+          x-stoplight:
+            id: gyp08lkxe2hae
+      required:
+        - identifier
+        - name
+        - description
+    DataSourcesResponse:
+      title: DataSourcesResponse
+      x-stoplight:
+        id: 9do6z13t6v9fl
+      type: object
+      description: Response for list of data sources
+      properties:
+        data_sources:
+          type: array
+          x-stoplight:
+            id: k1tokaztedcr1
+          items:
+            $ref: '#/components/schemas/DataSource'
+      required:
+        - data_sources
+      x-internal: true
+    DataPoint:
+      title: DataPoint
+      x-stoplight:
+        id: 7fyk4x1li1eaj
+      type: object
+      description: Conatins detail for single data point
+      x-internal: true
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: 0lpjxk7tpz8ji
+        name:
+          type: string
+          x-stoplight:
+            id: uckum5n11xyyl
+        description:
+          type: string
+          x-stoplight:
+            id: k02oc9ogu10i3
+        is_conditional:
+          type: boolean
+          x-stoplight:
+            id: susn4sdmr82o8
+        conditional_input_description:
+          type: string
+          x-stoplight:
+            id: 44jsmidvndf1y
+        data_point_identifier:
+          type: string
+          x-stoplight:
+            id: suve4hizvo7kt
+      required:
+        - type
+        - name
+        - description
+        - is_conditional
+        - conditional_input_description
+        - data_point_identifier
+    DataPointsResponse:
+      title: DataPointResponse
+      x-stoplight:
+        id: 2ju9wpfij4lzq
+      type: object
+      description: Resposne for List of Data Points
+      properties:
+        data_points:
+          type: array
+          x-stoplight:
+            id: gefxold9nu027
+          items:
+            $ref: '#/components/schemas/DataPoint'
+      required:
+        - data_points
+      x-internal: true
+    CheckStatus:
+      title: CheckStatus
+      x-stoplight:
+        id: tadxsutimub6u
+      type: object
+      description: Info for single check status
+      x-internal: true
+      properties:
+        reason:
+          type: string
+          x-stoplight:
+            id: 9hf61ck9h0vv4
+        name:
+          type: string
+          x-stoplight:
+            id: q1why3h6g1m6g
+        status:
+          type: string
+          x-stoplight:
+            id: 7xavundrotswn
+          enum:
+            - PASS
+            - FAIL
+        weight:
+          type: integer
+          x-stoplight:
+            id: t43y321aan87a
+      required:
+        - name
+        - status
+        - weight
+    ScorecardSummaryInfo:
+      title: ScorecardSummaryInfo
+      x-stoplight:
+        id: vlp45j6ygh0oj
+      type: object
+      description: Scorecard score calculation summary info
+      x-internal: true
+      properties:
+        scorecard_name:
+          type: string
+          x-stoplight:
+            id: a9xzelvgumv13
+        timestamp:
+          type: integer
+          x-stoplight:
+            id: fcw2novbpt009
+          format: int64
+        score:
+          type: integer
+          x-stoplight:
+            id: eurbu3ds567rq
+        checks_statuses:
+          type: array
+          x-stoplight:
+            id: eaucryh928gms
+          items:
+            $ref: '#/components/schemas/CheckStatus'
+        description:
+          type: string
+          x-stoplight:
+            id: 0kld8d4csn6p2
+        scorecard_identifier:
+          type: string
+          x-stoplight:
+            id: nme4a27tefrza
+      required:
+        - scorecard_name
+        - timestamp
+        - score
+        - checks_statuses
+        - description
+        - scorecard_identifier
+    ScorecardSummaryResponse:
+      title: ScorecardSummaryResponse
+      x-stoplight:
+        id: 7lxytcdye4aj6
+      type: object
+      description: 'Response for getting list for summary of score '
+      properties:
+        scorecards_summary:
+          type: array
+          x-stoplight:
+            id: se8nhz0g1fgd8
+          items:
+            $ref: '#/components/schemas/ScorecardSummaryInfo'
+      required:
+        - scorecards_summary
+      x-internal: true
+    ScorecardScore:
+      title: ScorecardScore
+      x-stoplight:
+        id: pf3iefzxcgo74
+      type: object
+      x-internal: true
+      description: Score info for single score card
+      properties:
+        score:
+          type: integer
+          x-stoplight:
+            id: tf365a8qkq5jy
+        description:
+          type: string
+          x-stoplight:
+            id: isyuvts7zq4on
+        scorecard_name:
+          type: string
+          x-stoplight:
+            id: sljetiq5qiqo1
+      required:
+        - score
+        - description
+        - scorecard_name
+    ScorecardScoreResponse:
+      title: ScorecardScoreResponse
+      x-stoplight:
+        id: 5ovth4f37mcvb
+      type: object
+      x-internal: true
+      description: Response for getting only scores for scorecards
+      properties:
+        scorecard_scores:
+          type: array
+          x-stoplight:
+            id: bpzns1y72hgqv
+          items:
+            $ref: '#/components/schemas/ScorecardScore'
+        overall_score:
+          type: integer
+          x-stoplight:
+            id: 5eqjfx41hp9n1
+      required:
+        - scorecard_scores
+        - overall_score
+    EntityScores:
+      title: EntityScores
+      x-stoplight:
+        id: mucorn634fmc7
+      type: object
+      x-internal: true
+      description: Scores for each backstage entity
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: ycksnjutgyzl1
+        title:
+          type: string
+          x-stoplight:
+            id: 5khrdpgvej5kr
+        kind:
+          type: string
+          x-stoplight:
+            id: pvkpwis8128nc
+        namespace:
+          type: string
+          x-stoplight:
+            id: y0baq4ksypqyp
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScorecardScore'
+      required:
+        - name
+        - title
+        - kind
+        - namespace
+        - scores
+    EntityScoresResponse:
+      title: EntityScoresResponse
+      x-stoplight:
+        id: wagfrksyyxwwy
+      type: object
+      description: Response for each entity scores
+      x-internal: true
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityScores'
+    ScorecardGraphSummaryInfo:
+      title: ScorecardGraphSummaryInfo
+      x-stoplight:
+        id: 82vhf0mpytpyt
+      type: object
+      description: Scorecard graph summary
+      x-internal: true
+      properties:
+        scorecard_identifier:
+          type: string
+          x-stoplight:
+            id: glr9ih80une1l
+        timestamp:
+          type: integer
+          x-stoplight:
+            id: h0scdjvp90cgw
+          format: int64
+        score:
+          type: integer
+          x-stoplight:
+            id: i2e2jfa6daj2w
+      required:
+        - scorecard_identifier
+        - timestamp
+        - score
+    ScorecardGraphSummaryInfoResponse:
+      title: ScorecardGraphSummaryInfoResponse
+      x-stoplight:
+        id: u7vtd303bi9p9
+      type: object
+      x-internal: true
+      properties:
+        scorecard_graph_summary:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScorecardGraphSummaryInfo'
+      required:
+        - scorecard_graph_summary
+      description: Response for scorecard graph summary
+    ScorecardRecalibrateResponse:
+      title: ScorecardRecalibrateResponse
+      x-stoplight:
+        id: auuloyc3ch9cl
+      type: object
+      properties:
+        recalibrated_scores:
+          $ref: '#/components/schemas/ScorecardSummaryInfo'
+      required:
+        - recalibrated_scores
+    DataSourceDataPointInfo:
+      title: DataSourceDataPointInfo
+      x-stoplight:
+        id: sn6osnkwms7ch
+      type: object
+      description: Request Content for fetching the data point data from data source
+      x-internal: true
+      properties:
+        data_source_location:
+          $ref: '#/components/schemas/DataSourceLocationInfo'
+        catalog_info_yaml:
+          type: string
+          x-stoplight:
+            id: v9ms63mgwwdly
+      required:
+        - data_source_location
+        - catalog_info_yaml
+    DataPointInputValues:
+      title: DataPointInputValues
+      x-stoplight:
+        id: igq1rqo6y2slp
+      type: object
+      properties:
+        data_point_identifier:
+          type: string
+          x-stoplight:
+            id: cyyj3e7m2k7ni
+        values:
+          type: array
+          x-stoplight:
+            id: msp7lobjmcpvn
+          items:
+            x-stoplight:
+              id: obth8gs8cucfg
+            type: string
+      required:
+        - data_point_identifier
+        - values
+      description: Data point values Info for Request
+      x-internal: true
+    DataSourceLocationInfo:
+      title: DataSourceLocationInfo
+      x-stoplight:
+        id: 9du9r7lli2sum
+      type: object
+      description: Data Source Location Info for request
+      x-internal: true
+      properties:
+        data_points:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPointInputValues'
+      required:
+        - data_points
+    DataSourceDataPointInfoResponse:
+      title: DataSourceDataPointInfoResponse
+      x-stoplight:
+        id: eqqxsyq97h8en
+      type: object
+      description: Resonse for getting the data point data
+      x-internal: true
+      properties:
+        resource:
+          type: object
+          x-stoplight:
+            id: qgghsjiz92qg9
+      required:
+        - resource
+    DataSourceDataPointInfoRequest:
+      title: DataSourceDataPointInfoRequest
+      x-stoplight:
+        id: 04ybuk9887jxa
+      type: object
+      description: Request for getting the data point data
+      x-internal: true
+      properties:
+        request:
+          $ref: '#/components/schemas/DataSourceDataPointInfo'
+      required:
+        - request
+    DefaultSaveResponse:
+      title: DefaultSaveResponse
+      x-stoplight:
+        id: 5u0qdkmvkx0x2
+      type: object
+      description: 'Default response for Save/Edit operations '
+      properties:
+        status:
+          type: string
+          x-stoplight:
+            id: sw2kw8z8zth3x
+      required:
+        - status
+    DataSourceDataPointsMap:
+      title: DataSourceDataPointsMap
+      x-stoplight:
+        id: fjw0hgymh8sse
+      type: object
+      properties:
+        data_source:
+          $ref: '#/components/schemas/DataSource'
+        data_points:
+          type: array
+          x-stoplight:
+            id: 92f2vm6nbrhdp
+          items:
+            $ref: '#/components/schemas/DataPoint'
+      required:
+        - data_source
+        - data_points
+      description: Mapping of data source with data points
+    DataSourceDataPointsMapResponse:
+      title: DataSourceDataPointsMapResponse
+      x-stoplight:
+        id: ro23d1cvvakfy
+      type: object
+      properties:
+        data_source_data_points_map:
+          x-stoplight:
+            id: o7sj5qnvqmi7n
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSourceDataPointsMap'
+      required:
+        - data_source_data_points_map
+      description: Response for getting the data sources and data points map
+    ClusterConfig:
+      title: ClusterConfig
+      x-stoplight:
+        id: asldfduyxp7oi
+      type: object
+      properties:
+        url:
+          type: string
+          x-stoplight:
+            id: gnsyvhr4u7n2w
+        token:
+          type: string
+          x-stoplight:
+            id: lii9n8ndjl0ht
+        name:
+          type: string
+          x-stoplight:
+            id: lii9n8ndjl0ht
+      description: Kubernetes Cluster configuration
+    KubernetesConfig:
+      title: KubernetesConfig
+      x-stoplight:
+        id: qebdcxf927gbc
+      type: object
+      description: Kubernetes data source config
+      properties:
+        clusters:
+          type: array
+          x-stoplight:
+            id: 8i8cz761rzbtt
+          items:
+            $ref: '#/components/schemas/ClusterConfig'
+        label_selector:
+          type: string
+          x-stoplight:
+            id: m85m9r1063ok6
+        data_source_location:
+          $ref: '#/components/schemas/DataSourceLocationInfo'
+    KubernetesRequest:
+      title: KubernetesRequest
+      x-stoplight:
+        id: iyh3bwdf95m32
+      type: object
+      properties:
+        request:
+          $ref: '#/components/schemas/KubernetesConfig'
+    ScorecardRecalibrateIdentifiers:
+      title: ScorecardRecalibrateIdentifiers
+      x-stoplight:
+        id: 9cig5fsqkk4f1
+      type: object
+      properties:
+        scorecard_identifier:
+          type: string
+          x-stoplight:
+            id: hvr34g3lw8746
+        entity_identifier:
+          type: string
+          x-stoplight:
+            id: cn7wufx9de8tf
+      description: Identifiers needed for score recalibration
+    ScorecardRecalibrateRequest:
+      title: ScorecardRecalibrateRequest
+      x-stoplight:
+        id: x14gxxz5b84vl
+      type: object
+      properties:
+        identifiers:
+          $ref: '#/components/schemas/ScorecardRecalibrateIdentifiers'
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1928,6 +3336,62 @@ components:
         enum:
           - github-auth
           - google-auth
+    Namespace:
+      name: namespace
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Namespace from where the request is being made
+    CheckType:
+      name: custom
+      in: query
+      schema:
+        type: boolean
+      description: Type of checks to be returned
+      required: false
+    CheckIdentifier:
+      name: check-id
+      in: path
+      description: Check Identifier
+      required: true
+      schema:
+        type: string
+    ScorecardIdentifier:
+      name: scorecard-id
+      in: path
+      description: Scorecard Identifier
+      required: true
+      schema:
+        type: string
+    EntityIdentifier:
+      name: entity_identifier
+      in: query
+      required: true
+      schema:
+        type: string
+      description: 'Identifier for entity to get the scores for score card '
+    ForceDelete:
+      name: force_delete
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: This is used if an entity need to be force deleted
+    CatalogKind:
+      name: kind
+      in: query
+      required: true
+      schema:
+        type: string
+      description: This is used to filter backstage catalog entity facets by kind
+    NamespacePathParam:
+      name: namespace
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Namespace from where the request is being made
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -2053,6 +3517,37 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ConfigurationEntities'
+    CheckDetailsRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CheckDetailsRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/CheckDetailsRequest'
+    DataSourceDataPointInfoRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointInfoRequest'
+      description: Request for getting the data point data
+    ScorecardRecalibrateRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardRecalibrateRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ScorecardRecalibrateRequest'
+    KubernetesConfigRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/KubernetesRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/KubernetesRequest'
+      description: Kubernetes Configuration
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -2276,6 +3771,163 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ConfigurationEntities'
+    ResolvedEnvVariableResponse:
+      description: Returns encrypted string of list of env variables with the decrypted value
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResolvedEnvVariableResponse'
+          examples: {}
+        application/yaml:
+          schema:
+            type: string
+          examples: {}
+    DataSourcesResponse:
+      description: Response containing list of data sources present in account
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourcesResponse'
+        application/xml:
+          schema:
+            type: object
+            properties:
+              datasources:
+                type: string
+                x-stoplight:
+                  id: ttkhlra8e2vr3
+    ScorecardSummaryInfoResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardSummaryResponse'
+    DatapointResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataPointsResponse'
+    ScorecardScoreResponse:
+      description: Response for scorecards score
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardScoreResponse'
+    EntityScoresResponseList:
+      description: Response for all the entity scores
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/EntityScoresResponse'
+    ScorecardGraphSummaryResponse:
+      description: Response for scorecard's score summary for graph
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardGraphSummaryInfoResponse'
+    ScorecardRecalibrateResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardRecalibrateResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ScorecardRecalibrateResponse'
+    CheckResponseList:
+      description: Response for all checks available
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CheckResponse'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CheckResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
+    CheckDetailsResponse:
+      description: Response for check details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CheckDetailsResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/CheckDetailsResponse'
+    ScorecardResponseList:
+      description: Response for all scorecards available
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ScorecardResponse'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ScorecardResponse'
+    ScorecardDetailsResponse:
+      description: Response for scorecard details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardDetailsResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ScorecardDetailsResponse'
+    FacetsResponse:
+      description: Response for entity facets
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Facets'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/Facets'
+    DataSourceDataPointInfoResponse:
+      description: Response for getting the data point data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointInfoResponse'
+    DefaultSaveResponse:
+      description: Default response for Save/Edit operations
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DefaultSaveResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/DefaultSaveResponse'
+    DataSourceDataPointsMapResponse:
+      description: Response for getting the data source and data point map
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointsMapResponse'
+        application/xml:
+          schema:
+            type: object
+            properties: {}
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2284,16 +3936,30 @@ components:
 tags:
   - name: AccountInfo
     description: Account Information
+  - name: AllowList
+    description: Backstage Allow List
   - name: AppConfig
     description: Backstage App Configurations
+  - name: AuthInfo
+    description: Auth Information
   - name: BackstageEnvVariable
     description: Backstage Environment Variable
   - name: BackstagePermissions
     description: Backstage Permissions
   - name: ConnectorInfo
     description: Connector Information
+  - name: DataPointsData
+    description: DataPointData Information
+  - name: DataSource
+    description: DataSource Information
+  - name: HarnessDataPoints
+    description: Harness DataPoints Information
+  - name: KubernetesDataPoints
+    description: Kubernetes DataPoints Information
   - name: LayoutProxy
     description: Layout Proxy
+  - name: MergedPluginsConfig
+    description: Merged Plugins Configurations
   - name: Namespace
     description: Backstage Namespace
   - name: OnboardingResource
@@ -2302,7 +3968,7 @@ tags:
     description: Plugin Information
   - name: Provision
     description: Provision
+  - name: Scores
+    description: Scores Information
   - name: StatusInfo
     description: Status Information
-  - name: MergedPluginsConfig
-    description: Merged Plugins Configurations

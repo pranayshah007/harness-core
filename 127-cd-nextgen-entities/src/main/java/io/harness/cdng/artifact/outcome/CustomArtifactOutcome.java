@@ -10,18 +10,25 @@ package io.harness.cdng.artifact.outcome;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.CustomArtifactSummary;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.google.common.collect.Sets;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = false)
@@ -45,6 +52,9 @@ public class CustomArtifactOutcome implements ArtifactOutcome {
   /** Custom Artifact metadata */
   Map<String, String> metadata;
 
+  /* Field for adding support for <artifact.tag> */
+  String tag;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return CustomArtifactSummary.builder().version(version).build();
@@ -58,5 +68,10 @@ public class CustomArtifactOutcome implements ArtifactOutcome {
   @Override
   public String getTag() {
     return version;
+  }
+
+  @Override
+  public Set<String> getMetaTags() {
+    return Sets.newHashSet(tag, identifier, version);
   }
 }

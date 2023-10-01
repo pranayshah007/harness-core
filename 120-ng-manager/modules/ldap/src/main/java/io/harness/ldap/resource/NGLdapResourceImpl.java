@@ -93,6 +93,12 @@ public class NGLdapResourceImpl implements NGLdapResource {
   }
 
   @Override
+  public RestResponse<Boolean> syncLdapGroupsV2(String accountId, String orgIdentifier, String projectIdentifier) {
+    ngLdapService.syncUserGroupsJob(accountId, orgIdentifier, projectIdentifier);
+    return new RestResponse<>(true);
+  }
+
+  @Override
   public RestResponse<LdapResponse> postLdapAuthenticationTest(
       String accountId, String orgIdentifier, String projectIdentifier, String email, String password) {
     return new RestResponse<>(

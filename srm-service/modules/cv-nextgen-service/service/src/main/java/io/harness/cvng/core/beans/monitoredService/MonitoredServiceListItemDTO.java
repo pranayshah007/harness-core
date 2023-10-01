@@ -8,7 +8,7 @@
 package io.harness.cvng.core.beans.monitoredService;
 
 import io.harness.cvng.beans.MonitoredServiceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.gitsync.beans.YamlDTO;
 
 import java.util.List;

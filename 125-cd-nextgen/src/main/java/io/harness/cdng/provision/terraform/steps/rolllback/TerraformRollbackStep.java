@@ -7,13 +7,18 @@
 
 package io.harness.cdng.provision.terraform.steps.rolllback;
 
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
+
 import static java.lang.String.format;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.TerraformConfig;
 import io.harness.cdng.provision.terraform.TerraformConfigDAL;
@@ -28,12 +33,10 @@ import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters.TerraformTaskNGParametersBuilder;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.persistence.HIterator;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -41,7 +44,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -49,6 +51,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.serializer.KryoSerializer;
@@ -65,6 +68,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGResponse> {
@@ -78,14 +83,15 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
   @Inject private TerraformStepHelper terraformStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private StepHelper stepHelper;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
+
   @Inject public TerraformConfigDAL terraformConfigDAL;
   @Inject private AccountService accountService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     TerraformRollbackStepParameters stepParametersSpec = (TerraformRollbackStepParameters) stepParameters.getSpec();
     log.info("Running Obtain Inline Task for the Rollback Step");
     String provisionerIdentifier =
@@ -131,8 +137,7 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
         rollbackMessage.append(prepareExecutionUrl(rollbackConfig.getPipelineExecutionId(), ambiance));
       }
 
-      ExpressionEvaluatorUtils.updateExpressions(
-          rollbackConfig, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+      cdExpressionResolver.updateExpressions(ambiance, rollbackConfig);
       // TODO:  log rollback message
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TERRAFORM_CONFIG,
           TerraformConfigSweepingOutput.builder().terraformConfig(rollbackConfig).tfTaskType(tfTaskType).build(),
@@ -170,7 +175,9 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
           .environmentVariables(rollbackConfig.getEnvironmentVariables() == null
                   ? new HashMap<>()
                   : rollbackConfig.getEnvironmentVariables())
-          .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+          .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+          .skipColorLogs(
+              cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TF_TG_SKIP_ERROR_LOGS_COLORING));
 
       ParameterField<Boolean> skipTerraformRefreshCommandParameter = stepParametersSpec.getSkipRefreshCommand();
 
@@ -202,13 +209,14 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // no connectors/secret managers to validate
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<TerraformTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<TerraformTaskNGResponse> responseDataSupplier)
+      throws Exception {
     log.info("Handling Task Result With Security Context for the Rollback Step");
     StepResponse stepResponse = null;
 
@@ -259,7 +267,7 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

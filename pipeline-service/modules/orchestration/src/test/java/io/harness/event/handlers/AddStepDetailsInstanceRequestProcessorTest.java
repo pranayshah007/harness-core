@@ -14,7 +14,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.execution.events.AddStepDetailsInstanceRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.rule.Owner;
@@ -32,7 +32,7 @@ public class AddStepDetailsInstanceRequestProcessorTest {
 
   @InjectMocks AddStepDetailsInstanceRequestProcessor addStepDetailsInstanceRequestProcessor;
 
-  @Mock PmsGraphStepDetailsService graphStepDetailsService;
+  @Mock NodeExecutionInfoService graphStepDetailsService;
 
   @Test
   @Owner(developers = SOUMYAJIT)

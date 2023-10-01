@@ -14,16 +14,22 @@ import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ngmigration.dto.BaseEntityDetailsDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.Application;
+import software.wings.beans.Base.BaseKeys;
 import software.wings.beans.Environment;
 import software.wings.beans.Environment.EnvironmentKeys;
 import software.wings.beans.Pipeline;
@@ -34,6 +40,8 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
+import software.wings.beans.security.UserGroup;
+import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.Template.TemplateKeys;
 import software.wings.beans.trigger.Trigger;
@@ -45,6 +53,8 @@ import software.wings.security.annotations.Scope;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +67,7 @@ import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(CDC)
 @Slf4j
 @Path("/")
@@ -66,6 +77,7 @@ import org.apache.commons.lang3.StringUtils;
 @NextGenManagerAuth
 public class EntityDetailsResource {
   @Inject HPersistence hPersistence;
+  @Inject FeatureFlagService featureFlagService;
 
   @GET
   @Path("/workflows")
@@ -268,5 +280,34 @@ public class EntityDetailsResource {
                      .collect(Collectors.toList());
     }
     return new RestResponse<>(entities);
+  }
+
+  @GET
+  @Path("/usergroups")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<List<BaseEntityDetailsDTO>> listUserGroups(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @QueryParam("appId") String appId) {
+    List<BaseEntityDetailsDTO> entities = new ArrayList<>();
+    List<UserGroup> groups = hPersistence.createQuery(UserGroup.class)
+                                 .filter(UserGroupKeys.accountId, accountId)
+                                 .project(BaseKeys.uuid, true)
+                                 .project(UserGroupKeys.name, true)
+                                 .asList(createFindOptionsToHitSecondaryNode(accountId));
+
+    if (EmptyPredicate.isNotEmpty(groups)) {
+      entities = groups.stream()
+                     .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
+                     .collect(Collectors.toList());
+    }
+    return new RestResponse<>(entities);
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

@@ -6,7 +6,9 @@
  */
 
 package io.harness.ng.migration;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
@@ -16,6 +18,11 @@ import io.harness.ng.core.migration.NGWebhookMendateSettingsCategoryUpdateMigrat
 import io.harness.ng.core.migration.PopulateYamlFieldInNGEnvironmentMigration;
 import io.harness.ng.core.migration.background.AddDeploymentTypeToInfrastructureEntityMigration;
 import io.harness.ng.core.migration.background.AddServiceOverrideV2RelatedFieldsMigration;
+import io.harness.ng.core.migration.background.CleanupCdAccountExecutionMetadata;
+import io.harness.ng.core.migration.background.CleanupDeploymentAccounts;
+import io.harness.ng.core.migration.background.CleanupDeploymentSummaryNg;
+import io.harness.ng.core.migration.background.CleanupInfrastructureMappingNg;
+import io.harness.ng.core.migration.background.CleanupInstanceNg;
 import io.harness.ng.core.migration.background.DeleteSoftDeletedConnectorsMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGJiraConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
@@ -27,6 +34,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
   @Override
   public MigrationType getMigrationTypeName() {
@@ -55,6 +63,11 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(12, PopulateYamlFieldInNGEnvironmentMigration.class))
         .add(Pair.of(13, PopulateYamlFieldInNGServiceEntityMigration.class))
         .add(Pair.of(14, AddServiceOverrideV2RelatedFieldsMigration.class))
+        .add(Pair.of(15, CleanupCdAccountExecutionMetadata.class))
+        .add(Pair.of(16, CleanupDeploymentAccounts.class))
+        .add(Pair.of(17, CleanupDeploymentSummaryNg.class))
+        .add(Pair.of(18, CleanupInfrastructureMappingNg.class))
+        .add(Pair.of(19, CleanupInstanceNg.class))
         .build();
   }
 }

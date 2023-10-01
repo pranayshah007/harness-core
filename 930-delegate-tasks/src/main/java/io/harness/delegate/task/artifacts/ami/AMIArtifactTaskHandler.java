@@ -6,8 +6,10 @@
  */
 
 package io.harness.delegate.task.artifacts.ami;
-
 import io.harness.ami.AMITagsResponse;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.ami.service.AMIRegistryService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -32,6 +34,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j

@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.helm;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
@@ -14,9 +13,16 @@ import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.aws.AwsClient;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
@@ -24,6 +30,7 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.helm.beans.FetchHelmChartManifestRequest;
 import io.harness.delegate.task.helm.response.HelmChartManifest;
@@ -48,6 +55,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
@@ -62,6 +70,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
@@ -72,6 +81,9 @@ public class HelmChartManifestTaskService {
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
 
   @Inject private GitFetchTaskHelper gitFetchTaskHelper;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
+  @Inject private static AwsClient awsClient;
+  @Inject private static AwsNgConfigMapper awsNgConfigMapper;
 
   private final Cache<HelmChartKey, HelmChartManifest> cache =
       CacheBuilder.newBuilder()
@@ -83,7 +95,13 @@ public class HelmChartManifestTaskService {
     HelmChartMetadata metadata = createMetadata(request.getManifestDelegateConfig());
     Optional<HelmChartKey> helmChartKey = metadata.toHelmChartKey();
     if (helmChartKey.isPresent()) {
-      return cache.get(helmChartKey.get(), () -> fetchAndReadHelmChartYaml(request, metadata));
+      HelmChartManifest helmChartManifest = cache.getIfPresent(helmChartKey.get());
+      if (helmChartManifest == null) {
+        helmChartManifest = fetchAndReadHelmChartYaml(request, metadata);
+        cache.put(helmChartKey.get(), helmChartManifest);
+      }
+
+      return helmChartManifest;
     }
 
     return fetchAndReadHelmChartYaml(request, metadata);
@@ -107,8 +125,9 @@ public class HelmChartManifestTaskService {
       HelmChartYaml helmChartYaml = HelmChartYamlMapper.deserialize(stream);
       return HelmChartManifest.create(helmChartYaml, metadata.toMap());
     } catch (FileNotFoundException | NoSuchFileException e) {
+      log.warn("Unable to find Chart.yaml in file path: {}", helmChartYamlFile.getPath());
       String helmVersion = isNotEmpty(manifestConfig.getChartVersion())
-          ? format("%s:%s", manifestConfig.getChartName(), manifestConfig.getHelmVersion())
+          ? format("%s:%s", manifestConfig.getChartName(), manifestConfig.getChartVersion())
           : manifestConfig.getChartName();
       throw NestedExceptionUtils.hintWithExplanationException(
           format("Check if provided %s helm package is a valid helm chart", helmVersion),
@@ -130,14 +149,7 @@ public class HelmChartManifestTaskService {
       fetchHelmChartYamlFromHelmRepo(manifestConfig, destinationDirectory, timeout);
     }
 
-    String chartYamlSubpath;
-    if (isNotEmpty(manifestConfig.getSubChartPath())) {
-      chartYamlSubpath = Paths.get(manifestConfig.getSubChartPath(), CHARTS_YAML_KEY).toString();
-    } else {
-      chartYamlSubpath = CHARTS_YAML_KEY;
-    }
-
-    return Paths.get(destinationDirectory, chartYamlSubpath).toFile();
+    return findHelmChartYaml(manifestConfig, destinationDirectory);
   }
 
   private void fetchHelmChartYamlFromGit(
@@ -149,11 +161,12 @@ public class HelmChartManifestTaskService {
     }
 
     final String chartPath = gitStoreDelegateConfig.getPaths().get(0);
-    GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+    GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+        gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
     String chartYamlPath = getChartYamlPath(manifestConfig, chartPath);
 
     FetchFilesResult result = gitFetchTaskHelper.fetchFileFromRepo(
-        gitStoreDelegateConfig, Collections.singletonList(chartYamlPath), accountId, gitConfigDTO);
+        gitStoreDelegateConfig, Collections.singletonList(chartYamlPath), accountId, gitConfigDTO, false);
     if (isEmpty(result.getFiles())) {
       return;
     }
@@ -164,8 +177,9 @@ public class HelmChartManifestTaskService {
     }
 
     String chartYamlOutputPath = getChartYamlPath(manifestConfig, destinationDirectory);
-    FileIo.createDirectoryIfDoesNotExist(Paths.get(chartYamlOutputPath).getParent());
-    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(chartYamlPath, 10);
+    Path chartYamlDirectory = Paths.get(chartYamlOutputPath).getParent();
+    FileIo.createDirectoryIfDoesNotExist(chartYamlDirectory);
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(chartYamlDirectory.toString(), 10);
     FileIo.writeFile(
         getChartYamlPath(manifestConfig, destinationDirectory), chartYamlContent.getBytes(StandardCharsets.UTF_8));
   }
@@ -191,6 +205,25 @@ public class HelmChartManifestTaskService {
       helmTaskHelperBase.downloadHelmChart(
           manifestConfig, timeoutInMillis, new NoopExecutionCallback(), destinationDirectory);
     }
+  }
+
+  private File findHelmChartYaml(HelmChartManifestDelegateConfig manifestConfig, String destinationDirectory) {
+    String chartYamlSubpath;
+    if (isNotEmpty(manifestConfig.getSubChartPath())) {
+      chartYamlSubpath = Paths.get(manifestConfig.getSubChartPath(), CHARTS_YAML_KEY).toString();
+    } else {
+      chartYamlSubpath = CHARTS_YAML_KEY;
+    }
+
+    if (isNotEmpty(manifestConfig.getChartName())) {
+      File potentialChartYamlFile =
+          Paths.get(destinationDirectory, manifestConfig.getChartName(), chartYamlSubpath).toFile();
+      if (potentialChartYamlFile.exists()) {
+        return potentialChartYamlFile;
+      }
+    }
+
+    return Paths.get(destinationDirectory, chartYamlSubpath).toFile();
   }
 
   private String getChartYamlPath(HelmChartManifestDelegateConfig manifestConfig, String basePath) {
@@ -228,9 +261,18 @@ public class HelmChartManifestTaskService {
         break;
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelm = (OciHelmStoreDelegateConfig) config.getStoreDelegateConfig();
-        metadataBuilder.url(ociHelm.getOciHelmConnector().getHelmRepoUrl())
-            .basePath(ociHelm.getBasePath())
-            .cacheRepoUrl(format("%s/%s", ociHelm.getOciHelmConnector().getHelmRepoUrl(), ociHelm.getBasePath()));
+        if (ociHelm.getConnectorConfigDTO() instanceof OciHelmConnectorDTO) {
+          metadataBuilder.url(ociHelm.getRepoUrl())
+              .basePath(ociHelm.getBasePath())
+              .cacheRepoUrl(format("%s/%s", ociHelm.getRepoUrl(), ociHelm.getBasePath()));
+        } else if (ociHelm.getConnectorConfigDTO() instanceof AwsConnectorDTO) {
+          String repoUrl = getEcrRepoUrl(ociHelm);
+          metadataBuilder.url(repoUrl)
+              .region(ociHelm.getRegion())
+              .registryId(ociHelm.getRegistryId())
+              .basePath(ociHelm.getBasePath())
+              .cacheRepoUrl(format("%s/%s", repoUrl, ociHelm.getBasePath()));
+        }
         break;
       case GIT:
         GitStoreDelegateConfig gitConfig = (GitStoreDelegateConfig) config.getStoreDelegateConfig();
@@ -258,6 +300,13 @@ public class HelmChartManifestTaskService {
     return metadataBuilder.build();
   }
 
+  private static String getEcrRepoUrl(OciHelmStoreDelegateConfig ociHelmStoreDelegateConfig) {
+    AwsInternalConfig awsInternalConfig =
+        awsNgConfigMapper.createAwsInternalConfig((AwsConnectorDTO) ociHelmStoreDelegateConfig.getConnectorConfigDTO());
+    return awsClient.getEcrImageUrl(awsInternalConfig, ociHelmStoreDelegateConfig.getRegistryId(),
+        ociHelmStoreDelegateConfig.getRegion(), ociHelmStoreDelegateConfig.getRepoName());
+  }
+
   @Value
   @Builder
   @EqualsAndHashCode
@@ -283,6 +332,7 @@ public class HelmChartManifestTaskService {
     String commitId;
     String branch;
     String cacheRepoUrl;
+    String registryId;
 
     public Optional<HelmChartKey> toHelmChartKey() {
       if (isEmpty(cacheRepoUrl) || isEmpty(chartVersion)) {

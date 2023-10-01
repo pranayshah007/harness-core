@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -23,6 +24,7 @@ import lombok.experimental.FieldNameConstants;
  */
 @Value
 @Builder
+@EqualsAndHashCode
 @OwnedBy(CE)
 @FieldNameConstants(innerTypeName = "NodePoolIdKeys")
 public class NodePoolId {

@@ -13,11 +13,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.response.TargetExecutionSummary;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
+import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.artifact.AMIRegistrySpec;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
 import io.harness.ngtriggers.dtos.NGPipelineExecutionResponseDTO;
 import io.harness.rule.Owner;
 
@@ -34,6 +39,7 @@ public class TriggerEventResponseHelperTest extends CategoryTest {
   String message = "message";
   String uuid = "uuid";
   String payload = "payload";
+  String build = "build";
   Long createdAt = 12L;
   @Test
   @Owner(developers = MEET)
@@ -50,6 +56,14 @@ public class TriggerEventResponseHelperTest extends CategoryTest {
                                           .targetIdentifier(pipelineId)
                                           .type(NGTriggerType.ARTIFACT)
                                           .build();
+    NGTriggerConfigV2 ngTriggerConfigV2 = NGTriggerConfigV2.builder()
+                                              .source(NGTriggerSourceV2.builder()
+                                                          .spec(ArtifactTriggerConfig.builder()
+                                                                    .spec(AMIRegistrySpec.builder().build())
+                                                                    .type(ArtifactType.AMI)
+                                                                    .build())
+                                                          .build())
+                                              .build();
     TargetExecutionSummary targetExecutionSummary = TargetExecutionSummary.builder().targetId(pipelineId).build();
 
     TriggerEventResponse response = TriggerEventResponse.builder()
@@ -63,18 +77,20 @@ public class TriggerEventResponseHelperTest extends CategoryTest {
                                         .finalStatus(status)
                                         .triggerIdentifier(triggerIdentifier)
                                         .message(message)
+                                        .buildSourceType(ArtifactType.AMI.getValue())
+                                        .build(build)
                                         .ngTriggerType(NGTriggerType.ARTIFACT)
                                         .targetExecutionSummary(targetExecutionSummary)
                                         .pollingDocId(pollingDocId)
                                         .build();
-    TriggerEventResponse triggerEventResponse =
-        TriggerEventResponseHelper.toResponseWithPollingInfo(status, triggerWebhookEvent,
-            ngPipelineExecutionResponseDTO, ngTriggerEntity, message, targetExecutionSummary, pollingDocId);
+    TriggerEventResponse triggerEventResponse = TriggerEventResponseHelper.toResponseWithPollingInfo(status,
+        triggerWebhookEvent, ngPipelineExecutionResponseDTO, ngTriggerEntity, ngTriggerConfigV2, message,
+        targetExecutionSummary, pollingDocId, build);
     assertThat(triggerEventResponse).isEqualTo(response);
 
     // Without pipeline execution details
-    TriggerEventResponse triggerEventResponse1 = TriggerEventResponseHelper.toResponseWithPollingInfo(
-        status, triggerWebhookEvent, ngTriggerEntity, message, targetExecutionSummary, pollingDocId);
+    TriggerEventResponse triggerEventResponse1 = TriggerEventResponseHelper.toResponseWithPollingInfo(status,
+        triggerWebhookEvent, ngTriggerEntity, ngTriggerConfigV2, message, targetExecutionSummary, pollingDocId, build);
     assertThat(triggerEventResponse1).isEqualTo(response);
   }
 }

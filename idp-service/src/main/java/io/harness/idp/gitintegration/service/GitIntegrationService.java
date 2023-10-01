@@ -18,13 +18,16 @@ import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface GitIntegrationService {
   void createConnectorSecretsEnvVariable(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO);
   void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws Exception;
+
   void createOrUpdateConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
-      CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier) throws Exception;
+      CatalogInfraConnectorType catalogConnectorEntityType, String host, Set<String> delegateSelectors);
+
   List<CatalogConnectorEntity> getAllConnectorDetails(String accountIdentifier);
   Optional<CatalogConnectorEntity> findByAccountIdAndProviderType(String accountIdentifier, String providerType);
   CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails)

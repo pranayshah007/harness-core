@@ -7,5 +7,12 @@
 set -ex
 
 export PLATFORM="jenkins"
+
+export VERSION_FILE=srm-service/build.properties
+export MAJOR=`cat ${VERSION_FILE} | grep 'build.majorVersion=' | sed -e 's: *build.majorVersion=::g'`
+export MINOR=`cat ${VERSION_FILE} | grep 'build.minorVersion=' | sed -e 's: *build.minorVersion=::g'`
+export PATCHVERSION=`cat ${VERSION_FILE} | grep 'build.patchVersion=' | sed -e 's: *build.patchVersion=::g'`
+export VERSION=${MAJOR}.${MINOR}.${PATCHVERSION}
+
 chmod +x srm-service/build/feature_build.sh
 srm-service/build/feature_build.sh

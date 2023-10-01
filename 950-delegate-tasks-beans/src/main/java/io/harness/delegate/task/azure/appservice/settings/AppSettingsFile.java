@@ -12,6 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -30,6 +31,7 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.task.azure.appservice.settings.AppSettingsFile")
 public class AppSettingsFile implements NestedAnnotationResolver {
   boolean encrypted;
   @Setter @NonFinal @Expression(ALLOW_SECRETS) String fileContent;

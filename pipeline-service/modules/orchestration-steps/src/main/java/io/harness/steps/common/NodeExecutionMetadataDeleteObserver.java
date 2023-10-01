@@ -17,7 +17,7 @@ import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -42,7 +42,7 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
   @Inject private TimeoutEngine timeoutEngine;
   @Inject private ResourceRestraintInstanceService resourceRestraintInstanceService;
   @Inject private PlanService planService;
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
   @Inject private WaitStepService waitStepService;
   @Inject private ExecutionInputService executionInputService;
   @Inject private ApprovalInstanceService approvalInstanceService;
@@ -61,6 +61,7 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
     Set<String> waitStepNodeExecutionIds = new HashSet<>();
     Set<String> executionInputNodeExecutionIds = new HashSet<>();
     Set<String> approvalNodeExecutionIds = new HashSet<>();
+    String planId = nodeExecutionsToDelete.get(0).getPlanId();
     for (NodeExecution nodeExecution : nodeExecutionsToDelete) {
       nodeExecutionIds.add(nodeExecution.getUuid());
       if (isNotEmpty(nodeExecution.getTimeoutInstanceIds())) {
@@ -100,7 +101,7 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
     // Delete resource restraint instances
     resourceRestraintInstanceService.deleteInstancesForGivenReleaseType(stageNodeExecutionIds, HoldingScope.STAGE);
     // Delete nodes entity
-    planService.deleteNodesForGivenIds(nodeEntityIds);
+    planService.deleteNodesForGivenIds(planId, nodeEntityIds);
     // Delete NodeExecutionsInfo
     pmsGraphStepDetailsService.deleteNodeExecutionInfoForGivenIds(nodeExecutionIds);
     // Delete WaiStepInstance for given waiStep nodeExecutionIds

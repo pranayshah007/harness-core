@@ -6,18 +6,22 @@
  */
 
 package io.harness.helm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by anubhaw on 3/23/18.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDP)
 public final class HelmConstants {
   public static final String HELM_PATH_PLACEHOLDER = "${HELM_PATH}";
@@ -140,6 +144,7 @@ public final class HelmConstants {
 
   public static final long DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(60);
   public static final String HELM_RELEASE_LABEL = "release";
+  public static final String HELM_INSTANCE_LABEL = "app.kubernetes.io/instance";
   public static final String HELM_HOOK_ANNOTATION = "helm.sh/hook";
 
   public static final String DEFAULT_HELM_VALUE_YAML = "# Enter your Helm value YAML\n"

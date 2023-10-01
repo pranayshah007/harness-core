@@ -15,11 +15,14 @@ import static io.harness.pms.execution.utils.AmbianceUtils.getAccountId;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.cloudformation.beans.CloudFormationInheritOutput;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
@@ -34,10 +37,8 @@ import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -45,10 +46,10 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -69,6 +70,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationTaskNGResponse> {
@@ -76,7 +78,7 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
   @Inject CloudformationConfigDAL cloudformationConfigDAL;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
@@ -86,11 +88,12 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
                                                .build();
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier)
+      throws Exception {
     CloudformationTaskNGResponse cloudformationTaskNGResponse;
     try {
       cloudformationTaskNGResponse = responseDataSupplier.get();
@@ -133,7 +136,7 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     CloudformationRollbackStepParameters cloudformationRollbackStepParameters =
         (CloudformationRollbackStepParameters) stepParameters.getSpec();
     log.info("Starting execution Obtain Task after Rbac for the Cloudformation Rollback Step");
@@ -167,7 +170,7 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
     return TaskRequest.newBuilder().setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(reason).build()).build();
   }
 
-  private TaskRequest obtainCloudformationRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskRequest obtainCloudformationRollbackTask(Ambiance ambiance, StepBaseParameters stepParameters,
       CloudformationTaskNGParameters cloudformationTaskNGParameters) {
     TaskData taskData = TaskData.builder()
                             .async(true)
@@ -185,13 +188,13 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @VisibleForTesting
   CloudformationTaskNGParameters getCreateStackCloudformationTaskNGParameters(
-      Ambiance ambiance, StepElementParameters stepParameters, CloudformationConfig cloudformationConfig) {
+      Ambiance ambiance, StepBaseParameters stepParameters, CloudformationConfig cloudformationConfig) {
     AwsConnectorDTO awsConnectorDTO =
         (AwsConnectorDTO) cloudformationStepHelper.getConnectorDTO(cloudformationConfig.getConnectorRef(), ambiance)
             .getConnectorConfig();
@@ -232,8 +235,7 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
             .stackStatusesToMarkAsSuccess(statusesToMarkAsSuccess)
             .timeoutInMs(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
             .build();
-    ExpressionEvaluatorUtils.updateExpressions(
-        cloudformationTaskNGParameters, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, cloudformationTaskNGParameters);
     return cloudformationTaskNGParameters;
   }
 
@@ -254,8 +256,7 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
             .encryptedDataDetails(cloudformationStepHelper.getAwsEncryptionDetails(ambiance, connectorDTO))
             .stackName(cloudFormationInheritOutput.getStackName())
             .build();
-    ExpressionEvaluatorUtils.updateExpressions(
-        cloudformationTaskNGParameters, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, cloudformationTaskNGParameters);
     return cloudformationTaskNGParameters;
   }
 }

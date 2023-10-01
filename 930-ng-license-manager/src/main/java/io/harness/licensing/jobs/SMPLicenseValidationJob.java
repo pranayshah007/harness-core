@@ -13,5 +13,5 @@ import java.util.function.Function;
 
 public interface SMPLicenseValidationJob {
   void scheduleValidation(
-      String accountId, String licenseSign, int frequencyInMinutes, Function<String, SMPLicense> licenseProvider);
+      String accountId, SMPLicense smpLicense, int frequencyInMinutes, Function<String, SMPLicense> licenseProvider);
 }

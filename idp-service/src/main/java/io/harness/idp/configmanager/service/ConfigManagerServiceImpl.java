@@ -7,6 +7,9 @@
 package io.harness.idp.configmanager.service;
 
 import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
+import static io.harness.idp.common.Constants.COMPLIANCE_ENV;
+import static io.harness.idp.common.Constants.PRE_QA_ENV;
+import static io.harness.idp.common.Constants.QA_ENV;
 
 import static java.lang.String.format;
 
@@ -111,7 +114,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     appConfigEntity.setEnabled(getEnabledFlagBasedOnConfigType(configType));
 
     List<ProxyHostDetail> pluginProxyHostDetails =
-        pluginsProxyInfoService.insertProxyHostDetailsForPlugin(appConfig, accountIdentifier);
+        pluginsProxyInfoService.insertProxyHostDetailsForPlugin(appConfig, accountIdentifier, configType);
 
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
@@ -130,9 +133,6 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
 
-    List<ProxyHostDetail> proxyHostDetailList =
-        pluginsProxyInfoService.updateProxyHostDetailsForPlugin(appConfig, accountIdentifier);
-
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.updateConfigEnvVariables(appConfig, accountIdentifier);
     AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
@@ -141,7 +141,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     }
     AppConfig returnedConfig = AppConfigMapper.toDTO(updatedData);
     returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+
+    List<ProxyHostDetail> proxyHostDetailList =
+        pluginsProxyInfoService.updateProxyHostDetailsForPlugin(appConfig, accountIdentifier, configType);
     returnedConfig.setProxy(proxyHostDetailList);
+
     return returnedConfig;
   }
 
@@ -221,7 +225,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception {
+  public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) {
     MergedPluginConfigs mergedPluginConfigs = new MergedPluginConfigs();
     List<String> allEnabledPluginConfigs = getAllEnabledPluginConfigs(accountIdentifier);
     boolean isAllEnabledPluginsWithNoConfig = allEnabledPluginConfigs.stream().allMatch(config -> config == null);
@@ -404,11 +408,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private String getBaseAppConfigPath() {
     switch (env) {
-      case "qa":
+      case QA_ENV:
         return BASE_APP_CONFIG_PATH_QA;
-      case "stress":
+      case PRE_QA_ENV:
         return BASE_APP_CONFIG_PATH_PRE_QA;
-      case "compliance":
+      case COMPLIANCE_ENV:
         return BASE_APP_CONFIG_PATH_COMPLIANCE;
       default:
         return BASE_APP_CONFIG_PATH;

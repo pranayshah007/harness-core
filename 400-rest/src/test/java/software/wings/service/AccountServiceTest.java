@@ -16,11 +16,13 @@ import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.JOHANNES;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.LAZAR;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.MEHUL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
@@ -34,6 +36,7 @@ import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.SRINIVAS;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS;
@@ -53,6 +56,7 @@ import static software.wings.utils.WingsTestConstants.PORTAL_URL;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -106,7 +110,6 @@ import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.Environment;
@@ -120,6 +123,7 @@ import software.wings.beans.SubdomainUrl;
 import software.wings.beans.TechStack;
 import software.wings.beans.UrlInfo;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.accountdetails.events.AccountDetailsCrossGenerationAccessUpdateEvent;
 import software.wings.beans.accountdetails.events.AccountDetailsDefaultExperienceUpdateEvent;
 import software.wings.beans.governance.GovernanceConfig;
@@ -522,7 +526,12 @@ public class AccountServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldUpdateUserAfterDeletingAccount() {
     String accountId = generateUuid();
-    Account account = anAccount().withUuid(accountId).withCompanyName(HARNESS_NAME).build();
+    Account account =
+        anAccount()
+            .withUuid(accountId)
+            .withCompanyName(HARNESS_NAME)
+            .withLicenseInfo(LicenseInfo.builder().accountType("PAID").expiryTime(100000).licenseUnits(100).build())
+            .build();
     wingsPersistence.save(account);
 
     String accountId2 = generateUuid();
@@ -1825,5 +1834,84 @@ public class AccountServiceTest extends WingsBaseTest {
             false);
     Boolean isSSO = accountService.isSSOEnabled(onlyUserPassAccount);
     assertThat(isSSO).isFalse();
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testSetPublicAccess() {
+    Account account = saveAccount("Harness");
+
+    accountService.setPublicAccessEnabled(account.getUuid(), true);
+    assertTrue(accountService.getPublicAccessEnabled(account.getUuid()));
+
+    accountService.setPublicAccessEnabled(account.getUuid(), false);
+    assertFalse(accountService.getPublicAccessEnabled(account.getUuid()));
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDisableCrossGenAccessWhenFFenabled() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("fernando@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .withIsCrossGenerationAccessEnabled(Boolean.TRUE)
+                          .build();
+    wingsPersistence.save(account);
+
+    when(featureFlagService.isEnabled(eq(FeatureName.CDS_DISABLE_FIRST_GEN_CD), any())).thenReturn(true);
+
+    assertThat(accountService.get(account.getUuid()).isCrossGenerationAccessEnabled()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testUpdateHarnessSupportAccess() {
+    Account account = saveAccount("Harness");
+    accountService.updateHarnessSupportAccess(account.getUuid(), true);
+    assertFalse(accountService.isHarnessSupportAccessDisabled(account.getUuid()));
+
+    accountService.updateHarnessSupportAccess(account.getUuid(), false);
+    assertTrue(accountService.isHarnessSupportAccessDisabled(account.getUuid()));
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDontChangeCrossGenAccessWhenFFdisabledAndPropTrue() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("fernando@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .withIsCrossGenerationAccessEnabled(Boolean.TRUE)
+                          .build();
+    wingsPersistence.save(account);
+
+    when(featureFlagService.isEnabled(eq(FeatureName.CDS_DISABLE_FIRST_GEN_CD), any())).thenReturn(false);
+
+    assertThat(accountService.get(account.getUuid()).isCrossGenerationAccessEnabled()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDontChangeCrossGenAccessWhenFFdisabledAndPropFalse() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("fernando@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .withIsCrossGenerationAccessEnabled(Boolean.FALSE)
+                          .build();
+    wingsPersistence.save(account);
+
+    when(featureFlagService.isEnabled(eq(FeatureName.CDS_DISABLE_FIRST_GEN_CD), any())).thenReturn(false);
+
+    assertThat(accountService.get(account.getUuid()).isCrossGenerationAccessEnabled()).isFalse();
   }
 }

@@ -6,10 +6,12 @@
  */
 
 package io.harness.dtos.deploymentinfo;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.k8s.model.HelmVersion;
@@ -18,11 +20,14 @@ import io.harness.util.InstanceSyncKey;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @Builder
@@ -34,6 +39,7 @@ public class NativeHelmDeploymentInfoDTO extends DeploymentInfoDTO {
   private HelmChartInfo helmChartInfo;
   @NotNull private HelmVersion helmVersion;
   @EqualsAndHashCode.Exclude private K8sCloudConfigMetadata cloudConfigMetadata;
+  private Map<String, List<String>> workloadLabelSelectors;
 
   @Override
   public String getType() {

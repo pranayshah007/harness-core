@@ -9,7 +9,7 @@ package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
@@ -29,9 +29,9 @@ import lombok.Data;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlImage {
   @NotNull
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlImageType")
-  protected STOYamlImageType type;
+  protected ParameterField<STOYamlImageType> type;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> domain;
 
@@ -44,4 +44,16 @@ public class STOYamlImage {
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> name;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> tag;
+
+  public STOYamlImageType getType() {
+    if (type == null) {
+      return null;
+    }
+    if (type.fetchFinalValue() instanceof String) {
+      String imageType = (String) type.fetchFinalValue();
+      return STOYamlImageType.getValue(imageType);
+    } else {
+      return (STOYamlImageType) type.fetchFinalValue();
+    }
+  }
 }

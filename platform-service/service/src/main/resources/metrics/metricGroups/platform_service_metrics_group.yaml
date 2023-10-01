@@ -1,0 +1,6 @@
+name: Platform Service Metrics Group
+identifier: PlatformServiceMetricsGroup
+labels:
+  - namespace
+  - containerName
+  - serviceName

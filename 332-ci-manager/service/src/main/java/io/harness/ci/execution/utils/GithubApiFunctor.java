@@ -5,14 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.utils;
+package io.harness.ci.execution.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.FunctorException;
 import io.harness.expression.functors.ExpressionFunctor;

@@ -13,16 +13,21 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.Instance;
 import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
+import com.amazonaws.services.autoscaling.model.Tag;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,6 +37,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDP)
 public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAutoScalingGroupRequest> {
   public interface OverrideProperties {
@@ -83,19 +89,20 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     String asgName = chainState.getAsgName();
     AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(asgName);
 
-    if (asgConfigurationManifestRequest.isUseAlreadyRunningInstances()) {
-      if (autoScalingGroup != null) {
-        Integer currentAsgMinSize = autoScalingGroup.getMinSize();
-        Integer currentAsgMaxSize = autoScalingGroup.getMaxSize();
-        Integer currentAsgDesiredCapacity = autoScalingGroup.getDesiredCapacity();
-        Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>() {
-          {
-            put(AsgConfigurationManifestHandler.OverrideProperties.minSize, currentAsgMinSize);
-            put(AsgConfigurationManifestHandler.OverrideProperties.maxSize, currentAsgMaxSize);
-            put(AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, currentAsgDesiredCapacity);
-          }
-        };
-        asgConfigurationManifestRequest.setOverrideProperties(asgConfigurationOverrideProperties);
+    AsgInstanceCapacity asgInstanceCapacity =
+        getRunningInstanceCapacity(autoScalingGroup, asgConfigurationManifestRequest);
+
+    if (asgConfigurationManifestRequest.isUseAlreadyRunningInstances()
+        && asgInstanceCapacity.getDesiredCapacity() != null && asgInstanceCapacity.getDesiredCapacity() > 0) {
+      Map<String, Object> capacityOverrideProperties = new HashMap<>();
+      capacityOverrideProperties.put(OverrideProperties.minSize, asgInstanceCapacity.getMinCapacity());
+      capacityOverrideProperties.put(OverrideProperties.maxSize, asgInstanceCapacity.getMaxCapacity());
+      capacityOverrideProperties.put(OverrideProperties.desiredCapacity, asgInstanceCapacity.getDesiredCapacity());
+
+      if (isNotEmpty(asgConfigurationManifestRequest.getOverrideProperties())) {
+        asgConfigurationManifestRequest.getOverrideProperties().putAll(capacityOverrideProperties);
+      } else {
+        asgConfigurationManifestRequest.setOverrideProperties(capacityOverrideProperties);
       }
     }
 
@@ -106,7 +113,7 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     }
 
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest = manifests.get(0);
-    createAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
+    prepareCreateAutoScalingGroupRequest(createAutoScalingGroupRequest, asgName);
 
     String operationName = format("Asg %s to reach steady state", asgName);
 
@@ -204,5 +211,40 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  AsgInstanceCapacity getRunningInstanceCapacity(
+      AutoScalingGroup autoScalingGroup, AsgConfigurationManifestRequest asgConfigurationManifestRequest) {
+    AsgInstanceCapacity asgInstanceCapacity = asgConfigurationManifestRequest.getAlreadyRunningInstanceCapacity();
+    // for Canary and Rolling alreadyRunningInstanceCapacity is NULL, for BG default is with null properties.
+    boolean isBGDeployment = asgInstanceCapacity != null;
+
+    if (!isBGDeployment) {
+      if (autoScalingGroup != null) {
+        return AsgInstanceCapacity.builder()
+            .minCapacity(autoScalingGroup.getMinSize())
+            .desiredCapacity(autoScalingGroup.getDesiredCapacity())
+            .maxCapacity(autoScalingGroup.getMaxSize())
+            .build();
+      }
+      return AsgInstanceCapacity.builder().build();
+    }
+
+    return asgInstanceCapacity;
+  }
+
+  void prepareCreateAutoScalingGroupRequest(CreateAutoScalingGroupRequest req, String asgName) {
+    req.setAutoScalingGroupName(asgName);
+    req.setLaunchTemplate(null);
+    req.setTags(prepareTags(req.getTags()));
+  }
+
+  List<Tag> prepareTags(Collection<Tag> tags) {
+    if (tags == null) {
+      return null;
+    }
+
+    // keep only key, value properties. For Base deploy resourceId also is provided that leads to error
+    return tags.stream().map(t -> new Tag().withKey(t.getKey()).withValue(t.getValue())).collect(Collectors.toList());
   }
 }

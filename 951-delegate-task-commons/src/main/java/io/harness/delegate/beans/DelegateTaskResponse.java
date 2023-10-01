@@ -6,8 +6,10 @@
  */
 
 package io.harness.delegate.beans;
-
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.SerializationFormat;
@@ -17,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)

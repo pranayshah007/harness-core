@@ -11,13 +11,14 @@ import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceVersion;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 
 import software.wings.beans.GraphNode;
 
 public abstract class HealthSourceGenerator {
-  public abstract HealthSourceSpec generateHealthSourceSpec(GraphNode graphNode);
+  public abstract HealthSourceSpec generateHealthSourceSpec(GraphNode graphNode, MigrationContext migrationContext);
 
   public abstract MonitoredServiceDataSourceType getDataSourceType(GraphNode graphNode);
 
@@ -25,12 +26,12 @@ public abstract class HealthSourceGenerator {
     return null;
   }
 
-  public HealthSource generateHealthSource(GraphNode graphNode) {
+  public HealthSource generateHealthSource(GraphNode graphNode, MigrationContext migrationContext) {
     return HealthSource.builder()
         .name(graphNode.getName())
         .identifier(MigratorUtility.generateIdentifier(graphNode.getName(), CaseFormat.LOWER_CASE))
         .type(getDataSourceType(graphNode))
-        .spec(generateHealthSourceSpec(graphNode))
+        .spec(generateHealthSourceSpec(graphNode, migrationContext))
         .version(getVersion())
         .build();
   }

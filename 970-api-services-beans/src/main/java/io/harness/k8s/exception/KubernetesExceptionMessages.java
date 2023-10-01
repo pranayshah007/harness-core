@@ -38,4 +38,6 @@ public class KubernetesExceptionMessages {
 
   public final String UNABLE_TO_FIND_FILE_IN_MANIFEST_DIRECTORY_FORMAT =
       "Unable to find file path %s in manifest directory";
+  public final String CUSTOM_REMOTE_MANIFEST_SIZE_LIMIT =
+      "Custom Manifest File at path %s exceeds allowed max size of 25Mb";
 }

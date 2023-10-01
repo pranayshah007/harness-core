@@ -97,6 +97,6 @@ public class TasValidationHandlerTest extends CategoryTest {
     ConnectorValidationParams connectorValidationParams =
         TasValidationParams.builder().tasConnectorDTO(tasConnectorDTO).build();
     assertThatThrownBy(() -> tasValidationHandler.validate(connectorValidationParams, accountIdentifier))
-        .hasMessage(null);
+        .isInstanceOf(NullPointerException.class);
   }
 }

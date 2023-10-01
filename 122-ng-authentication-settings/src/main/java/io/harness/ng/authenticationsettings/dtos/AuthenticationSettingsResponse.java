@@ -37,4 +37,6 @@ public class AuthenticationSettingsResponse {
   @Schema(
       description = "Any user of this account will be logged out if there is no activity for this number of minutes")
   Integer sessionTimeoutInMinutes;
+  @Schema(description = "If public access is enabled, this value is true. Otherwise, it is false.")
+  boolean publicAccessEnabled;
 }

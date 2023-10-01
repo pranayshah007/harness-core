@@ -10,6 +10,7 @@ package io.harness.accesscontrol.resources.resourcetypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -22,4 +23,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class ResourceType {
   @NotEmpty String identifier;
   @NotEmpty String permissionKey;
+
+  @JsonProperty("isPublic") boolean isPublic;
 }

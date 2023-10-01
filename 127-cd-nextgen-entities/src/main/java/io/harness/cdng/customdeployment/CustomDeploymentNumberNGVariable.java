@@ -12,7 +12,10 @@ import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.numberStringWithEmptyValue;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validator.NGRegexValidatorConstants;
@@ -32,6 +35,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @Data
 @Builder
 @NoArgsConstructor

@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.serverless;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.k8s.manifest.ManifestHelper.normalizeFolderPath;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -35,6 +37,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 public class ServerlessStepUtils extends CDStepHelper {
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
   private static final String SERVERLESS_YAML_REGEX = ".*serverless\\.yaml";

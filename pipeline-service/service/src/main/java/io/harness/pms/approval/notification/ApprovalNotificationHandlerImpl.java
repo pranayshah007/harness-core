@@ -226,7 +226,9 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     GraphLayoutNodeDTO node = layoutNodeMap.get(currentNodeId);
     if (node.getNodeGroup().matches(STAGE_IDENTIFIER)) {
       if (node.getStatus() == ExecutionStatus.NOTSTARTED) {
-        approvalSummary.getUpcomingStages().add(node.getName());
+        if (!isEmpty(node.getName())) {
+          approvalSummary.getUpcomingStages().add(node.getName());
+        }
       } else if (StatusUtils.finalStatuses().stream().anyMatch(
                      status -> ExecutionStatus.getExecutionStatus(status) == node.getStatus())) {
         approvalSummary.getFinishedStages().add(node.getName());
@@ -236,6 +238,13 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     }
 
     if (!isNull(node.getEdgeLayoutList()) && !isEmpty(node.getEdgeLayoutList().getNextIds())) {
+      if (!isEmpty(node.getEdgeLayoutList().getCurrentNodeChildren())) {
+        for (String nextNodeChildrenId : node.getEdgeLayoutList().getCurrentNodeChildren()) {
+          // iterating through stages which are set to run in parallel
+          traverseGraph(approvalSummary, layoutNodeMap, nextNodeChildrenId);
+        }
+      }
+
       for (String nextId : node.getEdgeLayoutList().getNextIds()) {
         traverseGraph(approvalSummary, layoutNodeMap, nextId);
       }

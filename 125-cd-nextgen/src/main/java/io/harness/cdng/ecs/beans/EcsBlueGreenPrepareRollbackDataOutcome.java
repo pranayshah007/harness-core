@@ -38,4 +38,11 @@ public class EcsBlueGreenPrepareRollbackDataOutcome implements Outcome, Executio
   String stageListenerArn;
   String stageListenerRuleArn;
   String stageTargetGroupArn;
+  String greenServiceName;
+  String greenServiceRequestBuilderString;
+  List<String> greenServiceScalableTargetRequestBuilderStrings;
+  List<String> greenServiceScalingPolicyRequestBuilderStrings;
+  boolean greenServiceExist;
+  boolean greenServiceRollbackDataExist;
+  EcsServiceDeployConfig ecsBGServiceDeployConfig;
 }

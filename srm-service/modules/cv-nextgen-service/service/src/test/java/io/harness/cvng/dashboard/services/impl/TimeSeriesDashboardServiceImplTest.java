@@ -9,6 +9,7 @@ package io.harness.cvng.dashboard.services.impl;
 
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
@@ -111,7 +112,7 @@ public class TimeSeriesDashboardServiceImplTest extends CvNextGenTestBase {
     Instant end = start.plus(5, ChronoUnit.MINUTES);
     String cvConfigId = generateUuid();
     when(timeSeriesRecordService.getTimeSeriesRecordsForConfigs(any(), any(), any(), anyBoolean()))
-        .thenReturn(getTimeSeriesRecords(cvConfigId, false));
+        .thenReturn(getTimeSeriesRecords(cvConfigId, false, false));
     List<String> cvConfigs = Arrays.asList(cvConfigId);
     AppDynamicsCVConfig cvConfig = new AppDynamicsCVConfig();
     cvConfig.setUuid(cvConfigId);
@@ -124,6 +125,35 @@ public class TimeSeriesDashboardServiceImplTest extends CvNextGenTestBase {
     verify(cvConfigService).list(monitoredServiceParams);
     assertThat(response).isNotNull();
     assertThat(response.getContent()).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testGetSortedMetricData_customerDefinedUnhealthy() throws Exception {
+    Instant start = Instant.parse("2020-07-07T02:40:00.000Z");
+    Instant end = start.plus(5, ChronoUnit.MINUTES);
+    String cvConfigId = generateUuid();
+    when(timeSeriesRecordService.getTimeSeriesRecordsForConfigs(any(), any(), any(), anyBoolean()))
+        .thenReturn(getTimeSeriesRecords(cvConfigId, false, true));
+    List<String> cvConfigs = Arrays.asList(cvConfigId);
+    AppDynamicsCVConfig cvConfig = new AppDynamicsCVConfig();
+    cvConfig.setUuid(cvConfigId);
+    when(cvConfigService.list(monitoredServiceParams)).thenReturn(Arrays.asList(cvConfig));
+
+    PageResponse<TimeSeriesMetricDataDTO> response = timeSeriesDashboardService.getTimeSeriesMetricData(
+        monitoredServiceParams, TimeRangeParams.builder().startTime(start).endTime(end).build(),
+        TimeSeriesAnalysisFilter.builder().build(), PageParams.builder().page(0).size(10).build());
+
+    verify(cvConfigService).list(monitoredServiceParams);
+    assertThat(response).isNotNull();
+    assertThat(response.getContent()).isNotEmpty();
+    response.getContent().forEach(timeSeriesMetricDataDTO
+        -> assertThat(timeSeriesMetricDataDTO.getMetricDataList()
+                          .stream()
+                          .filter(metricData -> metricData.getRisk().equals(Risk.CUSTOMER_DEFINED_UNHEALTHY))
+                          .count())
+               .isEqualTo(1));
   }
 
   @Test
@@ -232,7 +262,7 @@ public class TimeSeriesDashboardServiceImplTest extends CvNextGenTestBase {
 
     String cvConfigId = generateUuid();
     when(timeSeriesRecordService.getTimeSeriesRecordsForConfigs(any(), any(), any(), anyBoolean()))
-        .thenReturn(getTimeSeriesRecords(cvConfigId, true));
+        .thenReturn(getTimeSeriesRecords(cvConfigId, true, false));
     AppDynamicsCVConfig cvConfig = new AppDynamicsCVConfig();
     cvConfig.setUuid(cvConfigId);
     List<String> healthSourceIdentifiers = Arrays.asList(cvConfig.getIdentifier());
@@ -283,7 +313,7 @@ public class TimeSeriesDashboardServiceImplTest extends CvNextGenTestBase {
 
     String cvConfigId = generateUuid();
     when(timeSeriesRecordService.getTimeSeriesRecordsForConfigs(any(), any(), any(), anyBoolean()))
-        .thenReturn(getTimeSeriesRecords(cvConfigId, true));
+        .thenReturn(getTimeSeriesRecords(cvConfigId, true, false));
     AppDynamicsCVConfig cvConfig = new AppDynamicsCVConfig();
     cvConfig.setUuid(cvConfigId);
     List<String> healthSourceIdentifiers = Arrays.asList(cvConfig.getIdentifier());
@@ -503,7 +533,7 @@ public class TimeSeriesDashboardServiceImplTest extends CvNextGenTestBase {
 
     String cvConfigId = generateUuid();
     when(timeSeriesRecordService.getTimeSeriesRecordsForConfigs(any(), any(), any(), anyBoolean()))
-        .thenReturn(getTimeSeriesRecords(cvConfigId, true));
+        .thenReturn(getTimeSeriesRecords(cvConfigId, true, false));
     AppDynamicsCVConfig cvConfig = new AppDynamicsCVConfig();
     cvConfig.setUuid(cvConfigId);
     List<String> healthSourceIdentifiers = Arrays.asList(cvConfig.getIdentifier());
@@ -533,7 +563,8 @@ public class TimeSeriesDashboardServiceImplTest extends CvNextGenTestBase {
     });
   }
 
-  private List<TimeSeriesRecord> getTimeSeriesRecords(String cvConfigId, boolean anomalousOnly) throws Exception {
+  private List<TimeSeriesRecord> getTimeSeriesRecords(
+      String cvConfigId, boolean anomalousOnly, boolean customerDefinedUnhealthy) throws Exception {
     File file = new File(getResourceFilePath("timeseries/timeseriesRecords.json"));
     final Gson gson = new Gson();
     try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -554,6 +585,8 @@ public class TimeSeriesDashboardServiceImplTest extends CvNextGenTestBase {
           groupVal.setTimeStamp(baseTime.plus(random.nextInt(4), ChronoUnit.MINUTES));
           if (anomalousOnly) {
             groupVal.setRiskScore(2);
+          } else if (customerDefinedUnhealthy) {
+            groupVal.setRiskScore(4);
           }
         });
       });

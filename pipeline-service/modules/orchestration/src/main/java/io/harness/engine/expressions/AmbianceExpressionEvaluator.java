@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.expressions;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -43,12 +45,13 @@ import io.harness.expression.functors.NGJsonFunctor;
 import io.harness.expression.functors.NGShellScriptFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionEvaluatorResolver;
 import io.harness.pms.expression.ProcessorResult;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField;
 import io.harness.pms.yaml.ParameterDocumentFieldMapper;
-import io.harness.pms.yaml.ParameterFieldProcessor;
+import io.harness.pms.yaml.ParameterDocumentFieldProcessor;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.shell.ScriptType;
 import io.harness.utils.PmsFeatureFlagService;
@@ -79,6 +82,9 @@ import org.hibernate.validator.constraints.NotEmpty;
  * ExpressionEvaluatorProvider} to be provided when adding a dependency on {@link io.harness.OrchestrationModule}. For a
  * sample implementation, look at SampleExpressionEvaluator.java and SampleExpressionEvaluatorProvider.java.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Getter
 @Slf4j
@@ -173,6 +179,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
             .pmsSweepingOutputService(pmsSweepingOutputService)
             .ambiance(ambiance)
             .entityTypes(entityTypes)
+            .engine(getEngine())
             .build());
     // Access StepParameters and Outcomes of ancestors.
     addToContext("ancestor",
@@ -183,6 +190,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
             .ambiance(ambiance)
             .entityTypes(entityTypes)
             .groupAliases(groupAliases)
+            .engine(getEngine())
             .build());
     // Access StepParameters and Outcomes using fully qualified names.
     addToContext("qualified",
@@ -192,6 +200,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
             .pmsSweepingOutputService(pmsSweepingOutputService)
             .ambiance(ambiance)
             .entityTypes(entityTypes)
+            .engine(getEngine())
             .build());
   }
 
@@ -241,13 +250,13 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   }
 
   public static class AmbianceResolveFunctorImpl extends ResolveFunctorImpl {
-    private final ParameterFieldProcessor parameterFieldProcessor;
+    private final ParameterDocumentFieldProcessor parameterDocumentFieldProcessor;
 
     public AmbianceResolveFunctorImpl(AmbianceExpressionEvaluator expressionEvaluator,
         InputSetValidatorFactory inputSetValidatorFactory, ExpressionMode expressionMode) {
       super(expressionEvaluator, expressionMode);
-      this.parameterFieldProcessor =
-          new ParameterFieldProcessor(getExpressionEvaluator(), inputSetValidatorFactory, expressionMode);
+      this.parameterDocumentFieldProcessor = new ParameterDocumentFieldProcessor(
+          new EngineExpressionEvaluatorResolver(getExpressionEvaluator()), inputSetValidatorFactory, expressionMode);
     }
 
     @Override
@@ -266,7 +275,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     }
 
     private void processObjectInternal(ParameterDocumentField documentField) {
-      ProcessorResult processorResult = parameterFieldProcessor.process(documentField);
+      ProcessorResult processorResult = parameterDocumentFieldProcessor.process(documentField);
       if (processorResult.isError()) {
         throw new EngineExpressionEvaluationException(processorResult.getMessage(), processorResult.getExpression());
       }

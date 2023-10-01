@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage.V1;
+package io.harness.ci.execution.integrationstage.V1;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.yaml.extended.ci.codebase.Build.builder;
@@ -31,15 +31,15 @@ import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
 import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.utils.WebhookTriggerProcessorUtils;
 import io.harness.ci.states.codebase.ScmGitRefManager;
-import io.harness.ci.utils.WebhookTriggerProcessorUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -162,12 +162,7 @@ public class CIPlanCreatorUtils {
   }
 
   public Optional<Object> getDeserializedObjectFromDependency(Dependency dependency, String key) {
-    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey(key)) {
-      return Optional.empty();
-    }
-    byte[] bytes = dependency.getMetadataMap().get(key).toByteArray();
-    return EmptyPredicate.isEmpty(bytes) ? Optional.empty() : Optional.of(kryoSerializer.asObject(bytes));
+    return PlanCreatorUtilsV1.getDeserializedObjectFromDependency(dependency, kryoSerializer, key, false);
   }
 
   public static List<YamlField> getStepYamlFields(YamlField yamlField) {

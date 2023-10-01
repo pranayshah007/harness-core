@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.data.structure.MongoMapSanitizer;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -90,6 +91,7 @@ public class AzureRecommendation
   String connectorId;
   String connectorName;
   CCMJiraDetails jiraDetails;
+  CCMServiceNowDetails serviceNowDetails;
   @JsonIgnore
   @EqualsAndHashCode.Exclude
   @Builder.Default

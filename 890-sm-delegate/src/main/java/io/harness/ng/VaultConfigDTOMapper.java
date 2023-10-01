@@ -103,7 +103,8 @@ public class VaultConfigDTOMapper {
                                               .vaultK8sAuthRole(vaultConnectorDTO.getVaultK8sAuthRole())
                                               .serviceAccountTokenPath(vaultConnectorDTO.getServiceAccountTokenPath())
                                               .k8sAuthEndpoint(vaultConnectorDTO.getK8sAuthEndpoint())
-                                              .renewAppRoleToken(vaultConnectorDTO.isRenewAppRoleToken());
+                                              .renewAppRoleToken(vaultConnectorDTO.isRenewAppRoleToken())
+                                              .enableCache(vaultConnectorDTO.isEnableCache());
 
     if (null != vaultConnectorDTO.getHeaderAwsIam()
         && null != vaultConnectorDTO.getHeaderAwsIam().getDecryptedValue()) {

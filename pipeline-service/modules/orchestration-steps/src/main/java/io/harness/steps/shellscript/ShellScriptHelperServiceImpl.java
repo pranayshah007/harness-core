@@ -6,17 +6,27 @@
  */
 
 package io.harness.steps.shellscript;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.task.shell.winrm.WinRmCommandConstants.SESSION_TIMEOUT;
+import static io.harness.steps.shellscript.ShellScriptBaseSource.HARNESS;
+import static io.harness.steps.shellscript.ShellScriptBaseSource.INLINE;
 
 import static java.lang.Boolean.parseBoolean;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
+import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.common.VariablesSweepingOutput;
+import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -24,25 +34,35 @@ import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskParametersNG.WinRmShellScriptTaskParametersNGBuilder;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.filestore.remote.FileStoreClient;
 import io.harness.k8s.K8sConstants;
+import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
+import io.harness.ng.core.utils.URLDecoderUtility;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.expression.EngineExpressionServiceResolver;
+import io.harness.pms.expression.ParameterFieldResolverFunctor;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
@@ -53,6 +73,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
@@ -65,12 +86,18 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 @Slf4j
 public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
+  static final String FILE_STORE_SCRIPT_ERROR_MSG = "Script from Harness File Store cannot be empty, file: %s";
+  static final String NULL_STRING = "null";
+
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretManagerClient;
   @Inject private SshKeySpecDTOHelper sshKeySpecDTOHelper;
@@ -80,6 +107,11 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   @Inject private NGSettingsClient settingsClient;
 
   @Inject private EngineExpressionService engineExpressionService;
+  @Inject private InputSetValidatorFactory inputSetValidatorFactory;
+
+  @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
+
+  @Inject private FileStoreClient fileStoreClient;
 
   @Override
   public Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables, Ambiance ambiance) {
@@ -173,8 +205,9 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   }
 
   @Override
-  public K8sInfraDelegateConfig getK8sInfraDelegateConfig(@Nonnull Ambiance ambiance, @Nonnull String shellScript) {
-    if (shellScript.contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)) {
+  public K8sInfraDelegateConfig getK8sInfraDelegateConfig(
+      @Nonnull Ambiance ambiance, @Nonnull String shellScript, Boolean includeInfraSelectors) {
+    if (BooleanUtils.isTrue(includeInfraSelectors) || shellScript.contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)) {
       OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
           RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
       if (optionalSweepingOutput.isFound()) {
@@ -218,9 +251,59 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   }
 
   @Override
-  public String getShellScript(@Nonnull ShellScriptStepParameters stepParameters) {
-    ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) stepParameters.getSource().getSpec();
-    return (String) shellScriptInlineSource.getScript().fetchFinalValue();
+  public String getShellScript(@Nonnull ShellScriptStepParameters stepParameters, Ambiance ambiance) {
+    ShellScriptSourceWrapper shellScriptSourceWrapper = stepParameters.getSource();
+
+    if (INLINE.equals(shellScriptSourceWrapper.getType())) {
+      ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) shellScriptSourceWrapper.getSpec();
+      return (String) shellScriptInlineSource.getScript().fetchFinalValue();
+    } else if (HARNESS.equals(shellScriptSourceWrapper.getType())) {
+      return getShellFileScript(shellScriptSourceWrapper, ambiance);
+    } else {
+      throw new InvalidRequestException("Unsupported source type: " + shellScriptSourceWrapper.getType());
+    }
+  }
+
+  private String getShellFileScript(ShellScriptSourceWrapper shellScriptSourceWrapper, Ambiance ambiance) {
+    if (pmsFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_ENABLE_SHELL_SCRITPT_FILE_REFERENCE)) {
+      HarnessFileStoreSource spec =
+          (HarnessFileStoreSource) updateExpressions(ambiance, shellScriptSourceWrapper.getSpec());
+      String scopedFilePath = spec.getFile().getValue();
+      String script =
+          getContent(FileReference.of(scopedFilePath, AmbianceUtils.getAccountId(ambiance),
+                         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)),
+              scopedFilePath);
+
+      if (isEmpty(script)) {
+        throw new InvalidRequestException(format(FILE_STORE_SCRIPT_ERROR_MSG, scopedFilePath));
+      }
+
+      return engineExpressionService.renderExpression(ambiance, script);
+    } else {
+      throw new InvalidRequestException(
+          format("FF `%s` not enabled", FeatureName.CDS_ENABLE_SHELL_SCRITPT_FILE_REFERENCE));
+    }
+  }
+
+  public String getContent(FileReference fileReference, String scopedFilePath) {
+    scopedFilePath = URLDecoderUtility.getEncodedString(scopedFilePath);
+    try {
+      ResponseDTO<String> ret = SafeHttpCall.executeWithExceptions(
+          fileStoreClient.getContent(scopedFilePath, fileReference.getAccountIdentifier(),
+              fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier()));
+      return ret.getData();
+    } catch (Exception exception) {
+      String msg = format("Failed to get File content from `%s`, error: %s", scopedFilePath, exception);
+      log.error(msg);
+      throw new InvalidRequestException(msg);
+    }
+  }
+
+  public Object updateExpressions(Ambiance ambiance, Object obj) {
+    return ExpressionEvaluatorUtils.updateExpressions(obj,
+        new ParameterFieldResolverFunctor(new EngineExpressionServiceResolver(engineExpressionService, ambiance),
+            inputSetValidatorFactory, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
   }
 
   @Override
@@ -251,28 +334,52 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
 
   @Override
   public TaskParameters buildShellScriptTaskParametersNG(
-      @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters) {
+      @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters, String sessionTimeout) {
     SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
     ScriptType scriptType = shellScriptStepParameters.getShell().getScriptType();
-    String shellScript = shellScriptHelperService.getShellScript(shellScriptStepParameters);
+    String shellScript = shellScriptHelperService.getShellScript(shellScriptStepParameters, ambiance);
     ParameterField<String> workingDirectory = (shellScriptStepParameters.getExecutionTarget() != null)
         ? shellScriptStepParameters.getExecutionTarget().getWorkingDirectory()
         : ParameterField.ofNull();
-
+    validateExportVariables(shellScriptStepParameters.getOutputAlias());
     if (ScriptType.BASH.equals(scriptType)) {
       return buildBashTaskParametersNG(ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory);
     } else {
-      return getWinRmTaskParametersNG(ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory);
+      return getWinRmTaskParametersNG(
+          ambiance, shellScriptStepParameters, scriptType, shellScript, workingDirectory, sessionTimeout);
     }
+  }
+
+  private void validateExportVariables(OutputAlias exportVariables) {
+    if (isNull(exportVariables)) {
+      return;
+    }
+
+    ParameterField<String> alias = exportVariables.getKey();
+    if (ParameterField.isBlank(alias)) {
+      throw new InvalidRequestException("Empty value for key is not allowed in output alias configuration");
+    }
+    if (NULL_STRING.equals(alias.fetchFinalValue())) {
+      throw new InvalidRequestException("Expression provided for key in output alias configuration was not resolved");
+    }
+  }
+
+  @Override
+  public TaskParameters buildShellScriptTaskParametersNG(
+      @NotNull Ambiance ambiance, @NotNull ShellScriptStepParameters shellScriptStepParameters) {
+    return buildShellScriptTaskParametersNG(ambiance, shellScriptStepParameters, null);
   }
 
   private WinRmShellScriptTaskParametersNG getWinRmTaskParametersNG(@NotNull Ambiance ambiance,
       @NotNull ShellScriptStepParameters shellScriptStepParameters, ScriptType scriptType, String shellScript,
-      ParameterField<String> workingDirectory) {
+      ParameterField<String> workingDirectory, String sessionTimeout) {
     WinRmShellScriptTaskParametersNGBuilder taskParametersNGBuilder = WinRmShellScriptTaskParametersNG.builder();
 
+    Boolean includeInfraSelectors = shellScriptStepParameters.includeInfraSelectors != null
+        && BooleanUtils.isTrue(shellScriptStepParameters.includeInfraSelectors.getValue());
+
     taskParametersNGBuilder.k8sInfraDelegateConfig(
-        shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript));
+        shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript, includeInfraSelectors));
 
     if (!shellScriptStepParameters.onDelegate.getValue()) {
       ExecutionTarget executionTarget = shellScriptStepParameters.getExecutionTarget();
@@ -292,7 +399,9 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .disableCommandEncoding(pmsFeatureFlagService.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
         .winrmScriptCommandSplit(pmsFeatureFlagService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG));
+            AmbianceUtils.getAccountId(ambiance), FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG))
+        .disableWinRmEnvVarEscaping(pmsFeatureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS));
 
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(shellScriptStepParameters.onDelegate.getValue())
@@ -307,6 +416,9 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .scriptType(scriptType)
         .workingDirectory(shellScriptHelperService.getWorkingDirectory(
             workingDirectory, scriptType, shellScriptStepParameters.onDelegate.getValue()))
+        .sessionTimeout(EmptyPredicate.isNotEmpty(sessionTimeout)
+                ? Math.max(NGTimeConversionHelper.convertTimeStringToMilliseconds(sessionTimeout), SESSION_TIMEOUT)
+                : SESSION_TIMEOUT)
         .build();
   }
 
@@ -315,8 +427,11 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
       ParameterField<String> workingDirectory) {
     ShellScriptTaskParametersNGBuilder taskParametersNGBuilder = ShellScriptTaskParametersNG.builder();
 
+    Boolean includeInfraSelectors = shellScriptStepParameters.includeInfraSelectors != null
+        && BooleanUtils.isTrue(shellScriptStepParameters.includeInfraSelectors.getValue());
+
     taskParametersNGBuilder.k8sInfraDelegateConfig(
-        shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript));
+        shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript, includeInfraSelectors));
     shellScriptHelperService.prepareTaskParametersForExecutionTarget(
         ambiance, shellScriptStepParameters, taskParametersNGBuilder);
     return taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
@@ -390,5 +505,35 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
       }
     });
     return outputVars;
+  }
+
+  @Override
+  public void exportOutputVariablesUsingAlias(@Nonnull Ambiance ambiance,
+      @Nonnull ShellScriptStepParameters shellScriptStepParameters, @Nonnull ShellScriptOutcome shellScriptOutcome) {
+    if (isNull(shellScriptStepParameters.getOutputAlias())
+        || EmptyPredicate.isEmpty(shellScriptOutcome.getOutputVariables())) {
+      log.debug("Skipping exporting output variables as output alias not present or output variables are empty");
+      return;
+    }
+    String userAlias = (String) shellScriptStepParameters.getOutputAlias().getKey().fetchFinalValue();
+    String uuid = OutputAliasUtils.generateSweepingOutputKeyUsingUserAlias(userAlias, ambiance);
+    try {
+      executionSweepingOutputService.consume(ambiance, uuid,
+          OutputAliasSweepingOutput.builder().outputVariables(shellScriptOutcome.getOutputVariables()).build(),
+          shellScriptStepParameters.getOutputAlias().getScope().toStepOutcomeGroup());
+    } catch (Exception ex) {
+      if (OutputAliasUtils.isDuplicateKeyException(ex)) {
+        log.warn("Error while publishing outputAlias due to the output already saved for the key [{}:{}] for scope {}",
+            userAlias, uuid, shellScriptStepParameters.getOutputAlias().getScope(), ex);
+        throw new InvalidRequestException(String.format(
+            "Output alias with key %s, already saved in %s scope. Please ensure that there are no duplicate output alias keys within the same scope",
+            userAlias, shellScriptStepParameters.getOutputAlias().getScope()));
+      }
+      log.warn("Error while publishing outputAlias for the key [{}:{}] for scope {}", userAlias, uuid,
+          shellScriptStepParameters.getOutputAlias().getScope(), ex);
+      throw new InternalServerErrorException(
+          String.format("Error while publishing outputAlias for the key %s for scope %s: %s", userAlias,
+              shellScriptStepParameters.getOutputAlias().getScope(), ExceptionUtils.getMessage(ex)));
+    }
   }
 }

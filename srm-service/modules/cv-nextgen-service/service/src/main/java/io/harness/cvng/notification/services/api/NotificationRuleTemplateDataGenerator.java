@@ -13,10 +13,13 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.COLOR
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.HEADER_MESSAGE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.MODULE_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ORG_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PROJECT_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLOS_FOR_MONITORED_SERVICE_URL_FORMAT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_URL;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.START_DATE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.START_TS_SECS;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.THEME_COLOR;
@@ -97,6 +100,8 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
         put(START_TS_SECS, String.valueOf(startTime));
         put(START_DATE, startDate);
         put(URL, getUrl(baseUrl, projectParams, entityDetails.getOrDefault(ENTITY_IDENTIFIER, "").toString(), endTime));
+        put(SLO_URL,
+            getSLOUrl(baseUrl, projectParams, entityDetails.getOrDefault(ENTITY_IDENTIFIER, "").toString(), endTime));
         put(getEntityName(), entityDetails.getOrDefault(ENTITY_NAME, "").toString());
         put(HEADER_MESSAGE, getHeaderMessage(notificationDataMap));
         put(TRIGGER_MESSAGE, getTriggerMessage(condition));
@@ -109,6 +114,12 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
 
   protected abstract String getEntityName();
   protected abstract String getUrl(String baseUrl, ProjectParams projectParams, String identifier, Long endTime);
+
+  public String getSLOUrl(String baseUrl, ProjectParams projectParams, String identifier, Long endTime) {
+    return String.format(SLOS_FOR_MONITORED_SERVICE_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(),
+        MODULE_NAME, projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), identifier, endTime);
+  }
+
   protected abstract String getHeaderMessage(Map<String, String> notificationDataMap);
   protected abstract String getTriggerMessage(T condition);
   protected abstract String getAnomalousMetrics(

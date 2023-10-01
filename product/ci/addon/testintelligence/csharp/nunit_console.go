@@ -47,6 +47,10 @@ func (b *nunitConsoleRunner) AutoDetectTests(ctx context.Context, testGlobs []st
 	return GetCsharpTests(testGlobs)
 }
 
+func (b *nunitConsoleRunner) ReadPackages(files []types.File) []types.File {
+	return files
+}
+
 func (b *nunitConsoleRunner) GetCmd(_ context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	/*
 		i) Get the DLL list from the command (assume it runs at the root of the repository)

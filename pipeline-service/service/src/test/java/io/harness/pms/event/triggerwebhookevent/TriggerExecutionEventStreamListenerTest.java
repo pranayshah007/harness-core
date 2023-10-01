@@ -12,8 +12,8 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -22,11 +22,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.pms.contracts.interrupts.InterruptEvent;
-import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.eventsframework.webhookpayloads.webhookdata.EventHeader;
+import io.harness.eventsframework.webhookpayloads.webhookdata.TriggerExecutionDTO;
+import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookEventExecutionService;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,16 +51,29 @@ public class TriggerExecutionEventStreamListenerTest extends CategoryTest {
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testHandleMessage() {
-    assertTrue(triggerExecutionEventStreamListener.handleMessage(Message.newBuilder().build()));
-    Message message =
-        Message.newBuilder()
-            .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
-                            .putMetadata(ENTITY_TYPE, PIPELINE_ENTITY)
-                            .putMetadata(ACTION, DELETE_ACTION)
-                            .setData(InterruptEvent.newBuilder().setType(InterruptType.ABORT).build().toByteString())
-                            .build())
+    TriggerExecutionDTO triggerExecutionDTO =
+        TriggerExecutionDTO.newBuilder()
+            .setAccountId("accId")
+            .setOrgIdentifier("orgId")
+            .setProjectIdentifier("projId")
+            .setTriggerIdentifier("triggerId")
+            .setTargetIdentifier("pipId")
+            .setWebhookDto(WebhookDTO.newBuilder()
+                               .addHeaders(EventHeader.newBuilder().setKey("key1").addValues("value1").build())
+                               .build())
             .build();
-    triggerExecutionEventStreamListener.handleMessage(message);
-    verify(triggerWebhookEventExecutionService, times(1)).processEvent(any());
+
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ENTITY_TYPE, PIPELINE_ENTITY);
+    metadata.put(ACTION, DELETE_ACTION);
+    Message message = Message.newBuilder()
+                          .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
+                                          .putAllMetadata(metadata)
+                                          .setData(triggerExecutionDTO.toByteString())
+                                          .build())
+                          .build();
+    triggerExecutionEventStreamListener.handleMessage(message, System.currentTimeMillis());
+    verify(triggerWebhookEventExecutionService, times(1))
+        .handleEvent(eq(triggerExecutionDTO), eq(metadata), anyLong(), anyLong());
   }
 }

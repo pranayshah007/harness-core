@@ -37,7 +37,6 @@ import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -49,6 +48,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -72,18 +72,18 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, StepInputPackage inputPackage) {
     K8sApplyStepParameters k8sApplyStepParameters = (K8sApplyStepParameters) stepElementParameters.getSpec();
     if (isNotEmpty(k8sApplyStepParameters.getOverrides())) {
       k8sStepHelper.resolveManifestsConfigExpressions(ambiance, k8sApplyStepParameters.getOverrides());
@@ -120,14 +120,14 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
 
   @Override
   public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     return k8sStepHelper.executeNextLink(this, ambiance, stepElementParameters, passThroughData, responseSupplier);
   }
 
   @Override
   public TaskChainResponse executeK8sTask(ManifestOutcome k8sManifestOutcome, Ambiance ambiance,
-      StepElementParameters stepElementParameters, List<String> manifestOverrideContents,
+      StepBaseParameters stepElementParameters, List<String> manifestOverrideContents,
       K8sExecutionPassThroughData executionPassThroughData, boolean shouldOpenFetchFilesLogStream,
       UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
@@ -170,7 +170,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
     }
 
     Map<String, String> k8sCommandFlag =
-        k8sStepHelper.getDelegateK8sCommandFlag(k8sApplyStepParameters.getCommandFlags());
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sApplyStepParameters.getCommandFlags(), ambiance);
     applyRequestBuilder.k8sCommandFlags(k8sCommandFlag);
 
     K8sApplyRequest k8sApplyRequest = applyRequestBuilder.build();
@@ -180,9 +180,8 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
-      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepBaseParameters stepElementParameters,
+      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof CustomFetchResponsePassThroughData) {
       return k8sStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
     }

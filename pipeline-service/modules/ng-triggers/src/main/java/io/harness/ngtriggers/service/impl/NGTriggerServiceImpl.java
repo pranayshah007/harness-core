@@ -31,13 +31,17 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.common.NGExpressionUtils;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.PollingResponseDTO;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFieldException;
@@ -46,11 +50,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.exception.ngexception.NGPipelineNotFoundException;
-import io.harness.expression.common.ExpressionConstants;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.network.SafeHttpCall;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -154,8 +158,10 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.util.CollectionUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -166,7 +172,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public static final int WEBHOOOk_POLLING_MIN_INTERVAL = 2;
   public static final int WEBHOOOk_POLLING_MAX_INTERVAL = 60;
   private static final long MIN_INTERVAL_MINUTES = 5;
-
+  private static final long MAX_DISABLE_BATCH_SIZE = 50;
   private final AccessControlClient accessControlClient;
   private final NGSettingsClient settingsClient;
   private final NGTriggerRepository ngTriggerRepository;
@@ -228,11 +234,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void checkForAccessForHarnessScm(NGTriggerEntity ngTriggerEntity) {
+  @VisibleForTesting
+  void checkForAccessForHarnessScm(NGTriggerEntity ngTriggerEntity) {
     if (ngTriggerEntity.getMetadata().getWebhook() != null
         && ngTriggerEntity.getMetadata().getWebhook().getGit() != null
         && Boolean.TRUE.equals(ngTriggerEntity.getMetadata().getWebhook().getGit().getIsHarnessScm())) {
-      // todo(abhinav): check what reponame is used
+      // todo(abhinav): if org level repos come we will need to change here to extract right repo name
       String repoName = ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName();
       String repositoryAccessControlResourceName = "REPOSITORY";
       String repositoryAccessControlPerms = "code_repo_edit";
@@ -315,7 +322,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
               ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
           updatePollingRegistrationStatus(
-              ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.SUCCESS);
+              ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.PENDING);
         }
       }
     } catch (Exception exception) {
@@ -347,7 +354,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
       if (shouldSubscribe) {
         List<PollingDocument> pollingDocuments = subscribePollingV2(ngTriggerEntity, pollingItems);
-        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.SUCCESS);
+        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.PENDING);
       } else if (unsubscribeSuccess) {
         // no subscription done, check if unsubscription worked.
         updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
@@ -452,7 +459,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments, StatusResult statusResult) {
     // change pollingDocId only if request was successful. Else, we dont know what happened.
     // In next trigger upsert, we will try again
-    if (statusResult == StatusResult.SUCCESS) {
+    if (statusResult == StatusResult.SUCCESS || statusResult == StatusResult.PENDING) {
       if (ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
         stampPollingInfoForMultiArtifactTrigger(ngTriggerEntity, pollingDocuments);
       } else {
@@ -551,6 +558,47 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     return updatedTriggerEntity;
   }
 
+  @Override
+  public TriggerUpdateCount disableTriggers(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId).is(accountIdentifier);
+    if (isNotEmpty(orgIdentifier)) {
+      criteria.and(NGTriggerEntityKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      criteria.and(NGTriggerEntityKeys.projectIdentifier).is(projectIdentifier);
+    }
+    criteria.and(NGTriggerEntityKeys.deleted).is(false);
+    CloseableIterator<NGTriggerEntity> iterator = ngTriggerRepository.findAll(criteria);
+    List<NGTriggerEntity> toBeDisabledTriggers = new ArrayList<>();
+    long successfullyUpdated = 0;
+    long failedToUpdate = 0;
+    while (iterator.hasNext()) {
+      NGTriggerEntity ngTriggerEntity = iterator.next();
+      ngTriggerEntity.setEnabled(false);
+      ngTriggerElementMapper.updateEntityYmlWithEnabledValue(ngTriggerEntity);
+      toBeDisabledTriggers.add(ngTriggerEntity);
+
+      if (toBeDisabledTriggers.size() >= MAX_DISABLE_BATCH_SIZE) {
+        TriggerUpdateCount triggerUpdateCount = ngTriggerRepository.updateTriggerEnabled(toBeDisabledTriggers);
+        successfullyUpdated = successfullyUpdated + triggerUpdateCount.getSuccessCount();
+        failedToUpdate = failedToUpdate + triggerUpdateCount.getFailureCount();
+        toBeDisabledTriggers.clear();
+      }
+    }
+    if (EmptyPredicate.isNotEmpty(toBeDisabledTriggers)) {
+      TriggerUpdateCount triggerUpdateCount = ngTriggerRepository.updateTriggerEnabled(toBeDisabledTriggers);
+      successfullyUpdated = successfullyUpdated + triggerUpdateCount.getSuccessCount();
+      failedToUpdate = failedToUpdate + triggerUpdateCount.getFailureCount();
+    }
+
+    TriggerUpdateCount triggerUpdateCount =
+        TriggerUpdateCount.builder().successCount(successfullyUpdated).failureCount(failedToUpdate).build();
+    log.info("Successfully disabled {} and failed to disable {} triggers in account {}, org {}, project {}",
+        triggerUpdateCount.getSuccessCount(), triggerUpdateCount.getFailureCount(), accountIdentifier, orgIdentifier,
+        projectIdentifier);
+    return triggerUpdateCount;
+  }
+
   @NotNull
   private NGTriggerEntity updateTriggerEntity(NGTriggerEntity ngTriggerEntity, Criteria criteria) {
     NGTriggerEntity updatedEntity = ngTriggerRepository.update(criteria, ngTriggerEntity);
@@ -574,6 +622,16 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       throw new InvalidRequestException(
           String.format("NGTrigger [%s] couldn't be updated or doesn't exist", ngTriggerEntity.getIdentifier()));
     }
+  }
+
+  @Override
+  public boolean updateTriggerPollingStatus(String accountId, PollingTriggerStatusUpdateDTO statusUpdate) {
+    if (isEmpty(statusUpdate.getSignatures())) {
+      throw new InvalidRequestException("Empty signatures list provided for trigger polling status update");
+    }
+    return ngTriggerRepository.updateManyTriggerPollingSubscriptionStatusBySignatures(accountId,
+        statusUpdate.getSignatures(), statusUpdate.isSuccess(), statusUpdate.getErrorMessage(),
+        statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime());
   }
 
   @Override
@@ -1224,12 +1282,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     return TriggerDetails.builder().ngTriggerConfigV2(config).ngTriggerEntity(entity).build();
-  }
-
-  @VisibleForTesting
-  public boolean isBranchExpr(String pipelineBranch) {
-    return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
-        && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
   }
 
   public Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId) {

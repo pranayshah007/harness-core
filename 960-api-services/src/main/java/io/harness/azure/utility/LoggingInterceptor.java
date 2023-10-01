@@ -6,9 +6,11 @@
  */
 
 package io.harness.azure.utility;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class LoggingInterceptor implements Interceptor {

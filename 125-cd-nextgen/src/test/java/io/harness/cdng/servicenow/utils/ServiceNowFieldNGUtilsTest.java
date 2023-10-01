@@ -54,6 +54,7 @@ public class ServiceNowFieldNGUtilsTest extends CategoryTest {
     assertThat(serviceNowFieldNG.getName()).isEqualTo("Priority");
     assertThat(serviceNowFieldNG.getAllowedValues()).hasSize(6);
     assertThat(serviceNowFieldNG.getSchema().isArray()).isTrue();
+    assertThat(serviceNowFieldNG.isReadOnly()).isFalse();
     assertThat(serviceNowFieldNG.getSchema().getType()).isEqualTo(ServiceNowFieldTypeNG.OPTION);
     assertThat(serviceNowFieldNG.getSchema().getTypeStr()).isEqualTo("integer");
 
@@ -63,6 +64,7 @@ public class ServiceNowFieldNGUtilsTest extends CategoryTest {
     assertThat(serviceNowFieldNG.getKey()).isEqualTo("sys_id");
     assertThat(serviceNowFieldNG.getName()).isEqualTo("Sys ID");
     assertThat(serviceNowFieldNG.isRequired()).isTrue();
+    assertThat(serviceNowFieldNG.isReadOnly()).isFalse();
     assertThat(serviceNowFieldNG.getSchema().getType()).isEqualTo(ServiceNowFieldTypeNG.UNKNOWN);
     assertThat(serviceNowFieldNG.getSchema().getTypeStr()).isEqualTo("");
 
@@ -72,6 +74,7 @@ public class ServiceNowFieldNGUtilsTest extends CategoryTest {
     assertThat(serviceNowFieldNG.getKey()).isEqualTo("comments_and_work_notes");
     assertThat(serviceNowFieldNG.getName()).isEqualTo("Comments and Work notes");
     assertThat(serviceNowFieldNG.getSchema().isMultilineText()).isTrue();
+    assertThat(serviceNowFieldNG.isReadOnly()).isFalse();
     assertThat(serviceNowFieldNG.getSchema().getType()).isEqualTo(ServiceNowFieldTypeNG.UNKNOWN);
     assertThat(serviceNowFieldNG.getSchema().getTypeStr()).isEqualTo("");
 
@@ -81,6 +84,7 @@ public class ServiceNowFieldNGUtilsTest extends CategoryTest {
     assertThat(serviceNowFieldNG.getKey()).isEqualTo("u_string_1");
     assertThat(serviceNowFieldNG.getName()).isEqualTo("testNametestName");
     assertThat(serviceNowFieldNG.isCustom()).isTrue();
+    assertThat(serviceNowFieldNG.isReadOnly()).isFalse();
     assertThat(serviceNowFieldNG.getSchema().getType()).isEqualTo(ServiceNowFieldTypeNG.STRING);
     assertThat(serviceNowFieldNG.getSchema().getTypeStr()).isEqualTo("string");
 
@@ -89,6 +93,7 @@ public class ServiceNowFieldNGUtilsTest extends CategoryTest {
         ServiceNowFieldNGUtils.parseServiceNowFieldNG(readResource("servicenow/utils/integerField.json"));
     assertThat(serviceNowFieldNG.getKey()).isEqualTo("child_incidents");
     assertThat(serviceNowFieldNG.getName()).isEqualTo("Child Incidents");
+    assertThat(serviceNowFieldNG.isReadOnly()).isFalse();
     assertThat(serviceNowFieldNG.getSchema().getType()).isEqualTo(ServiceNowFieldTypeNG.INTEGER);
     assertThat(serviceNowFieldNG.getSchema().getTypeStr()).isEqualTo("integer");
 
@@ -97,6 +102,7 @@ public class ServiceNowFieldNGUtilsTest extends CategoryTest {
         ServiceNowFieldNGUtils.parseServiceNowFieldNG(readResource("servicenow/utils/booleanField.json"));
     assertThat(serviceNowFieldNG.getKey()).isEqualTo("knowledge");
     assertThat(serviceNowFieldNG.getName()).isEqualTo("Knowledge");
+    assertThat(serviceNowFieldNG.isReadOnly()).isFalse();
     assertThat(serviceNowFieldNG.getSchema().getType()).isEqualTo(ServiceNowFieldTypeNG.BOOLEAN);
     assertThat(serviceNowFieldNG.getSchema().getTypeStr()).isEqualTo("boolean");
 
@@ -105,8 +111,18 @@ public class ServiceNowFieldNGUtilsTest extends CategoryTest {
         ServiceNowFieldNGUtils.parseServiceNowFieldNG(readResource("servicenow/utils/dateTimeField.json"));
     assertThat(serviceNowFieldNG.getKey()).isEqualTo("closed_at");
     assertThat(serviceNowFieldNG.getName()).isEqualTo("Closed");
+    assertThat(serviceNowFieldNG.isReadOnly()).isFalse();
     assertThat(serviceNowFieldNG.getSchema().getType()).isEqualTo(ServiceNowFieldTypeNG.DATE_TIME);
     assertThat(serviceNowFieldNG.getSchema().getTypeStr()).isEqualTo("glide_date_time");
+
+    // date time readOnly field
+    serviceNowFieldNG =
+        ServiceNowFieldNGUtils.parseServiceNowFieldNG(readResource("servicenow/utils/dateTimeReadOnlyField.json"));
+    assertThat(serviceNowFieldNG.getKey()).isEqualTo("sla_due");
+    assertThat(serviceNowFieldNG.getName()).isEqualTo("SLA due");
+    assertThat(serviceNowFieldNG.isReadOnly()).isTrue();
+    assertThat(serviceNowFieldNG.getSchema().getType()).isEqualTo(ServiceNowFieldTypeNG.DATE_TIME);
+    assertThat(serviceNowFieldNG.getSchema().getTypeStr()).isEqualTo("due_date");
   }
 
   @Test

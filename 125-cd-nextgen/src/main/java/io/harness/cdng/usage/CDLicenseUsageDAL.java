@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.usage;
-
 import static io.harness.cd.CDLicenseType.SERVICES;
 import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.name;
@@ -29,8 +28,11 @@ import static java.lang.String.format;
 import static java.sql.Date.valueOf;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cd.CDLicenseType;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
 import io.harness.cdng.usage.impl.AggregateServiceUsageInfo;
@@ -38,6 +40,7 @@ import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceBase;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
 import io.harness.cdng.usage.pojos.ActiveServiceResponse;
+import io.harness.cdng.usage.pojos.LicenseDailyUsage;
 import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.licensing.usage.params.filter.LicenseDateUsageReportType;
@@ -56,15 +59,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Sort;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
@@ -341,8 +345,8 @@ public class CDLicenseUsageDAL {
    * @param licenseUsageFetchDate license usage fetch data needed for creating request to DB
    * @return license usage per dates
    */
-  public Map<String, Integer> fetchLicenseDateUsage(LicenseDateUsageFetchData licenseUsageFetchDate) {
-    Map<String, Integer> licenseUsage = new LinkedHashMap<>();
+  public List<LicenseDailyUsage> fetchLicenseDateUsage(LicenseDateUsageFetchData licenseUsageFetchDate) {
+    List<LicenseDailyUsage> licenseUsage = new LinkedList<>();
     String accountIdentifier = licenseUsageFetchDate.getAccountIdentifier();
     CDLicenseType licenseType = licenseUsageFetchDate.getLicenseType();
     if (isEmpty(accountIdentifier)) {
@@ -367,8 +371,12 @@ public class CDLicenseUsageDAL {
         ResultSet results = callableStatement.getResultSet();
         while (results.next()) {
           Date usageDate = results.getDate(1);
-          Integer licenseCount = results.getInt(2);
-          licenseUsage.put(String.valueOf(usageDate), licenseCount);
+          int licenseCount = results.getInt(2);
+          licenseUsage.add(LicenseDailyUsage.builder()
+                               .accountId(accountIdentifier)
+                               .reportedDay(usageDate.toLocalDate())
+                               .licenseCount(licenseCount)
+                               .build());
         }
 
         successfulOperation = true;

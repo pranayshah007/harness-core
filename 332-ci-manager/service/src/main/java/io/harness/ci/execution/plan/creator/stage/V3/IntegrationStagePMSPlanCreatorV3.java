@@ -5,36 +5,36 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.plan.creator.stage.V3;
+package io.harness.ci.execution.plan.creator.stage.V3;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
-import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
-import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
-import io.harness.ci.states.IntegrationStageStepPMS;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.V1.CIPlanCreatorUtils;
+import io.harness.ci.execution.plan.creator.codebase.CodebasePlanCreator;
+import io.harness.ci.execution.states.IntegrationStageStepPMS;
 import io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
-import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.DependencyMetadata;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
-import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
-import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -43,7 +43,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
@@ -72,6 +72,9 @@ import lombok.extern.slf4j.Slf4j;
 public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<IntegrationStageNodeV1> {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private CIPlanCreatorUtils ciPlanCreatorUtils;
+  public static final String STAGE_NODE = "stageNode";
+  public static final String INFRASTRUCTURE = "infrastructure";
+  public static final String CODEBASE = "codebase";
 
   @Override
   public Class<IntegrationStageNodeV1> getFieldClass() {
@@ -136,12 +139,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, IntegrationStageNodeV1 stageNode) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField stageYamlField = context.getCurrentField();
-    String nextNodeUuid = null;
-    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey("nextId")) {
-      nextNodeUuid =
-          (String) kryoSerializer.asObject(context.getDependency().getMetadataMap().get("nextId").toByteArray());
-    }
+    String nextNodeUuid = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, context.getDependency());
     if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
     }
@@ -150,18 +148,10 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
 
   private List<AdviserObtainment> getAdvisorObtainments(Dependency dependency) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey("nextId")) {
-      return adviserObtainments;
+    AdviserObtainment nextStepAdviser = PlanCreatorUtilsV1.getNextStepAdviser(kryoSerializer, dependency);
+    if (nextStepAdviser != null) {
+      adviserObtainments.add(nextStepAdviser);
     }
-
-    String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
-    adviserObtainments.add(
-        AdviserObtainment.newBuilder()
-            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-            .setParameters(ByteString.copyFrom(
-                kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
-            .build());
     return adviserObtainments;
   }
 
@@ -175,8 +165,6 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, IntegrationStageNodeV1 stageNode) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-    Map<String, ByteString> strategyMetadataMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     YamlField field = ctx.getCurrentField();
     YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
@@ -184,29 +172,36 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     IntegrationStageConfigImplV1 stageConfigImpl = stageNode.getStageConfig();
     Infrastructure infrastructure =
         ciPlanCreatorUtils.getInfrastructure(stageConfigImpl.getRuntime(), stageConfigImpl.getPlatform());
-    createPlanForCodebase(ctx, stageConfigImpl.getClone(), planCreationResponseMap, metadataMap, stepsField.getUuid());
+    CodeBase codeBase =
+        createPlanForCodebase(ctx, stageConfigImpl.getClone(), planCreationResponseMap, stepsField.getUuid());
     dependenciesNodeMap.put(stepsField.getUuid(), stepsField);
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap,
-        strategyMetadataMap, getAdvisorObtainments(ctx.getDependency()));
-    metadataMap.put("stageNode", ByteString.copyFrom(kryoSerializer.asBytes(stageNode)));
-    metadataMap.put("infrastructure", ByteString.copyFrom(kryoSerializer.asBytes(infrastructure)));
+    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
+        kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap, getAdvisorObtainments(ctx.getDependency()));
+
+    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+    // bytes for complex objects. We will deprecate the first one in v1
     planCreationResponseMap.put(stepsField.getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
-                              .toBuilder()
-                              .putDependencyMetadata(
-                                  field.getUuid(), Dependency.newBuilder().putAllMetadata(strategyMetadataMap).build())
-                              .putDependencyMetadata(
-                                  stepsField.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
-                              .build())
+            .dependencies(
+                DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                    .toBuilder()
+                    .putDependencyMetadata(field.getUuid(),
+                        Dependency.newBuilder()
+                            .putAllMetadata(dependencyMetadata.getMetadataMap())
+                            .setNodeMetadata(
+                                HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
+                            .build())
+                    .putDependencyMetadata(
+                        stepsField.getUuid(), getDependencyMetadataForStepsField(infrastructure, codeBase, stageNode))
+                    .build())
             .build());
     log.info("Successfully created plan for integration stage {}", stageNode.getName());
     return planCreationResponseMap;
   }
 
-  private void createPlanForCodebase(PlanCreationContext ctx, Clone stageClone,
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap,
-      String childNodeID) {
+  private CodeBase createPlanForCodebase(PlanCreationContext ctx, Clone stageClone,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, String childNodeID) {
     Optional<CodeBase> optionalCodeBase = ciPlanCreatorUtils.getCodebase(ctx, stageClone);
     if (optionalCodeBase.isPresent()) {
       CodeBase codeBase = optionalCodeBase.get();
@@ -218,12 +213,38 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
           planCreationResponseMap.put(planNode.getUuid(), PlanCreationResponse.builder().planNode(planNode).build());
         }
       }
-      metadataMap.put("codebase", ByteString.copyFrom(kryoSerializer.asBytes(codeBase)));
+      return codeBase;
     }
+    return null;
+  }
+
+  Dependency getDependencyMetadataForStepsField(
+      Infrastructure infrastructure, CodeBase codeBase, IntegrationStageNodeV1 stageNode) {
+    Map<String, HarnessValue> nodeMetadataMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
+    ByteString stageNodeBytes = ByteString.copyFrom(kryoSerializer.asBytes(stageNode));
+    ByteString infrastructureBytes = ByteString.copyFrom(kryoSerializer.asBytes(infrastructure));
+    metadataMap.put(STAGE_NODE, stageNodeBytes);
+    metadataMap.put(INFRASTRUCTURE, infrastructureBytes);
+
+    nodeMetadataMap.put(STAGE_NODE, HarnessValue.newBuilder().setBytesValue(stageNodeBytes).build());
+    nodeMetadataMap.put(INFRASTRUCTURE, HarnessValue.newBuilder().setBytesValue(infrastructureBytes).build());
+    if (codeBase != null) {
+      ByteString codebaseBytes = ByteString.copyFrom(kryoSerializer.asBytes(codeBase));
+      metadataMap.put(CODEBASE, codebaseBytes);
+      nodeMetadataMap.put(CODEBASE, HarnessValue.newBuilder().setBytesValue(codebaseBytes).build());
+    }
+    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+    // bytes for complex objects. We will deprecate the first one in v1
+    return Dependency.newBuilder()
+        .putAllMetadata(metadataMap)
+        .setNodeMetadata(HarnessStruct.newBuilder().putAllData(nodeMetadataMap).build())
+        .build();
   }
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V1);
+    return Set.of(HarnessYamlVersion.V1);
   }
 }

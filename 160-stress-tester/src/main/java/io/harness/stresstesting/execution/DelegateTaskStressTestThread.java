@@ -35,7 +35,7 @@ public class DelegateTaskStressTestThread extends Thread {
 
       for (int i = 0; i < stage.getIterations(); i++) {
         int item = (int) (Math.random() * taskRequestCount);
-        String taskId = delegateServiceBlockingStub.submitTask(stage.getTaskRequest(item)).getTaskId().getId();
+        String taskId = delegateServiceBlockingStub.submitTaskV2(stage.getTaskRequest(item)).getTaskId().getId();
         log.info("Firing iteration " + i + "on stage " + stageId + "task id " + taskId);
         Thread.sleep(1000 / stage.getQps());
       }

@@ -6,14 +6,17 @@
  */
 
 package io.harness.steps.matrix.v1;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.plancreator.strategy.v1.ForConfigV1;
 import io.harness.plancreator.strategy.v1.StrategyConfigV1;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.yaml.ParameterField;
@@ -29,12 +32,14 @@ import java.util.List;
 import java.util.Optional;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 @NoArgsConstructor
 public class ForConfigServiceV1 implements StrategyConfigServiceV1 {
   @Override
-  public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfigV1 strategyConfig, String childNodeId) {
+  public List<ChildrenExecutableResponse.Child> fetchChildren(
+      StrategyConfigV1 strategyConfig, String childNodeId, Ambiance ambiance) {
     try {
       ForConfigV1 forConfig = (ForConfigV1) strategyConfig.getStrategyInfoConfig().getValue();
       List<ChildrenExecutableResponse.Child> children = new ArrayList<>();

@@ -9,6 +9,7 @@ package io.harness.delegate.beans.storeconfig;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.filestore.FileStoreFetchFilesConfig;
 
@@ -23,6 +24,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig")
 public class S3StoreTFDelegateConfig extends FileStoreFetchFilesConfig {
   String bucketName;
   String region;

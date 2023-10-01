@@ -26,6 +26,7 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -85,6 +86,7 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
   @Mock private AccountService accountService;
   @Mock private StepHelper stepHelper;
   @Mock private TelemetryReporter telemetryReporter;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @Before
   public void setUp() {

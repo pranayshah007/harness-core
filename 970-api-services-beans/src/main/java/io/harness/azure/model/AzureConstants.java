@@ -6,11 +6,15 @@
  */
 
 package io.harness.azure.model;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 public interface AzureConstants {
   Pattern failureContainerLogPattern =
       Pattern.compile("ERROR - Container .* didn't respond to HTTP pings on port:", Pattern.CASE_INSENSITIVE);
@@ -284,6 +288,10 @@ public interface AzureConstants {
   String UNSUPPORTED_ARTIFACT = "Unsupported package deployment for artifact type, artifactType: %s, slotName: %s";
   String ZIP_DEPLOY = "Deploying artifact ZIP file on slot, %nArtifact file: %s%nApp name: %s%nSlot name: %s";
   String WAR_DEPLOY = "Deploying artifact WAR file on slot, %nArtifact file: %s%nApp name: %s%nSlot name: %s";
+
+  String DEPLOY_LOG = "Deploying artifact file of type %s on site slot";
+  String DEPLOY_DETAILS_LOG = "Artifact file: %s%nApp name: %s%nSlot name: %s";
+  String DEPLOY_OPTIONS_LOG = "With deploy options: { type: %s, clean: %b }";
 
   // Azure App Service Command Units
   String SAVE_EXISTING_CONFIGURATIONS = "Save App Service Configurations";

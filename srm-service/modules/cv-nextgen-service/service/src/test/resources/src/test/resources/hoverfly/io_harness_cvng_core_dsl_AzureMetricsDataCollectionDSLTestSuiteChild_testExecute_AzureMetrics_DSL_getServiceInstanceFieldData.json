@@ -1,0 +1,210 @@
+{
+  "data": {
+    "pairs": [
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/b229b2bb-5f33-4d22-bce0-730f6474e906/oauth2/token"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "login.microsoftonline.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "body": [
+            {
+              "matcher": "exact",
+              "value": "grant_type=client_credentials&resource=https%3A%2F%2Fmanagement.azure.com&client_secret=***&client_id=***"
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "{\"token_type\":\"Bearer\",\"expires_in\":\"3599\",\"ext_expires_in\":\"3599\",\"expires_on\":\"1689774347\",\"not_before\":\"1689770447\",\"resource\":\"https://management.azure.com\",\"access_token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuYXp1cmUuY29tIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvYjIyOWIyYmItNWYzMy00ZDIyLWJjZTAtNzMwZjY0NzRlOTA2LyIsImlhdCI6MTY4OTc3MDQ0NywibmJmIjoxNjg5NzcwNDQ3LCJleHAiOjE2ODk3NzQzNDcsImFpbyI6IkUyWmdZRGhRdXZUQ1Z2czd1NzVPdEQ4ZjRmejdDQUE9IiwiYXBwaWQiOiIyZmZmY2M4My0wOWE4LTQ1MGYtODdmNS1hMjVlMzk0MmRkMTAiLCJhcHBpZGFjciI6IjEiLCJpZHAiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9iMjI5YjJiYi01ZjMzLTRkMjItYmNlMC03MzBmNjQ3NGU5MDYvIiwiaWR0eXAiOiJhcHAiLCJvaWQiOiIzMDcxY2ZlZi00YTc1LTRhOTYtYTllNi05NzQwMjU0YmQxZjUiLCJyaCI6IjAuQVNrQXU3SXBzak5mSWsyODRITVBaSFRwQmtaSWYza0F1dGRQdWtQYXdmajJNQk1wQUFBLiIsInN1YiI6IjMwNzFjZmVmLTRhNzUtNGE5Ni1hOWU2LTk3NDAyNTRiZDFmNSIsInRpZCI6ImIyMjliMmJiLTVmMzMtNGQyMi1iY2UwLTczMGY2NDc0ZTkwNiIsInV0aSI6ImZjUzRHdW04ejBLeFVKM2l3S3AyQUEiLCJ2ZXIiOiIxLjAiLCJ4bXNfdGNkdCI6MTUxOTc2ODk4Nn0.FHqskRhd35FeSNB4ylp3GB14SUOT-hC2PeigVbXG5rYidwjkMEjxp8gNVK_WEGyGFRv3KdPGWaC7bF2itUJWkHmHZcJ9JlZU7KrX8VB19CmNJefPy6UOjjLQWxtuXZ50Ab6TidUUGKdUOWVnMl5XgxiT2g11UgxVYIQmdztHB0pfmgTyxCbVoI_d96RQZnA2C3niTQNtmCqW_UZzgTBI0IXbMtDJ4ojWF2pWfUN_lu6OFCinOzN7ZygBpRc20mD7JMG5UO8gALf3xMk0iFuzUA3iPHj0dCBBpaxePBHxB9nuEf9tT9EevfZ78AUBnOz7iTM1LvNygMN_Ahlc1ikQqg\"}",
+          "encodedBody": false,
+          "templated": false,
+          "headers": {
+            "Cache-Control": [
+              "no-store, no-cache"
+            ],
+            "Content-Length": [
+              "1466"
+            ],
+            "Content-Type": [
+              "application/json; charset=utf-8"
+            ],
+            "Date": [
+              "Wed, 19 Jul 2023 12:45:47 GMT"
+            ],
+            "Expires": [
+              "-1"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "P3p": [
+              "CP=\"DSP CUR OTPi IND OTRi ONL FIN\""
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Set-Cookie": [
+              "fpc=AtfN17JaMgFEmF6bxm8uZ2-6AFXmAQAAAPrRSdwOAAAA; expires=Fri, 18-Aug-2023 12:45:47 GMT; path=/; secure; HttpOnly; SameSite=None",
+              "x-ms-gateway-slice=estsfd; path=/; secure; samesite=none; httponly",
+              "stsservicecookie=estsfd; path=/; secure; samesite=none; httponly"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=31536000; includeSubDomains"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Ms-Ests-Server": [
+              "2.1.15811.5 - NCUS ProdSlices"
+            ],
+            "X-Ms-Request-Id": [
+              "1ab8c47d-bce9-42cf-b150-9de2c0aa7600"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          }
+        }
+      },
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/subscriptions/12d2db62-5aa9-471d-84bb-faa489b3e319/resourceGroups/srm-test/providers/Microsoft.ContainerService/managedClusters/srm-test/providers/Microsoft.Insights/metricDefinitions"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "management.azure.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "query": {
+            "api-version": [
+              {
+                "matcher": "exact",
+                "value": "2021-05-01"
+              }
+            ],
+            "metricnamespace": [
+              {
+                "matcher": "exact",
+                "value": "microsoft.containerservice/managedclusters"
+              }
+            ],
+            "metricnames": [
+              {
+                "matcher": "exact",
+                "value": "node_cpu_usage_millicores"
+              }
+            ]
+          },
+          "body": [
+            {
+              "matcher": "json",
+              "value": ""
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "H4sIAAAAAAAEAO29B2AcSZYlJi9tynt/SvVK1+B0oQiAYBMk2JBAEOzBiM3mkuwdaUcjKasqgcplVmVdZhZAzO2dvPfee++999577733ujudTif33/8/XGZkAWz2zkrayZ4hgKrIHz9+fB8/In7xR5dZuc4/evS9X/xRMfvo0Ud3m/WkmdbFqi2qZXN3d2+2N5t8urd9P8sebu8/2J1tH+xPJtvnWbZ/8HByL7+3+/BunTfVup7mn9fVetXcberFdps37d1VXV0Ws7xu7n5RTOuqqc7b8Um1bLNimdev8/qymOZ3F9kyu8hnJ+W6adE08vbCvl0sm+Ji3tJHeVsX01l+XiwLwXRZzfLff7pa//7rhuD9/ouiLItpRah9NPqI/mUEz/5fNUJCbJkt8maVTWkCPro9BHpxmrX5RVVf03svaOBNuvXy1elPnp1+9w59CagfPbJT+9Em0pTVNCuLH+Szn9TGJy+/Sr9Cu/QL1+6XjD6aFc2qzK6f5pZ21Pj44qLOLwiXWbrIs2Zd54t82abVeQow67Yg0BnapsUydf2mGYbapO08T6cyKEKlaJ4W9HpDzV/lv2hd1DlN13lWNvnoozVNM/XHKJ0ABLVf1cUiq68NDvTam+sVhnB8mdc0AGrSrFerqib0Oo0aYviPvsjeFYv1gpqZF74/+kgY6/gyK8psQui3BTf+xR+1hNvnNU0LdfDyze4X9FqdtzRaAomPHt57SmTqtrt/y3a7t214b+eWDXe/fbt2n96y3e5evCHRbEYNedqEUj7b0Ss9DnuRLXKwCGaf26Az/6VVVZW3eZHb/ZLv/5Lv/5L/B0YDdgXHBAAA",
+          "encodedBody": true,
+          "templated": false,
+          "headers": {
+            "Access-Control-Allow-Origin": [
+              "*"
+            ],
+            "Cache-Control": [
+              "no-cache"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=utf-8"
+            ],
+            "Date": [
+              "Wed, 19 Jul 2023 12:45:49 GMT"
+            ],
+            "Expires": [
+              "-1"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Request-Context": [
+              "appId=cid-v1:b021da79-5252-4375-9df5-2e17c1dcd822"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=31536000; includeSubDomains"
+            ],
+            "Vary": [
+              "Accept-Encoding"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Ms-Correlation-Request-Id": [
+              "660339f7-7eb0-4421-a2a1-42d6eef5af1e"
+            ],
+            "X-Ms-Ratelimit-Remaining-Subscription-Resource-Requests": [
+              "399"
+            ],
+            "X-Ms-Request-Id": [
+              "{660339f7-7eb0-4421-a2a1-42d6eef5af1e}"
+            ],
+            "X-Ms-Routing-Request-Id": [
+              "JIOINDIAWEST:20230719T124549Z:660339f7-7eb0-4421-a2a1-42d6eef5af1e"
+            ]
+          }
+        }
+      }
+    ],
+    "globalActions": {
+      "delays": []
+    }
+  },
+  "meta": {
+    "schemaVersion": "v5",
+    "hoverflyVersion": "v1.1.5",
+    "timeExported": "2023-07-19T12:45:49Z"
+  }
+}

@@ -19,6 +19,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
 @OwnedBy(CDC)
 @Value
@@ -29,6 +30,7 @@ public class NodeExecutionQualifiedFunctor implements LateBindingValue {
   PmsSweepingOutputService pmsSweepingOutputService;
   Ambiance ambiance;
   Set<NodeExecutionEntityType> entityTypes;
+  JexlEngine engine;
 
   @Override
   public Object bind() {
@@ -39,6 +41,7 @@ public class NodeExecutionQualifiedFunctor implements LateBindingValue {
         .ambiance(ambiance)
         .startNodeExecution(null)
         .entityTypes(entityTypes)
+        .engine(engine)
         .build()
         .bind();
   }

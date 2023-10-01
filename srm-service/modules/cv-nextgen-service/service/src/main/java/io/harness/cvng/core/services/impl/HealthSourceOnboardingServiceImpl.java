@@ -53,8 +53,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -177,7 +180,9 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     List<MetricPack> metricPacks =
         metricPackService.getMetricPacks(accountIdentifier, orgIdentifier, projectIdentifier, providerType);
     metricPackService.populateDataCollectionDsl(providerType, metricPacks.get(0));
-    if (providerType.isNextGenSpec() && providerType.getVerificationType() == VerificationType.TIME_SERIES) {
+    if ((providerType.isNextGenSpec() || providerType == DataSourceType.PROMETHEUS
+            || providerType == DataSourceType.DATADOG_METRICS)
+        && providerType.getVerificationType() == VerificationType.TIME_SERIES) {
       cvConfig = NextGenMetricCVConfig.builder()
                      .accountId(accountIdentifier)
                      .orgIdentifier(orgIdentifier)
@@ -189,7 +194,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
                      .category(CVMonitoringCategory.PERFORMANCE)
                      .metricInfos(Collections.singletonList(
                          NextGenMetricInfo.builder()
-                             .query(queryRecordsRequest.getQuery().trim())
+                             .query(Optional.ofNullable(queryRecordsRequest.getQuery()).map(String::trim).orElse(null))
                              .identifier(SAMPLE_METRIC_INDENTIFIER)
                              .metricName(SAMPLE_METRIC_INDENTIFIER)
                              .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())
@@ -200,11 +205,10 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     } else {
       throw new NotImplementedForHealthSourceException("Not Implemented for health source provider.");
     }
-
     DataCollectionInfoMapper<DataCollectionInfo<ConnectorConfigDTO>, CVConfig> dataCollectionInfoMapper =
         dataSourceTypeDataCollectionInfoMapperMap.get(providerType);
     DataCollectionInfo<ConnectorConfigDTO> dataCollectionInfo =
-        dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, VerificationTask.TaskType.SLI);
+        dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, VerificationTask.TaskType.DEPLOYMENT);
     dataCollectionInfo.setCollectHostData(
         StringUtils.isNotEmpty(queryRecordsRequest.getHealthSourceQueryParams().getServiceInstanceField()));
     return dataCollectionInfo;
@@ -239,13 +243,19 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     List<LogDataRecord> logDataRecords =
         JsonUtils.asList(JsonUtils.asJson(response.getResult()), new TypeReference<>() {});
     List<LogRecord> logRecords = new ArrayList<>();
-    logDataRecords.forEach(logDataRecord
-        -> logRecords.add(LogRecord.builder()
-                              .timestamp(logDataRecord.getTimestamp())
-                              .message(logDataRecord.getLog())
-                              .serviceInstance(logDataRecord.getHostname())
-                              .build()));
-    return LogRecordsResponse.builder().logRecords(logRecords).build();
+    Set<String> serviceInstances = new HashSet<>();
+    logDataRecords.forEach(logDataRecord -> {
+      logRecords.add(LogRecord.builder()
+                         .timestamp(logDataRecord.getTimestamp())
+                         .message(logDataRecord.getLog())
+                         .serviceInstance(logDataRecord.getHostname())
+                         .build());
+      serviceInstances.add(logDataRecord.getHostname());
+    });
+    return LogRecordsResponse.builder()
+        .serviceInstances(new ArrayList<>(serviceInstances))
+        .logRecords(logRecords)
+        .build();
   }
 
   @Override
@@ -266,7 +276,8 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
       QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
     CVConfig cvConfig;
     DataSourceType providerType = getDataSourceType(queryRecordsRequest);
-    if (providerType.isNextGenSpec() && providerType.getVerificationType() == VerificationType.LOG) {
+    if ((providerType.isNextGenSpec() || providerType == DataSourceType.DATADOG_LOG)
+        && providerType.getVerificationType() == VerificationType.LOG) {
       cvConfig = NextGenLogCVConfig.builder()
                      .orgIdentifier(projectParams.getOrgIdentifier())
                      .projectIdentifier(projectParams.getProjectIdentifier())
@@ -277,6 +288,8 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
                      .healthSourceParams(queryRecordsRequest.getHealthSourceParams().getHealthSourceParamsEntity())
                      .query(queryRecordsRequest.getQuery().trim())
                      .queryName(QUERY_NAME)
+                     .queryIdentifier(QUERY_NAME)
+                     .groupName(DEFAULT_GROUP)
                      .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
                      .build();
     } else {

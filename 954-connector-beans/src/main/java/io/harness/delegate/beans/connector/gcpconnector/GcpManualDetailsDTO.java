@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.gcpconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -25,6 +26,7 @@ import lombok.Data;
 @JsonTypeName(GcpConstants.MANUAL_CONFIG)
 @ApiModel("GcpManualDetails")
 @Schema(name = "GcpManualDetails", description = "This contains GCP manual credentials details")
+@RecasterAlias("io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO")
 public class GcpManualDetailsDTO implements GcpCredentialSpecDTO {
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData secretKeyRef;
 }

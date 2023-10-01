@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform.output;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -17,6 +18,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput")
 public class TerraformPlanJsonOutput implements ExecutionSweepingOutput {
   private static final String OUTPUT_NAME_FORMAT = "%s_planJson";
 

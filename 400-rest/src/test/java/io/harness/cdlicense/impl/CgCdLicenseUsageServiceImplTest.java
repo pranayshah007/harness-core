@@ -31,6 +31,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
 import io.harness.cdlicense.bean.CgServiceUsage;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -52,6 +53,7 @@ public class CgCdLicenseUsageServiceImplTest extends CategoryTest {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
 
   @Mock CgCdLicenseUsageQueryHelper cdLicenseUsageQueryHelper;
+  @Mock FeatureFlagService featureFlagService;
   @InjectMocks @Inject private CgCdLicenseUsageServiceImpl cgCdLicenseUsageService;
 
   @Before

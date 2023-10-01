@@ -6,14 +6,16 @@
  */
 
 package io.harness.cdng.environment.yaml;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtimeEmptyStringAllowed;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.helper.EnvironmentYamlV2VisitorHelper;
@@ -35,13 +37,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Data
 @Builder
 @SimpleVisitorHelper(helperClass = EnvironmentYamlV2VisitorHelper.class)
@@ -54,10 +57,11 @@ public class EnvironmentYamlV2 implements Visitable {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  @NotNull
   @Pattern(regexp = NGRegexValidatorConstants.NON_EMPTY_STRING_PATTERN)
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   private ParameterField<String> environmentRef;
+
+  private String gitBranch;
 
   /*
   Deploy to all underlying infrastructures (or gitops clusters)
@@ -79,6 +83,8 @@ public class EnvironmentYamlV2 implements Visitable {
   ParameterField<InfraStructureDefinitionYaml> infrastructureDefinition;
 
   @Nullable @VariableExpression(skipVariableExpression = true) ExecutionElementConfig provisioner;
+
+  @VariableExpression(skipVariableExpression = true) private EnvironmentInfraUseFromStage useFromStage;
 
   // environmentInputs
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)

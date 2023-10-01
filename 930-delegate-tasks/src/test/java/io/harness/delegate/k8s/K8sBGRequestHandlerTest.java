@@ -47,7 +47,9 @@ import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sBGDeployRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -76,6 +78,7 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.K8sSteadyStateDTO;
@@ -125,6 +128,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   K8sDelegateTaskParams k8sDelegateTaskParams;
   CommandUnitsProgress commandUnitsProgress;
   final String workingDirectory = "/tmp";
+  private static final String CHART_NAME = "CHART_NAME";
 
   @Before
   public void setup() throws Exception {
@@ -193,8 +197,8 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .readManifests(anyList(), eq(logCallback), eq(true));
     doReturn(deployedPods)
         .when(k8sBGBaseHandler)
-        .getAllPods(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
-            eq(HarnessLabelValues.colorGreen), eq("releaseName"));
+        .getAllPodsNG(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
+            eq(HarnessLabelValues.colorGreen), eq("releaseName"), anyList());
 
     K8sDeployResponse response = k8sBGRequestHandler.executeTaskInternal(
         k8sBGDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
@@ -207,6 +211,62 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     assertThat(bgDeployResponse.getPrimaryServiceName()).isEqualTo("my-service");
     assertThat(bgDeployResponse.getStageServiceName()).isEqualTo("my-service-stage");
     assertThat(bgDeployResponse.getK8sPodList()).isEqualTo(deployedPods);
+    verify(k8sBGRequestHandler)
+        .getManifestOverrideFlies(k8sBGDeployRequest,
+            KubernetesReleaseDetails.builder()
+                .releaseNumber(10)
+                .color(k8sBGBaseHandler.getInverseColor(HarnessLabelValues.colorDefault))
+                .build()
+                .toContextMap());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testExecuteTaskInternalGetStepExecutionInstanceInfo() throws Exception {
+    final List<K8sPod> previousPods = List.of(K8sPod.builder().name("oldPod").newPod(false).build());
+    final List<K8sPod> afterPods = List.of(
+        K8sPod.builder().name("newPod").newPod(true).build(), K8sPod.builder().name("oldPod").newPod(false).build());
+    final K8sBGDeployRequest k8sBGDeployRequest =
+        K8sBGDeployRequest.builder()
+            .skipResourceVersioning(true)
+            .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
+            .releaseName("releaseName")
+            .useDeclarativeRollback(true)
+            .build();
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
+    doReturn("sampleManifest")
+        .when(k8sManifestHashGenerator)
+        .manifestHash(anyList(), eq(k8sDelegateTaskParams), eq(logCallback), any(Kubectl.class));
+    doReturn(HarnessLabelValues.colorBlue)
+        .when(k8sBGBaseHandler)
+        .getPrimaryColor(any(KubernetesResource.class), eq(kubernetesConfig), eq(logCallback));
+    doReturn(new ArrayList<>(asList(deployment(), service())))
+        .when(k8sTaskHelperBase)
+        .readManifests(anyList(), eq(logCallback), eq(true));
+    doReturn(afterPods)
+        .when(k8sBGBaseHandler)
+        .getAllPodsNG(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
+            eq(HarnessLabelValues.colorGreen), eq("releaseName"), any());
+    doReturn(previousPods).when(k8sBGBaseHandler).getExistingPods(anyLong(), eq(kubernetesConfig), anyString(), any());
+
+    K8sDeployResponse response = k8sBGRequestHandler.executeTaskInternal(
+        k8sBGDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(response.getK8sNGTaskResponse()).isNotNull();
+    K8sBGDeployResponse bgDeployResponse = (K8sBGDeployResponse) response.getK8sNGTaskResponse();
+    assertThat(bgDeployResponse.getPrimaryColor()).isEqualTo(HarnessLabelValues.colorBlue);
+    assertThat(bgDeployResponse.getStageColor()).isEqualTo(HarnessLabelValues.colorGreen);
+    assertThat(bgDeployResponse.getPrimaryServiceName()).isEqualTo("my-service");
+    assertThat(bgDeployResponse.getStageServiceName()).isEqualTo("my-service-stage");
+    assertThat(bgDeployResponse.getK8sPodList()).isEqualTo(afterPods);
+    assertThat(response.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isEqualTo(1);
+    assertThat(response.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isEqualTo(2);
+    assertThat(response.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isEqualTo(1);
     verify(k8sBGRequestHandler)
         .getManifestOverrideFlies(k8sBGDeployRequest,
             KubernetesReleaseDetails.builder()
@@ -251,8 +311,8 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .readManifests(anyList(), eq(logCallback), eq(true));
     doReturn(deployedPods)
         .when(k8sBGBaseHandler)
-        .getAllPods(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
-            eq(HarnessLabelValues.colorGreen), eq("releaseName"));
+        .getAllPodsNG(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
+            eq(HarnessLabelValues.colorGreen), eq("releaseName"), any());
 
     K8sDeployResponse response = k8sBGRequestHandler.executeTaskInternal(
         k8sBGDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
@@ -265,6 +325,67 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     assertThat(bgDeployResponse.getPrimaryServiceName()).isEqualTo("my-service");
     assertThat(bgDeployResponse.getStageServiceName()).isEqualTo("my-service-stage");
     assertThat(bgDeployResponse.getK8sPodList()).isEqualTo(deployedPods);
+
+    verify(legacyRelease).setManagedWorkload(any());
+    verify(legacyRelease, times(2)).setManagedWorkloadRevision(any());
+    verify(k8sBGRequestHandler)
+        .getManifestOverrideFlies(
+            k8sBGDeployRequest, KubernetesReleaseDetails.builder().releaseNumber(1).build().toContextMap());
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testExecuteTaskInternalLegacyReleaseImplementationWithHelmDelegateConfig() throws Exception {
+    final List<K8sPod> deployedPods = Collections.singletonList(K8sPod.builder().build());
+    ManifestDelegateConfig helmManifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder().chartName(CHART_NAME).helmVersion(HelmVersion.V2).build();
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("haha").repoUrl("sample.com").version("0.2.0").build();
+    final K8sBGDeployRequest k8sBGDeployRequest = K8sBGDeployRequest.builder()
+                                                      .skipResourceVersioning(true)
+                                                      .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+                                                      .manifestDelegateConfig(helmManifestDelegateConfig)
+                                                      .releaseName("releaseName")
+                                                      .useDeclarativeRollback(false)
+                                                      .build();
+    K8SLegacyReleaseHistory releaseHistory = mock(K8SLegacyReleaseHistory.class);
+    ReleaseHistory releaseHistoryContent = mock(ReleaseHistory.class);
+    doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
+    doReturn(1).when(releaseHistory).getAndIncrementLastReleaseNumber();
+    doReturn(releaseHistoryContent).when(releaseHistory).getReleaseHistory();
+    doReturn(helmChartInfo).when(k8sTaskHelperBase).getHelmChartDetails(any(), any());
+    K8sLegacyRelease legacyRelease = mock(K8sLegacyRelease.class);
+    doReturn(legacyRelease).when(releaseHistoryContent).addReleaseToReleaseHistory(any());
+    doReturn(legacyRelease).when(releaseHandler).createRelease(any(), anyInt());
+    doReturn("sampleManifest")
+        .when(k8sManifestHashGenerator)
+        .manifestHash(anyList(), eq(k8sDelegateTaskParams), eq(logCallback), any(Kubectl.class));
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
+    doReturn(HarnessLabelValues.colorBlue)
+        .when(k8sBGBaseHandler)
+        .getPrimaryColor(any(KubernetesResource.class), eq(kubernetesConfig), eq(logCallback));
+    doReturn(new ArrayList<>(asList(deployment(), service())))
+        .when(k8sTaskHelperBase)
+        .readManifests(anyList(), eq(logCallback), eq(true));
+    doReturn(deployedPods)
+        .when(k8sBGBaseHandler)
+        .getAllPodsNG(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
+            eq(HarnessLabelValues.colorGreen), eq("releaseName"), any());
+
+    K8sDeployResponse response = k8sBGRequestHandler.executeTaskInternal(
+        k8sBGDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(response.getK8sNGTaskResponse()).isNotNull();
+    K8sBGDeployResponse bgDeployResponse = (K8sBGDeployResponse) response.getK8sNGTaskResponse();
+    assertThat(bgDeployResponse.getPrimaryColor()).isEqualTo(HarnessLabelValues.colorBlue);
+    assertThat(bgDeployResponse.getStageColor()).isEqualTo(HarnessLabelValues.colorGreen);
+    assertThat(bgDeployResponse.getPrimaryServiceName()).isEqualTo("my-service");
+    assertThat(bgDeployResponse.getStageServiceName()).isEqualTo("my-service-stage");
+    assertThat(bgDeployResponse.getK8sPodList()).isEqualTo(deployedPods);
+    assertThat(bgDeployResponse.getHelmChartInfo()).isEqualTo(helmChartInfo);
 
     verify(legacyRelease).setManagedWorkload(any());
     verify(legacyRelease, times(2)).setManagedWorkloadRevision(any());
@@ -301,8 +422,8 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .manifestHash(anyList(), eq(k8sDelegateTaskParams), eq(logCallback), any(Kubectl.class));
     doReturn(deployedPods)
         .when(k8sBGBaseHandler)
-        .getAllPods(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
-            eq(HarnessLabelValues.colorGreen), eq("releaseName"));
+        .getAllPodsNG(anyLong(), eq(kubernetesConfig), any(KubernetesResource.class), eq(HarnessLabelValues.colorBlue),
+            eq(HarnessLabelValues.colorGreen), eq("releaseName"), any());
     K8sDeployResponse response = k8sBGRequestHandler.executeTaskInternal(
         k8sBGDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
 

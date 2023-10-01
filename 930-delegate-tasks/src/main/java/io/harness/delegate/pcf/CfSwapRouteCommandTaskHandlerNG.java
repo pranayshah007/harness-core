@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.pcf;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.NON_VERSION_TO_NON_VERSION;
@@ -22,8 +21,11 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -67,6 +69,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @NoArgsConstructor
 @Singleton
 @Slf4j
@@ -83,7 +86,6 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     if (!(cfCommandRequestNG instanceof CfSwapRoutesRequestNG)) {
       throw new InvalidArgumentsException(Pair.of("cfCommandRequest", "Must be instance of CfSwapRoutesRequestNG"));
     }
-    CfInBuiltVariablesUpdateValues updateValues = null;
     LogCallback executionLogCallback = tasTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, CfCommandUnitConstants.SwapRoutesForNewApplication, true, commandUnitsProgress);
     CfSwapRouteCommandResult cfSwapRouteCommandResult = CfSwapRouteCommandResult.builder().build();
@@ -200,17 +202,17 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       executionLogCallback = tasTaskHelperBase.getLogCallback(
           iLogStreamingTaskClient, CfCommandUnitConstants.Downsize, true, commandUnitsProgress);
       // if deploy and downsizeOld is true
-      updateValues = downsizeOldAppDuringDeployAndRenameApps(executionLogCallback, cfSwapRoutesRequestNG,
-          cfRequestConfig, pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath(), iLogStreamingTaskClient,
-          commandUnitsProgress);
+      downsizeOldAppDuringDeployAndRenameApps(executionLogCallback, cfSwapRoutesRequestNG, cfRequestConfig,
+          pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath(), iLogStreamingTaskClient, commandUnitsProgress);
 
       getInstancesForNewApplication(
           cfSwapRoutesRequestNG.getReleaseNamePrefix(), cfSwapRouteCommandResult, cfRequestConfig);
 
-      cfSwapRouteCommandResult.setUpdatedValues(updateValues);
       cfSwapRouteCommandResponseNG.setErrorMessage(StringUtils.EMPTY);
       cfSwapRouteCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
       cfSwapRouteCommandResponseNG.setNewApplicationName(cfSwapRoutesRequestNG.getReleaseNamePrefix());
+      cfSwapRouteCommandResult.setNewApplicationInfo(cfSwapRoutesRequestNG.getNewApplicationDetails());
+      cfSwapRouteCommandResult.setActiveApplicationInfo(cfSwapRoutesRequestNG.getActiveApplicationDetails());
       cfSwapRouteCommandResponseNG.setCfSwapRouteCommandResult(cfSwapRouteCommandResult);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);

@@ -32,7 +32,9 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.IDP)
 public class UserSyncJobTest extends CategoryTest {
   private static final String TEST_ACCOUNT1 = "acc1";
+  private static final String TEST_ACCOUNT1_USER_GROUP = "acc1Ug";
   private static final String TEST_ACCOUNT2 = "acc2";
+  private static final String TEST_ACCOUNT2_USER_GROUP = "acc2Ug";
   @Mock private UserEventRepository userEventRepository;
   @Mock private BackstageResourceClient backstageResourceClient;
   @InjectMocks private UserSyncJob job;
@@ -47,12 +49,20 @@ public class UserSyncJobTest extends CategoryTest {
   @Owner(developers = SARVAGNYA_JATTI)
   @Category(UnitTests.class)
   public void testUserSync() {
-    UserEventEntity acc1 = UserEventEntity.builder().accountIdentifier(TEST_ACCOUNT1).hasEvent(true).build();
-    UserEventEntity acc2 = UserEventEntity.builder().accountIdentifier(TEST_ACCOUNT2).hasEvent(true).build();
+    UserEventEntity acc1 = UserEventEntity.builder()
+                               .accountIdentifier(TEST_ACCOUNT1)
+                               .userGroupIdentifier(TEST_ACCOUNT1_USER_GROUP)
+                               .hasEvent(true)
+                               .build();
+    UserEventEntity acc2 = UserEventEntity.builder()
+                               .accountIdentifier(TEST_ACCOUNT2)
+                               .userGroupIdentifier(TEST_ACCOUNT2_USER_GROUP)
+                               .hasEvent(true)
+                               .build();
     when(userEventRepository.findAllByHasEvent(true)).thenReturn(Arrays.asList(acc1, acc2));
     job.run();
-    verify(backstageResourceClient).providerRefresh(acc1.getAccountIdentifier());
-    verify(backstageResourceClient).providerRefresh(acc2.getAccountIdentifier());
+    verify(backstageResourceClient).providerRefresh(acc1.getAccountIdentifier(), acc1.getUserGroupIdentifier());
+    verify(backstageResourceClient).providerRefresh(acc2.getAccountIdentifier(), acc2.getUserGroupIdentifier());
   }
 
   @After

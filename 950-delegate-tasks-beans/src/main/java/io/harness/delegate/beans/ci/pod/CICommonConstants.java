@@ -9,4 +9,9 @@ package io.harness.delegate.beans.ci.pod;
 public class CICommonConstants {
   // Lite engine container constants
   public static final String LITE_ENGINE_CONTAINER_NAME = "lite-engine";
+  public static final String HARNESS_LE_DELEGATE_LOG_URL = "HARNESS_LE_DELEGATE_LOG_URL";
+  public static final String HARNESS_LE_DELEGATE_TI_URL = "HARNESS_LE_DELEGATE_TI_URL";
+
+  public static final String LITE_ENGINE_LOG_KEY_SUFFIX =
+      "engine:main"; // keeping it the same everywhere to keep uniformity
 }

@@ -163,3 +163,4 @@ featureFlagConfig:
 listOfErrorCodesForOffsetReset:
   - 286 # Resume token cannot be found in oplog
   - 10334 # Invalid BSONObj size
+  - 280 # Non-resumable change stream error

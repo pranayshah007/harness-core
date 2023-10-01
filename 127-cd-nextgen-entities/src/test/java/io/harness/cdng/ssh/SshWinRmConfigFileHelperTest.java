@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -69,6 +71,7 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
   private static final String PROJECT_ID = "testProject";
   private static final String ORG_ID = "testOrg";
   private static final String CONFIG_FILE_VALID_PATH = "validFilePath";
+  private static final String CONFIG_FILE_EMPTY_PATH = "emptyFilePath";
   private static final String CONFIG_FILE_VALID_SECRET_ID = "validSecretFileId";
   private static final String CONFIG_FILE_CONTENT = "content";
   private static final long CONFIG_FILE_SIZE = 20L;
@@ -81,8 +84,17 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
   @Mock private FileStoreService fileStoreService;
   @Mock private NGEncryptedDataService ngEncryptedDataService;
   @Mock private CDExpressionResolver cdExpressionResolver;
-
   @InjectMocks private SshWinRmConfigFileHelper sshWinRmConfigFileHelper;
+
+  @Before
+  public void setUp() throws Exception {
+    doThrow(new RuntimeException("null expression is not allowed while rendering"))
+        .when(cdExpressionResolver)
+        .renderExpression(any(Ambiance.class), eq(null), anyBoolean());
+    doThrow(new RuntimeException("null expression is not allowed while rendering"))
+        .when(cdExpressionResolver)
+        .renderExpression(any(Ambiance.class), eq(null));
+  }
 
   @Test
   @Owner(developers = IVAN)
@@ -90,33 +102,41 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
   public void testGetFileDelegateConfig() {
     Ambiance ambiance = getAmbiance();
     Map<String, ConfigFileOutcome> configFilesOutcome = new HashMap<>();
-    HarnessStore harnessStore = HarnessStore.builder()
-                                    .files(ParameterField.createValueField(List.of(CONFIG_FILE_VALID_PATH)))
-                                    .secretFiles(ParameterField.createValueField(List.of(CONFIG_FILE_VALID_SECRET_ID)))
-                                    .build();
+    HarnessStore harnessStore =
+        HarnessStore.builder()
+            .files(ParameterField.createValueField(List.of(CONFIG_FILE_VALID_PATH, CONFIG_FILE_EMPTY_PATH)))
+            .secretFiles(ParameterField.createValueField(List.of(CONFIG_FILE_VALID_SECRET_ID)))
+            .build();
     configFilesOutcome.put(
         "validConfigFile", ConfigFileOutcome.builder().identifier("validConfigFile").store(harnessStore).build());
+    configFilesOutcome.put(
+        "emptyConfigFile", ConfigFileOutcome.builder().identifier("validConfigFile").store(harnessStore).build());
+
     when(cdExpressionResolver.updateExpressions(ambiance, harnessStore)).thenReturn(harnessStore);
+    when(cdExpressionResolver.renderExpression(eq(ambiance), anyString(), anyBoolean()))
+        .thenReturn(CONFIG_FILE_CONTENT);
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
-        .thenReturn(Optional.of(getFileNodeDTO()));
+        .thenReturn(Optional.of(getFileNodeDTO(CONFIG_FILE_CONTENT)));
+    when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_EMPTY_PATH, true))
+        .thenReturn(Optional.of(getFileNodeDTO(null)));
     when(ngEncryptedDataService.getEncryptionDetails(any(), any()))
         .thenReturn(List.of(EncryptedDataDetail.builder().fieldName(ENCRYPTED_FILE_NAME).build()));
 
     FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false);
+        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance);
 
     assertThat(fileDelegateConfig.getStores()).isNotEmpty();
     List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
     HarnessStoreDelegateConfig storeDelegateConfig = (HarnessStoreDelegateConfig) stores.get(0);
     assertThat(storeDelegateConfig.getConfigFiles()).isNotEmpty();
-    assertThat(storeDelegateConfig.getConfigFiles().size()).isEqualTo(2);
+    assertThat(storeDelegateConfig.getConfigFiles().size()).isEqualTo(3);
 
     ConfigFileParameters configFile = storeDelegateConfig.getConfigFiles().get(0);
     assertThat(configFile.getFileName()).isEqualTo(CONFIG_FILE_NAME);
     assertThat(configFile.getFileContent()).isEqualTo(CONFIG_FILE_CONTENT);
     assertThat(configFile.getFileSize()).isEqualTo(CONFIG_FILE_SIZE);
 
-    ConfigFileParameters secretConfigFile = storeDelegateConfig.getConfigFiles().get(1);
+    ConfigFileParameters secretConfigFile = storeDelegateConfig.getConfigFiles().get(2);
     assertThat(secretConfigFile.getFileName()).isEqualTo(CONFIG_FILE_VALID_SECRET_ID);
     assertThat(secretConfigFile.getEncryptionDataDetails().get(0).getFieldName()).isEqualTo(ENCRYPTED_FILE_NAME);
     assertThat(secretConfigFile.getSecretConfigFile().getEncryptedConfigFile().getIdentifier())
@@ -170,12 +190,12 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
     when(cdExpressionResolver.renderExpression(any(), anyString(), anyBoolean())).thenReturn(CONFIG_FILE_CONTENT);
 
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
-        .thenReturn(Optional.of(getFileNodeDTO()));
+        .thenReturn(Optional.of(getFileNodeDTO(CONFIG_FILE_CONTENT)));
     when(ngEncryptedDataService.getEncryptionDetails(any(), any()))
         .thenReturn(List.of(EncryptedDataDetail.builder().fieldName(ENCRYPTED_FILE_NAME).build()));
 
     FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false);
+        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance);
 
     assertThat(fileDelegateConfig.getStores()).isNotEmpty();
     List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
@@ -200,11 +220,11 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
         "validConfigFile", ConfigFileOutcome.builder().identifier("validConfigFile").store(harnessStore).build());
     when(cdExpressionResolver.updateExpressions(ambiance, harnessStore)).thenReturn(harnessStore);
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
-        .thenReturn(Optional.of(getFileNodeDTO()));
+        .thenReturn(Optional.of(getFileNodeDTO(CONFIG_FILE_CONTENT)));
     when(cdExpressionResolver.renderExpression(eq(ambiance), any(), anyBoolean())).thenReturn(CONFIG_FILE_CONTENT);
 
     FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, true);
+        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance);
 
     assertThat(fileDelegateConfig.getStores()).isNotEmpty();
     List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
@@ -232,12 +252,12 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
         "validConfigFile", ConfigFileOutcome.builder().identifier("validConfigFile").store(harnessStore).build());
     when(cdExpressionResolver.updateExpressions(ambiance, harnessStore)).thenReturn(harnessStore);
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
-        .thenReturn(Optional.of(getFileNodeDTO()));
+        .thenReturn(Optional.of(getFileNodeDTO(CONFIG_FILE_CONTENT)));
     when(ngEncryptedDataService.getEncryptionDetails(any(), any()))
         .thenReturn(List.of(EncryptedDataDetail.builder().fieldName(ENCRYPTED_FILE_NAME).build()));
 
     FileDelegateConfig fileDelegateConfig =
-        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, true);
+        sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance);
 
     assertThat(fileDelegateConfig.getStores()).isNotEmpty();
     List<StoreDelegateConfig> stores = fileDelegateConfig.getStores();
@@ -267,7 +287,7 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
         .thenReturn(Optional.of(getFileNodeDTOWith16MBFile()));
 
-    assertThatThrownBy(() -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false))
+    assertThatThrownBy(() -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Config file size is larger than maximum [15728640], path [validFilePath], scope: [PROJECT]");
   }
@@ -286,7 +306,7 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
     when(fileStoreService.getWithChildrenByPath(ACCOUNT_ID, ORG_ID, PROJECT_ID, CONFIG_FILE_VALID_PATH, true))
         .thenReturn(Optional.of(getFolderNodeDTO()));
 
-    assertThatThrownBy(() -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, false))
+    assertThatThrownBy(() -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Config file cannot be directory, path [validFilePath], scope: [PROJECT]");
   }
@@ -308,11 +328,11 @@ public class SshWinRmConfigFileHelperTest extends CategoryTest {
         .build();
   }
 
-  private FileNodeDTO getFileNodeDTO() {
+  private FileNodeDTO getFileNodeDTO(String content) {
     return FileNodeDTO.builder()
         .name(CONFIG_FILE_NAME)
         .fileUsage(FileUsage.CONFIG)
-        .content(CONFIG_FILE_CONTENT)
+        .content(content)
         .size(CONFIG_FILE_SIZE)
         .build();
   }

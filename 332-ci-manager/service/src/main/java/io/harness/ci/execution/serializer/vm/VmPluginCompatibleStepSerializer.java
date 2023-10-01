@@ -5,20 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer.vm;
+package io.harness.ci.execution.serializer.vm;
 
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.config.CIDockerLayerCachingConfig;
-import io.harness.ci.execution.CIDockerLayerCachingConfigService;
-import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.execution.CIDockerLayerCachingConfigService;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
+import io.harness.ci.execution.utils.HarnessImageUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.utils.CIStepInfoUtils;
-import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
@@ -47,6 +48,7 @@ public class VmPluginCompatibleStepSerializer {
   @Inject private PluginSettingUtils pluginSettingUtils;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private CIDockerLayerCachingConfigService dockerLayerCachingConfigService;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmStepInfo serialize(Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep,
       StageInfraDetails stageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
@@ -60,6 +62,8 @@ public class VmPluginCompatibleStepSerializer {
     }
     Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
         pluginCompatibleStep, identifier, timeout, ambiance, Type.VM, true, true);
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     return getContainerizedStep(ambiance, pluginCompatibleStep, stageInfraDetails, envVars, timeout);
   }
 
@@ -108,23 +112,26 @@ public class VmPluginCompatibleStepSerializer {
   }
 
   public Set<String> preProcessStep(Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep,
-      StageInfraDetails stageInfraDetails, String identifier) {
+      StageInfraDetails stageInfraDetails, String identifier, boolean isBareMetalUsed) {
     Set<String> secretSet = new HashSet<>();
     if (CIStepInfoUtils.canRunVmStepOnHost(pluginCompatibleStep.getNonYamlInfo().getStepInfoType(), stageInfraDetails,
             AmbianceUtils.getAccountId(ambiance), ciExecutionConfigService, featureFlagService, pluginCompatibleStep)) {
       // Check if DLC Setup is required
       if (pluginSettingUtils.dlcSetupRequired(pluginCompatibleStep)) {
-        Set<String> dlcSecrets = setupDlc(pluginCompatibleStep, AmbianceUtils.getAccountId(ambiance), identifier);
+        Set<String> dlcSecrets =
+            setupDlc(pluginCompatibleStep, AmbianceUtils.getAccountId(ambiance), identifier, isBareMetalUsed);
         secretSet.addAll(dlcSecrets);
       }
     }
     return secretSet;
   }
 
-  private Set<String> setupDlc(PluginCompatibleStep stepInfo, String accountId, String identifier) {
+  private Set<String> setupDlc(
+      PluginCompatibleStep stepInfo, String accountId, String identifier, boolean isBareMetalUsed) {
     Set<String> stepSecrets = new HashSet<>();
     // Get DLC Config for the accountId
-    CIDockerLayerCachingConfig config = dockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId);
+    CIDockerLayerCachingConfig config =
+        dockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId, isBareMetalUsed);
     if (config == null) {
       // Nothing to add
       return stepSecrets;

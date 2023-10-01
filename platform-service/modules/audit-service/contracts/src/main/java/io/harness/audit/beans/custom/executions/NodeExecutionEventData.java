@@ -35,6 +35,7 @@ public class NodeExecutionEventData extends AuditEventData {
   String stageIdentifier;
   String stageType;
   String planExecutionId;
+  Integer runSequence;
   String nodeExecutionId;
   String status;
   TriggeredByInfoAuditDetails triggeredBy;
@@ -43,7 +44,7 @@ public class NodeExecutionEventData extends AuditEventData {
 
   @Builder
   public NodeExecutionEventData(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String stageIdentifier, String stageType, String planExecutionId,
+      String pipelineIdentifier, String stageIdentifier, String stageType, String planExecutionId, Integer runSequence,
       String nodeExecutionId, String status, TriggeredByInfoAuditDetails triggeredBy, long startTs, long endTs) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
@@ -51,6 +52,7 @@ public class NodeExecutionEventData extends AuditEventData {
     this.pipelineIdentifier = pipelineIdentifier;
     this.stageIdentifier = stageIdentifier;
     this.stageType = stageType;
+    this.runSequence = runSequence;
     this.planExecutionId = planExecutionId;
     this.nodeExecutionId = nodeExecutionId;
     this.status = status;

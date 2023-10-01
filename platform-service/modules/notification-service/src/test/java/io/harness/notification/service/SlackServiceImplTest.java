@@ -16,6 +16,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +34,7 @@ import io.harness.notification.remote.dto.SlackSettingDTO;
 import io.harness.notification.senders.SlackSenderImpl;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.rule.Owner;
 import io.harness.service.DelegateGrpcClientWrapper;
 
@@ -51,6 +54,7 @@ public class SlackServiceImplTest extends CategoryTest {
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private SlackSenderImpl slackSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private SlackServiceImpl slackService;
   private String accountId = "accountId";
   private String slackTemplateName = "slack_test";
@@ -61,8 +65,8 @@ public class SlackServiceImplTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    slackService = new SlackServiceImpl(
-        notificationSettingsService, notificationTemplateService, slackSender, delegateGrpcClientWrapper);
+    slackService = new SlackServiceImpl(notificationSettingsService, notificationTemplateService, slackSender,
+        delegateGrpcClientWrapper, notificationSettingsHelper);
   }
 
   @Test
@@ -140,6 +144,8 @@ public class SlackServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(slackWebhookurl));
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
@@ -194,6 +200,8 @@ public class SlackServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(slackWebhookurl));
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
@@ -243,6 +251,8 @@ public class SlackServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(slackWebhookurl));
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));

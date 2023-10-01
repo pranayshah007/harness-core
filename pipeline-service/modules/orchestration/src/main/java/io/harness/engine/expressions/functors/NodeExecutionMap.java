@@ -12,7 +12,10 @@ import static io.harness.execution.NodeExecution.NodeExecutionKeys;
 
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.engine.pms.data.OutcomeException;
@@ -33,7 +36,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.execution.NodeExecutionUtils;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +46,7 @@ import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
 /**
  * NodeExecutionMap resolves expressions for a single node execution.
@@ -54,6 +57,8 @@ import lombok.Value;
  * 3. Then we try to find an outcome in node1's scope with name `child1`
  * 4. Then we try to find an sweeping output in node1's scope with name `child1`
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Value
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
@@ -65,11 +70,13 @@ public class NodeExecutionMap extends LateBindingMap {
   transient NodeExecution nodeExecution;
   transient Set<NodeExecutionEntityType> entityTypes;
   transient Map<String, Object> children;
+  transient JexlEngine engine;
+  public static final String RETRY_COUNT = "retryCount";
 
   @Builder
   NodeExecutionMap(NodeExecutionsCache nodeExecutionsCache, PmsOutcomeService pmsOutcomeService,
       PmsSweepingOutputService pmsSweepingOutputService, Ambiance ambiance, NodeExecution nodeExecution,
-      Set<NodeExecutionEntityType> entityTypes, Map<String, Object> children) {
+      Set<NodeExecutionEntityType> entityTypes, Map<String, Object> children, JexlEngine engine) {
     this.nodeExecutionsCache = nodeExecutionsCache;
     this.pmsOutcomeService = pmsOutcomeService;
     this.pmsSweepingOutputService = pmsSweepingOutputService;
@@ -82,6 +89,7 @@ public class NodeExecutionMap extends LateBindingMap {
       this.children = new LateBindingMap();
       this.children.putAll(children);
     }
+    this.engine = engine;
   }
 
   @Override
@@ -136,6 +144,7 @@ public class NodeExecutionMap extends LateBindingMap {
      * c) a Pipeline Stage -> which is same as normal stage
      */
     String pipelineExecutionUrl = "<+pipeline." + OrchestrationConstants.EXECUTION_URL + ">";
+    // Todo: Fetch Ambiance on demand
     Ambiance nodeAmbiance = nodeExecution.getAmbiance();
     boolean currentLevelInsideStage = AmbianceUtils.isCurrentLevelInsideStage(nodeAmbiance);
     // If any other node expression is called, then return pipeline execution url.
@@ -188,6 +197,8 @@ public class NodeExecutionMap extends LateBindingMap {
       return Optional.ofNullable(nodeExecution.getStartTs());
     } else if (NodeExecutionKeys.endTs.equals(key)) {
       return Optional.ofNullable(nodeExecution.getEndTs());
+    } else if (RETRY_COUNT.equals(key)) {
+      return Optional.ofNullable(nodeExecution.getRetryIds() != null ? nodeExecution.getRetryIds().size() : 0);
     } else {
       return Optional.empty();
     }
@@ -196,15 +207,16 @@ public class NodeExecutionMap extends LateBindingMap {
   private Optional<Object> fetchStepParameters(String key) {
     if (nodeExecution == null || !entityTypes.contains(NodeExecutionEntityType.STEP_PARAMETERS)) {
       return Optional.empty();
-    }
-    return ExpressionEvaluatorUtils.fetchField(extractFinalStepParameters(nodeExecution, nodeExecutionsCache), key);
+    } // ulWguxJGTZe0rN_cFSTclQ
+    return ExpressionEvaluatorUtils.fetchField(
+        engine, extractFinalStepParameters(nodeExecution, nodeExecutionsCache), key);
   }
 
   private Optional<Object> fetchStrategyData(String key) {
     if (nodeExecution == null || !entityTypes.contains(NodeExecutionEntityType.STRATEGY)) {
       return Optional.empty();
     }
-    return ExpressionEvaluatorUtils.fetchField(extractStrategyMetadata(nodeExecution), key);
+    return ExpressionEvaluatorUtils.fetchField(engine, extractStrategyMetadata(nodeExecution), key);
   }
 
   private Optional<Object> fetchOutcomeOrOutput(String key) {
@@ -214,38 +226,39 @@ public class NodeExecutionMap extends LateBindingMap {
       return Optional.empty();
     }
 
-    Ambiance newAmbiance = nodeExecution.getAmbiance();
-    if (newAmbiance == null) {
+    List<String> levelRuntimeIdx = nodeExecution.getLevelRuntimeIdx();
+    if (levelRuntimeIdx == null) {
       return Optional.empty();
     }
 
-    Optional<Object> value = fetchOutcome(newAmbiance, key);
+    Optional<Object> value = fetchOutcome(ambiance.getPlanExecutionId(), levelRuntimeIdx, key);
     if (!value.isPresent()) {
-      value = fetchSweepingOutput(newAmbiance, key);
+      value = fetchSweepingOutput(ambiance.getPlanExecutionId(), levelRuntimeIdx, key);
     }
     return value;
   }
 
-  private Optional<Object> fetchOutcome(Ambiance newAmbiance, String key) {
+  private Optional<Object> fetchOutcome(String planExecutionId, List<String> levelRuntimeIdIdx, String key) {
     if (!entityTypes.contains(NodeExecutionEntityType.OUTCOME)) {
       return Optional.empty();
     }
 
     try {
-      return jsonToObject(pmsOutcomeService.resolve(newAmbiance, RefObjectUtils.getOutcomeRefObject(key)));
+      return jsonToObject(pmsOutcomeService.resolveUsingLevelRuntimeIdx(
+          planExecutionId, levelRuntimeIdIdx, RefObjectUtils.getOutcomeRefObject(key)));
     } catch (OutcomeException ignored) {
       return Optional.empty();
     }
   }
 
-  private Optional<Object> fetchSweepingOutput(Ambiance newAmbiance, String key) {
+  private Optional<Object> fetchSweepingOutput(String planExecutionId, List<String> levelRuntimeIdIdx, String key) {
     if (!entityTypes.contains(NodeExecutionEntityType.SWEEPING_OUTPUT)) {
       return Optional.empty();
     }
 
     try {
-      return jsonToObject(
-          pmsSweepingOutputService.resolve(newAmbiance, RefObjectUtils.getSweepingOutputRefObject(key)));
+      return jsonToObject(pmsSweepingOutputService.resolveUsingLevelRuntimeIdx(
+          planExecutionId, levelRuntimeIdIdx, RefObjectUtils.getSweepingOutputRefObject(key)));
     } catch (SweepingOutputException ignored) {
       return Optional.empty();
     }
@@ -254,14 +267,14 @@ public class NodeExecutionMap extends LateBindingMap {
   private static Map<String, Object> extractFinalStepParameters(
       NodeExecution nodeExecution, NodeExecutionsCache nodeExecutionsCache) {
     if (nodeExecution.getResolvedStepParameters() != null) {
-      Map<String, Object> stepParameters = NodeExecutionUtils.extractAndProcessObject(
-          RecastOrchestrationUtils.toJson(nodeExecution.getResolvedStepParameters()));
+      Map<String, Object> stepParameters =
+          (Map<String, Object>) NodeExecutionUtils.resolveObject(nodeExecution.getResolvedStepParameters());
       if (stepParameters != null) {
         return stepParameters;
       }
     }
     Node node = nodeExecutionsCache.fetchNode(nodeExecution.getNodeId());
-    return NodeExecutionUtils.extractAndProcessObject(node.getStepParameters().toJson());
+    return (Map<String, Object>) NodeExecutionUtils.resolveObject(node.getStepParameters());
   }
 
   private static Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {

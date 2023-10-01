@@ -6,12 +6,14 @@
  */
 
 package io.harness.cimanager.stages;
-
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.yaml.extended.cache.Caching;
@@ -21,6 +23,7 @@ import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.slsa.beans.SlsaConfig;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.schema.beans.SupportedPossibleFieldTypes;
 
@@ -38,6 +41,7 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CI)
 @Data
 @Builder
@@ -75,4 +79,6 @@ public class IntegrationStageConfigImpl implements IntegrationStageConfig {
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = Caching.class)
   private Caching caching;
+
+  SlsaConfig slsa_provenance;
 }

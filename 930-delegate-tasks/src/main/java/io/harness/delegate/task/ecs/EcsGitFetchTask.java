@@ -19,13 +19,16 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -67,11 +70,13 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jose4j.lang.JoseException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private GitFetchTaskHelper gitFetchTaskHelper;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public EcsGitFetchTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -176,7 +181,8 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
       executionLogCallback.saveExecutionLog("Using optimized file fetch ");
       gitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
     } else {
-      gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+      gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+          gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
           gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
@@ -190,7 +196,7 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
         gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
         try {
           filesResult =
-              gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+              gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO, false);
         } catch (Exception e) {
           throw NestedExceptionUtils.hintWithExplanationException(
               format(

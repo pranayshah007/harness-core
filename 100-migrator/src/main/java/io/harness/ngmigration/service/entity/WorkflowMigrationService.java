@@ -16,8 +16,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -92,6 +95,8 @@ import okhttp3.RequestBody;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class WorkflowMigrationService extends NgMigrationService {
@@ -375,7 +380,7 @@ public class WorkflowMigrationService extends NgMigrationService {
                                                 .build()))
           .build();
     }
-    String yaml = YamlUtils.writeYamlString(yamlFile.getYaml());
+    String yaml;
     if (yamlFile.getYaml() instanceof PipelineConfig) {
       yaml = getYamlString(yamlFile);
       Response<ResponseDTO<PipelineSaveResponse>> resp =
@@ -384,18 +389,37 @@ public class WorkflowMigrationService extends NgMigrationService {
                   inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
                   RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
               .execute();
+      if (!(resp.code() >= 200 && resp.code() < 300)) {
+        yaml = getYamlStringV2(yamlFile);
+        resp = pmsClient
+                   .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                       inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                       RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
+                   .execute();
+      }
       log.info("Workflow as pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
         log.info("Workflows as pipeline template is \n - {}", yaml);
       }
       return handleResp(yamlFile, resp);
     } else {
+      yaml = YamlUtils.writeYamlString(yamlFile.getYaml());
       Response<ResponseDTO<TemplateWrapperResponseDTO>> resp =
           templateClient
               .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                   inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
                   RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
               .execute();
+
+      if (!(resp.code() >= 200 && resp.code() < 300)) {
+        yaml = getYamlStringV2(yamlFile);
+        resp = templateClient
+                   .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                       inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                       RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
+                   .execute();
+      }
+
       log.info("Workflow as template creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
         log.info("The WF template is \n - {}", yaml);
@@ -464,7 +488,7 @@ public class WorkflowMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 }

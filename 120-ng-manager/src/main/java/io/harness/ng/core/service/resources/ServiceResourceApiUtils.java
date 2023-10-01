@@ -15,6 +15,9 @@ import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -38,6 +41,8 @@ import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Singleton
 public class ServiceResourceApiUtils {
   private final Validator validator;

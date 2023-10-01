@@ -656,6 +656,29 @@ public class AuthenticationSettingsResource {
     return new RestResponse<>(response);
   }
 
+  @PUT
+  @Path("/public-access")
+  @Consumes(APPLICATION_JSON)
+  @ApiOperation(value = "Enable/disable public access", nickname = "setPublicAccess")
+  @Operation(operationId = "setPublicAccess", summary = "Enable/disable public access at account level",
+      description = "Enable/disable public access for the given Account ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Successfully configured public access for an account")
+      })
+  public RestResponse<Boolean>
+  setPublicAccess(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                      "accountIdentifier") @NotNull String accountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+          description = "Information about the session timeout for all users of this account in minutes.") @NotNull
+      @Valid Boolean publicAccessEnabled) {
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, null, null), Resource.of(AUTHSETTING, null), EDIT_AUTHSETTING_PERMISSION);
+    boolean response = authenticationSettingsService.setPublicAccess(accountIdentifier, publicAccessEnabled);
+    return new RestResponse<>(response);
+  }
+
   private MultipartBody.Part getMultipartBodyFromInputStream(InputStream uploadedInputStream) throws IOException {
     return uploadedInputStream == null ? null
                                        : MultipartBody.Part.createFormData("file", null,

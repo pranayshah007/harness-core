@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer.vm;
+package io.harness.ci.execution.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
@@ -17,10 +17,10 @@ import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.serializer.SerializerUtils;
-import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmRunTestStep;
@@ -48,6 +48,8 @@ public class VmRunTestStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
+
   String NULL_STR = "null";
 
   public VmRunTestStep serialize(RunTestsStepInfo runTestsStepInfo, String identifier,
@@ -120,6 +122,8 @@ public class VmRunTestStepSerializer {
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
 
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runTestsStepInfo.getShell());
     preCommand = earlyExitCommand + preCommand;
 

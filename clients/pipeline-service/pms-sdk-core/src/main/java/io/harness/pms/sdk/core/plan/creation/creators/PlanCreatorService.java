@@ -7,12 +7,16 @@
 
 package io.harness.pms.sdk.core.plan.creation.creators;
 
+import static io.harness.pms.plan.creation.PlanCreatorConstants.YAML_VERSION;
 import static io.harness.pms.sdk.PmsSdkModuleUtils.PLAN_CREATOR_SERVICE_EXECUTOR;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -46,7 +50,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.variables.VariableCreatorService;
 import io.harness.pms.utils.CompletableFutures;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -65,6 +69,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 @Singleton
@@ -273,8 +279,9 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
              ctx.getProjectIdentifier(), ctx.getPipelineIdentifier(), ctx.getExecutionUuid())) {
       try {
         String fullyQualifiedName = YamlUtils.getFullyQualifiedName(field.getNode());
+        String yamlVersion = getYamlVersion(ctx, dependency);
         Optional<PartialPlanCreator<?>> planCreatorOptional =
-            PlanCreatorServiceHelper.findPlanCreator(planCreators, field, ctx.getYamlVersion());
+            PlanCreatorServiceHelper.findPlanCreator(planCreators, field, yamlVersion);
         if (!planCreatorOptional.isPresent()) {
           return null;
         }
@@ -283,7 +290,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         Class<?> cls = planCreator.getFieldClass();
         String executionInputTemplate = "";
         // ExecutionInput is supported for V0 YAML only. Not supported with YAML simplification.
-        if (PipelineVersion.V0.equals(ctx.getYamlVersion())) {
+        if (HarnessYamlVersion.V0.equals(ctx.getYamlVersion())) {
           executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
         }
         Object obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);
@@ -299,6 +306,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
           PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
               planForField, serviceName, field, currentNodeServiceAffinity);
+          PlanCreatorServiceHelper.decorateResponseWithParentInfo(dependency, planForField);
           return planForField;
         } catch (Exception ex) {
           log.error(format("Error creating plan for node: %s", fullyQualifiedName), ex);
@@ -316,5 +324,16 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         return PlanCreationResponse.builder().errorMessage(message).build();
       }
     }
+  }
+
+  private String getYamlVersion(PlanCreationContext ctx, Dependency dependency) {
+    String yamlVersion = ctx.getYamlVersion();
+    // If the yamlVersion is V0 then do v0 only.
+    if (!HarnessYamlVersion.V0.equals(yamlVersion)) {
+      if (dependency != null && dependency.getParentInfo().getDataMap().containsKey(YAML_VERSION)) {
+        yamlVersion = dependency.getParentInfo().getDataMap().get(YAML_VERSION).getStringValue();
+      }
+    }
+    return yamlVersion;
   }
 }

@@ -6,19 +6,19 @@
  */
 
 package io.harness.cdng.manifest;
-
-import static java.lang.String.format;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.UnsupportedOperationException;
-import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.annotations.dev.ProductModule;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 public interface ManifestType {
   Set<String> K8S_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(
@@ -29,7 +29,9 @@ public interface ManifestType {
           ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition);
   Set<String> SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.VALUES, ManifestType.KustomizePatches, ManifestType.OpenshiftParam,
-          ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, ManifestType.HelmRepoOverride);
+          ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, ManifestType.HelmRepoOverride,
+          ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition, ManifestType.EcsScalingPolicyDefinition,
+          ManifestType.EcsScalableTargetDefinition);
   Set<String> ASG_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AsgLaunchTemplate,
       ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction);
 
@@ -39,6 +41,7 @@ public interface ManifestType {
   Set<String> AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition);
   Set<String> AWS_SAM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AwsSamDirectory);
+  Set<String> MULTIPLE_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.HelmChart);
 
   String K8Manifest = "K8sManifest";
   String VALUES = "Values";
@@ -80,17 +83,5 @@ public interface ManifestType {
         AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
         ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
         ManifestType.AwsSamDirectory, ManifestType.GoogleCloudFunctionGenOneDefinition));
-  }
-
-  static Set<String> getSupportedManifestTypes(String serviceType) {
-    if (ServiceSpecType.KUBERNETES.equals(serviceType)) {
-      return K8S_SUPPORTED_MANIFEST_TYPES;
-    }
-
-    if (ServiceSpecType.NATIVE_HELM.equals(serviceType)) {
-      return HELM_SUPPORTED_MANIFEST_TYPES;
-    }
-
-    throw new UnsupportedOperationException(format("Service Spec Type %s is not supported", serviceType));
   }
 }

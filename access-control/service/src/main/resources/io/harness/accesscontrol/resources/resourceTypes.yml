@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 31
+version: 37
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -18,6 +18,7 @@ resourceTypes:
     permissionKey: secret
   - identifier: PIPELINE
     permissionKey: pipeline
+    isPublic: true
   - identifier: SERVICE
     permissionKey: service
   - identifier: ENVIRONMENT
@@ -120,8 +121,6 @@ resourceTypes:
     permissionKey: setting
   - identifier: DEPLOYMENTFREEZE
     permissionKey: deploymentfreeze
-  - identifier: IAC_STACK
-    permissionKey: stack
   - identifier: STREAMING_DESTINATION
     permissionKey: streamingDestination
   - identifier: DOWNTIME
@@ -130,9 +129,25 @@ resourceTypes:
     permissionKey: idpsettings
   - identifier: CODE_REPOSITORY
     permissionKey: repo
-  - identifier: CODE_COMMIT_CHECK
-    permissionKey: commitCheck
   - identifier: NETWORK_MAP
     permissionKey: networkmap
   - identifier: CHAOS_SECURITY_GOVERNANCE
     permissionKey: chaossecuritygovernance
+  - identifier:  CET_AGENT
+    permissionKey: agents
+  - identifier:  CET_TOKEN
+    permissionKey: token
+  - identifier:  CET_CRITICAL_EVENT
+    permissionKey: criticalevent
+  - identifier: IAC_WORKSPACE
+    permissionKey: workspace
+  - identifier: SEI_CONFIGURATION_SETTINGS
+    permissionKey: seiconfigurationsettings
+  - identifier: SEI_COLLECTIONS
+    permissionKey: seicollections
+  - identifier: SEI_INSIGHTS
+    permissionKey: seiinsights
+  - identifier: CCM_ANOMALIES
+    permissionKey: anomalies
+  - identifier: CCM_RECOMMENDATIONS
+    permissionKey: recommendations

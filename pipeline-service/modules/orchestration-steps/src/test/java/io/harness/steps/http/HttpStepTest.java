@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,6 +46,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -107,7 +109,14 @@ public class HttpStepTest extends CategoryTest {
     LogStreamingStepClientImpl logClient = mock(LogStreamingStepClientImpl.class);
     Mockito.when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logClient);
     Reflect.on(httpStep).set("engineExpressionService", engineExpressionService);
-    ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "accountId").build();
+
+    ambiance =
+        Ambiance.newBuilder()
+            .putSetupAbstractions("accountId", "accountId")
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
+
     Mockito.when(pmsFeatureFlagHelper.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
   }
 
@@ -265,7 +274,13 @@ public class HttpStepTest extends CategoryTest {
   public void testObtainTask() {
     aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
-    ambiance = Ambiance.newBuilder().build();
+
+    ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
+
     httpStepParameters = HttpStepParameters.infoBuilder()
                              .method(ParameterField.createValueField("GET"))
                              .url(ParameterField.createValueField(TEST_URL))
@@ -298,7 +313,11 @@ public class HttpStepTest extends CategoryTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testHandleTask() throws Exception {
-    ambiance = Ambiance.newBuilder().build();
+    ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
 
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
 
@@ -356,7 +375,13 @@ public class HttpStepTest extends CategoryTest {
 
     aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
-    ambiance = Ambiance.newBuilder().build();
+
+    ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
+
     httpStepParameters = HttpStepParameters.infoBuilder()
                              .method(ParameterField.createValueField("GET"))
                              .url(ParameterField.createValueField(TEST_URL))
@@ -418,7 +443,12 @@ public class HttpStepTest extends CategoryTest {
   public void testObtainTaskWithInputVariables() {
     aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
-    ambiance = Ambiance.newBuilder().build();
+
+    ambiance =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
 
     List<NGVariable> inputVariables = new ArrayList<>();
     inputVariables.add(

@@ -6,10 +6,13 @@
  */
 
 package io.harness.pms.pipeline.governance.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public interface PipelineGovernanceService {
   GovernanceMetadata validateGovernanceRules(String accountId, String orgIdentifier, String projectIdentifier,
       String branch, PipelineEntity pipelineEntity, String yamlWithResolvedTemplates);

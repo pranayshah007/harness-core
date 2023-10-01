@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.rancher;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -32,6 +33,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonDeserialize(using = RancherConnectorConfigAuthCredentialsDTOSerializer.class)
 @Schema(name = "RancherAuthentication", description = "This contains rancher authentication details")
+@RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthCredentialsDTO")
 public class RancherConnectorConfigAuthCredentialsDTO {
   @NotNull @JsonProperty("type") RancherAuthType authType;
 

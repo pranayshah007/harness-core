@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
@@ -130,6 +131,10 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
           analysisStateMachine.getNextAttemptTime());
       return analysisStateMachine.getCurrentState().getStatus();
     }
+    if (analysisStateMachine.getFirstPickedAt() == null) {
+      analysisStateMachine.setFirstPickedAt(clock.instant());
+      hPersistence.save(analysisStateMachine);
+    }
     log.info("Executing state machine {} for verificationTask {}", analysisStateMachine.getUuid(),
         analysisStateMachine.getVerificationTaskId());
     AnalysisState currentState = analysisStateMachine.getCurrentState();
@@ -215,17 +220,32 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       }
     }
     hPersistence.save(analysisStateMachine);
-    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(analysisStateMachine.getUuid());
-    if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())) {
-      Duration timeDuration =
-          Duration.between(analysisStateMachine.getStartTime(), analysisStateMachine.getAnalysisEndTime());
-      cvngLogTags.addAll(
-          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, timeDuration));
-    }
+    List<CVNGLogTag> cvngLogTags = getCvngLogTags(analysisStateMachine, clock);
     executionLogService.getLogger(analysisStateMachine)
         .log(analysisStateMachine.getLogLevel(), cvngLogTags,
             "Analysis state machine status: " + analysisStateMachine.getStatus());
     return analysisStateMachine.getCurrentState().getStatus();
+  }
+
+  private static List<CVNGLogTag> getCvngLogTags(AnalysisStateMachine analysisStateMachine, Clock clock) {
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(analysisStateMachine.getUuid());
+    if (analysisStateMachine.getTotalRetryCount() > 0) {
+      cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+          CVNGTaskMetadataConstants.RETRY_COUNT, String.valueOf(analysisStateMachine.getTotalRetryCount())));
+    }
+    if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())
+        && analysisStateMachine.getFirstPickedAt() != null) {
+      cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+          CVNGTaskMetadataConstants.TASK_TYPE, String.valueOf(analysisStateMachine.getCurrentState().getType())));
+      Duration waitDuration = Duration.between(
+          Instant.ofEpochMilli(analysisStateMachine.getCreatedAt()), analysisStateMachine.getFirstPickedAt());
+      cvngLogTags.addAll(
+          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, waitDuration));
+      Duration totalRunningDuration = Duration.between(analysisStateMachine.getFirstPickedAt(), clock.instant());
+      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+          CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, totalRunningDuration));
+    }
+    return cvngLogTags;
   }
 
   @Override
@@ -241,6 +261,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
     AnalysisStateExecutor analysisStateExecutor = stateTypeAnalysisStateExecutorMap.get(currentState.getType());
     if (currentState.getStatus() == AnalysisStatus.FAILED || currentState.getStatus() == AnalysisStatus.TIMEOUT) {
       analysisStateMachine.setStatus(AnalysisStatus.RUNNING);
+      analysisStateMachine.incrementTotalRetryCount();
       analysisStateExecutor.handleRetry(currentState);
     } else {
       throw new AnalysisStateMachineException(

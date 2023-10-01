@@ -2,8 +2,37 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
+  kubeVersion: ""
   loadbalancerURL: ""
   imagePullSecrets: []
+  useMinimalDelegateImage: false
+  ingress:
+    # -- create ingress objects
+    enabled: false
+    # -- set ingress object classname
+    className: harness
+    # -- set host of ingressObjects
+    hosts:
+      - my-host.example.org
+    # -- set tls for ingress objects
+    tls:
+      enabled: true
+      secretName: ''
+    # -- add annotations to ingress objects
+    objects:
+      annotations: {}
+  istio:
+    # -- create virtualServices objects
+    enabled: false
+    # -- create gateway and use in virtualservice
+    gateway:
+      create: false
+    # -- if gateway not created, use specified gateway and host
+    virtualService:
+      gateways:
+      hosts:
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
@@ -13,7 +42,7 @@ image:
   repository: harness/delegate-proxy-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "76018"
+  tag: "80104_1"
   digest: ""
   imagePullSecrets: []
 
@@ -41,11 +70,11 @@ securityContext:
 
 service:
   type: ClusterIP
-  port: 8080
+  port: 80
+  targetPort: 8080
 
 resources:
   limits:
-    cpu: 200m
     memory: 100Mi
   requests:
     cpu: 200m
@@ -55,9 +84,8 @@ autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
+  targetCPU: ""
+  targetMemory: ""
 nodeSelector: {}
 
 tolerations: []
@@ -65,3 +93,28 @@ tolerations: []
 affinity: {}
 
 additionalConfigs: {}
+
+# extraVolumes:
+# - name: volume-test
+#   configMap:
+#     name: test-config
+#     readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: test-volume-mount
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

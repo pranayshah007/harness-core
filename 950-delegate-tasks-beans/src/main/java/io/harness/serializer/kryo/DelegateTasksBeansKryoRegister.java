@@ -6,10 +6,12 @@
  */
 
 package io.harness.serializer.kryo;
-
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
@@ -19,6 +21,7 @@ import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.audit.streaming.outgoing.Principal;
 import io.harness.audit.streaming.outgoing.Resource;
 import io.harness.audit.streaming.outgoing.ResourceScope;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.beans.HttpCertificate;
 import io.harness.beans.HttpCertificateNG;
@@ -230,6 +233,7 @@ import io.harness.delegate.beans.connector.docker.DockerValidationParams;
 import io.harness.delegate.beans.connector.gcp.GcpValidationParams;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsValidationParams;
 import io.harness.delegate.beans.connector.gcpsecretmanagerconnector.GcpSecretManagerValidationParams;
+import io.harness.delegate.beans.connector.helm.EcrHelmApiListTagsTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
@@ -335,6 +339,7 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.beans.helm.HelmChartVersionDetails;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
 import io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
@@ -771,6 +776,9 @@ import io.harness.delegate.task.helm.HelmReleaseHistoryCommandRequestNG;
 import io.harness.delegate.task.helm.HelmRollbackCommandRequestNG;
 import io.harness.delegate.task.helm.HelmValuesFetchRequest;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
+import io.harness.delegate.task.helm.request.HelmFetchChartManifestTaskParameters;
+import io.harness.delegate.task.helm.response.HelmChartManifest;
+import io.harness.delegate.task.helm.response.HelmFetchChartManifestResponse;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
@@ -987,6 +995,7 @@ import io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.EcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.GcrArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GoogleCloudStorageArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig;
@@ -1220,6 +1229,7 @@ import org.eclipse.jgit.api.GitCommand;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(DEL)
 public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
   @SneakyThrows
@@ -1722,6 +1732,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HelmInstallationParameters.class, 10013);
     kryo.register(SmtpParameters.class, 10014);
     kryo.register(UnitProgressData.class, 95001);
+    kryo.register(HelmDeployProgressData.class, 95003);
     kryo.register(TerraformCommand.class, 5524);
     kryo.register(TerraformCommandUnit.class, 5525);
     kryo.register(DecryptGitAPiAccessTaskParams.class, 543266);
@@ -2181,6 +2192,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureWebAppSlotDeploymentExceptionData.class, 55409);
     kryo.register(OciHelmDockerApiListTagsTaskParams.class, 55440);
     kryo.register(OciHelmDockerApiListTagsTaskResponse.class, 55441);
+    kryo.register(EcrHelmApiListTagsTaskParams.class, 55442);
 
     // GIT
     kryo.register(GitTaskNGRequest.class, 573401);
@@ -2275,6 +2287,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgBlueGreenDeployResponse.class, 5731608);
     kryo.register(AsgBlueGreenDeployResult.class, 5731609);
     kryo.register(NativeHelmServerInstanceInfo.class, 5731610);
+    kryo.register(AsgCapacityConfig.class, 5731611);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
@@ -2324,6 +2337,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AcrArtifactDelegateConfig.class, 9800013);
     kryo.register(DockerArtifactDelegateConfig.class, 9800014);
     kryo.register(GithubPackagesArtifactDelegateConfig.class, 9800015);
+    kryo.register(GoogleCloudStorageArtifactDelegateConfig.class, 9800017);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
@@ -2525,5 +2539,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(RollbackConfiguration.class, 20000614);
     kryo.register(RollbackTrigger.class, 20000615);
     kryo.register(Tag.class, 20000616);
+
+    kryo.register(HelmFetchChartManifestTaskParameters.class, 20000617);
+    kryo.register(HelmFetchChartManifestResponse.class, 20000618);
+    kryo.register(HelmChartManifest.class, 20000619);
   }
 }

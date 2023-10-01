@@ -9,7 +9,10 @@ package io.harness.cdng.environment.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
@@ -27,7 +30,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @UtilityClass
 @OwnedBy(CDC)
 public class EnvironmentPlanCreatorConfigMapper {

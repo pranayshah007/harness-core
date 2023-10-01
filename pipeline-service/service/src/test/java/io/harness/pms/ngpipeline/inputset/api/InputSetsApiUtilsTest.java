@@ -22,7 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
@@ -107,7 +107,7 @@ public class InputSetsApiUtilsTest extends CategoryTest {
     String yaml = readFile("inputSetV1.yaml");
     when(pmsFeatureFlagHelper.isEnabled(account, FeatureName.CI_YAML_VERSIONING)).thenReturn(true);
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(account, yaml);
-    assertThat(inputSetVersion).isEqualTo(PipelineVersion.V1);
+    assertThat(inputSetVersion).isEqualTo(HarnessYamlVersion.V1);
   }
 
   @Test
@@ -117,7 +117,7 @@ public class InputSetsApiUtilsTest extends CategoryTest {
     String yaml = readFile("inputSetV1.yaml");
     when(pmsFeatureFlagHelper.isEnabled(account, FeatureName.CI_YAML_VERSIONING)).thenReturn(false);
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(account, yaml);
-    assertThat(inputSetVersion).isEqualTo(PipelineVersion.V0);
+    assertThat(inputSetVersion).isEqualTo(HarnessYamlVersion.V0);
   }
 
   @Test
@@ -127,6 +127,6 @@ public class InputSetsApiUtilsTest extends CategoryTest {
     String yaml = readFile("inputSet1.yml");
     when(pmsFeatureFlagHelper.isEnabled(account, FeatureName.CI_YAML_VERSIONING)).thenReturn(true);
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(account, yaml);
-    assertThat(inputSetVersion).isEqualTo(PipelineVersion.V0);
+    assertThat(inputSetVersion).isEqualTo(HarnessYamlVersion.V0);
   }
 }

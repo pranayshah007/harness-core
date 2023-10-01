@@ -6,12 +6,14 @@
  */
 
 package io.harness.delegate.task.shell;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper;
@@ -42,6 +44,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
@@ -49,6 +53,7 @@ import lombok.experimental.SuperBuilder;
 public abstract class CommandTaskParameters implements TaskParameters, ExecutionCapabilityDemander {
   String accountId;
   String executionId;
+  Long sessionTimeout;
   @Default @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables = new HashMap<>();
   boolean executeOnDelegate;
   @Expression(ALLOW_SECRETS) List<NgCommandUnit> commandUnits;

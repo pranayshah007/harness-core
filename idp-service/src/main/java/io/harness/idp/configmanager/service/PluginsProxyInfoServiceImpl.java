@@ -9,27 +9,26 @@ package io.harness.idp.configmanager.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.configmanager.beans.entity.PluginsProxyInfoEntity;
 import io.harness.idp.configmanager.repositories.PluginsProxyInfoRepository;
-import io.harness.idp.proxy.envvariable.ProxyEnvVariableUtils;
+import io.harness.idp.configmanager.utils.ConfigType;
+import io.harness.idp.proxy.envvariable.ProxyEnvVariableServiceWrapper;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -37,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
   private PluginsProxyInfoRepository pluginsProxyInfoRepository;
   private DelegateSelectorsCache delegateSelectorsCache;
-  private ProxyEnvVariableUtils proxyEnvVariableUtils;
+  private ProxyEnvVariableServiceWrapper proxyEnvVariableServiceWrapper;
 
   private static final String ERROR_MESSAGE_FOR_PROXY =
       "Host - %s is already used in plugin - %s, please configure it from configurations page.";
@@ -46,29 +45,59 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
       "No proxy hosts are associated with Plugin id - {} for account - {}";
 
   @Override
-  public List<ProxyHostDetail> insertProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier) {
+  public List<ProxyHostDetail> insertProxyHostDetailsForPlugin(
+      AppConfig appConfig, String accountIdentifier, ConfigType configType) {
     List<PluginsProxyInfoEntity> pluginsProxyInfoEntities = getPluginProxyInfoEntities(appConfig, accountIdentifier);
+    if (!ConfigType.PLUGIN.equals(configType)) {
+      return Collections.emptyList();
+    }
+
     List<String> errorMessageForProxyDetails = getErrorMessageIfHostIsAlreadyInUse(accountIdentifier, appConfig);
     if (!errorMessageForProxyDetails.isEmpty()) {
       throw new InvalidRequestException(new Gson().toJson(errorMessageForProxyDetails));
     }
 
-    // deleting older proxy host details
-    deleteProxyHostDetailsForPlugin(accountIdentifier, appConfig.getConfigId());
+    // deleting old proxy host details
+    List<PluginsProxyInfoEntity> existingPluginProxies =
+        pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, appConfig.getConfigId());
+    JSONObject hostProxyMap = proxyEnvVariableServiceWrapper.getHostProxyMap(accountIdentifier);
+    JSONObject originalHostProxyMap = new JSONObject(hostProxyMap.toString());
+
+    if (!existingPluginProxies.isEmpty()) {
+      for (PluginsProxyInfoEntity existingPluginProxy : existingPluginProxies) {
+        hostProxyMap.remove(existingPluginProxy.getHost());
+        Set<String> hostsToBeRemoved =
+            existingPluginProxies.stream().map(PluginsProxyInfoEntity::getHost).collect(Collectors.toSet());
+        delegateSelectorsCache.remove(accountIdentifier, hostsToBeRemoved);
+      }
+      pluginsProxyInfoRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, appConfig.getConfigId());
+    }
+
+    // add new proxy host details
+    for (PluginsProxyInfoEntity pluginsProxyInfoEntity : pluginsProxyInfoEntities) {
+      if (pluginsProxyInfoEntity.getProxy()) {
+        hostProxyMap.put(pluginsProxyInfoEntity.getHost(), true);
+        delegateSelectorsCache.put(accountIdentifier, pluginsProxyInfoEntity.getHost(),
+            new HashSet<>(pluginsProxyInfoEntity.getDelegateSelectors()));
+      }
+    }
 
     List<PluginsProxyInfoEntity> savedPluginProxyDetails =
         (List<PluginsProxyInfoEntity>) pluginsProxyInfoRepository.saveAll(pluginsProxyInfoEntities);
-    updateDelegateSelectorsCache(accountIdentifier, pluginsProxyInfoEntities);
-    updateHostProxyEnvVariable(accountIdentifier, pluginsProxyInfoEntities);
+
+    if (!originalHostProxyMap.similar(hostProxyMap)) {
+      proxyEnvVariableServiceWrapper.setHostProxyMap(accountIdentifier, hostProxyMap);
+    }
 
     return getPluginProxyHostDetailsFromEntities(savedPluginProxyDetails);
   }
 
   @Override
-  public List<ProxyHostDetail> updateProxyHostDetailsForPlugin(AppConfig appConfig, String accountIdentifier) {
+  public List<ProxyHostDetail> updateProxyHostDetailsForPlugin(
+      AppConfig appConfig, String accountIdentifier, ConfigType configType) {
     List<PluginsProxyInfoEntity> pluginsProxyInfoEntities = getPluginProxyInfoEntities(appConfig, accountIdentifier);
     if (pluginsProxyInfoEntities.isEmpty()) {
-      log.info(String.format(NO_PROXY_HOST_ASSOCIATED_VARIABLE_ASSOCIATED, appConfig.getConfigId(), accountIdentifier));
+      log.info(NO_PROXY_HOST_ASSOCIATED_VARIABLE_ASSOCIATED, appConfig.getConfigId(), accountIdentifier);
     }
 
     List<String> errorMessageForProxyDetails = getErrorMessageIfHostIsAlreadyInUse(accountIdentifier, appConfig);
@@ -77,7 +106,7 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
     }
 
     // create new updated proxy host values
-    return insertProxyHostDetailsForPlugin(appConfig, accountIdentifier);
+    return insertProxyHostDetailsForPlugin(appConfig, accountIdentifier, configType);
   }
 
   @Override
@@ -88,7 +117,7 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
       Set<String> hostsToBeRemoved =
           existingPluginProxies.stream().map(PluginsProxyInfoEntity::getHost).collect(Collectors.toSet());
       delegateSelectorsCache.remove(accountIdentifier, hostsToBeRemoved);
-      proxyEnvVariableUtils.removeFromHostProxyEnvVariable(accountIdentifier, hostsToBeRemoved);
+      proxyEnvVariableServiceWrapper.removeFromHostProxyEnvVariable(accountIdentifier, hostsToBeRemoved);
       pluginsProxyInfoRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, pluginId);
     }
   }
@@ -168,24 +197,5 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
       returnList.add(proxyHostDetail);
     }
     return returnList;
-  }
-
-  @VisibleForTesting
-  void updateDelegateSelectorsCache(String accountIdentifier, List<PluginsProxyInfoEntity> proxies) {
-    for (PluginsProxyInfoEntity proxy : proxies) {
-      if (proxy.getProxy()) {
-        delegateSelectorsCache.put(accountIdentifier, proxy.getHost(), new HashSet<>(proxy.getDelegateSelectors()));
-      }
-    }
-  }
-  @VisibleForTesting
-  void updateHostProxyEnvVariable(String accountIdentifier, List<PluginsProxyInfoEntity> proxies) {
-    Map<String, Boolean> hostProxyMap = new HashMap<>();
-    for (PluginsProxyInfoEntity proxy : proxies) {
-      if (proxy.getProxy()) {
-        hostProxyMap.put(proxy.getHost(), true);
-      }
-    }
-    proxyEnvVariableUtils.createOrUpdateHostProxyEnvVariable(accountIdentifier, hostProxyMap);
   }
 }

@@ -26,6 +26,7 @@ import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.SmtpConfig;
@@ -39,6 +40,7 @@ import io.harness.notification.senders.MailSenderImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.serializer.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.userng.remote.UserNGClient;
@@ -81,6 +83,8 @@ public class MailServiceImpl implements ChannelService {
   private final SmtpConfig smtpConfigDefault;
   private final MailSenderImpl mailSender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private final NotificationSettingsHelper notificationSettingsHelper;
+
   @Inject private UserNGClient userNGClient;
 
   @Override
@@ -138,11 +142,15 @@ public class MailServiceImpl implements ChannelService {
               notificationSettingDTO.getNotificationId()),
           DEFAULT_ERROR_CODE, USER);
     }
+    notificationSettingsHelper.validateRecipient(
+        email, notificationSettingDTO.getAccountId(), SettingIdentifiers.EMAIL_NOTIFICATION_DOMAIN_ALLOWLIST);
     NotificationTaskResponse response = sendInSync(Collections.singletonList(email), Collections.emptyList(),
         DEFAULT_SUBJECT_BODY, DEFAULT_SUBJECT_BODY, email, notificationSettingDTO.getAccountId());
     if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
         || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
-      throw new NotificationException("Failed to send email. Check SMTP configuration.", DEFAULT_ERROR_CODE, USER);
+      throw new NotificationException(
+          String.format("Failed to send email. Check SMTP configuration. %s", response.getErrorMessage()),
+          DEFAULT_ERROR_CODE, USER);
     }
     return true;
   }
@@ -171,7 +179,9 @@ public class MailServiceImpl implements ChannelService {
         emails, ccEmails, emailDTO.getSubject(), emailDTO.getBody(), emailDTO.getNotificationId(), accountId);
     if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
         || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
-      throw new NotificationException("Failed to send email. Check SMTP configuration.", DEFAULT_ERROR_CODE, USER);
+      throw new NotificationException(
+          String.format("Failed to send email. Check SMTP configuration. %s", response.getErrorMessage()),
+          DEFAULT_ERROR_CODE, USER);
     }
     if (StringUtils.isNotEmpty(errorMessage)) {
       response.setErrorMessage(errorMessage);
@@ -363,7 +373,8 @@ public class MailServiceImpl implements ChannelService {
           emailDetails.getUserGroupList(), NotificationChannelType.EMAIL, notificationRequest.getAccountId(), 0L);
       recipients.addAll(resolvedRecipients);
     }
-    return recipients.stream().distinct().collect(Collectors.toList());
+    return notificationSettingsHelper.getRecipientsWithValidDomain(
+        recipients, notificationRequest.getAccountId(), SettingIdentifiers.EMAIL_NOTIFICATION_DOMAIN_ALLOWLIST);
   }
 
   private Set<String> getDelegateSelectors(SmtpConfig smtpConfig) {

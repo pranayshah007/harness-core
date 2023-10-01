@@ -7,16 +7,22 @@
 
 package io.harness.pms.sdk.core.plan.creation.creators;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.RollbackModeBehaviour;
 import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
@@ -33,9 +39,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class PlanCreatorServiceHelper {
+  private static final List<String> parentInfoKeysList =
+      List.of(PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, PlanCreatorConstants.STAGE_ID,
+          PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES, PlanCreatorConstants.STEP_GROUP_ID,
+          PlanCreatorConstants.STRATEGY_ID, PlanCreatorConstants.STRATEGY_NODE_TYPE, PlanCreatorConstants.YAML_VERSION);
   public Optional<PartialPlanCreator<?>> findPlanCreator(
       List<PartialPlanCreator<?>> planCreators, YamlField field, String yamlVersion) {
     return planCreators.stream()
@@ -203,6 +215,46 @@ public class PlanCreatorServiceHelper {
 
     planForField.setDependencies(
         dependenciesInPlanForField.toBuilder().putAllDependencyMetadata(decoratedDependencyMetadataMap).build());
+  }
+
+  public void decorateResponseWithParentInfo(Dependency initialDependencyDetails, PlanCreationResponse planForField) {
+    // No dependencies so return. This would be for leaf nodes.
+    if (planForField.getDependencies() == null) {
+      return;
+    }
+    Dependencies.Builder dependencies = planForField.getDependencies().toBuilder();
+    for (String depKey : planForField.getDependencies().getDependenciesMap().keySet()) {
+      Dependency dependencyMetadata = planForField.getDependencies().getDependencyMetadataMap().get(depKey);
+      // If dependencyMetadata not present for a uuid then create empty metadata and propagate the parentInfo struct for
+      // the version.
+      if (dependencyMetadata == null) {
+        dependencyMetadata = Dependency.newBuilder().build();
+      }
+      HarnessStruct.Builder parentInfoOfCurrentNode = dependencyMetadata.getParentInfo().toBuilder();
+      for (String parentInfoKey : parentInfoKeysList) {
+        // If the planCreator already sent the metadata for its children then that value will be considered. So
+        // continue.
+        if (parentInfoOfCurrentNode.getDataMap().containsKey(parentInfoKey)) {
+          continue;
+        }
+        HarnessValue parentInfoValue = getParentInfoFromParentDependency(initialDependencyDetails, parentInfoKey);
+        if (parentInfoValue == null) {
+          continue;
+        }
+        parentInfoOfCurrentNode.putData(parentInfoKey, parentInfoValue).build();
+      }
+      dependencies.putDependencyMetadata(
+          depKey, dependencyMetadata.toBuilder().setParentInfo(parentInfoOfCurrentNode.build()).build());
+    }
+    planForField.setDependencies(dependencies.build());
+  }
+
+  private HarnessValue getParentInfoFromParentDependency(Dependency initialDependencyDetails, String parentIntoKey) {
+    if (initialDependencyDetails != null
+        && initialDependencyDetails.getParentInfo().getDataMap().get(parentIntoKey) != null) {
+      return initialDependencyDetails.getParentInfo().getDataMap().get(parentIntoKey);
+    }
+    return null;
   }
 
   void checkAndAddNodesToBePreservedInRollbackMode(

@@ -9,6 +9,7 @@ package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorExplanations.INVALID_CONNECTOR_CREDS;
+import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorExplanations.OAUTH_ACCESS_DENIED;
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorHints.INVALID_CREDENTIALS;
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorHints.REPO_NOT_FOUND;
 
@@ -42,7 +43,8 @@ public class BitbucketCreateFileScmApiErrorHandler implements ScmApiErrorHandler
       case 403:
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(INVALID_CREDENTIALS, errorMetadata),
-            ErrorMessageFormatter.formatMessage(CREATE_FILE_REQUEST_FAILURE + INVALID_CONNECTOR_CREDS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                CREATE_FILE_REQUEST_FAILURE + INVALID_CONNECTOR_CREDS + OAUTH_ACCESS_DENIED, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
       case 400:
         throw NestedExceptionUtils.hintWithExplanationException(

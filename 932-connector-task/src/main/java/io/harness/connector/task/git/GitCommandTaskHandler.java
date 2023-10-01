@@ -29,6 +29,7 @@ import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ManagerExecutable;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
+import io.harness.connector.helper.GithubAppDTOToGithubAppSpecDTOMapper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -37,8 +38,10 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.errorhandling.NGErrorHelper;
@@ -49,12 +52,14 @@ import io.harness.exception.runtime.SCMRuntimeException;
 import io.harness.git.GitClientHelper;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.ScmClient;
 import io.harness.service.ScmServiceClient;
 import io.harness.shell.SshSessionConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -67,6 +72,7 @@ public class GitCommandTaskHandler {
   @Inject private ScmDelegateClient scmDelegateClient;
   @Inject private ScmServiceClient scmServiceClient;
   @Inject private ExceptionManager exceptionManager;
+  @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject(optional = true) private ScmClient scmClient;
 
   public ConnectorValidationResult validateGitCredentials(GitConfigDTO gitConnector, ScmConnector scmConnector,
@@ -94,6 +100,36 @@ public class GitCommandTaskHandler {
     }
 
     handleApiAccessValidation(scmConnector, executeOnDelegate);
+    return GitCommandExecutionResponse.builder()
+        .gitCommandStatus(SUCCESS)
+        .connectorValidationResult(ConnectorValidationResult.builder()
+                                       .testedAt(System.currentTimeMillis())
+                                       .status(ConnectivityStatus.SUCCESS)
+                                       .build())
+        .build();
+  }
+
+  public ConnectorValidationResult validateGitCredentialsForGithubAppAuth(
+      GithubConnectorDTO githubConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
+    try {
+      handleValidateTaskForGithubAppAuth(githubConnectorDTO, encryptedDataDetails);
+    } catch (Exception e) {
+      throw exceptionManager.processException(e, MANAGER, null);
+    }
+    return ConnectorValidationResult.builder()
+        .status(ConnectivityStatus.SUCCESS)
+        .testedAt(System.currentTimeMillis())
+        .build();
+  }
+
+  public DelegateResponseData handleValidateTaskForGithubAppAuth(
+      GithubConnectorDTO githubConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
+    log.info("validating github connector for github app authentication");
+
+    githubConnectorDTO.getAuthentication().setCredentials(
+        gitDecryptionHelper.decryptGitHubAppAuthenticationConfig(githubConnectorDTO, encryptedDataDetails));
+    handleApiAccessValidation(githubConnectorDTO, githubConnectorDTO.getExecuteOnDelegate());
+    validateGitHubAppAuth(githubConnectorDTO);
     return GitCommandExecutionResponse.builder()
         .gitCommandStatus(SUCCESS)
         .connectorValidationResult(ConnectorValidationResult.builder()
@@ -166,6 +202,18 @@ public class GitCommandTaskHandler {
   private void validateGitHubApp(GithubConnectorDTO gitHubConnector) {
     GithubApiAccessDTO apiAccess = gitHubConnector.getApiAccess();
     GithubAppSpecDTO apiAccessDTO = (GithubAppSpecDTO) apiAccess.getSpec();
+    validateTokenFromGitHubApp(apiAccessDTO, gitHubConnector.getUrl());
+  }
+
+  private void validateGitHubAppAuth(GithubConnectorDTO gitHubConnector) {
+    GithubHttpCredentialsDTO githubHttpCredentialsDTO =
+        (GithubHttpCredentialsDTO) gitHubConnector.getAuthentication().getCredentials();
+    GithubAppDTO githubAppDTO = (GithubAppDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
+    validateTokenFromGitHubApp(
+        GithubAppDTOToGithubAppSpecDTOMapper.toGitHubSpec(githubAppDTO), gitHubConnector.getUrl());
+  }
+
+  private void validateTokenFromGitHubApp(GithubAppSpecDTO apiAccessDTO, String url) {
     try {
       gitHubService.getToken(GithubAppConfig.builder()
                                  .appId(getSecretAsStringFromPlainTextOrSecretRef(
@@ -173,7 +221,7 @@ public class GitCommandTaskHandler {
                                  .installationId(getSecretAsStringFromPlainTextOrSecretRef(
                                      apiAccessDTO.getInstallationId(), apiAccessDTO.getInstallationIdRef()))
                                  .privateKey(String.valueOf(apiAccessDTO.getPrivateKeyRef().getDecryptedValue()))
-                                 .githubUrl(GitClientHelper.getGithubApiURL(gitHubConnector.getUrl()))
+                                 .githubUrl(GitClientHelper.getGithubApiURL(url))
                                  .build());
     } catch (Exception e) {
       throw SCMRuntimeException.builder()

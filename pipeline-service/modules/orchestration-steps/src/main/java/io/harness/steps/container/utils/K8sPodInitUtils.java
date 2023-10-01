@@ -6,7 +6,6 @@
  */
 
 package io.harness.steps.container.utils;
-
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.ACCOUNT_ID_ATTR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.ADDON_VOLUME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.ADDON_VOL_MOUNT_PATH;
@@ -46,8 +45,11 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.CharUtils.isAsciiAlphanumeric;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -118,6 +120,8 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)

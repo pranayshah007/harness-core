@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.gitops.syncstep;
-
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SYNC_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,6 +13,9 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.Level;
@@ -47,6 +49,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Slf4j
 public class SyncStep implements AsyncExecutableWithRbac<StepElementParameters> {
   private static final String LOG_SUFFIX = "Execute";

@@ -10,7 +10,6 @@ package io.harness.delegate.app;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.configuration.DeployMode;
 import io.harness.delegate.app.modules.DelegateAgentModule;
@@ -25,6 +24,8 @@ import io.harness.health.HealthService;
 import io.harness.serializer.YamlUtils;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
+
+import software.wings.jersey.KryoFeature;
 
 import ch.qos.logback.classic.LoggerContext;
 import com.codahale.metrics.MetricRegistry;
@@ -68,19 +69,6 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
     new DelegateAgentApplication(args[1]).run(args);
   }
 
-  private static void setupProxyConfig() {
-    final String proxyUser = System.getenv("PROXY_USER");
-    if (isNotBlank(proxyUser)) {
-      System.setProperty("http.proxyUser", proxyUser);
-      System.setProperty("https.proxyUser", proxyUser);
-    }
-    final String proxyPassword = System.getenv("PROXY_PASSWORD");
-    if (isNotBlank(proxyPassword)) {
-      System.setProperty("http.proxyPassword", proxyPassword);
-      System.setProperty("https.proxyPassword", proxyPassword);
-    }
-  }
-
   @Override
   public void run(final DelegateAgentConfig delegateAgentConfig, final Environment environment) throws Exception {
     ExecutorModule.getInstance().setExecutorService(ThreadPool.create(10, 40, 1, TimeUnit.SECONDS,
@@ -104,7 +92,6 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
   public void initialize(final Bootstrap<DelegateAgentConfig> bootstrap) {
     super.initialize(bootstrap);
 
-    setupProxyConfig();
     // Optionally remove existing handlers attached to j.u.l root logger
     SLF4JBridgeHandler.removeHandlersForRootLogger(); // (since SLF4J 1.6.5)
     // add SLF4JBridgeHandler to j.u.l's root logger, should be done once during
@@ -163,6 +150,8 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
 
   private void registerResources(final Environment environment, final Injector injector) {
     environment.jersey().register(injector.getInstance(HealthResource.class));
+    environment.jersey().register(injector.getInstance(ExecutionResponseResource.class));
     environment.jersey().register(injector.getInstance(DelegateAgentMetricResource.class));
+    environment.jersey().register(injector.getInstance(KryoFeature.class));
   }
 }

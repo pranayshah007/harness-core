@@ -20,6 +20,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_IP_ALLOWLIST;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_TRIGGERS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NG_USER_CLEANUP_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SYNC_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
@@ -43,6 +45,7 @@ import static software.wings.beans.RoleType.APPLICATION_ADMIN;
 import static software.wings.beans.RoleType.NON_PROD_SUPPORT;
 import static software.wings.beans.RoleType.PROD_SUPPORT;
 import static software.wings.beans.SystemCatalog.CatalogType.APPSTACK;
+import static software.wings.beans.account.AccountStatus.MARKED_FOR_DELETION;
 import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 
 import static java.lang.String.format;
@@ -55,7 +58,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
 import io.harness.authenticationservice.beans.AuthenticationInfo.AuthenticationInfoBuilder;
@@ -91,6 +97,7 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
+import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
@@ -125,8 +132,6 @@ import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountPreferences;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.LicenseInfo;
@@ -140,6 +145,8 @@ import software.wings.beans.TechStack;
 import software.wings.beans.UrlInfo;
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
+import software.wings.beans.account.AccountPreferences;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.accountdetails.events.AccountDetailsCrossGenerationAccessUpdateEvent;
 import software.wings.beans.accountdetails.events.AccountDetailsDefaultExperienceUpdateEvent;
 import software.wings.beans.accountdetails.events.CrossGenerationAccessYamlDTO;
@@ -246,6 +253,10 @@ import org.apache.commons.validator.routines.UrlValidator;
 /**
  * Created by peeyushaggarwal on 10/11/16.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_GITX})
 @OwnedBy(PL)
 @Singleton
 @ValidateOnExecution
@@ -377,6 +388,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   private void publishAccountChangeEventViaEventFramework(String accountId, String action) {
+    log.info("testDeletionLog: producing event to events framework for account {}, action {}", accountId, action);
     try {
       eventProducer.send(
           Message.newBuilder()
@@ -388,7 +400,29 @@ public class AccountServiceImpl implements AccountService {
       log.error(format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
     }
   }
-
+  private String publishAccountChangeEventViaEventFramework(
+      String accountId, String orgIdentifier, String projectIdentifier, String action) {
+    log.info("testDeletionLog: producing event to events framework for account {}, action {}", accountId, action);
+    try {
+      return eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of(EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                  EventsFrameworkMetadataConstants.PROJECT_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
+              .setData(ProjectEntityChangeDTO.newBuilder()
+                           .setAccountIdentifier(accountId)
+                           .setOrgIdentifier(orgIdentifier == null ? "" : orgIdentifier)
+                           .setIdentifier(projectIdentifier == null ? "" : projectIdentifier)
+                           .build()
+                           .toByteString())
+              .build());
+    } catch (Exception ex) {
+      log.error(format("Failed to publish account %s event for accountId %s , org %s , project %s via event framework.",
+          action, accountId, orgIdentifier, projectIdentifier));
+      throw new InvalidRequestException(
+          format("Failed to publish account %s event for accountId %s , org %s , project %s via event framework.",
+              action, accountId, orgIdentifier, projectIdentifier));
+    }
+  }
   private void publishAccountChangeEvent(Account account) {
     EventData eventData = EventData.builder().eventInfo(new AccountEntityEvent(account)).build();
     eventPublisher.publishEvent(
@@ -507,12 +541,11 @@ public class AccountServiceImpl implements AccountService {
 
   private void enableFeatureFlags(@NotNull Account account, boolean fromDataGen) {
     if (fromDataGen) {
-      updateNextGenEnabled(account.getUuid(), true);
-      featureFlagService.enableAccount(FeatureName.CENG_ENABLED, account.getUuid());
+      updateNextGenEnabled(account.getUuid(), true, false);
       featureFlagService.enableAccount(FeatureName.CFNG_ENABLED, account.getUuid());
       featureFlagService.enableAccount(FeatureName.CVNG_ENABLED, account.getUuid());
     } else if (account.isCreatedFromNG()) {
-      updateNextGenEnabled(account.getUuid(), true);
+      updateNextGenEnabled(account.getUuid(), true, false);
     }
   }
 
@@ -554,6 +587,9 @@ public class AccountServiceImpl implements AccountService {
       throw new AccountNotFoundException(
           "Account is not found for the given id:" + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
     }
+    if (featureFlagService.isEnabled(FeatureName.CDS_DISABLE_FIRST_GEN_CD, accountId)) {
+      account.isCrossGenerationAccessEnabled(false);
+    }
     LicenseUtils.decryptLicenseInfo(account, false);
     return account;
   }
@@ -565,9 +601,12 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public Boolean updateNextGenEnabled(String accountId, boolean enabled) {
+  public Boolean updateNextGenEnabled(String accountId, boolean isNextGenEnabled, boolean isAdmin) {
     Account account = get(accountId);
-    account.setNextGenEnabled(enabled);
+    account.setNextGenEnabled(isNextGenEnabled);
+    if (isAdmin) {
+      account.setDefaultExperience(isNextGenEnabled ? DefaultExperience.NG : DefaultExperience.CG);
+    }
     update(account);
     publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
     return true;
@@ -587,6 +626,20 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Boolean disableIpAllowList(String accountId) {
+    log.info("Publish disable ip event for account" + accountId);
+    publishAccountChangeEventViaEventFramework(accountId, DISABLE_IP_ALLOWLIST);
+    return true;
+  }
+
+  @Override
+  public String disableTriggers(String accountId, String orgIdentifier, String projectIdentifier) {
+    log.info("Publish disable triggers event for account " + accountId + " orgIdentifier " + orgIdentifier
+        + " projectIdentifier " + projectIdentifier);
+    return publishAccountChangeEventViaEventFramework(accountId, orgIdentifier, projectIdentifier, DISABLE_TRIGGERS);
+  }
+
+  @Override
   public Boolean updateIsProductLed(String accountId, boolean isProductLed) {
     Account account = get(accountId);
     account.setProductLed(isProductLed);
@@ -599,6 +652,15 @@ public class AccountServiceImpl implements AccountService {
   public Boolean updateIsSmpAccount(String accountId, boolean isSmpAccount) {
     Account account = get(accountId);
     account.setSmpAccount(isSmpAccount);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
+  public Boolean updateHarnessSupportAccess(String accountId, boolean isHarnessSupportAccessAllowed) {
+    Account account = get(accountId);
+    account.setHarnessSupportAccessAllowed(isHarnessSupportAccessAllowed);
     update(account);
     publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
     return true;
@@ -655,6 +717,19 @@ public class AccountServiceImpl implements AccountService {
     }
 
     return updatedAccount;
+  }
+
+  @Override
+  public boolean getPublicAccessEnabled(String accountId) {
+    Query<Account> getQuery = wingsPersistence.createQuery(Account.class).filter(ID_KEY2, accountId);
+    return Optional.ofNullable(getQuery.get().isPublicAccessEnabled()).orElse(false);
+  }
+
+  @Override
+  public void setPublicAccessEnabled(String accountId, boolean publicAccessEnabled) {
+    Account account = get(accountId);
+    account.setPublicAccessEnabled(publicAccessEnabled);
+    update(account);
   }
 
   private void ngAuditAccountDetailsCrossGenerationAccess(
@@ -745,12 +820,27 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public boolean delete(String accountId) {
-    boolean success = accountId != null && deleteAccountHelper.deleteAccount(accountId);
-    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
-    if (success) {
-      publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
+    if (accountId == null) {
+      return true;
     }
-    return success;
+    updateAccountStatus(accountId, MARKED_FOR_DELETION);
+    try {
+      publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
+      try {
+        accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
+      } catch (Exception ex) {
+        log.info("testDeletionLog: exception occurred for accountLicenseObserverSubject {}", ex.getMessage());
+      }
+      boolean isCgEntitiesDeleted = deleteAccountHelper.deleteAccount(accountId, false);
+      if (isCgEntitiesDeleted) {
+        deleteAccountHelper.deleteAccountFromAccountsCollection(accountId);
+        return true;
+      }
+      return false;
+    } catch (Exception ex) {
+      log.info("testDeletionLog: some exception occurred - {}", ex);
+      return false;
+    }
   }
 
   @Override
@@ -1032,7 +1122,9 @@ public class AccountServiceImpl implements AccountService {
             .set(AccountKeys.ceAutoCollectK8sEvents, account.isCeAutoCollectK8sEvents())
             .set("whitelistedDomains", account.getWhitelistedDomains())
             .set("smpAccount", account.isSmpAccount())
-            .set("isProductLed", account.isProductLed());
+            .set("isProductLed", account.isProductLed())
+            .set(AccountKeys.publicAccessEnabled, account.isPublicAccessEnabled())
+            .set(AccountKeys.isHarnessSupportAccessAllowed, account.isHarnessSupportAccessAllowed());
 
     if (null != account.getSessionTimeOutInMinutes()) {
       updateOperations.set(AccountKeys.sessionTimeOutInMinutes, account.getSessionTimeOutInMinutes());
@@ -1241,36 +1333,12 @@ public class AccountServiceImpl implements AccountService {
       }
     }
     if (enabled.contains("NEXT_GEN_ENABLED")) {
-      updateNextGenEnabled(onPremAccount.get().getUuid(), true);
+      updateNextGenEnabled(onPremAccount.get().getUuid(), true, false);
     }
 
     if (enabled.contains("ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM")) {
       setDefaultExperience(onPremAccount.get().getUuid(), DefaultExperience.NG);
     }
-  }
-
-  @Override
-  public List<AccountDTO> getAllAccounts() {
-    Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
-                               .project(ID_KEY2, true)
-                               .project(AccountKeys.accountName, true)
-                               .project(AccountKeys.companyName, true)
-                               .project(AccountKeys.defaultExperience, true)
-                               .project(AccountKeys.authenticationMechanism, true)
-                               .project(AccountKeys.nextGenEnabled, true)
-                               .project(AccountKeys.serviceAccountConfig, true)
-                               .project(AccountKeys.isProductLed, true)
-                               .project(AccountKeys.twoFactorAdminEnforced, true)
-                               .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
-                               .limit(NO_LIMIT);
-
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
-      for (Account account : iterator) {
-        accountDTOList.add(AccountMapper.toAccountDTO(account));
-      }
-    }
-    return accountDTOList;
   }
 
   @Override

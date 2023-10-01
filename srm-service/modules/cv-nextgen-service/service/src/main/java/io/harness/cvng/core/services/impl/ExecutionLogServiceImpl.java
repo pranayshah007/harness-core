@@ -11,10 +11,13 @@ import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
+import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.ExecutionLogger;
+import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -31,14 +34,42 @@ import org.apache.commons.collections4.CollectionUtils;
 public class ExecutionLogServiceImpl implements ExecutionLogService {
   @Inject private CVNGLogService cvngLogService;
 
+  @Inject private VerificationTaskService verificationTaskService;
+
   @Override
   public ExecutionLogger getLogger(VerificationTaskExecutionInstance verificationTaskExecutionInstance) {
     return ExecutionLoggerImpl.builder()
         .cvngLogService(cvngLogService)
         .accountId(verificationTaskExecutionInstance.getAccountId())
-        .verificationTaskId(verificationTaskExecutionInstance.getVerificationTaskId())
+        .traceableId(verificationTaskExecutionInstance.getVerificationTaskId())
+        .traceableType(TraceableType.VERIFICATION_TASK)
         .startTime(verificationTaskExecutionInstance.getStartTime())
         .endTime(verificationTaskExecutionInstance.getEndTime())
+        .build();
+  }
+
+  @Override
+  public ExecutionLogger getLogger(String verificationTaskId, Instant startTime, Instant endTime) {
+    VerificationTask verificationTask = verificationTaskService.get(verificationTaskId);
+    return ExecutionLoggerImpl.builder()
+        .cvngLogService(cvngLogService)
+        .accountId(verificationTask.getAccountId())
+        .traceableId(verificationTaskId)
+        .traceableType(TraceableType.VERIFICATION_TASK)
+        .startTime(startTime)
+        .endTime(endTime)
+        .build();
+  }
+
+  @Override
+  public ExecutionLogger getLogger(VerificationJobInstance verificationJobInstance) {
+    return ExecutionLoggerImpl.builder()
+        .cvngLogService(cvngLogService)
+        .accountId(verificationJobInstance.getAccountId())
+        .traceableId(verificationJobInstance.getUuid())
+        .traceableType(TraceableType.VERIFICATION_JOB_INSTANCE)
+        .startTime(verificationJobInstance.getStartTime())
+        .endTime(verificationJobInstance.getEndTime())
         .build();
   }
 
@@ -47,7 +78,8 @@ public class ExecutionLogServiceImpl implements ExecutionLogService {
   private static class ExecutionLoggerImpl implements ExecutionLogger {
     CVNGLogService cvngLogService;
     String accountId;
-    String verificationTaskId;
+    String traceableId;
+    TraceableType traceableType;
     Instant startTime;
     Instant endTime;
 
@@ -61,10 +93,10 @@ public class ExecutionLogServiceImpl implements ExecutionLogService {
       String extraMessages = Arrays.stream(messages).filter(Objects::nonNull).collect(Collectors.joining(", "));
       return ExecutionLogDTO.builder()
           .accountId(accountId)
-          .traceableId(verificationTaskId)
+          .traceableId(traceableId)
           .startTime(startTime.toEpochMilli())
           .endTime(endTime.toEpochMilli())
-          .traceableType(TraceableType.VERIFICATION_TASK)
+          .traceableType(traceableType)
           .log(message + extraMessages)
           .logLevel(logLevel)
           .build();

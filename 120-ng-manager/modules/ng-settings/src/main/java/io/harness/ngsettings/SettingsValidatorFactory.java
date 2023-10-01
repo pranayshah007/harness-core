@@ -18,6 +18,7 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.ngsettings.services.SettingEnforcementValidator;
 import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.impl.validators.DisableBuiltInHarnessSMValidator;
+import io.harness.ngsettings.services.impl.validators.EnableAidaValidator;
 import io.harness.ngsettings.services.impl.validators.enforcement.EnforcementMaxLimitValidator;
 import io.harness.ngsettings.services.impl.validators.enforcement.TimeoutMaxLimitEnforcementValidator;
 import io.harness.ngsettings.utils.SettingValidatorRegistrar;
@@ -42,6 +43,7 @@ public class SettingsValidatorFactory {
         new SettingValidatorRegistrar(MAX_STEP_TIMEOUT_SECONDS, TimeoutMaxLimitEnforcementValidator.class));
     registrar.put(SettingIdentifiers.CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS,
         new SettingValidatorRegistrar(MAX_CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS, EnforcementMaxLimitValidator.class));
+    registrar.put(SettingIdentifiers.AIDA, new SettingValidatorRegistrar(EnableAidaValidator.class));
   }
 
   public static List<String> getSettingIdentifiersWithValidators() {

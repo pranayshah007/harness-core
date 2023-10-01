@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.beans.LogHelper.color;
+
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toMap;
@@ -32,6 +34,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.CreateStackResult;
@@ -95,7 +100,8 @@ public class CloudformationCreateStackTaskHandler extends CloudformationAbstract
     CloudformationTaskNGResponseBuilder builder = CloudformationTaskNGResponse.builder();
     String stackName = createStackParameters.getStackName();
     try {
-      logCallback.saveExecutionLog(format("# Creating stack with name: %s", stackName));
+      logCallback.saveExecutionLog(
+          color(format("# Creating stack with name: %s", stackName), LogColor.Cyan, LogWeight.Bold));
       CreateStackRequest createStackRequest =
           new CreateStackRequest()
               .withStackName(stackName)
@@ -139,7 +145,8 @@ public class CloudformationCreateStackTaskHandler extends CloudformationAbstract
       AwsInternalConfig awsInternalConfig, Stack stack, LogCallback executionLogCallback) {
     CloudformationTaskNGResponseBuilder builder = CloudformationTaskNGResponse.builder();
     try {
-      executionLogCallback.saveExecutionLog(format("# Starting to Update stack with name: %s", stack.getStackName()));
+      executionLogCallback.saveExecutionLog(color(
+          format("# Starting to Update stack with name: %s", stack.getStackName()), LogColor.Cyan, LogWeight.Bold));
       UpdateStackRequest updateStackRequest =
           new UpdateStackRequest()
               .withStackName(stack.getStackName())

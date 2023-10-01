@@ -7,10 +7,15 @@
 
 package io.harness.ngsettings.rule;
 
+import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_TOPIC_NAME;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+
 import static org.mockito.Mockito.mock;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
@@ -73,6 +78,7 @@ public class NgSettingRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(mongoTypeModule(annotations));
     modules.add(TestMongoModule.getInstance());
     modules.add(new NgSettingsPersistenceTestModule());
+
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {
@@ -83,6 +89,7 @@ public class NgSettingRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .toInstance(mock(TransactionTemplate.class));
         bind(LicenseService.class).toInstance(mock(LicenseService.class));
         bind(PersistentLocker.class).toInstance(mock(PersistentLocker.class));
+        bind(Producer.class).annotatedWith(Names.named(ENTITY_CRUD)).toInstance(NoOpProducer.of(DUMMY_TOPIC_NAME));
         MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
         MapBinder.newMapBinder(binder(), String.class, SettingEnforcementValidator.class);
       }

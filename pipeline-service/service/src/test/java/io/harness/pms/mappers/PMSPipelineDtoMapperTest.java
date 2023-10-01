@@ -8,7 +8,9 @@
 package io.harness.pms.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SHALINI;
@@ -54,8 +56,11 @@ import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 
+import com.google.common.hash.Hashing;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -72,6 +77,10 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
   String yaml = "yaml";
   String identifier = "identifier";
 
+  Integer getYamlHash(String yaml) {
+    return Hashing.murmur3_32_fixed().hashString(yaml, StandardCharsets.UTF_8).asInt();
+  }
+
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
@@ -86,6 +95,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
         + "  orgIdentifier: org1\n"
         + "  projectIdentifier: proj1\n";
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(acc, org, proj, yaml);
+    assertThat(pipelineEntity.getYamlHash()).isEqualTo(getYamlHash(yaml));
     assertThat(pipelineEntity.getIdentifier()).isEqualTo("p1");
     assertThat(pipelineEntity.getName()).isEqualTo("p1");
     assertThat(pipelineEntity.getAccountId()).isEqualTo("acc");
@@ -476,6 +486,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
     assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+    assertThat(pipelineSummaryResponse.getYamlVersion()).isEqualTo("0");
 
     PipelineEntity oldGitSyncInvalid = PipelineEntity.builder()
                                            .name("name")
@@ -486,6 +497,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                            .filters(Collections.singletonMap("cd", null))
                                            .yamlGitConfigRef("repo")
                                            .branch("br1")
+                                           .harnessVersion("1")
                                            .isEntityInvalid(true)
                                            .build();
     pipelineSummaryResponse =
@@ -500,6 +512,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
     assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+    assertThat(pipelineSummaryResponse.getYamlVersion()).isEqualTo("1");
 
     PipelineEntity inline = PipelineEntity.builder()
                                 .name("name")
@@ -715,5 +728,50 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
 
     CacheResponseMetadataDTO cacheResponseMetadataDTO = PMSPipelineDtoMapper.getCacheResponseFromGitContext();
     assertThat(cacheResponseMetadataDTO.getCacheState()).isEqualTo(CacheState.VALID_CACHE);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testToSimplifiedPipelineEntity() {
+    String accountId = generateUuid();
+    String orgId = generateUuid();
+    String projectId = generateUuid();
+    String identifier = generateUuid();
+
+    assertThatThrownBy(
+        () -> PMSPipelineDtoMapper.toSimplifiedPipelineEntity(accountId, orgId, projectId, "", "", "yaml"))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(
+        () -> PMSPipelineDtoMapper.toSimplifiedPipelineEntity(accountId, orgId, projectId, "", "", "yaml"))
+        .hasMessage("Pipeline identifier cannot be empty");
+
+    assertThatThrownBy(
+        () -> PMSPipelineDtoMapper.toSimplifiedPipelineEntity(accountId, orgId, projectId, "<+input>", "", "yaml"))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(
+        () -> PMSPipelineDtoMapper.toSimplifiedPipelineEntity(accountId, orgId, projectId, "<+input>", "", "yaml"))
+        .hasMessage("Pipeline name cannot be empty");
+
+    assertThatThrownBy(()
+                           -> PMSPipelineDtoMapper.toSimplifiedPipelineEntity(
+                               accountId, orgId, projectId, "<+input>", "pipelineName", "yaml"))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(()
+                           -> PMSPipelineDtoMapper.toSimplifiedPipelineEntity(
+                               accountId, orgId, projectId, "<+input>", "pipelineName", "yaml"))
+        .hasMessage("Pipeline identifier cannot be runtime input");
+
+    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toSimplifiedPipelineEntity(
+        accountId, orgId, projectId, identifier, "pipelineName", "yaml");
+
+    assertThat(pipelineEntity.getIdentifier()).isEqualTo(identifier);
+    assertThat(pipelineEntity.getYamlHash()).isEqualTo(getYamlHash("yaml"));
+    assertThat(pipelineEntity.getName()).isEqualTo("pipelineName");
+
+    assertThat(pipelineEntity.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(pipelineEntity.getOrgIdentifier()).isEqualTo(orgId);
+    assertThat(pipelineEntity.getProjectIdentifier()).isEqualTo(projectId);
+    assertThat(pipelineEntity.getHarnessVersion()).isEqualTo(HarnessYamlVersion.V1);
   }
 }

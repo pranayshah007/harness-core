@@ -6,14 +6,16 @@
  */
 
 package io.harness.pms.merger.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
 import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
@@ -35,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class RuntimeInputFormHelper {
@@ -67,6 +70,10 @@ public class RuntimeInputFormHelper {
     YamlConfig runtimeInputFormYamlConfig =
         createRuntimeInputFormYamlConfig(new YamlConfig(pipelineYaml), new YamlConfig(runtimeInputsYaml), keepInput);
     return runtimeInputFormYamlConfig.getYaml();
+  }
+
+  public Map<FQN, String> fetchExpressionAndFqnFromYaml(String pipelineYaml) {
+    return createExpressionFormYamlConfig(new YamlConfig(pipelineYaml));
   }
 
   private YamlConfig createRuntimeInputFormYamlConfig(String yaml, boolean keepInput) {
@@ -131,6 +138,19 @@ public class RuntimeInputFormHelper {
     }
 
     return new YamlConfig(templateMap, yamlConfig.getYamlMap());
+  }
+
+  public Map<FQN, String> createExpressionFormYamlConfig(YamlConfig yamlConfig) {
+    Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
+    Map<FQN, String> fqnExpressionMap = new LinkedHashMap<>();
+    fullMap.keySet().forEach(key -> {
+      String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
+      if (NGExpressionUtils.isExpressionField(value)) {
+        fqnExpressionMap.put(key, fullMap.get(key).toString());
+      }
+    });
+
+    return fqnExpressionMap;
   }
 
   public JsonNode createRuntimeInputFormJsonNode(JsonNode jsonNode, boolean keepInput, boolean keepDefaultValues) {

@@ -20,13 +20,14 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -81,7 +82,7 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testSupportedYamlVersions() {
-    assertThat(planCreator.getSupportedYamlVersions()).isEqualTo(Set.of(PipelineVersion.V1));
+    assertThat(planCreator.getSupportedYamlVersions()).isEqualTo(Set.of(HarnessYamlVersion.V1));
   }
 
   @Test
@@ -156,7 +157,8 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     planNode = planCreator.createPlanForParentNode(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata("nextId", ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .putMetadata(PlanCreatorConstants.NEXT_ID,
+                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
                             .build())
             .build(),
         new YamlField(stagesNode.get(1)), childrenIds);
@@ -213,7 +215,8 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     response = planCreator.getLayoutNodeInfo(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata("nextId", ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .putMetadata(PlanCreatorConstants.NEXT_ID,
+                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
                             .build())
             .build(),
         new YamlField(stagesNode.get(1)));

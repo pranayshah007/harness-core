@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.PROJECT;
 import static io.harness.ngmigration.utils.MigratorUtility.containsEcsTask;
@@ -61,6 +62,7 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.TypeSummary;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.ServiceSummary;
@@ -70,11 +72,14 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.manifest.ValuesYamlFromHelmRepoManifestService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.ngmigration.service.servicev2.ServiceV2Mapper;
+import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
@@ -83,11 +88,17 @@ import io.harness.service.remote.ServiceResourceClient;
 import io.harness.utils.YamlPipelineUtils;
 
 import software.wings.api.DeploymentType;
+import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.ConfigFile;
 import software.wings.beans.EntityType;
+import software.wings.beans.GraphNode;
 import software.wings.beans.LambdaSpecification;
+import software.wings.beans.PhaseStep;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariableType;
+import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowPhase;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.command.ServiceCommand;
@@ -99,10 +110,12 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.ServiceResourceService;
+import software.wings.service.intfc.WorkflowService;
 import software.wings.utils.ArtifactType;
 
 import com.google.inject.Inject;
@@ -134,6 +147,10 @@ public class ServiceMigrationService extends NgMigrationService {
   @Inject private AmiStartupScriptMigrationService amiStartupScriptMigrationService;
   @Inject ConfigService configService;
   @Inject ConfigFileMigrationService configFileMigrationService;
+
+  @Inject private WorkflowService workflowService;
+
+  @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -311,6 +328,7 @@ public class ServiceMigrationService extends NgMigrationService {
                                                 .build()))
           .build();
     }
+
     ServiceRequestDTO serviceRequestDTO =
         ServiceRequestDTO.builder()
             .description(null)
@@ -320,11 +338,28 @@ public class ServiceMigrationService extends NgMigrationService {
             .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
             .yaml(getYamlString(yamlFile))
             .build();
+
+    log.info("Service yaml: {}", getYamlString(yamlFile));
+
     Response<ResponseDTO<ServiceResponse>> resp =
         ngClient
             .createService(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 JsonUtils.asTree(serviceRequestDTO))
             .execute();
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      serviceRequestDTO = ServiceRequestDTO.builder()
+                              .description(null)
+                              .identifier(yamlFile.getNgEntityDetail().getIdentifier())
+                              .name(((NGServiceConfig) yamlFile.getYaml()).getNgServiceV2InfoConfig().getName())
+                              .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
+                              .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
+                              .yaml(getYamlStringV2(yamlFile))
+                              .build();
+      resp = ngClient
+                 .createService(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     JsonUtils.asTree(serviceRequestDTO))
+                 .execute();
+    }
     log.info("Service creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
@@ -342,8 +377,6 @@ public class ServiceMigrationService extends NgMigrationService {
         entityId, name, migrationContext.getInputDTO().getIdentifierCaseFormat());
     String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, migrationContext.getInputDTO());
     String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, migrationContext.getInputDTO());
-
-    MigratorExpressionUtils.render(migrationContext, service, migrationContext.getInputDTO().getCustomExpressions());
     Set<CgEntityId> manifests = migrationContext.getGraph()
                                     .get(entityId)
                                     .stream()
@@ -368,7 +401,6 @@ public class ServiceMigrationService extends NgMigrationService {
             .filter(entry -> CONFIG_FILE == entry.getType())
             .map(entry -> (ConfigFile) entry.getEntity())
             .filter(configFile -> configFile.getEntityType() == EntityType.SERVICE)
-            .filter(ConfigFile::isTargetToAllEnv)
             .filter(configFile -> StringUtils.equals(configFile.getEntityId(), service.getUuid()))
             .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());
@@ -398,8 +430,8 @@ public class ServiceMigrationService extends NgMigrationService {
     List<ConfigFileWrapper> configFileWrapperList =
         configFileMigrationService.getConfigFiles(migrationContext, configFileIds);
 
-    ServiceDefinition serviceDefinition = serviceMapper.getServiceDefinition(
-        migrationContext, service, manifestConfigWrapperList, configFileWrapperList, startupScriptConfigurations);
+    ServiceDefinition serviceDefinition = serviceMapper.getServiceDefinition(workflowService, migrationContext, service,
+        manifestConfigWrapperList, configFileWrapperList, startupScriptConfigurations);
     if (serviceDefinition == null) {
       return YamlGenerationDetails.builder()
           .skipDetails(
@@ -437,7 +469,79 @@ public class ServiceMigrationService extends NgMigrationService {
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
     files.add(ngYamlFile);
     files.add(getFolder(name, identifier, projectIdentifier, orgIdentifier));
+    Map<String, Object> custom = updateContextVariables(migrationContext, entities, service);
+    MigratorExpressionUtils.render(migrationContext, ngYamlFile, custom);
     return YamlGenerationDetails.builder().yamlFileList(files).build();
+  }
+
+  private void updateFromLastExecution(Map<String, Object> custom, MigrationContext migrationContext, Service service) {
+    WorkflowExecution workflowExecution = workflowService.getLastWorkflowExecutionByInfrastructure(
+        migrationContext.getAccountId(), service.getAppId(), service.getUuid());
+    if (workflowExecution != null) {
+      Workflow workflow = workflowService.readWorkflow(service.getAppId(), workflowExecution.getWorkflowId());
+      WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+      if (workflow != null && wfContext != null) {
+        CanaryOrchestrationWorkflow orchestrationWorkflow =
+            (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+        if (orchestrationWorkflow != null) {
+          List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
+          for (WorkflowPhase phase : phases) {
+            processPhase(custom, migrationContext, wfContext, phase);
+          }
+        }
+      }
+    }
+  }
+
+  private void processPhase(Map<String, Object> custom, MigrationContext migrationContext,
+      WorkflowMigrationContext wfContext, WorkflowPhase phase) {
+    List<PhaseStep> phaseSteps = phase.getPhaseSteps();
+    phaseSteps.stream().filter(phaseStep -> isNotEmpty(phaseStep.getSteps())).forEach(phaseStep -> {
+      List<GraphNode> steps = phaseStep.getSteps();
+      steps.forEach(stepYaml -> {
+        StepMapper stepMapper = stepMapperFactory.getStepMapper(stepYaml.getType());
+        List<StepExpressionFunctor> expressionFunctors =
+            stepMapper.getExpressionFunctor(wfContext, phase, phaseStep, stepYaml);
+        if (isNotEmpty(expressionFunctors)) {
+          wfContext.getStepExpressionFunctors().addAll(expressionFunctors);
+        }
+      });
+    });
+    custom.putAll(MigratorUtility.getExpressions(
+        phase, wfContext.getStepExpressionFunctors(), migrationContext.getInputDTO().getIdentifierCaseFormat()));
+  }
+
+  private Map<String, Object> updateContextVariables(
+      MigrationContext migrationContext, Map<CgEntityId, CgEntityNode> entities, Service service) {
+    Map<String, Object> custom = new HashMap<>();
+    updateFromLastExecution(custom, migrationContext, service);
+    if (isEmpty(custom)) {
+      entities.entrySet()
+          .stream()
+          .filter(entry -> NGMigrationEntityType.WORKFLOW.equals(entry.getValue().getType()))
+          .forEach(entry -> {
+            Workflow workflow = (Workflow) entry.getValue().getEntity();
+            updateFromWorkflow(custom, migrationContext, workflow, service);
+          });
+    }
+    return custom;
+  }
+
+  private void updateFromWorkflow(
+      Map<String, Object> custom, MigrationContext migrationContext, Workflow workflow, Service service) {
+    WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+    if (workflow != null && wfContext != null) {
+      CanaryOrchestrationWorkflow orchestrationWorkflow =
+          (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+      if (orchestrationWorkflow != null) {
+        List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
+        for (WorkflowPhase phase : phases) {
+          if (service.getUuid().equals(phase.getServiceId())) {
+            processPhase(custom, migrationContext, wfContext, phase);
+          }
+        }
+      }
+    }
   }
 
   private List<ManifestConfigWrapper> mergeHelmChartOverrideManifestsIfApplicable(
@@ -534,7 +638,7 @@ public class ServiceMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 }

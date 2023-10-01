@@ -8,6 +8,7 @@
 package io.harness.secretmanagerclient.dto;
 
 import static io.harness.SecretManagerDescriptionConstants.AWS_REGION;
+import static io.harness.SecretManagerDescriptionConstants.ENABLE_CACHE;
 import static io.harness.SecretManagerDescriptionConstants.K8S_AUTH_ENDPOINT;
 import static io.harness.SecretManagerDescriptionConstants.RENEW_APPROLE_TOKEN;
 import static io.harness.SecretManagerDescriptionConstants.SERVICE_ACCOUNT_TOKEN_PATH;
@@ -71,4 +72,5 @@ public class VaultConfigDTO extends SecretManagerConfigDTO {
   @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
 
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
+  @Schema(description = ENABLE_CACHE) private Boolean enableCache;
 }

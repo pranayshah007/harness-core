@@ -6,7 +6,11 @@
  */
 
 package io.harness.delegate.task.artifacts.gcr.exceptions;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public class GcbClientException extends RuntimeException {
   public GcbClientException(String message, Throwable cause) {
     super(message, cause);

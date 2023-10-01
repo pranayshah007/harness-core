@@ -218,8 +218,19 @@ if [[ "" != "$IACM_EXTERNAL_SERVICE_ENDPOINT" ]]; then
   export IACM_EXTERNAL_SERVICE_ENDPOINT; yq -i '.iacmServiceConfig.externalUrl=env(IACM_EXTERNAL_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$IACM_HARNESS_INFRACOST_API" ]]; then
+  export IACM_HARNESS_INFRACOST_API; yq -i '.iacmServiceConfig.costEstimationToken=env(IACM_HARNESS_INFRACOST_API)' $CONFIG_FILE
+fi
+if [[ "" != "$IACM_INFRACOST_API_ENDPOINT" ]]; then
+  export IACM_INFRACOST_API_ENDPOINT; yq -i '.iacmServiceConfig.costEstimationAPIIUrl=env(IACM_INFRACOST_API_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$IACM_TERRAFORM_IMAGE" ]]; then
   export IACM_TERRAFORM_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.iacmTerraform=env(IACM_TERRAFORM_IMAGE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$IACM_TERRAFORM_IMAGE" ]]; then
+  export IACM_TERRAFORM_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.iacmTerraform.image=env(IACM_TERRAFORM_IMAGE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
@@ -301,6 +312,15 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
+if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi

@@ -9,11 +9,17 @@ package io.harness.cvng.servicelevelobjective.beans.slospec;
 
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.math3.util.Pair;
 
 public class LeastPerformanceCompositeSLOEvaluator extends CompositeSLOEvaluator {
   @Override
-  public Double evaluate(List<Double> weightage, List<Integer> sliValues) {
-    List<Double> sliWithWeightage = getSLOValuesOfIndividualSLIs(weightage, sliValues);
-    return Collections.max(sliWithWeightage);
+  public Pair<Double, Double> evaluate(
+      List<Double> weightage, List<Integer> goodSliValues, List<Integer> badSliValues) {
+    if (badSliValues.contains(-1)) {
+      return Pair.create(0.0, 0.0);
+    }
+    List<Double> badSliWithWeightage = getSLOValuesOfIndividualSLIs(weightage, badSliValues);
+    double runningBadCount = Collections.max(badSliWithWeightage);
+    return Pair.create(1.0 - runningBadCount, runningBadCount);
   }
 }

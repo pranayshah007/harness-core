@@ -190,10 +190,10 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
 
     for (Map.Entry<String, String> variable : envVariablesMap.entrySet()) {
       if (isEmpty(variable.getValue())) {
-        emptySb.append(variable.getKey()).append(",");
+        emptySb.append(variable.getKey()).append(',');
       }
       if (variable.getKey().contains("-")) {
-        hyphenSb.append(variable.getKey()).append(",");
+        hyphenSb.append(variable.getKey()).append(',');
       }
     }
 
@@ -232,5 +232,13 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
   @Override
   public LogCallback getLogCallback() {
     return this.logCallback;
+  }
+
+  public boolean getShouldSaveExecutionLogs() {
+    return this.shouldSaveExecutionLogs;
+  }
+
+  public void setShouldSaveExecutionLogs(boolean shouldSaveExecutionLogs) {
+    this.shouldSaveExecutionLogs = shouldSaveExecutionLogs;
   }
 }

@@ -174,6 +174,14 @@ public class Instance {
                  .field(InstanceKeys.serviceIdentifier)
                  .sortField(InstanceKeys.lastDeployedAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_instanceInfoNamespace_instanceInfoReleaseName_isDeleted_createdAt_idx")
+                 .field(InstanceKeys.accountIdentifier)
+                 .field(InstanceKeysAdditional.instanceInfoNamespace)
+                 .field(InstanceKeysAdditional.instanceInfoReleaseName)
+                 .field(InstanceKeys.isDeleted)
+                 .sortField(InstanceKeys.createdAt)
+                 .build())
         .build();
   }
 
@@ -224,6 +232,8 @@ public class Instance {
     public static final String instanceInfoPodName = "instanceInfo.podName";
     public static final String instanceInfoNamespace = "instanceInfo.namespace";
     public static final String instanceInfoClusterIdentifier = "instanceInfo.clusterIdentifier";
+    public static final String instanceInfoHelmChartVersion = "instanceInfo.helmChartInfo.version";
     public static final String instanceInfoAgentIdentifier = "instanceInfo.agentIdentifier";
+    public static final String instanceInfoReleaseName = "instanceInfo.releaseName";
   }
 }

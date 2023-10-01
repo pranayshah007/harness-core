@@ -15,7 +15,8 @@ public enum GithubHttpAuthenticationType {
   USERNAME_AND_PASSWORD(GithubConnectorConstants.USERNAME_AND_PASSWORD),
   @JsonProperty(GithubConnectorConstants.USERNAME_AND_TOKEN)
   USERNAME_AND_TOKEN(GithubConnectorConstants.USERNAME_AND_TOKEN),
-  @JsonProperty(GithubConnectorConstants.OAUTH) OAUTH(GithubConnectorConstants.OAUTH);
+  @JsonProperty(GithubConnectorConstants.OAUTH) OAUTH(GithubConnectorConstants.OAUTH),
+  @JsonProperty(GithubConnectorConstants.GITHUB_APP) GITHUB_APP(GithubConnectorConstants.GITHUB_APP);
 
   private final String displayName;
 

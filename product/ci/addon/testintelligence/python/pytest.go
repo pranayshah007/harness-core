@@ -22,6 +22,7 @@ import (
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
+	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
 )
@@ -53,7 +54,14 @@ func (b *pytestRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *pytestRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
-	return GetPythonTests(testGlobs)
+	if len(testGlobs) == 0 {
+		testGlobs = utils.PYTHON_TEST_PATTERN
+	}
+	return utils.GetTestsFromLocal(testGlobs, "py", utils.LangType_PYTHON)
+}
+
+func (b *pytestRunner) ReadPackages(files []types.File) []types.File {
+	return files
 }
 
 func (b *pytestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
@@ -65,25 +73,14 @@ func (b *pytestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 		if ignoreInstr {
 			return strings.TrimSpace(fmt.Sprintf("%s -m %s %s", pythonCmd, pytestCmd, userArgs)), nil
 		}
-		testCmd = strings.TrimSpace(fmt.Sprintf("%s %s %s --test_harness %s",
-			pythonCmd, scriptPath, currentDir, userCmd))
+		testCmd = strings.TrimSpace(fmt.Sprintf("%s %s %s --test_harness %s --config_file %s",
+			pythonCmd, scriptPath, currentDir, userCmd, agentConfigPath))
 		return testCmd, nil
 	}
 	if len(tests) == 0 {
 		return "echo \"Skipping test run, received no tests to execute\"", nil
 	}
-	// Use only unique class
-	set := make(map[types.RunnableTest]interface{})
-	ut := []string{}
-	for _, t := range tests {
-		w := types.RunnableTest{Class: t.Class}
-		if _, ok := set[w]; ok {
-			// The test has already been added
-			continue
-		}
-		set[w] = struct{}{}
-		ut = append(ut, t.Class)
-	}
+	ut := utils.GetUniqueTestStrings(tests)
 
 	if ignoreInstr {
 		testStr := strings.Join(ut, " ")
@@ -91,7 +88,7 @@ func (b *pytestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	}
 
 	testStr := strings.Join(ut, ",")
-	testCmd = fmt.Sprintf("%s %s %s --test_harness %s --test_files %s",
-		pythonCmd, scriptPath, currentDir, userCmd, testStr)
+	testCmd = fmt.Sprintf("%s %s %s --test_harness %s --test_files %s --config_file %s",
+		pythonCmd, scriptPath, currentDir, userCmd, testStr, agentConfigPath)
 	return testCmd, nil
 }

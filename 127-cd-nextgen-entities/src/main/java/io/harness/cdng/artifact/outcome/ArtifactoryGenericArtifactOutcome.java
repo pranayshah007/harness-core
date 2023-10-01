@@ -10,17 +10,24 @@ package io.harness.cdng.artifact.outcome;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.ArtifactoryGenericArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.google.common.collect.Sets;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(
+    module = ProductModule.CDS, components = {HarnessModuleComponent.CDS_ARTIFACTS}, unitCoverageRequired = false)
 @Value
 @Builder
 @EqualsAndHashCode(callSuper = false)
@@ -67,5 +74,10 @@ public class ArtifactoryGenericArtifactOutcome implements ArtifactOutcome {
   @Override
   public String getArtifactType() {
     return type;
+  }
+
+  @Override
+  public Set<String> getMetaTags() {
+    return Sets.newHashSet(tag, identifier, artifactDirectory, repositoryFormat, repositoryName, artifactPath);
   }
 }

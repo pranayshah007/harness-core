@@ -23,6 +23,8 @@ public interface DelegateRingService {
 
   String getWatcherVersions(String accountId);
 
+  String getJREVersion(String accountId, boolean isDelegate);
+
   Map<String, String> getWatcherVersionsAllRings(boolean skipCache);
 
   String getWatcherVersionsForRing(String ringName, boolean skipCache);

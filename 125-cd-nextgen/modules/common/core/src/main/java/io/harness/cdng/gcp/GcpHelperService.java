@@ -122,7 +122,7 @@ public class GcpHelperService {
                                                         .accountId(ngAccess.getAccountIdentifier())
                                                         .taskType(NGTaskType.GCP_TASK.name())
                                                         .taskParameters(gcpTaskParameters)
-                                                        .executionTimeout(java.time.Duration.ofSeconds(30))
+                                                        .executionTimeout(gcpRequest.getExecutionTimeout())
                                                         .taskSetupAbstractions(abstractions)
                                                         .taskSelectors(gcpRequest.getDelegateSelectors())
                                                         .build();

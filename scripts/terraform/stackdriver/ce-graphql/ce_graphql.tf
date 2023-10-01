@@ -10,7 +10,7 @@ resource "google_logging_metric" "ce_graphQL_errors" {
   description = "Number of Errors in graphQL requests received. Owner: CE"
   filter = join("\n", [
     local.filter_prefix,
-    "jsonPayload.logger:(\"software.wings.graphql.datafetcher.billing\" OR \"software.wings.graphql.datafetcher.budget\" OR \"software.wings.graphql.datafetcher.ce\" OR \"software.wings.graphql.datafetcher.budget\" OR \"software.wings.graphql.datafetcher.cloudefficiencyevents\" OR \"software.wings.graphql.datafetcher.k8sLabel\" OR \"io.harness.ccm.setup.graphql.OverviewPageStatsDataFetcher\")",
+    "jsonPayload.logger:(\"io.harness.ccm.views.service.impl\" OR \"io.harness.ccm.views.graphql\" OR \"io.harness.ccm.views.helper\")",
     "severity>WARNING"
   ])
   metric_descriptor {
@@ -22,9 +22,9 @@ resource "google_logging_metric" "ce_graphQL_errors" {
       description = "The accountId"
     }
     labels {
-      key         = "dataFetcher"
+      key         = "classPath"
       value_type  = "STRING"
-      description = "The datafetcher of Warning/Error Origin"
+      description = "The classPath of Warning/Error Origin"
     }
     labels {
       key         = "severity"
@@ -34,7 +34,7 @@ resource "google_logging_metric" "ce_graphQL_errors" {
   }
   label_extractors = {
     "accountId" : "EXTRACT(jsonPayload.harness.accountId)"
-    "dataFetcher" : "EXTRACT(jsonPayload.logger)"
+    "classPath" : "EXTRACT(jsonPayload.logger)"
     "severity" : "EXTRACT(severity)"
   }
 }

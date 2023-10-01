@@ -23,6 +23,8 @@ public abstract class DataCollectionInfo<T extends ConnectorConfigDTO> {
   private String dataCollectionDsl;
   private boolean collectHostData;
   private List<String> serviceInstances;
+  private List<String> validServiceInstanceRegExPatterns;
+
   public abstract VerificationType getVerificationType();
   public abstract Map<String, Object> getDslEnvVariables(T connectorConfigDTO);
   public abstract String getBaseUrl(T connectorConfigDTO);

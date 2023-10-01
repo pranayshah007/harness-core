@@ -19,4 +19,5 @@ public interface CIBuildInfoRepositoryCustom {
   Optional<CIBuild> getBuildById(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Long buildIdentifier);
   Page<CIBuild> getBuilds(Criteria criteria, Pageable pageable);
+  void deleteAllByAccountId(String accountId);
 }

@@ -6,10 +6,12 @@
  */
 
 package io.harness.ngtriggers.outbox;
-
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.ResourceDTO;
@@ -28,6 +30,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class TriggerOutboxEventHandler implements OutboxEventHandler {

@@ -1,0 +1,111 @@
+global:
+  ggIngress:
+    enabled: false
+    className: "harness-global"
+    hosts:
+      - 'myhost.example.com'
+    tls:
+      enabled: true
+      secretName: harness-cert
+  commonAnnotations: {}
+  commonLabels: {}
+  ingress:
+    enabled: false
+    className: "harness"
+    hosts:
+      - 'myhost.example.com'
+    tls:
+      enabled: true
+      secretName: harness-cert
+  # -- Istio Ingress Settings
+  istio:
+    enabled: false
+    strict: false
+    gateway:
+      # -- Enable to create istio-system gateway
+      create: true
+      port: 443
+      # -- override the name of gateway
+      name: ""
+      # -- override the name of namespace to deploy gateway
+      namespace: ""
+      # -- adds a gateway selector
+      selector:
+        istio: ingressgateway
+      protocol: HTTPS
+    # -- set to istio gateway's k8s service FQDN for internal use case. eg "internal-istio-gateway.istio-system.svc.cluster.local"
+    # If not set, internal request routing would happen via global.loadbalancerUrl
+    istioGatewayServiceUrl: ""
+    # -- add global.istio.istioGatewayServiceUrl in hosts if global.istio.istioGatewayServiceUrl is not empty.
+    hosts:
+      - '*'
+    tls:
+      credentialName:
+      minProtocolVersion: TLSV1_2
+      mode: SIMPLE
+    virtualService:
+      gateways:
+        - ""
+      # -- add global.istio.istioGatewayServiceUrl in hosts if global.istio.istioGatewayServiceUrl is not empty.
+      hosts:
+
+nginx:
+  # -- Create Nginx Controller.  True will deploy a controller into your cluster
+  create: false
+  # setting true sets it to enable loadBalancer nginx service, otherwise uses nodePort
+  loadBalancerEnabled: false
+  # set loadbalancer IP when loadBalancer service is enabled.
+  loadBalancerIP: '0.0.0.0'
+  healthPort: ""
+  healthNodePort: ""
+  httpNodePort: ""
+  httpsNodePort: ""
+  controller:
+    # -- annotations to be addded to ingress Controller
+    annotations: {}
+  objects:
+    # -- annotations to be added to ingress Objects
+    annotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  image:
+    registry:  us.gcr.io
+    repository: k8s-artifacts-prod/ingress-nginx/controller
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "v1.0.0-alpha.2"
+    digest: ""
+  resources:
+    limits:
+      memory: '512Mi'
+    requests:
+      cpu: '0.5'
+      memory: '512Mi'
+  podLabels: {}
+  service:
+    annotations: {}
+
+
+defaultbackend:
+  # -- Create will deploy a default backend into your cluster
+  create: false
+  image:
+    registry: registry.k8s.io
+    repository: defaultbackend-amd64
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "1.5"
+    digest: ""
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  resources:
+    limits:
+      memory: 20Mi
+    requests:
+      cpu: 10m
+      memory: 20Mi
+  podLabels: {}
+  service:
+    annotations: {}

@@ -8,15 +8,20 @@
 package software.wings.delegatetasks.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -50,6 +55,7 @@ import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(CDC)
 @Slf4j
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
   private static final String WORKING_DIR_BASE = "./repository/helm-validation/";
@@ -107,29 +113,33 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
     helmTaskHelper.initHelm(workingDirectory, helmVersion, DEFAULT_TIMEOUT_IN_MILLIS);
     String repoName = convertBase64UuidToCanonicalForm(generateUuid());
 
-    switch (helmRepoConfig.getSettingType()) {
-      case HTTP_HELM_REPO:
-        tryAddingHttpHelmRepo(helmRepoConfig, repoName, taskParams.getRepoDisplayName(), workingDirectory);
-        break;
+    try {
+      switch (helmRepoConfig.getSettingType()) {
+        case HTTP_HELM_REPO:
+          tryAddingHttpHelmRepo(
+              helmRepoConfig, repoName, taskParams.getRepoDisplayName(), workingDirectory, taskParams.isUseCache());
+          break;
 
-      case OCI_HELM_REPO:
-        tryLoginOciRegistry(helmRepoConfig, HelmVersion.V380, workingDirectory);
-        break;
-      case AMAZON_S3_HELM_REPO:
-        tryAddingAmazonS3HelmRepo(helmRepoConfig, repoName, taskParams, workingDirectory);
-        break;
+        case OCI_HELM_REPO:
+          tryLoginOciRegistry(helmRepoConfig, HelmVersion.V380, workingDirectory);
+          break;
+        case AMAZON_S3_HELM_REPO:
+          tryAddingAmazonS3HelmRepo(helmRepoConfig, repoName, taskParams, workingDirectory);
+          break;
 
-      case GCS_HELM_REPO:
-        tryAddingGCSHelmRepo(helmRepoConfig, repoName, taskParams, workingDirectory);
-        break;
+        case GCS_HELM_REPO:
+          tryAddingGCSHelmRepo(helmRepoConfig, repoName, taskParams, workingDirectory);
+          break;
 
-      default:
-        unhandled(helmRepoConfig.getSettingType());
-        throw new WingsException("Unhandled type of helm repo config. Type : " + helmRepoConfig.getSettingType());
+        default:
+          unhandled(helmRepoConfig.getSettingType());
+          throw new WingsException("Unhandled type of helm repo config. Type : " + helmRepoConfig.getSettingType());
+      }
+    } finally {
+      // expecting remove repo to not throw any failures if the repo was already removed or something went wrong
+      helmTaskHelper.removeRepo(repoName, workingDirectory, helmVersion, DEFAULT_TIMEOUT_IN_MILLIS);
+      helmTaskHelper.cleanup(workingDirectory);
     }
-
-    helmTaskHelper.removeRepo(repoName, workingDirectory, helmVersion, DEFAULT_TIMEOUT_IN_MILLIS);
-    helmTaskHelper.cleanup(workingDirectory);
   }
 
   private void tryLoginOciRegistry(HelmRepoConfig helmRepoConfig, HelmVersion helmVersion, String workingDirectory) {
@@ -148,12 +158,19 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
   }
 
   private void tryAddingHttpHelmRepo(HelmRepoConfig helmRepoConfig, String repoName, String repoDisplayName,
-      String workingDirectory) throws Exception {
+      String workingDirectory, boolean useCache) throws Exception {
     HttpHelmRepoConfig httpHelmRepoConfig = (HttpHelmRepoConfig) helmRepoConfig;
 
-    helmTaskHelper.addRepo(repoName, repoDisplayName, httpHelmRepoConfig.getChartRepoUrl(),
-        httpHelmRepoConfig.getUsername(), httpHelmRepoConfig.getPassword(), workingDirectory, helmVersion,
-        DEFAULT_TIMEOUT_IN_MILLIS, null);
+    String cacheDir = helmTaskHelper.getCacheDir(repoName, useCache, helmVersion);
+    try {
+      helmTaskHelper.tryAddHelmRepo(repoName, repoDisplayName, httpHelmRepoConfig.getChartRepoUrl(),
+          httpHelmRepoConfig.getUsername(), httpHelmRepoConfig.getPassword(), workingDirectory, helmVersion,
+          DEFAULT_TIMEOUT_IN_MILLIS, cacheDir, null);
+    } finally {
+      if (isNotEmpty(cacheDir) && !useCache) {
+        deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
+      }
+    }
   }
 
   private void tryAddingAmazonS3HelmRepo(HelmRepoConfig helmRepoConfig, String repoName,

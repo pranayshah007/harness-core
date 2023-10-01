@@ -30,6 +30,7 @@ public class RoleDBOMapper {
         .createdAt(object.getCreatedAt())
         .lastModifiedAt(object.getLastModifiedAt())
         .version(object.getVersion())
+        .isPublic(object.isPublic())
         .build();
   }
 
@@ -47,6 +48,7 @@ public class RoleDBOMapper {
         .createdAt(roleDBO.getCreatedAt())
         .lastModifiedAt(roleDBO.getLastModifiedAt())
         .version(roleDBO.getVersion())
+        .isPublic(Boolean.TRUE.equals(roleDBO.getIsPublic()))
         .build();
   }
 }

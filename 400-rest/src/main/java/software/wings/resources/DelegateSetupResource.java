@@ -117,6 +117,7 @@ public class DelegateSetupResource {
   private static final String ATTACHMENT_FILENAME = "attachment; filename=";
   public static final String YAML = ".yaml";
   private static final String TAR_GZ = ".tar.gz";
+  private static final String HELM = "HELM";
 
   private final DelegateService delegateService;
   private final DelegateCache delegateCache;
@@ -422,7 +423,7 @@ public class DelegateSetupResource {
       @PathParam("delegateId") @NotEmpty String delegateId, @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(delegateCache.get(accountId, delegateId, true));
+      return new RestResponse<>(delegateCache.get(accountId, delegateId));
     }
   }
 
@@ -495,6 +496,8 @@ public class DelegateSetupResource {
       if (existingDelegate != null) {
         delegate.setDelegateType(existingDelegate.getDelegateType());
         delegate.setDelegateGroupName(existingDelegate.getDelegateGroupName());
+        delegate.setDelegateName(existingDelegate.getDelegateName());
+        delegate.setIp(existingDelegate.getIp());
       }
 
       return new RestResponse<>(delegateService.update(delegate));
@@ -810,9 +813,13 @@ public class DelegateSetupResource {
       final String managerUrl = subdomainUrlHelper.getManagerUrl(request, accountId);
       final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
       final String command = delegateInstallationCommandService.getCommand(commandType, managerUrl, accountId, owner);
-      ImmutableMap<String, String> commandResponse =
-          ImmutableMap.<String, String>builder().put("command", command).build();
-      return new RestResponse(commandResponse);
+      ImmutableMap.Builder<String, String> commandResponseBuilder =
+          ImmutableMap.<String, String>builder().put("command", command);
+      if (commandType.equals(HELM)) {
+        commandResponseBuilder.put(
+            "delegateHelmRepoUrl", delegateInstallationCommandService.getHelmRepoUrl(commandType, managerUrl));
+      }
+      return new RestResponse(commandResponseBuilder.build());
     }
   }
 

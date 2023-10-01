@@ -24,7 +24,6 @@ import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -69,7 +68,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.PIPELINE)
 @RecasterAlias("io.harness.steps.plugin.ContainerStepInfo")
 public class ContainerStepInfo extends ContainerBaseStepInfo
-    implements PMSStepInfo, Visitable, WithDelegateSelector, WithConnectorRef, SpecParameters, ContainerStepSpec {
+    implements PMSStepInfo, Visitable, WithConnectorRef, SpecParameters, ContainerStepSpec {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -173,5 +172,10 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
   @JsonIgnore
   public ContainerStepType getType() {
     return ContainerStepType.RUN_CONTAINER;
+  }
+
+  @Override
+  public List<String> excludeKeysFromStepInputs() {
+    return PMSStepInfo.super.excludeKeysFromStepInputs();
   }
 }

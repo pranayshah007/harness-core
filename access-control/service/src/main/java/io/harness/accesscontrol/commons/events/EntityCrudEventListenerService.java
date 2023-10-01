@@ -13,12 +13,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 @OwnedBy(HarnessTeam.PL)
 public class EntityCrudEventListenerService extends EventListenerService {
   @Inject
-  public EntityCrudEventListenerService(EntityCrudEventListener entityCrudEventListener) {
-    super(entityCrudEventListener);
+  public EntityCrudEventListenerService(
+      EntityCrudEventListener entityCrudEventListener, @Named("eventsConfig") EventsConfig eventsConfig) {
+    super(entityCrudEventListener, eventsConfig);
   }
 
   @Override

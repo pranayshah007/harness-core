@@ -6,15 +6,17 @@
  */
 
 package io.harness;
-
 import static io.harness.OrchestrationPublisherName.PERSISTENCE_LAYER;
 import static io.harness.OrchestrationPublisherName.PUBLISHER_NAME;
 
 import static java.util.Arrays.asList;
 
 import io.harness.account.AccountClientModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.delay.AbstractOrchestrationDelayModule;
 import io.harness.engine.GovernanceService;
@@ -69,8 +71,8 @@ import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.execution.expansion.PlanExpansionServiceImpl;
 import io.harness.govern.ServersModule;
-import io.harness.graph.stepDetail.PmsGraphStepDetailsServiceImpl;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.NodeExecutionInfoServiceImpl;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.pms.NoopFeatureFlagServiceImpl;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
@@ -109,6 +111,7 @@ import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationModule extends AbstractModule implements ServersModule {
   private static OrchestrationModule instance;
@@ -160,7 +163,7 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
     bind(PlanExecutionService.class).to(PlanExecutionServiceImpl.class).in(Singleton.class);
     bind(PlanExecutionMonitorService.class).to(PlanExecutionMonitorServiceImpl.class).in(Singleton.class);
     bind(NodeExecutionMonitorService.class).to(NodeExecutionMonitorServiceImpl.class).in(Singleton.class);
-    bind(PmsGraphStepDetailsService.class).to(PmsGraphStepDetailsServiceImpl.class);
+    bind(NodeExecutionInfoService.class).to(NodeExecutionInfoServiceImpl.class);
     bind(ExecutionInputService.class).to(ExecutionInputServiceImpl.class);
     bind(StepExecutionEntityService.class).to(StepExecutionEntityServiceImpl.class);
     bind(ExpressionUsageService.class).to(ExpressionUsageServiceImpl.class).in(Singleton.class);
@@ -255,10 +258,22 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
         versionInfoManager.getVersionInfo().getBuildNo());
     MutableConfiguration<String, Long> config = new MutableConfiguration<>();
     config.setTypes(String.class, Long.class);
-    cache.registerCacheEntryListener(
-        new MutableCacheEntryListenerConfiguration(FactoryBuilder.factoryOf(orchestrationLogCacheListener),
-            FactoryBuilder.factoryOf(orchestrationLogCacheListener), false, false));
+    if (this.config.getOrchestrationLogConfiguration().isShouldUseExpiredListener()) {
+      cache.registerCacheEntryListener(
+          new MutableCacheEntryListenerConfiguration(FactoryBuilder.factoryOf(orchestrationLogCacheListener),
+              FactoryBuilder.factoryOf(orchestrationLogCacheListener), false, false));
+    }
     return cache;
+  }
+
+  @Provides
+  @Singleton
+  @Named("pmsMetricsCache")
+  public Cache<String, Integer> metricsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("pmsMetricsCache", String.class, Integer.class,
+        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.MINUTES, 1)),
+        versionInfoManager.getVersionInfo().getBuildNo());
   }
 
   @Provides

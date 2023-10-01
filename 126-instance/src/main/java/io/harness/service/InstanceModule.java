@@ -16,6 +16,8 @@ import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.persistence.HPersistence;
 import io.harness.repositories.instancestats.InstanceStatsRepository;
 import io.harness.repositories.instancestats.InstanceStatsRepositoryImpl;
+import io.harness.repositories.instancestatsiterator.InstanceStatsIteratorRepository;
+import io.harness.repositories.instancestatsiterator.InstanceStatsIteratorRepositoryImpl;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.deploymentsummary.DeploymentSummaryServiceImpl;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
@@ -36,6 +38,8 @@ import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskSer
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskServiceImpl;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoServiceImpl;
+import io.harness.service.releasedetailsmapping.ReleaseDetailsMappingService;
+import io.harness.service.releasedetailsmapping.ReleaseDetailsMappingServiceImpl;
 import io.harness.service.stats.statscollector.InstanceStatsCollectorImpl;
 import io.harness.service.stats.statscollector.StatsCollector;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
@@ -63,6 +67,7 @@ public class InstanceModule extends AbstractModule {
     bind(InstanceDashboardService.class).to(InstanceDashboardServiceImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
     bind(InstanceSyncPerpetualTaskInfoService.class).to(InstanceSyncPerpetualTaskInfoServiceImpl.class);
+    bind(ReleaseDetailsMappingService.class).to(ReleaseDetailsMappingServiceImpl.class);
     bind(InfrastructureMappingService.class).to(InfrastructureMappingServiceImpl.class);
     bind(InstanceSyncHandlerFactoryService.class).to(InstanceSyncHandlerFactoryServiceImpl.class);
     bind(InstanceSyncService.class).to(InstanceSyncServiceImpl.class);
@@ -72,6 +77,7 @@ public class InstanceModule extends AbstractModule {
     bind(InstanceStatsService.class).to(InstanceStatsServiceImpl.class);
     bind(UsageMetricsEventPublisher.class).to(UsageMetricsEventPublisherImpl.class);
     bind(InstanceStatsRepository.class).to(InstanceStatsRepositoryImpl.class);
+    bind(InstanceStatsIteratorRepository.class).to(InstanceStatsIteratorRepositoryImpl.class);
     bind(BroadcasterFactory.class).to(DefaultBroadcasterFactory.class);
     bind(GitopsInstanceSyncService.class).to(GitopsInstanceSyncServiceImpl.class);
     bind(InstanceSyncPerpetualTaskMappingService.class).to(InstanceSyncPerpetualTaskMappingServiceImpl.class);

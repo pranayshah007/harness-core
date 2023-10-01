@@ -6,43 +6,48 @@
  */
 
 package io.harness.rancher;
-
+import static io.harness.exception.ngexception.RancherClientRuntimeException.RancherActionType.GENERATE_KUBECONFIG;
+import static io.harness.exception.ngexception.RancherClientRuntimeException.RancherActionType.LIST_CLUSTERS;
 import static io.harness.exception.sanitizer.ExceptionMessageSanitizer.sanitizeException;
 
+import static io.github.resilience4j.retry.Retry.decorateCallable;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.ngexception.RancherClientRuntimeException;
+import io.harness.exception.ngexception.RancherClientRuntimeException.RancherActionType;
+import io.harness.k8s.KubernetesApiRetryUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
-import io.github.resilience4j.retry.RetryConfig;
-import java.time.Duration;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import retrofit2.Call;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class RancherClusterClientImpl implements RancherClusterClient {
-  private static final String RANCHER_LIST_CLUSTERS_ERROR_MESSAGE = "Failed to list clusters using Rancher [%s].";
+  private static final String RANCHER_LIST_CLUSTERS_ERROR_MESSAGE = "Failed to list clusters using rancher cluster.";
+  private static final String RANCHER_ERROR_MESSAGE_RANCHER_URL = " Rancher URL: [%s].";
+  private static final String RANCHER_ERROR_MESSAGE_RANCHER_URL_CLUSTER = " Rancher URL: [%s], Cluster: [%s].";
+
   private static final String RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE =
-      "Failed to generate kubeconfig from cluster [%s] using Rancher [%s].";
-  private static final String STATUS_CODE_MESSAGE = " Status code: [%s]";
-  private static final String RANCHER_LIST_CLUSTERS_ERROR_MESSAGE_WITH_CODE =
-      RANCHER_LIST_CLUSTERS_ERROR_MESSAGE + STATUS_CODE_MESSAGE;
-  private static final String RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE_WITH_CODE =
-      RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE + STATUS_CODE_MESSAGE;
-  private static final RetryConfig retryConfig =
-      RetryConfig.custom()
-          .maxAttempts(3)
-          .intervalFunction(IntervalFunction.ofExponentialBackoff(Duration.ofSeconds(1)))
-          .build();
-  private static final Retry retry = Retry.of("RancherClusterClient", retryConfig);
+      "Failed to generate kubeconfig from rancher cluster.";
+  private static final String ENDPOINT_AND_STATUS_CODE_MESSAGE = " Endpoint: [%s]. Status code: [%s]. ";
+  private static final String RANCHER_LIST_CLUSTERS_ERROR_MESSAGE_WITH_INFO =
+      RANCHER_LIST_CLUSTERS_ERROR_MESSAGE + ENDPOINT_AND_STATUS_CODE_MESSAGE;
+  private static final String RANCHER_GENERATE_KUBECFG_ERROR_MESSAGE_WITH_INFO =
+      RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE + ENDPOINT_AND_STATUS_CODE_MESSAGE;
+  private static final Retry retry = KubernetesApiRetryUtils.buildRetryAndRegisterListeners("RancherClusterClient");
 
   @Inject private RancherRestClientFactory rancherRestClientFactory;
 
@@ -50,13 +55,17 @@ public class RancherClusterClientImpl implements RancherClusterClient {
   public RancherListClustersResponse listClusters(
       String bearerToken, String url, Map<String, String> pageRequestParams) {
     try {
+      RancherClientRuntimeException.RancherRequestData rancherRequestData =
+          RancherClientRuntimeException.RancherRequestData.builder().build();
       RancherRestClient rancherRestClient = rancherRestClientFactory.getRestClient(url, bearerToken);
-      Response<RancherListClustersResponse> listClustersResponse =
-          Retry.decorateCallable(retry, () -> rancherRestClient.listClusters(pageRequestParams).execute()).call();
+      Response<RancherListClustersResponse> listClustersResponse = decorateCallable(retry, () -> {
+        Call<RancherListClustersResponse> listClustersCall = rancherRestClient.listClusters(pageRequestParams);
+        rancherRequestData.setEndpoint(listClustersCall.request().url().toString());
+        return listClustersCall.execute();
+      }).call();
 
       if (isResponseUnsuccessfulOrEmpty(listClustersResponse)) {
-        throw createRancherRuntimeException(
-            format(RANCHER_LIST_CLUSTERS_ERROR_MESSAGE_WITH_CODE, url, listClustersResponse.code()));
+        constructAndThrowRancherException(listClustersResponse, rancherRequestData, LIST_CLUSTERS);
       }
       return listClustersResponse.body();
     } catch (RancherClientRuntimeException e) {
@@ -65,42 +74,66 @@ public class RancherClusterClientImpl implements RancherClusterClient {
     } catch (Exception e) {
       Exception sanitizedException = sanitizeException(e);
       log.error("Failed to list clusters using rancher {}", url, sanitizedException);
-      throw createRancherRuntimeException(format(RANCHER_LIST_CLUSTERS_ERROR_MESSAGE, url), sanitizedException);
+      throw new RancherClientRuntimeException(
+          RANCHER_LIST_CLUSTERS_ERROR_MESSAGE + format(RANCHER_ERROR_MESSAGE_RANCHER_URL, url), sanitizedException);
     }
   }
 
   @Override
-  public RancherGenerateKubeconfigResponse generateKubeconfig(String bearerToken, String url, String clusterName) {
+  public RancherGenerateKubeconfigResponse generateKubeconfig(String bearerToken, String url, String clusterId) {
     try {
+      RancherClientRuntimeException.RancherRequestData rancherRequestData =
+          RancherClientRuntimeException.RancherRequestData.builder().build();
       RancherRestClient rancherRestClient = rancherRestClientFactory.getRestClient(url, bearerToken);
-      Response<RancherGenerateKubeconfigResponse> generateKubeconfigResponse =
-          Retry.decorateCallable(retry, () -> rancherRestClient.generateKubeconfig(clusterName).execute()).call();
+      Response<RancherGenerateKubeconfigResponse> generateKubeconfigResponse = decorateCallable(retry, () -> {
+        Call<RancherGenerateKubeconfigResponse> kubeconfigCall = rancherRestClient.generateKubeconfig(clusterId);
+        rancherRequestData.setEndpoint(kubeconfigCall.request().url().toString());
+        return kubeconfigCall.execute();
+      }).call();
 
       if (isResponseUnsuccessfulOrEmpty(generateKubeconfigResponse)) {
-        throw createRancherRuntimeException(format(
-            RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE_WITH_CODE, clusterName, url, generateKubeconfigResponse.code()));
+        constructAndThrowRancherException(generateKubeconfigResponse, rancherRequestData, GENERATE_KUBECONFIG);
       }
       return generateKubeconfigResponse.body();
     } catch (RancherClientRuntimeException e) {
-      log.error("Failed to generate kubeconfig for cluster {} using rancher {}", clusterName, url, e);
+      log.error("Failed to generate kubeconfig for cluster {} using rancher {}", clusterId, url, e);
       throw e;
     } catch (Exception e) {
       Exception sanitizedException = sanitizeException(e);
-      log.error("Failed to generate kubeconfig for cluster {} using rancher {}", clusterName, url, sanitizedException);
-      throw createRancherRuntimeException(
-          format(RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE, clusterName, url), sanitizedException);
+      log.error("Failed to generate kubeconfig for cluster {} using rancher {}", clusterId, url, sanitizedException);
+      throw new RancherClientRuntimeException(
+          RANCHER_GENERATE_KUBECONFIG_ERROR_MESSAGE + format(RANCHER_ERROR_MESSAGE_RANCHER_URL_CLUSTER, url, clusterId),
+          sanitizedException);
     }
   }
 
-  private RancherClientRuntimeException createRancherRuntimeException(String errorMessage, Throwable cause) {
-    return new RancherClientRuntimeException(errorMessage, cause);
-  }
-
-  private RancherClientRuntimeException createRancherRuntimeException(String errorMessage) {
-    return new RancherClientRuntimeException(errorMessage);
+  private void constructAndThrowRancherException(Response<?> response,
+      RancherClientRuntimeException.RancherRequestData requestData, RancherActionType actionType) {
+    String errorMessage = StringUtils.EMPTY;
+    int errorCode = response.code();
+    if (GENERATE_KUBECONFIG == actionType) {
+      errorMessage = format(RANCHER_GENERATE_KUBECFG_ERROR_MESSAGE_WITH_INFO, requestData.getEndpoint(), errorCode);
+    } else if (LIST_CLUSTERS == actionType) {
+      errorMessage = format(RANCHER_LIST_CLUSTERS_ERROR_MESSAGE_WITH_INFO, requestData.getEndpoint(), errorCode);
+    }
+    requestData.setErrorMessage(errorMessage);
+    requestData.setCode(errorCode);
+    requestData.setErrorBody(getErrorBodyFromResponse(response));
+    throw new RancherClientRuntimeException(errorMessage, actionType, requestData);
   }
 
   private boolean isResponseUnsuccessfulOrEmpty(Response<?> rancherResponse) {
     return !rancherResponse.isSuccessful() || rancherResponse.body() == null;
+  }
+
+  private String getErrorBodyFromResponse(Response<?> response) {
+    try {
+      if (response.errorBody() != null) {
+        return response.errorBody().string();
+      }
+      return StringUtils.EMPTY;
+    } catch (Exception e) {
+      return StringUtils.EMPTY;
+    }
   }
 }

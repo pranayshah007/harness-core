@@ -7,6 +7,8 @@
 
 package io.harness.idp.gitintegration.processor.impl;
 
+import static io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType.GITHUB_APP;
+import static io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType.USERNAME_AND_TOKEN;
 import static io.harness.idp.common.Constants.SLASH_DELIMITER;
 import static io.harness.idp.common.Constants.SOURCE_FORMAT;
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
@@ -14,16 +16,20 @@ import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALO
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cistatus.service.GithubAppConfig;
+import io.harness.cistatus.service.GithubService;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.adapter.GithubToGitMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.git.GitClientHelper;
 import io.harness.idp.common.Constants;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
@@ -34,16 +40,21 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 
+import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public class GithubConnectorProcessor extends ConnectorProcessor {
   private static final String SUFFIX_FOR_GITHUB_APP_CONNECTOR = "_App";
   private static final String TARGET_TO_REPLACE_IN_CONFIG_FOR_GITHUB_API_BASE_URL = "API_BASE_URL";
+
+  @Inject GithubService githubService;
+
   @Override
   public String getInfraConnectorType(ConnectorInfoDTO connectorInfoDTO) {
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
@@ -53,7 +64,6 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
-    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITHUB_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not github connector ", connectorIdentifier));
@@ -70,8 +80,6 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
     if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
-      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
-
       GithubAppSpecDTO apiAccessSpec = (GithubAppSpecDTO) apiAccess.getSpec();
 
       if (apiAccessSpec.getApplicationIdRef() == null) {
@@ -94,13 +102,21 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
 
     GithubHttpCredentialsOutcomeDTO outcome =
         (GithubHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
-    if (!outcome.getType().toString().equals(GitIntegrationConstants.USERNAME_TOKEN_AUTH_TYPE)) {
+    if (!outcome.getType().equals(USERNAME_AND_TOKEN) && !outcome.getType().equals(GITHUB_APP)) {
       throw new InvalidRequestException(String.format(
-          " Authentication is not Username and Token for Github Connector with id - [%s] ", connectorIdentifier));
+          "AuthenticationType should be Username + Token / GithubApp for Github Connector with id - [%s] ",
+          connectorIdentifier));
     }
-    GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
 
-    String tokenSecretIdentifier = spec.getTokenRef().getIdentifier();
+    String tokenSecretIdentifier = "";
+    if (outcome.getType().equals(USERNAME_AND_TOKEN)) {
+      GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
+      tokenSecretIdentifier = spec.getTokenRef().getIdentifier();
+    } else {
+      GithubAppDTO spec = (GithubAppDTO) outcome.getSpec();
+      tokenSecretIdentifier = spec.getPrivateKeyRef().getIdentifier();
+    }
+
     if (tokenSecretIdentifier.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Secret identifier not found for connector: [%s] ", connectorIdentifier));
@@ -109,13 +125,25 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     secrets.put(Constants.GITHUB_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.GITHUB_TOKEN));
 
+    return secrets;
+  }
+
+  @Override
+  public void createOrUpdateIntegrationConfig(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
+    GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    GithubApiAccessDTO apiAccess = config.getApiAccess();
+    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
+
+    if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
+    }
+
     // config for github connector git integration
     String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
     integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG_FOR_GITHUB_API_BASE_URL,
         getGithubApiBaseUrlFromHost(GitIntegrationUtils.getHostForConnector(connectorInfoDTO)));
     configManagerService.createOrUpdateAppConfigForGitIntegrations(
         accountIdentifier, connectorInfoDTO, integrationConfigs, connectorTypeAsString);
-    return secrets;
   }
 
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
@@ -132,12 +160,38 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
     GithubHttpCredentialsOutcomeDTO outcome =
         (GithubHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
-    GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
+
+    String username = "HarnessIdp";
+    if (outcome.getType().equals(USERNAME_AND_TOKEN)) {
+      GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
+      username = spec.getUsername();
+      if (StringUtils.isEmpty(username)) {
+        username = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+            spec.getUsernameRef().getIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
+      }
+    } else if (outcome.getType().equals(GITHUB_APP)) {
+      GithubAppDTO spec = (GithubAppDTO) outcome.getSpec();
+      String applicationId = spec.getApplicationId();
+      if (StringUtils.isEmpty(applicationId)) {
+        applicationId = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+            spec.getApplicationIdRef().getIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
+      }
+      String installationId = spec.getInstallationId();
+      if (StringUtils.isEmpty(installationId)) {
+        installationId = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+            spec.getInstallationIdRef().getIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
+      }
+      username = username + "-GithubApp";
+      username = StringUtils.isEmpty(spec.getApplicationId()) ? username : username + "-" + spec.getApplicationId();
+      username = StringUtils.isEmpty(spec.getInstallationId()) ? username : username + "-" + spec.getInstallationId();
+      githubConnectorSecret = githubService.getToken(buildGithubAppConfig(applicationId, installationId,
+          githubConnectorSecret, ((GithubConnectorDTO) connectorInfoDTO.getConnectorConfig()).getUrl()));
+    }
 
     config.setUrl(catalogConnectorInfo.getRepo());
 
-    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
-        spec.getUsername(), githubConnectorSecret, config, throughGrpc);
+    performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush, username,
+        githubConnectorSecret, config, throughGrpc);
   }
 
   @Override
@@ -154,5 +208,15 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   private String getGithubApiBaseUrlFromHost(String host) {
     return (host.equals("github.com")) ? String.format("https://api.%s", host)
                                        : String.format("https://%s/api/v3", host);
+  }
+
+  private GithubAppConfig buildGithubAppConfig(
+      String applicationId, String installationId, String privateKey, String url) {
+    return GithubAppConfig.builder()
+        .appId(applicationId)
+        .installationId(installationId)
+        .privateKey(privateKey)
+        .githubUrl(GitClientHelper.getGithubApiURL(url))
+        .build();
   }
 }

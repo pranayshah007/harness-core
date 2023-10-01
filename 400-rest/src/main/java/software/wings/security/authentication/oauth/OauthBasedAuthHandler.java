@@ -120,6 +120,15 @@ public class OauthBasedAuthHandler implements AuthHandler {
     }
   }
 
+  public String getOauthProviderName(String... credentials) {
+    if (credentials == null || credentials.length != 3) {
+      return null;
+    }
+
+    String domain = credentials[2];
+    return oauthOptions.getOauthProvider(OauthProviderType.valueOf(domain.toUpperCase())).getName();
+  }
+
   private void verifyAuthMechanismOfUser(User user, OauthClient oauthProvider) {
     matchOauthProvider(user, oauthProvider);
     verifyAccountLevelAuthMechanismEqualsOauth(user);

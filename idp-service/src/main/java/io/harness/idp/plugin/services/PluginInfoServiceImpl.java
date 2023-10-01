@@ -7,11 +7,15 @@
 
 package io.harness.idp.plugin.services;
 
+import static io.harness.idp.common.Constants.PLUGIN_REQUEST_NOTIFICATION_SLACK_WEBHOOK;
+import static io.harness.notification.templates.PredefinedTemplate.IDP_PLUGIN_REQUESTS_NOTIFICATION_SLACK;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
 import io.harness.idp.common.FileUtils;
+import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.service.PluginsProxyInfoService;
@@ -25,6 +29,8 @@ import io.harness.idp.plugin.mappers.PluginInfoMapper;
 import io.harness.idp.plugin.mappers.PluginRequestMapper;
 import io.harness.idp.plugin.repositories.PluginInfoRepository;
 import io.harness.idp.plugin.repositories.PluginRequestRepository;
+import io.harness.notification.Team;
+import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
@@ -37,6 +43,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,7 +68,10 @@ public class PluginInfoServiceImpl implements PluginInfoService {
   private ConfigEnvVariablesService configEnvVariablesService;
   private BackstageEnvVariableService backstageEnvVariableService;
   private PluginsProxyInfoService pluginsProxyInfoService;
+  private IdpCommonService idpCommonService;
   @Inject @Named("env") private String env;
+  @Inject @Named("notificationConfigs") HashMap<String, String> notificationConfigs;
+
   @Override
   public List<PluginInfo> getAllPluginsInfo(String accountId) {
     List<PluginInfoEntity> plugins = pluginInfoRepository.findByIdentifierIn(Constants.pluginIds);
@@ -129,6 +140,7 @@ public class PluginInfoServiceImpl implements PluginInfoService {
   public RequestPlugin savePluginRequest(String harnessAccount, RequestPlugin pluginRequest) {
     PluginRequestEntity pluginRequestEntity = PluginRequestMapper.fromDTO(harnessAccount, pluginRequest);
     pluginRequestRepository.save(pluginRequestEntity);
+    sendSlackNotificationForPluginRequest(harnessAccount, pluginRequestEntity);
     return PluginRequestMapper.toDTO(pluginRequestEntity);
   }
 
@@ -150,5 +162,18 @@ public class PluginInfoServiceImpl implements PluginInfoService {
     Criteria criteria = new Criteria();
     criteria.and(PluginRequestEntity.PluginRequestKeys.accountIdentifier).is(harnessAccount);
     return criteria;
+  }
+
+  private void sendSlackNotificationForPluginRequest(String harnessAccount, PluginRequestEntity pluginRequestEntity) {
+    SlackChannel slackChannel =
+        SlackChannel.builder()
+            .accountId(harnessAccount)
+            .userGroups(Collections.emptyList())
+            .templateId(IDP_PLUGIN_REQUESTS_NOTIFICATION_SLACK.getIdentifier())
+            .templateData(pluginRequestEntity.toMap())
+            .team(Team.IDP)
+            .webhookUrls(Collections.singletonList(notificationConfigs.get(PLUGIN_REQUEST_NOTIFICATION_SLACK_WEBHOOK)))
+            .build();
+    idpCommonService.sendSlackNotification(slackChannel);
   }
 }

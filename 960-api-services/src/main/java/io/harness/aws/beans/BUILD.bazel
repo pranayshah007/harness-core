@@ -6,6 +6,12 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
+filegroup(
+    name = "java_srcs",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+)
+
 java_library(
     name = "module",
     srcs = glob(["*.java"]),
@@ -16,6 +22,7 @@ java_library(
         "//970-api-services-beans/src/main/java/software/wings/annotation:module",
         "//970-api-services-beans/src/main/java/software/wings/beans:module",
         "//970-api-services-beans/src/main/java/software/wings/settings:module",
+        "//979-recaster/src/main/java/io/harness/annotation:module",
         "//980-commons/src/main/java/io/harness/encryption:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_github_reinert_jjschema",

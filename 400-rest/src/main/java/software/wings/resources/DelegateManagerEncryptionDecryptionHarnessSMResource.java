@@ -6,12 +6,14 @@
  */
 
 package software.wings.resources;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -34,6 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import retrofit.http.Body;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Api("/encryption")
 @Path("/encryption")
 @Produces("application/json")

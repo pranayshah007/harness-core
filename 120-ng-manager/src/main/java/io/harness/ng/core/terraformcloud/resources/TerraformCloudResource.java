@@ -6,11 +6,13 @@
  */
 
 package io.harness.ng.core.terraformcloud.resources;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.provision.terraformcloud.resources.dtos.OrganizationsDTO;
 import io.harness.cdng.provision.terraformcloud.resources.dtos.WorkspacesDTO;
@@ -37,6 +39,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDP)
 @Api("terraform-cloud")
 @Path("/terraform-cloud")

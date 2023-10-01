@@ -5,6 +5,7 @@
 
 exports_files(
     [
+        "keystore.jks",
         "config.yml",
     ],
     visibility = ["//idp-service/build:__subpackages__"],

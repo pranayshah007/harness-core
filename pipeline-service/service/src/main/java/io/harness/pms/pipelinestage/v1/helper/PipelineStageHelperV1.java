@@ -6,13 +6,15 @@
  */
 
 package io.harness.pms.pipelinestage.v1.helper;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.GROUP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -32,6 +34,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j

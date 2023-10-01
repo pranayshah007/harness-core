@@ -8,11 +8,14 @@
 package io.harness.polling.service.impl;
 
 import static io.harness.rule.OwnerRule.MEET;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,6 +24,9 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.dto.PolledResponse;
 import io.harness.dto.PollingInfoForTriggers;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pipeline.triggers.TriggersClient;
 import io.harness.polling.bean.ArtifactPolledResponse;
 import io.harness.polling.bean.ManifestPolledResponse;
 import io.harness.polling.bean.PollingDocument;
@@ -40,10 +46,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class PollingServiceImplTest extends CategoryTest {
   @InjectMocks PollingServiceImpl pollingService;
   @Mock PollingRepository pollingRepository;
+  @Mock TriggersClient triggersClient;
   String accountId = "accountId";
   String orgId = "orgId";
   String projectId = "projectId";
@@ -110,5 +119,51 @@ public class PollingServiceImplTest extends CategoryTest {
     ArgumentCaptor<PollingDocument> pollingDocumentArgumentCaptor = ArgumentCaptor.forClass(PollingDocument.class);
     verify(pollingRepository, times(1)).save(pollingDocumentArgumentCaptor.capture());
     assertThat(pollingDocumentArgumentCaptor.getValue().getUuid()).isNull();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerPollingStatusSuccess() throws IOException {
+    PollingTriggerStatusUpdateDTO expectedStatusUpdate = PollingTriggerStatusUpdateDTO.builder()
+                                                             .signatures(Collections.singletonList("sig"))
+                                                             .success(true)
+                                                             .errorMessage("")
+                                                             .lastCollectedVersions(Collections.singletonList("1.0"))
+                                                             .build();
+    ArgumentCaptor<PollingTriggerStatusUpdateDTO> updateDTOCaptor =
+        ArgumentCaptor.forClass(PollingTriggerStatusUpdateDTO.class);
+    Call<ResponseDTO<Boolean>> call = mock(Call.class);
+    when(triggersClient.updateTriggerPollingStatus(any(), updateDTOCaptor.capture())).thenReturn(call);
+    when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
+    boolean result = pollingService.updateTriggerPollingStatus(
+        accountId, Collections.singletonList("sig"), true, "", Collections.singletonList("1.0"));
+    assertThat(result).isTrue();
+    expectedStatusUpdate.setLastCollectedTime(updateDTOCaptor.getValue().getLastCollectedTime());
+    verify(triggersClient, times(1)).updateTriggerPollingStatus(eq(accountId), any());
+    assertThat(expectedStatusUpdate).isEqualToComparingFieldByField(updateDTOCaptor.getValue());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerPollingStatusFailure() throws IOException {
+    PollingTriggerStatusUpdateDTO expectedStatusUpdate = PollingTriggerStatusUpdateDTO.builder()
+                                                             .signatures(Collections.singletonList("sig"))
+                                                             .success(true)
+                                                             .errorMessage("")
+                                                             .lastCollectedVersions(Collections.singletonList("1.0"))
+                                                             .build();
+    ArgumentCaptor<PollingTriggerStatusUpdateDTO> updateDTOCaptor =
+        ArgumentCaptor.forClass(PollingTriggerStatusUpdateDTO.class);
+    Call<ResponseDTO<Boolean>> call = mock(Call.class);
+    when(triggersClient.updateTriggerPollingStatus(any(), updateDTOCaptor.capture())).thenReturn(call);
+    when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
+    boolean result = pollingService.updateTriggerPollingStatus(
+        accountId, Collections.singletonList("sig"), true, "", Collections.singletonList("1.0"));
+    assertThat(result).isFalse();
+    expectedStatusUpdate.setLastCollectedTime(updateDTOCaptor.getValue().getLastCollectedTime());
+    verify(triggersClient, times(1)).updateTriggerPollingStatus(eq(accountId), any());
+    assertThat(expectedStatusUpdate).isEqualToComparingFieldByField(updateDTOCaptor.getValue());
   }
 }

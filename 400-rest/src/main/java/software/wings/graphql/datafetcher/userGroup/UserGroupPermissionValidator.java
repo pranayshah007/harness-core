@@ -137,7 +137,7 @@ public class UserGroupPermissionValidator {
                                     .addFilter("accountId", SearchFilter.Operator.EQ, accountId)
                                     .addFilter("_id", IN, pipelineIds.toArray())
                                     .build();
-    PageResponse<Pipeline> res = pipelineService.listPipelines(req);
+    PageResponse<Pipeline> res = pipelineService.listPipelines(req, false, accountId);
     List<String> idsPresent = res.stream().map(Pipeline::getUuid).collect(Collectors.toList());
     checkForInvalidIds(ids, idsPresent);
   }

@@ -20,7 +20,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
@@ -87,6 +87,7 @@ import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingValidati
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
 import io.harness.ccm.views.service.CEViewFolderService;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
 import io.harness.ccm.views.service.LabelFlattenedService;
@@ -96,6 +97,7 @@ import io.harness.ccm.views.service.impl.BigQueryDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
+import io.harness.ccm.views.service.impl.CEViewPreferenceServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.LabelFlattenedServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
@@ -208,6 +210,7 @@ import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.module.AgentMtlsModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notifications.AlertNotificationRuleChecker;
 import io.harness.notifications.AlertNotificationRuleCheckerImpl;
@@ -896,7 +899,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return configuration.getDistributedLockImplementation() == null ? MONGO
+    return configuration.getDistributedLockImplementation() == null ? REDIS
                                                                     : configuration.getDistributedLockImplementation();
   }
 
@@ -1261,6 +1264,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DataResponseService.class).to(BigQueryDataResponseServiceImpl.class);
     bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
+    bind(CEViewPreferenceService.class).to(CEViewPreferenceServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
     bind(BusinessMappingHistoryService.class).to(BusinessMappingHistoryServiceImpl.class);
@@ -1314,7 +1318,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     buildServiceMapBinder.addBinding(SftpConfig.class).toInstance(SftpBuildService.class);
     buildServiceMapBinder.addBinding(AzureArtifactsPATConfig.class).toInstance(AzureArtifactsBuildService.class);
 
-    install(new ManagerCacheRegistrar());
+    install(new ManagerCacheRegistrar(configuration));
     install(new FactoryModuleBuilder().implement(Jenkins.class, JenkinsImpl.class).build(JenkinsFactory.class));
     install(SecretManagementCoreModule.getInstance());
     install(new InstanceSyncMonitoringModule());
@@ -1530,6 +1534,9 @@ public class WingsModule extends AbstractModule implements ServersModule {
     }
 
     install(new PollResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
+
+    install(new NGSettingsClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
 
     // ng-usermembership Dependencies

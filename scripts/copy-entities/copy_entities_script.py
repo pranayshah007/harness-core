@@ -25,6 +25,7 @@ connector_endpoint = "/gateway/ng/api/connectors"
 template_endpoint = "/gateway/template/api/templates"
 pipeline_endpoint = "/gateway/pipeline/api/pipelines"
 input_set_endpoint = "/gateway/pipeline/api/inputSets"
+trigger_endpoint = "/gateway/pipeline/api/triggers"
 variable_endpoint = "gateway/ng/api/variables"
 roles_endpoint = "gateway/authz/api/roles"
 resourcegroup_endpoint = "gateway/resourcegroup/api/v2/resourcegroup"
@@ -55,7 +56,7 @@ Entities = [
     "Connector",
     "Service",
     "Environment",
-    "EnvironmentOverride"
+    "EnvironmentOverride",
     "ServiceOverride",
     "InfraOverride",
     "Template",
@@ -151,6 +152,7 @@ def export_input_set(pipelineIdentifier):
                 + pipelineIdentifier
                 + "&projectIdentifier="
                 + from_projectIdentifier
+                + "&loadFromFallbackBranch=true"
             )
             response_get_input_set = get_response_data("GET", url_get_input_set, "")
             new_payload_json = modify_payload(
@@ -172,6 +174,80 @@ def export_input_set(pipelineIdentifier):
             )
             create_and_print_entity(url_create_input_set, new_payload_json)
 
+
+def export_triggers(pipelineIdentifier):
+    url = (
+        "/gateway/pipeline/api/triggers"
+        + "?routingId="
+        + accountIdentifier
+        + "&accountIdentifier="
+        + accountIdentifier
+        + "&orgIdentifier="
+        + from_orgIdentifier
+        + "&projectIdentifier="
+        + from_projectIdentifier
+        + "&targetIdentifier="
+        + pipelineIdentifier
+        + "&pageIndex=0&pageSize=20"
+    )
+    response_dict = get_response_data("GET", url, "")
+    for j in range(0, response_dict["data"]["totalPages"]):
+        url_paginated = (
+            trigger_endpoint
+            + "?routingId="
+            + accountIdentifier
+            + "&accountIdentifier="
+            + accountIdentifier
+            + "&orgIdentifier="
+            + from_orgIdentifier
+            + "&projectIdentifier="
+            + from_projectIdentifier
+            + "&targetIdentifier="
+            + pipelineIdentifier
+            + "&pageIndex="
+            + str(j)
+            + "&pageSize=20"
+        )
+        response_dict = get_response_data("GET", url_paginated, "")
+
+        for i in range(0, response_dict["data"]["pageItemCount"]):
+            url_get_input_set = (
+                "/gateway/pipeline/api/triggers"
+                + "/"
+                + response_dict["data"]["content"][i]["identifier"]
+                + "?routingId="
+                + accountIdentifier
+                + "&accountIdentifier="
+                + accountIdentifier
+                + "&orgIdentifier="
+                + from_orgIdentifier
+                + "&targetIdentifier="
+                + pipelineIdentifier
+                + "&projectIdentifier="
+                + from_projectIdentifier
+                + "&loadFromFallbackBranch=true"
+            )
+            response_get_input_set = get_response_data("GET", url_get_input_set, "")
+            new_payload_json = modify_payload(
+                yaml.safe_load(response_get_input_set["data"]["yaml"]),
+                "trigger",
+            )
+            url_create_input_set = (
+                "/gateway/pipeline/api/triggers"
+                + "?routingId="
+                + accountIdentifier
+                + "&accountIdentifier="
+                + accountIdentifier
+                + "&orgIdentifier="
+                + to_orgIdentifier
+                + "&targetIdentifier="
+                + pipelineIdentifier
+                + "&projectIdentifier="
+                + to_projectIdentifier
+                + "&withServiceV2=true"
+            )
+
+            create_and_print_entity(url_create_input_set, yaml.dump(json.loads(new_payload_json)))
 
 class ImportExport(ABC):
     @abstractmethod
@@ -325,6 +401,8 @@ class Environment(ImportExport):
             )["environment"]
         )
 
+
+
     def create_entity(self, payload):
         url_create_env = environment_endpoint + routing_and_accountId_param
         return create_and_print_entity(url_create_env, payload)
@@ -436,44 +514,22 @@ class ServiceOverride(ImportExport):
         return response_list_entity[i]["data"]["content"][i]["environmentRef"]
 
     def get_entity(self, response_list_entity, i):
-        environment_instance = Environment()
-        response_list_entity = environment_instance.list_entity()
-        environment_identifiers = [
-            environment_instance.get_entity_identifier(response_list_entity, i)
-            for i in range(len(response_list_entity["data"]["content"]))
-        ]
+        return response_list_entity
 
-        responses = []
-        for environment_identifier in environment_identifiers:
-            url_secret_list = (
-                environment_service
-                + source_query_param
-                + "&environmentIdentifier="
-                + environment_identifier
-                + "&pageIndex=0&pageSize=10"
-            )
-            response = get_response_data("GET", url_secret_list, "")
-            if response["status"] == "SUCCESS" or response["code"] == "DUPLICATE_FIELD":
-
-                responses.append(response)
-
-        return responses[i]
-
-    def get_payload(self, response_get_entity):
-        content = response_get_entity["data"]["content"]
+    def get_payload(self, response_get_entity,i):
+        item = response_get_entity["data"]["content"][i]
         modified_payloads = []
-        for item in content:
-            yaml_data = item["yaml"]
-            service_ref = item["serviceRef"]
-            env_ref = item["environmentRef"]
-            payload = {
-                "serviceIdentifier": service_ref,
-                "environmentIdentifier": env_ref,
-                "yaml": str(yaml_data),
-                "projectIdentifier": to_projectIdentifier,
-                "orgIdentifier": to_orgIdentifier,
-            }
-            modified_payloads.append(payload)
+        yaml_data = item["yaml"]
+        service_ref = item["serviceRef"]
+        env_ref = item["environmentRef"]
+        payload = {
+            "serviceIdentifier": service_ref,
+            "environmentIdentifier": env_ref,
+            "yaml": str(yaml_data),
+            "projectIdentifier": to_projectIdentifier,
+            "orgIdentifier": to_orgIdentifier,
+        }
+        modified_payloads.append(payload)
         return json.dumps(modified_payloads)
 
     def create_entity(self, payload):
@@ -545,30 +601,7 @@ class InfraOverride(ImportExport):
         return response_list_entity[i]["data"]["content"][i]["infrastructure"]
 
     def get_entity(self, response_list_entity, i):
-
-        environment_instance = Environment()
-        response_list_entity = environment_instance.list_entity()
-        environment_identifiers = [
-            environment_instance.get_entity_identifier(response_list_entity, i)
-            for i in range(len(response_list_entity["data"]["content"]))
-        ]
-        responses = []
-        for environment_identifier in environment_identifiers:
-            url_secret_list = (
-                environment_infra
-                + source_query_param
-                + "&environmentIdentifier="
-                + environment_identifier
-                + "&pageIndex=0&pageSize=10"
-            )
-            response = get_response_data("GET", url_secret_list, "")
-            if response["status"] == "SUCCESS" or response["code"] == "DUPLICATE_FIELD":
-                responses.append(response)
-
-        if i < len(responses):
-            return responses[i]
-        else:
-            return responses[0]
+        return response_list_entity
 
     def get_payload(self, response_get_entity):
 
@@ -595,6 +628,31 @@ class InfraOverride(ImportExport):
             }
 
             modified_payloads.append(payload)
+
+        return json.dumps(modified_payloads)
+
+    def get_payload(self, response_get_entity, i):
+
+        infrastructure = response_get_entity["data"]["content"][i]["infrastructure"]
+
+        modified_payloads = []
+        yaml_data = infrastructure["yaml"]
+        modified_yaml = yaml_data.replace("projectIdentifier", to_projectIdentifier)
+        modified_yaml = modified_yaml.replace("orgIdentifier", to_orgIdentifier)
+        payload = {
+            "identifier": infrastructure["identifier"],
+            "name": infrastructure["name"],
+            "environmentRef": infrastructure["environmentRef"],
+            "yaml": str(modified_yaml),
+            "type": infrastructure["type"],
+            "deploymentType": infrastructure["deploymentType"],
+            "description": infrastructure["description"],
+            "tags": infrastructure["tags"],
+            "projectIdentifier": to_projectIdentifier,
+            "orgIdentifier": to_orgIdentifier,
+        }
+
+        modified_payloads.append(payload)
 
         return json.dumps(modified_payloads)
 
@@ -758,7 +816,8 @@ class Pipeline(ImportExport):
             + "&orgIdentifier="
             + from_orgIdentifier
             + "&projectIdentifier="
-            + from_projectIdentifier            
+            + from_projectIdentifier
+            + "&loadFromFallbackBranch=true"
         )
         return get_response_data("GET", url_get_pipeline, "")
 
@@ -787,6 +846,7 @@ class Pipeline(ImportExport):
         url_create_pipeline = url_create_pipeline.replace(" ", "%20")
         response_create_pipeline = create_and_print_entity(url_create_pipeline, payload)
         export_input_set(json.loads(payload)["pipeline"]["identifier"])
+        export_triggers(json.loads(payload)["pipeline"]["identifier"])
         return response_create_pipeline
 
 # This copies the Variable
@@ -1179,6 +1239,7 @@ class RoleAssignToUG(ImportExport):
         identifier = response_get_entity["data"]["userGroupDTO"]["identifier"]
         name = response_get_entity["data"]["userGroupDTO"]["name"]
         roleassignment = response_get_entity["data"]["roleAssignmentsMetadataDTO"]
+
         new_included_roleIdentifier = []
         for role in roleassignment:
             new_scope = {
@@ -1432,21 +1493,25 @@ class RoleAssignToUG(ImportExport):
     identifier = response_get_entity["data"]["userGroupDTO"]["identifier"]
     name = response_get_entity["data"]["userGroupDTO"]["name"]
     roleassignment = response_get_entity["data"]["roleAssignmentsMetadataDTO"]
-    new_included_roleIdentifier = []
-    for role in roleassignment:
-        new_scope = {
-            "roleIdentifier": role["roleIdentifier"],
-            "resourceGroupIdentifier" : role["resourceGroupIdentifier"] ,
-            "principal" : {
-                "identifier" : identifier,
-                "type" : "USER_GROUP"
+    if str(roleassignment) == "None":
+        new_included_roleIdentifier = []
+    else:
+        new_included_roleIdentifier = []
+        for role in roleassignment:
+            new_scope = {
+                "roleIdentifier": role["roleIdentifier"],
+                "resourceGroupIdentifier" : role["resourceGroupIdentifier"] ,
+                "principal" : {
+                    "identifier" : identifier,
+                    "type" : "USER_GROUP"
+                }
             }
-        }
-        new_included_roleIdentifier.append(new_scope)
+            new_included_roleIdentifier.append(new_scope)
 
     payload = {
-      "roleAssignments": new_included_roleIdentifier,
+        "roleAssignments": new_included_roleIdentifier,
     }
+
     return json.dumps(payload)
 
 
@@ -1475,37 +1540,36 @@ def main_export(entityType):
     failure_count = 0
     duplicate_count = 0
     response_list_entity = x.list_entity()
-
+    print("============================================")
+    print ("currently working on entity : " + entityType)
+    print("============================================")
     if entityType == "ServiceOverride" or entityType == "InfraOverride":
-        for response_entity in response_list_entity:
-            total_pages = response_entity["data"]["totalPages"]
-            for j in range(0, total_pages):
-                response_list_entity_paginated = x.list_entity_paginated(j)
-                for entity_paginated in response_list_entity_paginated:
-                    page_item_count = entity_paginated["data"]["pageItemCount"]
-                    for i in range(0, page_item_count):
-                        response_get_entity = x.get_entity(entity_paginated, i)
-                        new_payload = x.get_payload(response_get_entity)
-                        response_create_entity = x.create_entity(new_payload)
 
-                        if isinstance(response_create_entity, list):
-                            for response_item in response_create_entity:
-                                if response_item["status"] == "SUCCESS":
-                                    success_count += 1
-                                elif response_item["code"] == "DUPLICATE_FIELD":
-                                    duplicate_count += 1
-                                else:
-                                    failure_count += 1
-                                    identifier = x.get_entity_identifier(
-                                        entity_paginated, i
-                                    )
-                                    list_error_response.append(
-                                        entityType
-                                        + " Identifier: "
-                                        + identifier
-                                        + ", Error Message:"
-                                        + response_item["message"]
-                                    )
+        for response_entity in response_list_entity:
+            page_item_count = response_entity["data"]["pageItemCount"]
+            for i in range(0, page_item_count):
+                response_get_entity = x.get_entity(response_entity, i)
+                new_payload = x.get_payload(response_get_entity,i)
+                response_create_entity = x.create_entity(new_payload)
+                if isinstance(response_create_entity, list):
+                    for response_item in response_create_entity:
+                        if response_item["status"] == "SUCCESS":
+                            success_count += 1
+                        elif response_item["code"] == "DUPLICATE_FIELD":
+                            duplicate_count += 1
+                        else:
+                            failure_count += 1
+                            identifier = x.get_entity_identifier(
+                                entity_paginated, i
+                            )
+                            list_error_response.append(
+                                entityType
+                                + " Identifier: "
+                                + identifier
+                                + ", Error Message:"
+                                + response_item["message"]
+                            )
+
 
     else:
 
@@ -1543,7 +1607,6 @@ def main_export(entityType):
 
 for n in range(0, len(Entities)):
     success_failure_count[n] = main_export(Entities[n])
-    duplicates_count[n] = main_export(Entities[n])
 
 for n in range(0, len(Entities)):
     print(
@@ -1559,5 +1622,5 @@ for n in range(0, len(Entities)):
 
     print("\n")
     for i in range(0, success_failure_count[n][1]):
-        print(success_failure_count[n][2][i])
+        print(success_failure_count[n][3][i])
         print("\n")

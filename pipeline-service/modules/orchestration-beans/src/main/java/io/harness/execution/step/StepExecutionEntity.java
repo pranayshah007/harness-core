@@ -6,11 +6,14 @@
  */
 
 package io.harness.execution.step;
-
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -37,6 +40,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Data
 @Builder
 @ToString
@@ -48,6 +52,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("stepExecutionEntity")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)
+@ChangeDataCapture(table = "step_execution", dataStore = "pms-harness", fields = {}, handler = "StepExecutionHandler")
+@ChangeDataCapture(table = "harness_approval_step_execution", dataStore = "pms-harness", fields = {},
+    handler = "HarnessApprovalStepExecutionHandler")
+@ChangeDataCapture(
+    table = "jira_step_execution", dataStore = "pms-harness", fields = {}, handler = "JiraStepExecutionHandler")
 public class StepExecutionEntity implements PersistentEntity, UuidAware {
   @org.springframework.data.annotation.Id @Id String uuid;
   @CreatedDate private Long createdAt;

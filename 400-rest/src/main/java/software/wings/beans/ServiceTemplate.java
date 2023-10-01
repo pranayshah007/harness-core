@@ -10,6 +10,7 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_TEMPLATE;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
@@ -25,8 +26,11 @@ import io.harness.ng.DbAliases;
 
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
+import software.wings.ngmigration.CgBasicInfo;
+import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.utils.ArtifactType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -46,7 +50,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Entity(value = "serviceTemplates", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "ServiceTemplateKeys")
-public class ServiceTemplate extends Base {
+public class ServiceTemplate extends Base implements NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -111,6 +115,24 @@ public class ServiceTemplate extends Base {
         .withServiceId(getServiceId())
         .withDefaultServiceTemplate(isDefaultServiceTemplate())
         .withName(getName())
+        .build();
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getName();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(SERVICE_TEMPLATE)
+        .appId(getAppId())
+        .accountId(getAccountId())
         .build();
   }
 

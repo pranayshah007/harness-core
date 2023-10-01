@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.creator.plan.service;
-
 import static io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator.SERVICE_ENTITY_DEFINITION_TYPE_KEY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
@@ -58,6 +60,9 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Contains method useful for serviceDefinition plan creator
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @UtilityClass
 public class ServiceDefinitionPlanCreatorHelper {
   public Map<String, ByteString> prepareMetadata(

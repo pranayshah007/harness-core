@@ -13,7 +13,7 @@ import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
+import software.wings.beans.account.AccountStatus;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.ArtifactStreamService;
 

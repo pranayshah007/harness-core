@@ -44,6 +44,18 @@ public class IACMTerraformPluginInfo extends IACMStepInfo {
   @ApiModelProperty(hidden = true)
   private ParameterField<Map<String, String>> envVariables;
 
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private ParameterField<Map<String, String>> envVariablesFromConnector;
+
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private ParameterField<Map<String, String>> secretVariables;
+
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private ParameterField<Map<String, String>> secretVariablesFromConnector;
+
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> command;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
 

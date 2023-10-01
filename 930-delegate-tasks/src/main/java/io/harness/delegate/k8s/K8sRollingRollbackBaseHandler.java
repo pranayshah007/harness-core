@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -20,6 +19,7 @@ import static io.harness.k8s.manifest.ManifestHelper.getCustomResourceDefinition
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloads;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Succeeded;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
@@ -35,7 +35,10 @@ import static java.time.Duration.ofMinutes;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -89,6 +92,7 @@ import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -528,6 +532,24 @@ public class K8sRollingRollbackBaseHandler {
     }
 
     return k8sPods;
+  }
+
+  public List<K8sPod> getExistingPods(int timeoutMins, K8sRollingRollbackHandlerConfig rollbackHandlerConfig,
+      String releaseName, LogCallback logCallback) throws Exception {
+    List<K8sPod> existingPodList;
+    String namespace = rollbackHandlerConfig.getKubernetesConfig().getNamespace();
+    try {
+      logCallback.saveExecutionLog("\nFetching existing pod list.");
+      existingPodList = k8sTaskHelperBase.getPodDetails(
+          rollbackHandlerConfig.getKubernetesConfig(), namespace, releaseName, ofMinutes(timeoutMins).toMillis());
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(e.getMessage(), ERROR, FAILURE);
+      return Collections.emptyList();
+    }
+
+    logCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+
+    return existingPodList;
   }
 
   private List<String> getNamespacesFromWorkloads(K8sRollingRollbackHandlerConfig rollbackHandlerConfig) {

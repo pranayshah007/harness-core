@@ -40,6 +40,7 @@ import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.Type;
@@ -51,11 +52,12 @@ import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
-import io.harness.cvng.core.services.api.FeatureFlagService;
+import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
+import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.beans.VerifyStepMetricContext;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
@@ -68,6 +70,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Progress
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceKeys;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.cvng.verificationjob.utils.VerificationJobInstanceDataCollectionUtils;
+import io.harness.cvng.verificationjob.utils.VerificationJobInstanceServiceInstanceUtils;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
@@ -76,7 +79,6 @@ import io.harness.persistence.HPersistence;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import dev.morphia.UpdateOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
@@ -104,8 +106,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 public class VerificationJobInstanceServiceImpl implements VerificationJobInstanceService {
   @Inject private HPersistence hPersistence;
-
-  @Inject private FeatureFlagService featureFlagService;
   @Inject private CVConfigService cvConfigService;
   @Inject private DataCollectionTaskService dataCollectionTaskService;
   @Inject private Map<DataSourceType, DataCollectionInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
@@ -119,6 +119,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
+  @Inject private ExecutionLogService executionLogService;
 
   @Override
   public String create(VerificationJobInstance verificationJobInstance) {
@@ -149,6 +150,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   @Override
   public void processVerificationJobInstance(VerificationJobInstance verificationJobInstance) {
     log.info("Processing verificationJobInstance with ID: {}", verificationJobInstance.getUuid());
+    VerificationJobInstanceServiceInstanceUtils.logExecutionLog(
+        verificationJobInstance, executionLogService.getLogger(verificationJobInstance));
     createDataCollectionTasks(verificationJobInstance);
   }
 
@@ -230,12 +233,9 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, executionStatus)
             .set(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.ERROR);
       }
-      UpdateOptions options = new UpdateOptions();
-      options.upsert(true);
-      hPersistence.getDatastore(VerificationJobInstance.class)
-          .update(hPersistence.createQuery(VerificationJobInstance.class)
-                      .filter(VerificationJobInstanceKeys.uuid, verificationJobInstanceId),
-              verificationJobInstanceUpdateOperations, options);
+      hPersistence.upsert(hPersistence.createQuery(VerificationJobInstance.class)
+                              .filter(VerificationJobInstanceKeys.uuid, verificationJobInstanceId),
+          verificationJobInstanceUpdateOperations);
       VerificationJobInstance verificationJobInstance = getVerificationJobInstance(verificationJobInstanceId);
       updateStatusIfDone(verificationJobInstance);
       if (progressLog.isLastProgressLog(verificationJobInstance)) {
@@ -272,11 +272,9 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
           hPersistence.createUpdateOperations(VerificationJobInstance.class);
       verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, SUCCESS)
           .set(VerificationJobInstanceKeys.verificationStatus, activityVerificationStatus);
-      hPersistence.getDatastore(VerificationJobInstance.class)
-          .update(hPersistence.createQuery(VerificationJobInstance.class)
-                      .filter(VerificationJobInstanceKeys.uuid, verificationJobInstance.getUuid()),
-              verificationJobInstanceUpdateOperations, new UpdateOptions());
-
+      hPersistence.update(hPersistence.createQuery(VerificationJobInstance.class)
+                              .filter(VerificationJobInstanceKeys.uuid, verificationJobInstance.getUuid()),
+          verificationJobInstanceUpdateOperations);
       Set<String> verificationTaskIds = verificationTaskService.getVerificationTaskIds(
           verificationJobInstance.getAccountId(), verificationJobInstance.getUuid());
       if (hasAnyVerificationTaskTerminated) {
@@ -693,11 +691,35 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         verificationJobInstance.getResolvedJob().getProjectIdentifier(), connectorIdentifier,
         monitoringSourceIdentifier);
   }
+  private static List<CVConfig> filterDeploymentCvConfigs(List<CVConfig> cvConfigs) {
+    if (CollectionUtils.isEmpty(cvConfigs)) {
+      return cvConfigs;
+    }
+    List<CVConfig> deploymentCvConfigs = new ArrayList<>();
+    for (CVConfig cvConfig : cvConfigs) {
+      if (cvConfig instanceof MetricCVConfig) {
+        MetricCVConfig<?> metricCVConfig = (MetricCVConfig<?>) cvConfig;
+        List<? extends AnalysisInfo> deploymentRelatedMetricInfos =
+            AnalysisInfoUtility.filterApplicableForDataCollection(metricCVConfig.getMetricInfos(), TaskType.DEPLOYMENT);
+        if (cvConfigHasOnlyMetricPackQueries(metricCVConfig)
+            || CollectionUtils.isNotEmpty(deploymentRelatedMetricInfos)) {
+          deploymentCvConfigs.add(cvConfig);
+        }
+      } else {
+        deploymentCvConfigs.add(cvConfig);
+      }
+    }
+    return deploymentCvConfigs;
+  }
 
+  private static boolean cvConfigHasOnlyMetricPackQueries(MetricCVConfig<?> metricCVConfig) {
+    return CollectionUtils.isEmpty(metricCVConfig.getMetricInfos());
+  }
   private void createDataCollectionTasks(
       VerificationJobInstance verificationJobInstance, VerificationJob verificationJob, List<CVConfig> cvConfigs) {
     List<TimeRange> timeRanges =
         verificationJob.getDataCollectionTimeRanges(roundDownTo1MinBoundary(verificationJobInstance.getStartTime()));
+    cvConfigs = filterDeploymentCvConfigs(cvConfigs);
     cvConfigs.forEach(cvConfig -> {
       populateMetricPack(cvConfig);
       List<DataCollectionTask> dataCollectionTasks = new ArrayList<>();
@@ -737,6 +759,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
                   VerificationJobInstanceDataCollectionUtils.getPreDeploymentNodesToCollect(verificationJobInstance));
           preDeploymentDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
           preDeploymentDataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+          preDeploymentDataCollectionInfo.setValidServiceInstanceRegExPatterns(
+              VerificationJobInstanceDataCollectionUtils.validPreDeploymentNodePatterns(verificationJobInstance));
           dataCollectionInfoMapper.postProcessDataCollectionInfo(
               preDeploymentDataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
           preDeploymentDataCollectionTimeRanges.forEach(timeRange -> {
@@ -761,15 +785,16 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
           });
         }
       }
-
       DataCollectionInfo dataCollectionInfo = dataCollectionInfoMapper.toDeploymentDataCollectionInfo(cvConfig,
           VerificationJobInstanceDataCollectionUtils.getPostDeploymentNodesToCollect(verificationJobInstance));
+      dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
+      dataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
+      dataCollectionInfo.setValidServiceInstanceRegExPatterns(
+          VerificationJobInstanceDataCollectionUtils.validPostDeploymentNodePatterns(verificationJobInstance));
+      dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
       timeRanges.forEach(timeRange -> {
         // TODO: For Now the DSL is same for both. We need to see how this evolves when implementation other provider.
         // Keeping this simple for now.
-        dataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
-        dataCollectionInfo.setCollectHostData(verificationJob.collectHostData());
-        dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.DEPLOYMENT);
         Map<String, String> dataCollectionMetadata =
             CVNGTaskMetadataUtils.getDataCollectionInfoMetadata(cvConfig, verificationJobInstance, verificationTaskId);
         dataCollectionTasks.add(

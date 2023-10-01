@@ -12,6 +12,7 @@ import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.cdng.k8s.K8sStepHelper.MISSING_INFRASTRUCTURE_ERROR;
 import static io.harness.cdng.k8s.K8sStepHelper.RELEASE_NAME;
+import static io.harness.cdng.k8s.yaml.YamlUtility.REDACTED_BY_HARNESS;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AWS;
@@ -27,10 +28,12 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -54,13 +57,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.HelmDeployStepParams;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -100,6 +104,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.KustomizePatchesManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -191,6 +196,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
@@ -213,12 +219,14 @@ import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -241,17 +249,20 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.powermock.api.mockito.PowerMockito;
 
 @OwnedBy(CDP)
-public class K8sStepHelperTest extends CategoryTest {
+public class K8sStepHelperTest extends CDNGTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private ConnectorService connectorService;
   @Mock private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private OutcomeService outcomeService;
   @Mock private K8sStepExecutor k8sStepExecutor;
   @Mock private KryoSerializer kryoSerializer;
@@ -275,11 +286,17 @@ public class K8sStepHelperTest extends CategoryTest {
   @Spy @InjectMocks private K8sStepHelper k8sStepHelper;
 
   @Mock private LogCallback mockLogCallback;
+
   private final Ambiance ambiance = Ambiance.newBuilder()
                                         .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+                                        .setMetadata(ExecutionMetadata.newBuilder()
+                                                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                         .setPipelineIdentifier("pipelineIdentifier")
+                                                         .build())
                                         .build();
+
   private static final String SOME_URL = "https://url.com/owner/repo.git";
 
   private final String ENCODED_REPO_NAME = "c26979e4-1d8c-344e-8181-45f484c57fe5";
@@ -287,6 +304,7 @@ public class K8sStepHelperTest extends CategoryTest {
   private final String INFRA_KEY = "svcId_envId";
   @Before
   public void setup() {
+    MockitoAnnotations.initMocks(this);
     doReturn(mockLogCallback).when(cdStepHelper).getLogCallback(anyString(), eq(ambiance), anyBoolean());
     doReturn(true)
         .when(cdFeatureFlagHelper)
@@ -294,6 +312,10 @@ public class K8sStepHelperTest extends CategoryTest {
     doAnswer(invocation -> invocation.getArgument(1, String.class))
         .when(engineExpressionService)
         .renderExpression(eq(ambiance), anyString());
+    Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
+    Reflect.on(k8sStepHelper).set("cdExpressionResolver", cdExpressionResolver);
+    Reflect.on(cdExpressionResolver).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
     Reflect.on(k8sStepHelper).set("cdStepHelper", cdStepHelper);
   }
 
@@ -304,7 +326,13 @@ public class K8sStepHelperTest extends CategoryTest {
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
 
-    return Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).build();
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(setupAbstractions)
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                         .setPipelineIdentifier("pipelineIdentifier")
+                         .build())
+        .build();
   }
 
   @Test
@@ -1195,7 +1223,7 @@ public class K8sStepHelperTest extends CategoryTest {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -2311,6 +2339,7 @@ public class K8sStepHelperTest extends CategoryTest {
                     .spec(OciHelmChartStoreGenericConfig.builder()
                               .connectorRef(ParameterField.createValueField("oci-helm-connector"))
                               .build())
+                    .type(OciHelmChartStoreConfigType.GENERIC)
                     .build()))
             .build();
 
@@ -3951,7 +3980,7 @@ public class K8sStepHelperTest extends CategoryTest {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4135,7 +4164,7 @@ public class K8sStepHelperTest extends CategoryTest {
         .isEqualTo(TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG.getDisplayName());
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4416,7 +4445,7 @@ public class K8sStepHelperTest extends CategoryTest {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4556,9 +4585,25 @@ public class K8sStepHelperTest extends CategoryTest {
                                       .flag(ParameterField.createValueField("--server-side"))
                                       .build());
     Map<String, String> k8sCommandFlagExpected = ImmutableMap.of("Apply", "--server-side");
-    Map<String, String> k8sCommandFlag = k8sStepHelper.getDelegateK8sCommandFlag(commandFlags);
+    Map<String, String> k8sCommandFlag = k8sStepHelper.getDelegateK8sCommandFlag(commandFlags, ambiance);
     assertThat(k8sCommandFlag).isEqualTo(k8sCommandFlagExpected);
   }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetDelegateK8sCommandFlagFromExpression() {
+    List<K8sStepCommandFlag> commandFlags = Collections.singletonList(
+        K8sStepCommandFlag.builder()
+            .commandType(K8sCommandFlagType.Apply)
+            .flag(ParameterField.createExpressionField(true, "<+pipeline.variables.output>", null, true))
+            .build());
+    doReturn("--output=json").when(engineExpressionService).renderExpression(ambiance, "<+pipeline.variables.output>");
+    Map<String, String> k8sCommandFlagExpected = ImmutableMap.of("Apply", "--output=json");
+    Map<String, String> k8sCommandFlag = k8sStepHelper.getDelegateK8sCommandFlag(commandFlags, ambiance);
+    assertThat(k8sCommandFlag).isEqualTo(k8sCommandFlagExpected);
+  }
+
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
@@ -4911,6 +4956,74 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(
         ((GitStore) k8sStepPassThroughData.getManifestOutcomeList().get(1).getStore()).getPaths().getValue().get(0))
         .isEqualTo("path/to/k8s/manifest/step-values.yaml");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testRenderAndRemoveCommentsIntegration() {
+    String yaml = "key: value1 # test-comment\n"
+        + "listOf:\n"
+        + "- # comment test\n"
+        + "  key: <+expr>\n"
+        + "  value: item1\n"
+        + "# test-comment\n"
+        + "<+expr-full>\n"
+        + "literalValue: |-\n"
+        + "  lorem <+expr>\n"
+        + "  lorem # <+expr>\n";
+
+    String expectedYaml = "key: value1 # " + REDACTED_BY_HARNESS + "\n"
+        + "listOf:\n"
+        + "- # " + REDACTED_BY_HARNESS + "\n"
+        + "  key: valuen\n"
+        + "  value: item1\n"
+        + "# " + REDACTED_BY_HARNESS + "\n"
+        + "inline: value\n"
+        + "literalValue: |-\n"
+        + "  lorem valuen\n"
+        + "  lorem # valuen\n";
+
+    doAnswer(invocation -> {
+      String value = invocation.getArgument(1);
+      return value.replaceAll("<\\+expr>", "valuen").replaceAll("<\\+expr-full>", "inline: value");
+    })
+        .when(engineExpressionService)
+        .renderExpression(any(Ambiance.class), any(), any(ExpressionMode.class));
+
+    List<String> result =
+        k8sStepHelper.removeCommentsAndRender(K8sManifestOutcome.builder().build(), ambiance, List.of(yaml));
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0)).isEqualTo(expectedYaml);
+    verify(engineExpressionService, times(1))
+        .renderExpression(any(Ambiance.class), any(), eq(ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED));
+    verify(engineExpressionService, times(1))
+        .renderExpression(any(Ambiance.class), eq(yaml), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testRenderAndRemoveCommentsNoComments() {
+    String yaml = "key: value\n"
+        + "key1: <+expr>#/abc\n";
+    String expectedYaml = "key: value\n"
+        + "key1: value#/abc\n";
+
+    doAnswer(invocation -> {
+      String value = invocation.getArgument(1);
+      return value.replaceAll("<\\+expr>", "value");
+    })
+        .when(engineExpressionService)
+        .renderExpression(any(Ambiance.class), any(), eq(ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED));
+
+    List<String> result =
+        k8sStepHelper.removeCommentsAndRender(K8sManifestOutcome.builder().build(), ambiance, List.of(yaml));
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0)).isEqualTo(expectedYaml);
+
+    verify(engineExpressionService, times(1)).renderExpression(any(Ambiance.class), any(), any(ExpressionMode.class));
   }
 
   private FileStoreNodeDTO getFileStoreNode(String path, String name) {

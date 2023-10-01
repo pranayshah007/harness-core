@@ -9,11 +9,16 @@ package io.harness.cdng.k8s;
 
 import static io.harness.delegate.task.k8s.K8sBGDeployRequest.K8sBGDeployRequestBuilder;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sBlueGreenBaseStepInfo.K8sBlueGreenBaseStepInfoKeys;
@@ -28,14 +33,13 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.mapper.K8sPodToServiceInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sBGDeployRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -49,6 +53,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -59,9 +64,10 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac implements K8sStepExecutor {
+public class K8sBlueGreenStep extends CdTaskChainExecutable implements K8sStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.K8S_BLUE_GREEN.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -75,31 +81,31 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, StepInputPackage inputPackage) {
     return k8sStepHelper.startChainLink(this, ambiance, stepElementParameters);
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     return k8sStepHelper.executeNextLink(this, ambiance, stepElementParameters, passThroughData, responseSupplier);
   }
 
   @Override
   public TaskChainResponse executeK8sTask(ManifestOutcome k8sManifestOutcome, Ambiance ambiance,
-      StepElementParameters stepElementParameters, List<String> manifestOverrideContents,
+      StepBaseParameters stepElementParameters, List<String> manifestOverrideContents,
       K8sExecutionPassThroughData executionPassThroughData, boolean shouldOpenFetchFilesLogStream,
       UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
@@ -150,7 +156,7 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
       bgRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
     Map<String, String> k8sCommandFlag =
-        k8sStepHelper.getDelegateK8sCommandFlag(k8sBlueGreenStepParameters.getCommandFlags());
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sBlueGreenStepParameters.getCommandFlags(), ambiance);
     bgRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     K8sBGDeployRequest k8sBGDeployRequest = bgRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
@@ -159,8 +165,8 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof CustomFetchResponsePassThroughData) {
       return k8sStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
@@ -223,13 +229,18 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
                                                   .build();
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME, k8sBlueGreenOutcome, StepOutcomeGroup.STEP.name());
-
-    StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
-        ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sBGDeployResponse.getK8sPodList()));
+    HelmChartInfo helmChartInfo = k8sBGDeployResponse.getHelmChartInfo();
+    ReleaseHelmChartOutcome releaseHelmChartOutcome = k8sStepHelper.getHelmChartOutcome(helmChartInfo);
+    StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+        K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sBGDeployResponse.getK8sPodList(), helmChartInfo));
 
     return responseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).outcome(k8sBlueGreenOutcome).build())
         .stepOutcome(stepOutcome)
+        .stepOutcome(StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.RELEASE_HELM_CHART_OUTCOME)
+                         .outcome(releaseHelmChartOutcome)
+                         .build())
         .build();
   }
 }

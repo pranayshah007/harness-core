@@ -10,6 +10,7 @@ package software.wings.service.impl.applicationmanifest;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -184,6 +185,7 @@ public class ManifestCollectionUtils {
   public DelegateTask buildValidationTask(String appManifestId, String appId) {
     HelmChartCollectionParams helmChartCollectionParams =
         (HelmChartCollectionParams) prepareCollectTaskParams(appManifestId, appId);
+
     HelmRepoConfigValidationTaskParams helmRepoConfigValidationTaskParams =
         HelmRepoConfigValidationTaskParams.builder()
             .appId(appId)
@@ -199,16 +201,18 @@ public class ManifestCollectionUtils {
                 featureFlagService.isEnabled(FeatureName.HELM_VERSION_3_8_0, helmChartCollectionParams.getAccountId()))
             .connectorEncryptedDataDetails(
                 helmChartCollectionParams.getHelmChartConfigParams().getConnectorEncryptedDataDetails())
+            .useCache(helmChartCollectionParams.getHelmChartConfigParams().isUseCache())
             .build();
     return DelegateTask.builder()
         .accountId(helmChartCollectionParams.getAccountId())
         .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, appId)
         .data(TaskData.builder()
-                  .async(false)
+                  .async(true)
                   .taskType(TaskType.HELM_REPO_CONFIG_VALIDATION.name())
                   .parameters(new Object[] {helmRepoConfigValidationTaskParams})
                   .timeout(TimeUnit.MINUTES.toMillis(2))
                   .build())
+        .waitId(generateUuid())
         .build();
   }
 }

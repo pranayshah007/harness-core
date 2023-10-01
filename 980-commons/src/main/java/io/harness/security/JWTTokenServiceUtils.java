@@ -13,6 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
+import static io.harness.eraro.ErrorMessageConstants.INVALID_JWT_TOKEN;
+import static io.harness.eraro.ErrorMessageConstants.TOKEN_EXPIRED;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -21,7 +23,9 @@ import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ExpiredTokenException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidTokenException;
 import io.harness.security.dto.Principal;
 
 import com.auth0.jwt.JWT;
@@ -66,16 +70,30 @@ public class JWTTokenServiceUtils {
 
   public Map<String, Claim> verifyJWTToken(String jwtToken, String secret) {
     try {
-      Algorithm algorithm = Algorithm.HMAC256(secret);
-      JWTVerifier verifier = JWT.require(algorithm).withIssuer(ISSUER).build();
-      verifier.verify(jwtToken);
-      return JWT.decode(jwtToken).getClaims();
+      return verifyJWTTokenWithHMAC256(jwtToken, secret);
     } catch (UnsupportedEncodingException | JWTDecodeException | SignatureVerificationException e) {
-      throw new InvalidRequestException(
-          "Invalid JWTToken received, failed to decode the token", e, INVALID_TOKEN, USER);
+      throw new InvalidRequestException(INVALID_JWT_TOKEN, e, INVALID_TOKEN, USER);
     } catch (InvalidClaimException e) {
-      throw new InvalidRequestException("Token expired", e, EXPIRED_TOKEN, USER);
+      throw new InvalidRequestException(TOKEN_EXPIRED, e, EXPIRED_TOKEN, USER);
     }
+  }
+
+  public Map<String, Claim> verifyJWTTokenV2(String jwtToken, String secret) {
+    try {
+      return verifyJWTTokenWithHMAC256(jwtToken, secret);
+    } catch (UnsupportedEncodingException | JWTDecodeException | SignatureVerificationException e) {
+      throw new InvalidTokenException(INVALID_JWT_TOKEN, USER);
+    } catch (InvalidClaimException e) {
+      throw new ExpiredTokenException(TOKEN_EXPIRED, USER);
+    }
+  }
+
+  private Map<String, Claim> verifyJWTTokenWithHMAC256(String jwtToken, String secret)
+      throws UnsupportedEncodingException {
+    Algorithm algorithm = Algorithm.HMAC256(secret);
+    JWTVerifier verifier = JWT.require(algorithm).withIssuer(ISSUER).build();
+    verifier.verify(jwtToken);
+    return JWT.decode(jwtToken).getClaims();
   }
 
   public Map<String, Claim> verifyJWTToken(String jwtToken, RSAKey secret) {
@@ -161,6 +179,32 @@ public class JWTTokenServiceUtils {
       }
       if (!isEmpty(claims)) {
         claims.forEach(jwtBuilder::withClaim);
+      }
+      return jwtBuilder.sign(algorithm);
+    } catch (UnsupportedEncodingException | JWTCreationException exception) {
+      throw new JWTCreationException("JWTToken could not be generated", exception);
+    }
+  }
+
+  public String generateJWTToken(Map<String, String> claims, Map<String, String[]> arrayClaims,
+      Long validityDurationInMillis, String jwtPasswordSecret) {
+    if (jwtPasswordSecret == null) {
+      throw new InvalidRequestException("Could not find verification secret token");
+    }
+    try {
+      Algorithm algorithm = Algorithm.HMAC256(jwtPasswordSecret);
+      JWTCreator.Builder jwtBuilder = JWT.create().withIssuer(ISSUER).withIssuedAt(new Date());
+
+      if (validityDurationInMillis != null) {
+        jwtBuilder.withExpiresAt(new Date(System.currentTimeMillis() + validityDurationInMillis));
+      } else {
+        jwtBuilder.withExpiresAt(new Date(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1)));
+      }
+      if (!isEmpty(claims)) {
+        claims.forEach(jwtBuilder::withClaim);
+      }
+      if (!isEmpty(arrayClaims)) {
+        arrayClaims.forEach(jwtBuilder::withArrayClaim);
       }
       return jwtBuilder.sign(algorithm);
     } catch (UnsupportedEncodingException | JWTCreationException exception) {

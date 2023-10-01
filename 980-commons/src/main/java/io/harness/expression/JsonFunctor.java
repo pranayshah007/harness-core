@@ -6,9 +6,11 @@
  */
 
 package io.harness.expression;
-
 import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.serializer.JsonUtils;
 
@@ -17,6 +19,9 @@ import java.util.LinkedList;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_AMI_ASG,
+        HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 public class JsonFunctor implements ExpressionFunctor {
   private final Map<String, Object> contextMap;

@@ -29,7 +29,7 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
   public ResponseDTO<CDStageMetaDataDTO> getServiceAndEnvironmentRef(YamlNode stageLevelYamlNode) {
     YamlNode pipelineYamlNode = getPipelineYamlNode(stageLevelYamlNode);
     if (Objects.isNull(pipelineYamlNode)) {
-      log.error("Pipeline not found in given Yaml, By passing validation check");
+      log.warn("Pipeline not found in given Yaml, By passing validation check");
       return null;
     }
     return getServiceAndEnvironmentRef(stageLevelYamlNode.getIdentifier(), pipelineYamlNode.toString());
@@ -39,7 +39,7 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
   public ResponseDTO<CDStageMetaDataDTO> getServiceAndEnvironmentRef(String stageIdentifier, String pipelineYaml) {
     ResponseDTO<CDStageMetaDataDTO> responseDTO = getCdStageMetaDataResponse(stageIdentifier, pipelineYaml);
     if (isInvalidResponse(responseDTO)) {
-      log.error("Invalid Response for Service Ref and Environment Ref in pipeline: " + pipelineYaml);
+      log.warn("Invalid Response for Service Ref and Environment Ref in pipeline: " + pipelineYaml);
       return null;
     }
     if (CollectionUtils.isEmpty(responseDTO.getData().getServiceEnvRefList())) {
@@ -68,7 +68,8 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
                                                                                  .pipelineYaml(pipelineYaml)
                                                                                  .build()));
     } catch (Exception e) {
-      log.error("Exception occurred while fetching service and environment reference, Exception: " + e.getMessage());
+      log.warn("Exception occurred while fetching service and environment reference, Exception: " + e.getMessage()
+          + "pipeline: " + pipelineYaml);
     }
     return responseDTO;
   }

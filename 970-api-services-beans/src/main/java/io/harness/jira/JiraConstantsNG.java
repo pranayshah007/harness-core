@@ -6,15 +6,18 @@
  */
 
 package io.harness.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.utils.DateTimeUtils;
 
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
 public interface JiraConstantsNG {
   DateTimeFormatter DATE_FORMATTER = DateTimeUtils.DATE_FORMATTER;
@@ -32,6 +35,7 @@ public interface JiraConstantsNG {
   String PROJECT_INTERNAL_NAME = "__" + PROJECT_KEY;
 
   String ISSUE_TYPE_KEY = "issuetype";
+  String ISSUE_TYPE_NAME = "Issue Type";
   String ISSUE_TYPE_INTERNAL_NAME = "__" + ISSUE_TYPE_KEY;
 
   String STATUS_KEY = "status";
@@ -43,4 +47,5 @@ public interface JiraConstantsNG {
   String REMAINING_ESTIMATE_NAME = "Remaining Estimate";
   String ORIGINAL_ESTIMATE_KEY = "originalEstimate";
   String REMAINING_ESTIMATE_KEY = "remainingEstimate";
+  String JIRA_USER_KEY = "JIRAUSER";
 }

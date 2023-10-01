@@ -6,11 +6,15 @@
  */
 
 package software.wings.instancesyncv2.service;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
@@ -19,6 +23,9 @@ import software.wings.instancesyncv2.model.InstanceSyncTaskDetails.InstanceSyncT
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.ReadPreference;
+import dev.morphia.query.CountOptions;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +34,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -54,14 +62,16 @@ public class CgInstanceSyncTaskDetailsService {
   }
 
   public InstanceSyncTaskDetails getForId(String taskDetailsId) {
-    return mongoPersistence.get(InstanceSyncTaskDetails.class, taskDetailsId);
+    return mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+        .filter(ID_KEY, taskDetailsId)
+        .first(createFindOptionsToHitSecondaryNode());
   }
 
   public InstanceSyncTaskDetails getForInfraMapping(String accountId, String infraMappingId) {
     Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
                                                .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
                                                .filter(InstanceSyncTaskDetailsKeys.infraMappingId, infraMappingId);
-    return query.get();
+    return query.get(createFindOptionsToHitSecondaryNode());
   }
 
   public InstanceSyncTaskDetails fetchForCloudProvider(String accountId, String cloudProviderId) {
@@ -69,7 +79,7 @@ public class CgInstanceSyncTaskDetailsService {
                                                .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
                                                .filter(InstanceSyncTaskDetailsKeys.cloudProviderId, cloudProviderId);
 
-    return query.get();
+    return query.get(createFindOptionsToHitSecondaryNode());
   }
 
   public List<InstanceSyncTaskDetails> fetchAllForPerpetualTask(String accountId, String perpetualTaskId) {
@@ -77,7 +87,7 @@ public class CgInstanceSyncTaskDetailsService {
                                                .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
                                                .filter(InstanceSyncTaskDetailsKeys.perpetualTaskId, perpetualTaskId);
 
-    return query.asList();
+    return query.asList(createFindOptionsToHitSecondaryNode());
   }
 
   public boolean isInstanceSyncTaskDetailsExist(String accountId, String perpetualTaskId) {
@@ -85,7 +95,7 @@ public class CgInstanceSyncTaskDetailsService {
                                                .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
                                                .filter(InstanceSyncTaskDetailsKeys.perpetualTaskId, perpetualTaskId);
 
-    return query.count() > 0;
+    return query.count(createCountOptionsToHitSecondaryNode()) > 0;
   }
 
   public InstanceSyncTaskDetails getInstanceSyncTaskDetails(String accountId, String instanceSyncTaskDetailId) {
@@ -93,7 +103,7 @@ public class CgInstanceSyncTaskDetailsService {
                                                .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
                                                .filter(InstanceSyncTaskDetailsKeys.uuid, instanceSyncTaskDetailId);
 
-    return query.get();
+    return query.get(createFindOptionsToHitSecondaryNode());
   }
 
   public void updateLastRun(
@@ -113,5 +123,13 @@ public class CgInstanceSyncTaskDetailsService {
     } else {
       save(taskDetails);
     }
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode() {
+    return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+  }
+
+  private CountOptions createCountOptionsToHitSecondaryNode() {
+    return new CountOptions().readPreference(ReadPreference.secondaryPreferred());
   }
 }

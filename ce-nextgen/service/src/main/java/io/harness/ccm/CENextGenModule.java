@@ -20,8 +20,11 @@ import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
 import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CCM_BUDGET;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CCM_RULE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETTINGS;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 
 import io.harness.AccessControlClientModule;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
@@ -61,7 +64,10 @@ import io.harness.ccm.commons.service.impl.InstanceDataServiceImpl;
 import io.harness.ccm.commons.service.intf.ClusterRecordService;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.commons.service.intf.InstanceDataService;
+import io.harness.ccm.eventframework.BudgetCRUDStreamListener;
+import io.harness.ccm.eventframework.CCMSettingsCRUDStreamListener;
 import io.harness.ccm.eventframework.ConnectorEntityCRUDStreamListener;
+import io.harness.ccm.eventframework.GovernanceRuleCRUDStreamListener;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetCostServiceImpl;
 import io.harness.ccm.graphql.core.budget.BudgetService;
@@ -116,6 +122,8 @@ import io.harness.ccm.serviceAccount.GcpResourceManagerService;
 import io.harness.ccm.serviceAccount.GcpResourceManagerServiceImpl;
 import io.harness.ccm.serviceAccount.GcpServiceAccountService;
 import io.harness.ccm.serviceAccount.GcpServiceAccountServiceImpl;
+import io.harness.ccm.serviceNow.CCMServiceNowHelper;
+import io.harness.ccm.serviceNow.CCMServiceNowHelperImpl;
 import io.harness.ccm.utils.AccountIdentifierLogInterceptor;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingHistoryServiceImpl;
@@ -126,6 +134,7 @@ import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingValidationService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewFolderService;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.DataResponseService;
 import io.harness.ccm.views.service.GovernanceRuleService;
@@ -138,6 +147,7 @@ import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.BigQueryDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
+import io.harness.ccm.views.service.impl.CEViewPreferenceServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseDataResponseServiceImpl;
 import io.harness.ccm.views.service.impl.ClickHouseViewsBillingServiceImpl;
@@ -173,6 +183,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -391,6 +402,8 @@ public class CENextGenModule extends AbstractModule {
         configuration.getOutboxPollConfig(), NG_MANAGER.getServiceId(), configuration.isExportMetricsToStackDriver()));
     install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
+    install(new NGSettingsClientModule(configuration.getNgManagerClientConfig(),
+        configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(new CENGGraphQLModule(configuration.getCurrencyPreferencesConfig()));
     install(new AccountClientModule(
         configuration.getManagerClientConfig(), configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
@@ -403,6 +416,7 @@ public class CENextGenModule extends AbstractModule {
     bind(GcpServiceAccountService.class).to(GcpServiceAccountServiceImpl.class);
     bind(GcpResourceManagerService.class).to(GcpResourceManagerServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
+    bind(CEViewPreferenceService.class).to(CEViewPreferenceServiceImpl.class);
     bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(ClusterRecordService.class).to(ClusterRecordServiceImpl.class);
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
@@ -437,6 +451,7 @@ public class CENextGenModule extends AbstractModule {
     bind(MarginDetailsBqService.class).to(MarginDetailsBqServiceImpl.class);
     bind(MspValidationService.class).to(MspValidationServiceImpl.class);
     bind(LabelFlattenedService.class).to(LabelFlattenedServiceImpl.class);
+    bind(CCMServiceNowHelper.class).to(CCMServiceNowHelperImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);
@@ -549,7 +564,7 @@ public class CENextGenModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return configuration.getDistributedLockImplementation() == null ? MONGO
+    return configuration.getDistributedLockImplementation() == null ? REDIS
                                                                     : configuration.getDistributedLockImplementation();
   }
 
@@ -571,6 +586,13 @@ public class CENextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(CONNECTOR_ENTITY + ENTITY_CRUD))
         .to(ConnectorEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(SETTINGS + ENTITY_CRUD))
+        .to(CCMSettingsCRUDStreamListener.class);
+    bind(MessageListener.class).annotatedWith(Names.named(CCM_BUDGET + ENTITY_CRUD)).to(BudgetCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(CCM_RULE + ENTITY_CRUD))
+        .to(GovernanceRuleCRUDStreamListener.class);
   }
 
   @Provides

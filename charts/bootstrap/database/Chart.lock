@@ -7,12 +7,15 @@ dependencies:
   version: 13.1.2
 - name: timescaledb
   repository: file://./timescaledb
-  version: 0.2.19
+  version: 0.8.0
 - name: redis
   repository: file://./redis
-  version: 0.2.7
+  version: 0.8.0
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
   version: 12.4.2
-digest: sha256:2267630149ceec19aa6496e8c65e645aa2073fe2120c70879267047b1a654230
-generated: "2023-05-18T21:13:53.498544+05:30"
+- name: clickhouse
+  repository: https://charts.bitnami.com/bitnami
+  version: 2.1.0
+digest: sha256:d43e384b235286421c701a0d13be0ab9862120118cba07014c16bfb5d8b37cba
+generated: "2023-09-12T21:28:03.21271+05:30"

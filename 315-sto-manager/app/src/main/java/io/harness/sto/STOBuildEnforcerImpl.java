@@ -15,9 +15,4 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.STO)
 @Slf4j
-public class STOBuildEnforcerImpl implements CIBuildEnforcer {
-  @Override
-  public boolean checkBuildEnforcement(String accountId) {
-    return true;
-  }
-}
+public class STOBuildEnforcerImpl implements CIBuildEnforcer {}

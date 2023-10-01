@@ -9,6 +9,7 @@ workspace(name = "harness_monorepo")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("//tools/bazel/pmd:dependencies.bzl", "rules_pmd_dependencies")
+load("//:tools/bazel/repository.bzl", "REPOSITORY")
 
 rules_pmd_dependencies()
 
@@ -16,7 +17,7 @@ http_archive(
     name = "com_github_bazelbuild_buildtools",
     sha256 = "932160d5694e688cb7a05ac38efba4b9a90470c75f39716d85fb1d2f95eec96d",
     strip_prefix = "buildtools-4.0.1",
-    url = "https://harness-artifactory.harness.io/artifactory/bazel-buildtools-github/archive/refs/tags/4.0.1.zip",
+    url = "https://%s.harness.io/artifactory/bazel-buildtools-github/archive/refs/tags/4.0.1.zip" % REPOSITORY,
 )
 
 # Workaround for https://github.com/bazelbuild/bazel-gazelle/issues/1285. Ideally,
@@ -39,7 +40,7 @@ http_archive(
     sha256 = "6aff9834fd7c540875e1836967c8d14c6897e3785a2efac629f69860fb7834ff",
     strip_prefix = "protobuf-3.15.0",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/protobuf-github/archive/v3.15.0.tar.gz",
+        "https://%s.harness.io/artifactory/protobuf-github/archive/v3.15.0.tar.gz" % REPOSITORY,
         #"https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
         #"https://github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
     ],
@@ -62,7 +63,7 @@ http_archive(
     name = "io_bazel_rules_go",
     sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-go-github/download/v0.39.1/rules_go-v0.39.1.zip",
+        "https://%s.harness.io/artifactory/rules-go-github/download/v0.39.1/rules_go-v0.39.1.zip" % REPOSITORY,
         #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
         #"https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
     ],
@@ -72,7 +73,7 @@ http_archive(
     name = "bazel_gazelle",
     sha256 = "448e37e0dbf61d6fa8f00aaa12d191745e14f07c31cabfa731f0c8e8a4f41b97",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/bazel-gazelle-github/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
+        "https://%s.harness.io/artifactory/bazel-gazelle-github/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz" % REPOSITORY,
         #"https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
         #"https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
     ],
@@ -1297,8 +1298,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:p35onfFNfSQTKLC15sb76sESs+bj+Rb/pMqDtsgKsU4=",
-    version = "v1.29.2-0.20230515092809-5877f3846131",
+    sum = "h1:RnGwmapfLPyTIuQ8FfSeWo29v5gyPgMF4DAhWX9RxcY=",
+    version = "v1.32.1",
 )
 
 go_repository(
@@ -3897,7 +3898,7 @@ http_archive(
     strip_prefix = "rules_rust-f37b9d6a552e9412285e627f30cb124e709f4f7a",
     urls = [
         # Master branch as of 2021-01-27
-        "https://harness-artifactory.harness.io/artifactory/rules-rust-github/archive/f37b9d6a552e9412285e627f30cb124e709f4f7a.tar.gz",
+        "https://%s.harness.io/artifactory/rules-rust-github/archive/f37b9d6a552e9412285e627f30cb124e709f4f7a.tar.gz" % REPOSITORY,
     ],
 )
 
@@ -3929,6 +3930,20 @@ go_repository(
     importpath = "github.com/golang-jwt/jwt/v5",
     sum = "h1:1n1XNM9hk7O9mnQoNBGolZvzebBQ7p93ULHRc28XJUE=",
     version = "v5.0.0",
+)
+
+go_repository(
+    name = "com_github_redis_go_redis_v9",
+    importpath = "github.com/redis/go-redis/v9",
+    sum = "h1:CuQcn5HIEeK7BgElubPP8CGtE0KakrnbBSTLjathl5o=",
+    version = "v9.0.5",
+)
+
+go_repository(
+    name = "com_github_go_redis_redismock_v9",
+    importpath = "github.com/go-redis/redismock/v9",
+    sum = "h1:mtHQi2l51lCmXIbTRTqb1EiHYe9tL5Yk5oorlSJJqR0=",
+    version = "v9.0.3",
 )
 
 rust_repositories(
@@ -4608,8 +4623,8 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:5bAthnUBEV3zE9utLY4b6AKs/ZQ5y188uv2GkVJeetI=",
-    version = "v0.0.0-20230628234729-894f996b3046",
+    sum = "h1:MVFzBU0ScnbCHFxzyMZo5oLzeDwQLwaqibXQtjUzcvw=",
+    version = "v0.0.0-20230919114308-05b6697b67f9",
 )
 
 go_rules_dependencies()
@@ -4622,7 +4637,7 @@ http_archive(
     name = "rules_proto_grpc",
     sha256 = "5f0f2fc0199810c65a2de148a52ba0aff14d631d4e8202f41aff6a9d590a471b",
     strip_prefix = "rules_proto_grpc-1.0.2",
-    urls = ["https://harness-artifactory.harness.io/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz"],
+    urls = ["https://%s.harness.io/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz" % REPOSITORY],
 )
 
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
@@ -4660,7 +4675,7 @@ http_archive(
     name = "rules_spring",
     sha256 = "9385652bb92d365675d1ca7c963672a8091dc5940a9e307104d3c92e7a789c8e",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-spring-github/download/2.1.4/rules-spring-2.1.4.zip",
+        "https://%s.harness.io/artifactory/rules-spring-github/download/2.1.4/rules-spring-2.1.4.zip" % REPOSITORY,
     ],
 )
 
@@ -4670,7 +4685,7 @@ http_archive(
     name = "rules_jvm_external",
     sha256 = "b17d7388feb9bfa7f2fa09031b32707df529f26c91ab9e5d909eb1676badd9a6",
     strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
-    url = "https://harness-artifactory.harness.io/artifactory/rules-jvm-external-github/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+    url = "https://%s.harness.io/artifactory/rules-jvm-external-github/archive/%s.zip" % (REPOSITORY, RULES_JVM_EXTERNAL_TAG),
 )
 
 load("@rules_jvm_external//:defs.bzl", "maven_install")
@@ -4829,7 +4844,7 @@ plain_artifacts = [
     "com.google.protobuf:protobuf-java-util:3.21.7",
     "com.google.protobuf:protobuf-java:3.21.7",
     "com.googlecode.javaewah:JavaEWAH:1.1.6",
-    "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20211018.1",
+    "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20220608.1",
     "com.graphql-java:graphql-java:12.0",
     "com.graphql-java:java-dataloader:2.1.1",
     "com.healthmarketscience.sqlbuilder:sqlbuilder:3.0.0",
@@ -4843,7 +4858,7 @@ plain_artifacts = [
     "com.jakewharton.retrofit:retrofit1-okhttp3-client:1.1.0",
     "com.jakewharton.retrofit:retrofit2-reactor-adapter:2.1.0",
     "com.jayway.jsonpath:json-path:2.2.0",
-    "com.jcraft.harness:jsch-0-1-54-harness-patch:1.1",
+    "com.github.mwiede:jsch:0.2.8",
     "com.jcraft:jzlib:1.1.3",
     "com.lmax:disruptor:jar:3.4.2",
     "com.mashape.unirest:unirest-java:1.4.9",
@@ -4856,7 +4871,7 @@ plain_artifacts = [
     "com.nimbusds:oauth2-oidc-sdk:7.4",
     "org.asynchttpclient:async-http-client:2.12.3",
     "com.novemberain:quartz-mongodb:2.2.0-rc2",
-    "com.offbytwo.jenkins:jenkins-client:0.3.9",
+    "com.offbytwo.jenkins:jenkins-client:0.3.10",
     "com.openpojo:openpojo:0.8.3",
     "com.palominolabs.metrics:metrics-guice:3.2.0",
     "com.papertrail:profiler:1.0.2",
@@ -4932,9 +4947,9 @@ plain_artifacts = [
     "io.confluent:kafka-schema-registry-client:5.5.1",
     "io.confluent:kafka-schema-serializer:5.5.1",
     "io.confluent:kafka-schema-serializer:5.5.1",
-    "io.debezium:debezium-api:1.7.2.Final",
-    "io.debezium:debezium-connector-mongodb:1.7.2.Final",
-    "io.debezium:debezium-core:1.7.2.Final",
+    "io.debezium:debezium-api:1.9.7.Final",
+    "io.debezium:debezium-connector-mongodb:1.9.7.Final",
+    "io.debezium:debezium-core:1.9.7.Final",
     "io.dropwizard-bundles:dropwizard-configurable-assets-bundle:1.3.5",
     "io.dropwizard.metrics:metrics-annotation:4.1.19",
     "io.dropwizard.metrics:metrics-core:4.1.19",
@@ -5000,7 +5015,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.62-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.64-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",
@@ -5030,11 +5045,11 @@ plain_artifacts = [
     "io.projectreactor.netty:reactor-netty-core:1.0.24",
     "io.projectreactor.netty:reactor-netty-http:1.0.24",
     "io.projectreactor:reactor-core:3.4.18",
-    "io.prometheus:simpleclient:0.5.0",
-    "io.prometheus:simpleclient_common:0.5.0",
-    "io.prometheus:simpleclient_dropwizard:0.5.0",
-    "io.prometheus:simpleclient_servlet:0.3.0",
-    "io.prometheus:simpleclient_httpserver:0.4.0",
+    "io.prometheus:simpleclient:0.16.0",
+    "io.prometheus:simpleclient_common:0.16.0",
+    "io.prometheus:simpleclient_dropwizard:0.16.0",
+    "io.prometheus:simpleclient_servlet:0.16.0",
+    "io.prometheus:simpleclient_httpserver:0.16.0",
     "io.reactivex.rxjava2:rxjava:2.2.19",
     "io.reactivex:rxjava:1.3.8",
     "io.rest-assured:rest-assured:3.2.0",
@@ -5078,11 +5093,11 @@ plain_artifacts = [
     "net.minidev:accessors-smart:1.2",
     "net.minidev:json-smart:2.4.10",
     "net.openhft:affinity:3.2.2",
-    "net.openhft:chronicle-bytes:2.19.0",
-    "net.openhft:chronicle-core:2.19.0",
-    "net.openhft:chronicle-queue:5.19.2",
-    "net.openhft:chronicle-threads:2.17.27",
-    "net.openhft:chronicle-wire:2.17.71",
+    "net.openhft:chronicle-bytes:2.24ea15",
+    "net.openhft:chronicle-core:2.24ea20",
+    "net.openhft:chronicle-queue:5.24ea24",
+    "net.openhft:chronicle-threads:2.24ea9",
+    "net.openhft:chronicle-wire:2.24ea24",
     "net.openhft:compiler:2.3.4",
     "net.rcarz:jira-client:0.9-SNAPSHOT",
     "net.redhogs.cronparser:cron-parser:2.6",
@@ -5149,18 +5164,18 @@ plain_artifacts = [
     "org.apache.maven:maven-plugin-api:3.6.3",
     "org.apache.neethi:neethi:3.1.1",
     "org.apache.santuario:xmlsec:2.2.4",
-    "org.apache.sshd:sshd-core:2.9.2",
-    "org.apache.sshd:sshd-common:2.9.2",
-    "org.apache.sshd:sshd-scp:2.9.2",
+    "org.apache.sshd:sshd-core:2.10.0",
+    "org.apache.sshd:sshd-common:2.10.0",
+    "org.apache.sshd:sshd-scp:2.10.0",
     "org.apache.ws.xmlschema:xmlschema-core:2.2.5",
     "org.atmosphere:atmosphere-runtime:2.7.6",
     "org.atmosphere:wasync:3.0.0",
     "org.atteo:evo-inflector:1.2.2",
     "org.bitbucket.b_c:jose4j:0.9.3",
-    "org.bouncycastle:bcpg-jdk15on:1.70",
-    "org.bouncycastle:bcpkix-jdk15on:1.70",
-    "org.bouncycastle:bcprov-ext-jdk15on:1.70",
-    "org.bouncycastle:bcprov-jdk15on:1.70",
+    "org.bouncycastle:bcpg-jdk18on:1.76",
+    "org.bouncycastle:bcpkix-jdk18on:1.76",
+    "org.bouncycastle:bcprov-ext-jdk18on:1.76",
+    "org.bouncycastle:bcprov-jdk18on:1.76",
     "org.checkerframework:checker-compat-qual:2.5.5",
     "org.checkerframework:checker-qual:3.4.0",
     "org.cloudfoundry:cloudfoundry-client-reactor:5.9.0.RELEASE",
@@ -5285,7 +5300,7 @@ plain_artifacts = [
     "org.mongodb:mongodb-driver-core:4.6.1",
     "org.mongodb:bson:4.6.1",
     "org.mortbay.jetty.alpn:alpn-boot:8.1.13.v20181017",
-    "org.mozilla:rhino:1.7R4",
+    "org.mozilla:rhino:1.7.14",
     "org.objenesis:objenesis:2.6",
     "org.opensaml:opensaml-core:3.4.3",
     "org.opensaml:opensaml-messaging-api:3.4.3",
@@ -5319,7 +5334,7 @@ plain_artifacts = [
     "org.springframework.boot:spring-boot-autoconfigure:2.7.10",
     "org.springframework.boot:spring-boot-loader:2.7.10",
     "org.springframework.boot:spring-boot-starter-batch:2.7.10",
-    "org.springframework.boot:spring-boot:2.7.10",
+    "org.springframework.boot:spring-boot:2.7.14",
     "org.springframework.data:spring-data-commons:2.7.7",
     "org.springframework.data:spring-data-mongodb:3.4.7",
     "org.springframework.guice:spring-guice:1.1.3.RELEASE",
@@ -5413,7 +5428,7 @@ amazon_v2_artifacts = [
             "commons-logging:commons-logging",
         ],
         group = "software.amazon.awssdk",
-        version = "2.17.220",
+        version = "2.20.109",
     )
     for x in [
         "ecs",
@@ -5454,7 +5469,7 @@ maven_install(
             artifact = "netty-transport-native-kqueue",
             classifier = "osx-x86_64",
             group = "io.netty",
-            version = "4.1.86.Final",
+            version = "4.1.94.Final",
         ),
         maven.artifact(
             artifact = "jjschema",
@@ -5503,7 +5518,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "1.7.2.Final",
+            version = "1.9.7.Final",
         ),
         maven.artifact(
             artifact = "connect-runtime",
@@ -5560,11 +5575,11 @@ maven_install(
     maven_install_json = "//project:main_maven_install.json",
     override_targets = {
         "org.apache.commons:commons-io": "@maven//:commons_io_commons_io",
-        "com.jcraft:jsch": "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
+        "com.jcraft:jsch": "@maven//:com_github_mwiede_jsch",
         "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongodb_driver_core",
     },
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/artifactory/harness-internal",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
@@ -5585,7 +5600,7 @@ maven_install(
         "com.fasterxml.jackson.core:jackson-databind": "@maven//:com_fasterxml_jackson_core_jackson_databind",
     },
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
     version_conflict_policy = "pinned",
@@ -5594,17 +5609,18 @@ maven_install(
 maven_install(
     name = "batch",
     artifacts = [
-        "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
+        "com.fasterxml.jackson.core:jackson-databind:2.15.1",
+        "com.google.guava:guava:32.0.1-jre",
         "com.azure:azure-core:1.29.1",
         "com.azure:azure-identity:1.5.0",
         "com.azure:azure-storage-blob:12.16.0",
         "com.azure:azure-storage-common:12.15.1",
         "com.azure.resourcemanager:azure-resourcemanager-advisor:1.0.0-beta.2",
         "com.azure.resourcemanager:azure-resourcemanager-compute:2.26.0",
-        "software.amazon.awssdk:account:2.20.74",
+        "software.amazon.awssdk:account:2.20.109",
     ],
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
         "https://search.maven.org/artifact/",
         "https://mvnrepository.com/artifact/",
@@ -5615,6 +5631,7 @@ maven_install(
 maven_install(
     name = "ce-nextgen",
     artifacts = [
+        "com.google.guava:guava:32.0.1-jre",
         "com.azure:azure-core:1.29.1",
         "com.azure:azure-core-management:1.6.2",
         "com.azure:azure-identity:1.5.0",
@@ -5624,8 +5641,11 @@ maven_install(
         "com.azure.resourcemanager:azure-resourcemanager-authorization:2.14.0",
         "com.azure.resourcemanager:azure-resourcemanager-resources:2.14.0",
     ],
+    override_targets = {
+        "net.minidev:json-smart": "@maven//:net_minidev_json_smart",
+    },
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
     version_conflict_policy = "pinned",
@@ -5646,20 +5666,20 @@ maven_install(
         "com.github.sevntu-checkstyle:sevntu-checks:1.35.0",
     ],
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (2.1.3.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.3.1.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:2.1.3.Final",
-        "io.debezium:debezium-connector-mongodb:2.1.3.Final",
-        "io.debezium:debezium-core:2.1.3.Final",
+        "io.debezium:debezium-api:2.3.1.Final",
+        "io.debezium:debezium-connector-mongodb:2.3.1.Final",
+        "io.debezium:debezium-core:2.3.1.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5667,11 +5687,11 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "2.1.3.Final",
+            version = "2.3.1.Final",
         ),
     ],
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
 )
@@ -5688,7 +5708,7 @@ exports_files(["WORKSPACE"], visibility = ["//visibility:public"])
 """,
     sha256 = "f39b523c724d0e0047d238eb2bb17a9565a60574cf651206c867ee5fc000ab43",
     strip_prefix = "jdk8u242-b08",
-    urls = ["https://harness-artifactory.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u242b08.tar.gz"],
+    urls = ["https://%s.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u242b08.tar.gz" % REPOSITORY],
 )
 
 http_archive(
@@ -5703,7 +5723,7 @@ java_runtime(
 """,
     sha256 = "06675b7d65bce0313ee1f2e888dd44267e8afeced75e0b39b5ad1f5fdff54e0b",
     strip_prefix = "jdk8u242-b08",
-    urls = ["https://harness-artifactory.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u242b08.tar.gz"],
+    urls = ["https://%s.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u242b08.tar.gz" % REPOSITORY],
 )
 
 load("//tools/bazel/pmd:toolchains.bzl", "rules_pmd_toolchains")
@@ -5756,7 +5776,7 @@ register_toolchains("//:py_toolchain")
 http_archive(
     name = "io_bazel_rules_docker",
     sha256 = "b1e80761a8a8243d03ebca8845e9cc1ba6c82ce7c5179ce2b295cd36f7e394bf",
-    urls = ["https://harness-artifactory.harness.io/artifactory/rules-docker-github/download/v0.25.0/rules_docker-v0.25.0.tar.gz"],
+    urls = ["https://%s.harness.io/artifactory/rules-docker-github/download/v0.25.0/rules_docker-v0.25.0.tar.gz" % REPOSITORY],
 )
 
 load(
@@ -5815,7 +5835,7 @@ http_archive(
     name = "rules_pkg",
     sha256 = "eea0f59c28a9241156a47d7a8e32db9122f3d50b505fae0f33de6ce4d9b61834",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-pkg-github/download/0.8.0/rules_pkg-0.8.0.tar.gz",
+        "https://%s.harness.io/artifactory/rules-pkg-github/download/0.8.0/rules_pkg-0.8.0.tar.gz % (REPOSITORY)",
         #"https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
         #"https://github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
     ],
@@ -5911,7 +5931,7 @@ http_archive(
     name = "contrib_rules_jvm",
     sha256 = "548f0583192ff79c317789b03b882a7be9b1325eb5d3da5d7fdcc4b7ca69d543",
     strip_prefix = "rules_jvm-0.9.0",
-    url = "https://harness-artifactory.harness.io/artifactory/bazel-contrib-rules-jvm/archive/v0.9.0.tar.gz",
+    url = "https://%s.harness.io/artifactory/bazel-contrib-rules-jvm/archive/v0.9.0.tar.gz" % REPOSITORY,
 )
 
 # Fetches the contrib_rules_jvm dependencies.

@@ -6,5 +6,13 @@
  */
 
 package software.wings.beans;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
-public enum SerializationFormat { KRYO, JSON }
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
+public enum SerializationFormat {
+  KRYO,
+  JSON
+}

@@ -20,4 +20,5 @@ public class EC2InstanceDTO {
   String cpuUtilisation;
   String memoryUtilisation;
   String monthlyCost;
+  String monthlySavings;
 }

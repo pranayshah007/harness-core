@@ -41,7 +41,6 @@ import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -52,6 +51,7 @@ import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.JWTTokenServiceUtils;
 import io.harness.steps.StepSpecTypeConstants;
@@ -96,8 +96,8 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
   @Inject @Named("PRIVILEGED") AccessControlClient accessControlClient;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
@@ -107,7 +107,7 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
   }
 
   @Override
-  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepBaseParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     log.info("Executing feature update step..");
     long startTime = System.currentTimeMillis();
@@ -258,8 +258,8 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
             if (spec == null) {
               throw new InvalidRequestException("the spec for flag instruction, remove target group, is null");
             }
-            PatchInstruction instruction =
-                cfApi.getAddSegmentToVariationMapParams(spec.getVariation().getValue(), spec.getSegments().getValue());
+            PatchInstruction instruction = cfApi.getRemoveSegmentToVariationMapParams(
+                spec.getVariation().getValue(), spec.getSegments().getValue());
             instructions.add(instruction);
           }
         }
@@ -280,7 +280,7 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
           e.getResponseBody(), e.getCode());
       log.error(errStr);
       return StepResponse.builder()
-          .status(Status.ERRORED)
+          .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().setErrorMessage(errStr).build())
           .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
                                                           .setUnitName(INFRASTRUCTURE_COMMAND_UNIT)
@@ -293,7 +293,7 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
     } catch (Exception e) {
       log.error(format("error updating flag because %s", e.getMessage()));
       return StepResponse.builder()
-          .status(Status.ERRORED)
+          .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().setErrorMessage(e.getMessage()).build())
           .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
                                                           .setUnitName(INFRASTRUCTURE_COMMAND_UNIT)
@@ -357,7 +357,7 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     List<EntityDetail> entityDetailList = new ArrayList<>();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);

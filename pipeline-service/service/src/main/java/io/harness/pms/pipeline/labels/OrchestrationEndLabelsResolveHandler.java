@@ -6,15 +6,18 @@
  */
 
 package io.harness.pms.pipeline.labels;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.yaml.core.NGLabel;
 
 import com.google.common.collect.Sets;
@@ -25,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 public class OrchestrationEndLabelsResolveHandler implements OrchestrationEndObserver, AsyncInformObserver {
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
@@ -37,13 +41,13 @@ public class OrchestrationEndLabelsResolveHandler implements OrchestrationEndObs
   }
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(ambiance.getPlanExecutionId(),
             Sets.newHashSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.labels,
                 PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.pipelineVersion));
     if (pipelineExecutionSummaryEntity != null
-        && PipelineVersion.isV1(pipelineExecutionSummaryEntity.getPipelineVersion())) {
+        && HarnessYamlVersion.isV1(pipelineExecutionSummaryEntity.getPipelineVersion())) {
       List<NGLabel> resolvedLabels = (List<NGLabel>) pmsEngineExpressionService.resolve(
           ambiance, pipelineExecutionSummaryEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
       Update update = new Update().set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.labels, resolvedLabels);

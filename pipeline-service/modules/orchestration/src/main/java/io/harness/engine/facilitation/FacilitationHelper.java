@@ -9,10 +9,14 @@ package io.harness.engine.facilitation;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.facilitation.facilitator.CoreFacilitator;
 import io.harness.engine.facilitation.facilitator.async.AsyncFacilitator;
+import io.harness.engine.facilitation.facilitator.chain.AsyncChainFacilitator;
 import io.harness.engine.facilitation.facilitator.chain.ChildChainFacilitator;
 import io.harness.engine.facilitation.facilitator.chain.TaskChainFacilitator;
 import io.harness.engine.facilitation.facilitator.child.ChildFacilitator;
@@ -32,6 +36,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = HarnessModuleComponent.CDS_PIPELINE)
 public class FacilitationHelper {
   @Inject Injector injector;
 
@@ -79,6 +84,8 @@ public class FacilitationHelper {
         return injector.getInstance(ChildrenFacilitator.class);
       case OrchestrationFacilitatorType.WAIT_STEP:
         return injector.getInstance(WaitStepFacilitator.class);
+      case OrchestrationFacilitatorType.ASYNC_CHAIN:
+        return injector.getInstance(AsyncChainFacilitator.class);
       default:
         throw new InvalidRequestException("Core facilitator Type not found");
     }

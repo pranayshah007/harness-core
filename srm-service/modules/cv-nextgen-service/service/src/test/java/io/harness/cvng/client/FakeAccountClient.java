@@ -135,6 +135,12 @@ public class FakeAccountClient implements AccountClient {
   }
 
   @Override
+  public Call<RestResponse<Boolean>> updateHarnessSupportAccess(
+      String accountId, Boolean isHarnessSupportAccessAllowed) {
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
+  }
+
+  @Override
   public Call<RestResponse<AccountDTO>> updateCrossGenerationAccessEnabled(String accountId, AccountDTO dto) {
     throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
@@ -151,6 +157,11 @@ public class FakeAccountClient implements AccountClient {
 
   @Override
   public Call<RestResponse<Boolean>> checkIfHarnessSupportEnabledForAccount(String accountId) {
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
+  }
+
+  @Override
+  public Call<RestResponse<Boolean>> isHarnessSupportUserId(String userId) {
     throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }
 

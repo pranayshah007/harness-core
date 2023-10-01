@@ -6,14 +6,16 @@
  */
 
 package io.harness.ngtriggers.buildtriggers.helpers.generator;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
@@ -22,6 +24,7 @@ import io.harness.polling.contracts.Category;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.Qualifier;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 public interface PollingItemGenerator {
   PollingItem generatePollingItem(BuildTriggerOpsData buildTriggerOpsData);

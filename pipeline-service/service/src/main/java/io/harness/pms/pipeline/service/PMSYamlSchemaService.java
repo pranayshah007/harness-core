@@ -7,26 +7,26 @@
 
 package io.harness.pms.pipeline.service;
 
-import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.encryption.Scope;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PMSYamlSchemaService {
-  JsonNode getPipelineYamlSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope);
-
   boolean validateYamlSchema(String accountId, String orgId, String projectId, JsonNode jsonNode);
 
   void validateUniqueFqn(String yaml);
 
-  void invalidateAllCache();
+  List<YamlInputDetails> getInputSchemaDetails(String yaml);
 
-  JsonNode getIndividualYamlSchema(String accountId, String orgIdentifier, String projectIdentifier, Scope scope,
-      EntityType entityType, String yamlGroup);
-
-  JsonNode getStaticSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String identifier,
-      EntityType entityType, Scope scope, String version);
+  ObjectNode getStaticSchemaForAllEntities(
+      String nodeGroup, String nodeType, String nodeGroupDifferentiator, String version);
 }

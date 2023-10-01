@@ -14,14 +14,19 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plan.NodeEntity;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
-public interface NodeEntityRepository extends CrudRepository<NodeEntity, String> {
+public interface NodeEntityRepository extends CrudRepository<NodeEntity, String>, NodeEntityRepositoryCustom {
   // Deleting nodeEntity with uuid in given set
   // Uses - id index
   void deleteAllByUuidIn(Set<String> ids);
   List<NodeEntity> findNodeEntityByPlanId(String planId);
+
+  Optional<NodeEntity> findByPlanIdAndNodeId(String planId, String nodeId);
+
+  List<NodeEntity> findNodeEntityByNodeId(String nodeId);
 }

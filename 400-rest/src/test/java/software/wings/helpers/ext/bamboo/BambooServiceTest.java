@@ -81,7 +81,7 @@ public class BambooServiceTest extends WingsBaseTest {
                                                           .port(0));
 
   @Inject @InjectMocks DelegateFileManager delegateFileManager;
-  ;
+
   @Mock private ArtifactCollectionCommonTaskHelper artifactCollectionCommonTaskHelper;
 
   @Mock private EncryptionService encryptionService;

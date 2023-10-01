@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipeline;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -18,7 +17,10 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.beans.ExecutionNode;
 import io.harness.gitaware.helper.GitImportInfoDTO;
@@ -69,6 +71,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.springframework.data.domain.Page;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Api("pipelines")
 @Path("pipelines")
@@ -158,7 +161,7 @@ public interface PipelineResource {
             examples = @ExampleObject(name = "Create", summary = "Sample Create Pipeline YAML",
                 value = PipelineAPIConstants.CREATE_PIPELINE_API,
                 description = "Sample Pipeline YAML with One Build Stage and One Deploy Stage"))
-      }) @NotNull String yaml);
+      }) @NotNull String yaml, @QueryParam("public") @DefaultValue("false") boolean isPublic);
 
   @POST
   @Path("/clone")
@@ -315,7 +318,7 @@ public interface PipelineResource {
             examples = @ExampleObject(name = "Update", summary = "Sample Update Pipeline YAML",
                 value = PipelineAPIConstants.CREATE_PIPELINE_API,
                 description = "Sample Pipeline YAML with One Build Stage and One Deploy Stage"))
-      }) @NotNull String yaml);
+      }) @NotNull String yaml, @QueryParam("public") @DefaultValue("false") boolean isPublic);
 
   @DELETE
   @Path("/{pipelineIdentifier}")
@@ -351,7 +354,6 @@ public interface PipelineResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Paginated list of pipelines.")
       })
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   ResponseDTO<Page<PMSPipelineSummaryResponseDTO>>
   getListOfPipelines(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -406,11 +408,11 @@ public interface PipelineResource {
   @POST
   @Path("/import/{pipelineIdentifier}")
   @ApiOperation(value = "Get Pipeline YAML from Git Repository", nickname = "importPipeline")
-  @Operation(operationId = "importPipeline", summary = "Get Pipeline YAML from Git Repository",
+  @Operation(operationId = "importPipeline", summary = "Import and Create Pipeline from Git Repository",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
-            description = "Fetches Pipeline YAML from Git Repository and saves a record for it in Harness")
+            description = "Import and Create Pipeline from Git Repository and saves a record for it in Harness")
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   ResponseDTO<PipelineSaveResponse>
@@ -507,20 +509,6 @@ public interface PipelineResource {
   @Hidden
   // do not delete this.
   ResponseDTO<TemplateStageNode> getTemplateStageNode();
-
-  @GET
-  @Path("/ffCache/refresh")
-  @ApiOperation(value = "Refresh the feature flag cache", nickname = "refreshFFCache")
-  @Operation(operationId = "refreshFFCache", summary = "Refresh the feature flag cache",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Refresh the feature flag cache")
-      })
-  @Hidden
-  ResponseDTO<Boolean>
-  refreshFFCache(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE,
-      required = true) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId);
 
   @POST
   @Path("/validate-yaml-with-schema")

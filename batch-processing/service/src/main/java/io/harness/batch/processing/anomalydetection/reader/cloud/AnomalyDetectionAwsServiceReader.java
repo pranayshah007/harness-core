@@ -99,10 +99,10 @@ public class AnomalyDetectionAwsServiceReader extends AnomalyDetectionCloudReade
 
     // aggeration
     aggregationList.add(CloudBillingAggregate.builder()
-                            .columnName(CloudBillingAggregate.AWS_BLENDED_COST)
+                            .columnName(CloudBillingAggregate.AWS_UN_BLENDED_COST)
                             .operationType(QLCCMAggregateOperation.SUM)
                             .build());
-    notNullColumns.add(PreAggregatedTableSchema.awsBlendedCost);
+    notNullColumns.add(PreAggregatedTableSchema.awsUnBlendedCost);
 
     // sort Critera
     sortCriteriaList.add(CloudBillingSortCriteria.builder()

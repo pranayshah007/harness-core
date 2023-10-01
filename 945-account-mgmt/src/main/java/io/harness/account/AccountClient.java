@@ -90,6 +90,9 @@ public interface AccountClient {
 
   @PUT(ACCOUNT_API + "/{accountId}/default-experience")
   Call<RestResponse<AccountDTO>> updateDefaultExperience(@Path("accountId") String accountId, @Body AccountDTO dto);
+  @PUT(ACCOUNT_API + "/{accountId}/harness-support-access")
+  Call<RestResponse<Boolean>> updateHarnessSupportAccess(
+      @Path("accountId") String accountId, @Body Boolean isHarnessSupportAccessAllowed);
 
   @PUT(ACCOUNT_API + "/{accountId}/cross-generation-access")
   Call<RestResponse<AccountDTO>> updateCrossGenerationAccessEnabled(
@@ -102,6 +105,9 @@ public interface AccountClient {
 
   @GET(HARNESS_USER_GROUP_API + "/supportEnabledStatus")
   Call<RestResponse<Boolean>> checkIfHarnessSupportEnabledForAccount(@Query("accountId") String accountId);
+
+  @GET(HARNESS_USER_GROUP_API + "/is-harness-support-user-id")
+  Call<RestResponse<Boolean>> isHarnessSupportUserId(@Query("userId") String userId);
 
   @GET(ACCOUNT_API + "/is-auto-invite-acceptance-enabled")
   Call<RestResponse<Boolean>> checkAutoInviteAcceptanceEnabledForAccount(@Query("accountId") String accountId);

@@ -83,7 +83,7 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
             .eligibleToExecuteDelegateIds(new LinkedList<>(List.of(delegate.getUuid())))
             .build();
     persistence.save(delegateTask);
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(accountId, delegate.getUuid())).thenReturn(delegate);
     assertThat(delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)).isTrue();
   }
 

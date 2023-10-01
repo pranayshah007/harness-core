@@ -6,11 +6,12 @@
  */
 
 package io.harness.engine.events;
-
 import io.harness.OrchestrationStepTypes;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.stage.StageExecutionEntityService;
 import io.harness.execution.stage.StageExecutionEntityUpdateDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -19,7 +20,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.StageStatus;
 
 import com.google.common.collect.Sets;
@@ -28,12 +28,12 @@ import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class PipelineStageExecutionUpdateEventHandler implements OrchestrationEventHandler {
   private static final Set<String> STAGES_TO_UPDATE = Sets.newHashSet(OrchestrationStepTypes.CUSTOM_STAGE);
 
-  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private StageExecutionEntityService stageExecutionEntityService;
 
   @Override
@@ -43,10 +43,6 @@ public class PipelineStageExecutionUpdateEventHandler implements OrchestrationEv
       return;
     }
     if (!StatusUtils.isFinalStatus(event.getStatus())) {
-      return;
-    }
-    if (!pmsFeatureFlagService.isEnabled(
-            AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.CDS_CUSTOM_STAGE_EXECUTION_DATA_SYNC)) {
       return;
     }
     processNodeExecutionStatusUpdateEvent(event, event.getStatus());

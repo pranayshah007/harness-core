@@ -8,8 +8,11 @@
 package io.harness.cdng.aws.asg;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AsgRollingDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -33,6 +36,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
@@ -52,8 +56,10 @@ public class AsgRollingDeployStepInfo extends AsgRollingDeployBaseStepInfo imple
   @Builder(builderMethodName = "infoBuilder")
   public AsgRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> skipMatching, ParameterField<Boolean> useAlreadyRunningInstances,
-      ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage) {
-    super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage);
+      ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage, AsgInstances instances,
+      ParameterField<String> asgName) {
+    super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
+        instances, asgName);
   }
 
   @Override
@@ -74,6 +80,8 @@ public class AsgRollingDeployStepInfo extends AsgRollingDeployBaseStepInfo imple
         .useAlreadyRunningInstances(this.getSkipMatching())
         .instanceWarmup(this.getInstanceWarmup())
         .minimumHealthyPercentage(this.getMinimumHealthyPercentage())
+        .instances(this.getInstances())
+        .asgName(this.getAsgName())
         .build();
   }
 

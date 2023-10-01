@@ -7,18 +7,25 @@
 
 package io.harness.cvng.core.transformer.changeEvent;
 
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL_FORMAT;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata.HarnessCDEventMetadataBuilder;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata.VerifyStepSummary;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 
+import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class HarnessCDChangeEventTransformer
     extends ChangeEventMetaDataTransformer<DeploymentActivity, HarnessCDEventMetadata> {
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
+
   @Override
   public DeploymentActivity getEntity(ChangeEventDTO changeEventDTO) {
     HarnessCDEventMetadata metaData = (HarnessCDEventMetadata) changeEventDTO.getMetadata();
@@ -36,6 +43,7 @@ public class HarnessCDChangeEventTransformer
         .planExecutionId(metaData.getPlanExecutionId())
         .stageStepId(metaData.getStageStepId())
         .pipelineId(metaData.getPipelineId())
+        .runSequence(metaData.getRunSequence())
         .stageId(metaData.getStageId())
         .planExecutionId(metaData.getPlanExecutionId())
         .activityStartTime(Instant.ofEpochMilli(metaData.getDeploymentStartTime()))
@@ -56,11 +64,12 @@ public class HarnessCDChangeEventTransformer
             .planExecutionId(activity.getPlanExecutionId())
             .stageStepId(activity.getStageStepId())
             .pipelineId(activity.getPipelineId())
+            .runSequence(activity.getRunSequence())
             .stageId(activity.getStageId())
             .artifactTag(activity.getArtifactTag())
-            .pipelinePath("/account/" + activity.getAccountId() + "/cd/orgs/" + activity.getOrgIdentifier()
-                + "/projects/" + activity.getProjectIdentifier() + "/pipelines/" + activity.getPipelineId()
-                + "/executions/" + activity.getPlanExecutionId() + "/pipeline?stage=" + activity.getStageStepId())
+            .pipelinePath(String.format(PIPELINE_URL_FORMAT, activity.getAccountId(), activity.getOrgIdentifier(),
+                activity.getProjectIdentifier(), activity.getPipelineId(), activity.getPlanExecutionId(),
+                activity.getStageStepId()))
             .artifactType(activity.getArtifactType());
     if (activity.getVerificationSummary() != null
         && activity.getVerificationSummary().getVerficationStatusMap() != null) {
@@ -73,6 +82,10 @@ public class HarnessCDChangeEventTransformer
                   -> VerifyStepSummary.builder().name(entry.getKey()).verificationStatus(entry.getValue()).build())
               .collect(Collectors.toList());
       harnessCDEventMetadataBuilder.verifyStepSummaries(verifyStepSummaries);
+    }
+    if (isNotEmpty(activity.getAnalysisImpactExecutionIds())) {
+      harnessCDEventMetadataBuilder.analysisStepDetails(
+          srmAnalysisStepService.getSRMAnalysisStepDetails(activity.getAnalysisImpactExecutionIds()));
     }
     return harnessCDEventMetadataBuilder.build();
   }

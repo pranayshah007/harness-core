@@ -9,14 +9,21 @@ package software.wings.service.impl.delegate;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.service.impl.AwsApiHelperService.handleExceptionWhileFetchingRepositories;
+
 import static java.util.Collections.singletonList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.context.MdcGlobalContextData;
+import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.manage.GlobalContextManager;
@@ -27,6 +34,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ecr.AmazonECRClient;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
+import com.amazonaws.services.ecr.model.AmazonECRException;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesResult;
 import com.amazonaws.services.ecr.model.GetAuthorizationTokenRequest;
@@ -41,6 +49,8 @@ import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TRIGGERS, HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AwsEcrApiHelperServiceDelegate extends AwsEcrApiHelperServiceDelegateBase {
   public AmazonECRClient getAmazonEcrClient(AwsInternalConfig awsConfig, String region) {
@@ -82,24 +92,42 @@ public class AwsEcrApiHelperServiceDelegate extends AwsEcrApiHelperServiceDelega
     return new DescribeRepositoriesResult();
   }
 
-  private Repository getRepository(
-      AwsInternalConfig awsConfig, String registryId, String region, String repositoryName) {
-    DescribeRepositoriesRequest describeRepositoriesRequest = new DescribeRepositoriesRequest();
-    if (StringUtils.isNotBlank(registryId)) {
-      describeRepositoriesRequest.setRegistryId(registryId);
-    }
-    describeRepositoriesRequest.setRepositoryNames(Lists.newArrayList(repositoryName));
-    DescribeRepositoriesResult describeRepositoriesResult =
-        listRepositories(awsConfig, describeRepositoriesRequest, region);
-    List<Repository> repositories = describeRepositoriesResult.getRepositories();
-    if (isNotEmpty(repositories)) {
-      return repositories.get(0);
+  private Repository getRepository(AwsInternalConfig awsConfig, String registryId, String region, String repositoryName,
+      boolean throwFormattedException) {
+    try {
+      DescribeRepositoriesRequest describeRepositoriesRequest = new DescribeRepositoriesRequest();
+      if (StringUtils.isNotBlank(registryId)) {
+        describeRepositoriesRequest.setRegistryId(registryId);
+      }
+      describeRepositoriesRequest.setRepositoryNames(Lists.newArrayList(repositoryName));
+      DescribeRepositoriesResult describeRepositoriesResult =
+          listRepositories(awsConfig, describeRepositoriesRequest, region);
+      List<Repository> repositories = describeRepositoriesResult.getRepositories();
+      if (isNotEmpty(repositories)) {
+        return repositories.get(0);
+      }
+      return null;
+    } catch (AmazonECRException e) {
+      handleExceptionWhileFetchingRepositories(e.getStatusCode(), e.getErrorMessage());
+    } catch (Exception e) {
+      if (throwFormattedException) {
+        throw new InvalidRequestException(
+            "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
+            new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+      } else {
+        throw e;
+      }
     }
     return null;
   }
 
   public String getEcrImageUrl(AwsInternalConfig awsConfig, String registryId, String region, String imageName) {
-    Repository repository = getRepository(awsConfig, registryId, region, imageName);
+    Repository repository = getRepository(awsConfig, registryId, region, imageName, true);
+    return repository != null ? repository.getRepositoryUri() : null;
+  }
+
+  public String getEcrImageUrlForCG(AwsInternalConfig awsConfig, String registryId, String region, String imageName) {
+    Repository repository = getRepository(awsConfig, registryId, region, imageName, false);
     return repository != null ? repository.getRepositoryUri() : null;
   }
 

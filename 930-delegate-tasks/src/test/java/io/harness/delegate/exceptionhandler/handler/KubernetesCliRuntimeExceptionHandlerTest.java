@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.configuration.KubernetesCliCommandType;
 import io.harness.delegate.task.k8s.exception.KubernetesCliRuntimeExceptionHandler;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.FailureType;
@@ -35,7 +36,10 @@ import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.rule.Owner;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,6 +49,12 @@ import org.zeroturnaround.exec.ProcessResult;
 @OwnedBy(CDP)
 public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   private KubernetesCliRuntimeExceptionHandler exceptionHandler = new KubernetesCliRuntimeExceptionHandler();
+  private static final String kubectlTimeoutMessagePart = "i/o timeout";
+  private static final String kubectlConnectionRefusedMessagePart1 = "The connection to the server";
+  private static final String kubectlConnectionRefusedMessagePart2 = "was refused";
+  private static final String kubectlConnectionRefusedMessagePart3 = "did you specify the right host or port";
+  private static final String kubectlConnectionRefusedMessagePart4 = "connection refused";
+  private static final String kubectlUnableToConnectMessagePart = "transport connection broken";
 
   @Test
   @Owner(developers = ABHINAV2)
@@ -163,17 +173,30 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void handleKubectlTimeoutInDryRunException() {
-    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
-        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), DRY_RUN);
-    exception.setKubectlVersion("");
-    exception.setResourcesNotApplied("");
-    WingsException handledException = exceptionHandler.handleException(exception);
-    assertThat(handledException).isInstanceOf(HintException.class);
-    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.DRY_RUN_MANIFEST_FAILED);
-    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
-    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
-    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
-    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE, DRY_RUN,
+        Collections.singletonList(kubectlTimeoutMessagePart), KubernetesExceptionHints.KUBECTL_COMMAND_TIMEOUT);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlConnectionRefusedInDryRunException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE, DRY_RUN,
+        Arrays.asList(kubectlConnectionRefusedMessagePart1, kubectlConnectionRefusedMessagePart2,
+            kubectlConnectionRefusedMessagePart3),
+        KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE_2, DRY_RUN,
+        Arrays.asList(kubectlConnectionRefusedMessagePart4), KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlUnableToConnectInDryRunException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_UNABLE_TO_CONNECT_MESSAGE, DRY_RUN,
+        Collections.singletonList(kubectlUnableToConnectMessagePart),
+        KubernetesExceptionHints.KUBECTL_UNABLE_TO_CONNECT);
   }
 
   @Test
@@ -241,17 +264,30 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void handleKubectlTimeoutInSteadyStateException() {
-    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
-        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), STEADY_STATE_CHECK);
-    exception.setKubectlVersion("");
-    exception.setResourcesNotApplied("");
-    WingsException handledException = exceptionHandler.handleException(exception);
-    assertThat(handledException).isInstanceOf(HintException.class);
-    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.WAIT_FOR_STEADY_STATE_FAILED);
-    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
-    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
-    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
-    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE, STEADY_STATE_CHECK,
+        Collections.singletonList(kubectlTimeoutMessagePart), KubernetesExceptionHints.KUBECTL_COMMAND_TIMEOUT);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlConnectionRefusedInSteadyStateException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE, STEADY_STATE_CHECK,
+        Arrays.asList(kubectlConnectionRefusedMessagePart1, kubectlConnectionRefusedMessagePart2,
+            kubectlConnectionRefusedMessagePart3),
+        KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE_2, STEADY_STATE_CHECK,
+        Arrays.asList(kubectlConnectionRefusedMessagePart4), KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlUnableToConnectInSteadyStateException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_UNABLE_TO_CONNECT_MESSAGE, STEADY_STATE_CHECK,
+        Collections.singletonList(kubectlUnableToConnectMessagePart),
+        KubernetesExceptionHints.KUBECTL_UNABLE_TO_CONNECT);
   }
 
   @Test
@@ -286,17 +322,30 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void handleKubectlTimeoutInScaleException() {
-    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
-        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), SCALE);
-    exception.setKubectlVersion("");
-    exception.setResourcesNotApplied("");
-    WingsException handledException = exceptionHandler.handleException(exception);
-    assertThat(handledException).isInstanceOf(HintException.class);
-    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.SCALE_CLI_FAILED_GENERIC);
-    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
-    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
-    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
-    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE, SCALE,
+        Collections.singletonList(kubectlTimeoutMessagePart), KubernetesExceptionHints.KUBECTL_COMMAND_TIMEOUT);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlConnectionRefusedInScaleException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE, SCALE,
+        Arrays.asList(kubectlConnectionRefusedMessagePart1, kubectlConnectionRefusedMessagePart2,
+            kubectlConnectionRefusedMessagePart3),
+        KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE_2, SCALE,
+        Arrays.asList(kubectlConnectionRefusedMessagePart4), KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlUnableToConnectInScaleException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_UNABLE_TO_CONNECT_MESSAGE, SCALE,
+        Collections.singletonList(kubectlUnableToConnectMessagePart),
+        KubernetesExceptionHints.KUBECTL_UNABLE_TO_CONNECT);
   }
 
   @Test
@@ -362,17 +411,30 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void handleKubectlTimeoutInApplyException() {
-    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
-        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), APPLY);
-    exception.setKubectlVersion("");
-    exception.setResourcesNotApplied("");
-    WingsException handledException = exceptionHandler.handleException(exception);
-    assertThat(handledException).isInstanceOf(HintException.class);
-    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.APPLY_MANIFEST_FAILED);
-    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
-    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
-    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
-    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE, APPLY,
+        Collections.singletonList(kubectlTimeoutMessagePart), KubernetesExceptionHints.KUBECTL_COMMAND_TIMEOUT);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlConnectionRefusedInApplyException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE, APPLY,
+        Arrays.asList(kubectlConnectionRefusedMessagePart1, kubectlConnectionRefusedMessagePart2,
+            kubectlConnectionRefusedMessagePart3),
+        KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE_2, APPLY,
+        Arrays.asList(kubectlConnectionRefusedMessagePart4), KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlUnableToConnectInApplyException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_UNABLE_TO_CONNECT_MESSAGE, APPLY,
+        Collections.singletonList(kubectlUnableToConnectMessagePart),
+        KubernetesExceptionHints.KUBECTL_UNABLE_TO_CONNECT);
   }
 
   @Test
@@ -437,17 +499,30 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void handleKubectlTimeoutInHashGenerationException() {
-    KubernetesCliTaskRuntimeException exception = new KubernetesCliTaskRuntimeException(
-        createProcessResponse(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE), GENERATE_HASH);
-    exception.setKubectlVersion("");
-    exception.setResourcesNotApplied("");
-    WingsException handledException = exceptionHandler.handleException(exception);
-    assertThat(handledException).isInstanceOf(HintException.class);
-    assertThat(handledException.getMessage()).isEqualTo(KubernetesExceptionHints.HASH_CALCULATION_FAILED_ERROR);
-    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
-    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
-    assertThat(handledException.getCause().getCause().getMessage()).contains("i/o timeout");
-    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_COMMAND_TIMEOUT_MESSAGE, GENERATE_HASH,
+        Collections.singletonList(kubectlTimeoutMessagePart), KubernetesExceptionHints.KUBECTL_COMMAND_TIMEOUT);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlConnectionRefusedInHashGenerationException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE, GENERATE_HASH,
+        Arrays.asList(kubectlConnectionRefusedMessagePart1, kubectlConnectionRefusedMessagePart2,
+            kubectlConnectionRefusedMessagePart3),
+        KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_CONNECTION_REFUSED_MESSAGE_2, GENERATE_HASH,
+        Arrays.asList(kubectlConnectionRefusedMessagePart4), KubernetesExceptionHints.KUBECTL_CONNECTION_REFUSED);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void handleKubectlUnableToConnectInHashGenerationException() {
+    testConnectivityTypeException(CliErrorMessages.KUBECTL_UNABLE_TO_CONNECT_MESSAGE, GENERATE_HASH,
+        Collections.singletonList(kubectlUnableToConnectMessagePart),
+        KubernetesExceptionHints.KUBECTL_UNABLE_TO_CONNECT);
   }
 
   private ProcessResponse createProcessResponse(String cliErrorMessage) {
@@ -464,6 +539,23 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
     expectedHintMap.put(CliErrorMessages.UNSUPPORTED_VALUE, KubernetesExceptionHints.UNSUPPORTED_VALUE);
     expectedHintMap.put(CliErrorMessages.FORBIDDEN_MESSAGE, KubernetesExceptionHints.K8S_API_FORBIDDEN_EXCEPTION);
     return expectedHintMap;
+  }
+
+  private void testConnectivityTypeException(String cliErrorMessage, KubernetesCliCommandType kubernetesCliCommandType,
+      List<String> identifyingPartsOfCauseException, String handledExceptionExpectedMessage) {
+    KubernetesCliTaskRuntimeException exception =
+        new KubernetesCliTaskRuntimeException(createProcessResponse(cliErrorMessage), kubernetesCliCommandType);
+    exception.setKubectlVersion("");
+    exception.setResourcesNotApplied("");
+    WingsException handledException = exceptionHandler.handleException(exception);
+    assertThat(handledException).isInstanceOf(HintException.class);
+    assertThat(handledException.getMessage()).isEqualTo(handledExceptionExpectedMessage);
+    assertThat(handledException.getCause()).isInstanceOf(ExplanationException.class);
+    assertThat(handledException.getFailureTypes().contains(FailureType.CONNECTIVITY));
+    for (String partOfCauseException : identifyingPartsOfCauseException) {
+      assertThat(handledException.getCause().getCause().getMessage()).contains(partOfCauseException);
+    }
+    assertThat(handledException.getCause().getCause()).isInstanceOf(KubernetesTaskException.class);
   }
 
   static class CliErrorMessages {
@@ -495,6 +587,12 @@ public class KubernetesCliRuntimeExceptionHandlerTest extends CategoryTest {
         "Error from server (Forbidden): error when retrieving current configuration of:Resource: \"/v1, Resource=services\", GroupVersionKind: \"/v1, Kind=Service\"Name: \"latest\", Namespace: \"dev\"Object: &{map[\"metadata\":map[\"labels\":map[\"app\":\"latest\"] \"name\":\"latest\" \"namespace\":\"dev\" \"annotations\":map[\"kubernetes.io/change-cause\":\"kubectl apply --kubeconfig=config --filename=manifests.yaml --record=true\" \"kubectl.kubernetes.io/last-applied-configuration\":\"\"]] \"spec\":map[\"ports\":[map[\"port\":'\\u1f90']] \"selector\":map[\"harness.io/name\":\"latest\"] \"type\":\"ClusterIP\"] \"apiVersion\":\"v1\" \"kind\":\"Service\"]}from server for: \"manifests.yaml\": services \"np-latest\" is forbidden: User \"system:serviceaccount:hrns\" cannot get resource \"services\" in API group \"\" in the namespace \"standard\"Error from server (Forbidden): error when retrieving current configuration of:Resource: \"apps/v1, Resource=statefulsets\", GroupVersionKind: \"apps/v1, Kind=StatefulSet\"Name: \"np-latest\", Namespace: \"standard\"Object: &{map[\"apiVersion\":\"apps/v1\" \"kind\":\"StatefulSet\" \"metadata\":map[\"labels\":map[\"harness.io/name\":\"np-latest\"] \"name\":\"np-latest\" \"namespace\":\"standard\" \"annotations\":map[\"kubernetes.io/change-cause\":\"kubectl apply --kubeconfig=config --filename=manifests.yaml --record=true\" \"kubectl.kubernetes.io/last-applied-configuration\":\"\"]] \"spec\":map[\"replicas\":'\\x01' \"selector\":map[\"matchLabels\":map[\"harness.io/name\":\"tkgi-tepmr22-k8s-np-latest\"]] \"serviceName\":\"\" \"template\":map[\"metadata\":map[\"labels\":map[\"harness.io/name\":\"np-latest\" \"harness.io/release-name\":\"81eeaa34dc\"]] \"spec\":map[\"containers\":[map[\"resources\":map[\"limits\":map[\"cpu\":\"500m\" \"memory\":\"2Gi\"] \"requests\":map[\"cpu\":\"500m\" \"memory\":\"2Gi\"]] \"volumeMounts\":[map[\"mountPath\":\"/var/certs\" \"name\":\"cert\" \"readOnly\":%!q(bool=false)]] \"image\":\"w/hrns:0.0.1\" \"lifecycle\":map[\"postStart\":map[\"exec\":map[\"command\":[\"/bin/bash\" \"-c\" \"cp /var/certs/cacerts jdk8u242-b08-jre/lib/security/cacerts\\n\"]]]] \"livenessProbe\":map[\"exec\":map[\"command\":[\"bash\" \"-c\" \"[[ -e /watcher-data && $(($(date +%s000) - $(grep heartbeat /opt/harness-delegate/msg/data/watcher-data | cut -d \\\":\\\" -f 2 | cut -d \\\",\\\" -f 1))) -lt 300000 ]]\"]] \"failureThreshold\":'\\x02' \"initialDelaySeconds\":'\\u00f0' \"periodSeconds\":'\\n' \"successThreshold\":'\\x01' \"timeoutSeconds\":'\\n'] \"ports\":[map[\"containerPort\":'\\u1f90']] \"imagePullPolicy\":\"Always\" \"name\":\"delegate\" \"readinessProbe\":map[\"exec\":map[\"command\":[\"test\" \"-s\" \"delegate.log\"]] \"initialDelaySeconds\":'\\x14' \"periodSeconds\":'\\n']]] \"imagePullSecrets\":[map[\"name\":\"hrns-cred\"]] \"serviceAccountName\":\"hrns-sa\" \"volumes\":[map[\"configMap\":map[\"name\":\"ca-bundle-1\"] \"name\":\"cert\"]]]] \"podManagementPolicy\":\"Parallel\"]]}from server for: \"manifests.yaml\": statefulsets.apps \"latest\" is forbidden: User \"system:serviceaccount:test\" cannot get resource \"statefulsets\" in API group \"apps\" in the namespace \"abc\"";
     static final String KUBECTL_COMMAND_TIMEOUT_MESSAGE =
         "Unable to connect to the server: dial tcp X.X.X.X:443: i/o timeout";
+    static final String KUBECTL_CONNECTION_REFUSED_MESSAGE =
+        "The connection to the server someHostName:443 was refused - did you specify the right host or port?";
+    static final String KUBECTL_CONNECTION_REFUSED_MESSAGE_2 =
+        "unable to recognize \"manifests.yaml\": Get https://localhost/api?timeout=32s: dial tcp [::1]:443: connect: connection refused";
+    static final String KUBECTL_UNABLE_TO_CONNECT_MESSAGE =
+        "Unable to connect to the server: net/http: HTTP/1.x transport connection broken: malformed HTTP status code \"\\x00\\x00\\x00\\x04\\b\\x00\\x00\\x00\\x00\\x00\\x00\\x0f\\x00\\x01\\x00\\x00:\\a\\x00\\x00\\x00\\x00\\x00\\u007f\\xff\\xff\\xff\\x00\\x00\\x00\\x01Unexpected\"";
 
     static final String KUBECTL_COMMAND_NO_OBJECT_TO_APPLY_MESSAGE = "error: no objects passed to apply";
   }

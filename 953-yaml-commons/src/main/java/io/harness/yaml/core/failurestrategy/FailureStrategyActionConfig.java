@@ -6,13 +6,15 @@
  */
 
 package io.harness.yaml.core.failurestrategy;
-
 import static com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXISTING_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
@@ -28,6 +30,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.validation.constraints.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @JsonTypeInfo(use = NAME, property = "type", include = EXISTING_PROPERTY, visible = true)
 @JsonSubTypes({
   @Type(value = AbortFailureActionConfig.class, name = NGFailureActionTypeConstants.ABORT)

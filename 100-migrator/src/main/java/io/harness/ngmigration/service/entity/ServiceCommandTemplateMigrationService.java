@@ -14,7 +14,11 @@ import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.beans.YamlDTO;
@@ -81,6 +85,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 // Merge this class with TemplateMigrationService
 public class ServiceCommandTemplateMigrationService extends NgMigrationService {
@@ -134,17 +139,36 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
     String serviceId = entityId.split(SERVICE_COMMAND_TEMPLATE_SEPARATOR)[0];
     String serviceCommandName = entityId.split(SERVICE_COMMAND_TEMPLATE_SEPARATOR)[1];
     if (serviceId.equals(UNKNOWN_SERVICE)) {
-      List<Service> services = serviceResourceService.listByDeploymentType(appId, DeploymentType.SSH.name(), null);
-      for (Service service : services) {
-        DiscoveryNode node = getDiscoveryNodeForService(appId, service.getUuid(), serviceCommandName);
-        if (node != null) {
-          return node;
+      return getDiscoveryNodeForUnknownService(appId, serviceCommandName);
+    } else {
+      DiscoveryNode result = getDiscoveryNodeForService(appId, serviceId, serviceCommandName);
+      if (result == null) {
+        result = getDiscoveryNodeForUnknownService(appId, serviceCommandName);
+        if (result != null) {
+          result.getEntityNode().setEntityId(
+              CgEntityId.builder().id(entityId).type(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE).build());
         }
       }
-      return null;
-    } else {
-      return getDiscoveryNodeForService(appId, serviceId, serviceCommandName);
+      return result;
     }
+  }
+
+  private DiscoveryNode getDiscoveryNodeForUnknownService(String appId, String serviceCommandName) {
+    List<Service> services = serviceResourceService.listByDeploymentType(appId, DeploymentType.SSH.name(), null);
+    if (EmptyPredicate.isEmpty(services)) {
+      return null;
+    }
+    // We are sorting based on createdAt so that we consistently pick the same service for the same service command
+    services = services.stream()
+                   .sorted((s1, s2) -> Long.compare(s2.getCreatedAt(), s1.getCreatedAt()))
+                   .collect(Collectors.toList());
+    for (Service service : services) {
+      DiscoveryNode node = getDiscoveryNodeForService(appId, service.getUuid(), serviceCommandName);
+      if (node != null) {
+        return node;
+      }
+    }
+    return null;
   }
 
   @Nullable
@@ -206,6 +230,16 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
                 RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.writeYamlString(yamlFile.getYaml())),
                 StoreType.INLINE)
             .execute();
+
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      resp =
+          templateClient
+              .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                  RequestBody.create(MediaType.parse("application/yaml"), getYamlStringV2(yamlFile)), StoreType.INLINE)
+              .execute();
+    }
+
     log.info("Template creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
@@ -327,7 +361,7 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 }

@@ -43,6 +43,9 @@ public interface UserMembershipClient {
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query("removeUserFilter") NGRemoveUserFilter removeUserFilter);
 
+  @DELETE(USER_API + "/remove-user-metadata/{userId}")
+  Call<ResponseDTO<Boolean>> deleteUserMetadata(@Path("userId") String userId);
+
   @GET(USER_API + "/internal/{userId}")
   Call<ResponseDTO<UserMetadataDTO>> getUser(@Path(NGCommonEntityConstants.USER_ID) String userId,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);

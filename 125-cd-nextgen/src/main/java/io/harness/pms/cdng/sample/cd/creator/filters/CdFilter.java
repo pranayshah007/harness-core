@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.cdng.sample.cd.creator.filters;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -17,6 +19,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Singular;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @Builder
 @JsonInclude(Include.NON_NULL)

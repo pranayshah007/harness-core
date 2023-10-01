@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.ssh;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -21,6 +22,7 @@ import lombok.Getter;
 
 @Getter
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig")
 public class AwsWinrmInfraDelegateConfig extends AwsInfraDelegateConfig implements WinRmInfraDelegateConfig {
   Set<String> hosts;
   List<EncryptedDataDetail> encryptionDataDetails;

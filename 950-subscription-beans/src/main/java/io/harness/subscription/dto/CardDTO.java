@@ -9,12 +9,12 @@ package io.harness.subscription.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 import org.jvnet.hk2.annotations.Optional;
 
 @Data
-@Builder
+@SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CardDTO {

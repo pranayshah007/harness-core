@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.servicenow;
-
 import static io.harness.adfs.AdfsConstants.ADFS_ACCESS_TOKEN_ENDPOINT;
 import static io.harness.adfs.AdfsConstants.ADFS_CLIENT_ASSERTION_TYPE;
 import static io.harness.adfs.AdfsConstants.ADFS_GRANT_TYPE;
@@ -22,7 +21,10 @@ import static java.util.Objects.isNull;
 import io.harness.adfs.AdfsAccessTokenResponse;
 import io.harness.adfs.AdfsExceptionHandler;
 import io.harness.adfs.AdfsRestClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
@@ -64,6 +66,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  * Only modification at the time of writing this is one additional parameter resource_id is being used to indicate the
  * resource for which token is generated.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @UtilityClass
 @Slf4j

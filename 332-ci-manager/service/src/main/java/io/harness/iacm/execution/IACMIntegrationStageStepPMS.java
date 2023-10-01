@@ -9,7 +9,7 @@ package io.harness.iacm.execution;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ci.states.IntegrationStageStepPMS;
+import io.harness.ci.execution.states.IntegrationStageStepPMS;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;

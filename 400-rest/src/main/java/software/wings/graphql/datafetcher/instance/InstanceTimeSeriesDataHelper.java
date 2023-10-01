@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.graphql.datafetcher.AbstractStatsDataFetcher.MAX_RETRY;
+import static software.wings.graphql.datafetcher.DataFetcherUtils.GENERIC_EXCEPTION_MSG;
 import static software.wings.graphql.datafetcher.instance.Constants.COMPLETE_AGGREGATION_INTERVAL;
 import static software.wings.graphql.datafetcher.instance.Constants.INSTANCE_STATS_DAY_TABLE_NAME;
 import static software.wings.graphql.datafetcher.instance.Constants.INSTANCE_STATS_HOUR_TABLE_NAME;
@@ -22,6 +23,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.event.timeseries.processor.utils.DateUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
@@ -76,26 +78,28 @@ public class InstanceTimeSeriesDataHelper {
       QLNoOpAggregateFunction aggregateFunction, List<QLInstanceFilter> filters, QLTimeSeriesAggregation groupByTime,
       QLInstanceEntityAggregation groupByEntity) {
     //    SELECT PERCENTILE_DISC(0.50) WITHIN GROUP (ORDER BY SUM_VALUE) AS CNT,
-    //    time_bucket_gapfill('1 days',REPORTEDAT, '2019-08-03T10:35:10.248Z', '2019-08-10T10:35:10.248Z') AS
-    //    GRP_BY_TIME, ENTITY_ID FROM (SELECT APPID AS ENTITY_ID, REPORTEDAT, SUM(INSTANCECOUNT) AS SUM_VALUE FROM
+    //    ENTITY_ID, T_SEQ_DATETIME AS GRP_BY_TIME FROM HARNESS_TIME_BUCKET_LIST(from, to, 'hours') TB
+    //    LEFT JOIN (SELECT APPID AS ENTITY_ID, REPORTEDAT, SUM(INSTANCECOUNT) AS SUM_VALUE FROM
     //    INSTANCE_STATS WHERE REPORTEDAT  >= timestamp '2019-08-03T10:35:10.248Z' AND  REPORTEDAT  < timestamp
-    //    '2019-08-10T10:35:10.248Z' AND ACCOUNTID = 'kmpySmUISimoRrJL6NL73w' GROUP BY ENTITY_ID, REPORTEDAT)
-    //    INSTANCE_STATS GROUP BY ENTITY_ID, GRP_BY_TIME ORDER BY GRP_BY_TIME
+    //    '2019-08-10T10:35:10.248Z' AND ACCOUNTID = 'kmpySmUISimoRrJL6NL73w' GROUP BY ENTITY_ID, REPORTEDAT) AS
+    //    INSTANCE_STATS ON TB.T_SEQ_DATETIME = DATE_TRUNC('hour', INSTANCE_STATS.REPORTEDAT)
+    //    GROUP BY ENTITY_ID, GRP_BY_TIME ORDER BY GRP_BY_TIME
 
     try {
-      StringBuilder queryBuilder = new StringBuilder(350);
-      queryBuilder.append("SELECT PERCENTILE_DISC(0.50) WITHIN GROUP (ORDER BY SUM_VALUE) AS CNT, ");
+      StringBuilder queryBuilder = new StringBuilder(700).append(
+          "SELECT PERCENTILE_DISC(0.50) WITHIN GROUP (ORDER BY SUM_VALUE) AS CNT, T_SEQ_DATETIME AS GRP_BY_TIME, ENTITY_ID FROM HARNESS_TIME_BUCKET_LIST(");
 
       String[] values = extractTime(filters);
       String from = values[0];
       String to = values[1];
 
-      String timeQuerySegment =
-          instanceStatsDataFetcher.getGroupByTimeQueryWithGapFill(groupByTime, "REPORTEDAT", from, to);
-
       String groupByFieldName = getSqlFieldName(groupByEntity);
-      queryBuilder.append(timeQuerySegment)
-          .append(" AS GRP_BY_TIME, ENTITY_ID FROM (SELECT ")
+      queryBuilder.append(Instant.parse(from).toEpochMilli() / 1000)
+          .append(',')
+          .append(Instant.parse(to).toEpochMilli() / 1000)
+          .append(",'")
+          .append(getGroupByTimeAsInterval(groupByTime))
+          .append("') TB LEFT JOIN (SELECT ")
           .append(groupByFieldName)
           .append(" AS ENTITY_ID, REPORTEDAT, SUM(INSTANCECOUNT) AS SUM_VALUE FROM INSTANCE_STATS WHERE ");
       if (isNotEmpty(filters)) {
@@ -114,8 +118,9 @@ public class InstanceTimeSeriesDataHelper {
       addTimeQuery(queryBuilder, QLTimeOperator.BEFORE, to);
       queryBuilder.append(" AND ACCOUNTID = '")
           .append(accountId)
-          .append(
-              "' GROUP BY ENTITY_ID, REPORTEDAT) INSTANCE_STATS GROUP BY ENTITY_ID, GRP_BY_TIME ORDER BY GRP_BY_TIME");
+          .append("' GROUP BY ENTITY_ID, REPORTEDAT) AS INSTANCE_STATS ON TB.T_SEQ_DATETIME = DATE_TRUNC('")
+          .append(getDateTruncParam(groupByTime))
+          .append("', INSTANCE_STATS.REPORTEDAT) GROUP BY ENTITY_ID, GRP_BY_TIME ORDER BY GRP_BY_TIME");
 
       List<QLStackedTimeSeriesDataPoint> dataPoints = new ArrayList<>();
       executeStackedTimeSeriesQuery(accountId, queryBuilder.toString(), dataPoints, groupByEntity);
@@ -256,6 +261,30 @@ public class InstanceTimeSeriesDataHelper {
       return dataPoints;
     } catch (Exception ex) {
       throw new WingsException("Error while getting time series data", ex);
+    }
+  }
+
+  private String getDateTruncParam(QLTimeSeriesAggregation groupByTime) {
+    switch (groupByTime.getTimeAggregationType()) {
+      case DAY:
+        return "day";
+      case HOUR:
+        return "hour";
+      default:
+        log.warn("Unsupported timeAggregationType " + groupByTime.getTimeAggregationType());
+        throw new InvalidRequestException(GENERIC_EXCEPTION_MSG);
+    }
+  }
+
+  private String getGroupByTimeAsInterval(QLTimeSeriesAggregation groupByTime) {
+    switch (groupByTime.getTimeAggregationType()) {
+      case DAY:
+        return "days";
+      case HOUR:
+        return "hours";
+      default:
+        log.warn("Unsupported timeAggregationType " + groupByTime.getTimeAggregationType());
+        throw new InvalidRequestException(GENERIC_EXCEPTION_MSG);
     }
   }
 
@@ -411,23 +440,28 @@ public class InstanceTimeSeriesDataHelper {
 
   public QLTimeSeriesData getTimeSeriesData(String accountId, QLNoOpAggregateFunction aggregateFunction,
       List<QLInstanceFilter> filters, QLTimeSeriesAggregation groupByTime) {
-    //    select percentile_disc(0.95) within group (order by sum_value) as percent, time_bucket_gapfill('1
-    //    hours',reportedat) AS grp_by_time from (select reportedat, sum(INSTANCECOUNT) as sum_value from INSTANCE_STATS
-    //    group by reportedat) INSTANCE_STATS group by grp_by_time order by grp_by_time
+    //    select percentile_disc(0.95) within group (order by sum_value) as percent,
+    //    t_seq_datetime as grp_by_time from HARNESS_TIME_BUCKET_LIST(from, to, 'hours') tb
+    //    left join (select reportedat, sum(INSTANCECOUNT) as sum_value from INSTANCE_STATS
+    //    group by reportedat) as INSTANCE_STATS
+    //    on tb.t_seq_datetime = date_trunc('hour', INSTANCE_STATS.reportedat)
+    //    group by grp_by_time order by grp_by_time
 
     try {
-      StringBuilder queryBuilder = new StringBuilder(302);
-      queryBuilder.append("SELECT PERCENTILE_DISC(0.50) WITHIN GROUP (ORDER BY SUM_VALUE) AS CNT, ");
+      StringBuilder queryBuilder = new StringBuilder(600).append(
+          "SELECT PERCENTILE_DISC(0.50) WITHIN GROUP (ORDER BY SUM_VALUE) AS CNT, T_SEQ_DATETIME AS GRP_BY_TIME FROM HARNESS_TIME_BUCKET_LIST(");
+
       String[] values = extractTime(filters);
       String from = values[0];
       String to = values[1];
 
-      String timeQuerySegment =
-          instanceStatsDataFetcher.getGroupByTimeQueryWithGapFill(groupByTime, "REPORTEDAT", from, to);
+      queryBuilder.append(Instant.parse(from).toEpochMilli() / 1000)
+          .append(',')
+          .append(Instant.parse(to).toEpochMilli() / 1000)
+          .append(",'")
+          .append(getGroupByTimeAsInterval(groupByTime))
+          .append("') TB LEFT JOIN (SELECT REPORTEDAT, SUM(INSTANCECOUNT) AS SUM_VALUE FROM INSTANCE_STATS WHERE ");
 
-      queryBuilder.append(timeQuerySegment)
-          .append(
-              " AS GRP_BY_TIME FROM (SELECT REPORTEDAT, SUM(INSTANCECOUNT) AS SUM_VALUE FROM INSTANCE_STATS WHERE ");
       if (isNotEmpty(filters)) {
         filters.forEach(filter -> {
           String sqlFilter = getSqlFilter(filter);
@@ -444,7 +478,9 @@ public class InstanceTimeSeriesDataHelper {
       addTimeQuery(queryBuilder, QLTimeOperator.BEFORE, to);
       queryBuilder.append(" AND ACCOUNTID = '")
           .append(accountId)
-          .append("' GROUP BY REPORTEDAT) INSTANCE_STATS GROUP BY GRP_BY_TIME ORDER BY GRP_BY_TIME");
+          .append("' GROUP BY REPORTEDAT) AS INSTANCE_STATS ON TB.T_SEQ_DATETIME = DATE_TRUNC('")
+          .append(getDateTruncParam(groupByTime))
+          .append("', INSTANCE_STATS.REPORTEDAT) GROUP BY GRP_BY_TIME ORDER BY GRP_BY_TIME");
 
       List<QLTimeSeriesDataPoint> dataPoints = new ArrayList<>();
       executeTimeSeriesQuery(accountId, queryBuilder.toString(), dataPoints);

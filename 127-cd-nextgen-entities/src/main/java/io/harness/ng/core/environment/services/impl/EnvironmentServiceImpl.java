@@ -24,8 +24,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.visitor.YamlTypes;
@@ -106,12 +109,13 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
@@ -166,11 +170,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public Environment create(@NotNull @Valid Environment environment) {
     try {
       validatePresenceOfRequiredFields(environment.getAccountId(), environment.getIdentifier());
+      validateIdentifierIsUnique(environment.getAccountId(), environment.getOrgIdentifier(),
+          environment.getProjectIdentifier(), environment.getIdentifier());
       modifyEnvironmentRequest(environment);
+
       Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(environment);
       Environment createdEnvironment =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            Environment tempEnvironment = environmentRepository.save(environment);
+            Environment tempEnvironment = environmentRepository.saveGitAware(environment);
             outboxService.save(EnvironmentCreateEvent.builder()
                                    .accountIdentifier(environment.getAccountId())
                                    .orgIdentifier(environment.getOrgIdentifier())
@@ -183,11 +190,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       publishEvent(environment.getAccountId(), environment.getOrgIdentifier(), environment.getProjectIdentifier(),
           environment.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdEnvironment;
-    } catch (DuplicateKeyException ex) {
-      throw new DuplicateFieldException(
-          getDuplicateServiceExistsErrorMessage(environment.getAccountId(), environment.getOrgIdentifier(),
-              environment.getProjectIdentifier(), environment.getIdentifier()),
-          USER_SRE, ex);
+    } catch (Exception ex) {
+      log.error(String.format("Error while saving environment [%s]", environment.getIdentifier()), ex);
+      throw new InvalidRequestException(
+          String.format("Error while saving environment [%s]: %s", environment.getIdentifier(), ex.getMessage()));
     }
   }
 
@@ -922,5 +928,17 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       olderreferredEntityTypes.add(entityDetailProtoDTO.getType().name());
     }
     return olderreferredEntityTypes;
+  }
+
+  private void validateIdentifierIsUnique(
+      String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier) {
+    Optional<Environment> environment =
+        environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
+    if (environment.isPresent()) {
+      throw new DuplicateFieldException(
+          getDuplicateServiceExistsErrorMessage(accountId, orgIdentifier, projectIdentifier, environmentIdentifier),
+          USER_SRE);
+    }
   }
 }

@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.pipeline.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStrategyType;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.deploymentmetadata.DeploymentMetadataServiceHelper;
@@ -40,6 +42,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_ECS})
 @OwnedBy(CDP)
 public class CDNGPipelineConfigurationHelper {
   @Inject private CdEnumFilter enumFilter;

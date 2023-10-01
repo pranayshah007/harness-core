@@ -9,7 +9,9 @@ package io.harness.ng.core.entityusageactivity;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Builder;
+import lombok.Data;
 
+@Data
 @Builder
 @JsonDeserialize(using = EntityUsageDetailDeserializer.class)
 public class EntityUsageDetail {

@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsCFTemplatesType;
+import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
@@ -38,12 +39,12 @@ public class AwsCFTaskParamsRequest extends AwsTaskParams {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     if (fileStoreType == AwsCFTemplatesType.GIT) {
       capabilityList.add(GitConnectionNGCapability.builder()
-                             .gitConfig((GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO())
+                             .gitConfig(gitStoreDelegateConfig.getGitConfigDTO())
                              .encryptedDataDetails(gitStoreDelegateConfig.getEncryptedDataDetails())
                              .sshKeySpecDTO(gitStoreDelegateConfig.getSshKeySpecDTO())
                              .build());
 
-      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
+      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
       if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
         capabilityList.add(SelectorCapability.builder().selectors(gitConfigDTO.getDelegateSelectors()).build());
       }

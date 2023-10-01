@@ -6,12 +6,14 @@
 rulesets = "//tools/config/src/main/resources:harness_pmd_ruleset.xml"
 pmd_tool = "//tools/bazel/pmd:pmd"
 
-def pmd(srcs = ["src/main/**/*"]):
+def pmd(srcs):
     module_name = native.package_name()
+    if srcs == [] or srcs == None:
+        srcs = native.glob(["src/main/**/*"])
     native.genrule(
         name = "pmd",
         outs = ["pmd_report.xml"],
-        srcs = native.glob(srcs),
+        srcs = srcs,
         tags = ["manual", "no-ide", "analysis", "pmd"],
         visibility = ["//visibility:public"],
         cmd = " ".join([

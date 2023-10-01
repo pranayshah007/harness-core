@@ -12,6 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
@@ -81,6 +84,8 @@ import org.jfree.chart.renderer.category.StandardBarPainter;
 import org.jfree.chart.ui.RectangleInsets;
 import org.jfree.data.category.DefaultCategoryDataset;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuilderService {
   @Inject private CEViewService ceViewService;
@@ -198,7 +203,8 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
     // Generating Trend data
     QLCEViewTrendInfo trendData =
-        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregationFunction, viewQueryParams).getTotalCost();
+        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregationFunction, null, viewQueryParams)
+            .getTotalCost();
     if (trendData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for cost trend");
     }
@@ -207,7 +213,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     List<QLCEViewEntityStatsDataPoint> tableData =
         viewsBillingService
             .getEntityStatsDataPointsNg(filters, groupBy, aggregationFunction, sortCriteria, DEFAULT_LIMIT,
-                DEFAULT_OFFSET, viewsQueryHelper.buildQueryParams(accountId, false, false))
+                DEFAULT_OFFSET, null, viewsQueryHelper.buildQueryParams(accountId, false, false))
             .getData();
     if (isEmpty(tableData)) {
       throw new InvalidRequestException("Exception while generating report. No data to for table");
@@ -226,7 +232,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     } else {
       chartData = viewsBillingServiceImpl.convertToQLViewTimeSeriesData(
           viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregationFunction, sortCriteria, false,
-              DEFAULT_LIMIT, viewsQueryHelper.buildQueryParams(accountId, true, false, false, false)),
+              DEFAULT_LIMIT, null, viewsQueryHelper.buildQueryParams(accountId, true, false, false, false)),
           accountId, groupBy);
     }
     if (chartData == null) {

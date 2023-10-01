@@ -44,6 +44,7 @@ import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.data.structure.CollectionUtils;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -128,10 +129,10 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
     Optional<TimeRange> preDeploymentTimeRange =
         verificationJobInstanceService.getPreDeploymentTimeRange(verificationJobInstance.getUuid());
     Set<String> oldHosts = new HashSet<>();
-    if (verificationJobInstance.getServiceInstanceDetailsFromCD() != null
-        && verificationJobInstance.getServiceInstanceDetailsFromCD().isValid()) {
-      oldHosts = new HashSet<>(
-          verificationJobInstance.getServiceInstanceDetailsFromCD().getServiceInstancesBeforeDeployment());
+    if (verificationJobInstance.getServiceInstanceDetails() != null
+        && verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD()) {
+      oldHosts = new HashSet<>(CollectionUtils.emptyIfNull(
+          verificationJobInstance.getServiceInstanceDetails().getServiceInstancesBeforeDeployment()));
     } else if (preDeploymentTimeRange.isPresent()) {
       Set<String> verificationTaskIds =
           verificationTaskService.maybeGetVerificationTaskIds(accountId, verificationJobInstance.getUuid());
@@ -172,17 +173,28 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
 
   private static CanaryBlueGreenAdditionalInfo getBlueGreenAdditionalInfoForAutoVerificationType(
       VerificationJobInstance verificationJobInstance) {
+    AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
+        getAppliedDeploymentAnalysisTypeForAutoVerificationType(verificationJobInstance);
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.CANARY) {
+      return new CanaryAdditionalInfo();
+    } else {
+      return new BlueGreenAdditionalInfo();
+    }
+  }
+
+  public static AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisTypeForAutoVerificationType(
+      VerificationJobInstance verificationJobInstance) {
     Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap =
         verificationJobInstance.getAppliedDeploymentAnalysisTypeMap();
     if (Objects.nonNull(appliedDeploymentAnalysisTypeMap) && appliedDeploymentAnalysisTypeMap.size() > 0) {
       int numberOfCanaryAnalyses = getNumberOfCanaryAnalyses(appliedDeploymentAnalysisTypeMap);
       if (numberOfCanaryAnalyses > appliedDeploymentAnalysisTypeMap.size() / 2) {
-        return new CanaryAdditionalInfo();
+        return AppliedDeploymentAnalysisType.CANARY;
       } else {
-        return new BlueGreenAdditionalInfo();
+        return AppliedDeploymentAnalysisType.ROLLING;
       }
     } else {
-      return new BlueGreenAdditionalInfo();
+      return AppliedDeploymentAnalysisType.ROLLING;
     }
   }
 

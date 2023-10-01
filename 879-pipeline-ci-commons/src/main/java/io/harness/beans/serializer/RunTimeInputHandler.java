@@ -498,4 +498,12 @@ public class RunTimeInputHandler extends BaseRunTimeInputHandler {
 
     return parameterField.getValue();
   }
+
+  public static String resolveString(ParameterField<String> field) {
+    if (field == null || field.isExpression() || field.getValue() == null) {
+      return null;
+    } else {
+      return field.getValue();
+    }
+  }
 }

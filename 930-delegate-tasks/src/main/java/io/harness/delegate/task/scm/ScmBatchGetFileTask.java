@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.task.scm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequestV2;
@@ -35,6 +37,7 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jose4j.lang.JoseException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ScmBatchGetFileTask extends AbstractDelegateRunnableTask {
   @Inject ScmDelegateClient scmDelegateClient;

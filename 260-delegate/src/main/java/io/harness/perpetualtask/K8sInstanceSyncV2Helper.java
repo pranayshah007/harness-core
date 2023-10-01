@@ -15,8 +15,11 @@ import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUST
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.container.ContainerInfo;
@@ -50,6 +53,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
@@ -107,6 +111,7 @@ public class K8sInstanceSyncV2Helper {
               .namespace(namespace)
               .cluster(kubernetesCloudClusterConfig.getClusterName())
               .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
+              .addRegionalParam(kubernetesCloudClusterConfig.isAddRegionalParam())
               .build();
 
         case RANCHER:
@@ -137,15 +142,16 @@ public class K8sInstanceSyncV2Helper {
 
     List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
         requestData.getKubernetesConfig(), requestData.getNamespace(), requestData.getReleaseName(), timeoutMillis);
-    return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList);
+    return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList, requestData.getHelmChartInfo());
   }
   public List<ServerInstanceInfo> getServerInstanceInfoList(
       NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) throws Exception {
     long timeoutMillis =
         K8sTaskHelperBase.getTimeoutMillisFromMinutes(DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT);
 
-    List<ContainerInfo> containerInfoList = k8sTaskHelperBase.getContainerInfos(
-        requestData.getKubernetesConfig(), requestData.getReleaseName(), requestData.getNamespace(), timeoutMillis);
+    List<ContainerInfo> containerInfoList =
+        k8sTaskHelperBase.getContainerInfos(requestData.getKubernetesConfig(), requestData.getReleaseName(),
+            requestData.getNamespace(), requestData.getWorkloadLabelSelectors(), timeoutMillis);
     return K8sContainerToHelmServiceInstanceInfoMapper.toServerInstanceInfoList(
         containerInfoList, requestData.getHelmChartInfo(), HelmVersion.valueOf(requestData.getHelmVersion()));
   }

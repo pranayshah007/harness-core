@@ -29,11 +29,24 @@ timescaledb:
   sslMode: disable
   sslRootCert: ""
 
+batch-job-postgresdb:
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness_batch_qa"
+  timescaledbUsername: "postgres"
+  timescaledbPassword: ""
+  connectTimeout: 300
+  socketTimeout: 900
+  logUnclosedConnections: false
+  loggerLevel: OFF
+  isHealthCheckNeeded: false
+  sslMode: disable
+  sslRootCert: ""
+
 batchQueryConfig:
   queryBatchSize: 1000
   billingDataQueryBatchSize: 4000
   instanceDataBatchSize: 5000
   syncJobDisabled: false
+  disableBatchJobsInCG: true
 
 bulkOperationBatchQueryConfig:
   queryBatchSize: 400
@@ -209,6 +222,8 @@ governanceConfig:
   dkronJobEnabled: true
   awsFaktoryJobType: aws-governance # This should match with worker
   awsFaktoryQueueName: aws-governance # This should match with worker
+  azureFaktoryJobType: azure-governance # This should match with worker
+  azureFaktoryQueueName: azure-governance # This should match with worker
   OOTBAccount: wFHXHD0RRQWoO8tIZT5YVw
   tagsKey: dc
   tagsValue: dc1:1
@@ -232,3 +247,28 @@ managerServiceHttpClientConfig:
 
 batchJobRepository:
   timescaleEnabled: false
+  metadataCleanupSchedule: "0 */30 * * * ?"
+  dataRetentionPeriodInDays: 7
+
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
+cliProxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
+awsServiceEndpointUrls:
+  enabled: false
+  endPointRegion: us-east-1
+  stsEndPointUrl: https://sts.us-east-1.amazonaws.com
+  ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
+  cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com

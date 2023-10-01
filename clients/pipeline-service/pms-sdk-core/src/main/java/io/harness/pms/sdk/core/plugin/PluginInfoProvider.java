@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.sdk.core.plugin;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponseList;
@@ -14,6 +16,8 @@ import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 public interface PluginInfoProvider {
   PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance);
 

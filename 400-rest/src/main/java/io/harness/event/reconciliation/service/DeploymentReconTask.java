@@ -22,8 +22,8 @@ import io.harness.lock.PersistentLocker;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.search.entities.deployment.DeploymentExecutionEntity;
@@ -111,7 +111,7 @@ public class DeploymentReconTask implements Runnable {
                          DATA_MIGRATION_CRON_LOCK_PREFIX + account.getUuid(),
                          Duration.ofSeconds(DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS))) {
                   if (lock == null) {
-                    log.error("Unable to fetch lock for running deployment data migration for account : {}",
+                    log.debug("Unable to fetch lock for running deployment data migration for account : {}",
                         account.getUuid());
                     return;
                   }

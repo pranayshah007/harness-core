@@ -76,7 +76,7 @@ func (s *Streamer) Tail(ctx context.Context, key string) (<-chan *stream.Line, <
 	return stream.subscribe(ctx)
 }
 
-func (s *Streamer) ListPrefix(ctx context.Context, prefix string) ([]string, error) {
+func (s *Streamer) ListPrefix(ctx context.Context, prefix string, scanBatch int64) ([]string, error) {
 	s.Lock()
 	defer s.Unlock()
 	keys := []string{}

@@ -26,10 +26,12 @@ public interface RoleService {
 
   PageResponse<Role> list(
       @NotNull PageRequest pageRequest, @Valid @NotNull RoleFilter roleFilter, boolean hideInternal);
+  PageResponse<RoleWithPrincipalCount> listWithPrincipalCount(
+      @NotNull PageRequest pageRequest, @Valid @NotNull RoleFilter roleFilter, boolean hideInternal);
 
   Optional<Role> get(@NotEmpty String identifier, String scopeIdentifier, @NotNull ManagedFilter managedFilter);
 
-  RoleUpdateResult update(@NotNull @Valid Role role);
+  Role update(@NotNull @Valid Role role);
 
   boolean removePermissionFromRoles(@NotEmpty String permissionIdentifier, @Valid @NotNull RoleFilter roleFilter);
 
@@ -39,5 +41,7 @@ public interface RoleService {
 
   Role deleteManaged(@NotEmpty String identifier);
 
+  // NOTE: This method should be used only for deleting roles on scope deletion as here we are generating outbox event
+  // for ACLs processing.
   long deleteMulti(@Valid @NotNull RoleFilter roleFilter);
 }

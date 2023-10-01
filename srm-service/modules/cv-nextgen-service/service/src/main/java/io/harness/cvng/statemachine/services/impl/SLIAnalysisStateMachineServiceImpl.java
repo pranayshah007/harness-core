@@ -24,7 +24,6 @@ import io.harness.cvng.statemachine.entities.SLIMetricAnalysisState;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import java.time.Duration;
 import java.util.List;
 
 public class SLIAnalysisStateMachineServiceImpl extends AnalysisStateMachineServiceImpl {
@@ -52,11 +51,6 @@ public class SLIAnalysisStateMachineServiceImpl extends AnalysisStateMachineServ
     stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_FOR_SLI);
     stateMachine.setCurrentState(firstState);
     List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(stateMachine.getUuid());
-    if (AnalysisStatus.getFinalStates().contains(stateMachine.getStatus())) {
-      Duration timeDuration = Duration.between(stateMachine.getStartTime(), stateMachine.getAnalysisEndTime());
-      cvngLogTags.addAll(
-          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.TOTAL_DURATION, timeDuration));
-    }
     executionLogService.getLogger(stateMachine)
         .log(stateMachine.getLogLevel(), cvngLogTags, "Analysis state machine status: " + stateMachine.getStatus());
     return stateMachine;

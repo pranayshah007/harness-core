@@ -40,9 +40,21 @@ public interface GitSyncableEntity extends NGAccess {
 
   void setFilePath(String filePath);
 
-  boolean isEntityInvalid();
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default boolean isEntityInvalid() {
+    return false;
+  }
 
-  void setEntityInvalid(boolean isEntityInvalid);
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default void setEntityInvalid(boolean isEntityInvalid) {
+    // Do nothing; this method is deprecated
+  }
 
   String getInvalidYamlString();
 }

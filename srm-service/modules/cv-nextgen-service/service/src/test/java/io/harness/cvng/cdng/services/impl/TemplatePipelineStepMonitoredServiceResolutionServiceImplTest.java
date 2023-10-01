@@ -36,6 +36,7 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -70,6 +71,8 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   private ServiceEnvironmentParams serviceEnvironmentParams;
   private MonitoredServiceService mockMonitoredServiceService;
 
+  private Ambiance ambiance = mock(Ambiance.class);
+
   @Before
   public void setup() throws IllegalAccessException, IOException {
     mockMonitoredServiceService = mock(MonitoredServiceService.class);
@@ -87,7 +90,8 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
     JsonNode templateInputsNode = objectMapper.readTree(testFile);
     templateMonitoredServiceSpec =
         builderFactory.getTemplateMonitoredServiceSpecBuilder().templateInputs(templateInputsNode).build();
-    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
+    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYamlWithPipelineVariables(any(), any(), any()))
+        .thenReturn(monitoredServiceDTO);
     monitoredServiceNode = getDefaultMonitoredServiceNode();
     FieldUtils.writeField(templateService, "monitoredServiceService", mockMonitoredServiceService, true);
   }
@@ -97,7 +101,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   @Category(UnitTests.class)
   public void testGetMonitoredServiceIdentifier() {
     String actualIdentifier =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getMonitoredServiceIdentifier();
     assertThat(actualIdentifier).isNotBlank();
   }
@@ -107,7 +111,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   @Category(UnitTests.class)
   public void testGetMonitoredServiceTemplateIdentifier() {
     String templateIdentifier =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getMonitoredServiceTemplateIdentifier();
     assertThat(templateIdentifier).isNotBlank();
   }
@@ -117,7 +121,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   @Category(UnitTests.class)
   public void testGetMonitoredServiceTemplateVersionLabel() {
     String versionLabel =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getMonitoredServiceTemplateVersionLabel();
     assertThat(versionLabel).isNotBlank();
   }
@@ -127,7 +131,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   @Category(UnitTests.class)
   public void testGetCVConfigs() {
     List<CVConfig> actualCvConfigs =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(1);
     assertThat(actualCvConfigs.get(0).getDataSourceName()).isEqualTo(DataSourceType.APP_DYNAMICS);
@@ -138,9 +142,10 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetCVConfigs_monitoredServiceDtoDoesNotExist() {
-    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(null);
+    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYamlWithPipelineVariables(any(), any(), any()))
+        .thenReturn(null);
     List<CVConfig> actualCvConfigs =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(0);
   }
@@ -151,7 +156,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   public void testGetCVConfigs_healthSourcesDoNotExist() {
     monitoredServiceDTO.getSources().setHealthSources(Collections.emptySet());
     List<CVConfig> actualCvConfigs =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(0);
   }
@@ -162,7 +167,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   public void testGetCVConfigs_SourcesDoNotExist() {
     monitoredServiceDTO.setSources(null);
     List<CVConfig> actualCvConfigs =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(0);
   }
@@ -172,7 +177,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   @Category(UnitTests.class)
   public void testManagePerpetualTasks_verifyPerpetualTasksGotCreated() {
     ResolvedCVConfigInfo resolvedCVConfigInfo =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode);
     String verificationJobInstanceId = generateUuid();
     templateService.managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
     Query<MonitoringSourcePerpetualTask> query =
@@ -189,7 +194,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   @Category(UnitTests.class)
   public void testManagePerpetualTasks_verifySideKickGotCreated() {
     ResolvedCVConfigInfo resolvedCVConfigInfo =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode);
     String verificationJobInstanceId = generateUuid();
     templateService.managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
     Query<SideKick> query = hPersistence.createQuery(SideKick.class, excludeAuthority);
@@ -209,7 +214,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImplTest exten
   public void testManagePerpetualTasks_noHealthSources() {
     monitoredServiceDTO.setSources(null);
     ResolvedCVConfigInfo resolvedCVConfigInfo =
-        templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+        templateService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode);
     String verificationJobInstanceId = generateUuid();
     templateService.managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
     List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasks =

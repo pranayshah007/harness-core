@@ -45,6 +45,7 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -108,7 +109,6 @@ public class NextStepHandlerTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecutionId).setPlanId(planId).build();
     NodeExecution nodeExecution = NodeExecution.builder()
                                       .uuid(nodeExecutionId)
-                                      .planNode(PlanNode.builder().build())
                                       .ambiance(ambiance)
                                       .status(Status.QUEUED)
                                       .mode(ExecutionMode.TASK)
@@ -178,18 +178,13 @@ public class NextStepHandlerTest extends CategoryTest {
                  .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("parentId"), any());
-    doReturn(NodeExecution.builder()
-                 .planNode(IdentityPlanNode.builder().build())
-                 .uuid("originalNodeExecutionId")
-                 .nextId("nextId")
-                 .build())
+    doReturn(NodeExecution.builder().uuid("originalNodeExecutionId").nextId("nextId").build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("originalNodeExecutionId"), any());
 
-    doReturn(
-        NodeExecution.builder().planNode(IdentityPlanNode.builder().build()).uuid("nextId").oldRetry(false).build())
+    doReturn(NodeExecution.builder().uuid(PlanCreatorConstants.NEXT_ID).oldRetry(false).build())
         .when(nodeExecutionService)
-        .getWithFieldsIncluded(eq("nextId"), any());
+        .getWithFieldsIncluded(eq(PlanCreatorConstants.NEXT_ID), any());
 
     // Since currentNode is of type planNode and parentNodeExecution.nodeType is identityPlanNode. So identityNode will
     // be created for current node.
@@ -203,7 +198,8 @@ public class NextStepHandlerTest extends CategoryTest {
     assertThat(savedIdentityNode.getName()).isEqualTo(planNode.getName());
     assertThat(savedIdentityNode.getIdentifier()).isEqualTo(planNode.getIdentifier());
     assertThat(savedIdentityNode.getStepType()).isEqualTo(planNode.getStepType());
-    assertThat(((IdentityPlanNode) savedIdentityNode).getOriginalNodeExecutionId()).isEqualTo("nextId");
+    assertThat(((IdentityPlanNode) savedIdentityNode).getOriginalNodeExecutionId())
+        .isEqualTo(PlanCreatorConstants.NEXT_ID);
   }
 
   @Test

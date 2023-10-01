@@ -49,7 +49,7 @@ public class NGActivityEntityToDTOMapper {
             .activityStatusMessage(((EntityUsageActivityDetail) activity).getActivityStatusMessage())
             .errors(entityUsageActivity.getErrors())
             .errorSummary(entityUsageActivity.getErrorSummary())
-            .status(entityUsageActivity.getStatus())
+            .activityMetadata(entityUsageActivity.getActivityMetadata())
             .build();
       case ENTITY_UPDATE:
       case ENTITY_CREATION:

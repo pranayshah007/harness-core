@@ -56,6 +56,15 @@ public class InputSetTemplateHelper {
     return removeNonRequiredStages(template, pipelineYaml, stageIdentifiers, false);
   }
 
+  public String createTemplateFromWithDefaultValuesPipelineForGivenStages(
+      String pipelineYaml, List<String> stageIdentifiers) {
+    String template = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(pipelineYaml);
+    if (EmptyPredicate.isEmpty(template)) {
+      return null;
+    }
+    return removeNonRequiredStages(template, pipelineYaml, stageIdentifiers, true);
+  }
+
   public JsonNode createTemplateFromPipelineForGivenStages(JsonNode pipelineJsonNode, List<String> stageIdentifiers) {
     JsonNode template = RuntimeInputFormHelper.createRuntimeInputFormWithJsonNode(pipelineJsonNode, true);
     if (isEmpty(template)) {

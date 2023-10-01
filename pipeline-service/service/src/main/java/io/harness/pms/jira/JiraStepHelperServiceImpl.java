@@ -9,9 +9,14 @@ package io.harness.pms.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static software.wings.delegatetasks.ShellScriptTaskHandlerNG.COMMAND_UNIT;
+
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGTaskType;
@@ -50,8 +55,9 @@ import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 public class JiraStepHelperServiceImpl implements JiraStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
@@ -70,7 +76,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
 
   @Override
   public TaskRequest prepareTaskRequest(JiraTaskNGParametersBuilder paramsBuilder, Ambiance ambiance,
-      String connectorRef, String timeStr, String taskName) {
+      String connectorRef, String timeStr, String taskName, List<TaskSelector> delegateSelectors) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
         connectorRef, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
@@ -107,12 +113,8 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
                             .parameters(new Object[] {params})
                             .build();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
-        Collections.emptyList(), false, taskName,
-        params.getDelegateSelectors()
-            .stream()
-            .map(s -> TaskSelector.newBuilder().setSelector(s).build())
-            .collect(Collectors.toList()),
-        Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
+        Collections.singletonList(COMMAND_UNIT), true, taskName, delegateSelectors, Scope.PROJECT, EnvironmentType.ALL,
+        false, Collections.emptyList(), false, null);
   }
 
   @Override

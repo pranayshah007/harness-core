@@ -6,7 +6,9 @@
  */
 
 package software.wings;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
@@ -20,6 +22,8 @@ import software.wings.beans.TaskType;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @UtilityClass
 public class TaskTypeToRequestResponseMapper {
   public static Optional<Class<? extends TaskParameters>> getTaskRequestClass(TaskType taskType) {
@@ -27,8 +31,10 @@ public class TaskTypeToRequestResponseMapper {
       case DLITE_CI_VM_INITIALIZE_TASK:
         return Optional.of(DliteVmInitializeTaskParams.class);
       case DLITE_CI_VM_EXECUTE_TASK:
+      case DLITE_CI_VM_EXECUTE_TASK_V2:
         return Optional.of(DliteVmExecuteStepTaskParams.class);
       case DLITE_CI_VM_CLEANUP_TASK:
+      case DLITE_CI_VM_CLEANUP_TASK_V2:
         return Optional.of(DliteVmCleanupTaskParams.class);
       default:
         return Optional.empty();
@@ -41,7 +47,9 @@ public class TaskTypeToRequestResponseMapper {
         return Optional.of(StepStatusTaskResponseData.class);
       case DLITE_CI_VM_INITIALIZE_TASK:
       case DLITE_CI_VM_EXECUTE_TASK:
+      case DLITE_CI_VM_EXECUTE_TASK_V2:
       case DLITE_CI_VM_CLEANUP_TASK:
+      case DLITE_CI_VM_CLEANUP_TASK_V2:
         return Optional.of(VmTaskExecutionResponse.class);
       default:
         return Optional.empty();

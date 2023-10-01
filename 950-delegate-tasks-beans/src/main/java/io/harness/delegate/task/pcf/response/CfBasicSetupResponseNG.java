@@ -7,17 +7,28 @@
 
 package io.harness.delegate.task.pcf.response;
 
+import static java.util.Objects.isNull;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
+import io.harness.delegate.cdng.execution.StepInstanceInfo;
+import io.harness.delegate.cdng.execution.TasStepInstanceInfo;
 import io.harness.logging.CommandExecutionStatus;
 
+import java.util.Collections;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.NonFinal;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
@@ -37,5 +48,33 @@ public class CfBasicSetupResponseNG implements CfCommandResponseNG {
   @Override
   public void setCommandUnitsProgress(UnitProgressData unitProgressData) {
     this.unitProgressData = unitProgressData;
+  }
+  @Override
+  public StepExecutionInstanceInfo getStepExecutionInstanceInfo() {
+    return StepExecutionInstanceInfo.builder()
+        .serviceInstancesBefore(convertTasApplicationToTasStepInstanceInfo(this.currentProdInfo))
+        .deployedServiceInstances(convertTasApplicationToTasStepInstanceInfo(
+            filterNewTasApplication(this.currentProdInfo, this.newApplicationInfo)))
+        .serviceInstancesAfter(convertTasApplicationToTasStepInstanceInfo(this.newApplicationInfo))
+        .build();
+  }
+
+  private TasApplicationInfo filterNewTasApplication(
+      TasApplicationInfo currentProdInfo, TasApplicationInfo newApplicationInfo) {
+    if (isNull(currentProdInfo)) {
+      return newApplicationInfo;
+    }
+    if (isNull(newApplicationInfo)
+        || currentProdInfo.getApplicationGuid().equals(newApplicationInfo.getApplicationGuid())) {
+      return null;
+    }
+    return newApplicationInfo;
+  }
+
+  private List<StepInstanceInfo> convertTasApplicationToTasStepInstanceInfo(TasApplicationInfo tasApplicationInfo) {
+    if (isNull(tasApplicationInfo)) {
+      return Collections.emptyList();
+    }
+    return List.of(TasStepInstanceInfo.builder().applicationGuid(tasApplicationInfo.getApplicationGuid()).build());
   }
 }

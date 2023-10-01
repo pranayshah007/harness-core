@@ -6,12 +6,16 @@
  */
 
 package io.harness.delegate.task.winrm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class DownloadWinRmScript {
@@ -21,6 +25,13 @@ public class DownloadWinRmScript {
   public static final String X_AMZ_CONTENT_SHA256 = "${X_AMZ_CONTENT_SHA256}";
   public static final String X_AMZ_DATE = "${X_AMZ_DATE}";
   public static final String X_AMZ_SECURITY_TOKEN = "${X_AMZ_SECURITY_TOKEN}";
+  public static final String TOKEN = "${TOKEN}";
+  public static final String AZURE_ARTIFACTS_URL = "${AZURE_ARTIFACTS_URL}";
+  public static final String FEED = "${FEED}";
+  public static final String PROJECT = "${PROJECT}";
+  public static final String PKG_NAME = "${PKG_NAME}";
+  public static final String PKG_VERSION = "${PKG_VERSION}";
+  public static final String DESTINATION_PATH = "${DESTINATION_PATH}";
 
   public static final String DOWNLOAD_ARTIFACT_BY_PROXY_PS = ""
       + "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n"
@@ -96,4 +107,16 @@ public class DownloadWinRmScript {
   public static final String JENKINS_DOWNLOAD_ARTIFACT_USING_CREDENTIALS_PS = BASE_JENKINS_DOWNLOAD_SCRIPT + "\n"
       + "$webClient.Headers[[System.Net.HttpRequestHeader]::Authorization] = \"${AUTHORIZATION}\"\n"
       + "$webClient.DownloadFile($url, $localfilename)\n";
+
+  public static final String AZURE_UPACK_DOWNLOAD_ARTIFACT_BASH_ORG = "export AZURE_DEVOPS_EXT_PAT=${TOKEN}\n"
+      + "az artifacts universal download --organization \"${AZURE_ARTIFACTS_URL}\" --feed \"${FEED}\" --name \"${PKG_NAME}\" --version \"${PKG_VERSION}\" --path ${DESTINATION_PATH}";
+
+  public static final String AZURE_UPACK_DOWNLOAD_ARTIFACT_BASH_PROJ = "export AZURE_DEVOPS_EXT_PAT=${TOKEN}\n"
+      + "az artifacts universal download --organization \"${AZURE_ARTIFACTS_URL}\" --project=\"${PROJECT}\" --scope project --feed \"${FEED}\" --name \"${PKG_NAME}\" --version \"${PKG_VERSION}\" --path ${DESTINATION_PATH}";
+
+  public static final String AZURE_UPACK_DOWNLOAD_ARTIFACT_PS_ORG = "$env:AZURE_DEVOPS_EXT_PAT = \"${TOKEN}\"\n"
+      + "az artifacts universal download --organization \"${AZURE_ARTIFACTS_URL}\" --feed \"${FEED}\" --name \"${PKG_NAME}\" --version \"${PKG_VERSION}\" --path ${DESTINATION_PATH}";
+
+  public static final String AZURE_UPACK_DOWNLOAD_ARTIFACT_PS_PROJ = "$env:AZURE_DEVOPS_EXT_PAT = \"${TOKEN}\"\n"
+      + "az artifacts universal download --organization \"${AZURE_ARTIFACTS_URL}\" --project=\"${PROJECT}\" --scope project --feed \"${FEED}\" --name \"${PKG_NAME}\" --version \"${PKG_VERSION}\" --path ${DESTINATION_PATH}";
 }

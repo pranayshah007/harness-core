@@ -6,15 +6,19 @@
  */
 
 package io.harness.template.async;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.logging.AutoLogContext;
 
 import software.wings.beans.EntityType;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateAsyncSetupUsageLogContext extends AutoLogContext {
   public static final String ENTITY_TYPE = "entityType";

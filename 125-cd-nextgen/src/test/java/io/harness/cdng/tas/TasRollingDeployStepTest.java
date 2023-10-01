@@ -62,6 +62,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -141,7 +142,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
     StepElementParameters stepElementParameters =
         StepElementParameters.builder().type("BasicAppSetup").spec(parameters).build();
     assertThatThrownBy(() -> tasRollingDeployStep.validateResources(ambiance, stepElementParameters))
-        .hasMessage("CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.");
+        .hasMessage("NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.");
   }
 
   private Ambiance getAmbiance() {
@@ -160,7 +161,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(tasRollingDeployStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(tasRollingDeployStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test
@@ -199,7 +200,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
     List<String> routeMaps = Arrays.asList(additionalRoute);
     doReturn(routeMaps)
         .when(tasStepHelper)
-        .getRouteMaps(tasExecutionPassThroughData.getTasManifestsPackage().getManifestYml(),
+        .getRouteMaps(tasExecutionPassThroughData.getTasManifestsPackage(),
             getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
 
     Mockito.mockStatic(TaskRequestsUtils.class);
@@ -253,7 +254,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
     List<String> routeMaps = Arrays.asList(additionalRoute);
     doReturn(routeMaps)
         .when(tasStepHelper)
-        .getRouteMaps(tasExecutionPassThroughData.getTasManifestsPackage().getManifestYml(),
+        .getRouteMaps(tasExecutionPassThroughData.getTasManifestsPackage(),
             getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
 
     Mockito.mockStatic(TaskRequestsUtils.class);
@@ -331,7 +332,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
         .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
 
     StepResponse stepResponse1 =
-        tasRollingDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+        tasRollingDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
             TasExecutionPassThroughData.builder().tasManifestsPackage(TasManifestsPackage.builder().build()).build(),
             () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.SUCCEEDED);
@@ -388,7 +389,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
         .when(instanceInfoService)
         .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
 
-    StepResponse stepResponse1 = tasRollingDeployStep.finalizeExecutionWithSecurityContext(
+    StepResponse stepResponse1 = tasRollingDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, TasExecutionPassThroughData.builder().build(), () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.FAILED);
   }
@@ -444,7 +445,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
         .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
 
     StepResponse stepResponse1 =
-        tasRollingDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+        tasRollingDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
             StepExceptionPassThroughData.builder().unitProgressData(unitProgressData).errorMessage("error").build(),
             () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.FAILED);
@@ -500,7 +501,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
         .when(instanceInfoService)
         .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
 
-    tasRollingDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+    tasRollingDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
         TasExecutionPassThroughData.builder().build(), () -> { throw new Exception("exception"); });
   }
 
@@ -560,7 +561,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
         .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
 
     StepResponse stepResponse1 =
-        tasRollingDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+        tasRollingDeployStep.finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
             TasExecutionPassThroughData.builder().tasManifestsPackage(TasManifestsPackage.builder().build()).build(),
             () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.SUCCEEDED);

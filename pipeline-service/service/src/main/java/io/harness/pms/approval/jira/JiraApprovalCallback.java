@@ -6,14 +6,16 @@
  */
 
 package io.harness.pms.approval.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.exception.ApprovalStepNGException;
@@ -27,10 +29,13 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.approval.AbstractApprovalCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.misc.TicketNG;
+import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.evaluation.CriteriaEvaluator;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
@@ -48,7 +53,9 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Slf4j
@@ -58,6 +65,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
 
   @Builder
   public JiraApprovalCallback(String approvalInstanceId) {
@@ -69,9 +77,12 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceService.get(approvalInstanceId);
     try (AutoLogContext ignore = instance.autoLogContext()) {
       pushInternal(response);
+    } finally {
+      if (ParameterField.isNotNull(instance.getRetryInterval())) {
+        resetNextIteration(instance);
+      }
     }
   }
-
   private void pushInternal(Map<String, ResponseData> response) {
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceService.get(approvalInstanceId);
     log.info("Jira Approval Instance callback for instance id - {}", instance.getId());
@@ -87,10 +98,14 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     JiraTaskNGResponse jiraTaskNGResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
-              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
-              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+
+      // fallback : if inflated response is obtained, use it directly
+      if (responseData instanceof BinaryResponseData) {
+        BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+        responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+                ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+                : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+      }
       if (responseData instanceof ErrorNotifyResponseData) {
         log.warn("Jira Approval Instance failed to fetch jira issue for instance id - {}", instance.getId());
         handleErrorNotifyResponse(logCallback, (ErrorNotifyResponseData) responseData, "Failed to fetch jira issue:");
@@ -115,8 +130,10 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
       if (!validateIssueType(instance, jiraTaskNGResponse)) {
         return;
       }
-
       logCallback.saveExecutionLog(String.format("Issue url: %s", jiraTaskNGResponse.getIssue().getUrl()));
+
+      updateKeyListToFetchFilteredFields(logCallback, jiraTaskNGResponse.getIssue(), instance);
+
     } catch (Exception ex) {
       logCallback.saveExecutionLog(
           LogHelper.color(String.format("Error fetching jira issue response: %s. Retrying in sometime...",
@@ -191,6 +208,35 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
   protected void updateTicketFieldsInApprovalInstance(TicketNG ticket, ApprovalInstance instance) {
     approvalInstanceService.updateTicketFieldsInJiraApprovalInstance(
         (JiraApprovalInstance) instance, (JiraIssueNG) ticket);
+  }
+
+  @Override
+  protected void updateKeyListToFetchFilteredFields(
+      NGLogCallback logCallback, TicketNG ticket, ApprovalInstance instance) {
+    JiraApprovalInstance jiraApprovalInstance = (JiraApprovalInstance) instance;
+    if (isNull(jiraApprovalInstance.getKeyListInKeyValueCriteria())) {
+      // this block is expected to run once per Jira approval as fetchKeysForApprovalInstance returns non-null value.
+      // can run again in case of error while updating instance
+      log.info("Fetching keys list in Key Value criteria");
+      String keyListInKeyValueCriteria =
+          ApprovalUtils.fetchKeysForApprovalInstance(jiraApprovalInstance, (JiraIssueNG) ticket);
+      if (StringUtils.isNotBlank(keyListInKeyValueCriteria)) {
+        logCallback.saveExecutionLog(
+            String.format("Fields to be fetched for jira issue: %s", keyListInKeyValueCriteria));
+      }
+      try {
+        approvalInstanceService.updateKeyListInKeyValueCriteria(
+            jiraApprovalInstance.getId(), keyListInKeyValueCriteria);
+      } catch (Exception ex) {
+        // ignore the exception, retry updating in next callback event
+        log.warn("Failed to update keyListInKeyValueCriteria in approval instance", ex);
+      }
+    }
+  }
+
+  private void resetNextIteration(JiraApprovalInstance instance) {
+    approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
+    irregularApprovalInstanceHandler.wakeup();
   }
 
   @Override

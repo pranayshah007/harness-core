@@ -6,7 +6,12 @@
  */
 
 package io.harness.cdng.serverless;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_SERVERLESS})
 public enum ArtifactType {
   ECR("ECR"),
   ARTIFACTORY("ARTIFACTORY"),

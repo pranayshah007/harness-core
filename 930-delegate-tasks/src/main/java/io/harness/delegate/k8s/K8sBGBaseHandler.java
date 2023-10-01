@@ -6,14 +6,15 @@
  */
 
 package io.harness.delegate.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
 
@@ -26,7 +27,10 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
@@ -60,6 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -118,6 +123,18 @@ public class K8sBGBaseHandler {
     k8sTaskHelperBase.describe(client, k8sDelegateTaskParams, executionLogCallback);
   }
 
+  public List<K8sPod> getExistingPods(
+      long timeoutInMillis, KubernetesConfig kubernetesConfig, String releaseName, LogCallback logCallback) {
+    String namespace = kubernetesConfig.getNamespace();
+    try {
+      logCallback.saveExecutionLog("\nFetching existing pod list.");
+      return k8sTaskHelperBase.getPodDetails(kubernetesConfig, namespace, releaseName, timeoutInMillis);
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(e.getMessage(), ERROR, FAILURE);
+    }
+    return emptyList();
+  }
+
   public String getPrimaryColor(
       KubernetesResource primaryService, KubernetesConfig kubernetesConfig, LogCallback executionLogCallback) {
     V1Service primaryServiceInCluster =
@@ -129,6 +146,27 @@ public class K8sBGBaseHandler {
 
     return (primaryServiceInCluster != null) ? getColorFromService(primaryServiceInCluster)
                                              : HarnessLabelValues.colorDefault;
+  }
+
+  @VisibleForTesting
+  public List<K8sPod> getAllPodsNG(long timeoutInMillis, KubernetesConfig kubernetesConfig,
+      KubernetesResource managedWorkload, String primaryColor, String stageColor, String releaseName,
+      List<K8sPod> existingPodList) throws Exception {
+    List<K8sPod> allPods = new ArrayList<>();
+    String namespace = managedWorkload.getResourceId().getNamespace();
+    final List<K8sPod> stagePods =
+        k8sTaskHelperBase.getPodDetailsWithColor(kubernetesConfig, namespace, releaseName, stageColor, timeoutInMillis);
+    final List<K8sPod> primaryPods = k8sTaskHelperBase.getPodDetailsWithColor(
+        kubernetesConfig, namespace, releaseName, primaryColor, timeoutInMillis);
+    Set<String> olderPodNames = existingPodList.stream().map(K8sPod::getName).collect(Collectors.toSet());
+    stagePods.forEach(pod -> {
+      if (!olderPodNames.contains(pod.getName())) {
+        pod.setNewPod(true);
+      }
+    });
+    allPods.addAll(stagePods);
+    allPods.addAll(primaryPods);
+    return allPods;
   }
 
   @VisibleForTesting

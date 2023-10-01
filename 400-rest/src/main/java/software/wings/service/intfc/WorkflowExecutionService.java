@@ -6,11 +6,13 @@
  */
 
 package software.wings.service.intfc;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.PageRequest;
@@ -24,7 +26,6 @@ import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.ApprovalAuthorization;
 import software.wings.beans.ApprovalDetails;
 import software.wings.beans.ArtifactVariable;
-import software.wings.beans.AwsLambdaExecutionSummary;
 import software.wings.beans.BuildExecutionSummary;
 import software.wings.beans.CountsByStatuses;
 import software.wings.beans.ElementExecutionSummary;
@@ -37,16 +38,17 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.PipelineStageGroupedInfo;
 import software.wings.beans.RequiredExecutionArgs;
-import software.wings.beans.StateExecutionElement;
 import software.wings.beans.StateExecutionInterrupt;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.approval.PreviousApprovalDetails;
+import software.wings.beans.aws.AwsLambdaExecutionSummary;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.WorkflowVariablesMetadata;
+import software.wings.beans.execution.StateExecutionElement;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.trigger.Trigger;
 import software.wings.infra.InfrastructureDefinition;
@@ -74,6 +76,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public interface WorkflowExecutionService extends StateStatusUpdate {
@@ -112,7 +115,18 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   WorkflowExecution getExecutionWithoutSummary(@NotNull String appId, @NotNull String workflowExecutionId);
 
-  WorkflowExecution getWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
+  /**
+   * Get a workflow execution using appId and workflowExecutionId (collection primary key).
+   *
+   * <p>As we know the {@code workflowExecution} collection has a higher number of fields and nested objects, the caller
+   * can optimize the resource usage when setting which fields want to be retrieved. When fields are provided the fields
+   * appId, accountId, and uuid are returned retrieved too by default.
+   *
+   * @param fields which fields should be retrieved, leave it empty to retrieve all document fields.
+   *
+   * @return a workflow execution or {@code null} when not found.
+   */
+  WorkflowExecution getWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId, String... fields);
 
   WorkflowExecution getUpdatedWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
 
@@ -370,4 +384,6 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   void checkDeploymentFreezeRejectedExecution(
       String accountId, PreDeploymentChecker deploymentFreezeChecker, WorkflowExecution workflowExecution);
+
+  Integer getDeploymentCount();
 }

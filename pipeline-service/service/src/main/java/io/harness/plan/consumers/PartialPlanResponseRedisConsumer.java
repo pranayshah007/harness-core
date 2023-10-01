@@ -8,6 +8,7 @@
 package io.harness.plan.consumers;
 
 import static io.harness.OrchestrationEventsFrameworkConstants.PARTIAL_PLAN_EVENT_CONSUMER;
+import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,6 +19,7 @@ import io.harness.queue.QueueController;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -27,7 +29,8 @@ public class PartialPlanResponseRedisConsumer
   @Inject
   public PartialPlanResponseRedisConsumer(@Named(PARTIAL_PLAN_EVENT_CONSUMER) Consumer redisConsumer,
       PartialPlanResponseEventMessageListener sdkResponseMessageListener,
-      @Named("pmsEventsCache") Cache<String, Integer> eventsCache, QueueController queueController) {
-    super(redisConsumer, sdkResponseMessageListener, eventsCache, queueController);
+      @Named("pmsEventsCache") Cache<String, Integer> eventsCache, QueueController queueController,
+      @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(redisConsumer, sdkResponseMessageListener, eventsCache, queueController, executorService);
   }
 }

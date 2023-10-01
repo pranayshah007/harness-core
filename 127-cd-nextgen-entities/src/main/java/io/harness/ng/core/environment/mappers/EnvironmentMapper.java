@@ -17,8 +17,15 @@ import static io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentBasicInfo;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
@@ -27,6 +34,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.validation.JavaxValidator;
@@ -41,7 +49,8 @@ import javax.validation.Valid;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Pair;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class EnvironmentMapper {
@@ -131,6 +140,37 @@ public class EnvironmentMapper {
         .tags(convertToMap(environment.getTags()))
         .version(environment.getVersion())
         .yaml(environment.getYaml())
+        .entityGitDetails(getEntityGitDetails(environment))
+        .storeType(environment.getStoreType())
+        .connectorRef(environment.getConnectorRef())
+        .cacheResponseMetadataDTO(getCacheResponse(environment))
+        .build();
+  }
+
+  private EntityGitDetails getEntityGitDetails(Environment environment) {
+    if (environment.getStoreType() == StoreType.REMOTE) {
+      return GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata();
+    }
+    return null; // Default if storeType is not remote
+  }
+
+  private CacheResponseMetadataDTO getCacheResponse(Environment environment) {
+    if (environment.getStoreType() == StoreType.REMOTE) {
+      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+
+      if (cacheResponse != null) {
+        return createCacheResponseMetadataDTO(cacheResponse);
+      }
+    }
+
+    return null;
+  }
+
+  private CacheResponseMetadataDTO createCacheResponseMetadataDTO(CacheResponse cacheResponse) {
+    return CacheResponseMetadataDTO.builder()
+        .cacheState(cacheResponse.getCacheState())
+        .ttlLeft(cacheResponse.getTtlLeft())
+        .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
         .build();
   }
 

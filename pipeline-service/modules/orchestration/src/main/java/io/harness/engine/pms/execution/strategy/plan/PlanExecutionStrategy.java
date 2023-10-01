@@ -46,6 +46,7 @@ import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.springdata.TransactionHelper;
+import io.harness.utils.ExecutionModeUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
@@ -168,7 +169,11 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
     try {
       orchestrationStartSubject.fireInform(OrchestrationStartObserver::onStart,
-          OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
+          OrchestrationStartInfo.builder()
+              .ambiance(ambiance)
+              .planExecutionMetadata(planExecutionMetadata)
+              .startStatus(status)
+              .build());
     } catch (Exception e) {
       // Marking the planExecution Errored if OrchestrationStartObservers failed.
       planExecutionService.markPlanExecutionErrored(ambiance.getPlanExecutionId());
@@ -180,7 +185,8 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   @Override
   public void endNodeExecution(Ambiance ambiance) {
-    Status status = planExecutionService.calculateStatus(ambiance.getPlanExecutionId());
+    Status status = planExecutionService.calculateStatus(
+        ambiance.getPlanExecutionId(), ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode()));
     PlanExecution planExecution = planExecutionService.updateStatus(
         ambiance.getPlanExecutionId(), status, ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
     if (planExecution == null) {
@@ -192,7 +198,7 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
     if (planExecution != null) {
       eventEmitter.emitEvent(buildEndEvent(ambiance, planExecution.getStatus()));
     }
-    orchestrationEndSubject.fireInform(OrchestrationEndObserver::onEnd, ambiance);
+    orchestrationEndSubject.fireInform(OrchestrationEndObserver::onEnd, ambiance, status);
   }
 
   private OrchestrationEvent buildEndEvent(Ambiance ambiance, Status status) {

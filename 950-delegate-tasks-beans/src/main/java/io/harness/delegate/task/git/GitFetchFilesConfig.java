@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 
@@ -18,6 +19,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.delegate.task.git.GitFetchFilesConfig")
 public class GitFetchFilesConfig {
   String identifier;
   String manifestType;

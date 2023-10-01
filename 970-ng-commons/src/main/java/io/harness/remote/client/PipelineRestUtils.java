@@ -6,8 +6,10 @@
  */
 
 package io.harness.remote.client;
-
-import io.harness.exception.InvalidRequestException;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.exception.HarnessRemoteServiceException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -27,6 +29,8 @@ import org.apache.commons.lang3.StringUtils;
 import retrofit2.Call;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_FIRST_GEN})
 @UtilityClass
 @Slf4j
 public class PipelineRestUtils {
@@ -60,9 +64,9 @@ public class PipelineRestUtils {
     try {
       ErrorDTO restResponse = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
       errorMessage = restResponse.getMessage();
-      throw new InvalidRequestException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage,
+      throw new HarnessRemoteServiceException(StringUtils.isEmpty(errorMessage) ? defaultErrorMessage : errorMessage,
           restResponse.getMetadata(), restResponse.getResponseMessages());
-    } catch (InvalidRequestException e) {
+    } catch (HarnessRemoteServiceException e) {
       throw e;
     } catch (IOException e) {
       throw new RuntimeException(e);

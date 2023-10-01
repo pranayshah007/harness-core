@@ -13,7 +13,6 @@ import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_EXPIRED;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -32,6 +31,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
+import io.harness.delegate.task.TaskFailureReason;
 import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
@@ -81,7 +81,7 @@ public class FailDelegateTaskIteratorHelper {
   public void markTimedOutTasksAsFailed(DelegateTask delegateTask, boolean isDelegateTaskMigrationEnabled) {
     if (delegateTask.getStatus().equals(STARTED) && delegateTask.getExpiry() < currentTimeMillis()) {
       log.info("Marking following timed out tasks as failed [{}]", delegateTask.getUuid());
-      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled);
+      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled, TaskFailureReason.TIMED_OUT);
     }
   }
 
@@ -90,7 +90,11 @@ public class FailDelegateTaskIteratorHelper {
     if (asList(QUEUED, PARKED, ABORTED).contains(delegateTask.getStatus())
         && (delegateTask.getExpiry() < currentTimeMillis())) {
       log.info("Marking following long queued tasks as failed [{}]", delegateTask.getUuid());
-      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled);
+      TaskFailureReason taskFailureReason =
+          delegateTask.getStatus().equals(QUEUED) || isEmpty(delegateTask.getDelegateId())
+          ? TaskFailureReason.NOT_ASSIGNED
+          : TaskFailureReason.EXPIRED;
+      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled, taskFailureReason);
     }
   }
 
@@ -101,12 +105,13 @@ public class FailDelegateTaskIteratorHelper {
     if (delegateTask.getStatus().equals(QUEUED) && delegateTask.getBroadcastRound() >= MAX_BROADCAST_ROUND
         && delegateTask.getNextBroadcast() < (now + TimeUnit.MINUTES.toMillis(1))) {
       log.info("Marking non acquired task after multiple broadcast attempts, as failed [{}]", delegateTask.getUuid());
-      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled);
+      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled, TaskFailureReason.NOT_ASSIGNED);
     }
   }
 
   @VisibleForTesting
-  public void endTasks(List<String> taskIds, boolean isDelegateTaskMigrationEnabled) {
+  public void endTasks(
+      List<String> taskIds, boolean isDelegateTaskMigrationEnabled, TaskFailureReason taskFailureReason) {
     Map<String, DelegateTask> delegateTasks = new HashMap<>();
     Map<String, String> taskWaitIds = new HashMap<>();
     List<DelegateTask> tasksToExpire = new ArrayList<>();
@@ -132,7 +137,7 @@ public class FailDelegateTaskIteratorHelper {
                              .filter(task -> isNotEmpty(task.getWaitId()))
                              .collect(toMap(DelegateTask::getUuid, DelegateTask::getWaitId)));
     } catch (Exception e1) {
-      log.error("Failed to deserialize {} tasks. Trying individually...", taskIds.size(), e1);
+      log.debug("Failed to deserialize {} tasks. Trying individually...", taskIds.size(), e1);
       for (String taskId : taskIds) {
         try {
           DelegateTask task =
@@ -179,7 +184,8 @@ public class FailDelegateTaskIteratorHelper {
       taskIdsToExpire.forEach(taskId -> {
         if (taskWaitIds.containsKey(taskId)) {
           String errorMessage = delegateTasks.containsKey(taskId)
-              ? assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTasks.get(taskId))
+              ? assignDelegateService.getDelegateTaskAssignmentFailureMessage(
+                  delegateTasks.get(taskId), taskFailureReason)
               : "Unable to determine proper error as delegate task could not be deserialized.";
           log.info("Marking task as failed - {}: {}", taskId, errorMessage);
           if (delegateTasks.get(taskId) != null) {
@@ -218,8 +224,8 @@ public class FailDelegateTaskIteratorHelper {
                 whitelistedDelegates);
             return;
           }
-          final String errorMessage =
-              assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTask);
+          final String errorMessage = assignDelegateService.getDelegateTaskAssignmentFailureMessage(
+              delegateTask, TaskFailureReason.VALIDATION_FAILED);
           log.info("Failing task {} due to validation error, {}", delegateTask.getUuid(), errorMessage);
 
           DelegateResponseData response;
@@ -273,7 +279,7 @@ public class FailDelegateTaskIteratorHelper {
 
   private List<String> getHostNamesFromDelegateIds(String accountId, LinkedList<String> eligibleToExecuteDelegateIds) {
     return eligibleToExecuteDelegateIds.stream()
-        .map(id -> delegateCache.get(accountId, id, false))
+        .map(id -> delegateCache.get(accountId, id))
         .filter(Objects::nonNull)
         .map(Delegate::getHostName)
         .collect(Collectors.toList());

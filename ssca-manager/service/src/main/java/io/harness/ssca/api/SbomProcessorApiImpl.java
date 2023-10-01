@@ -7,13 +7,16 @@
 
 package io.harness.ssca.api;
 
+import io.harness.annotations.SSCAServiceAuth;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomRequestBody;
+import io.harness.spec.server.ssca.v1.model.EnforceSbomResponseBody;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
 import io.harness.spec.server.ssca.v1.model.SbomProcessResponseBody;
-import io.harness.ssca.services.SbomProcessorService;
+import io.harness.ssca.services.EnforcementStepService;
+import io.harness.ssca.services.OrchestrationStepService;
 
 import com.google.inject.Inject;
 import javax.validation.Valid;
@@ -26,12 +29,18 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.SSCA)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
+@SSCAServiceAuth
 public class SbomProcessorApiImpl implements SbomProcessorApi {
-  @Inject SbomProcessorService sbomProcessorService;
+  @Inject OrchestrationStepService orchestrationStepService;
+
+  @Inject EnforcementStepService enforcementStepService;
 
   @Override
-  public Response enforceSbom(String org, String project, @Valid EnforceSbomRequestBody body, String harnessAccount) {
-    return null;
+  public Response enforceSbom(
+      String orgIdentifier, String projectIdentifier, @Valid EnforceSbomRequestBody body, String accountId) {
+    EnforceSbomResponseBody response =
+        enforcementStepService.enforceSbom(accountId, orgIdentifier, projectIdentifier, body);
+    return Response.ok().entity(response).build();
   }
 
   @SneakyThrows
@@ -40,7 +49,7 @@ public class SbomProcessorApiImpl implements SbomProcessorApi {
       String orgIdentifier, String projectIdentifier, SbomProcessRequestBody sbomProcessRequestBody, String accountId) {
     SbomProcessResponseBody response = new SbomProcessResponseBody();
     response.setArtifactId(
-        sbomProcessorService.processSBOM(accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody));
+        orchestrationStepService.processSBOM(accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody));
     return Response.ok().entity(response).build();
   }
 }

@@ -41,7 +41,6 @@ public class InstancesPurgeJob implements Job {
   private static final String INSTANCES_PURGE_CRON_GROUP = "INSTANCES_PURGE_CRON_GROUP";
 
   private static final int MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH = 2;
-  private static final int MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH = 6;
 
   @Inject private BackgroundExecutorService executorService;
   @Inject private InstanceService instanceService;
@@ -71,56 +70,25 @@ public class InstancesPurgeJob implements Job {
 
   @VisibleForTesting
   void purge() {
-    log.info("Starting execution of instances and instance stats purge job");
+    log.info("Starting execution of instances purge job");
     Stopwatch sw = Stopwatch.createStarted();
-
-    // TODO: purging stats can be removed in Jan 2023 as we started adding 6 months TTL index in July
-    purgeOldStats();
-    purgeOldServerlessInstanceStats();
     purgeOldDeletedInstances();
-
-    log.info("Execution of instances and instance stats purge job completed. Time taken: {} millis",
-        sw.elapsed(TimeUnit.MILLISECONDS));
-  }
-
-  private void purgeOldStats() {
-    log.info("Starting purge of instance stats");
-    Stopwatch sw = Stopwatch.createStarted();
-
-    boolean purged =
-        instanceStatsService.purgeUpTo(getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH));
-    if (purged) {
-      log.info(
-          "Purge of instance stats completed successfully. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
-    } else {
-      log.info("Purge of instance stats failed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
-    }
-  }
-
-  private void purgeOldServerlessInstanceStats() {
-    log.info("Starting purge of serverless instance stats");
-    Stopwatch sw = Stopwatch.createStarted();
-
-    boolean purged = serverlessInstanceStatService.purgeUpTo(
-        getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH));
-    if (purged) {
-      log.info("Purge of serverless instance stats completed successfully. Time taken: {} millis",
-          sw.elapsed(TimeUnit.MILLISECONDS));
-    } else {
-      log.info("Purge of serverless instance stats failed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
-    }
+    log.info("Execution of instances purge job completed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
   }
 
   private void purgeOldDeletedInstances() {
     log.info("Starting purge of instances");
     Stopwatch sw = Stopwatch.createStarted();
-
-    boolean purged =
-        instanceService.purgeDeletedUpTo(getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH));
-    if (purged) {
-      log.info("Purge of instances completed successfully. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
-    } else {
-      log.info("Purge of instances failed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
+    try {
+      boolean purged =
+          instanceService.purgeDeletedUpTo(getRetentionStartTime(MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH));
+      if (purged) {
+        log.info("Purge of instances completed successfully. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
+      } else {
+        log.info("Purge of instances failed. Time taken: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
+      }
+    } catch (Exception e) {
+      log.error("Purge of instances failed. Time spent: {} millis", sw.elapsed(TimeUnit.MILLISECONDS));
     }
   }
 

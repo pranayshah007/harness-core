@@ -7,6 +7,7 @@
 
 package io.harness.cdng.elastigroup;
 
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
@@ -87,7 +88,8 @@ public class ElastigroupServiceSettingsStep implements SyncExecutable<EmptyStepP
 
     expressionResolver.updateExpressions(ambiance, serviceSpec);
 
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
 
     final List<StepResponse.StepOutcome> outcomes = new ArrayList<>();
 

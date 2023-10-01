@@ -80,6 +80,25 @@ message GetTestTimesResponse {
   string time_data_map = 1;
 }
 
+message GetLastSuccCommitInfoRequest {
+  string step_id = 1;
+  string repo = 2;
+  string branch = 3;
+}
+
+message GetLastSuccCommitInfoResponse {
+  string commit_info = 1;
+}
+
+message GetChangedFilesPushTriggerRequest {
+  string step_id = 1;
+  string last_succ_commit = 2;
+}
+
+message GetChangedFilesPushTriggerResponse {
+  string changed_files = 1;
+}
+
 service TiProxy {
   // RPC to stream test cases from the addon
   rpc WriteTests(stream WriteTestsRequest) returns (WriteTestsResponse);
@@ -98,4 +117,10 @@ service TiProxy {
 
   // Get test timing data from lite engine which forwards the call to ti service.
   rpc GetTestTimes(GetTestTimesRequest) returns (GetTestTimesResponse);
+
+  // Get the last successful commit info for a particular account, repo, branch in Push Trigger Case
+  rpc GetLastSuccCommitInfo(GetLastSuccCommitInfoRequest) returns (GetLastSuccCommitInfoResponse);
+
+  // Get the changed files incase of a push trigger execution
+  rpc GetChangedFilesPushTrigger(GetChangedFilesPushTriggerRequest) returns (GetChangedFilesPushTriggerResponse);
 }

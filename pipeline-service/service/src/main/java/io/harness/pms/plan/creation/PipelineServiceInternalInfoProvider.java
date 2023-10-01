@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.creation;
-
 import static io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator.FEATURE_FLAG_SUPPORTED_TYPE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.GROUP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
@@ -15,8 +14,11 @@ import static io.harness.steps.StepSpecTypeConstants.FLAG_CONFIGURATION;
 import static io.harness.steps.StepSpecTypeConstants.PIPELINE_ROLLBACK_STAGE;
 import static io.harness.steps.StepSpecTypeConstants.RESOURCE_CONSTRAINT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cf.pipeline.CfExecutionPMSPlanCreator;
 import io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator;
 import io.harness.cf.pipeline.FeatureFlagStagePlanCreator;
@@ -110,6 +112,7 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoProvider {

@@ -18,6 +18,7 @@ import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
 import io.harness.ccm.views.helper.ExecutionEnforcementDetails;
+import io.harness.ccm.views.helper.LinkedEnforcements;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleSetService;
@@ -72,20 +73,28 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
   public void checkLimitsAndValidate(RuleEnforcement ruleEnforcement, GovernanceConfig governanceConfig) {
     if (ruleEnforcement.getRuleIds() != null
         && ruleEnforcement.getRuleIds().size() > governanceConfig.getPoliciesInEnforcement()) {
-      throw new InvalidRequestException("Limit of number of rules in an enforcement is exceeded ");
+      throw new InvalidRequestException(
+          String.format("Number of rules(%s) in the enforcement is exceeding set limit(%s)",
+              ruleEnforcement.getRuleIds().size(), governanceConfig.getPoliciesInEnforcement()));
     }
     if (ruleEnforcement.getRuleSetIDs() != null
         && ruleEnforcement.getRuleSetIDs().size() > governanceConfig.getPacksInEnforcement()) {
-      throw new InvalidRequestException("Limit of number of Rule Sets in an enforcement is exceeded ");
+      throw new InvalidRequestException(
+          String.format("Number of Rule Set(%s) in the enforcement is exceeding set limit(%s)",
+              ruleEnforcement.getRuleSetIDs().size(), governanceConfig.getPacksInEnforcement()));
     }
     if (ruleEnforcement.getTargetAccounts() != null
         && ruleEnforcement.getTargetAccounts().size() > governanceConfig.getAccountLimit()) {
-      throw new InvalidRequestException("Limit of number of target accounts allowed per enforcement is exceeded ");
+      throw new InvalidRequestException(
+          String.format("Number of target accounts(%s) in the enforcement is exceeding set limit(%s)",
+              ruleEnforcement.getTargetAccounts().size(), governanceConfig.getAccountLimit()));
     }
 
     if (ruleEnforcement.getTargetRegions() != null
         && ruleEnforcement.getTargetRegions().size() > governanceConfig.getRegionLimit()) {
-      throw new InvalidRequestException("Limit of target regions allowed per enforcement is exceeded ");
+      throw new InvalidRequestException(
+          String.format("Number of regions(%s) in the enforcement is exceeding set limit(%s)",
+              ruleEnforcement.getTargetRegions().size(), governanceConfig.getRegionLimit()));
     }
     if (ruleEnforcement.getRuleIds() != null) {
       ruleService.check(ruleEnforcement.getAccountId(), ruleEnforcement.getRuleIds());
@@ -118,30 +127,31 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
     return enforcementCount;
   }
 
-  public Map<String, List<String>> getRuleCount(String accountId, List<String> ruleIds) {
-    Map<String, List<String>> rulesIds = new HashMap<>();
+  public Map<String, List<LinkedEnforcements>> getRuleCount(String accountId, List<String> ruleIds) {
+    Map<String, List<LinkedEnforcements>> rulesIds = new HashMap<>();
     List<RuleEnforcement> ruleEnforcements = ruleEnforcementDAO.ruleEnforcement(accountId, ruleIds);
     for (RuleEnforcement it : ruleEnforcements) {
       for (String itr : it.getRuleIds()) {
         rulesIds.computeIfAbsent(itr, k -> new ArrayList<>());
-        rulesIds.get(itr).add(it.getUuid());
+        rulesIds.get(itr).add(LinkedEnforcements.builder().uuid(it.getUuid()).name(it.getName()).build());
       }
     }
     log.info("{}", rulesIds);
     return rulesIds;
   }
 
-  public Map<String, List<String>> getRuleSetCount(String accountId, List<String> ruleSetIds) {
-    Map<String, List<String>> ruleSetId = new HashMap<>();
+  public Map<String, List<LinkedEnforcements>> getRuleSetCount(String accountId, List<String> ruleSetIds) {
+    Map<String, List<LinkedEnforcements>> ruleSetId = new HashMap<>();
     List<RuleEnforcement> ruleEnforcements = ruleEnforcementDAO.ruleSetEnforcement(accountId, ruleSetIds);
     for (RuleEnforcement it : ruleEnforcements) {
       for (String itr : it.getRuleSetIDs()) {
         ruleSetId.computeIfAbsent(itr, k -> new ArrayList<>());
-        ruleSetId.get(itr).add(it.getUuid());
+        ruleSetId.get(itr).add(LinkedEnforcements.builder().uuid(it.getUuid()).name(it.getName()).build());
       }
     }
     return ruleSetId;
   }
+
   @Override
   public ExecutionDetails getDetails(String accountId, ExecutionDetailRequest executionDetailRequest) {
     List<RuleEnforcement> ruleEnforcements =
@@ -178,11 +188,30 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
       executionEnforcementDetails.setIsEnabled(itr.getIsEnabled());
       executionEnforcementDetails.setIsDryRun(itr.getIsDryRun());
       executionEnforcementDetails.setExecutionTimezone(itr.getExecutionTimezone());
+      executionEnforcementDetails.setCloudProvider(itr.getCloudProvider());
+      executionEnforcementDetails.setCreatedAt(itr.getCreatedAt());
+      executionEnforcementDetails.setCreatedBy(itr.getCreatedBy());
+      executionEnforcementDetails.setLastUpdatedAt(itr.getLastUpdatedAt());
+      executionEnforcementDetails.setLastUpdatedBy(itr.getLastUpdatedBy());
       log.info("executionEnforcementDetails: {}", executionEnforcementDetails);
       enforcementIds.put(itr.getUuid(), executionEnforcementDetails);
       executionDetailList.add(enforcementIds);
     }
     executionDetails.setEnforcementIds(executionDetailList);
     return executionDetails;
+  }
+
+  @Override
+  public List<RuleEnforcement> listEnforcementsWithGivenRule(String accountId, String ruleId) {
+    return ruleEnforcementDAO.listEnforcementsWithGivenRule(accountId, ruleId);
+  }
+
+  @Override
+  public RuleEnforcement removeRuleFromEnforcement(RuleEnforcement ruleEnforcement, String ruleId) {
+    List<String> rules = ruleEnforcement.getRuleIds();
+    rules.remove(ruleId);
+    ruleEnforcement.setRuleIds(rules);
+    ruleEnforcementDAO.update(ruleEnforcement);
+    return null;
   }
 }

@@ -86,16 +86,30 @@ public class ELKConnectorTest extends CategoryTest {
     elkConfig.setType(ConnectorType.ELASTICSEARCH);
     elkConfig.setIdentifier(identifier);
     elkConfig.setAccountIdentifier(accountIdentifier);
+    when(gitSyncSdkService.isGitSyncEnabled(accountIdentifier, null, null)).thenReturn(true);
+    doNothing().when(connectorService).assurePredefined(any(), any());
+  }
 
+  private ConnectorResponseDTO createConnector(ELKAuthType elkAuthType) {
     SecretRefData secretRefData = SecretRefData.builder().identifier(secretIdentifier).scope(Scope.ACCOUNT).build();
-
-    ELKConnectorDTO elkConnectorDTO = ELKConnectorDTO.builder()
-                                          .url(url)
-                                          .username(userName)
-                                          .passwordRef(secretRefData)
-                                          .authType(ELKAuthType.USERNAME_PASSWORD)
-                                          .build();
-
+    ELKConnectorDTO elkConnectorDTO = null;
+    if (elkAuthType == ELKAuthType.USERNAME_PASSWORD) {
+      elkConnectorDTO = ELKConnectorDTO.builder()
+                            .url(url)
+                            .username(userName)
+                            .passwordRef(secretRefData)
+                            .authType(ELKAuthType.USERNAME_PASSWORD)
+                            .build();
+    } else if (elkAuthType == ELKAuthType.BEARER_TOKEN) {
+      elkConnectorDTO = ELKConnectorDTO.builder()
+                            .url(url)
+                            .apiKeyRef(SecretRefData.builder()
+                                           .identifier(secretIdentifier + 1)
+                                           .decryptedValue("Harness@246".toCharArray())
+                                           .build())
+                            .authType(ELKAuthType.BEARER_TOKEN)
+                            .build();
+    }
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
                                          .name(name)
                                          .identifier(identifier)
@@ -105,13 +119,8 @@ public class ELKConnectorTest extends CategoryTest {
     connectorRequest = ConnectorDTO.builder().connectorInfo(connectorInfo).build();
     connectorResponse = ConnectorResponseDTO.builder().connector(connectorInfo).build();
     when(connectorRepository.save(elkConfig, connectorRequest, ChangeType.ADD, null)).thenReturn(elkConfig);
-    when(connectorMapper.writeDTO(elkConfig)).thenReturn(connectorResponse);
     when(connectorMapper.toConnector(connectorRequest, accountIdentifier)).thenReturn(elkConfig);
-    when(gitSyncSdkService.isGitSyncEnabled(accountIdentifier, null, null)).thenReturn(true);
-    doNothing().when(connectorService).assurePredefined(any(), any());
-  }
-
-  private ConnectorResponseDTO createConnector() {
+    when(connectorMapper.writeDTO(elkConfig)).thenReturn(connectorResponse);
     return connectorService.create(connectorRequest, accountIdentifier);
   }
 
@@ -119,23 +128,31 @@ public class ELKConnectorTest extends CategoryTest {
   @Owner(developers = OwnerRule.ARPITJ)
   @Category(UnitTests.class)
   public void testCreateELKConnector() {
-    ConnectorResponseDTO connectorDTOOutput = createConnector();
-    ensureELKConnectorFieldsAreCorrect(connectorDTOOutput);
+    ConnectorResponseDTO connectorDTOOutput = createConnector(ELKAuthType.USERNAME_PASSWORD);
+    ensureELKConnectorFieldsAreCorrect(connectorDTOOutput, ELKAuthType.USERNAME_PASSWORD);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ANSUMAN)
+  @Category(UnitTests.class)
+  public void testCreateELKConnectorWithServiceToken() {
+    ConnectorResponseDTO connectorDTOOutput = createConnector(ELKAuthType.BEARER_TOKEN);
+    ensureELKConnectorFieldsAreCorrect(connectorDTOOutput, ELKAuthType.BEARER_TOKEN);
   }
 
   @Test
   @Owner(developers = OwnerRule.ARPITJ)
   @Category(UnitTests.class)
   public void testGetELKConnector() {
-    createConnector();
+    createConnector(ELKAuthType.USERNAME_PASSWORD);
     when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
              anyString(), any(), any(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(elkConfig));
     ConnectorResponseDTO connectorDTO = connectorService.get(accountIdentifier, null, null, identifier).get();
-    ensureELKConnectorFieldsAreCorrect(connectorDTO);
+    ensureELKConnectorFieldsAreCorrect(connectorDTO, ELKAuthType.USERNAME_PASSWORD);
   }
 
-  private void ensureELKConnectorFieldsAreCorrect(ConnectorResponseDTO connectorResponse) {
+  private void ensureELKConnectorFieldsAreCorrect(ConnectorResponseDTO connectorResponse, ELKAuthType elkAuthType) {
     ConnectorInfoDTO connector = connectorResponse.getConnector();
     assertThat(connector).isNotNull();
     assertThat(connector.getName()).isEqualTo(name);
@@ -143,11 +160,17 @@ public class ELKConnectorTest extends CategoryTest {
     assertThat(connector.getConnectorType()).isEqualTo(ELASTICSEARCH);
     ELKConnectorDTO elkConnectorDTO = (ELKConnectorDTO) connector.getConnectorConfig();
     assertThat(elkConnectorDTO).isNotNull();
-    assertThat(elkConnectorDTO.getUsername()).isEqualTo(userName);
-    assertThat(elkConnectorDTO.getPasswordRef()).isNotNull();
-    assertThat(elkConnectorDTO.getPasswordRef().getIdentifier()).isEqualTo(secretIdentifier);
-    assertThat(elkConnectorDTO.getPasswordRef().getScope()).isEqualTo(Scope.ACCOUNT);
     assertThat(elkConnectorDTO.getUrl()).isEqualTo(url);
-    assertThat(elkConnectorDTO.getAuthType().name()).isEqualTo(ELKAuthType.USERNAME_PASSWORD.name());
+    if (elkAuthType == ELKAuthType.USERNAME_PASSWORD) {
+      assertThat(elkConnectorDTO.getAuthType().name()).isEqualTo(ELKAuthType.USERNAME_PASSWORD.name());
+      assertThat(elkConnectorDTO.getUsername()).isEqualTo(userName);
+      assertThat(elkConnectorDTO.getPasswordRef()).isNotNull();
+      assertThat(elkConnectorDTO.getPasswordRef().getIdentifier()).isEqualTo(secretIdentifier);
+      assertThat(elkConnectorDTO.getPasswordRef().getScope()).isEqualTo(Scope.ACCOUNT);
+    }
+    if (elkAuthType == ELKAuthType.BEARER_TOKEN) {
+      assertThat(elkConnectorDTO.getAuthType().name()).isEqualTo(ELKAuthType.BEARER_TOKEN.name());
+      assertThat(elkConnectorDTO.getApiKeyRef().getIdentifier()).isEqualTo(secretIdentifier + 1);
+    }
   }
 }

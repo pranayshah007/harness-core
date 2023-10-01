@@ -6,10 +6,15 @@
  */
 
 package io.harness.gitsync.interceptor;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(DX)
 public class GitSyncConstants {
   public static final String DEFAULT = "__default__";
@@ -25,4 +30,7 @@ public class GitSyncConstants {
   public static final String DEFAULT_CONNECTOR_FOR_GIT_EXPERIENCE = "default_connector_for_git_experience";
   public static final String DEFAULT_STORE_TYPE_FOR_ENTITIES = "default_store_type_for_entities";
   public static final String REPO_ALLOWLIST_FOR_GIT_EXPERIENCE = "git_experience_repo_allowlist";
+  public static final String DEFAULT_REPO_FOR_GIT_EXPERIENCE = "default_repo_for_git_experience";
+
+  public static final String ENABLE_BI_DIRECTIONAL_SYNC = "enable_bi_directional_sync";
 }

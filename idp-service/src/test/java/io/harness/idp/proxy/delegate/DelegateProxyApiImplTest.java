@@ -7,7 +7,7 @@
 
 package io.harness.idp.proxy.delegate;
 
-import static io.harness.idp.proxy.ngmanager.IdpAuthInterceptor.AUTHORIZATION;
+import static io.harness.idp.proxy.services.IdpAuthInterceptor.AUTHORIZATION;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
@@ -36,7 +36,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -74,7 +73,7 @@ public class DelegateProxyApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void testForwardProxyWithNoResponse() throws ExecutionException, JsonProcessingException {
+  public void testForwardProxyWithNoResponse() throws JsonProcessingException {
     BackstageProxyRequest backstageProxyRequest = getProxyRequest();
     List<HttpHeaderConfig> headers = new ArrayList<>();
     Set<String> delegateSelectors = new HashSet<>();
@@ -98,7 +97,7 @@ public class DelegateProxyApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void testForwardProxy() throws ExecutionException, JsonProcessingException {
+  public void testForwardProxy() throws JsonProcessingException {
     BackstageProxyRequest backstageProxyRequest = getProxyRequest();
     List<HttpHeaderConfig> headers = new ArrayList<>();
     HttpStepResponse expectedResponse = HttpStepResponse.builder()
@@ -127,7 +126,7 @@ public class DelegateProxyApiImplTest extends CategoryTest {
   @Test(expected = MismatchedInputException.class)
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void testForwardProxyWithInvalidBody() throws JsonProcessingException, ExecutionException {
+  public void testForwardProxyWithInvalidBody() throws JsonProcessingException {
     when(httpHeaders.getHeaderString("Harness-Account")).thenReturn(ACCOUNT_IDENTIFIER);
     delegateProxyApi.forwardProxy(uriInfo, httpHeaders, "", "");
   }
@@ -135,7 +134,7 @@ public class DelegateProxyApiImplTest extends CategoryTest {
   @Test(expected = RuntimeException.class)
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void testForwardProxyWithInvalidUrl() throws JsonProcessingException, ExecutionException {
+  public void testForwardProxyWithInvalidUrl() throws JsonProcessingException {
     BackstageProxyRequest backstageProxyRequest = getProxyRequest();
     backstageProxyRequest.setUrl("Invalid Url");
     ObjectMapper mapper = new ObjectMapper();

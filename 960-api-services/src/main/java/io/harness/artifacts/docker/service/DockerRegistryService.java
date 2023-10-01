@@ -6,10 +6,12 @@
  */
 
 package io.harness.artifacts.docker.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.beans.ArtifactMetaInfo;
@@ -20,6 +22,8 @@ import java.util.Map;
 /**
  * Created by anubhaw on 1/6/17.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface DockerRegistryService {
   int MAX_NO_OF_TAGS_PER_IMAGE = 10000;

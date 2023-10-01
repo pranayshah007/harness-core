@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.budget.ValueDataPoint;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
@@ -49,38 +50,38 @@ public interface ViewsBillingService {
   // For NG perspective queries
   QLCEViewGridData getEntityStatsDataPointsNg(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, Integer limit, Integer offset,
-      ViewQueryParams queryParams);
+      ViewPreferences viewPreferences, ViewQueryParams queryParams);
 
   List<String> getFilterValueStatsNg(
       List<QLCEViewFilterWrapper> filters, Integer limit, Integer offset, ViewQueryParams queryParams);
 
   QLCEViewTrendData getTrendStatsDataNg(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
-      List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams);
+      List<QLCEViewAggregation> aggregateFunction, ViewPreferences viewPreferences, ViewQueryParams queryParams);
 
   TableResult getTimeSeriesStatsNg(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort, boolean includeOthers,
-      Integer limit, ViewQueryParams queryParams);
+      Integer limit, ViewPreferences viewPreferences, ViewQueryParams queryParams);
 
   Map<Long, Double> getUnallocatedCostDataNg(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
-      List<QLCEViewSortCriteria> sort, ViewQueryParams queryParams);
+      List<QLCEViewSortCriteria> sort, ViewPreferences viewPreferences, ViewQueryParams queryParams);
 
   Map<Long, Double> getOthersTotalCostDataNg(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
-      List<QLCEViewSortCriteria> sort, ViewQueryParams queryParams);
+      List<QLCEViewSortCriteria> sort, ViewPreferences viewPreferences, ViewQueryParams queryParams);
 
   QLCEViewTrendInfo getForecastCostData(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
-      List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams);
+      List<QLCEViewAggregation> aggregateFunction, ViewPreferences viewPreferences, ViewQueryParams queryParams);
 
   ViewCostData getCostData(
       List<QLCEViewFilterWrapper> filters, List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams);
 
   ViewCostData getCostData(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
-      List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams);
+      List<QLCEViewAggregation> aggregateFunction, ViewPreferences viewPreferences, ViewQueryParams queryParams);
 
   List<ValueDataPoint> getActualCostGroupedByPeriod(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
       List<QLCEViewAggregation> aggregateFunction, ViewQueryParams queryParams);
 
-  Integer getTotalCountForQuery(
-      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, ViewQueryParams queryParams);
+  Integer getTotalCountForQuery(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      ViewPreferences viewPreferences, ViewQueryParams queryParams);
 
   boolean isDataGroupedByAwsAccount(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy);
 
@@ -89,7 +90,7 @@ public interface ViewsBillingService {
 
   Map<String, Map<Timestamp, Double>> getSharedCostPerTimestampFromFilters(List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
-      ViewQueryParams queryParams, boolean skipRoundOff);
+      ViewPreferences viewPreferences, ViewQueryParams queryParams, boolean skipRoundOff);
 
   List<ViewRule> getViewRules(List<QLCEViewFilterWrapper> filters);
 }

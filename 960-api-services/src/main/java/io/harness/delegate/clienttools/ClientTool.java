@@ -6,6 +6,9 @@
  */
 
 package io.harness.delegate.clienttools;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -13,6 +16,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Getter
 @RequiredArgsConstructor
 @ToString(onlyExplicitlyIncluded = true)
@@ -45,7 +49,7 @@ public enum ClientTool {
   GO_TEMPLATE("go-template", "public/shared/tools/go-template/release/%s/bin/%s/%s/go-template",
       "./client-tools/go-template/", "-v",
       "storage/harness-download/snapshot-go-template/release/%s/bin/%s/%s/go-template",
-      ImmutableList.copyOf(GoTemplateVersion.values()), GoTemplateVersion.V0_4_2),
+      ImmutableList.copyOf(GoTemplateVersion.values()), GoTemplateVersion.V0_4_4),
   HARNESS_PYWINRM("harness-pywinrm", "public/shared/tools/harness-pywinrm/release/%s/bin/%s/%s/harness-pywinrm",
       "./client-tools/harness-pywinrm/", "-v",
       "storage/harness-download/snapshot-harness-pywinrm/release/%s/bin/%s/%s/harness-pywinrm",

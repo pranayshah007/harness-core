@@ -21,8 +21,10 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
@@ -125,6 +127,8 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Slf4j
 @OwnedBy(CDC)
 public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure> {
@@ -148,6 +152,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject private InfrastructureOutcomeProvider infrastructureOutcomeProvider;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private InfrastructureProvisionerHelper infrastructureProvisionerHelper;
 
   @Override
   public Class<Infrastructure> getStepParametersClass() {
@@ -169,7 +174,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     validateConnector(infrastructure, ambiance);
 
     saveExecutionLogSafely(logCallback, "Fetching environment information...");
-
+    if (infrastructure.isDynamicallyProvisioned()) {
+      infrastructureProvisionerHelper.resolveProvisionerExpressions(ambiance, infrastructure);
+    }
     validateInfrastructure(infrastructure, ambiance);
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
@@ -225,10 +232,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       logCallback.saveExecutionLog(
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      saveInfraExecutionDataToStageInfo(ambiance, infrastructureOutcome);
-    }
+    saveInfraExecutionDataToStageInfo(ambiance, infrastructureOutcome);
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()

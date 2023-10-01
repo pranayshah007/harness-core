@@ -6,11 +6,15 @@
  */
 
 package io.harness.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static java.util.Collections.unmodifiableSet;
+
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.logging.CommandExecutionStatus;
 
@@ -20,6 +24,8 @@ import java.util.Set;
 /**
  * Describes possible execution statuses for a state.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._957_CG_BEANS)
 public enum ExecutionStatus {
@@ -44,24 +50,26 @@ public enum ExecutionStatus {
   PREPARING;
 
   private static Set<ExecutionStatus> finalStatuses =
-      EnumSet.<ExecutionStatus>of(ABORTED, ERROR, FAILED, SUCCESS, REJECTED, EXPIRED, SKIPPED);
-  private static Set<ExecutionStatus> brokeStatuses = EnumSet.<ExecutionStatus>of(ERROR, FAILED);
+      unmodifiableSet(EnumSet.<ExecutionStatus>of(ABORTED, ERROR, FAILED, SUCCESS, REJECTED, EXPIRED, SKIPPED));
+  private static Set<ExecutionStatus> brokeStatuses = unmodifiableSet(EnumSet.<ExecutionStatus>of(ERROR, FAILED));
   private static Set<ExecutionStatus> negativeStatuses =
-      EnumSet.<ExecutionStatus>of(ABORTED, DISCONTINUING, ERROR, FAILED, REJECTED, EXPIRED);
+      unmodifiableSet(EnumSet.<ExecutionStatus>of(ABORTED, DISCONTINUING, ERROR, FAILED, REJECTED, EXPIRED));
   private static Set<ExecutionStatus> runningStatuses =
-      EnumSet.<ExecutionStatus>of(DISCONTINUING, NEW, RUNNING, STARTING, QUEUED, PREPARING);
-  private static Set<ExecutionStatus> haltedStatuses = EnumSet.<ExecutionStatus>of(PAUSED, WAITING);
-  private static Set<ExecutionStatus> activeStatuses =
-      EnumSet.<ExecutionStatus>of(DISCONTINUING, NEW, PAUSED, RUNNING, STARTING, QUEUED, WAITING, PREPARING);
-  private static Set<ExecutionStatus> positiveStatuses = EnumSet.<ExecutionStatus>of(SUCCESS, SKIPPED);
-  private static Set<ExecutionStatus> discontinueStatuses = EnumSet.<ExecutionStatus>of(ABORTED, REJECTED, EXPIRED);
+      unmodifiableSet(EnumSet.<ExecutionStatus>of(DISCONTINUING, NEW, RUNNING, STARTING, QUEUED, PREPARING));
+  private static Set<ExecutionStatus> haltedStatuses = unmodifiableSet(EnumSet.<ExecutionStatus>of(PAUSED, WAITING));
+  private static Set<ExecutionStatus> activeStatuses = unmodifiableSet(
+      EnumSet.<ExecutionStatus>of(DISCONTINUING, NEW, PAUSED, RUNNING, STARTING, QUEUED, WAITING, PREPARING));
+  private static Set<ExecutionStatus> positiveStatuses = unmodifiableSet(EnumSet.<ExecutionStatus>of(SUCCESS, SKIPPED));
+  private static Set<ExecutionStatus> discontinueStatuses =
+      unmodifiableSet(EnumSet.<ExecutionStatus>of(ABORTED, REJECTED, EXPIRED));
   private static Set<ExecutionStatus> flowingStatuses =
-      EnumSet.<ExecutionStatus>of(DISCONTINUING, NEW, PAUSED, RUNNING, STARTING, WAITING, PREPARING);
-  private static Set<ExecutionStatus> persistedStatuses =
-      EnumSet.<ExecutionStatus>of(ABORTED, ERROR, FAILED, SUCCESS, REJECTED, EXPIRED, SKIPPED, RUNNING, PAUSED);
-  private static Set<ExecutionStatus> persistedActiveStatuses = EnumSet.<ExecutionStatus>of(RUNNING, PAUSED);
-  public static Set<ExecutionStatus> resumableStatuses =
-      EnumSet.<ExecutionStatus>of(FAILED, ABORTED, REJECTED, EXPIRED, ERROR);
+      unmodifiableSet(EnumSet.<ExecutionStatus>of(DISCONTINUING, NEW, PAUSED, RUNNING, STARTING, WAITING, PREPARING));
+  private static Set<ExecutionStatus> persistedStatuses = unmodifiableSet(
+      EnumSet.<ExecutionStatus>of(ABORTED, ERROR, FAILED, SUCCESS, REJECTED, EXPIRED, SKIPPED, RUNNING, PAUSED));
+  private static Set<ExecutionStatus> persistedActiveStatuses =
+      unmodifiableSet(EnumSet.<ExecutionStatus>of(RUNNING, PAUSED));
+  public static final Set<ExecutionStatus> resumableStatuses =
+      unmodifiableSet(EnumSet.<ExecutionStatus>of(FAILED, ABORTED, REJECTED, EXPIRED, ERROR));
 
   ExecutionStatus() {}
 

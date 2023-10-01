@@ -49,6 +49,7 @@ import io.harness.k8s.ProcessResponse;
 import io.harness.k8s.kubectl.ApplyCommand;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.KubectlFactory;
+import io.harness.k8s.manifest.DryRunOutput;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
@@ -148,10 +149,10 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
     List<String> manifestOverrideFiles =
         getManifestOverrideFlies(request, releaseDetails != null ? releaseDetails.toContextMap() : emptyMap());
 
-    this.resources =
-        k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
-            this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
-            isErrorFrameworkSupported(), request.isInCanaryWorkflow(), executionLogCallback);
+    this.resources = k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams,
+        manifestOverrideFiles, this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName,
+        request.isLocalOverrideFeatureFlag(), isErrorFrameworkSupported(), request.isInCanaryWorkflow(),
+        request.isDisableFabric8(), executionLogCallback);
     return dryRunManifests(k8sDelegateTaskParams, executionLogCallback);
   }
 
@@ -173,7 +174,9 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
         logExecutableFailed(result, executionLogCallback);
         throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.DRY_RUN);
       }
-      String dryRunManifestYaml = ManifestHelper.toYamlForLogs(this.resources);
+
+      List<DryRunOutput> dryRunOutputList = ManifestHelper.toDryRunOutput(this.resources);
+      String dryRunManifestYaml = ManifestHelper.toYamlOutput(dryRunOutputList);
       if (dryRunManifestYaml.getBytes(StandardCharsets.UTF_8).length >= MAX_VARIABLE_SIZE) {
         dryRunManifestYaml = "";
         executionLogCallback.saveExecutionLog(

@@ -7,6 +7,8 @@
 
 package io.harness.plancreator.steps.v1;
 
+import static io.harness.pms.plan.creation.PlanCreatorConstants.YAML_VERSION;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -14,15 +16,18 @@ import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -58,28 +63,66 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
     // TODO : Figure out corresponding failure stages and put that here as well
     for (i = 0; i < stages.size() - 1; i++) {
-      curr = stages.get(i);
+      curr = getStepField(stages.get(i));
+      String version = getYamlVersionFromStepField(curr);
+      String nextId = getStepField(stages.get(i + 1)).getUuid();
+      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+      // bytes for complex objects. We will deprecate the first one in v1
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(Dependencies.newBuilder()
-                                .putDependencies(curr.getUuid(), curr.getYamlPath())
-                                .putDependencyMetadata(curr.getUuid(),
-                                    Dependency.newBuilder()
-                                        .putMetadata("nextId",
-                                            ByteString.copyFrom(kryoSerializer.asBytes(stages.get(i + 1).getUuid())))
-                                        .build())
-                                .build())
+              .dependencies(
+                  Dependencies.newBuilder()
+                      .putDependencies(curr.getUuid(), curr.getYamlPath())
+                      .putDependencyMetadata(curr.getUuid(),
+                          Dependency.newBuilder()
+                              .putMetadata(
+                                  PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
+                              .setNodeMetadata(HarnessStruct.newBuilder()
+                                                   .putData(PlanCreatorConstants.NEXT_ID,
+                                                       HarnessValue.newBuilder().setStringValue(nextId).build())
+                                                   .build())
+                              .setParentInfo(
+                                  HarnessStruct.newBuilder()
+                                      .putData(YAML_VERSION, HarnessValue.newBuilder().setStringValue(version).build())
+                                      .build())
+                              .build())
+                      .build())
               .build());
     }
 
-    curr = stages.get(i);
+    curr = getStepField(stages.get(i));
+    String version = getYamlVersionFromStepField(curr);
     responseMap.put(curr.getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(Dependencies.newBuilder().putDependencies(curr.getUuid(), curr.getYamlPath()).build())
+            .dependencies(Dependencies.newBuilder()
+                              .putDependencies(curr.getUuid(), curr.getYamlPath())
+                              .putDependencyMetadata(curr.getUuid(),
+                                  Dependency.newBuilder()
+                                      .setParentInfo(HarnessStruct.newBuilder()
+                                                         .putData(YAML_VERSION,
+                                                             HarnessValue.newBuilder().setStringValue(version).build())
+                                                         .build())
+                                      .build())
+                              .build())
             .build());
     return responseMap;
   }
 
+  private YamlField getStepField(YamlField currField) {
+    if (currField.getNode().getField(YAMLFieldNameConstants.STEP) != null) {
+      return currField.getNode().getField(YAMLFieldNameConstants.STEP);
+    }
+    return currField;
+  }
+
+  private String getYamlVersionFromStepField(YamlField currField) {
+    if (currField.getNode().getField(YAMLFieldNameConstants.STEP) != null
+        || YAMLFieldNameConstants.STEP.equals(currField.getNode().getFieldName())) {
+      return HarnessYamlVersion.V0;
+    }
+    return HarnessYamlVersion.V1;
+  }
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
     StepParameters stepParameters = NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).build();
@@ -109,7 +152,7 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V1);
+    return Set.of(HarnessYamlVersion.V1);
   }
 
   private List<YamlField> getStepYamlFields(YamlField yamlField) {

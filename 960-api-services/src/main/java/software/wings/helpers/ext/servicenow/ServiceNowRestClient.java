@@ -9,7 +9,10 @@ package software.wings.helpers.ext.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import retrofit2.Call;
@@ -24,6 +27,8 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(CDC)
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public interface ServiceNowRestClient {
   @GET("api/now/table/task?sysparm_limit=1")
   Call<JsonNode> validateConnection(@Header("Authorization") String authorization);
@@ -87,6 +92,11 @@ public interface ServiceNowRestClient {
   Call<JsonNode> getIssue(@Header("Authorization") String authorization, @Path("ticketType") String ticketType,
       @Query("sysparm_query") String query, @Query("sysparm_display_value") String displayValue);
 
+  @GET("/api/now/table/{ticketType}")
+  Call<JsonNode> getIssueV2(@Header("Authorization") String authorization, @Path("ticketType") String ticketType,
+      @Query("sysparm_query") String query, @Query("sysparm_display_value") String displayValue,
+      @Query("sysparm_fields") String returnFields);
+
   @GET("api/now/doc/table/schema/{ticketType}")
   Call<JsonNode> getAdditionalFields(
       @Header("Authorization") String authorization, @Path("ticketType") String ticketType);
@@ -97,9 +107,17 @@ public interface ServiceNowRestClient {
   @GET("api/now/ui/meta/{ticketType}")
   Call<JsonNode> getMetadata(@Header("Authorization") String authorization, @Path("ticketType") String ticketType);
 
+  @GET(
+      "api/now/table/std_change_properties?sysparm_query=category.display_value=Standard%20Changes&sysparm_fields=readonly_fields&sysparm_limit=1")
+  Call<JsonNode>
+  getReadOnlyFieldsForStandardTemplate(@Header("Authorization") String authorization);
+
   @GET("/api/now/table/sys_template?{ticketType}")
   Call<JsonNode> getTemplate(@Header("Authorization") String authorization, @Path("ticketType") String ticketType,
       @Query("sysparm_query") String query, @Query("sysparm_display_value") String displayValue);
+
+  @GET("/api/now/table/sys_template/{sys_id}?sysparm_fields=template")
+  Call<JsonNode> getStandardTemplate(@Header("Authorization") String authorization, @Path("sys_id") String sys_id);
 
   @GET("/api/now/table/sys_db_object?sysparm_query=super_class.label=Import%20Set%20Row")
   Call<JsonNode> getStagingTableList(@Header("Authorization") String authorization);
@@ -109,10 +127,16 @@ public interface ServiceNowRestClient {
   Call<JsonNode>
   getTicketTypes(@Header("Authorization") String authorization);
 
+  @GET("api/now/table/std_change_record_producer")
+  Call<JsonNode> getStandardTemplate(@Header("Authorization") String authorization,
+      @Query("sysparm_query") String sysparm_query, @Query("sysparm_fields") String sparm_fields,
+      @Query("sysparm_limit") int limit, @Query("sysparm_offset") int offset);
+
   // Scripted API to list templates
   @GET("/api/x_harne_harness_ap/template/list")
   Call<JsonNode> getTemplateList(@Header("Authorization") String authorization, @Header("ticketType") String ticketType,
-      @Header("limit") int limit, @Header("offset") int offset, @Header("templateName") String templateName);
+      @Header("limit") int limit, @Header("offset") int offset, @Header("templateName") String templateName,
+      @Header("searchTerm") String searchTerm);
 
   // Scripted API to create ticket using template
   @POST("/api/x_harne_harness_ap/template/create")

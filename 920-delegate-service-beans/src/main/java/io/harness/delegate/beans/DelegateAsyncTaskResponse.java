@@ -42,7 +42,7 @@ public class DelegateAsyncTaskResponse implements PersistentEntity {
 
   public boolean isUsingKryoWithoutReference() {
     if (usingKryoWithoutReference == null) {
-      return false;
+      return true;
     }
     return usingKryoWithoutReference;
   }

@@ -37,4 +37,7 @@ public class CIExecutionImages {
   @NotBlank String securityTag;
   @NotBlank String sscaOrchestrationTag;
   @NotBlank String sscaEnforcementTag;
+  @NotBlank String provenanceTag;
+  @NotBlank String provenanceGcrTag;
+  @NotBlank String slsaVerificationTag;
 }

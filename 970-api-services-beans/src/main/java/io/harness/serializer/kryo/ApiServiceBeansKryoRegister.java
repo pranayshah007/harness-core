@@ -6,12 +6,14 @@
  */
 
 package io.harness.serializer.kryo;
-
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.adfs.AdfsAccessTokenResponse;
 import io.harness.ami.AMITagsResponse;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryImagePath;
 import io.harness.aws.AwsAccessKeyCredential;
@@ -122,6 +124,7 @@ import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.servicenow.ChangeTaskUpdateMultiple;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.servicenow.ServiceNowFieldAllowedValueNG;
 import io.harness.servicenow.ServiceNowFieldNG;
@@ -134,6 +137,7 @@ import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
+import io.harness.servicenow.ServiceNowUpdateMultipleTaskNode;
 import io.harness.servicenow.auth.refreshtoken.AccessTokenResponse;
 import io.harness.shell.AccessType;
 import io.harness.shell.AuthenticationScheme;
@@ -240,6 +244,7 @@ import java.nio.file.NoSuchFileException;
 import javax.ws.rs.core.MultivaluedHashMap;
 import org.json.JSONException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(DEL)
 public class ApiServiceBeansKryoRegister implements KryoRegistrar {
   @Override
@@ -479,6 +484,8 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(ServiceNowImportSetTransformMapResult.class, 97117);
     kryo.register(ServiceNowStagingTable.class, 97118);
     kryo.register(ServiceNowTicketTypeDTO.class, 97120);
+    kryo.register(ServiceNowUpdateMultipleTaskNode.class, 97121);
+    kryo.register(ChangeTaskUpdateMultiple.class, 97122);
     kryo.register(AdfsAccessTokenResponse.class, 10000121);
     kryo.register(GitPollingWebhookData.class, 73001);
     kryo.register(MultivaluedHashMap.class, 73002);

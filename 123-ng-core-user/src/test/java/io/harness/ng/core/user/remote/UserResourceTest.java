@@ -10,6 +10,7 @@ package io.harness.ng.core.user.remote;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.SAHIBA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +34,9 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.repositories.user.spring.UserMetadataRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
 
@@ -52,6 +55,7 @@ public class UserResourceTest extends CategoryTest {
   private static final String ACCOUNT = "account";
   @Mock private NgUserService ngUserService;
   @Mock private ProjectService projectService;
+  @Mock private UserMetadataRepository userMetadataRepository;
 
   @Mock private AccessControlClient accessControlClient;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
@@ -108,5 +112,17 @@ public class UserResourceTest extends CategoryTest {
     userResource.removeUser(userId, ACCOUNT, null, null);
     verify(userResource).removeUserInternal(userId, ACCOUNT, null, null, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
     verify(ngUserService).removeUser(userId, ACCOUNT);
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testUserMetadataDelete() {
+    String userId = randomAlphabetic(10);
+    Optional<UserMetadata> userMetadata = Optional.ofNullable(UserMetadata.builder().userId(userId).build());
+    doReturn(userMetadata).when(userMetadataRepository).findDistinctByUserId(userId);
+    userResource.deleteUserMetadata(userId);
+    verify(userResource).deleteUserMetadata(userId);
+    verify(ngUserService).deleteUserMetadata(userId);
   }
 }

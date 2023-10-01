@@ -3,8 +3,15 @@ kind: PodDisruptionBudget
 metadata:
   name: ci-manager
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: ci-manager
+    matchLabels:
+    {{- include "ci-manager.selectorLabels" . | nindent 6 }}

@@ -6,15 +6,18 @@
  */
 
 package io.harness.execution.stage;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.stage.custom.CustomStageExecutionSummaryDetails;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDP)
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, property = "stageType", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

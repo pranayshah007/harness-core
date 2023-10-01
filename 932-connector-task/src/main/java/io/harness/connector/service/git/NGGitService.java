@@ -6,9 +6,11 @@
  */
 
 package io.harness.connector.service.git;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.git.model.AuthRequest;
@@ -23,6 +25,7 @@ import io.harness.shell.SshSessionConfig;
 
 import java.io.IOException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(HarnessTeam.DX)
 public interface NGGitService {
   void validate(GitConfigDTO gitConfig, String accountId, SshSessionConfig sshSessionConfig);

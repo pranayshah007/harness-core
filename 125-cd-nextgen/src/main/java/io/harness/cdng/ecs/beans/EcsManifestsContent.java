@@ -7,12 +7,15 @@
 
 package io.harness.cdng.ecs.beans;
 
+import io.harness.annotation.RecasterAlias;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.cdng.ecs.beans.EcsManifestsContent")
 public class EcsManifestsContent {
   private String ecsTaskDefinitionFileContent;
   private String ecsServiceDefinitionFileContent;

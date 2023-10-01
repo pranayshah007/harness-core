@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.barriers.service.visitor;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -33,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {

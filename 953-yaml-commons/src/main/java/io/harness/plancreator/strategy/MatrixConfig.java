@@ -9,6 +9,7 @@ package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.common.NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
@@ -19,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
@@ -73,6 +75,14 @@ public class MatrixConfig implements MatrixConfigInterface {
   @Min(value = 0)
   @YamlSchemaTypes(value = {expression})
   ParameterField<Integer> maxConcurrency;
+
+  // This field defines the name of the nodes for the matrix execution. Supports expression as well.
+  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @JsonProperty("nodeName")
+  @YamlSchemaTypes(value = {expression})
+  @SkipAutoEvaluation
+  ParameterField<String> nodeName;
+
   @JsonAnySetter
   void setAxis(String key, Object value) {
     try {

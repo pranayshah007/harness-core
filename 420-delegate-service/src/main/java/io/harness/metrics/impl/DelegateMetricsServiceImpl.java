@@ -11,16 +11,19 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.beans.DelegateAccountMetricContext;
 import io.harness.metrics.beans.DelegateTaskTypeMetricContext;
+import io.harness.metrics.beans.HeartbeatMetricContext;
 import io.harness.metrics.beans.PerpetualTaskMetricContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.text.SimpleDateFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,6 +60,16 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASK_NONASSIGNABLE = "perpetual_task_nonassignable";
   public static final String TASK_TYPE_SUFFIX = "_by_type";
 
+  public static final String HEARTBEAT_RECEIVED = "heartbeat_received";
+  public static final String HEARTBEAT_CONNECTED = "CONNECTED";
+  public static final String HEARTBEAT_RECONNECTED = "RE_CONNECTED";
+  public static final String HEARTBEAT_DISCONNECTED = "DISCONNECTED";
+  public static final String HEARTBEAT_EVENT = "heartBeat";
+  public static final String HEARTBEAT_REGISTER_EVENT = "register";
+  public static final String HEARTBEAT_UNREGISTER_EVENT = "unregister";
+  public static final String HEARTBEAT_DELETE_EVENT = "delete";
+  public static final String HEARTBEAT_RESTART_EVENT = "restart";
+
   public static final String DELEGATE_JWT_CACHE_HIT = "delegate_auth_cache_hit";
   public static final String DELEGATE_JWT_CACHE_MISS = "delegate_auth_cache_miss";
 
@@ -74,6 +87,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASKS_PAUSED = "perpetual_tasks_paused_num";
   public static final String PERPETUAL_TASKS_NON_ASSIGNABLE = "perpetual_tasks_non_assignable_num";
   public static final String PERPETUAL_TASKS_INVALID = "perpetual_invalid_tasks";
+  public static final String PERPETUAL_ASSIGNMENT_DELAY = "perpetual_tasks_assignment_delay";
 
   private final MetricService metricService;
   private final DelegateTaskMetricContextBuilder metricContextBuilder;
@@ -125,6 +139,21 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public void recordDelegateMetricsPerAccount(String accountId, String metricName) {
     try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId)) {
       metricService.incCounter(metricName);
+    }
+  }
+
+  @Override
+  public void recordDelegateHeartBeatMetricsPerAccount(long time, String accountId, String accountName,
+      String companyName, DelegateRing delegateRing, String orgId, String projectId, String delegateName,
+      String delegateId, String delegateVersion, String delegateConnectionStatus, String delegateEventType,
+      boolean isNg, boolean isImmutable, long lastHB, String metricName) {
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    try (HeartbeatMetricContext ignore = new HeartbeatMetricContext(dateFormat.format(time), accountId, accountName,
+             companyName, delegateRing.getRingName(), delegateRing.getDelegateImageTag(),
+             delegateRing.getUpgraderImageTag(), delegateRing.getWatcherVersions(), delegateRing.getWatcherJREVersion(),
+             delegateRing.getDelegateJREVersion(), orgId, projectId, delegateName, delegateId, delegateVersion,
+             delegateConnectionStatus, delegateEventType, isNg, isImmutable)) {
+      metricService.recordMetric(metricName, lastHB);
     }
   }
 }

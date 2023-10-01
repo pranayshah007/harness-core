@@ -66,7 +66,7 @@ segmentConfiguration:
   apiKey: "segment_api_key"
   certValidationRequired: false
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 redisLockConfig:
   sentinel: false
@@ -191,7 +191,7 @@ deployMode: KUBERNETES
 envPath: ""
 
 kubectlVersion: v1.13.2
-scmVersion: 0c5acd02
+scmVersion: 93b3c9f1
 
 portal:
   url: https://localhost:8000

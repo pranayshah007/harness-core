@@ -18,7 +18,6 @@ import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.CIManagerConfiguration;
 import io.harness.app.CIManagerConfigurationOverride;
-import io.harness.app.CIManagerServiceModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
@@ -30,10 +29,10 @@ import io.harness.cf.CfMigrationConfig;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.serializer.CiExecutionRegistrars;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.ci.registrars.ExecutionRegistrar;
-import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
@@ -41,6 +40,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.hsqs.client.model.QueueServiceClientConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -218,6 +218,7 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .managerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build())
             .ngManagerServiceSecret("IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
             .apiUrl("https://localhost:8181/#/")
+            .distributedLockImplementation(DistributedLockImplementation.NOOP)
             .build();
 
     modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
@@ -225,7 +226,7 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(mongoTypeModule(annotations));
     modules.add(TestMongoModule.getInstance());
     modules.add(new SpringPersistenceTestModule());
-    modules.add(new CIManagerServiceModule(configuration, new CIManagerConfigurationOverride()));
+    modules.add(new CIManagerServiceTestModule(configuration, new CIManagerConfigurationOverride()));
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));
     modules.add(new AbstractCfModule() {
       @Override

@@ -44,7 +44,6 @@ import io.harness.delegate.TaskProgressResponse;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.TaskType;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
@@ -94,7 +93,6 @@ import org.apache.commons.lang3.tuple.Pair;
 public class DelegateServiceGrpcClient {
   private final DelegateServiceBlockingStub delegateServiceBlockingStub;
   private final DelegateAsyncService delegateAsyncService;
-  private final KryoSerializer kryoSerializer;
 
   private final KryoSerializer referenceFalseKryoSerializer;
   private final DelegateSyncService delegateSyncService;
@@ -103,23 +101,15 @@ public class DelegateServiceGrpcClient {
 
   @Inject
   public DelegateServiceGrpcClient(DelegateServiceBlockingStub delegateServiceBlockingStub,
-      DelegateAsyncService delegateAsyncService, KryoSerializer kryoSerializer,
+      DelegateAsyncService delegateAsyncService,
       @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       DelegateSyncService delegateSyncService,
       @Named("driver-installed-in-ng-service") BooleanSupplier isDriverInstalledInNgService) {
     this.delegateServiceBlockingStub = delegateServiceBlockingStub;
     this.delegateAsyncService = delegateAsyncService;
-    this.kryoSerializer = kryoSerializer;
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateSyncService = delegateSyncService;
     this.isDriverInstalledInNgService = isDriverInstalledInNgService.getAsBoolean();
-  }
-
-  public String submitAsyncTask(DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken,
-      Duration holdFor, Boolean selectionTrackingLogEnabled) {
-    final SubmitTaskResponse submitTaskResponse =
-        submitTaskInternal(TaskMode.ASYNC, taskRequest, delegateCallbackToken, holdFor, selectionTrackingLogEnabled);
-    return submitTaskResponse.getTaskId().getId();
   }
 
   public String submitAsyncTaskV2(DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken,
@@ -127,43 +117,6 @@ public class DelegateServiceGrpcClient {
     final SubmitTaskResponse submitTaskResponse = submitTaskInternalV2(
         TaskMode.ASYNC, taskRequest, delegateCallbackToken, holdFor, delegateSelectionTrackingLogEnabled);
     return submitTaskResponse.getTaskId().getId();
-  }
-
-  public <T extends DelegateResponseData> T executeSyncTask(
-      DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
-    final SubmitTaskResponse submitTaskResponse =
-        submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
-    final String taskId = submitTaskResponse.getTaskId().getId();
-    return delegateSyncService.waitForTask(taskId,
-        Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
-        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
-  }
-
-  /**
-   * This api, doesn't deserialize delegate response into specific objects.
-   * This api can just return response containing byte[] and let
-   * caller deserialize it.
-   *
-   * So your delegateSyncService implementation doesn't need to know about
-   * all DelegeteResponse objects and caller can take that responsibility.
-   *
-   * e.g. Please refer to PmsDelegateSyncServiceImpl
-   * (PmsDelegateSyncServiceImpl.waitForTask())
-   *
-   * @param taskRequest
-   * @param delegateCallbackToken
-   * @param <T>
-   * @return
-   */
-  public <T extends ResponseData> Pair<String, T> executeSyncTaskReturningResponseData(
-      DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
-    final SubmitTaskResponse submitTaskResponse =
-        submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
-    final String taskId = submitTaskResponse.getTaskId().getId();
-    return Pair.of(taskId,
-        delegateSyncService.waitForTask(taskId,
-            Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
-            Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null));
   }
 
   public <T extends ResponseData> Pair<String, T> executeSyncTaskReturningResponseDataV2(
@@ -175,82 +128,6 @@ public class DelegateServiceGrpcClient {
         delegateSyncService.waitForTask(taskId,
             Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
             Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null));
-  }
-
-  public SubmitTaskResponse submitTask(DelegateCallbackToken delegateCallbackToken, AccountId accountId,
-      TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
-      List<ExecutionCapability> capabilities, List<String> taskSelectors, Duration holdFor, boolean forceExecute,
-      boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
-      String stageId, Boolean selectionTrackingLogEnabled) {
-    try {
-      if (taskSetupAbstractions == null || taskSetupAbstractions.getValuesCount() == 0) {
-        Map<String, String> setupAbstractions = new HashMap<>();
-        setupAbstractions.put("ng", String.valueOf(isDriverInstalledInNgService));
-
-        taskSetupAbstractions = TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractions).build();
-      } else if (taskSetupAbstractions.getValuesMap().get("ng") == null) {
-        // This should allow a consumer of the client to override the value, if the one provided by this client is not
-        // appropriate
-        taskSetupAbstractions = TaskSetupAbstractions.newBuilder()
-                                    .putAllValues(taskSetupAbstractions.getValuesMap())
-                                    .putValues("ng", String.valueOf(isDriverInstalledInNgService))
-                                    .build();
-      }
-
-      SubmitTaskRequest.Builder submitTaskRequestBuilder =
-          SubmitTaskRequest.newBuilder()
-              .setCallbackToken(delegateCallbackToken)
-              .setAccountId(accountId)
-              .setSetupAbstractions(taskSetupAbstractions)
-              .setLogAbstractions(taskLogAbstractions)
-              .setExecuteOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
-              .setEmitEvent(emitEvent)
-              .setDetails(taskDetails)
-              .setForceExecute(forceExecute);
-
-      if (Strings.isNotBlank(stageId)) {
-        submitTaskRequestBuilder.setStageId(stageId);
-      }
-
-      submitTaskRequestBuilder.setSelectionTrackingLogEnabled(selectionTrackingLogEnabled);
-
-      if (isNotEmpty(capabilities)) {
-        submitTaskRequestBuilder.addAllCapabilities(
-            capabilities.stream()
-                .map(capability
-                    -> Capability.newBuilder()
-                           .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(capability)))
-                           .build())
-                .collect(toList()));
-      }
-
-      if (isNotEmpty(taskSelectors)) {
-        submitTaskRequestBuilder.addAllSelectors(
-            taskSelectors.stream()
-                .map(selector -> TaskSelector.newBuilder().setSelector(selector).build())
-                .collect(toList()));
-      }
-
-      if (isNotEmpty(eligibleToExecuteDelegateIds)) {
-        submitTaskRequestBuilder.addAllEligibleToExecuteDelegateIds(
-            eligibleToExecuteDelegateIds.stream().collect(toList()));
-      }
-
-      SubmitTaskResponse response = delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-                                        .submitTask(submitTaskRequestBuilder.build());
-
-      if (taskDetails.getMode() == TaskMode.ASYNC) {
-        delegateAsyncService.setupTimeoutForTask(response.getTaskId().getId(),
-            Timestamps.toMillis(response.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
-      }
-
-      return response;
-    } catch (StatusRuntimeException ex) {
-      if (ex.getStatus() != null && isNotEmpty(ex.getStatus().getDescription())) {
-        throw new DelegateServiceDriverException(ex.getStatus().getDescription());
-      }
-      throw new DelegateServiceDriverException("Unexpected error occurred while submitting task.", ex);
-    }
   }
 
   public SubmitTaskResponse submitTaskV2(DelegateCallbackToken delegateCallbackToken, AccountId accountId,
@@ -331,44 +208,6 @@ public class DelegateServiceGrpcClient {
     }
   }
 
-  private SubmitTaskResponse submitTaskInternal(TaskMode taskMode, DelegateTaskRequest taskRequest,
-      DelegateCallbackToken delegateCallbackToken, Duration holdFor, Boolean selectionTrackingLogEnabled) {
-    final TaskParameters taskParameters = taskRequest.getTaskParameters();
-
-    final List<ExecutionCapability> capabilities = (taskParameters instanceof ExecutionCapabilityDemander)
-        ? ListUtils.emptyIfNull(((ExecutionCapabilityDemander) taskParameters).fetchRequiredExecutionCapabilities(null))
-        : Collections.emptyList();
-
-    TaskDetails.Builder taskDetailsBuilder =
-        TaskDetails.newBuilder()
-            .setParked(taskRequest.isParked())
-            .setMode(taskMode)
-            .setExpressionFunctorToken(taskRequest.getExpressionFunctorToken())
-            .setType(TaskType.newBuilder().setType(taskRequest.getTaskType()).build())
-            .setExecutionTimeout(Durations.fromSeconds(taskRequest.getExecutionTimeout().getSeconds()));
-
-    if (taskRequest.getSerializationFormat().equals(SerializationFormat.JSON)) {
-      try {
-        taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
-      } catch (JsonProcessingException e) {
-        throw new InvalidRequestException("Could not serialize the task request", e);
-      }
-    } else {
-      taskDetailsBuilder.setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters)));
-    }
-
-    return submitTask(delegateCallbackToken, AccountId.newBuilder().setId(taskRequest.getAccountId()).build(),
-        TaskSetupAbstractions.newBuilder()
-            .putAllValues(MapUtils.emptyIfNull(taskRequest.getTaskSetupAbstractions()))
-            .build(),
-        TaskLogAbstractions.newBuilder()
-            .putAllValues(MapUtils.emptyIfNull(taskRequest.getLogStreamingAbstractions()))
-            .build(),
-        taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor, taskRequest.isForceExecute(),
-        taskRequest.isExecuteOnHarnessHostedDelegates(), taskRequest.getEligibleToExecuteDelegateIds(),
-        taskRequest.isEmitEvent(), taskRequest.getStageId(), selectionTrackingLogEnabled);
-  }
-
   private SubmitTaskResponse submitTaskInternalV2(TaskMode taskMode, DelegateTaskRequest taskRequest,
       DelegateCallbackToken delegateCallbackToken, Duration holdFor, Boolean delegateSelectionTrackingLogEnabled) {
     final TaskParameters taskParameters = taskRequest.getTaskParameters();
@@ -409,18 +248,6 @@ public class DelegateServiceGrpcClient {
         taskRequest.isForceExecute(), taskRequest.isExecuteOnHarnessHostedDelegates(),
         taskRequest.getEligibleToExecuteDelegateIds(), taskRequest.isEmitEvent(), taskRequest.getStageId(),
         delegateSelectionTrackingLogEnabled, taskRequest.getSelectors());
-  }
-
-  public TaskExecutionStage cancelTask(AccountId accountId, TaskId taskId) {
-    try {
-      CancelTaskResponse response =
-          delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-              .cancelTask(CancelTaskRequest.newBuilder().setAccountId(accountId).setTaskId(taskId).build());
-
-      return response.getCanceledAtStage();
-    } catch (StatusRuntimeException ex) {
-      throw new DelegateServiceDriverException("Unexpected error occurred while cancelling task.", ex);
-    }
   }
 
   public TaskExecutionStage cancelTaskV2(AccountId accountId, TaskId taskId) {

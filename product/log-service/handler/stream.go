@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/harness/harness-core/product/log-service/logger"
@@ -65,7 +66,7 @@ func HandleOpen(stream stream.Stream) http.HandlerFunc {
 
 // HandleClose returns an http.HandlerFunc that closes
 // the live stream and optionally snapshots the stream.
-func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
+func HandleClose(logStream stream.Stream, store store.Store, scanBatch int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		st := time.Now()
@@ -78,24 +79,30 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 		// with that prefix. If no keys are found with that prefix, it's not
 		// an error.
 		usePrefix := r.FormValue(usePrefixParam)
+		keyList := r.FormValue(keyListParam)
 
 		logger.FromRequest(r).WithField("key", key).
-			WithField("prefix", usePrefix).
+			WithField(usePrefixParam, usePrefix).
 			WithField("time", time.Now().Format(time.RFC3339)).
 			Infoln("api: initiating close request on log service")
 
 		if usePrefix == "true" {
 			// Use the provided key as a prefix
 			var err error
-			keys, err = logStream.ListPrefix(ctx, key)
+			keys, err = logStream.ListPrefix(ctx, key, scanBatch)
 			if err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).
 					WithError(err).
 					WithField("key", key).
-					WithField("prefix", "true").
+					WithField(usePrefixParam, "true").
 					Errorln("api: unable to fetch prefixes")
 				return
+			}
+		} else if keyList != "" {
+			keys = strings.Split(keyList, ",")
+			for i := range keys {
+				keys[i] = CreateAccountSeparatedKey(accountID, keys[i])
 			}
 		} else {
 			keys = []string{key}
@@ -121,7 +128,6 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 				g.Go(func() error {
 					return logStream.CopyTo(ctx, k, bwc)
 				})
-
 				g.Go(func() error {
 					return store.Upload(ctx, k, br)
 				})
@@ -141,19 +147,20 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 		}
 
 		for _, k := range keys {
+
 			if err := logStream.Delete(ctx, k); err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).
 					WithError(err).
 					WithField("key", k).
-					Errorln("api: cannot close stream")
+					Warnln("api: cannot close stream")
 				return
 			}
 		}
 
 		logger.FromRequest(r).WithField("keys", keys).
 			WithField("snapshot", snapshot).
-			WithField("prefix", usePrefix).
+			WithField(usePrefixParam, usePrefix).
 			WithField("latency", time.Since(st)).
 			WithField("time", time.Now().Format(time.RFC3339)).
 			WithField("num_keys", len(keys)).
@@ -182,13 +189,21 @@ func HandleWrite(s stream.Stream) http.HandlerFunc {
 			return
 		}
 
+		// write to stream only if it exists
+		if err := s.Exists(ctx, key); err != nil {
+			return
+		}
 		if err := s.Write(ctx, key, in...); err != nil {
+			if err == stream.ErrNotFound {
+				WriteBadRequest(w, err)
+				return
+			}
 			if err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).
 					WithError(err).
 					WithField("key", key).
-					Errorln("api: cannot write to stream")
+					Warnln("api: cannot write to stream")
 				return
 			}
 		}

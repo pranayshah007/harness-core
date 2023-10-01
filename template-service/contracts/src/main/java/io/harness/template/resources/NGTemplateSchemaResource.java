@@ -6,7 +6,6 @@
  */
 
 package io.harness.template.resources;
-
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ENTITY_TYPE;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
@@ -15,7 +14,10 @@ import static io.harness.NGCommonEntityConstants.VERSION_FIELD;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -41,6 +43,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(CDC)
 @Api("templates")
 @Path("templates/schema")

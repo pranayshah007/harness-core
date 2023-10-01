@@ -74,14 +74,15 @@ dt_client = bigquery_datatransfer_v1.DataTransferServiceClient()
 publisher = pubsub_v1.PublisherClient()
 COSTCATEGORIESUPDATETOPIC = os.environ.get('COSTCATEGORIESUPDATETOPIC', 'ccm-bigquery-batch-update')
 GCPCFTOPIC = publisher.topic_path(PROJECTID, os.environ.get('GCPCFTOPIC', 'ce-gcp-billing-cf'))
+# https://cloud.google.com/billing/docs/how-to/export-data-bigquery-tables/detailed-usage
 GCP_STANDARD_EXPORT_COLUMNS = ["billing_account_id", "usage_start_time", "usage_end_time", "export_time",
                                "cost", "currency", "currency_conversion_rate", "cost_type", "labels",
                                "system_labels", "credits", "usage", "invoice", "adjustment_info",
-                               "service", "sku", "project", "location"]
+                               "service", "sku", "project", "location", "cost_at_list"]
 GCP_DETAILED_EXPORT_COLUMNS = ["billing_account_id", "usage_start_time", "usage_end_time", "export_time",
                                "cost", "currency", "currency_conversion_rate", "cost_type", "labels",
                                "system_labels", "credits", "usage", "invoice", "adjustment_info",
-                               "service", "sku", "project", "location", "resource"]
+                               "service", "sku", "project", "location", "cost_at_list", "resource", "price"]
 
 
 def main(event, context):
@@ -102,7 +103,6 @@ def main(event, context):
         util.ACCOUNTID_LOG = jsonData["destinationDatasetId"].split("BillingReport_")[-1]
         get_preferred_currency(jsonData)
         fetch_acc_from_gcp_conn_info(jsonData)
-
         # obtain/set partition column from the gcp_billing_export table to be used for all subsequent queries
         gcp_billing_export_bq_table_name = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
         try:
@@ -115,6 +115,7 @@ def main(event, context):
             jsonData["gcpBillingExportTablePartitionColumnName"] = "usage_start_time"
         print_(f"Partition column for gcp_billing_export table: {jsonData['gcpBillingExportTablePartitionColumnName']}")
 
+        get_unique_billingaccount_id(jsonData)
         jsonData["isFreshSync"] = isFreshSync(jsonData)
         if jsonData.get("isFreshSync"):
             jsonData["interval"] = '180'
@@ -122,7 +123,6 @@ def main(event, context):
             jsonData["interval"] = str(datetime.datetime.utcnow().date().day - 1)
         else:
             jsonData["interval"] = '3'
-        get_unique_billingaccount_id(jsonData)
 
         # currency specific methods
         insert_currencies_with_unit_conversion_factors_in_bq(jsonData)
@@ -169,7 +169,7 @@ def main(event, context):
         print_("%s table does not exists, creating table..." % unifiedTableRef)
         createTable(client, unifiedTableRef)
     else:
-        # alter_unified_table(jsonData)
+        alter_unified_table(jsonData)
         print_("%s table exists" % unifiedTableTableName)
 
     if not if_tbl_exists(client, preAggragatedTableRef):
@@ -800,8 +800,8 @@ def isFreshSync(jsonData):
     if jsonData.get("dataSourceId"):
         # Check in preaggregated table for non US regions
         query = """  SELECT count(*) as count from %s.%s.preAggregated
-                   WHERE starttime >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 3 DAY) AND cloudProvider = "GCP" ;
-                   """ % (PROJECTID, jsonData["datasetName"])
+                   WHERE starttime >= DATETIME_SUB(CURRENT_TIMESTAMP, INTERVAL 3 DAY) AND cloudProvider = "GCP" AND gcpBillingAccountId IN (%s) ;
+                   """ % (PROJECTID, jsonData["datasetName"], jsonData["billingAccountIds"])
     else:
         # Only applicable for US regions
         query = """  SELECT count(*) as count from %s.%s.%s
@@ -833,7 +833,7 @@ def syncDataset(jsonData):
     # for US region
     destination = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
     if jsonData["isFreshSync"]:
-        # Fresh sync. Sync only for 45 days.
+        # Fresh sync. Sync only for 180 days.
         query = """  SELECT * FROM `%s.%s.%s` WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 187 DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 187 DAY);
         """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
         # Configure the query job.
@@ -866,21 +866,23 @@ def syncDataset(jsonData):
                 ]
             )
     else:
+        # Alter raw table if it's existing on our side.
+        alter_raw_table(jsonData)
         # keeping this 3 days for currency customers also
         # only tables other than gcp_billing_export require to be updated with current month currency factors
         # Sync past 3 days only. Specify columns here explicitely.
 
         # check whether the raw billing table is standard_export or detailed_export
-        isBillingExportDetailed = check_if_billing_export_is_detailed(jsonData)
+        jsonData["isBillingExportDetailed"] = check_if_billing_export_is_detailed(jsonData)
         query = """  DELETE FROM `%s` 
                 WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL 10 DAY) and DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY); 
-            INSERT INTO `%s` (billing_account_id, %s service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info)
-                SELECT billing_account_id, %s service,sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info 
+            INSERT INTO `%s` (billing_account_id, %s service, %s sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info, cost_at_list)
+                SELECT billing_account_id, %s service,%s sku,usage_start_time,usage_end_time,project,labels,system_labels,location,export_time,cost,currency,currency_conversion_rate,usage,credits,invoice,cost_type,adjustment_info, cost_at_list 
                 FROM `%s.%s.%s`
                 WHERE DATE(_PARTITIONTIME) >= DATE_SUB(@run_date, INTERVAL 10 DAY) AND DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL 3 DAY);
         """ % (destination, jsonData["gcpBillingExportTablePartitionColumnName"], destination,
-               "resource," if isBillingExportDetailed else "",
-               "resource," if isBillingExportDetailed else "",
+               "resource," if jsonData["isBillingExportDetailed"] else "", "price," if jsonData["isBillingExportDetailed"] else "",
+               "resource," if jsonData["isBillingExportDetailed"] else "", "price," if jsonData["isBillingExportDetailed"] else "",
                jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
 
         # Configure the query job.
@@ -1027,18 +1029,20 @@ def ingest_into_gcp_cost_export_table(jsonData):
         "tableName"].startswith("gcp_billing_export") else f"gcp_cost_export_{jsonData['tableName']}"
     gcpCostExportTableRef = dataset.table(intermediary_table_name)
     gcpCostExportTableTableName = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], intermediary_table_name)
+    jsonData["gcpCostExportTableTableName"] = gcpCostExportTableTableName
     if not if_tbl_exists(client, gcpCostExportTableRef):
         print_("%s table does not exists, creating table..." % gcpCostExportTableRef)
         createTable(client, gcpCostExportTableRef)
     else:
+        alter_cost_export_table(jsonData)
         print_("%s table exists" % gcpCostExportTableTableName)
 
     # check whether the raw billing table is standard_export or detailed_export
-    isBillingExportDetailed = check_if_billing_export_is_detailed(jsonData)
+    jsonData["isBillingExportDetailed"] = check_if_billing_export_is_detailed(jsonData)
 
     # ingest into gcp_cost_export table
     print_("Loading into %s table..." % gcpCostExportTableTableName)
-    billing_export_columns = GCP_DETAILED_EXPORT_COLUMNS if isBillingExportDetailed else GCP_STANDARD_EXPORT_COLUMNS
+    billing_export_columns = GCP_DETAILED_EXPORT_COLUMNS if jsonData["isBillingExportDetailed"] else GCP_STANDARD_EXPORT_COLUMNS
     insert_columns_query = ", ".join(f"{w}" for w in billing_export_columns)
     select_columns_query = prepare_select_query(jsonData, billing_export_columns)
     query = """  DELETE FROM `%s` WHERE DATE(usage_start_time) >= DATE_SUB(@run_date , INTERVAL %s DAY)  
@@ -1080,10 +1084,10 @@ def ingest_into_gcp_cost_export_table(jsonData):
 
 
 def check_if_billing_export_is_detailed(jsonData):
-    print_("Checking if raw billing export (%s) is detailed / has resource column" % jsonData["tableName"])
+    print_("Checking if raw billing export (%s) is detailed / has resource column at source" % jsonData["tableName"])
     query = """  SELECT column_name FROM `%s.%s.INFORMATION_SCHEMA.COLUMNS` 
             WHERE table_name = '%s' and column_name = "resource";
-            """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
+            """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
     # Configure the query job.
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -1096,7 +1100,8 @@ def check_if_billing_export_is_detailed(jsonData):
     )
     try:
         print_(query)
-        query_job = client.query(query, job_config=job_config)
+        imclient = bigquery.Client(credentials=jsonData["credentials"], project=PROJECTID)
+        query_job = imclient.query(query, job_config=job_config)
         results = query_job.result()  # wait for job to complete
         for row in results:
             if row.column_name == "resource":
@@ -1111,26 +1116,42 @@ def check_if_billing_export_is_detailed(jsonData):
 def ingest_into_unified(jsonData):
     print_("Loading into unifiedTable table...")
     fx_rate_multiplier_query = "*fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else ""
-    query = """  DELETE FROM `%s.unifiedTable` WHERE DATE(startTime) >= DATE_SUB(@run_date , INTERVAL %s DAY) AND cloudProvider = "GCP" 
-                AND gcpBillingAccountId IN (%s);
-           INSERT INTO `%s.unifiedTable` (product, cost, gcpProduct,gcpSkuId,gcpSkuDescription, startTime, gcpProjectId,
+
+
+    insert_columns = """product, cost, gcpProduct,gcpSkuId,gcpSkuDescription, startTime, endTime, gcpProjectId,
+                gcpProjectName, gcpProjectNumber,
                 region,zone,gcpBillingAccountId,cloudProvider, discount, labels, fxRateSrcToDest, ccmPreferredCurrency,
-                gcpInvoiceMonth, gcpCostType)
-                SELECT service.description AS product, (cost %s) AS cost, service.description AS gcpProduct, sku.id AS gcpSkuId,
-                     sku.description AS gcpSkuDescription, TIMESTAMP_TRUNC(usage_start_time, DAY) as startTime, project.id AS gcpProjectId,
+                gcpInvoiceMonth, gcpCostType, gcpCredits, gcpSystemLabels, gcpCostAtList"""
+
+    select_columns = """service.description AS product, (cost %s) AS cost, service.description AS gcpProduct, sku.id AS gcpSkuId,
+                     sku.description AS gcpSkuDescription, TIMESTAMP_TRUNC(usage_start_time, DAY) as startTime, TIMESTAMP_TRUNC(usage_end_time, DAY) as endTime, project.id AS gcpProjectId, project.name AS gcpProjectName, project.number AS gcpProjectNumber,
                      location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, (SELECT SUM(c.amount %s) FROM UNNEST(credits) c) as discount, labels AS labels,
                      %s as fxRateSrcToDest, %s as ccmPreferredCurrency, 
-                     invoice.month as gcpInvoiceMonth, cost_type as gcpCostType
-                FROM `%s.%s`
-                WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND
-                     DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY) ;
-        """ % (jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"], jsonData["datasetName"],
-               fx_rate_multiplier_query, fx_rate_multiplier_query,
-               ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
-               (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData[
-                   "ccmPreferredCurrency"] else "cast(null as string)"),
-               jsonData["datasetName"], jsonData["tableName"], jsonData["gcpBillingExportTablePartitionColumnName"],
-               str(int(jsonData["interval"]) + 7), jsonData["interval"])
+                     invoice.month as gcpInvoiceMonth, cost_type as gcpCostType, credits as gcpCredits, system_labels as gcpSystemLabels, cost_at_list as gcpCostAtList""" % (
+                    fx_rate_multiplier_query, fx_rate_multiplier_query,
+                    ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
+                    (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"))
+
+
+    # supporting additional fields in unifiedTable for Elevance
+    if jsonData.get("isBillingExportDetailed", False):
+        for additionalColumn in ["resource", "price"]:
+            insert_columns = insert_columns + ", gcp%s" % (additionalColumn)
+            select_columns = select_columns + ", %s as gcp%s" % (additionalColumn, additionalColumn)
+
+    query = """  DELETE FROM `%s.unifiedTable` WHERE DATE(startTime) >= DATE_SUB(@run_date , INTERVAL %s DAY) AND cloudProvider = "GCP" 
+                AND gcpBillingAccountId IN (%s);
+               INSERT INTO `%s.unifiedTable` (%s)
+                    SELECT %s 
+                    FROM `%s.%s`
+                    WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY) AND
+                         DATE(usage_start_time) >= DATE_SUB(CAST(FORMAT_DATE('%%Y-%%m-%%d', @run_date) AS DATE), INTERVAL %s DAY) ;
+        """ % (jsonData["datasetName"], jsonData["interval"], jsonData["billingAccountIds"],
+               jsonData["datasetName"], insert_columns,
+               select_columns,
+               jsonData["datasetName"], jsonData["tableName"],
+               jsonData["gcpBillingExportTablePartitionColumnName"], str(int(jsonData["interval"]) + 7),
+               jsonData["interval"])
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -1205,7 +1226,7 @@ def get_unique_billingaccount_id(jsonData):
     query = """  SELECT DISTINCT(billing_account_id) as billing_account_id FROM `%s.%s.%s` 
             WHERE DATE(%s) >= DATE_SUB(@run_date, INTERVAL %s DAY);
             """ % (PROJECTID, jsonData["datasetName"], jsonData["tableName"],
-                   jsonData["gcpBillingExportTablePartitionColumnName"], str(int(jsonData["interval"]) + 7))
+                   jsonData["gcpBillingExportTablePartitionColumnName"], str(int(jsonData.get("interval", 180)) + 7))
     # Configure the query job.
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -1297,17 +1318,43 @@ def fetch_acc_from_gcp_conn_info(jsonData):
             jsonData["connectorId"] = row.connectorId
             jsonData["sourceGcpTableName"] = row.sourceGcpTableName
             jsonData["tableName"] = row.sourceGcpTableName
+            jsonData["sourceDataSetId"] = jsonData["destinationDatasetId"]
+            jsonData["sourceGcpProjectId"] = PROJECTID
             break
     except Exception as e:
         raise e
     print_("retrieved info from gcpConnectrInfoTable")
+
+def alter_raw_table(jsonData):
+    print_("Altering raw gcp_billing_export Table")
+    query = "ALTER TABLE `%s.%s.%s` \
+         ADD COLUMN IF NOT EXISTS cost_at_list FLOAT64, \
+         ADD COLUMN IF NOT EXISTS price STRUCT<effective_price NUMERIC, tier_start_amount NUMERIC, unit STRING, pricing_unit_quantity NUMERIC>, \
+         ADD COLUMN IF NOT EXISTS resource STRUCT<name STRING, global_name STRING>;" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
+    try:
+        print_(query)
+        query_job = client.query(query)
+        query_job.result()
+    except Exception as e:
+        # Error Running Alter Query
+        print_(e)
+    else:
+        print_("Finished Altering %s Table" % jsonData["tableName"])
 
 
 def alter_unified_table(jsonData):
     print_("Altering unifiedTable Table")
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
     query = "ALTER TABLE `%s.unifiedTable` \
-        ADD COLUMN IF NOT EXISTS costCategory ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>;" % ds
+        ADD COLUMN IF NOT EXISTS costCategory ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>, \
+        ADD COLUMN IF NOT EXISTS gcpResource STRUCT<name STRING, global_name STRING>, \
+        ADD COLUMN IF NOT EXISTS gcpSystemLabels ARRAY<STRUCT<key STRING, value STRING>>, \
+        ADD COLUMN IF NOT EXISTS gcpCostAtList FLOAT64, \
+        ADD COLUMN IF NOT EXISTS gcpProjectNumber STRING, \
+        ADD COLUMN IF NOT EXISTS gcpProjectName STRING, \
+        ADD COLUMN IF NOT EXISTS gcpPrice STRUCT<effective_price NUMERIC, tier_start_amount NUMERIC, unit STRING, pricing_unit_quantity NUMERIC>, \
+        ADD COLUMN IF NOT EXISTS gcpUsage STRUCT<amount FLOAT64, unit STRING, amount_in_pricing_unit FLOAT64, pricing_unit STRING>, \
+        ADD COLUMN IF NOT EXISTS gcpCredits ARRAY<STRUCT<name STRING, amount FLOAT64, full_name STRING, id STRING, type STRING>>;" % ds
 
     try:
         print_(query)
@@ -1318,3 +1365,19 @@ def alter_unified_table(jsonData):
         print_(e)
     else:
         print_("Finished Altering unifiedTable Table")
+
+def alter_cost_export_table(jsonData):
+    print_("Altering %s Table" % jsonData["gcpCostExportTableTableName"])
+    query = "ALTER TABLE `%s` \
+         ADD COLUMN IF NOT EXISTS cost_at_list FLOAT64, \
+         ADD COLUMN IF NOT EXISTS price STRUCT<effective_price NUMERIC, tier_start_amount NUMERIC, unit STRING, pricing_unit_quantity NUMERIC>, \
+         ADD COLUMN IF NOT EXISTS resource STRUCT<name STRING, global_name STRING>;" % (jsonData["gcpCostExportTableTableName"])
+    try:
+        print_(query)
+        query_job = client.query(query)
+        query_job.result()
+    except Exception as e:
+        # Error Running Alter Query
+        print_(e)
+    else:
+        print_("Finished Altering %s Table" % jsonData["gcpCostExportTableTableName"])

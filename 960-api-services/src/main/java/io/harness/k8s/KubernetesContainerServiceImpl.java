@@ -6,7 +6,6 @@
  */
 
 package io.harness.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.encoding.EncodingUtils.compressString;
 import static io.harness.data.encoding.EncodingUtils.deCompressString;
@@ -67,7 +66,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.http.HttpStatus.SC_FORBIDDEN;
 import static org.apache.http.HttpStatus.SC_UNAUTHORIZED;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.container.ContainerInfo;
 import io.harness.container.ContainerInfo.ContainerInfoBuilder;
@@ -80,6 +82,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.k8s.apiclient.K8sApiClientHelper;
 import io.harness.k8s.apiclient.KubernetesApiCall;
@@ -183,6 +186,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -212,6 +216,9 @@ import org.zeroturnaround.exec.ProcessResult;
 /**
  * Created by brett on 2/9/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_COMMON_STEPS})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -537,6 +544,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   private void persistKubernetesConfigFile(KubernetesConfig config, String dir) throws IOException {
     String configFileContent = getConfigFileContent(config);
     writeUtf8StringToFile(Paths.get(dir, K8sConstants.KUBECONFIG_FILENAME).toString(), configFileContent);
+    modifyKubeConfigReadableProperties(dir);
   }
 
   @VisibleForTesting
@@ -2129,6 +2137,33 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   }
 
   @Override
+  public List<V1Pod> getRunningPodsWithLabels(
+      KubernetesConfig kubernetesConfig, String namespace, List<String> labels) {
+    final Supplier<List<V1Pod>> podSupplier = Retry.decorateSupplier(retry, () -> {
+      try {
+        if (isEmpty(labels)) {
+          return Collections.emptyList();
+        }
+        ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
+        String labelSelector = String.join(K8S_SELECTOR_DELIMITER, labels);
+        V1PodList podList = new CoreV1Api(apiClient).listNamespacedPod(
+            namespace, null, null, null, null, labelSelector, null, null, null, null, false);
+        return podList.getItems()
+            .stream()
+            .filter(pod
+                -> pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() == null
+                    && pod.getStatus() != null && StringUtils.equals(pod.getStatus().getPhase(), RUNNING))
+            .collect(toList());
+      } catch (ApiException exception) {
+        String message = format(
+            "Unable to get running pods. Code: %s, message: %s", exception.getCode(), getErrorMessage(exception));
+        throw new InvalidRequestException(message, exception, USER);
+      }
+    });
+    return podSupplier.get();
+  }
+
+  @Override
   public V1Deployment getDeployment(KubernetesConfig kubernetesConfig, String namespace, String name) {
     if (kubernetesConfig == null || isBlank(name)) {
       return null;
@@ -2333,5 +2368,21 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace(OIDC_ISSUER_URL, providerUrl)
         .replace(OIDC_RERESH_TOKEN, refreshToken)
         .replace(OIDC_AUTH_NAME, authConfigName);
+  }
+  public void modifyKubeConfigReadableProperties(String path) {
+    modifyFileReadableProperties(Path.of(path, K8sConstants.KUBECONFIG_FILENAME).toString());
+  }
+
+  public void modifyFileReadableProperties(String path) {
+    Path configPath = Path.of(path);
+    try {
+      Set<PosixFilePermission> permissions = java.nio.file.Files.getPosixFilePermissions(configPath);
+      // Remove group-readable and world-readable properties
+      permissions.remove(PosixFilePermission.GROUP_READ);
+      permissions.remove(PosixFilePermission.OTHERS_READ);
+      java.nio.file.Files.setPosixFilePermissions(configPath, permissions);
+    } catch (Exception e) {
+      log.warn("Error updating file permissions", ExceptionMessageSanitizer.sanitizeException(e));
+    }
   }
 }

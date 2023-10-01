@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import javax.annotation.Nonnull;
@@ -27,6 +28,7 @@ public class EnvironmentMapper {
         .description(environmentYaml.getDescription() != null ? environmentYaml.getDescription().getValue() : "")
         .tags(CollectionUtils.emptyIfNull(environmentYaml.getTags()))
         .type(environmentYaml.getType())
+        .v1Type(environmentYaml.getType() == EnvironmentType.Production ? "PROD" : "NON_PROD")
         .build();
   }
 }

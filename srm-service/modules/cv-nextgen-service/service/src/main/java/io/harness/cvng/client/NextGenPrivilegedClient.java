@@ -7,10 +7,12 @@
 
 package io.harness.cvng.client;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.CDStageMetaDataDTO;
 import io.harness.ng.core.dto.CdDeployStageMetadataRequestDTO;
@@ -88,4 +90,12 @@ public interface NextGenPrivilegedClient {
 
   @POST("cdStage/metadata")
   Call<ResponseDTO<CDStageMetaDataDTO>> getCDStageMetaData(@Body CdDeployStageMetadataRequestDTO requestDTO);
+
+  @GET("instanceng/stage-instance-info")
+  Call<ResponseDTO<List<StepExecutionInstanceInfo>>> getCDStageInstanceInfo(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Query(NGCommonEntityConstants.ORG_KEY) String ordIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(NGCommonEntityConstants.PIPELINE_EXECUTION_ID) String pipelineExecutionId,
+      @Query(NGCommonEntityConstants.STAGE_KEY) String stageExecutionId);
 }

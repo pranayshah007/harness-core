@@ -24,6 +24,7 @@ import lombok.Value;
 public class SSCAServiceConfig {
   ServiceHttpClientConfig httpClientConfig;
   String serviceSecret;
+  boolean sscaManagerEnabled;
   @Deprecated String baseUrl;
   @Deprecated String globalToken;
   @Deprecated String internalUrl;

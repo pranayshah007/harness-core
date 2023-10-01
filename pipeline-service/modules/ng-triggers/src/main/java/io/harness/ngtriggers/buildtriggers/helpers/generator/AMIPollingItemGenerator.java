@@ -6,10 +6,12 @@
  */
 
 package io.harness.ngtriggers.buildtriggers.helpers.generator;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.artifacts.ami.AMIFilter;
 import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(CDC)

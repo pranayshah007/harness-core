@@ -6,8 +6,10 @@
  */
 
 package io.harness.cdng.provision.terraform;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.aws.s3.S3FileDetailResponse;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters.TerraformTaskNGParametersBuilder;
@@ -24,6 +26,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @Builder
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformPassThroughData")

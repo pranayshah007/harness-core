@@ -34,4 +34,9 @@ public class S3HelmStoreDelegateConfig implements StoreDelegateConfig {
   public StoreDelegateConfigType getType() {
     return StoreDelegateConfigType.S3_HELM;
   }
+
+  @Override
+  public String getRepoUrl() {
+    return new StringBuilder("s3://").append(this.getBucketName()).append("/").append(this.getFolderPath()).toString();
+  }
 }

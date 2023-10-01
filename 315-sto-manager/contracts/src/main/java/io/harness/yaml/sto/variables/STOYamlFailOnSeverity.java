@@ -12,6 +12,8 @@ import io.harness.annotation.RecasterAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("stoYamlFailOnSeverity")
@@ -31,11 +33,12 @@ public enum STOYamlFailOnSeverity {
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static STOYamlFailOnSeverity getValue(@JsonProperty("type") String yamlName) {
     for (STOYamlFailOnSeverity value : STOYamlFailOnSeverity.values()) {
-      if (value.yamlName.equalsIgnoreCase(yamlName)) {
+      if (value.yamlName.equalsIgnoreCase(yamlName) || value.name().equalsIgnoreCase(yamlName)) {
         return value;
       }
     }
-    throw new IllegalArgumentException("Invalid value: " + yamlName);
+    throw new IllegalArgumentException("Invalid value for fail on severity: " + yamlName + ". Valid values are: "
+        + Arrays.stream(STOYamlFailOnSeverity.values()).map(Enum::toString).collect(Collectors.joining(", ")));
   }
 
   @JsonValue

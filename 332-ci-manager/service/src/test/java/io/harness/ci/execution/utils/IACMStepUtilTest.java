@@ -22,12 +22,10 @@ import io.harness.beans.entities.Workspace;
 import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.category.element.UnitTests;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.buildstate.PluginSettingUtils;
-import io.harness.ci.execution.CIExecutionConfigService;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.utils.CIStepInfoUtils;
-import io.harness.ci.utils.HarnessImageUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -96,7 +94,7 @@ public class IACMStepUtilTest extends CategoryTest {
 
     Map<String, String> envVariables =
         iacmStepsUtils.getIACMEnvVariables("orgIdentifier", "projectIdentfier", "accountId", "id");
-    assertThat(envVariables).hasSize(5);
+    assertThat(envVariables).hasSize(7);
     assertThat(envVariables.get("PLUGIN_ROOT_DIR")).isEqualTo("root");
     assertThat(envVariables.get("PLUGIN_TF_VERSION")).isEqualTo("1.2.3");
     ConnectorDetails connector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, "connectorRef", "provisioner");

@@ -9,7 +9,7 @@ package io.harness.platform.resourcegroup;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
@@ -30,7 +30,6 @@ import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetr
 import io.harness.govern.ProviderModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
-import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -112,7 +111,6 @@ public class ResourceGroupServiceModule extends AbstractModule {
         return appConfig.getResoureGroupServiceConfig().getMongoConfig();
       }
     });
-    install(new MetricsModule());
     install(new AbstractMongoModule() {
       @Override
       public UserProvider userProvider() {
@@ -146,10 +144,6 @@ public class ResourceGroupServiceModule extends AbstractModule {
     install(AccessControlClientModule.getInstance(
         this.appConfig.getAccessControlClientConfig(), RESOUCE_GROUP_SERVICE.getServiceId()));
 
-    if (appConfig.getResoureGroupServiceConfig().isExportMetricsToStackDriver()) {
-      install(new MetricsModule());
-    }
-
     install(EnforcementClientModule.getInstance(appConfig.getNgManagerServiceConfig(),
         appConfig.getPlatformSecrets().getNgManagerServiceSecret(), RESOUCE_GROUP_SERVICE.getServiceId(),
         appConfig.getEnforcementClientConfiguration()));
@@ -165,7 +159,7 @@ public class ResourceGroupServiceModule extends AbstractModule {
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
     return appConfig.getResoureGroupServiceConfig().getDistributedLockImplementation() == null
-        ? MONGO
+        ? REDIS
         : appConfig.getResoureGroupServiceConfig().getDistributedLockImplementation();
   }
 

@@ -25,10 +25,10 @@ fi
 if [[ "${ENABLE_SERIALGC}" == "true" ]]; then
     export GC_PARAMS=" -XX:+UseSerialGC -Dfile.encoding=UTF-8"
 else
-    export GC_PARAMS=" -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=40 -XX:MaxGCPauseMillis=1000 -Dfile.encoding=UTF-8"
+    export GC_PARAMS=" -XX:+UseG1GC -Dfile.encoding=UTF-8"
 fi
 
-export JAVA_OPTS="-Xmx${MEMORY} -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc $GC_PARAMS $JAVA_ADVANCED_FLAGS"
+export JAVA_OPTS="-Xmx${MEMORY} -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc $GC_PARAMS $JAVA_ADVANCED_FLAGS $JAVA_17_FLAGS"
 
 if [[ "${ENABLE_REMOTE_DEBUG}" == "true" ]]; then
   export REMOTE_DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005"
@@ -69,12 +69,12 @@ if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
     echo "Using OpenTelemetry Java Agent"
 fi
 
-#if [[ "${ENABLE_COVERAGE}" == "true" ]] ; then
-#    echo "functional code coverage is enabled"
-#    mkdir /opt/harness/jacoco-0.8.7 && unzip jacoco-0.8.7.zip -d /opt/harness/jacoco-0.8.7
-#    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/jacoco-0.8.7/lib/jacocoagent.jar=port=6300,address=0.0.0.0,append=true,output=tcpserver,destfile=jacoco-remote.exec"
-#    echo "Using Jacoco Java Agent"
-#fi
+if [[ "${ENABLE_COVERAGE}" == "true" ]] ; then
+    echo "functional code coverage is enabled"
+    mkdir /opt/harness/jacoco-0.8.7 && unzip jacoco-0.8.7.zip -d /opt/harness/jacoco-0.8.7
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/jacoco-0.8.7/lib/jacocoagent.jar=port=6300,address=0.0.0.0,append=true,output=tcpserver,destfile=jacoco-remote.exec"
+    echo "Using Jacoco Java Agent"
+fi
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml

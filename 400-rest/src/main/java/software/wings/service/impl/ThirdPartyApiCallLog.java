@@ -218,7 +218,7 @@ public class ThirdPartyApiCallLog implements GoogleDataStoreAware, CreatedAtAwar
         .request(dto.getRequest())
         .response(dto.getResponse())
         .requestTimeStamp(dto.getRequestTimeStamp())
-        .responseTimeStamp(dto.getRequestTimeStamp())
+        .responseTimeStamp(dto.getResponseTimeStamp())
         .createdAt(dto.getCreatedAt())
         .uuid(dto.getUuid())
         .build();

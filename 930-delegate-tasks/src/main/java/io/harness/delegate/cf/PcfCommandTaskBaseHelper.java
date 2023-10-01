@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.cf;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -60,7 +59,10 @@ import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.pcf.CfAppRenameInfo;
@@ -117,6 +119,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Stateles helper class
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -542,6 +546,23 @@ public class PcfCommandTaskBaseHelper {
                   ": ACTIVE' identifier and no applications were found having same name as release name as specified by customer.");
       executionLogCallback.saveExecutionLog(msgBuilder.toString(), ERROR);
       throw new InvalidPcfStateException(msgBuilder.toString(), INVALID_INFRA_STATE, USER_SRE);
+    }
+
+    return activeApplication;
+  }
+
+  public ApplicationSummary findCurrentActiveApplicationNG(List<ApplicationSummary> previousReleases,
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+    if (isEmpty(previousReleases)) {
+      return null;
+    }
+    String releaseNamePrefix = cfRequestConfig.getApplicationName();
+
+    ApplicationSummary activeApplication =
+        findActiveBasedOnEnvironmentVariable(previousReleases, cfRequestConfig, executionLogCallback);
+
+    if (activeApplication == null) {
+      activeApplication = findActiveBasedOnServiceName(previousReleases, releaseNamePrefix, executionLogCallback);
     }
 
     return activeApplication;

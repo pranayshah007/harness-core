@@ -9,6 +9,7 @@ package io.harness.delegate.task.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
@@ -22,6 +23,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig")
 public class PdcWinRmInfraDelegateConfig implements WinRmInfraDelegateConfig {
   Set<String> hosts;
   PhysicalDataCenterConnectorDTO physicalDataCenterConnectorDTO;

@@ -159,6 +159,23 @@ public class CfRollbackCommandTaskHandlerTest extends CategoryTest {
             any(), any(), any(), cfRequestConfigArgumentCaptor.capture(), any(), any(), any());
     assertThat(cfRollbackCommandResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
 
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_INACTIVE_ID);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo(APP_INACTIVE_ID);
     CfRequestConfig cfRequestConfig = cfRequestConfigArgumentCaptor.getValue();
     assertForCfRequestConfig(cfRequestConfig);
   }
@@ -202,6 +219,23 @@ public class CfRollbackCommandTaskHandlerTest extends CategoryTest {
             any(), any(), any(), cfRequestConfigArgumentCaptor.capture(), any(), any(), any());
     assertThat(cfRollbackCommandResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
 
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_INACTIVE_ID);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo(APP_INACTIVE_ID);
     verify(cfDeploymentManager, times(0)).deleteApplication(any());
     CfRequestConfig cfRequestConfig = cfRequestConfigArgumentCaptor.getValue();
 
@@ -245,6 +279,23 @@ public class CfRollbackCommandTaskHandlerTest extends CategoryTest {
             cfRollbackCommandRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
 
     assertThat(cfRollbackCommandResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_INACTIVE_ID);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo(APP_INACTIVE_ID);
 
     verify(cfDeploymentManager, times(1)).deleteApplication(cfRequestConfigArgumentCaptor.capture());
     CfRequestConfig cfRequestConfig = cfRequestConfigArgumentCaptor.getValue();
@@ -283,6 +334,10 @@ public class CfRollbackCommandTaskHandlerTest extends CategoryTest {
         (CfRollbackCommandResponseNG) cfRollbackCommandTaskHandlerNG.executeTaskInternal(
             cfRollbackCommandRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
 
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isZero();
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isZero();
     verify(cfCommandTaskHelperNG, times(0))
         .upsizeListOfInstancesAndRestoreRoutes(any(), any(), any(), any(), any(), any(), any());
     verify(cfCommandTaskHelperNG, times(0)).downSizeListOfInstancesAndUnmapRoutes(any(), any(), any(), any(), any());
@@ -325,6 +380,23 @@ public class CfRollbackCommandTaskHandlerTest extends CategoryTest {
     verify(cfCommandTaskHelperNG, times(1))
         .enableAutoscalerIfNeeded(eq(oldAppInfo), cfAppAutoscalarRequestDataArgumentCaptor.capture(), any());
 
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(APP_INACTIVE_ID);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo(APP_INACTIVE_ID);
     CfAppAutoscalarRequestData cfAppAutoscalarRequestData = cfAppAutoscalarRequestDataArgumentCaptor.getValue();
     CfRequestConfig cfRequestConfig = cfAppAutoscalarRequestData.getCfRequestConfig();
     assertForCfRequestConfig(cfRequestConfig);
@@ -356,6 +428,14 @@ public class CfRollbackCommandTaskHandlerTest extends CategoryTest {
         (CfRollbackCommandResponseNG) cfRollbackCommandTaskHandlerNG.executeTaskInternal(
             cfRollbackCommandRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
 
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(APP_ID);
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isZero();
+    assertThat(cfRollbackCommandResponseNG.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isZero();
     verify(cfCommandTaskHelperNG, times(0))
         .upsizeListOfInstancesAndRestoreRoutes(any(), any(), any(), any(), any(), any(), any());
     verify(cfDeploymentManager, times(1)).renameApplication(any(), any());

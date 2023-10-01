@@ -29,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorConnectivityMode;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorInternalFilterPropertiesDTO;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.entities.embedded.ceawsconnector.CEAwsConfig.CEAwsConfigKeys;
 import io.harness.connector.entities.embedded.ceazure.CEAzureConfig.CEAzureConfigKeys;
@@ -119,6 +120,24 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     return criteria;
   }
 
+  @Override
+  public Criteria createCriteriaFromCcmConnectorFilter(FilterPropertiesDTO filterPropertiesDTO) {
+    ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO =
+        (ConnectorInternalFilterPropertiesDTO) filterPropertiesDTO;
+    Criteria criteria =
+        where(ConnectorKeys.accountIdentifier).in(connectorInternalFilterPropertiesDTO.getAccountIdentifiers());
+    if (isNotEmpty(connectorInternalFilterPropertiesDTO.getTypes())) {
+      criteria.and(ConnectorKeys.type).in(connectorInternalFilterPropertiesDTO.getTypes());
+    }
+    if (isNotEmpty(connectorInternalFilterPropertiesDTO.getConnectivityStatuses())) {
+      criteria.and(ConnectorKeys.connectionStatus).in(connectorInternalFilterPropertiesDTO.getConnectivityStatuses());
+    }
+    if (connectorInternalFilterPropertiesDTO.getCcmConnectorFilter() != null) {
+      populateCcmFilters(criteria, connectorInternalFilterPropertiesDTO.getCcmConnectorFilter());
+    }
+    return criteria;
+  }
+
   private void applySearchFilter(String searchTerm, List<Criteria> criteriaListForAndOperator) {
     if (isNotBlank(searchTerm)) {
       Criteria criteriaWithSearchTerm = getSearchTermFilter(searchTerm);
@@ -164,7 +183,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
       return;
     }
     populateInFilter(criteria, ConnectorKeys.categories, connectorFilter.getCategories());
-    populateTypesInFilter(criteria, connectorFilter.getTypes(), version);
+    populateTypesInFilter(criteria, connectorFilter.getTypes(), version, criteriaListForAndOperator);
     populateNameDesciptionAndSearchTermFilter(connectorFilter.getConnectorNames(), connectorFilter.getDescription(),
         searchTerm, connectorFilter.getInheritingCredentialsFromDelegate(), criteriaListForAndOperator);
     populateInFilter(criteria, ConnectorKeys.identifier, connectorFilter.getConnectorIdentifiers());
@@ -184,7 +203,8 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     populateTagsFilter(criteria, connectorFilter.getTags());
   }
 
-  private void populateTypesInFilter(Criteria criteria, List<?> types, String version) {
+  private void populateTypesInFilter(
+      Criteria criteria, List<?> types, String version, List<Criteria> criteriaListForAndOperator) {
     Criteria nexusVersionFiltercriteria = new Criteria().andOperator(
         Criteria.where(ConnectorKeys.type).is(ConnectorType.NEXUS.name()), Criteria.where("nexusVersion").is(version));
     if (isNotEmpty(types)) {
@@ -192,7 +212,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
       nonNexusTypes.remove(ConnectorType.NEXUS);
       if (types.contains(ConnectorType.NEXUS) && Arrays.asList("2.x", "3.x").contains(version)) {
         Criteria criteria1 = Criteria.where(ConnectorKeys.type).in(nonNexusTypes);
-        criteria.andOperator(new Criteria().orOperator(nexusVersionFiltercriteria, criteria1));
+        criteriaListForAndOperator.add(new Criteria().orOperator(nexusVersionFiltercriteria, criteria1));
       } else {
         criteria.and(ConnectorKeys.type).in(types);
       }

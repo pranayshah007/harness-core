@@ -3,6 +3,7 @@
     "type": "CEAws",
     "name": "name_ph",
     "identifier": "identifier_ph",
+    "accountIdentifier": "accountIdentifier_ph",
     "orgIdentifier": "orgIdentifier_ph",
     "description": "description_ph",
     "projectIdentifier": "projectIdentifier_ph",

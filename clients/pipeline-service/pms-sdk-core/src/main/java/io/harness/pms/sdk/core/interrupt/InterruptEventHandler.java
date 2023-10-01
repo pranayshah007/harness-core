@@ -9,6 +9,9 @@ package io.harness.pms.sdk.core.interrupt;
 
 import static io.harness.govern.Switch.noop;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.interrupts.InterruptEvent;
@@ -20,6 +23,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.registries.StepRegistry;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.pms.sdk.core.steps.executables.Abortable;
+import io.harness.pms.sdk.core.steps.executables.Expirable;
 import io.harness.pms.sdk.core.steps.executables.Failable;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
@@ -29,6 +33,8 @@ import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
   @Inject private PMSInterruptService pmsInterruptService;
@@ -64,8 +70,12 @@ public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
     switch (interruptType) {
       case ABORT:
       case USER_MARKED_FAIL_ALL:
-        handleAbort(event);
-        log.info("Handled ABORT InterruptEvent Successfully");
+        handleAbortAndUserMarkedFailure(event, interruptType);
+        log.info(String.format("Handled %s InterruptEvent Successfully", interruptType));
+        break;
+      case MARK_EXPIRED:
+        handleExpire(event);
+        log.info("Handled MARK_EXPIRED InterruptEvent Successfully");
         break;
       case CUSTOM_FAILURE:
         handleFailure(event);
@@ -92,22 +102,43 @@ public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
     }
   }
 
-  public void handleAbort(InterruptEvent event) {
+  public void handleAbortAndUserMarkedFailure(InterruptEvent event, InterruptType interruptType) {
     try {
       StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
       Step<?> step = stepRegistry.obtain(stepType);
       if (step instanceof Abortable) {
         StepParameters stepParameters =
             RecastOrchestrationUtils.fromJson(event.getStepParameters().toStringUtf8(), StepParameters.class);
-        ((Abortable) step).handleAbort(event.getAmbiance(), stepParameters, extractExecutableResponses(event));
+        ((Abortable) step)
+            .handleAbortAndUserMarkedFailure(event.getAmbiance(), stepParameters, extractExecutableResponses(event),
+                interruptType == InterruptType.USER_MARKED_FAIL_ALL);
         pmsInterruptService.handleAbort(event.getNotifyId());
       } else {
         pmsInterruptService.handleAbort(event.getNotifyId());
       }
     } catch (Exception ex) {
-      log.error("Handling abort at sdk failed with interrupt event - {} ", event.getInterruptUuid(), ex);
+      log.error(String.format(
+                    "Handling %s at sdk failed with interrupt event - %s} ", interruptType, event.getInterruptUuid()),
+          ex);
       // Even if error send feedback
       pmsInterruptService.handleAbort(event.getNotifyId());
+    }
+  }
+
+  public void handleExpire(InterruptEvent event) {
+    try {
+      StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
+      Step<?> step = stepRegistry.obtain(stepType);
+      if (step instanceof Expirable) {
+        StepParameters stepParameters =
+            RecastOrchestrationUtils.fromJson(event.getStepParameters().toStringUtf8(), StepParameters.class);
+        ((Expirable) step).handleExpire(event.getAmbiance(), stepParameters, extractExecutableResponses(event));
+      }
+    } catch (Exception ex) {
+      log.error("Handling expire at sdk failed with interrupt event - {} ", event.getInterruptUuid(), ex);
+    } finally {
+      // Even if error always send feedback
+      pmsInterruptService.handleExpire(event.getNotifyId());
     }
   }
 

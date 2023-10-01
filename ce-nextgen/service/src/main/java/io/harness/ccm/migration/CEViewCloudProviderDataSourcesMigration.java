@@ -11,13 +11,13 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.commons.constants.ViewFieldConstants;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewType;
+import io.harness.ccm.views.service.CEViewService;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;
 
@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CE)
 public class CEViewCloudProviderDataSourcesMigration implements NGMigration {
   @Inject private CEViewDao ceViewDao;
+  @Inject private CEViewService ceViewService;
   @Inject private HPersistence hPersistence;
 
   @Override
@@ -65,10 +66,10 @@ public class CEViewCloudProviderDataSourcesMigration implements NGMigration {
     if (Objects.isNull(ceView.getViewRules())) {
       ceView.setViewRules(new ArrayList<>());
     }
-    ceView.setDataSources(getCEViewDataSources(ceView.getViewRules()));
+    ceView.setDataSources(getCEViewDataSources(ceView.getViewRules(), ceView.getAccountId()));
   }
 
-  private List<ViewFieldIdentifier> getCEViewDataSources(final List<ViewRule> viewRules) {
+  private List<ViewFieldIdentifier> getCEViewDataSources(final List<ViewRule> viewRules, final String accountId) {
     final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
     if (Objects.nonNull(viewRules)) {
       viewRules.forEach(viewRule -> {
@@ -78,7 +79,8 @@ public class CEViewCloudProviderDataSourcesMigration implements NGMigration {
             final ViewFieldIdentifier viewFieldIdentifier = viewIdCondition.getViewField().getIdentifier();
             if (viewFieldIdentifier != ViewFieldIdentifier.LABEL) {
               if (viewFieldIdentifier == ViewFieldIdentifier.COMMON) {
-                viewFieldIdentifiers.addAll(getDataSourcesFromCloudProviderField(viewIdCondition));
+                viewFieldIdentifiers.addAll(
+                    ceViewService.getDataSourcesFromCloudProviderField(viewIdCondition, accountId));
               } else {
                 viewFieldIdentifiers.add(viewIdCondition.getViewField().getIdentifier());
               }
@@ -88,23 +90,5 @@ public class CEViewCloudProviderDataSourcesMigration implements NGMigration {
       });
     }
     return new ArrayList<>(viewFieldIdentifiers);
-  }
-
-  private Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(final ViewIdCondition viewIdCondition) {
-    final Set<ViewFieldIdentifier> viewFieldIdentifiers = new HashSet<>();
-    if (ViewFieldConstants.CLOUD_PROVIDER_FIELD_ID.equals(viewIdCondition.getViewField().getFieldId())) {
-      for (final String value : viewIdCondition.getValues()) {
-        if (ViewFieldIdentifier.AWS.name().equals(value)) {
-          viewFieldIdentifiers.add(ViewFieldIdentifier.AWS);
-        } else if (ViewFieldIdentifier.GCP.name().equals(value)) {
-          viewFieldIdentifiers.add(ViewFieldIdentifier.GCP);
-        } else if (ViewFieldIdentifier.AZURE.name().equals(value)) {
-          viewFieldIdentifiers.add(ViewFieldIdentifier.AZURE);
-        } else if (ViewFieldIdentifier.CLUSTER.name().equals(value)) {
-          viewFieldIdentifiers.add(ViewFieldIdentifier.CLUSTER);
-        }
-      }
-    }
-    return viewFieldIdentifiers;
   }
 }

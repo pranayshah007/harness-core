@@ -6,9 +6,11 @@
  */
 
 package io.harness.changehandlers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.interrupts.Interrupt.InterruptKeys;
 
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CV)
 public class VerifyStepInterruptCDCHandler extends AbstractChangeDataHandler {
   @Override

@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -95,7 +96,6 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
         throw new InitializeSdkException("Could not acquire lock");
       }
       saveSdkInstance(request);
-      schemaFetcher.invalidateAllCache();
       ephemeralCacheService.getDistributedSet(SDK_STEP_SET_NAME).clear();
     } catch (Exception ex) {
       log.error(String.format("Exception occurred while registering sdk with name: [%s]", request.getName()), ex);
@@ -145,8 +145,13 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
       }
       if (shouldUseInstanceCache) {
         log.info("Updating sdkInstanceCache for module {}", request.getName());
-        instanceCache.put(request.getName(), instance);
-        log.info("Updated sdkInstanceCache for module {}", request.getName());
+        try {
+          instanceCache.put(request.getName(), instance);
+          log.info("Updated sdkInstanceCache for module {}", request.getName());
+        } catch (CacheException e) {
+          log.error("Unable to set instance data into cache", e);
+          throw e;
+        }
       }
       return instance;
     });

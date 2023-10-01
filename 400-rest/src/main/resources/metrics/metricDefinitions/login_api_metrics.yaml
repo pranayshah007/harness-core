@@ -1,0 +1,12 @@
+name: Login API Metrics
+identifier: login_api_metrics
+metricGroup: login_metrics_group
+metrics:
+  - metricName: login_success_count
+    metricDefinition: Number of Login API requests that succeeded
+    type: Count
+    unit: "1"
+  - metricName: login_failure_count
+    metricDefinition: Number of Login API requests that failed
+    type: Count
+    unit: "1"

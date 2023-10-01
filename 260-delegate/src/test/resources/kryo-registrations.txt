@@ -1146,6 +1146,12 @@
 9148:io.harness.cvng.beans.SignalFXMetricDataCollectionInfo.MetricCollectionInfo
 9149:io.harness.cvng.beans.grafanaloki.GrafanaLokiLogSampleDataRequest
 9150:io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo
+9151:io.harness.cvng.beans.azure.AzureLogsSampleDataRequest
+9152:io.harness.cvng.beans.AzureLogsDataCollectionInfo
+9153:io.harness.cvng.beans.azure.AzureMetricsSampleDataRequest
+9154:io.harness.cvng.beans.azure.AzureServiceInstanceFieldDataRequest
+9155:io.harness.cvng.beans.AzureMetricsDataCollectionInfo
+9156:io.harness.cvng.beans.AzureMetricsDataCollectionInfo.MetricCollectionInfo
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
@@ -1829,6 +1835,7 @@
 55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
 55440:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskParams
 55441:io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskResponse
+55442:io.harness.delegate.beans.connector.helm.EcrHelmApiListTagsTaskParams
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
@@ -1918,6 +1925,7 @@
 83087:io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
+95003:io.harness.delegate.beans.helm.HelmDeployProgressData
 97001:io.harness.jira.JiraActionNG
 97002:io.harness.jira.JiraCreateIssueRequestNG
 97003:io.harness.jira.JiraFieldAllowedValueNG
@@ -1968,6 +1976,8 @@
 97117:io.harness.servicenow.ServiceNowImportSetTransformMapResult
 97118:io.harness.servicenow.ServiceNowStagingTable
 97120:io.harness.servicenow.ServiceNowTicketTypeDTO
+97121:io.harness.servicenow.ServiceNowUpdateMultipleTaskNode
+97122:io.harness.servicenow.ChangeTaskUpdateMultiple
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
 98400:io.harness.helm.HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG
@@ -2679,11 +2689,14 @@
 5731608:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse
 5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
 5731610:io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo
+5731611:io.harness.aws.beans.AsgCapacityConfig
 
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9000313:io.harness.provision.model.TfConfigInspectVersion
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
+9300130:io.harness.beans.RepoFilterDelegateTaskParams
+9300131:io.harness.beans.BranchFilterDelegateTaskParams
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig
@@ -2699,6 +2712,8 @@
 9800013:io.harness.delegate.task.ssh.artifact.AcrArtifactDelegateConfig
 9800014:io.harness.delegate.task.ssh.artifact.DockerArtifactDelegateConfig
 9800015:io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig
+9800016:io.harness.licensing.beans.modules.SEIModuleLicenseDTO
+9800017:io.harness.delegate.task.ssh.artifact.GoogleCloudStorageArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -2716,6 +2731,7 @@
 10000121:io.harness.adfs.AdfsAccessTokenResponse
 10000122:io.harness.exception.ServiceNowOIDCException
 10000123:io.harness.servicenow.auth.refreshtoken.AccessTokenResponse
+10000124:io.harness.exception.HarnessRemoteServiceException
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO
@@ -2837,3 +2853,8 @@
 20000614:io.harness.delegate.beans.serverless.RollbackConfiguration
 20000615:io.harness.delegate.beans.serverless.RollbackTrigger
 20000616:io.harness.delegate.beans.serverless.Tag
+20000617:io.harness.delegate.task.helm.request.HelmFetchChartManifestTaskParameters
+20000618:io.harness.delegate.task.helm.response.HelmFetchChartManifestResponse
+20000619:io.harness.delegate.task.helm.response.HelmChartManifest
+20001000:io.harness.delegate.beans.connector.scm.github.GithubAppDTO
+20001001:io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO

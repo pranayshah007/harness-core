@@ -7,7 +7,6 @@
 
 package io.harness.cvng.core.resources;
 
-import static io.harness.cvng.notification.beans.NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
@@ -26,8 +25,10 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
+import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MetricDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
@@ -38,17 +39,17 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHea
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.notification.beans.DeploymentImpactReportConditionSpec;
-import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
@@ -63,11 +64,14 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.ws.rs.client.Entity;
@@ -91,12 +95,15 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVConfigService cvConfigService;
   @Inject NotificationRuleService notificationRuleService;
-
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
+  @Inject private HPersistence hPersistence;
   private MonitoredServiceDTO monitoredServiceDTO;
 
   @ClassRule
-  public static final ResourceTestRule RESOURCES =
-      ResourceTestRule.builder().addResource(monitoredServiceResource).build();
+  public static final ResourceTestRule RESOURCES = ResourceTestRule.builder()
+                                                       .addResource(monitoredServiceResource)
+
+                                                       .build();
   @Before
   public void setup() {
     injector.injectMembers(monitoredServiceResource);
@@ -404,6 +411,38 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     assertThat(monitoredServiceDTO.getServiceRef()).isEqualTo("cvng_service_UxrHvd7oNa");
     assertThat(monitoredServiceDTO.getEnvironmentRefList())
         .isEqualTo(Collections.singletonList("org.cvng_env_prod_NWceMzD9XM"));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testSaveMonitoredService_defaultEnabled() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-default-enabled.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse = response.readEntity(new GenericType<>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getIdentifier()).isEqualTo("cvng_service_UxrHvd7oNa_cvng_env_prod_NWceMzD9XM");
+    assertThat(monitoredServiceDTO.getServiceRef()).isEqualTo("cvng_service_UxrHvd7oNa");
+    assertThat(monitoredServiceDTO.getEnvironmentRefList())
+        .isEqualTo(Collections.singletonList("cvng_env_prod_NWceMzD9XM"));
+    assertThat(monitoredServiceDTO.isEnabled()).isFalse();
+    assertThat(hPersistence.createQuery(MonitoredService.class).asList().get(0).isEnabled()).isFalse();
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier())
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .put(Entity.json(convertToJson(monitoredServiceYaml)));
+    restResponse = response.readEntity(new GenericType<>() {});
+    monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.isEnabled()).isFalse();
   }
 
   @Test
@@ -1070,6 +1109,75 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testMonitoredServiceWithDependency() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency-2.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency-3.yaml");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testMonitoredServiceWithDependencyParentType() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency-2.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency.yaml");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testMonitoredServiceWithServiceDependencyMetaDataMissing() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency-2.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency-4.yaml");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
+  @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetMonitoredService_WithProjectParamsIncorrect() {
@@ -1085,6 +1193,32 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     assertThat(response.readEntity(String.class))
         .contains("\"field\":\"projectIdentifier\",\"message\":\"must not be null\"");
   }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMSSecondaryEvents() throws IOException {
+    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().plus(5, ChronoUnit.MINUTES);
+    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceDTO.getIdentifier(), "stepName",
+        builderFactory.getContext().getServiceEnvironmentParams(), Duration.ofDays(1), Optional.empty());
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                + "/secondary-events")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .queryParam("startTime", startTime.toEpochMilli())
+                            .queryParam("endTime", endTime.toEpochMilli())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"type\":\"SrmAnalysisImpact\"");
+  }
+
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
@@ -1305,72 +1439,6 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   }
 
   @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
-  public void testGetNotificationRuleConditions() throws IOException {
-    NotificationRuleDTO notificationRuleDTO =
-        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
-    notificationRuleDTO.getConditions().add(NotificationRuleCondition.builder()
-                                                .type(DEPLOYMENT_IMPACT_REPORT)
-                                                .spec(DeploymentImpactReportConditionSpec.builder().build())
-                                                .build());
-    NotificationRuleResponse notificationRuleResponse =
-        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
-
-    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-with-notification-rule.yaml");
-    monitoredServiceYaml =
-        monitoredServiceYaml.replace("$orgIdentifier", builderFactory.getContext().getOrgIdentifier());
-    monitoredServiceYaml =
-        monitoredServiceYaml.replace("$projectIdentifier", builderFactory.getContext().getProjectIdentifier());
-    monitoredServiceYaml =
-        monitoredServiceYaml.replace("$identifier", notificationRuleResponse.getNotificationRule().getIdentifier());
-    monitoredServiceYaml = monitoredServiceYaml.replace("$enabled", "false");
-    Response response = RESOURCES.client()
-                            .target("http://localhost:9998/monitored-service/")
-                            .queryParam("accountId", builderFactory.getContext().getAccountId())
-                            .request(MediaType.APPLICATION_JSON_TYPE)
-                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
-    assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.readEntity(String.class))
-        .contains("\"notificationRuleRefs\":[{\"notificationRuleRef\":\"rule\",\"enabled\":false}]");
-
-    response = RESOURCES.client()
-                   .target("http://localhost:9998/monitored-service/"
-                       + "MSIdentifier"
-                       + "/notification-rule-conditions")
-                   .queryParam("accountId", builderFactory.getContext().getAccountId())
-                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
-                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
-                   .queryParam("pageNumber", 0)
-                   .queryParam("pageSize", 10)
-                   .queryParam("types", "DEPLOYMENT_IMPACT_REPORT")
-                   .request(MediaType.APPLICATION_JSON_TYPE)
-                   .get();
-    assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.readEntity(String.class)).contains("\"totalItems\":1");
-
-    response = RESOURCES.client()
-                   .target("http://localhost:9998/monitored-service/"
-                       + "MSIdentifier1"
-                       + "/notification-rule-conditions")
-                   .queryParam("accountId", builderFactory.getContext().getAccountId())
-                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
-                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
-                   .queryParam("pageNumber", 0)
-                   .queryParam("pageSize", 10)
-                   .queryParam("types", "DEPLOYMENT_IMPACT_REPORT")
-                   .request(MediaType.APPLICATION_JSON_TYPE)
-                   .get();
-    assertThat(response.getStatus()).isEqualTo(500);
-    assertThat(response.readEntity(String.class))
-        .contains(String.format(
-            "\"message\":\"io.harness.exception.InvalidRequestException: Monitored Service  with identifier MSIdentifier1, "
-                + "accountId %s, orgIdentifier %s and projectIdentifier %s  is not present\"",
-            builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
-            builderFactory.getContext().getProjectIdentifier()));
-  }
-
-  @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testCreate_allHealthSources() throws IOException {
@@ -1410,6 +1478,75 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
                               .post(Entity.json(convertToJson(monitoredServiceYaml)));
       assertThat(response.getStatus()).isEqualTo(200);
     }
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetOverallHealthScore_withNoDurationAndStartTime() {
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                  + "/overall-health-score")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("endTime", 14300000000L);
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class)).contains("One of duration or start time should be present.");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetOverallHealthScore_withBothDurationAndStartTimeInvalid() {
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                  + "/overall-health-score")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("duration", DurationDTO.FOUR_HOURS)
+                              .queryParam("endTime", 14300000000L)
+                              .queryParam("startTime", 14285500000L);
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains(
+            "Duration field value and duration from the start time and endTime is different. Make sure you pass either one of them or the duration is same from both.");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetOverallHealthScore_withBothLessThanFiveMinuteDifference() {
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                  + "/overall-health-score")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("endTime", 14300000000L)
+                              .queryParam("startTime", 14299800000L);
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains("Start time and endTime should have at least 5 minutes difference");
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetOverallHealthScore_withBothDurationAndStartTimeValid() {
+    WebTarget webTarget = RESOURCES.client()
+                              .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier()
+                                  + "/overall-health-score")
+                              .queryParam("accountId", builderFactory.getContext().getAccountId())
+                              .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                              .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                              .queryParam("duration", DurationDTO.FOUR_HOURS)
+                              .queryParam("endTime", 14300000000L);
+    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
   }
 
   private static String convertToYaml(String jsonString) throws JsonProcessingException {

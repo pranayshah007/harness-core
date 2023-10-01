@@ -9,6 +9,7 @@ package io.harness.delegate.task.elastigroup.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 
@@ -19,6 +20,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig")
 public class AwsLoadBalancerConfig implements LoadBalancerConfig {
   private List<LoadBalancerDetailsForBGDeployment> loadBalancerDetails;
 }

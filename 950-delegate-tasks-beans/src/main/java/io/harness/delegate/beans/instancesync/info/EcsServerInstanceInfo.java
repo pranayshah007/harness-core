@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.instancesync.info;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ecs.EcsContainer;
@@ -23,6 +24,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo")
 public class EcsServerInstanceInfo extends ServerInstanceInfo {
   private String region;
   private String clusterArn;

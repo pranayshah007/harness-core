@@ -23,6 +23,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HEN;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.NANDAN;
@@ -87,6 +88,7 @@ import io.harness.usermembership.remote.UserMembershipClient;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.Base.BaseKeys;
+import software.wings.beans.LicenseInfo;
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
 import software.wings.beans.UserInvite;
@@ -779,14 +781,30 @@ public class UserServiceImplTest extends WingsBaseTest {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void test_getUsersAccounts() {
-    Account account1 =
-        anAccount().withUuid("ACCOUNT_ID").withAccountName("account1").withHarnessGroupAccessAllowed(false).build();
-    Account account2 =
-        anAccount().withUuid("id2").withAccountName("account2").withHarnessGroupAccessAllowed(false).build();
-    Account account3 =
-        anAccount().withUuid("id3").withAccountName("account3").withHarnessGroupAccessAllowed(true).build();
-    Account account4 =
-        anAccount().withUuid("id4").withAccountName("account4").withHarnessGroupAccessAllowed(true).build();
+    Account account1 = anAccount()
+                           .withUuid("ACCOUNT_ID")
+                           .withAccountName("account1")
+                           .withHarnessGroupAccessAllowed(false)
+                           .withLicenseInfo(LicenseInfo.builder().build())
+                           .build();
+    Account account2 = anAccount()
+                           .withUuid("id2")
+                           .withAccountName("account2")
+                           .withHarnessGroupAccessAllowed(false)
+                           .withLicenseInfo(LicenseInfo.builder().build())
+                           .build();
+    Account account3 = anAccount()
+                           .withUuid("id3")
+                           .withAccountName("account3")
+                           .withHarnessGroupAccessAllowed(true)
+                           .withLicenseInfo(LicenseInfo.builder().build())
+                           .build();
+    Account account4 = anAccount()
+                           .withUuid("id4")
+                           .withAccountName("account4")
+                           .withHarnessGroupAccessAllowed(true)
+                           .withLicenseInfo(LicenseInfo.builder().build())
+                           .build();
     wingsPersistence.save(account4);
     wingsPersistence.save(account1);
     wingsPersistence.save(account3);
@@ -947,7 +965,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(userGroupService.getCountOfUserGroups("ACCOUNT_ID")).thenReturn(Long.valueOf(1));
     when(userGroupService.list("ACCOUNT_ID",
              aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null,
-             null))
+             null, false))
         .thenReturn(
             aPageResponse().withResponse(Collections.singletonList(userGroup1)).withTotal(1).withLimit("10").build());
     when(userGroupService.updateMembers(userGroup1, false, false)).thenReturn(userGroup1_updated);
@@ -978,7 +996,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     verify(userGroupService, times(1))
         .list("ACCOUNT_ID",
             aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null,
-            null);
+            null, false);
     verify(userGroupService, times(1)).updateMembers(userGroup1, false, false);
     assertThat(
         wingsPersistence.findAndDelete(wingsPersistence.createQuery(User.class).filter(BaseKeys.uuid, user1.getUuid()),
@@ -1046,7 +1064,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(userGroupService.getCountOfUserGroups("ACCOUNT_ID")).thenReturn(Long.valueOf(1));
     when(userGroupService.list("ACCOUNT_ID",
              aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null,
-             null))
+             null, false))
         .thenReturn(
             aPageResponse().withResponse(Collections.singletonList(userGroup1)).withTotal(1).withLimit("10").build());
     when(userGroupService.updateMembers(userGroup1, false, false)).thenReturn(userGroup1_updated);
@@ -1078,7 +1096,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     verify(userGroupService, times(1))
         .list("ACCOUNT_ID",
             aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null,
-            null);
+            null, false);
     verify(userGroupService, times(1)).updateMembers(userGroup1, false, false);
     assertThat(
         wingsPersistence.findAndDelete(wingsPersistence.createQuery(User.class).filter(BaseKeys.uuid, user1.getUuid()),
@@ -1137,5 +1155,18 @@ public class UserServiceImplTest extends WingsBaseTest {
             expectedQuery.criteria(UserKeys.email).containsIgnoreCase(searchTerm)),
         expectedQuery.criteria(UserKeys.disabled).notEqual(true));
     assertThat(expectedQuery).isEqualTo(resultantQuery);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testRemoveEmailDomainFromUserName() {
+    String userName = "User Name";
+    String userNameWithoutEmailDomain = userServiceImpl.removeEmailDomainFromUserName(userName);
+    assertThat(userNameWithoutEmailDomain).isEqualTo(userName);
+
+    String userNameAsEmail = "user.name@harness.io";
+    userNameWithoutEmailDomain = userServiceImpl.removeEmailDomainFromUserName(userNameAsEmail);
+    assertThat(userNameWithoutEmailDomain).isEqualTo("user.name");
   }
 }

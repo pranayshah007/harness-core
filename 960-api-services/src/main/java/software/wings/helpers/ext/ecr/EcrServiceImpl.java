@@ -6,17 +6,19 @@
  */
 
 package software.wings.helpers.ext.ecr;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.beans.BuildDetailsInternal.BuildDetailsInternalMetadataKeys;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
-import io.harness.artifacts.gar.service.GARUtils;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.context.MdcGlobalContextData;
@@ -47,7 +49,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -55,6 +59,8 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Created by brett on 7/15/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -191,6 +197,15 @@ public class EcrServiceImpl implements EcrService {
     return null;
   }
 
+  private Optional<Pattern> getRegexIfValid(String regex) {
+    try {
+      return Optional.of(Pattern.compile(regex));
+    } catch (PatternSyntaxException e) {
+      log.warn("The original regex {}, is not a valid regular expression", regex);
+      return Optional.empty();
+    }
+  }
+
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(AwsInternalConfig awsInternalConfig, String registryId,
       String imageUrl, String region, String imageName, String tagRegex) {
@@ -204,13 +219,13 @@ public class EcrServiceImpl implements EcrService {
 
     final String modifiedTagRegex = tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?");
     final Pattern modifiedPattern = Pattern.compile(modifiedTagRegex);
-    final Pattern originalPattern = Pattern.compile(tagRegex);
+    final Optional<Pattern> originalPattern = getRegexIfValid(tagRegex);
 
     List<BuildDetailsInternal> buildsResponse = filterByRegex(builds, modifiedPattern);
 
-    if (EmptyPredicate.isEmpty(buildsResponse)) {
+    if (EmptyPredicate.isEmpty(buildsResponse) && originalPattern.isPresent()) {
       // CDS-71903: If the modified regex does not match any build, try to match the builds with original regex.
-      List<BuildDetailsInternal> buildsResponseWithOriginalRegex = filterByRegex(builds, originalPattern);
+      List<BuildDetailsInternal> buildsResponseWithOriginalRegex = filterByRegex(builds, originalPattern.get());
       if (EmptyPredicate.isEmpty(buildsResponseWithOriginalRegex)) {
         throw new InvalidArtifactServerException(
             "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
@@ -221,7 +236,7 @@ public class EcrServiceImpl implements EcrService {
           buildsResponseWithOriginalRegex.get(0).getNumber());
     }
     final String buildNumber = buildsResponse.get(0).getNumber();
-    if (!originalPattern.matcher(buildNumber).find()) {
+    if (originalPattern.isPresent() && !originalPattern.get().matcher(buildNumber).find()) {
       log.info("Tag {} matched with modified regex {}, did not match with original regex {}", buildNumber,
           modifiedTagRegex, tagRegex);
     }
@@ -260,7 +275,7 @@ public class EcrServiceImpl implements EcrService {
   @Override
   public BuildDetailsInternal verifyBuildNumber(AwsInternalConfig awsInternalConfig, String registryId, String imageUrl,
       String region, String imageName, String tag) {
-    boolean isSHA = GARUtils.isSHA(tag);
+    boolean isSHA = ArtifactUtils.isSHA(tag);
     ImageIdentifier imageIdentifier;
     if (isSHA) {
       imageIdentifier = new ImageIdentifier().withImageDigest(tag);

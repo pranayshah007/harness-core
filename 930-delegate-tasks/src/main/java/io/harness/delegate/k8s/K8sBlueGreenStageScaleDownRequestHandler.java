@@ -6,13 +6,11 @@
  */
 
 package io.harness.delegate.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.Scale;
-import static io.harness.k8s.model.HarnessLabelValues.bgStageEnv;
 import static io.harness.k8s.model.Kind.BG_STAGE_DELETE_WORKLOAD_KINDS;
 import static io.harness.k8s.model.Kind.BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS;
 import static io.harness.k8s.model.Kind.BG_STAGE_WORKLOAD_KINDS;
@@ -24,7 +22,10 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
@@ -37,7 +38,6 @@ import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
-import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease;
@@ -56,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @NoArgsConstructor
 @Slf4j
@@ -108,7 +109,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
     IK8sReleaseHistory releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, request.getReleaseName());
 
     resourceIdsToScale = getResourceIdsToScaleDownStageEnvironment(
-        releaseHistory.getLatestSuccessfulBlueGreenRelease(), k8sDelegateTaskParams, executionLogCallback);
+        releaseHistory.getBlueGreenStageRelease(), k8sDelegateTaskParams, executionLogCallback);
     if (isNotEmpty(resourceIdsToScale)) {
       executionLogCallback.saveExecutionLog(
           "Found following resources from stage release which are eligible for scale down: \n"
@@ -127,7 +128,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) throws Exception {
     List<KubernetesResourceId> resourcesToDelete =
         resourceIdsToScale.stream()
-            .filter(resourceId -> BG_STAGE_DELETE_WORKLOAD_KINDS.contains(Kind.fromString(resourceId.getKind())))
+            .filter(resourceId -> BG_STAGE_DELETE_WORKLOAD_KINDS.contains(resourceId.getKind()))
             .collect(Collectors.toList());
     List<KubernetesResourceId> deletedResources = k8sTaskHelperBase.executeDeleteHandlingPartialExecution(
         client, k8sDelegateTaskParams, resourcesToDelete, executionLogCallback, false);
@@ -140,7 +141,7 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
   private void scaleDownStageEnvironmentResources(
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) throws Exception {
     for (KubernetesResourceId resourceId : resourceIdsToScale) {
-      if (BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS.contains(Kind.fromString(resourceId.getKind()))) {
+      if (BG_STAGE_SCALE_DOWN_WORKLOAD_KINDS.contains(resourceId.getKind())) {
         k8sTaskHelperBase.scale(
             client, k8sDelegateTaskParams, resourceId, TARGET_REPLICA_COUNT, executionLogCallback, true);
       }
@@ -153,25 +154,17 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
       executionLogCallback.saveExecutionLog("\nNo Stage environment found to scale down", INFO);
       return Collections.emptyList();
     }
-    if (bgStageEnv.equals(release.getBgEnvironment())) {
-      executionLogCallback.saveExecutionLog(
-          "\nSkipping scaling down the stage environment as no primary deployment found", INFO);
-      return Collections.emptyList();
-    }
     String stageColor = getStageColor(release);
     if (isEmpty(stageColor)) {
       executionLogCallback.saveExecutionLog(
           "\nSkipping scaling down the stage environment as the release has invalid BG color", INFO);
       return Collections.emptyList();
     }
-    String primaryColor = k8sBGBaseHandler.getInverseColor(stageColor);
-    String regex = primaryColor + "$";
     return release.getResourceIds()
         .stream()
         .filter(k8sResourceId
-            -> BG_STAGE_WORKLOAD_KINDS.contains(Kind.fromString(k8sResourceId.getKind()))
-                && k8sResourceId.getName().endsWith(primaryColor))
-        .peek(k8sResourceId -> k8sResourceId.setName(k8sResourceId.getName().replaceAll(regex, stageColor)))
+            -> BG_STAGE_WORKLOAD_KINDS.contains(k8sResourceId.getKind())
+                && k8sResourceId.getName().endsWith(stageColor))
         .filter(k8sResourceId
             -> k8sTaskHelperBase.checkIfResourceContainsHarnessDirectApplyAnnotation(
                 client, k8sDelegateTaskParams, k8sResourceId, executionLogCallback))
@@ -181,13 +174,13 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
 
   private String getStageColor(IK8sRelease release) {
     if (release instanceof K8sRelease) {
-      return k8sBGBaseHandler.getInverseColor(release.getReleaseColor());
+      return release.getReleaseColor();
     }
     if (release instanceof K8sLegacyRelease) {
       String managedWorkloadName = ((K8sLegacyRelease) release).getManagedWorkload().getName();
       String color = managedWorkloadName.substring(managedWorkloadName.lastIndexOf('-') + 1);
       if (isNotEmpty(color) && BLUE_GREEN_COLORS.contains(color)) {
-        return k8sBGBaseHandler.getInverseColor(color);
+        return color;
       }
       return StringUtils.EMPTY;
     }

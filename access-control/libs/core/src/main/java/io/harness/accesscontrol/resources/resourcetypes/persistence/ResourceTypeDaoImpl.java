@@ -34,7 +34,16 @@ public class ResourceTypeDaoImpl implements ResourceTypeDao {
 
   @Override
   public ResourceType save(ResourceType resourceType) {
-    return fromDBO(resourceTypeRepository.save(toDBO(resourceType)));
+    ResourceTypeDBO newResourceTypeDBO = toDBO(resourceType);
+    Optional<ResourceTypeDBO> existingResourceTypeDBOOptional =
+        resourceTypeRepository.findByIdentifier(resourceType.getIdentifier());
+    if (existingResourceTypeDBOOptional.isPresent()) {
+      ResourceTypeDBO existingResourceTypeDBO = existingResourceTypeDBOOptional.get();
+      newResourceTypeDBO.setVersion(existingResourceTypeDBO.getVersion());
+      newResourceTypeDBO.setCreatedAt(existingResourceTypeDBO.getCreatedAt());
+      newResourceTypeDBO.setId(existingResourceTypeDBO.getId());
+    }
+    return fromDBO(resourceTypeRepository.save(newResourceTypeDBO));
   }
 
   @Override

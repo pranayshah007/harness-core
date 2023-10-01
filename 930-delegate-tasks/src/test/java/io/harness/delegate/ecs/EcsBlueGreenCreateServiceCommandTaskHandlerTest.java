@@ -10,6 +10,7 @@ package io.harness.delegate.ecs;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -119,7 +120,7 @@ public class EcsBlueGreenCreateServiceCommandTaskHandlerTest extends CategoryTes
     doReturn(ecsBlueGreenCreateServiceResponse)
         .when(ecsDeploymentHelper)
         .deployStageService(eq(createServiceLogCallback), eq(ecsCommandRequest), anyList(), anyList(), anyString(),
-            anyString(), eq(null), eq(ecsLoadBalancerConfig), anyString());
+            anyString(), eq(null), eq(ecsLoadBalancerConfig), anyString(), anyBoolean(), anyBoolean());
 
     EcsBlueGreenCreateServiceResponse actualEcsBlueGreenCreateServiceResponse =
         (EcsBlueGreenCreateServiceResponse) ecsBlueGreenCreateServiceCommandTaskHandler.executeTaskInternal(

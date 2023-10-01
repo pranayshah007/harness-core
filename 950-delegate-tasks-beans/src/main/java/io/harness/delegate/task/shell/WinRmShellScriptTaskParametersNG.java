@@ -9,16 +9,17 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
-import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.mixin.ProcessExecutorCapabilityGenerator;
+import io.harness.delegate.task.utils.K8sCapabilityGenerator;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.k8s.K8sConstants;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
@@ -30,6 +31,8 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Value
 @Builder
 public class WinRmShellScriptTaskParametersNG implements TaskParameters, ExecutionCapabilityDemander {
@@ -48,21 +51,20 @@ public class WinRmShellScriptTaskParametersNG implements TaskParameters, Executi
   SecretSpecDTO sshKeySpecDTO;
   List<EncryptedDataDetail> encryptionDetails;
   String host;
+  Long sessionTimeout;
 
   // WinRm specific fields
   boolean disableCommandEncoding;
   boolean winrmScriptCommandSplit;
   boolean useWinRMKerberosUniqueCacheFile;
+  boolean disableWinRmEnvVarEscaping;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
-    if (script.contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH) && k8sInfraDelegateConfig != null) {
-      if (k8sInfraDelegateConfig instanceof DirectK8sInfraDelegateConfig) {
-        capabilities.addAll(K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
-            ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator,
-            k8sInfraDelegateConfig.useSocketCapability()));
-      }
+    if (k8sInfraDelegateConfig != null) {
+      capabilities.addAll(
+          K8sCapabilityGenerator.generateExecutionCapabilities(maskingEvaluator, k8sInfraDelegateConfig));
     }
     if (scriptType == ScriptType.POWERSHELL && executeOnDelegate) {
       capabilities.add(ProcessExecutorCapabilityGenerator.buildProcessExecutorCapability(

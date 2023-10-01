@@ -100,13 +100,13 @@ public class AwsLambdaInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
                 .accountId(ACCOUNT_ID)
                 .tags(singletonList("tag"))
                 .data(TaskData.builder()
-                          .async(false)
+                          .async(true)
                           .taskType(TaskType.AWS_LAMBDA_TASK.name())
                           .parameters(new Object[] {request})
                           .timeout(TimeUnit.MINUTES.toMillis(InstanceSyncConstants.VALIDATION_TIMEOUT_MINUTES))
                           .build())
                 .build(),
-            DelegateTaskKeys.expiry, DelegateTaskKeys.validUntil);
+            DelegateTaskKeys.expiry, DelegateTaskKeys.validUntil, DelegateTaskKeys.waitId);
   }
 
   private PerpetualTaskClientContext getClientContext() {

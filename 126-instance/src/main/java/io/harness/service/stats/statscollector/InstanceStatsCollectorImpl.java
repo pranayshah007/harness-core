@@ -15,6 +15,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
+import io.harness.repositories.instancestatsiterator.InstanceStatsIteratorRepository;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instancestats.InstanceStatsService;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
@@ -45,6 +46,7 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   private InstanceService instanceService;
   private UsageMetricsEventPublisher usageMetricsEventPublisher;
   private HPersistence persistence;
+  private InstanceStatsIteratorRepository instanceStatsIteratorRepository;
 
   @Override
   public boolean createStats(String accountId) {
@@ -73,6 +75,9 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
                 log.warn(
                     "Tried publishing {} stats for service {}. Pending backlog will be published in the next iteration",
                     MAX_CALLS_PER_SERVICE, service.getIdentifier());
+                instanceStatsIteratorRepository.updateTimestampForIterator(accountId, service.getOrgIdentifier(),
+                    service.getProjectIdentifier(), service.getIdentifier(),
+                    snapshotTimeProvider.currentlyAt().toEpochMilli());
                 break;
               }
               Instant nextTs = snapshotTimeProvider.next();
@@ -127,11 +132,15 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
       if (isRecentCollection(instant)) {
         instances =
             instanceService.getActiveInstancesByAccountOrgProjectAndService(accountId, orgId, projectId, serviceId, -1);
-        usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, Instant.now().toEpochMilli(), instances);
+        long timestamp = Instant.now().toEpochMilli();
+        usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, timestamp, instances);
+        instanceStatsIteratorRepository.updateTimestampForIterator(accountId, orgId, projectId, serviceId, timestamp);
       } else {
         instances = instanceService.getActiveInstancesByAccountOrgProjectAndService(
             accountId, orgId, projectId, serviceId, instant.toEpochMilli());
         usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, instant.toEpochMilli(), instances);
+        instanceStatsIteratorRepository.updateTimestampForIterator(
+            accountId, orgId, projectId, serviceId, instant.toEpochMilli());
       }
       return true;
     } catch (Exception e) {

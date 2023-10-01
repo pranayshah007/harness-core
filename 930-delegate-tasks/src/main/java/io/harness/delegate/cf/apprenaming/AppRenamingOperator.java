@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.cf.apprenaming;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
@@ -25,6 +27,7 @@ import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 public interface AppRenamingOperator {
   enum NamingTransition {
     VERSION_TO_NON_VERSION,

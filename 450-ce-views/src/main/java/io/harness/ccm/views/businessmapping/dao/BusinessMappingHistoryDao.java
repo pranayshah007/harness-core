@@ -83,6 +83,16 @@ public class BusinessMappingHistoryDao {
     return businessMappingHistory;
   }
 
+  public boolean delete(BusinessMappingHistory businessMappingHistory) {
+    Query<BusinessMappingHistory> query = hPersistence.createQuery(BusinessMappingHistory.class)
+                                              .field(BusinessMappingHistoryKeys.accountId)
+                                              .equal(businessMappingHistory.getAccountId())
+                                              .field(BusinessMappingHistoryKeys.uuid)
+                                              .equal(businessMappingHistory.getUuid());
+
+    return hPersistence.delete(query);
+  }
+
   private UpdateOperations<BusinessMappingHistory> getUpdateOperations(BusinessMappingHistory businessMappingHistory) {
     UpdateOperations<BusinessMappingHistory> updateOperations =
         hPersistence.createUpdateOperations(BusinessMappingHistory.class);

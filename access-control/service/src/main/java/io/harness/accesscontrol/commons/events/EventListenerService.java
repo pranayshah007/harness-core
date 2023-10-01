@@ -24,10 +24,10 @@ public abstract class EventListenerService implements Managed {
 
   public abstract String getServiceName();
 
-  public EventListenerService(EventListener eventListener) {
+  public EventListenerService(EventListener eventListener, EventsConfig eventsConfig) {
     this.eventListener = eventListener;
-    executorService = Executors.newSingleThreadExecutor(
-        new ThreadFactoryBuilder().setNameFormat(getServiceName() + "-listener-main-thread").build());
+    executorService = Executors.newFixedThreadPool(eventsConfig.getThreads(),
+        new ThreadFactoryBuilder().setNameFormat(getServiceName() + "-listener-main-thread-%d").build());
   }
 
   @Override

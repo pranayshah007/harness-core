@@ -12,10 +12,11 @@ import static io.harness.cvng.core.services.CVNextGenConstants.CHANGE_EVENT_NG_P
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
@@ -108,7 +109,7 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
   public RestResponse<PageResponse<ChangeEventDTO>> get(@Valid @BeanParam ProjectPathParams projectPathParams,
       List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
       List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
-      List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
+      List<ChangeSourceType> changeSourceTypes, @NotNull long startTime, @NotNull long endTime,
       PageRequest pageRequest) {
     validate(scopedMonitoredServiceIdentifiers, projectPathParams, startTime, endTime);
     ProjectParams projectParams = ProjectParams.builder()
@@ -117,8 +118,28 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getChangeEvents(projectParams, serviceIdentifiers, envIdentifiers,
-        monitoredServiceIdentifiers, false, searchText, changeCategories, changeSourceTypes,
-        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pageRequest));
+        monitoredServiceIdentifiers, false, changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime),
+        Instant.ofEpochMilli(endTime), pageRequest));
+  }
+
+  @Override
+  @Timed
+  @NextGenManagerAuth
+  @ExceptionMetered
+  @ApiOperation(value = "get ReportList List for Project", nickname = "reportListProject")
+  public RestResponse<PageResponse<SRMAnalysisStepDetailDTO>> get(@Valid @BeanParam ProjectPathParams projectPathParams,
+      List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
+      List<String> scopedMonitoredServiceIdentifiers, @NotNull long startTime, @NotNull long endTime,
+      PageRequest pageRequest) {
+    validate(scopedMonitoredServiceIdentifiers, projectPathParams, startTime, endTime);
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(projectPathParams.getAccountIdentifier())
+                                      .orgIdentifier(projectPathParams.getOrgIdentifier())
+                                      .projectIdentifier(projectPathParams.getProjectIdentifier())
+                                      .build();
+    return new RestResponse<>(
+        changeEventService.getReportList(projectParams, serviceIdentifiers, envIdentifiers, monitoredServiceIdentifiers,
+            false, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pageRequest));
   }
 
   @Override
@@ -129,8 +150,7 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
   public RestResponse<ChangeTimeline> get(@Valid @BeanParam ProjectPathParams projectPathParams,
       List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
       List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
-      List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
-      Integer pointCount) {
+      List<ChangeSourceType> changeSourceTypes, @NotNull long startTime, @NotNull long endTime, Integer pointCount) {
     validate(scopedMonitoredServiceIdentifiers, projectPathParams, startTime, endTime);
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
@@ -138,8 +158,8 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getTimeline(projectParams, serviceIdentifiers, envIdentifiers,
-        monitoredServiceIdentifiers, false, searchText, changeCategories, changeSourceTypes,
-        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pointCount));
+        monitoredServiceIdentifiers, false, changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime),
+        Instant.ofEpochMilli(endTime), pointCount));
   }
 
   @Override

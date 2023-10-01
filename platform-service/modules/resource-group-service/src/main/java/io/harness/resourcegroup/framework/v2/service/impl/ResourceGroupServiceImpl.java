@@ -218,20 +218,7 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
 
   @Override
   public Page<ResourceGroupResponse> list(ResourceGroupFilterDTO resourceGroupFilterDTO, PageRequest pageRequest) {
-    Page<ResourceGroup> resourceGroupPageResponse;
-    Criteria criteria = getResourceGroupFilterCriteria(resourceGroupFilterDTO);
-    if (!accessControlClient.hasAccess(
-            ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
-                resourceGroupFilterDTO.getProjectIdentifier()),
-            Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION)) {
-      List<ResourceGroup> resourceGroups = resourceGroupV2Repository.findAll(criteria, Pageable.unpaged()).getContent();
-
-      resourceGroups = getPermittedResourceGroups(resourceGroups);
-      resourceGroupPageResponse =
-          getPaginatedResult(resourceGroups, pageRequest.getPageIndex(), pageRequest.getPageSize());
-    } else {
-      resourceGroupPageResponse = resourceGroupV2Repository.findAll(criteria, getPageRequest(pageRequest));
-    }
+    Page<ResourceGroup> resourceGroupPageResponse = listAll(resourceGroupFilterDTO, pageRequest);
     return resourceGroupPageResponse.map(ResourceGroupMapper::toResponseWrapper);
   }
 
@@ -276,7 +263,7 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
     return resourceGroupPageResponse.map(ResourceGroupMapper::toResponseWrapper);
   }
 
-  private List<ResourceGroup> getPermittedResourceGroups(List<ResourceGroup> resourceGroups) {
+  public List<ResourceGroup> getPermittedResourceGroups(List<ResourceGroup> resourceGroups) {
     if (isEmpty(resourceGroups)) {
       return Collections.emptyList();
     }
@@ -305,6 +292,12 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
       }
     }
     return permittedResourceGroup;
+  }
+
+  @Override
+  public Page<ResourceGroup> listAll(ResourceGroupFilterDTO resourceGroupFilterDTO, PageRequest pageRequest) {
+    Criteria criteria = getResourceGroupFilterCriteria(resourceGroupFilterDTO);
+    return resourceGroupV2Repository.findAll(criteria, getPageRequest(pageRequest));
   }
 
   private static EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {

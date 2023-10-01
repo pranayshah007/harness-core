@@ -6,11 +6,13 @@
  */
 
 package io.harness.engine;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.governance.GovernanceMetadata;
@@ -20,7 +22,7 @@ import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
 import io.harness.opaclient.model.TemplateOpaEvaluationContext;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -31,6 +33,8 @@ import java.io.IOException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -41,9 +45,9 @@ public class GovernanceServiceImpl implements GovernanceService {
   @Override
   public GovernanceMetadata evaluateGovernancePolicies(String expandedJson, String accountId, String orgIdentifier,
       String projectIdentifier, String action, String planExecutionId, String pipelineVersion) {
-    pipelineVersion = isEmpty(pipelineVersion) ? PipelineVersion.V0 : pipelineVersion;
+    pipelineVersion = isEmpty(pipelineVersion) ? HarnessYamlVersion.V0 : pipelineVersion;
     switch (pipelineVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return GovernanceMetadata.newBuilder().setDeny(false).build();
       default:
         break;

@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.pipeline.validation.async.handler;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -27,6 +29,7 @@ import io.harness.pms.template.service.PipelineRefreshService;
 import io.fabric8.utils.Pair;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PipelineAsyncValidationHandler implements Runnable {

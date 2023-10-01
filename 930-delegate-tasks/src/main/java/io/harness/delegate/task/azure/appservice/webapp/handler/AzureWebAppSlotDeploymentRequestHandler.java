@@ -107,7 +107,7 @@ public class AzureWebAppSlotDeploymentRequestHandler
           artifactConfig, autoCloseableWorkingDirectory, logCallbackProvider);
       AzureArtifactDownloadResponse artifactResponse = artifactDownloaderService.download(downloadContext);
       AzureWebClientContext azureWebClientContext =
-          buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
+          buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig, true);
 
       AzureAppServicePackageDeploymentContext packageDeploymentContext = toAzureAppServicePackageDeploymentContext(
           taskRequest, azureWebClientContext, artifactResponse, logCallbackProvider);

@@ -7,6 +7,10 @@
 
 package io.harness.ccm.views.entities;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
+import io.harness.annotations.dev.OwnedBy;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -15,7 +19,11 @@ import lombok.experimental.FieldDefaults;
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@OwnedBy(CE)
 public class ViewPreferences {
+  Boolean showAnomalies;
   Boolean includeOthers;
   Boolean includeUnallocatedCost;
+  AWSViewPreferences awsPreferences;
+  GCPViewPreferences gcpPreferences;
 }

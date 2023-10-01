@@ -26,14 +26,13 @@ public class PlanExecutionStatusUpdateEventHandler {
   @Inject private PlanExecutionService planExecutionService;
   @Inject private GraphGenerationService graphGenerationService;
 
-  public OrchestrationGraph handleEvent(String planExecutionId, OrchestrationGraph orchestrationGraph) {
-    PlanExecution planExecution = planExecutionService.get(planExecutionId);
+  public OrchestrationGraph handleEvent(PlanExecution planExecution, OrchestrationGraph orchestrationGraph) {
     try {
       if (planExecution.getStatus() == Status.ERRORED) {
         // If plan Execution is ERRORED force generate the graph
         // graph. So that pipeline is failed
         log.info("[PMS_GRAPH]  Got Errored execution regenerating the graph final time");
-        return graphGenerationService.buildOrchestrationGraph(planExecutionId);
+        return graphGenerationService.buildOrchestrationGraph(planExecution.getUuid());
       }
       log.info("[PMS_GRAPH]  Updating Plan Execution with uuid [{}] with status [{}].", planExecution.getUuid(),
           planExecution.getStatus());
@@ -41,8 +40,8 @@ public class PlanExecutionStatusUpdateEventHandler {
         orchestrationGraph = orchestrationGraph.withEndTs(planExecution.getEndTs());
       }
     } catch (Exception e) {
-      log.error(String.format(
-                    "[GRAPH_ERROR] Graph update for PLAN_EXECUTION_UPDATE event failed for plan [%s]", planExecutionId),
+      log.error(String.format("[GRAPH_ERROR] Graph update for PLAN_EXECUTION_UPDATE event failed for plan [%s]",
+                    planExecution.getUuid()),
           e);
       throw e;
     }

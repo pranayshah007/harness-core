@@ -27,6 +27,7 @@ public class SetupVmRequest {
   @JsonProperty("tags") Map<String, String> tags;
   @JsonProperty("setup_request") Config config;
   @JsonProperty("infra_type") String infraType;
+  @JsonProperty("context") Context context;
 
   @Data
   @Builder
@@ -91,5 +92,16 @@ public class SetupVmRequest {
     @JsonProperty("id") String id;
     @JsonProperty("name") String name;
     @JsonProperty("path") String path;
+  }
+
+  @Data
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Context {
+    @JsonProperty("account_id") String accountID;
+    @JsonProperty("org_id") String orgID;
+    @JsonProperty("project_id") String projectID;
+    @JsonProperty("pipeline_id") String pipelineID;
+    @JsonProperty("run_sequence") int runSequence;
   }
 }

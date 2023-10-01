@@ -74,10 +74,11 @@ import io.harness.queueservice.infc.DelegateCapacityManagementService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateRingService;
 import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountPreferences;
+import software.wings.beans.account.AccountPreferences;
 import software.wings.beans.dto.ThirdPartyApiCallLog;
 import software.wings.beans.dto.ThirdPartyApiCallLog.FieldType;
 import software.wings.beans.dto.ThirdPartyApiCallLog.ThirdPartyApiCallField;
@@ -153,6 +154,8 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final DelegatePollingHeartbeatService delegatePollingHeartbeatService =
       mock(DelegatePollingHeartbeatService.class);
 
+  private static final DelegateRingService delegateRingService = mock(DelegateRingService.class);
+
   @Parameter public String apiUrl;
 
   @Parameters
@@ -167,7 +170,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
               artifactCollectionResponseHandler, instanceSyncResponseHandler, manifestCollectionResponseHandler,
               connectorHearbeatPublisher, kryoSerializer, configurationController, featureFlagService,
               delegateTaskServiceClassic, pollResourceClient, instanceSyncResponsePublisher,
-              delegatePollingHeartbeatService, delegateCapacityManagementService))
+              delegatePollingHeartbeatService, delegateCapacityManagementService, delegateRingService))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {

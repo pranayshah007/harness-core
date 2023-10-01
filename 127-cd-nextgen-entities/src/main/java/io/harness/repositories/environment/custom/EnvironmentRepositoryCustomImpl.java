@@ -7,9 +7,22 @@
 
 package io.harness.repositories.environment.custom;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.Scope;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
+import io.harness.ng.core.utils.CDGitXService;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
@@ -33,13 +46,16 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCustom {
   private final MongoTemplate mongoTemplate;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(10);
   private final int MAX_ATTEMPTS = 3;
+  private final GitAwareEntityHelper gitAwareEntityHelper;
+  private final CDGitXService cdGitXService;
 
   @Override
   public Page<Environment> findAll(Criteria criteria, Pageable pageable) {
@@ -47,6 +63,33 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
     List<Environment> projects = mongoTemplate.find(query, Environment.class);
     return PageableExecutionUtils.getPage(
         projects, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Environment.class));
+  }
+
+  @Override
+  public Environment saveGitAware(Environment environmentToSave) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    // inline entity
+    if (gitEntityInfo == null || StoreType.INLINE.equals(gitEntityInfo.getStoreType())
+        || gitEntityInfo.getStoreType() == null) {
+      environmentToSave.setStoreType(StoreType.INLINE);
+      return mongoTemplate.save(environmentToSave);
+    }
+
+    if (!cdGitXService.isNewGitXEnabled(environmentToSave.getAccountId(), environmentToSave.getOrgIdentifier(),
+            environmentToSave.getProjectIdentifier())) {
+      throw new InvalidRequestException(GitXUtils.getErrorMessageForGitSimplificationNotEnabled(
+          environmentToSave.getOrgIdentifier(), environmentToSave.getProjectIdentifier()));
+    }
+
+    addGitParamsToEnvironmentEntity(environmentToSave, gitEntityInfo);
+    Scope scope = Scope.of(environmentToSave.getAccountId(), environmentToSave.getOrgIdentifier(),
+        environmentToSave.getProjectIdentifier());
+    String yamlToPush = environmentToSave.getYaml();
+
+    gitAwareEntityHelper.createEntityOnGit(environmentToSave, yamlToPush, scope);
+    return mongoTemplate.save(environmentToSave);
   }
 
   @Override
@@ -145,5 +188,17 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
 
     List<Environment> EnvironmentEntity = mongoTemplate.find(query, Environment.class);
     return EnvironmentEntity.stream().map(environment -> environment.getIdentifier()).collect(Collectors.toList());
+  }
+
+  private void addGitParamsToEnvironmentEntity(Environment environmentEntity, GitEntityInfo gitEntityInfo) {
+    environmentEntity.setStoreType(StoreType.REMOTE);
+    if (EmptyPredicate.isEmpty(environmentEntity.getRepoURL())) {
+      environmentEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(environmentEntity.getAccountId(),
+          environmentEntity.getOrgIdentifier(), environmentEntity.getProjectIdentifier()));
+    }
+    environmentEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    environmentEntity.setRepo(gitEntityInfo.getRepoName());
+    environmentEntity.setFilePath(gitEntityInfo.getFilePath());
+    environmentEntity.setFallBackBranch(gitEntityInfo.getBranch());
   }
 }

@@ -8,15 +8,16 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.TelemetryConstants.CLOUD_PROVIDER;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_SET_CREATED;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_SET_DELETE;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_SET_UPDATED;
+import static io.harness.ccm.TelemetryConstants.MODULE;
+import static io.harness.ccm.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.TelemetryConstants.RULE_SET_NAME;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_CREATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_DELETE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_UPDATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
-import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_SET_NAME;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -174,8 +175,16 @@ public class GovernanceRuleSetResource {
     } else {
       throw new InvalidRequestException("Not authorised to create OOTB rule set. Make a custom rule set instead");
     }
+    if (ruleSet.getRulesIdentifier() == null || ruleSet.getRulesIdentifier().size() < 1) {
+      throw new InvalidRequestException("rulesIdentifier is a required field.");
+    }
     Set<String> uniqueRuleIds = new HashSet<>();
     uniqueRuleIds.addAll(ruleSet.getRulesIdentifier());
+    if (ruleSet.getCloudProvider() == null) {
+      ruleSet.setCloudProvider(
+          ruleService.fetchById(accountId, uniqueRuleIds.iterator().next(), false).getCloudProvider());
+    }
+    ruleSetService.validateCloudProvider(accountId, uniqueRuleIds, ruleSet.getCloudProvider());
     Set<String> rulesPermitted =
         rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, uniqueRuleIds, RULE_EXECUTE);
     if (rulesPermitted.size() != uniqueRuleIds.size()) {
@@ -187,10 +196,12 @@ public class GovernanceRuleSetResource {
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
+    ruleSet.setUuid(null);
     ruleSetService.save(ruleSet);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_SET_NAME, ruleSet.getName());
+    properties.put(CLOUD_PROVIDER, ruleSet.getCloudProvider());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_CREATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
@@ -220,9 +231,13 @@ public class GovernanceRuleSetResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
-    ruleSet.toDTO();
     ruleSet.setAccountId(accountId);
     RuleSet oldRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), true);
+    if (ruleSet.getCloudProvider() == null) {
+      ruleSet.setCloudProvider(oldRuleSet.getCloudProvider());
+    } else if (ruleSet.getCloudProvider() != oldRuleSet.getCloudProvider()) {
+      throw new InvalidRequestException("Update to Cloud Provider is not allowed");
+    }
     if (oldRuleSet.getIsOOTB()) {
       throw new InvalidRequestException("Editing OOTB Rule Set is not allowed");
     }
@@ -231,8 +246,12 @@ public class GovernanceRuleSetResource {
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
+    if (ruleSet.getRulesIdentifier() == null || ruleSet.getRulesIdentifier().size() < 1) {
+      throw new InvalidRequestException("rulesIdentifier is a required field.");
+    }
     Set<String> uniqueRuleIds = new HashSet<>();
     uniqueRuleIds.addAll(ruleSet.getRulesIdentifier());
+    ruleSetService.validateCloudProvider(accountId, uniqueRuleIds, ruleSet.getCloudProvider());
     Set<String> rulesPermitted =
         rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, uniqueRuleIds, RULE_EXECUTE);
     if (rulesPermitted.size() != uniqueRuleIds.size()) {
@@ -242,11 +261,14 @@ public class GovernanceRuleSetResource {
     }
     ruleSetService.update(accountId, ruleSet);
     RuleSet updatedRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), false);
+
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_SET_NAME, ruleSet.getName());
+    properties.put(RULE_SET_NAME, updatedRuleSet.getName());
+    properties.put(CLOUD_PROVIDER, updatedRuleSet.getCloudProvider());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new RuleSetUpdateEvent(accountId, updatedRuleSet.toDTO(), oldRuleSet.toDTO()));
       return updatedRuleSet;
@@ -277,7 +299,6 @@ public class GovernanceRuleSetResource {
       throw new InvalidRequestException(MALFORMED_ERROR);
     }
     RuleSet ruleSet = createRuleSetDTO.getRuleSet();
-    ruleSet.toDTO();
     if (!ruleSet.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       throw new InvalidRequestException("Editing OOTB rule set is not allowed");
     }
@@ -363,6 +384,7 @@ public class GovernanceRuleSetResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_SET_NAME, ruleSet.getName());
+    properties.put(CLOUD_PROVIDER, ruleSet.getCloudProvider());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {

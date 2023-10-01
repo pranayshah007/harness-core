@@ -25,6 +25,7 @@ import io.harness.cdng.ecs.beans.EcsBlueGreenCreateServiceDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenSwapTargetGroupsOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
+import io.harness.cdng.ecs.beans.EcsServiceDeployConfig;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -55,11 +56,13 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import software.wings.beans.TaskType;
 
+import com.google.api.client.util.Lists;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Rule;
@@ -101,8 +104,8 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void getStepParametersClassTest() {
-    Class<StepElementParameters> stepElementParametersClass = ecsBlueGreenSwapTargetGroupsStep.getStepParametersClass();
-    assertThat(stepElementParametersClass).isEqualTo(StepElementParameters.class);
+    Class<StepBaseParameters> stepElementParametersClass = ecsBlueGreenSwapTargetGroupsStep.getStepParametersClass();
+    assertThat(stepElementParametersClass).isEqualTo(StepBaseParameters.class);
   }
 
   @Test
@@ -205,6 +208,11 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
             .prodTargetGroupArn("grpArn")
             .isFirstDeployment(true)
             .serviceName("service")
+            .ecsBGServiceDeployConfig(EcsServiceDeployConfig.builder()
+                                          .enableAutoscalingInSwapStep(true)
+                                          .ecsScalingPolicyManifestContentList(Lists.newArrayList())
+                                          .ecsScalableTargetManifestContentList(Lists.newArrayList())
+                                          .build())
             .build();
     OptionalSweepingOutput ecsBlueGreenPrepareRollbackDataOptionalOutput =
         OptionalSweepingOutput.builder().found(true).output(ecsBlueGreenPrepareRollbackDataOutcome).build();
@@ -275,6 +283,8 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
                 && ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue())
             .downsizeOldServiceDelayInSecs(
                 ParameterFieldHelper.getParameterFieldValue(ecsSpecParameters.getDownsizeOldServiceDelayInSecs()))
+            .ecsScalingPolicyManifestContentList(Lists.newArrayList())
+            .ecsScalableTargetManifestContentList(Lists.newArrayList())
             .build();
 
     verify(ecsStepCommonHelper)

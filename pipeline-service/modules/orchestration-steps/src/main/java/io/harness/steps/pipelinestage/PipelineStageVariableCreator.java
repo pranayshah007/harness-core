@@ -6,7 +6,9 @@
  */
 
 package io.harness.steps.pipelinestage;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
@@ -22,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class PipelineStageVariableCreator extends AbstractStageVariableCreator<PipelineStageNode> {
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(

@@ -29,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.istio.IstioTaskHelper;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
@@ -74,6 +75,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class K8sCanaryBaseHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
+  @Inject private IstioTaskHelper istioTaskHelper;
 
   public boolean prepareForCanary(K8sCanaryHandlerConfig canaryHandlerConfig,
       K8sRequestHandlerContext k8sRequestHandlerContext, K8sDelegateTaskParams k8sDelegateTaskParams,
@@ -221,13 +223,13 @@ public class K8sCanaryBaseHandler {
 
   public void updateDestinationRuleManifestFilesWithSubsets(List<KubernetesResource> resources,
       KubernetesConfig kubernetesConfig, LogCallback logCallback) throws IOException {
-    k8sTaskHelperBase.updateDestinationRuleManifestFilesWithSubsets(resources,
+    istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(resources,
         asList(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable), kubernetesConfig, logCallback);
   }
 
   public void updateVirtualServiceManifestFilesWithRoutes(List<KubernetesResource> resources,
       KubernetesConfig kubernetesConfig, LogCallback logCallback) throws IOException {
-    k8sTaskHelperBase.updateVirtualServiceManifestFilesWithRoutesForCanary(resources, kubernetesConfig, logCallback);
+    istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(resources, kubernetesConfig, logCallback);
   }
 
   public List<K8sPod> getAllPods(K8sCanaryHandlerConfig canaryHandlerConfig, String releaseName, long timeoutInMillis)

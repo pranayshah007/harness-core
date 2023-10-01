@@ -6,18 +6,21 @@
  */
 
 package io.harness.pms.tags;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -28,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -37,12 +41,12 @@ public class OrchestrationEndTagsResolveHandler implements OrchestrationEndObser
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(ambiance.getPlanExecutionId(),
             Sets.newHashSet(PlanExecutionSummaryKeys.tags, PlanExecutionSummaryKeys.pipelineVersion));
     if (pipelineExecutionSummaryEntity != null
-        && !PipelineVersion.isV1(pipelineExecutionSummaryEntity.getPipelineVersion())) {
+        && !HarnessYamlVersion.isV1(pipelineExecutionSummaryEntity.getPipelineVersion())) {
       List<NGTag> resolvedTags =
           (List<NGTag>) pmsEngineExpressionService.resolve(ambiance, pipelineExecutionSummaryEntity.getTags(), true);
       Update update = new Update().set(PlanExecutionSummaryKeys.tags, resolvedTags);

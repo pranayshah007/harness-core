@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.bean.yaml;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
@@ -45,6 +46,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = SidecarArtifactVisitorHelper.class)
 @TypeAlias("sidecarArtifact")
 @OneOfField(fields = {"spec", "template"})
+@RecasterAlias("io.harness.cdng.artifact.bean.yaml.SidecarArtifact")
 public class SidecarArtifact implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

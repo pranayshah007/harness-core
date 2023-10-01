@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.beans.connector.rancher;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
@@ -16,6 +18,7 @@ import io.harness.delegate.beans.connector.ConnectorValidationResponseData;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder

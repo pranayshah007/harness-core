@@ -6,13 +6,15 @@
  */
 
 package io.harness.cdng.creator.plan.steps;
-
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileReference;
 import io.harness.cdng.creator.CDCreatorUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -40,6 +42,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class CDPMSStepFilterJsonCreatorV2 extends GenericStepPMSFilterJsonCreatorV2 {

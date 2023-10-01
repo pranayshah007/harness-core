@@ -5,6 +5,12 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "verification-svc.labels" . | nindent 4 }}
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 spec:
   progressDeadlineSeconds: 600
   {{- if not .Values.autoscaling.enabled }}
@@ -28,6 +34,12 @@ spec:
       {{- end }}
       labels:
         {{- include "verification-svc.selectorLabels" . | nindent 8 }}
+        {{- if .Values.global.commonLabels }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 8 }}
+        {{- end }}
+        {{- if .Values.podLabels }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.podLabels "context" $) | nindent 8 }}
+        {{- end }}
     spec:
       {{ include "verification-svc.pullSecrets" . | nindent 6 }}
       serviceAccountName: {{ include "verification-svc.serviceAccountName" . }}
@@ -60,10 +72,10 @@ spec:
               name: verification-svc
           env:
             {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
-            - name: DMS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "dms-harness" "context" $) }}
             - name: MONGO_URI
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
+            - name: DMS_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "dms-harness" "context" $) }}
           readinessProbe:
             failureThreshold: 3
             httpGet:

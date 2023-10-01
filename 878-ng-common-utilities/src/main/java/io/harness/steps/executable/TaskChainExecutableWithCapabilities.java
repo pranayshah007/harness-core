@@ -9,11 +9,11 @@ package io.harness.steps.executable;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -21,7 +21,7 @@ import io.harness.tasks.ResponseData;
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class TaskChainExecutableWithCapabilities extends TaskChainExecutableWithRollbackAndRbac {
   @Override
-  public StepResponse finalizeExecution(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse finalizeExecution(Ambiance ambiance, StepBaseParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
       StepResponse stepResponse =
@@ -33,7 +33,7 @@ public abstract class TaskChainExecutableWithCapabilities extends TaskChainExecu
   // evaluating policies added in advanced section of the steps and updating status and failure info in the step
   // response
   public StepResponse postTaskValidate(
-      Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepResponse stepResponse) {
     return stepResponse;
   }
 }

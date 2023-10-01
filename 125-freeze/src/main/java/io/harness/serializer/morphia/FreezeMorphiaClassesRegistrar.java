@@ -7,6 +7,9 @@
 
 package io.harness.serializer.morphia;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.entity.FrozenExecution;
 import io.harness.morphia.MorphiaRegistrar;
@@ -14,6 +17,8 @@ import io.harness.morphia.MorphiaRegistrarHelperPut;
 
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 public class FreezeMorphiaClassesRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {

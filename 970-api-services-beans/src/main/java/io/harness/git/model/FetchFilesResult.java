@@ -7,6 +7,8 @@
 
 package io.harness.git.model;
 
+import io.harness.annotation.RecasterAlias;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +16,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@RecasterAlias("io.harness.git.model.FetchFilesResult")
 public class FetchFilesResult extends GitBaseResult {
   private CommitResult commitResult;
   private List<GitFile> files;

@@ -9,6 +9,7 @@ package io.harness.pms.expressions.functors;
 
 import static io.harness.rule.OwnerRule.IVAN;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -25,12 +26,15 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ForMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,7 +54,7 @@ public class InstanceFunctorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGet() {
     Level level = Level.newBuilder()
-                      .setIdentifier("CommandStep")
+                      .setIdentifier("CommandStepIdentifier")
                       .setStrategyMetadata(StrategyMetadata.newBuilder()
                                                .setForMetadata(ForMetadata.newBuilder().setValue("hostName").build())
                                                .setCurrentIteration(1)
@@ -67,15 +71,43 @@ public class InstanceFunctorTest extends CategoryTest {
         .hasMessage("Not found step level repeat strategy item");
   }
 
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testProperties() {
+    Level level = Level.newBuilder()
+                      .setIdentifier("CommandStepIdentifier")
+                      .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                               .setForMetadata(ForMetadata.newBuilder().setValue("hostName").build())
+                                               .setCurrentIteration(1)
+                                               .setTotalIterations(1)
+                                               .build())
+                      .setGroup(StepOutcomeGroup.STEP.name())
+                      .setStepType(StepType.newBuilder().setType("CommandStep").build())
+                      .build();
+    Ambiance ambiance = Ambiance.newBuilder().addLevels(level).build();
+    when(sweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(getInstancesOutcome()).build());
+    Map<String, Object> properties = (Map<String, Object>) instanceFunctor.get(ambiance, "properties");
+
+    assertThat(properties.get("subnetId")).isEqualTo("subnetId-1234");
+    assertThat(properties.get("privateId")).isEqualTo("private-ip-1");
+  }
+
   private InstancesOutcome getInstancesOutcome() {
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("subnetId", "subnetId-1234");
+    properties.put("privateId", "private-ip-1");
+
     return InstancesOutcome.builder()
         .instances(List.of(InstanceOutcome.builder()
-                               .name("instanceName")
-                               .hostName("instanceHostname")
+                               .name("hostName")
+                               .hostName("hostName")
                                .host(HostOutcome.builder()
-                                         .hostName("instanceHostname")
+                                         .hostName("hostName")
                                          .publicIp("publicIp")
                                          .privateIp("privateIp")
+                                         .properties(properties)
                                          .build())
                                .build()))
         .build();

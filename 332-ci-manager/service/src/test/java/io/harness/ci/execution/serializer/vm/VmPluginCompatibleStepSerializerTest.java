@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -21,12 +22,11 @@ import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.category.element.UnitTests;
-import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.config.CIDockerLayerCachingConfig;
-import io.harness.ci.execution.CIDockerLayerCachingConfigService;
-import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.execution.CIDockerLayerCachingConfigService;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.serializer.vm.VmPluginCompatibleStepSerializer;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -106,10 +106,10 @@ public class VmPluginCompatibleStepSerializerTest {
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).thenReturn(true);
-    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(config);
+    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any(), anyBoolean())).thenReturn(config);
 
     Set<String> secretList =
-        vmPluginStepSerializer.preProcessStep(ambiance, dockerStepInfo, stageInfraDetails, "identifier");
+        vmPluginStepSerializer.preProcessStep(ambiance, dockerStepInfo, stageInfraDetails, "identifier", false);
     assertThat(secretList)
         .contains("endpoint")
         .contains("bucket")
@@ -134,7 +134,7 @@ public class VmPluginCompatibleStepSerializerTest {
     when(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).thenReturn(false);
 
     Set<String> secretList =
-        vmPluginStepSerializer.preProcessStep(ambiance, dockerStepInfo, stageInfraDetails, "identifier");
+        vmPluginStepSerializer.preProcessStep(ambiance, dockerStepInfo, stageInfraDetails, "identifier", false);
     assertThat(secretList.size()).isEqualTo(0);
   }
 
@@ -152,10 +152,10 @@ public class VmPluginCompatibleStepSerializerTest {
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).thenReturn(true);
-    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(null);
+    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any(), anyBoolean())).thenReturn(null);
 
     Set<String> secretList =
-        vmPluginStepSerializer.preProcessStep(ambiance, dockerStepInfo, stageInfraDetails, "identifier");
+        vmPluginStepSerializer.preProcessStep(ambiance, dockerStepInfo, stageInfraDetails, "identifier", false);
     assertThat(secretList.size()).isEqualTo(0);
   }
 
@@ -174,10 +174,10 @@ public class VmPluginCompatibleStepSerializerTest {
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(true);
-    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(config);
+    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any(), anyBoolean())).thenReturn(config);
 
     Set<String> secretList =
-        vmPluginStepSerializer.preProcessStep(ambiance, ecrStepInfo, stageInfraDetails, "identifier");
+        vmPluginStepSerializer.preProcessStep(ambiance, ecrStepInfo, stageInfraDetails, "identifier", false);
     assertThat(secretList)
         .contains("endpoint")
         .contains("bucket")
@@ -202,7 +202,7 @@ public class VmPluginCompatibleStepSerializerTest {
     when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(false);
 
     Set<String> secretList =
-        vmPluginStepSerializer.preProcessStep(ambiance, ecrStepInfo, stageInfraDetails, "identifier");
+        vmPluginStepSerializer.preProcessStep(ambiance, ecrStepInfo, stageInfraDetails, "identifier", false);
     assertThat(secretList.size()).isEqualTo(0);
   }
 
@@ -220,10 +220,10 @@ public class VmPluginCompatibleStepSerializerTest {
     when(ciExecutionConfigService.getContainerlessPluginNameForVM(any(), any(PluginCompatibleStep.class)))
         .thenReturn("pluginName");
     when(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).thenReturn(true);
-    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any())).thenReturn(null);
+    when(dockerLayerCachingConfigService.getDockerLayerCachingConfig(any(), anyBoolean())).thenReturn(null);
 
     Set<String> secretList =
-        vmPluginStepSerializer.preProcessStep(ambiance, ecrStepInfo, stageInfraDetails, "identifier");
+        vmPluginStepSerializer.preProcessStep(ambiance, ecrStepInfo, stageInfraDetails, "identifier", false);
     assertThat(secretList.size()).isEqualTo(0);
   }
 }

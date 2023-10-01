@@ -7,4 +7,4 @@
 
 package io.harness.cvng.beans.cvnglog;
 
-public enum TraceableType { ONBOARDING, VERIFICATION_TASK }
+public enum TraceableType { ONBOARDING, VERIFICATION_TASK, VERIFICATION_JOB_INSTANCE }

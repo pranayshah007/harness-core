@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(HarnessTeam.SSCA)
 public class CdSscaEnforcementBaseStepInfo {
   @NotNull SbomSource source;
-  @NotNull VerifyAttestation verifyAttestation;
+  VerifyAttestation verifyAttestation;
   @NotNull EnforcementPolicy policy;
   @NotNull @Valid ContainerStepInfra infrastructure;
 }

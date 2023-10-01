@@ -31,6 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class VmDetailsOutcome implements Outcome {
   String ipAddress;
   String delegateId;
+  String poolDriverUsed;
   public static final String VM_DETAILS_OUTCOME = "vmDetailsOutcome";
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
 }

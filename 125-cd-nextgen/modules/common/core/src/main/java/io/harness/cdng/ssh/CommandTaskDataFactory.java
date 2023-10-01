@@ -6,16 +6,19 @@
  */
 
 package io.harness.cdng.ssh;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.task.shell.CommandTaskParameters;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
@@ -28,10 +31,14 @@ import com.google.inject.Singleton;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class CommandTaskDataFactory {
+  private static final String AZURE_UNIVERSAL_PACKAGE = "upack";
+
   public TaskData create(CommandTaskParameters taskParameters, ParameterField<String> timeout) {
     TaskType taskType = getTaskType(taskParameters);
     return TaskData.builder()
@@ -44,17 +51,26 @@ public class CommandTaskDataFactory {
 
   private TaskType getTaskType(CommandTaskParameters taskParameters) {
     SshWinRmArtifactDelegateConfig artifactDelegateConfig = taskParameters.getArtifactDelegateConfig();
-    if (isNotEmpty(taskParameters.getSecretOutputVariables())) {
+
+    // Note the order of if/else is very important!!! The last FF goes first
+    if (artifactDelegateConfig != null && SshWinRmArtifactType.AZURE.equals(artifactDelegateConfig.getArtifactType())
+        && AZURE_UNIVERSAL_PACKAGE.equals(((AzureArtifactDelegateConfig) artifactDelegateConfig).getPackageType())) {
+      return TaskType.COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT;
+    } else if (artifactDelegateConfig != null
+        && SshWinRmArtifactType.GITHUB_PACKAGE.equals(artifactDelegateConfig.getArtifactType())) {
+      return TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
+    } else if (artifactDelegateConfig != null
+        && SshWinRmArtifactType.GCS.equals(artifactDelegateConfig.getArtifactType())) {
+      return TaskType.COMMAND_TASK_NG_WITH_GCS_ARTIFACT;
+    } else if (isNotEmpty(taskParameters.getSecretOutputVariables())) {
       return TaskType.COMMAND_TASK_NG_WITH_OUTPUT_VARIABLE_SECRETS;
     } else if (gitConfigExists(taskParameters)) {
       return TaskType.COMMAND_TASK_NG_WITH_GIT_CONFIGS;
     } else if (artifactDelegateConfig != null
         && SshWinRmArtifactType.AZURE.equals(artifactDelegateConfig.getArtifactType())) {
       return TaskType.COMMAND_TASK_NG_WITH_AZURE_ARTIFACT;
-    } else if (artifactDelegateConfig != null
-        && SshWinRmArtifactType.GITHUB_PACKAGE.equals(artifactDelegateConfig.getArtifactType())) {
-      return TaskType.COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT;
     }
+
     return TaskType.COMMAND_TASK_NG;
   }
 

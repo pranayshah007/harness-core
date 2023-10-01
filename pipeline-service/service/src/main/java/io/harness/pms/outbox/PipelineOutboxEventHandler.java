@@ -12,9 +12,13 @@ import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVI
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
+import io.harness.AbortInfoHelper;
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.ResourceDTO;
@@ -22,6 +26,7 @@ import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.beans.custom.executions.NodeExecutionEventData;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
+import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.engine.pms.audits.events.NodeExecutionOutboxEventConstants;
 import io.harness.engine.pms.audits.events.PipelineAbortEvent;
 import io.harness.engine.pms.audits.events.PipelineEndEvent;
@@ -43,9 +48,11 @@ import io.harness.pms.pipeline.observer.PipelineActionObserver;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
+import io.harness.security.dto.UserPrincipal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.serializer.HObjectMapper;
@@ -53,6 +60,7 @@ import java.io.IOException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -62,7 +70,6 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
   private final InputSetEventHandler inputSetEventHandler;
 
   @Getter private final Subject<PipelineActionObserver> pipelineActionObserverSubject = new Subject<>();
-
   @Inject
   PipelineOutboxEventHandler(AuditClientService auditClientService, InputSetEventHandler inputSetEventHandler) {
     this.objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
@@ -153,7 +160,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapPipelineStartEventToNodeExecutionEventData(pipelineStartEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START);
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START, getPrincipal(nodeExecutionEventData));
   }
 
   private boolean handlePipelineTimeoutEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -162,7 +169,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapPipelineTimeoutEventToNodeExecutionEventData(pipelineTimeoutEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.TIMEOUT);
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.TIMEOUT, null);
   }
 
   private boolean handlePipelineEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -170,7 +177,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapPipelineEndEventToNodeExecutionEventData(pipelineEndEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.END);
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.END, getPrincipal(nodeExecutionEventData));
   }
 
   private boolean handleStageStartEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -178,14 +185,17 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapStageStartEventToNodeExecutionEventData(stageStartEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.STAGE_START);
+    return publishAuditEntry(
+        outboxEvent, nodeExecutionEventData, Action.STAGE_START, getPrincipal(nodeExecutionEventData));
   }
   private boolean handleStageEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
     StageEndEvent stageEndEvent = objectMapper.readValue(outboxEvent.getEventData(), StageEndEvent.class);
+
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapStageEndEventToNodeExecutionEventData(stageEndEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.STAGE_END);
+    return publishAuditEntry(
+        outboxEvent, nodeExecutionEventData, Action.STAGE_END, getPrincipal(nodeExecutionEventData));
   }
 
   private boolean handlePipelineAbortEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -194,16 +204,28 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapPipelineAbortEventToNodeExecutionEventData(pipelineAbortEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.ABORT);
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.ABORT, getPrincipal(nodeExecutionEventData));
+  }
+
+  private Principal getPrincipal(NodeExecutionEventData nodeExecutionEventData) {
+    Principal principal = null;
+    if (nodeExecutionEventData.getTriggeredBy() != null) {
+      principal = new UserPrincipal(nodeExecutionEventData.getTriggeredBy().getIdentifier(),
+          getIdentifierForPrincipal(nodeExecutionEventData), nodeExecutionEventData.getTriggeredBy().getIdentifier(),
+          nodeExecutionEventData.getAccountIdentifier());
+    }
+    return principal;
   }
 
   private boolean publishAuditEntry(
-      OutboxEvent outboxEvent, NodeExecutionEventData nodeExecutionEventData, Action action) {
+      OutboxEvent outboxEvent, NodeExecutionEventData nodeExecutionEventData, Action action, Principal principal) {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
 
-    Principal principal = new ServicePrincipal(PIPELINE_SERVICE.getServiceId());
-    if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
-      principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
+    if (principal == null) {
+      principal = new ServicePrincipal(PIPELINE_SERVICE.getServiceId());
+      if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
+        principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
+      }
     }
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(action)
@@ -256,5 +278,16 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
         return false;
       }
     }
+  }
+
+  @VisibleForTesting
+  protected String getIdentifierForPrincipal(NodeExecutionEventData nodeExecutionEventData) {
+    if (nodeExecutionEventData.getTriggeredBy().getExtraInfo() != null
+        && !EmptyPredicate.isEmpty(nodeExecutionEventData.getTriggeredBy().getExtraInfo().get("email"))) {
+      return nodeExecutionEventData.getTriggeredBy().getExtraInfo().get("email");
+    } else if (!EmptyPredicate.isEmpty(nodeExecutionEventData.getTriggeredBy().getIdentifier())) {
+      return nodeExecutionEventData.getTriggeredBy().getIdentifier();
+    }
+    return AbortInfoHelper.SYSTEM_USER;
   }
 }

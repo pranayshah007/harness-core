@@ -21,4 +21,6 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface NotificationRepository
     extends PagingAndSortingRepository<Notification, String>, NotificationRepositoryCustom {
   Optional<Notification> findDistinctById(String id);
+
+  void deleteByAccountIdentifier(String accountIdentifier);
 }

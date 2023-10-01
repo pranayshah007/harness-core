@@ -6,10 +6,12 @@
  */
 
 package io.harness.steps.wait;
-
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
@@ -39,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 public class WaitStepPlanCreator extends AbstractStepPlanCreator<WaitStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {

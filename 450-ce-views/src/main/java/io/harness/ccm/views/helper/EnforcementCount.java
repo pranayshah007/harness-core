@@ -24,8 +24,8 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 public final class EnforcementCount {
   @Schema(description = "account id") String accountId;
-  @Schema(description = "rules ids and list of enforcement") Map<String, List<String>> ruleIds;
-  @Schema(description = "rules pack ids and list of enforcement") Map<String, List<String>> ruleSetIds;
+  @Schema(description = "rules ids and list of enforcement") Map<String, List<LinkedEnforcements>> ruleIds;
+  @Schema(description = "rules pack ids and list of enforcement") Map<String, List<LinkedEnforcements>> ruleSetIds;
 
   public EnforcementCount toDTO() {
     return EnforcementCount.builder()

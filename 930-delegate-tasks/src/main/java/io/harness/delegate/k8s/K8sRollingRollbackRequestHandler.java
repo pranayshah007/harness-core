@@ -39,6 +39,7 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.LogCallback;
 
@@ -77,6 +78,9 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
     Map<String, String> k8sCommandFlag = k8sRollingRollbackDeployRequest.getK8sCommandFlags();
     init(k8sRollingRollbackDeployRequest, k8sDelegateTaskParams, initLogCallback);
 
+    List<K8sPod> existingPodList =
+        rollbackBaseHandler.getExistingPods(k8sRollingRollbackDeployRequest.getTimeoutIntervalInMin(),
+            rollbackHandlerConfig, k8sRollingRollbackDeployRequest.getReleaseName(), initLogCallback);
     ResourceRecreationStatus resourceRecreationStatus = NO_RESOURCE_CREATED;
     if (k8sRollingRollbackDeployRequest.isPruningEnabled()) {
       resourceRecreationStatus =
@@ -104,8 +108,11 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
     rollbackBaseHandler.postProcess(rollbackHandlerConfig, k8sRollingRollbackDeployRequest.getReleaseName());
     K8sRollingDeployRollbackResponse response =
         K8sRollingDeployRollbackResponse.builder()
-            .k8sPodList(rollbackBaseHandler.getPods(k8sRollingRollbackDeployRequest.getTimeoutIntervalInMin(),
-                rollbackHandlerConfig, k8sRollingRollbackDeployRequest.getReleaseName()))
+            .k8sPodList(k8sTaskHelperBase.tagNewPods(
+                rollbackBaseHandler.getPods(k8sRollingRollbackDeployRequest.getTimeoutIntervalInMin(),
+                    rollbackHandlerConfig, k8sRollingRollbackDeployRequest.getReleaseName()),
+                existingPodList))
+            .previousK8sPodList(existingPodList)
             .recreatedResourceIds(recreatedResourceIds)
             .build();
 

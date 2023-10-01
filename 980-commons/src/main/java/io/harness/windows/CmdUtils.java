@@ -7,16 +7,29 @@
 
 package io.harness.windows;
 
-import lombok.experimental.UtilityClass;
+import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @UtilityClass
+@Slf4j
 public class CmdUtils {
+  public static final String WIN_RM_MARKER = "WinRm";
+
   public static String escapeEnvValueSpecialChars(String value) {
     /*
     https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/set_1
     */
 
     if (!isValidEnvValue(value)) {
+      log.warn(format("Escaping %s env variable as there is a single %% occurrence", value));
       return "";
     }
 
@@ -26,6 +39,23 @@ public class CmdUtils {
     value = value.replace("|", "^|");
     value = value.replace("&", "^&");
     value = value.replace("%", "^%");
+
+    return value;
+  }
+
+  public static String escapeEnvValueIllegalSymbols(String value) {
+    if (!isValidEnvValue(value)) {
+      log.debug(format("Escaping %s env variable as there is a single %% occurrence", value));
+      return "";
+    }
+
+    /*
+    < and > symbols can be used standalone, but in combination of those is translating to %lt> string itself.
+     */
+    if (value.contains("<>")) {
+      log.debug(format("Escaping %s env variable as there is a a combination of <> symbols identified", value));
+      return "";
+    }
 
     return value;
   }

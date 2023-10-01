@@ -6,7 +6,6 @@
  */
 
 package io.harness.gitsync;
-
 import static io.harness.Microservice.CF;
 import static io.harness.Microservice.CORE;
 import static io.harness.Microservice.PMS;
@@ -21,7 +20,10 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.YAML_C
 import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.SCMJavaClientModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
@@ -115,12 +117,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(DX)
 public class GitSyncModule extends AbstractModule {
   private static GitSyncModule gitSyncModule;
   public static final String SCM_ON_MANAGER = "scmOnManager";
   public static final String SCM_ON_DELEGATE = "scmOnDelegate";
   public static final String GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME = "gitxBackgroundCacheUpdateExecutorName";
+  public static final String GITX_WEBHOOK_HANDLER_EXECUTOR_NAME = "gitxWebhookHandlerExecutor";
   private final GitServiceConfiguration gitServiceConfiguration;
 
   private GitSyncModule(GitServiceConfiguration gitServiceConfiguration) {
@@ -180,6 +184,9 @@ public class GitSyncModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("gitChangeSet"))
         .toInstance(new ManagedScheduledExecutorService("GitChangeSet"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("gitXWebhookEvents"))
+        .toInstance(new ManagedScheduledExecutorService("GitXWebhookEvents"));
     bind(ScmOrchestratorService.class).to(ScmOrchestratorServiceImpl.class);
     bind(GitBranchSyncService.class).to(GitBranchSyncServiceImpl.class);
     bind(GitToHarnessProgressService.class).to(GitToHarnessProgressServiceImpl.class);
@@ -230,6 +237,16 @@ public class GitSyncModule extends AbstractModule {
     return new ManagedExecutorService(ThreadPool.create(
         gitServiceConfiguration.getGitServiceCacheConfiguration().getBackgroundUpdateThreadPoolConfig(), 1,
         new ThreadFactoryBuilder().setNameFormat("GitxCachingBackgroundUpdateThread-%d").build(),
+        new ThreadPoolExecutor.AbortPolicy()));
+  }
+
+  @Provides
+  @Singleton
+  @Named(GITX_WEBHOOK_HANDLER_EXECUTOR_NAME)
+  public ExecutorService gitXWebhookCacheUpdateExecutorService() {
+    return new ManagedExecutorService(ThreadPool.create(
+        gitServiceConfiguration.getGitServiceCacheConfiguration().getBackgroundUpdateThreadPoolConfig(), 1,
+        new ThreadFactoryBuilder().setNameFormat("GitxWebhookCacheUpdateThread-%d").build(),
         new ThreadPoolExecutor.AbortPolicy()));
   }
 }

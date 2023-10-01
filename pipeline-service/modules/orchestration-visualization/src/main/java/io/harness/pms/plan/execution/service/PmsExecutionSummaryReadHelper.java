@@ -46,17 +46,6 @@ public class PmsExecutionSummaryReadHelper {
     return secondaryMongoTemplate.find(query, PipelineExecutionSummaryEntity.class);
   }
 
-  public List<String> findListOfUniqueBranches(Query query) {
-    return secondaryMongoTemplate.findDistinct(query,
-        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.entityGitDetailsBranch,
-        PipelineExecutionSummaryEntity.class, String.class);
-  }
-  public List<String> findListOfUniqueRepositories(Query query) {
-    return secondaryMongoTemplate.findDistinct(query,
-        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.entityGitDetailsRepoName,
-        PipelineExecutionSummaryEntity.class, String.class);
-  }
-
   public CloseableIterator<PipelineExecutionSummaryEntity> fetchExecutionSummaryEntityFromAnalytics(Query query) {
     query.cursorBatchSize(MAX_BATCH_SIZE);
     validatePipelineExecutionSummaryStreamQuery(query);

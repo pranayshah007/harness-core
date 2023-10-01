@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.helm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
@@ -20,6 +22,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 public class HelmRollbackCommandRequestNG extends HelmCommandRequestNG {
   @Builder.Default private long timeoutInMillis = 600000;
@@ -35,12 +38,13 @@ public class HelmRollbackCommandRequestNG extends HelmCommandRequestNG {
       String commandFlags, String repoName, String workingDir, String kubeConfigLocation, String ocPath,
       String commandName, boolean useLatestKubectlVersion, Integer prevReleaseVersion, Integer newReleaseVersion,
       String gcpKeyPath, String releaseHistoryPrefix, List<ServiceHookDelegateConfig> serviceHooks,
-      boolean useRefactorSteadyStateCheck, boolean skipSteadyStateCheck) {
+      boolean useRefactorSteadyStateCheck, boolean skipSteadyStateCheck, boolean sendTaskProgressEvents,
+      boolean disableFabric8, boolean improvedHelmTracking) {
     super(releaseName, HelmCommandType.ROLLBACK, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
         useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, useRefactorSteadyStateCheck,
-        skipSteadyStateCheck);
+        skipSteadyStateCheck, sendTaskProgressEvents, disableFabric8, improvedHelmTracking);
     this.prevReleaseVersion = prevReleaseVersion;
     this.newReleaseVersion = newReleaseVersion;
   }

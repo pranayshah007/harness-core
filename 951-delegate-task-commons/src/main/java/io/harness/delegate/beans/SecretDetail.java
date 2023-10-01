@@ -6,12 +6,16 @@
  */
 
 package io.harness.delegate.beans;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.security.encryption.EncryptedRecord;
 
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Value
 @Builder
 public class SecretDetail {

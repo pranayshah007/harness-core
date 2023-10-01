@@ -205,7 +205,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 0c5acd02
+scmVersion: 93b3c9f1
 
 portal:
   url: https://localhost:8000
@@ -374,8 +374,8 @@ executorsConfig:
 
 ldapSyncJobConfig:
   poolSize: 3
-  syncInterval: 15
-  defaultCronExpression: "0 0/15 * 1/1 * ? *"
+  syncInterval: 60
+  defaultCronExpression: "0 0 */1 ? * * *"
 
 fileStorageMode: MONGO
 

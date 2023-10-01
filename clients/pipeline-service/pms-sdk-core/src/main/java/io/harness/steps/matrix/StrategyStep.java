@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.matrix;
-
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.StaticLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -41,6 +43,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<StrategyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
@@ -92,8 +95,8 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
                                        .getValue()))
                                .intValue();
         }
-        List<Child> children =
-            matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+        List<Child> children = matrixConfigService.fetchChildren(
+            stepParameters.getStrategyConfig(), stepParameters.getChildNodeId(), ambiance);
         if (maxConcurrency == 0) {
           maxConcurrency = children.size();
         }
@@ -116,7 +119,7 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
                 .intValue();
       }
       List<Child> children = forLoopStrategyConfigService.fetchChildren(
-          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId(), ambiance);
       if (maxConcurrency == 0) {
         maxConcurrency = children.size();
       }
@@ -131,7 +134,7 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
     }
     if (stepParameters.getStrategyConfig().getParallelism() != null) {
       List<Child> children = parallelismStrategyConfigService.fetchChildren(
-          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId(), ambiance);
       int maxConcurrency = stepParameters.getStrategyConfig().getParallelism().getValue();
       if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
         maxConcurrency = maxConcurrencyLimitBasedOnPlan;

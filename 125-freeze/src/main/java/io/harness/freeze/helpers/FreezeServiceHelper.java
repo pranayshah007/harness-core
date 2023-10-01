@@ -7,6 +7,9 @@
 
 package io.harness.freeze.helpers;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 
 import java.util.ArrayList;
@@ -15,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @UtilityClass
 public class FreezeServiceHelper {
   public Map<Scope, List<String>> getMapForEachScope() {

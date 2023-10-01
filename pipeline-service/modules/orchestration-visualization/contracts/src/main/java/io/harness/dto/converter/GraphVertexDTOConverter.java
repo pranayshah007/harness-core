@@ -6,9 +6,11 @@
  */
 
 package io.harness.dto.converter;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.GraphVertex;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.dto.GraphVertexDTO;
@@ -19,15 +21,14 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import java.util.function.Function;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GraphVertexDTOConverter {
   public Function<GraphVertex, GraphVertexDTO> toGraphVertexDTO = graphVertex -> {
-    Level level = AmbianceUtils.obtainCurrentLevel(graphVertex.getAmbiance());
     GraphVertexDTOBuilder builder =
         GraphVertexDTO.builder()
             .uuid(graphVertex.getUuid())
-            .ambiance(AmbianceDTOConverter.toAmbianceDTO.apply(graphVertex.getAmbiance()))
             .planNodeId(graphVertex.getPlanNodeId())
             .identifier(graphVertex.getIdentifier())
             .name(graphVertex.getName())
@@ -53,9 +54,16 @@ public class GraphVertexDTOConverter {
             .progressData(graphVertex.getPmsProgressData())
             .executionInputConfigured(graphVertex.getExecutionInputConfigured())
             .logBaseKey(graphVertex.getLogBaseKey())
-            .stepDetails(graphVertex.getStepDetails());
-    if (level != null && level.hasStrategyMetadata()) {
-      builder.strategyMetadata(level.getStrategyMetadata());
+            .stepDetails(graphVertex.getStepDetails())
+            .baseFqn(graphVertex.getBaseFqn());
+    if (graphVertex.getAmbiance() != null) {
+      Level level = AmbianceUtils.obtainCurrentLevel(graphVertex.getAmbiance());
+      if (level != null && AmbianceUtils.hasStrategyMetadata(level)) {
+        builder.strategyMetadata(level.getStrategyMetadata());
+      }
+    }
+    if (graphVertex.getCurrentLevel() != null && AmbianceUtils.hasStrategyMetadata(graphVertex.getCurrentLevel())) {
+      builder.strategyMetadata(graphVertex.getCurrentLevel().getStrategyMetadata());
     }
     return builder.build();
   };

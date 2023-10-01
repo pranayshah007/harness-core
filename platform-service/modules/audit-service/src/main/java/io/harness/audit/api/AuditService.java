@@ -32,4 +32,6 @@ public interface AuditService {
   void purgeAuditsOlderThanTimestamp(String accountIdentifier, Instant timestamp);
 
   Set<String> getUniqueAuditedAccounts();
+
+  void deleteAuditInfo(String accountId);
 }

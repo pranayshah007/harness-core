@@ -9,6 +9,7 @@ package io.harness.gitaware.helper;
 
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -23,6 +24,7 @@ import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
@@ -63,6 +65,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   String repoName = "repo";
   String filePath = "file/path";
   String data = "data: pipelineYaml";
+  String readMe = "README Content";
   String data2 = "data2: pipelineYaml";
 
   String branch = "dev";
@@ -77,6 +80,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   Scope scope;
 
   String yamlFilePath = ".harness/test.yaml";
+  String readMeFilePath = ".harness/README.md";
   EntityType entityType;
 
   private static final String BranchName = "branch";
@@ -129,7 +133,8 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, branch, "", yamlFilePath, connectorRef, false, entityType, null, false);
+        .getFileByBranch(
+            scope, repoName, branch, "", yamlFilePath, connectorRef, false, entityType, null, false, false);
     DummyGitAware dummyGitAware = DummyGitAware.builder().build();
     GitAware gitAware = gitAwareEntityHelper.fetchEntityFromRemote(dummyGitAware, scope, gitContextRequestParams, null);
     assertThat(gitAware.getData()).isEqualTo(data);
@@ -148,7 +153,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, "", "", yamlFilePath, connectorRef, false, entityType, null, false);
+        .getFileByBranch(scope, repoName, "", "", yamlFilePath, connectorRef, false, entityType, null, false, false);
     DummyGitAware dummyGitAware = DummyGitAware.builder().build();
     GitAware gitAware =
         gitAwareEntityHelper.fetchEntityFromRemote(dummyGitAware, scope, __default__branchGitParams, null);
@@ -168,7 +173,8 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, branch, "", yamlFilePath, connectorRef, false, entityType, null, false);
+        .getFileByBranch(
+            scope, repoName, branch, "", yamlFilePath, connectorRef, false, entityType, null, false, false);
     String data = gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, null);
     assertThat(data).isEqualTo(data);
     ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
@@ -186,7 +192,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
     doReturn(getFileResponse)
         .when(scmGitSyncHelper)
-        .getFileByBranch(scope, repoName, "", "", yamlFilePath, connectorRef, false, entityType, null, false);
+        .getFileByBranch(scope, repoName, "", "", yamlFilePath, connectorRef, false, entityType, null, false, false);
     String data = gitAwareEntityHelper.fetchYAMLFromRemote(scope, __default__branchGitParams, null);
     assertThat(data).isEqualTo(data);
     ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
@@ -350,6 +356,107 @@ public class GitAwareEntityHelperTest extends CategoryTest {
     assertTrue(remoteEntities.containsKey(uniqueKey2));
     GitAware gitAware2 = remoteEntities.get(uniqueKey2);
     assertEquals(gitAware2.getData(), data2);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testFetchEntitiesFromRemoteInvalidFileType() {
+    String uniqueKey1 = "uniqueKey1";
+    String uniqueKey2 = "uniqueKey2";
+    getFileGitContextRequestParams = GetFileGitContextRequestParams.builder()
+                                         .connectorRef(connectorRef)
+                                         .repoName(repoName)
+                                         .filePath(readMeFilePath)
+                                         .branchName(branch)
+                                         .entityType(EntityType.PIPELINES)
+                                         .build();
+
+    Map<String, FetchRemoteEntityRequest> remoteTemplatesList = new HashMap<>();
+    DummyGitAware dummyGitAware1 =
+        DummyGitAware.builder().branch(branch).connectorRef(connectorRef).repo(repoName).build();
+    FetchRemoteEntityRequest fetchRemoteEntityRequest1 =
+        FetchRemoteEntityRequest.builder()
+            .entity(dummyGitAware1)
+            .getFileGitContextRequestParams(getFileGitContextRequestParams)
+            .scope(scope)
+            .build();
+    DummyGitAware dummyGitAware2 =
+        DummyGitAware.builder().branch(branch).connectorRef(connectorRef).repo(repoName).build();
+    FetchRemoteEntityRequest fetchRemoteEntityRequest2 =
+        FetchRemoteEntityRequest.builder()
+            .entity(dummyGitAware2)
+            .getFileGitContextRequestParams(getFileGitContextRequestParams)
+            .scope(scope)
+            .build();
+    remoteTemplatesList.put(uniqueKey1, fetchRemoteEntityRequest1);
+    remoteTemplatesList.put(uniqueKey2, fetchRemoteEntityRequest2);
+
+    ScmGetFileResponse scmGetFileResponse1 = ScmGetFileResponse.builder().fileContent(data).build();
+    ScmGetFileResponse scmGetFileResponse2 = ScmGetFileResponse.builder().fileContent(data2).build();
+
+    Map<String, ScmGetFileResponse> batchFilesResponse = new HashMap<>();
+    batchFilesResponse.put(uniqueKey1, scmGetFileResponse1);
+    batchFilesResponse.put(uniqueKey2, scmGetFileResponse2);
+
+    ScmGetBatchFilesResponse scmGetBatchFilesResponse =
+        ScmGetBatchFilesResponse.builder().batchFilesResponse(batchFilesResponse).build();
+
+    doReturn(scmGetBatchFilesResponse).when(scmGitSyncHelper).getBatchFilesByBranch(any(), any());
+    assertThatThrownBy(() -> gitAwareEntityHelper.fetchEntitiesFromRemote(accountId, remoteTemplatesList))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Please check if the requested filepath is valid.");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testFetchEntitiesFromRemoteIncludingReadMeFile() {
+    String uniqueKey1 = "uniqueKey1";
+    String uniqueKey2 = "uniqueKey2";
+    getFileGitContextRequestParams = GetFileGitContextRequestParams.builder()
+                                         .connectorRef(connectorRef)
+                                         .repoName(repoName)
+                                         .filePath(readMeFilePath)
+                                         .branchName(branch)
+                                         .entityType(EntityType.PIPELINES)
+                                         .build();
+
+    Map<String, FetchRemoteEntityRequest> remoteTemplatesList = new HashMap<>();
+    DummyGitAware dummyGitAware1 =
+        DummyGitAware.builder().branch(branch).connectorRef(connectorRef).repo(repoName).build();
+    FetchRemoteEntityRequest fetchRemoteEntityRequest1 =
+        FetchRemoteEntityRequest.builder()
+            .entity(dummyGitAware1)
+            .getFileGitContextRequestParams(getFileGitContextRequestParams)
+            .scope(scope)
+            .build();
+    DummyGitAware dummyGitAware2 =
+        DummyGitAware.builder().branch(branch).connectorRef(connectorRef).repo(repoName).build();
+    FetchRemoteEntityRequest fetchRemoteEntityRequest2 =
+        FetchRemoteEntityRequest.builder()
+            .entity(dummyGitAware2)
+            .getFileGitContextRequestParams(getFileGitContextRequestParams)
+            .scope(scope)
+            .build();
+    remoteTemplatesList.put(uniqueKey1, fetchRemoteEntityRequest1);
+    remoteTemplatesList.put(uniqueKey2, fetchRemoteEntityRequest2);
+
+    ScmGetFileResponse scmGetFileResponse1 = ScmGetFileResponse.builder().fileContent(data).build();
+    ScmGetFileResponse scmGetFileResponse2 = ScmGetFileResponse.builder().fileContent(data2).build();
+
+    Map<String, ScmGetFileResponse> batchFilesResponse = new HashMap<>();
+    batchFilesResponse.put(uniqueKey1, scmGetFileResponse1);
+    batchFilesResponse.put(uniqueKey2, scmGetFileResponse2);
+
+    ScmGetBatchFilesResponse scmGetBatchFilesResponse =
+        ScmGetBatchFilesResponse.builder().batchFilesResponse(batchFilesResponse).build();
+
+    doReturn(scmGetBatchFilesResponse).when(scmGitSyncHelper).getBatchFilesByBranch(any(), any());
+    ScmGetBatchFilesResponse getBatchFilesResponse =
+        gitAwareEntityHelper.fetchEntitiesFromRemoteIncludingReadMeFile(accountId, remoteTemplatesList);
+
+    assertTrue(getBatchFilesResponse.getBatchFilesResponse().containsKey("uniqueKey1"));
   }
 
   @Test

@@ -56,7 +56,7 @@ public class EcsBGServiceSetupStepMapperImpl extends EcsBaseStepMapper {
 
   public ParameterField<Timeout> getTimeout(State state) {
     EcsBlueGreenServiceSetup ecsBlueGreenServiceSetup = (EcsBlueGreenServiceSetup) state;
-    return MigratorUtility.getTimeout(ecsBlueGreenServiceSetup.getServiceSteadyStateTimeout());
+    return MigratorUtility.getTimeout((long) ecsBlueGreenServiceSetup.getServiceSteadyStateTimeout());
   }
 
   @Override

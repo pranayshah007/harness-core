@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.filestore.entities.NGFile.builder;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -131,7 +132,20 @@ public class FileFailsafeServiceImplTest extends CategoryTest {
     when(transactionTemplate.execute(any()))
         .thenAnswer(
             invocationOnMock -> invocationOnMock.getArgument(0, TransactionCallback.class).doInTransaction(null));
-    boolean deletedFileDTO = fileFailsafeService.deleteAndPublish(ngFile);
+    boolean deletedFileDTO = fileFailsafeService.deleteAndPublish(ngFile, false);
+
+    assertThat(deletedFileDTO).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testForceDeleteAndPublish() {
+    NGFile ngFile = createNgFile("fileName", "identifier");
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(
+            invocationOnMock -> invocationOnMock.getArgument(0, TransactionCallback.class).doInTransaction(null));
+    boolean deletedFileDTO = fileFailsafeService.deleteAndPublish(ngFile, true);
 
     assertThat(deletedFileDTO).isTrue();
   }
@@ -144,7 +158,7 @@ public class FileFailsafeServiceImplTest extends CategoryTest {
     when(transactionTemplate.execute(any()))
         .thenThrow(new IllegalArgumentException("The given entity must not be null!"));
 
-    assertThatThrownBy(() -> fileFailsafeService.deleteAndPublish(ngFile))
+    assertThatThrownBy(() -> fileFailsafeService.deleteAndPublish(ngFile, false))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("The given entity must not be null!");
   }

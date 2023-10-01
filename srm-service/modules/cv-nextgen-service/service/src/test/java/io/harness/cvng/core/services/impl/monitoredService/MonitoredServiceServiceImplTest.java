@@ -9,7 +9,6 @@ package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
 import static io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution.FIVE_MIN;
-import static io.harness.cvng.notification.beans.NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ANJAN;
@@ -31,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -47,6 +47,7 @@ import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepInstanceDetails;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
@@ -54,7 +55,7 @@ import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag.TagType;
@@ -62,6 +63,7 @@ import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.FakeNotificationClient;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.NextGenServiceImpl;
@@ -70,7 +72,9 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
+import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.RiskProfile;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.CountServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthScoreDTO;
@@ -96,6 +100,7 @@ import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
+import io.harness.cvng.core.beans.sidekick.RetryChangeSourceHandleDeleteSideKickData;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -106,19 +111,24 @@ import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
+import io.harness.cvng.core.jobs.ProjectChangeEventMessageProcessor;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.core.services.api.OnboardingService;
+import io.harness.cvng.core.services.api.PagerDutyService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.WebhookConfigService;
+import io.harness.cvng.core.services.api.WebhookService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.services.impl.ChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.PagerdutyChangeSourceUpdateHandler;
+import io.harness.cvng.core.services.impl.sidekickexecutors.RetryChangeSourceHandleDeleteSideKickExecutor;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
@@ -135,6 +145,7 @@ import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
@@ -142,10 +153,13 @@ import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.enforcement.client.services.EnforcementClientService;
+import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
@@ -174,6 +188,7 @@ import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -185,6 +200,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -212,19 +228,23 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
   @Inject ServiceDependencyService serviceDependencyService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
-
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject CVNGLogService cvngLogService;
   @Inject VerificationTaskService verificationTaskService;
   @Inject NotificationRuleService notificationRuleService;
   @Inject private ActivityService activityService;
   @Inject private OutboxService outboxService;
+  @Inject private ProjectChangeEventMessageProcessor projectChangeEventMessageProcessor;
+  @Inject private PagerDutyService pagerDutyService;
+  @Inject private WebhookService webhookService;
 
   @Mock SetupUsageEventService setupUsageEventService;
   @Mock ChangeSourceService changeSourceServiceMock;
   @Mock FakeNotificationClient notificationClient;
   @Mock private PersistentLocker mockedPersistentLocker;
-  @Mock private EnforcementClientService enforcementClientService;
+
+  @Mock SRMAnalysisStepService mockedSrmAnalysisStepService;
   @Mock private FeatureFlagService featureFlagService;
 
   @Mock private WebhookConfigService webhookConfigService;
@@ -297,7 +317,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "setupUsageEventService", setupUsageEventService, true);
     FieldUtils.writeField(changeSourceService, "changeSourceUpdateHandlerMap", changeSourceUpdateHandlerMap, true);
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceService, true);
+    FieldUtils.writeField(pagerdutyChangeSourceUpdateHandler, "pagerDutyService", pagerDutyService, true);
     FieldUtils.writeField(heatMapService, "clock", clock, true);
+    FieldUtils.writeField(srmAnalysisStepService, "clock", clock, true);
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
     FieldUtils.writeField(monitoredServiceService, "featureFlagService", featureFlagService, true);
@@ -1060,7 +1082,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .sources(Sources.builder().healthSources(new HashSet<>()).build())
             .build();
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(
         () -> monitoredServiceService.update(builderFactory.getContext().getAccountId(), updatingMonitoredService))
@@ -1114,7 +1136,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), existingMonitoredService);
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(()
                            -> monitoredServiceService.delete(
@@ -1222,7 +1244,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
-  public void testDelete() {
+  public void testDelete() throws IllegalAccessException {
+    FieldUtils.writeField(monitoredServiceService, "srmAnalysisStepService", mockedSrmAnalysisStepService, true);
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
@@ -1241,6 +1264,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                    builderFactory.getContext().getMonitoredServiceParams(), Arrays.asList(changeSourceIdentifier)))
         .isEmpty();
     assertThat(cvConfigs.size()).isEqualTo(0);
+    verify(mockedSrmAnalysisStepService)
+        .abortRunningStepsForMonitoredService(projectParams, monitoredServiceIdentifier);
   }
 
   @Test
@@ -1264,6 +1289,47 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(activityService.getByMonitoredServiceIdentifier(monitoredServiceParams).size()).isEqualTo(0);
     monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
     assertThat(monitoredService).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testProcessDeleteAction_deletePagerDutyWebhook() throws IllegalAccessException {
+    OnboardingService onboardingService = Mockito.mock(OnboardingService.class);
+    RetryChangeSourceHandleDeleteSideKickExecutor retryChangeSourceHandleDeleteSideKickExecutor =
+        Mockito.mock(RetryChangeSourceHandleDeleteSideKickExecutor.class);
+    when(retryChangeSourceHandleDeleteSideKickExecutor.canExecute(any())).thenCallRealMethod();
+    FieldUtils.writeField(pagerDutyService, "onboardingService", onboardingService, true);
+    FieldUtils.writeField(retryChangeSourceHandleDeleteSideKickExecutor, "changeSourceUpdateHandlerMap",
+        changeSourceUpdateHandlerMap, true);
+    when(onboardingService.getOnboardingResponse(any(), any()))
+        .thenReturn(OnboardingResponseDTO.builder().result("PPQKG2N").build());
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceDTO.setSources(
+        MonitoredServiceDTO.Sources.builder()
+            .changeSources(new HashSet<>(List.of(builderFactory.getPagerDutyChangeSourceDTOBuilder().build())))
+            .build());
+    monitoredServiceService.create(accountId, monitoredServiceDTO);
+
+    MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builderWithProjectParams(projectParams)
+                                                        .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+                                                        .build();
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(monitoredServiceParams);
+
+    // deletes project and its resources
+    projectChangeEventMessageProcessor.processDeleteAction(ProjectEntityChangeDTO.newBuilder()
+                                                               .setAccountIdentifier(accountId)
+                                                               .setOrgIdentifier(orgIdentifier)
+                                                               .setIdentifier(projectIdentifier)
+                                                               .build());
+    assertThat(monitoredServiceService.getMonitoredServiceDTO(monitoredServiceParams)).isNull();
+    doNothing()
+        .when(retryChangeSourceHandleDeleteSideKickExecutor)
+        .execute(any(RetryChangeSourceHandleDeleteSideKickData.class));
+    // will check if the pager duty webhook also gets deleted after the project is deleted
+    assertThat(webhookService.getPagerdutyWebhook(projectParams, monitoredService.getChangeSourceIdentifiers().get(0)))
+        .isNull();
   }
 
   @Test
@@ -1687,6 +1753,21 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         .hasMessage(String.format(
             "Monitored Source Entity  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
             monitoredServiceIdentifier, accountId, orgIdentifier, projectIdentifier));
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testUpdate_sourcesDoesNotExist() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    monitoredServiceDTO.setSources(null);
+    MonitoredServiceDTO updatedMonitoredServiceDTO =
+        monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceDTO)
+            .getMonitoredServiceDTO();
+    assertThat(updatedMonitoredServiceDTO.getSources().getHealthSources().size()).isEqualTo(0);
+    assertThat(updatedMonitoredServiceDTO.getSources().getChangeSources().size()).isEqualTo(0);
   }
 
   @Test
@@ -2751,6 +2832,41 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(healthScoreDTO.getDependentHealthScore()).isNull();
   }
 
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMSSecondaryEvents() {
+    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, "stepName",
+        environmentParams, Duration.ofDays(1), Optional.empty());
+
+    List<SecondaryEventsResponse> instances =
+        monitoredServiceService.getMSSecondaryEvents(projectParams, monitoredServiceIdentifier,
+            clock.instant().toEpochMilli(), clock.instant().plus(5, ChronoUnit.MINUTES).toEpochMilli());
+    assertThat(instances.size()).isEqualTo(1);
+    SecondaryEventsResponse instance = instances.get(0);
+    assertThat(instance.getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
+    assertThat(instance.getStartTime()).isEqualTo(clock.instant().getEpochSecond());
+    assertThat(instance.getIdentifiers().get(0)).isEqualTo(analysisExecutionDetailsId);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMSSecondaryEventDetails() {
+    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, "stepName",
+        environmentParams, Duration.ofDays(1), Optional.empty());
+
+    SecondaryEventDetailsResponse eventDetailsResponse = monitoredServiceService.getMSSecondaryEventDetails(
+        SecondaryEventsType.SRM_ANALYSIS_IMPACT, List.of(analysisExecutionDetailsId));
+    assertThat(eventDetailsResponse.getStartTime()).isEqualTo(clock.instant().getEpochSecond());
+    assertThat(eventDetailsResponse.getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
+    SRMAnalysisStepInstanceDetails instanceDetails = (SRMAnalysisStepInstanceDetails) eventDetailsResponse.getDetails();
+    assertThat(instanceDetails.getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
+    assertThat(instanceDetails.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
+  }
+
   MonitoredServiceDTO createMonitoredServiceDTOWithCustomDependencies(
       String identifier, String serviceIdentifier, Set<String> dependentServiceIdentifiers) {
     return createMonitoredServiceDTOBuilder()
@@ -3044,7 +3160,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
 
-    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService).getNotificationRules(monitoredService).size())
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getEnabledAndEligibleNotificationRules(monitoredService)
+                   .size())
         .isEqualTo(1);
   }
 
@@ -3067,7 +3185,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
 
-    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService).getNotificationRules(monitoredService).size())
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getEnabledAndEligibleNotificationRules(monitoredService)
+                   .size())
         .isEqualTo(0);
   }
   @Test
@@ -3317,30 +3437,47 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
-  public void testGetNotificationRuleConditions() {
+  public void testGetEnabledNotificationRulesWithConditionType() {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
-    notificationRuleDTO.getConditions().add(NotificationRuleCondition.builder()
-                                                .type(DEPLOYMENT_IMPACT_REPORT)
-                                                .spec(DeploymentImpactReportConditionSpec.builder().build())
-                                                .build());
-    NotificationRuleResponse notificationRuleResponse =
+    NotificationRuleResponse notificationRuleResponse1 =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("noti1");
+    notificationRuleDTO.setConditions(
+        Collections.singletonList(NotificationRuleCondition.builder()
+                                      .type(NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT)
+                                      .spec(DeploymentImpactReportConditionSpec.builder().build())
+                                      .build()));
+    notificationRuleDTO.setIdentifier("noti2");
+    NotificationRuleResponse notificationRuleResponse2 =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setIdentifier("noti3");
+    NotificationRuleResponse notificationRuleResponse3 =
         notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
 
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
         "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
     monitoredServiceDTO.setNotificationRuleRefs(
         Arrays.asList(NotificationRuleRefDTO.builder()
-                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .notificationRuleRef(notificationRuleResponse1.getNotificationRule().getIdentifier())
                           .enabled(true)
-                          .build()));
+                          .build(),
+            NotificationRuleRefDTO.builder()
+                .notificationRuleRef(notificationRuleResponse2.getNotificationRule().getIdentifier())
+                .enabled(false)
+                .build(),
+            NotificationRuleRefDTO.builder()
+                .notificationRuleRef(notificationRuleResponse3.getNotificationRule().getIdentifier())
+                .enabled(true)
+                .build()));
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    PageResponse<NotificationRuleCondition> notificationRuleConditions =
-        monitoredServiceService.getNotificationRuleConditions(projectParams, monitoredServiceDTO.getIdentifier(),
-            PageParams.builder().page(0).size(10).build(), List.of(DEPLOYMENT_IMPACT_REPORT));
-    assertThat(notificationRuleConditions.getTotalPages()).isEqualTo(1);
-    assertThat(notificationRuleConditions.getTotalItems()).isEqualTo(1);
-    assertThat(notificationRuleConditions.getContent().get(0).getType()).isEqualTo(DEPLOYMENT_IMPACT_REPORT);
+    List<MonitoredServiceNotificationRule> notificationRules =
+        monitoredServiceService.getNotificationRules(projectParams, monitoredServiceDTO.getIdentifier(),
+            Collections.singletonList(NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT));
+    assertThat(notificationRules.size()).isEqualTo(1);
+    assertThat(notificationRules.get(0).getType()).isEqualTo(NotificationRuleType.MONITORED_SERVICE);
+    assertThat(notificationRules.get(0).getIdentifier())
+        .isEqualTo(notificationRuleResponse3.getNotificationRule().getIdentifier());
   }
 
   @Test
@@ -3414,7 +3551,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceDTO savedMonitoredServiceDTO =
         monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO)
             .getMonitoredServiceDTO();
-    assertThat(savedMonitoredServiceDTO.isEnabled()).isTrue();
+    assertThat(savedMonitoredServiceDTO.isEnabled()).isFalse();
   }
 
   @Test

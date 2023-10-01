@@ -14,7 +14,10 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
@@ -58,6 +61,7 @@ import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @UtilityClass
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -459,8 +463,8 @@ public class YamlUtils {
   public String getStageFqnPath(YamlNode yamlNode, String yamlVersion) {
     // If yamlVersion is V1 then use stages as root fieldName because stages is the root. If it's V0, then pipeline.
     List<String> qualifiedNames = getQualifiedNameList(yamlNode,
-        PipelineVersion.isV1(yamlVersion) ? YAMLFieldNameConstants.STAGES : YAMLFieldNameConstants.PIPELINE, false);
-    if (qualifiedNames.size() > 0 && PipelineVersion.isV1(yamlVersion)) {
+        HarnessYamlVersion.isV1(yamlVersion) ? YAMLFieldNameConstants.STAGES : YAMLFieldNameConstants.PIPELINE, false);
+    if (qualifiedNames.size() > 0 && HarnessYamlVersion.isV1(yamlVersion)) {
       return getStageFQNPathForV1Yaml(qualifiedNames, yamlNode);
     }
     if (qualifiedNames.size() <= 2) {

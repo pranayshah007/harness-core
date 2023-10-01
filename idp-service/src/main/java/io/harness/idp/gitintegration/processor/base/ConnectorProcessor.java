@@ -23,7 +23,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.connector.ConnectorDTO;
@@ -69,6 +68,7 @@ import io.harness.gitsync.common.helper.GitSyncLogContextHelper;
 import io.harness.gitsync.common.helper.ScopeIdentifierMapper;
 import io.harness.gitsync.common.helper.UserPrincipalMapper;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -81,7 +81,6 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -103,9 +102,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.IDP)
 public abstract class ConnectorProcessor {
   @Inject public ConnectorResourceClient connectorResourceClient;
-  @Inject NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject @Named("PRIVILEGED") public SecretManagerClientService ngSecretService;
-  @Inject SecretManagerClientService ngSecretServiceNonPrivileged;
   @Inject DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject ExceptionManager exceptionManager;
   @Inject public GitClientV2Impl gitClientV2;
@@ -117,6 +114,12 @@ public abstract class ConnectorProcessor {
 
   public abstract Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO);
+
+  public void createOrUpdateIntegrationConfig(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
+    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
+    configManagerService.createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO,
+        ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString), connectorTypeAsString);
+  }
 
   public abstract void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
       String locationParentPath, List<String> filesToPush, boolean throughGrpc);
@@ -266,7 +269,7 @@ public abstract class ConnectorProcessor {
         gitConfigDTO, connectorConfigDto, accountIdentifier, commitToNewBranch, baseBranchName, gitFileDetails);
 
     DelegateTaskRequest delegateTaskRequest =
-        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("scm"), accountIdentifier);
+        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("scm"), accountIdentifier, 2);
 
     return executeDelegateSyncTask(delegateTaskRequest);
   }
@@ -395,7 +398,7 @@ public abstract class ConnectorProcessor {
         gitConfigDTO, connectorConfigDto, accountIdentifier, GitCommandType.LIST_REMOTE, listRemoteRequest);
 
     DelegateTaskRequest delegateTaskRequest =
-        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("ngGit"), accountIdentifier);
+        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("ngGit"), accountIdentifier, 1);
 
     return executeDelegateSyncTask(delegateTaskRequest);
   }
@@ -406,7 +409,7 @@ public abstract class ConnectorProcessor {
         gitConfigDTO, connectorConfigDto, accountIdentifier, GitCommandType.COMMIT_AND_PUSH, commitAndPushRequest);
 
     DelegateTaskRequest delegateTaskRequest =
-        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("ngGit"), accountIdentifier);
+        buildDelegateTask(taskParameters, connectorConfigDto, getTaskType("ngGit"), accountIdentifier, 15);
 
     return executeDelegateSyncTask(delegateTaskRequest);
   }
@@ -452,10 +455,7 @@ public abstract class ConnectorProcessor {
     }
     NGAccess basicNGAccessObject =
         BaseNGAccess.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build();
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL)) {
-      return ngSecretService.getEncryptionDetails(basicNGAccessObject, decryptableEntity);
-    }
-    return ngSecretServiceNonPrivileged.getEncryptionDetails(basicNGAccessObject, decryptableEntity);
+    return ngSecretService.getEncryptionDetails(basicNGAccessObject, decryptableEntity);
   }
 
   private List<EncryptedDataDetail> getApiAccessEncryptedDataDetail(ScmConnector scmConnector, NGAccess ngAccess) {
@@ -465,8 +465,8 @@ public abstract class ConnectorProcessor {
     return emptyList();
   }
 
-  private DelegateTaskRequest buildDelegateTask(
-      TaskParameters taskParameters, ConnectorConfigDTO connectorConfig, String taskType, String accountIdentifier) {
+  private DelegateTaskRequest buildDelegateTask(TaskParameters taskParameters, ConnectorConfigDTO connectorConfig,
+      String taskType, String accountIdentifier, long executionTimeoutInMinutes) {
     if (taskParameters instanceof ConnectorTaskParams && connectorConfig instanceof DelegateSelectable) {
       ((ConnectorTaskParams) taskParameters)
           .setDelegateSelectors(((DelegateSelectable) connectorConfig).getDelegateSelectors());
@@ -480,7 +480,7 @@ public abstract class ConnectorProcessor {
         .taskType(taskType)
         .taskParameters(taskParameters)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
-        .executionTimeout(Duration.ofMinutes(10))
+        .executionTimeout(Duration.ofMinutes(executionTimeoutInMinutes))
         .forceExecute(true)
         .build();
   }
