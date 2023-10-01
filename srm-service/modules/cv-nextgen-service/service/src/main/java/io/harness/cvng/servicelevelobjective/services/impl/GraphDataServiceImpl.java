@@ -218,6 +218,7 @@ public class GraphDataServiceImpl implements GraphDataService {
     double sloErrorBudgetBurnDown = 0.0;
     List<Double> weightageList = new ArrayList<>();
     List<Double> errorBudgetBurnedList = new ArrayList<>();
+    List<Double> sliPercentageList = new ArrayList<>();
     for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail serviceLevelObjectivesDetail :
         compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
       weightageList.add(serviceLevelObjectivesDetail.getWeightagePercentage() / 100);
@@ -229,10 +230,11 @@ public class GraphDataServiceImpl implements GraphDataService {
         errorBudgetBurned = ((totalErrorBudget - sliValue.getBadCount()) * 100) / totalErrorBudget;
       }
       errorBudgetBurnedList.add(errorBudgetBurned);
+      sliPercentageList.add(sliValue.sliPercentage());
     }
     sloErrorBudgetBurnDown =
         formulaTypeCompositeSLOEvaluatorMap.get(compositeServiceLevelObjective.getCompositeSLOFormulaType())
-            .getSloErrorBudgetBurnDown(weightageList, errorBudgetBurnedList);
+            .getSloErrorBudgetBurnDown(weightageList, errorBudgetBurnedList, sliPercentageList);
     return sloErrorBudgetBurnDown;
   }
 

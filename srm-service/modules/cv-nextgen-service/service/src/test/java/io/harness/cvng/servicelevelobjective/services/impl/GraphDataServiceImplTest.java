@@ -244,14 +244,14 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
                       .serviceLevelObjectivesDetails(Arrays.asList(
                           ServiceLevelObjectiveDetailsDTO.builder()
                               .serviceLevelObjectiveRef(requestSimpleServiceLevelObjective1.getIdentifier())
-                              .weightagePercentage(84.0)
+                              .weightagePercentage(90.0)
                               .accountId(requestSimpleServiceLevelObjective1.getAccountId())
                               .orgIdentifier(requestSimpleServiceLevelObjective1.getOrgIdentifier())
                               .projectIdentifier(requestSimpleServiceLevelObjective1.getProjectIdentifier())
                               .build(),
                           ServiceLevelObjectiveDetailsDTO.builder()
                               .serviceLevelObjectiveRef(requestSimpleServiceLevelObjective2.getIdentifier())
-                              .weightagePercentage(83.0)
+                              .weightagePercentage(30.0)
                               .accountId(requestSimpleServiceLevelObjective2.getAccountId())
                               .orgIdentifier(requestSimpleServiceLevelObjective2.getOrgIdentifier())
                               .projectIdentifier(requestSimpleServiceLevelObjective2.getProjectIdentifier())
@@ -607,9 +607,9 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
         Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.BAD, BAD, BAD, GOOD);
     List<Long> goodCounts2 = Arrays.asList(0l, 100l, 100l, 100l, 100l, 100l, 100l, 100l);
     List<Long> badCounts2 = Arrays.asList(0l, 0l, 0l, 0l, 0l, 0l, 0l, 0l);
-    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 0.0, 0.0, 0.0, 0.0, 95.19, 98.48, 99.01);
+    List<Double> expectedSLITrend = Lists.newArrayList(100.0, 10.0, 10.0, 10.0, 10.0, 95.67, 98.63, 99.11);
     List<Double> expectedBurndown =
-        Lists.newArrayList(100.0, -4900.0, -4900.0, -4900.0, -4900.0, -140.38, 24.39, 50.87);
+        Lists.newArrayList(100.0, -4410.0, -4410.0, -4410.0, -4410.0, -126.34, 21.95, 45.78);
     testGraphCalculationCompositeSLORequest(leastPerformantCompositeServiceLevelObjective,
         leastPerformantVerificationTaskId, sliStateList1, sliStateList2, goodCounts1, badCounts1, goodCounts2,
         badCounts2, expectedSLITrend, expectedBurndown, 0, 0, 0, 0);

@@ -39,7 +39,8 @@ public class WeightedAverageCompositeSLOEvaluator extends CompositeSLOEvaluator 
   }
 
   @Override
-  public Double getSloErrorBudgetBurnDown(List<Double> weightage, List<Double> errorBudgetBurned) {
+  public Double getSloErrorBudgetBurnDown(
+      List<Double> weightage, List<Double> errorBudgetBurned, List<Double> sloPercentageList) {
     double sloErrorBudgetBurnDown = 0.0;
     for (int i = 0; i < weightage.size(); i++) {
       sloErrorBudgetBurnDown += weightage.get(i) * errorBudgetBurned.get(i);
