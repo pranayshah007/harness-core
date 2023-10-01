@@ -8,6 +8,7 @@
 package io.harness.notification.messageclient;
 
 import io.harness.notification.NotificationRequest;
+import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.entities.MongoNotificationRequest;
 import io.harness.queue.QueuePublisher;
 
@@ -22,5 +23,14 @@ public class MongoClient implements MessageClient {
   public void send(NotificationRequest notificationRequest, String accountId) {
     byte[] message = notificationRequest.toByteArray();
     producer.send(MongoNotificationRequest.builder().bytes(message).build());
+  }
+
+  @Override
+  public void send(NotificationTriggerRequest notificationTriggerRequest, String accountId) {
+    byte[] message = notificationTriggerRequest.toByteArray();
+    producer.send(MongoNotificationRequest.builder()
+                      .requestType(notificationTriggerRequest.getClass().getName())
+                      .bytes(message)
+                      .build());
   }
 }

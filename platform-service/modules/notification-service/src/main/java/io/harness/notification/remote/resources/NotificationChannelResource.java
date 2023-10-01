@@ -27,7 +27,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.entities.NotificationChannel;
-import io.harness.notification.service.api.NotificationManagementService;
+import io.harness.notification.service.api.NotificationChannelManagementService;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
@@ -87,7 +87,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(PL)
 @NextGenManagerAuth
 public class NotificationChannelResource {
-  private final NotificationManagementService notificationManagementService;
+  private final NotificationChannelManagementService notificationManagementService;
 
   @POST
   @ApiOperation(value = "Create notification channel", nickname = "postNotificationChannel")

@@ -7,6 +7,7 @@
 
 package io.harness.iterator;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
@@ -17,12 +18,16 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.task.DelegateLogContext;
+import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
+import io.harness.notification.NotificationTriggerRequest;
+import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.notification.notificationserviceclient.intfc.NotificationServiceClient;
 import io.harness.observer.Subject;
 
 import software.wings.service.impl.DelegateDao;
@@ -33,6 +38,8 @@ import software.wings.service.intfc.DelegateTaskServiceClassic;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +59,7 @@ public class DelegateDisconnectDetectorIterator
   @Inject private DelegateService delegateService;
   @Inject private DelegateDao delegateDao;
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject private NotificationServiceClient notificationServiceClient;
 
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
@@ -115,6 +123,7 @@ public class DelegateDisconnectDetectorIterator
       delegateService.onDelegateDisconnected(delegate.getAccountId(), delegate.getUuid());
       // mark delegate as disconnected
       delegateDao.delegateDisconnected(delegate.getAccountId(), delegate.getUuid());
+      triggerNotificationRequest(delegate);
       delegateService.updateLastExpiredEventHeartbeatTime(
           delegate.getLastHeartBeat(), delegate.getUuid(), delegate.getAccountId());
     }
@@ -123,5 +132,24 @@ public class DelegateDisconnectDetectorIterator
   private boolean isDelegateExpiryCheckDoneAlready(Delegate delegate) {
     return delegate.getLastExpiredEventHeartbeatTime() != null
         && delegate.getLastExpiredEventHeartbeatTime() == delegate.getLastHeartBeat();
+  }
+
+  private void triggerNotificationRequest(Delegate delegate) {
+    String notificationTriggerRequestId = generateUuid();
+    String orgId = DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(delegate.getOwner().getIdentifier());
+    String projectId =
+        DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegate.getOwner().getIdentifier());
+    Map<String, String> templateData = new HashMap<>();
+    templateData.put("DELEGATE_HOST", delegate.getDelegateGroupName());
+    templateData.put("DELEGATE_NAME", delegate.getHostName());
+    NotificationTriggerRequest.Builder notificationTriggerRequestBuilder = NotificationTriggerRequest.newBuilder()
+                                                                               .setId(notificationTriggerRequestId)
+                                                                               .setAccountId(delegate.getAccountId())
+                                                                               .setOrgId(orgId)
+                                                                               .setProjectId(projectId)
+                                                                               .setEventEntity("Delegate")
+                                                                               .setEvent("DelegateDown")
+                                                                               .putAllTemplateData(templateData);
+    notificationServiceClient.sendNotification(notificationTriggerRequestBuilder.build());
   }
 }

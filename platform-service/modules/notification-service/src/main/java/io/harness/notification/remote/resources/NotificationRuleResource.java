@@ -26,7 +26,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.entities.NotificationRule;
-import io.harness.notification.service.api.NotificationManagementService;
+import io.harness.notification.service.api.NotificationRuleManagementService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -84,7 +84,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Slf4j
 @OwnedBy(PL)
 public class NotificationRuleResource {
-  private final NotificationManagementService notificationManagementService;
+  private final NotificationRuleManagementService notificationManagementService;
 
   @POST
   @ApiOperation(value = "Create notification rule", nickname = "postNotificationRule")
@@ -166,7 +166,7 @@ public class NotificationRuleResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @RequestBody(description = "notification rule with update",
           required = true) @NotNull @Valid NotificationRule notificationRule) {
-    return ResponseDTO.newResponse(notificationManagementService.deleteNotificationRule(notificationRule));
+    return ResponseDTO.newResponse(notificationManagementService.delete(notificationRule));
   }
 
   @GET

@@ -8,7 +8,9 @@
 package io.harness.notification.messageclient;
 
 import io.harness.notification.NotificationRequest;
+import io.harness.notification.NotificationTriggerRequest;
 
 public interface MessageClient {
   void send(NotificationRequest notificationRequest, String accountId);
+  void send(NotificationTriggerRequest notificationTriggerRequest, String accountId);
 }

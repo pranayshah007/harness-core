@@ -13,13 +13,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.ng.beans.PageRequest;
 import io.harness.notification.NotificationRequest;
+import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 import io.harness.notification.entities.Notification.NotificationKeys;
+import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.mappers.NotificationMapper;
 import io.harness.notification.repositories.NotificationRepository;
 import io.harness.notification.service.api.ChannelService;
+import io.harness.notification.service.api.NotificationRuleManagementService;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.utils.PageUtils;
 
@@ -37,6 +40,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class NotificationServiceImpl implements NotificationService {
   private final ChannelService channelService;
   private final NotificationRepository notificationRepository;
+  private final NotificationRuleManagementService notificationManagementService;
 
   @Override
   public boolean processNewMessage(NotificationRequest notificationRequest) {
@@ -116,5 +120,34 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public void deleteByAccountIdentifier(String accountIdentifier) {
     notificationRepository.deleteByAccountIdentifier(accountIdentifier);
+  }
+
+  @Override
+  public boolean processNewMessage(NotificationTriggerRequest notificationTriggerRequest) {
+    NotificationRule notificationRule = notificationManagementService.get(notificationTriggerRequest.getAccountId(),
+        notificationTriggerRequest.getOrgId(), notificationTriggerRequest.getProjectId());
+    Notification notification = NotificationMapper.toNotification(notificationRule);
+
+    if (Objects.isNull(notification)) {
+      log.error("Ignoring notification request for processing {}", notificationRule.getUuid());
+      return false;
+    }
+
+    notificationRepository.save(notification);
+    NotificationProcessingResponse processingResponse = null;
+    try {
+      // construct notification request from notification rule
+      processingResponse = channelService.send(NotificationMapper.constructNotificationRequest(notificationRule));
+    } catch (NotificationException e) {
+      log.error("Could not send notification.", e);
+    }
+    if (Objects.nonNull(processingResponse)) {
+      notification.setProcessingResponses(processingResponse.getResult());
+      notification.setShouldRetry(!(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
+          || processingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries)));
+    }
+    notification.setRetries(1);
+    notificationRepository.save(notification);
+    return !NotificationProcessingResponse.isNotificationRequestFailed(processingResponse);
   }
 }

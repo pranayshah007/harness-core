@@ -23,6 +23,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -32,12 +33,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "NotificationChannelKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @StoreIn(DbAliases.NOTIFICATION)
-@Entity(value = "notificationChannel",noClassnameStored = true)
+@Entity(value = "notificationChannel", noClassnameStored = true)
 @Document("NotificationChannel")
 @TypeAlias("notificationChannel")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.PL)
-public class NotificationChannel implements PersistentEntity, PersistentRegularIterable {
+@Slf4j
+public class NotificationChannel implements PersistentEntity, PersistentRegularIterable, Channel {
   @Id @dev.morphia.annotations.Id String uuid;
 
   String name;
@@ -54,8 +56,7 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
   WebhookChannel webhookChannel;
 
   private Status status;
-  @FdIndex
-  private long nextIteration;
+  @FdIndex private long nextIteration;
 
   @Override
   public Long obtainNextIteration(String fieldName) {
@@ -64,12 +65,36 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-   this.nextIteration = nextIteration;
+    this.nextIteration = nextIteration;
   }
 
   @Override
   public String logKeyForId() {
     return PersistentRegularIterable.super.logKeyForId();
+  }
+
+  @Override
+  public Object toObjectofProtoSchema() {
+    switch (notificationChannelType) {
+      case EMAIL:
+        // return
+      case SLACK:
+        // return
+      case PAGERDUTY:
+        // return
+      case MSTEAMS:
+        // return
+      case WEBHOOK:
+        // return
+      default:
+        log.error("Channel type of the notification trigger request unidentified {}", notificationChannelType);
+    }
+    return null;
+  }
+
+  @Override
+  public NotificationChannelType getChannelType() {
+    return notificationChannelType;
   }
 
   public enum Status {

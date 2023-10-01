@@ -12,6 +12,8 @@ import io.harness.notification.entities.Channel;
 import io.harness.notification.entities.EmailChannel;
 import io.harness.notification.entities.MicrosoftTeamsChannel;
 import io.harness.notification.entities.Notification;
+import io.harness.notification.entities.NotificationChannel;
+import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.entities.PagerDutyChannel;
 import io.harness.notification.entities.SlackChannel;
 import io.harness.notification.entities.WebhookChannel;
@@ -38,6 +40,38 @@ public class NotificationMapper {
           notificationRequest, e);
       return null;
     }
+  }
+
+  public static Notification toNotification(NotificationRule notificationRule) {
+    try {
+      return Notification.builder()
+          .id(notificationRule.getUuid())
+          .accountIdentifier(notificationRule.getAccountIdentifier())
+          .channel(notificationRule.getNotificationChannel())
+          .build();
+    } catch (Exception e) {
+      log.error("Error converting notification rule to notification for persistence, {}", notificationRule, e);
+      return null;
+    }
+  }
+
+  public static NotificationRequest constructNotificationRequest(NotificationRule notificationRule) {
+    NotificationRequest.Builder notificationRequestBuilder =
+        NotificationRequest.newBuilder().setAccountId(notificationRule.getAccountIdentifier());
+
+    Object channelDetails = notificationRule.getNotificationChannel().toObjectofProtoSchema();
+    if (channelDetails instanceof NotificationRequest.Email) {
+      notificationRequestBuilder.setEmail((NotificationRequest.Email) channelDetails);
+    } else if (channelDetails instanceof NotificationRequest.Slack) {
+      notificationRequestBuilder.setSlack((NotificationRequest.Slack) channelDetails);
+    } else if (channelDetails instanceof NotificationRequest.PagerDuty) {
+      notificationRequestBuilder.setPagerDuty((NotificationRequest.PagerDuty) channelDetails);
+    } else if (channelDetails instanceof NotificationRequest.MSTeam) {
+      notificationRequestBuilder.setMsTeam((NotificationRequest.MSTeam) channelDetails);
+    } else if (channelDetails instanceof NotificationRequest.Webhook) {
+      notificationRequestBuilder.setWebhook((NotificationRequest.Webhook) channelDetails);
+    }
+    return notificationRequestBuilder.build();
   }
 
   private static Channel channelDetailsProtoToMongo(NotificationRequest notificationRequest) {
