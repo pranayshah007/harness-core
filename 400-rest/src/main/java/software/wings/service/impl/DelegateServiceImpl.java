@@ -709,14 +709,15 @@ public class DelegateServiceImpl implements DelegateService {
       throw new InvalidRequestException("Delegate Name must be provided.", USER);
     }
     if (delegateSetupDetails.getSize() == null) {
-      throw new InvalidRequestException("Delegate Size must be provided.", USER);
+      delegateSetupDetails.setSize(DelegateSize.LAPTOP);
     }
 
     K8sConfigDetails k8sConfigDetails = delegateSetupDetails.getK8sConfigDetails();
     if (k8sConfigDetails == null || k8sConfigDetails.getK8sPermissionType() == null) {
-      throw new InvalidRequestException("K8s permission type must be provided.", USER);
+      delegateSetupDetails.setK8sConfigDetails(
+          K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.CLUSTER_ADMIN).build());
     } else if (k8sConfigDetails.getK8sPermissionType() == NAMESPACE_ADMIN && isBlank(k8sConfigDetails.getNamespace())) {
-      throw new InvalidRequestException("K8s namespace must be provided for this type of permission.", USER);
+      delegateSetupDetails.setK8sConfigDetails(K8sConfigDetails.builder().namespace("harness-delegate-ng").build());
     }
 
     if (!(KUBERNETES.equals(delegateSetupDetails.getDelegateType())
