@@ -29,6 +29,7 @@ public class LeastPerformanceCompositeSLOEvaluator extends CompositeSLOEvaluator
 
   public Double getSloPercentage(List<Double> weightage, List<Double> sloPercentageList) {
     double tempSloPercentage = 0.0;
+
     for (int i = 0; i < weightage.size(); i++) {
       tempSloPercentage = Math.max(tempSloPercentage, (100.0 - sloPercentageList.get(i)) * weightage.get(i));
     }
