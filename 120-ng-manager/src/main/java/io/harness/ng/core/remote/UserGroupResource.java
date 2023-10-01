@@ -255,7 +255,7 @@ public class UserGroupResource {
                       .orgIdentifier(orgIdentifier)
                       .projectIdentifier(projectIdentifier)
                       .build();
-    if (isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
+    if (userGroupService.isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
       log.warn("Deleting an externally managed user group- {} from account- {} org- {} project- {}", identifier,
           accountIdentifier, orgIdentifier, projectIdentifier);
     }
@@ -456,7 +456,7 @@ public class UserGroupResource {
                       .orgIdentifier(orgIdentifier)
                       .projectIdentifier(projectIdentifier)
                       .build();
-    if (isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
+    if (userGroupService.isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
       log.warn("Deleting user- {} from an externally managed user group- {} from account- {} org- {} project- {}",
           userIdentifier, identifier, accountIdentifier, orgIdentifier, projectIdentifier);
     }
@@ -581,13 +581,8 @@ public class UserGroupResource {
 
   private void checkExternallyManaged(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    if (isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
+    if (userGroupService.isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier)) {
       throw new InvalidRequestException("This API call is not supported for externally managed group" + identifier);
     }
-  }
-
-  private boolean isExternallyManaged(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    return userGroupService.isExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 }
