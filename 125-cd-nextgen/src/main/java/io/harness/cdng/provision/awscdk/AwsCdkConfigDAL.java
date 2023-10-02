@@ -50,4 +50,15 @@ public class AwsCdkConfigDAL {
     cdExpressionResolver.updateExpressions(ambiance, awsCdkConfig);
     return awsCdkConfig;
   }
+
+  public void deleteAwsCdkConfig(Ambiance ambiance, String provisionerIdentifier) {
+    Query<AwsCdkConfig> query =
+        persistence.createQuery(AwsCdkConfig.class)
+            .filter(AwsCdkConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
+            .filter(AwsCdkConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
+            .filter(AwsCdkConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
+            .filter(AwsCdkConfigKeys.provisionerIdentifier, provisionerIdentifier)
+            .filter(AwsCdkConfigKeys.stageExecutionId, AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance));
+    persistence.delete(query);
+  }
 }
