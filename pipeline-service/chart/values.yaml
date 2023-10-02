@@ -37,9 +37,28 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              MONGO_USER: ""
+              MONGO_PASSWORD": ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                MONGO_USER:
+                  name: ""
+                  property: ""
+                MONGO_PASSWORD":
+                  name: ""
+                  property: ""
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
+      sslEnabled: true
       # --  provide default values if mongo.installed is set to false
       hosts:
         - timescaledb-single-chart:5432
@@ -47,8 +66,30 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
-      certName: ""
-      certKey: ""
+      certName: "a"
+      certKey: "a"
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              TIMESCALEDB_USERNAME: ""
+              TIMESCALEDB_PASSWORD: ""
+              TIMESCALEDB_SSL_ROOT_CERT: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                TIMESCALEDB_USERNAME:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_PASSWORD:
+                  name: ""
+                  property: ""
+                TIMESCALEDB_SSL_ROOT_CERT:
+                  name: ""
+                  property: ""
     redis:
       installed: true
       protocol: "redis"
@@ -59,6 +100,41 @@ global:
       userKey: "redis-user"
       passwordKey: "redis-password"
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              EVENTS_FRAMEWORK_REDIS_USERNAME: ""
+              EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
+              CACHE_CONFIG_REDIS_USERNAME: ""
+              CACHE_CONFIG_REDIS_PASSWORD: ""
+              LOCK_CONFIG_REDIS_USERNAME: ""
+              LOCK_CONFIG_REDIS_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                EVENTS_FRAMEWORK_REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                EVENTS_FRAMEWORK_REDIS_PASSWORD:
+                  name: ""
+                  property: ""
+                CACHE_CONFIG_REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                CACHE_CONFIG_REDIS_PASSWORD:
+                  name: ""
+                  property: ""
+                LOCK_CONFIG_REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                LOCK_CONFIG_REDIS_PASSWORD:
+                  name: ""
+                  property: ""
+  
   imagePullSecrets: []
   ingress:
     # -- create ingress objects
@@ -87,6 +163,95 @@ global:
       hosts:
   opa:
     enabled: false
+
+redis:
+  protocol: ""
+  hosts: []
+  secretName: ""
+  userKey: ""
+  passwordKey: ""
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          REDIS_USERNAME: ""
+          REDIS_PASSWORD": ""
+          EVENTS_FRAMEWORK_REDIS_USERNAME: ""
+          EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
+    secretManagement: 
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            REDIS_USERNAME:
+              name: ""
+              property: ""
+            REDIS_PASSWORD":
+              name: ""
+              property: ""
+            EVENTS_FRAMEWORK_REDIS_USERNAME:
+              name: ""
+              property: ""
+            EVENTS_FRAMEWORK_REDIS_USERNAME":
+              name: ""
+              property: ""
+
+timescaledb:
+  # -- TimescaleDB host names
+  hosts: []
+  # -- Enable TimescaleDB SSL
+  # sslEnabled: false
+  # -- TimescaleDB secrets
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          TIMESCALEDB_USERNAME: ""
+          TIMESCALEDB_PASSWORD: ""
+          TIMESCALEDB_SSL_ROOT_CERT: ""
+    secretManagement: 
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            TIMESCALEDB_USERNAME:
+              name: ""
+              property: ""
+            TIMESCALEDB_PASSWORD:
+              name: ""
+              property: ""
+            TIMESCALEDB_SSL_ROOT_CERT:
+              name: ""
+              property: ""
+mongo:
+  protocol: "mongodb"
+  hosts: []
+  secretName: ""
+  userKey: ""
+  passwordKey: ""
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          MONGO_USER: ""
+          MONGO_PASSWORD": ""
+    secretManagement: 
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            MONGO_USER:
+              name: ""
+              property: ""
+            MONGO_PASSWORD":
+              name: ""
+              property: ""
+
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
@@ -237,3 +402,21 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
+
+
+secrets:
+  default:
+    OPA_SERVER_SECRET: "dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq"
+  kubernetesSecrets:
+  - secretName: ""
+    keys:
+      OPA_SERVER_SECRET: ""
+  secretManagement: 
+    externalSecretsOperator:
+    - secretStore:
+        name: ""
+        kind: ""
+      remoteKeys:
+        OPA_SERVER_SECRET:
+          name: ""
+          property: ""
