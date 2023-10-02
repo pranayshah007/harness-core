@@ -124,9 +124,9 @@ public class DelegateDisconnectDetectorIterator
       delegateService.onDelegateDisconnected(delegate.getAccountId(), delegate.getUuid());
       // mark delegate as disconnected
       delegateDao.delegateDisconnected(delegate.getAccountId(), delegate.getUuid());
-      triggerNotificationRequest(delegate);
       delegateService.updateLastExpiredEventHeartbeatTime(
           delegate.getLastHeartBeat(), delegate.getUuid(), delegate.getAccountId());
+      triggerNotificationRequest(delegate);
     }
   }
 
@@ -137,9 +137,12 @@ public class DelegateDisconnectDetectorIterator
 
   private void triggerNotificationRequest(Delegate delegate) {
     String notificationTriggerRequestId = generateUuid();
-    String orgId = DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(delegate.getOwner().getIdentifier());
-    String projectId =
-        DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegate.getOwner().getIdentifier());
+    String orgId = delegate.getOwner() != null
+        ? DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(delegate.getOwner().getIdentifier())
+        : "";
+    String projectId = delegate.getOwner() != null
+        ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegate.getOwner().getIdentifier())
+        : "";
     Map<String, String> templateData = new HashMap<>();
     templateData.put("DELEGATE_HOST", delegate.getDelegateGroupName());
     templateData.put("DELEGATE_NAME", delegate.getHostName());
@@ -152,6 +155,7 @@ public class DelegateDisconnectDetectorIterator
             .setEventEntity(NotificationEntity.DELEGATE.name())
             .setEvent(NotificationEvent.DELEGATE_DOWN.name())
             .putAllTemplateData(templateData);
+    log.info("Sending delegate disconnect notifictaion for {}", delegate.getUuid());
     notificationServiceClient.sendNotification(notificationTriggerRequestBuilder.build());
   }
 }

@@ -16,7 +16,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PL)
-public class NotificationChannelManagementService
+public class NotificationChannelManagementServiceImpl
     implements io.harness.notification.service.api.NotificationChannelManagementService {
   private final NotificationChannelRepository notificationChannelRepository;
 

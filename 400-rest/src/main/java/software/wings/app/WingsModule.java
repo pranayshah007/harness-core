@@ -212,6 +212,8 @@ import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.notification.module.NotificationClientModule;
+import io.harness.notification.notificationserviceclient.NotificationServiceClientImpl;
+import io.harness.notification.notificationserviceclient.intfc.NotificationServiceClient;
 import io.harness.notifications.AlertNotificationRuleChecker;
 import io.harness.notifications.AlertNotificationRuleCheckerImpl;
 import io.harness.notifications.AlertVisibilityChecker;
@@ -1109,6 +1111,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateUpgraderService.class).to(DelegateUpgraderServiceImpl.class);
     bind(DelegateService.class).to(DelegateServiceImpl.class);
     bind(DelegateScopeService.class).to(DelegateScopeServiceImpl.class);
+    bind(NotificationServiceClient.class).to(NotificationServiceClientImpl.class);
     bind(DelegateInstallationCommandService.class).to(DelegateInstallationCommandServiceImpl.class);
     bind(DelegateStackdriverLogService.class).to(DelegateStackdriverLogServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);

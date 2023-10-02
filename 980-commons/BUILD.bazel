@@ -82,6 +82,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/metrics:module",
         "//980-commons/src/main/java/io/harness/morphia:module",
         "//980-commons/src/main/java/io/harness/network:module",
+        "//980-commons/src/main/java/io/harness/notification:module",
         "//980-commons/src/main/java/io/harness/obfuscate:module",
         "//980-commons/src/main/java/io/harness/observer:module",
         "//980-commons/src/main/java/io/harness/packages:module",

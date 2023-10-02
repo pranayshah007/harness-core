@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
-import io.harness.notification.events.NotificationEventGroup;
+import io.harness.notification.NotificationEntity;
 import io.harness.persistence.PersistentEntity;
 
 import dev.morphia.annotations.Entity;
@@ -32,7 +32,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "NotificationRuleKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @StoreIn(DbAliases.NOTIFICATION)
-@Entity(value = "notificationRule",noClassnameStored = true)
+@Entity(value = "notificationRule", noClassnameStored = true)
 @Document("NotificationRule")
 @TypeAlias("notificationRule")
 @HarnessEntity(exportable = true)
@@ -47,12 +47,10 @@ public class NotificationRule implements PersistentEntity, PersistentRegularIter
   String projectIdentifier;
 
   NotificationChannel notificationChannel;
-  NotificationEventGroup notificationEventGroup;
+  NotificationEntity notificationEntity;
 
   private Status status;
-  @FdIndex
-  private long nextIteration;
-
+  @FdIndex private long nextIteration;
 
   @Override
   public Long obtainNextIteration(String fieldName) {
@@ -61,7 +59,7 @@ public class NotificationRule implements PersistentEntity, PersistentRegularIter
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-   this.nextIteration = nextIteration;
+    this.nextIteration = nextIteration;
   }
 
   @Override
