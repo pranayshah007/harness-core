@@ -36,7 +36,7 @@ public class RunnerDecryptionService {
     final EncryptionConfig secretConfig =
         (EncryptionConfig) kryoSerializer.asInflatedObject(secret.getConfig().getBinaryData().toByteArray());
     final List<EncryptedRecord> kryoSecrets =
-        (List<EncryptedRecord>) kryoSerializer.asInflatedObject(secret.getSecrets().getBinaryData().toByteArray());
+        (List<EncryptedRecord>) kryoSerializer.asInflatedObject(secret.getEncryptedRecord().getBinaryData().toByteArray());
     final var decrypt = decryptionService.decrypt(Map.of(secretConfig, kryoSecrets));
     log.info("Decrypted secrets are: {}", decrypt);
     return decrypt;
@@ -44,7 +44,7 @@ public class RunnerDecryptionService {
 
   public Map<String, char[]> decryptByteArray(final Secret secret) throws InvalidProtocolBufferException {
     final EncryptedDataRecord encryptedDataRecord =
-        EncryptedDataRecord.parseFrom(secret.getSecrets().getBinaryData().toByteArray());
+        EncryptedDataRecord.parseFrom(secret.getEncryptedRecord().getBinaryData().toByteArray());
     EncryptedRecordData mappedRecordData = EncryptedDataRecordProtoPojoMapper.map(encryptedDataRecord);
     final io.harness.delegate.core.beans.EncryptionConfig encryptionConfig =
         io.harness.delegate.core.beans.EncryptionConfig.parseFrom(secret.getConfig().getBinaryData().toByteArray());
