@@ -123,7 +123,7 @@ func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) er
 	}
 
 	if len(lines) > maxStreamSize {
-		lines = lines[:maxStreamSize]
+		lines = lines[len(lines)-maxStreamSize:]
 	}
 
 	// Write input to redis stream. "*" tells Redis to auto-generate a unique incremental ID.
