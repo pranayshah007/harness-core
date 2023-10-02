@@ -89,7 +89,7 @@ public class YamlInputUtils {
 
   private InputDetails buildInputJsonNode(JsonNode inputNode, String inputName) {
     InputDetailsBuilder builder =
-        InputDetails.builder().name(inputName).type(SchemaInputType.valueOf(inputNode.get("type").asText()));
+        InputDetails.builder().name(inputName).type(SchemaInputType.getYamlInputType(inputNode.get("type").asText()));
     if (inputNode.get("description") != null) {
       builder.description(inputNode.get("description").asText());
     }

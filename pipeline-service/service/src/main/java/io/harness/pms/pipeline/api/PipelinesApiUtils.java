@@ -636,11 +636,11 @@ public class PipelinesApiUtils {
 
   private static YamlInputType getYamlInputType(SchemaInputType schemaInputType) {
     switch (schemaInputType) {
-      case String:
+      case STRING:
         return YamlInputType.STRING;
-      case Boolean:
+      case BOOLEAN:
         return YamlInputType.BOOLEAN;
-      case Integer:
+      case INTEGER:
         return YamlInputType.INTEGER;
       default:
         return YamlInputType.OBJECT;
