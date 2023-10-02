@@ -37,20 +37,20 @@ data:
   LOGGING_LEVEL: '{{ .Values.config.LOGGING_LEVEL }}'
   MEMORY: '{{ .Values.config.MEMORY }}'
   REDIS_SENTINEL: '{{ .Values.global.database.redis.installed }}'
-  REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   REDIS_MASTER_NAME: 'harness-redis'
-  REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   SERVER_PORT: '{{ .Values.config.SERVER_PORT }}'
   SERVICE_ACC: '{{ .Values.config.SERVICE_ACC }}'
   VERSION: '{{ .Values.config.VERSION }}'
   NG_MANAGER_BASE_URL: {{ .Values.config.NG_MANAGER_BASE_URL | default "http://ng-manager:7090/" }}
   ACCESS_CONTROL_ENABLED: '{{ .Values.config.ACCESS_CONTROL_ENABLED }}'
   ACCESS_CONTROL_BASE_URL: {{ .Values.config.ACCESS_CONTROL_BASE_URL | default "http://access-control:9006/api/" }}
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: '{{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME }}'
   EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: '{{ .Values.config.EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM }}'
-  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: '{{ .Values.config.HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER }}'
   MONGO_SSL_CONFIG: '{{ .Values.config.MONGO_SSL_CONFIG }}'
   ENABLE_ITERATORS: '{{ .Values.config.ENABLE_ITERATORS }}'

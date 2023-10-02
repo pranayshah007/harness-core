@@ -1,6 +1,6 @@
 # migrator
 
-![Version: 0.8.1](https://img.shields.io/badge/Version-0.8.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.100440](https://img.shields.io/badge/AppVersion-0.0.100440-informational?style=flat-square)
+![Version: 0.11.1](https://img.shields.io/badge/Version-0.11.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.100578](https://img.shields.io/badge/AppVersion-0.0.100578-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -76,9 +76,9 @@ A Helm chart for Kubernetes
 | extraEnvVars | list | `[]` |  |
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
-| featureFlags | object | `{"ADDITIONAL":"","Base":"LDAP_SSO_PROVIDER,ASYNC_ARTIFACT_COLLECTION,JIRA_INTEGRATION,AUDIT_TRAIL_UI,GDS_TIME_SERIES_SAVE_PER_MINUTE,STACKDRIVER_SERVICEGUARD,BATCH_SECRET_DECRYPTION,TIME_SERIES_SERVICEGUARD_V2,TIME_SERIES_WORKFLOW_V2,CUSTOM_DASHBOARD,GRAPHQL,CV_FEEDBACKS,LOGS_V2_247,UPGRADE_JRE,LOG_STREAMING_INTEGRATION,NG_HARNESS_APPROVAL,GIT_SYNC_NG,NG_SHOW_DELEGATE,NG_CG_TASK_ASSIGNMENT_ISOLATION,CI_OVERVIEW_PAGE,AZURE_CLOUD_PROVIDER_VALIDATION_ON_DELEGATE,TERRAFORM_AWS_CP_AUTHENTICATION,NG_TEMPLATES,NEW_DEPLOYMENT_FREEZE,HELM_CHART_AS_ARTIFACT,RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION,WEBHOOK_TRIGGER_AUTHORIZATION,GITHUB_WEBHOOK_AUTHENTICATION,CUSTOM_MANIFEST,GIT_ACCOUNT_SUPPORT,AZURE_WEBAPP,PRUNE_KUBERNETES_RESOURCES,LDAP_GROUP_SYNC_JOB_ITERATOR,POLLING_INTERVAL_CONFIGURABLE,APPLICATION_DROPDOWN_MULTISELECT,USER_GROUP_AS_EXPRESSION,RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED,NG_TEMPLATE_GITX,ELK_HEALTH_SOURCE,NG_ENABLE_LDAP_CHECK,CVNG_METRIC_THRESHOLD,SRM_HOST_SAMPLING_ENABLE,SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS","CCM":"CENG_ENABLED,CCM_MICRO_FRONTEND,NODE_RECOMMENDATION_AGGREGATE","CD":"CDNG_ENABLED","CDB":"NG_DASHBOARDS","CET":"CET_ENABLED,SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS","CHAOS":"CHAOS_ENABLED","CI":"CING_ENABLED,CI_INDIRECT_LOG_UPLOAD","FF":"CFNG_ENABLED","GitOps":"GITOPS_ONPREM_ENABLED,CDS_SHOW_CREATE_PR,GITOPS_BYO_ARGO,ARGO_PHASE1,ARGO_PHASE2_MANAGED,CUSTOM_ARIFACT_NG,SERVICE_DASHBOARD_V2,OPTIMIZED_GIT_FETCH_FILES,MULTI_SERVICE_INFRA,ENV_GROUP,NG_SVC_ENV_REDESIGN,OPTIMIZED_GIT_FETCH_FILES,NG_GITOPS","LICENSE":"NG_LICENSES_ENABLED,VIEW_USAGE_ENABLED","NG":"ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,NEXT_GEN_ENABLED,NEW_LEFT_NAVBAR_SETTINGS,SPG_SIDENAV_COLLAPSE","OLDGITSYNC":"USE_OLD_GIT_SYNC","OPA":"OPA_PIPELINE_GOVERNANCE,OPA_FEATURE_GOVERNANCE,OPA_FF_GOVERNANCE","SAMLAutoAccept":"AUTO_ACCEPT_SAML_ACCOUNT_INVITES,PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES","SRM":"CVNG_ENABLED","STO":"STO_BASELINE_REGEX,STO_STEP_PALETTE_BURP_ENTERPRISE,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP"}` | Feature Flags |
+| featureFlags | object | `{"ADDITIONAL":"","Base":"ASYNC_ARTIFACT_COLLECTION,JIRA_INTEGRATION,AUDIT_TRAIL_UI,GDS_TIME_SERIES_SAVE_PER_MINUTE,STACKDRIVER_SERVICEGUARD,TIME_SERIES_SERVICEGUARD_V2,TIME_SERIES_WORKFLOW_V2,CUSTOM_DASHBOARD,GRAPHQL,CV_FEEDBACKS,LOGS_V2_247,UPGRADE_JRE,LOG_STREAMING_INTEGRATION,NG_HARNESS_APPROVAL,GIT_SYNC_NG,NG_CG_TASK_ASSIGNMENT_ISOLATION,CI_OVERVIEW_PAGE,AZURE_CLOUD_PROVIDER_VALIDATION_ON_DELEGATE,TERRAFORM_AWS_CP_AUTHENTICATION,NG_TEMPLATES,NEW_DEPLOYMENT_FREEZE,HELM_CHART_AS_ARTIFACT,RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION,WEBHOOK_TRIGGER_AUTHORIZATION,GITHUB_WEBHOOK_AUTHENTICATION,CUSTOM_MANIFEST,GIT_ACCOUNT_SUPPORT,AZURE_WEBAPP,PRUNE_KUBERNETES_RESOURCES,POLLING_INTERVAL_CONFIGURABLE,APPLICATION_DROPDOWN_MULTISELECT,RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED,NG_TEMPLATE_GITX,ELK_HEALTH_SOURCE,CVNG_METRIC_THRESHOLD,SRM_HOST_SAMPLING_ENABLE,SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS","CCM":"CENG_ENABLED,CCM_MICRO_FRONTEND,NODE_RECOMMENDATION_AGGREGATE","CD":"CDNG_ENABLED","CDB":"NG_DASHBOARDS","CET":"CET_ENABLED,SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS","CHAOS":"CHAOS_ENABLED","CI":"CING_ENABLED,CI_INDIRECT_LOG_UPLOAD","FF":"CFNG_ENABLED","GitOps":"GITOPS_ONPREM_ENABLED,CDS_SHOW_CREATE_PR,GITOPS_BYO_ARGO,ARGO_PHASE1,ARGO_PHASE2_MANAGED,CUSTOM_ARIFACT_NG,SERVICE_DASHBOARD_V2,OPTIMIZED_GIT_FETCH_FILES,MULTI_SERVICE_INFRA,ENV_GROUP,NG_SVC_ENV_REDESIGN,OPTIMIZED_GIT_FETCH_FILES,NG_GITOPS","LICENSE":"NG_LICENSES_ENABLED,VIEW_USAGE_ENABLED","NG":"ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,NEXT_GEN_ENABLED,NEW_LEFT_NAVBAR_SETTINGS,SPG_SIDENAV_COLLAPSE","OLDGITSYNC":"USE_OLD_GIT_SYNC","OPA":"OPA_PIPELINE_GOVERNANCE,OPA_FEATURE_GOVERNANCE,OPA_FF_GOVERNANCE","SAMLAutoAccept":"AUTO_ACCEPT_SAML_ACCOUNT_INVITES,PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES","SRM":"CVNG_ENABLED","STO":"STO_BASELINE_REGEX,STO_STEP_PALETTE_BURP_ENTERPRISE,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP"}` | Feature Flags |
 | featureFlags.ADDITIONAL | string | `""` | Additional Feature Flag |
-| featureFlags.Base | string | `"LDAP_SSO_PROVIDER,ASYNC_ARTIFACT_COLLECTION,JIRA_INTEGRATION,AUDIT_TRAIL_UI,GDS_TIME_SERIES_SAVE_PER_MINUTE,STACKDRIVER_SERVICEGUARD,BATCH_SECRET_DECRYPTION,TIME_SERIES_SERVICEGUARD_V2,TIME_SERIES_WORKFLOW_V2,CUSTOM_DASHBOARD,GRAPHQL,CV_FEEDBACKS,LOGS_V2_247,UPGRADE_JRE,LOG_STREAMING_INTEGRATION,NG_HARNESS_APPROVAL,GIT_SYNC_NG,NG_SHOW_DELEGATE,NG_CG_TASK_ASSIGNMENT_ISOLATION,CI_OVERVIEW_PAGE,AZURE_CLOUD_PROVIDER_VALIDATION_ON_DELEGATE,TERRAFORM_AWS_CP_AUTHENTICATION,NG_TEMPLATES,NEW_DEPLOYMENT_FREEZE,HELM_CHART_AS_ARTIFACT,RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION,WEBHOOK_TRIGGER_AUTHORIZATION,GITHUB_WEBHOOK_AUTHENTICATION,CUSTOM_MANIFEST,GIT_ACCOUNT_SUPPORT,AZURE_WEBAPP,PRUNE_KUBERNETES_RESOURCES,LDAP_GROUP_SYNC_JOB_ITERATOR,POLLING_INTERVAL_CONFIGURABLE,APPLICATION_DROPDOWN_MULTISELECT,USER_GROUP_AS_EXPRESSION,RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED,NG_TEMPLATE_GITX,ELK_HEALTH_SOURCE,NG_ENABLE_LDAP_CHECK,CVNG_METRIC_THRESHOLD,SRM_HOST_SAMPLING_ENABLE,SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS"` | Base flags for all modules |
+| featureFlags.Base | string | `"ASYNC_ARTIFACT_COLLECTION,JIRA_INTEGRATION,AUDIT_TRAIL_UI,GDS_TIME_SERIES_SAVE_PER_MINUTE,STACKDRIVER_SERVICEGUARD,TIME_SERIES_SERVICEGUARD_V2,TIME_SERIES_WORKFLOW_V2,CUSTOM_DASHBOARD,GRAPHQL,CV_FEEDBACKS,LOGS_V2_247,UPGRADE_JRE,LOG_STREAMING_INTEGRATION,NG_HARNESS_APPROVAL,GIT_SYNC_NG,NG_CG_TASK_ASSIGNMENT_ISOLATION,CI_OVERVIEW_PAGE,AZURE_CLOUD_PROVIDER_VALIDATION_ON_DELEGATE,TERRAFORM_AWS_CP_AUTHENTICATION,NG_TEMPLATES,NEW_DEPLOYMENT_FREEZE,HELM_CHART_AS_ARTIFACT,RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION,WEBHOOK_TRIGGER_AUTHORIZATION,GITHUB_WEBHOOK_AUTHENTICATION,CUSTOM_MANIFEST,GIT_ACCOUNT_SUPPORT,AZURE_WEBAPP,PRUNE_KUBERNETES_RESOURCES,POLLING_INTERVAL_CONFIGURABLE,APPLICATION_DROPDOWN_MULTISELECT,RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED,NG_TEMPLATE_GITX,ELK_HEALTH_SOURCE,CVNG_METRIC_THRESHOLD,SRM_HOST_SAMPLING_ENABLE,SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS"` | Base flags for all modules |
 | featureFlags.CCM | string | `"CENG_ENABLED,CCM_MICRO_FRONTEND,NODE_RECOMMENDATION_AGGREGATE"` | CCM Feature Flags |
 | featureFlags.CD | string | `"CDNG_ENABLED"` | STO Feature Flags |
 | featureFlags.CDB | string | `"NG_DASHBOARDS"` | Custom Dashboard Flags |
@@ -93,19 +93,30 @@ A Helm chart for Kubernetes
 | featureFlags.OPA | string | `"OPA_PIPELINE_GOVERNANCE,OPA_FEATURE_GOVERNANCE,OPA_FF_GOVERNANCE"` | OPA |
 | featureFlags.SAMLAutoAccept | string | `"AUTO_ACCEPT_SAML_ACCOUNT_INVITES,PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES"` | AutoAccept Feature Flags |
 | featureFlags.SRM | string | `"CVNG_ENABLED"` | SRM Flags |
-| featureFlags.STO | string | `"STO_BASELINE_REGEX,STO_STEP_PALETTE_BURP_ENTERPRISE ,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA ,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP"` | STO Feature Flags |
+| featureFlags.STO | string | `"STO_BASELINE_REGEX,STO_STEP_PALETTE_BURP_ENTERPRISE,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP"` | STO Feature Flags |
 | fullnameOverride | string | `""` |  |
 | global.ccm.enabled | bool | `false` |  |
 | global.cd.enabled | bool | `false` |  |
 | global.cg.enabled | bool | `false` |  |
 | global.chaos.enabled | bool | `false` |  |
 | global.ci.enabled | bool | `false` |  |
+| global.commonAnnotations | object | `{}` |  |
+| global.commonLabels | object | `{}` |  |
 | global.database.mongo.extraArgs | string | `""` |  |
 | global.database.mongo.hosts | list | `[]` | provide default values if mongo.installed is set to false |
 | global.database.mongo.installed | bool | `true` |  |
 | global.database.mongo.passwordKey | string | `""` |  |
 | global.database.mongo.protocol | string | `"mongodb"` |  |
 | global.database.mongo.secretName | string | `""` |  |
+| global.database.mongo.secrets.kubernetesSecrets[0].keys.MONGO_PASSWORD" | string | `""` |  |
+| global.database.mongo.secrets.kubernetesSecrets[0].keys.MONGO_USER | string | `""` |  |
+| global.database.mongo.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_PASSWORD".name | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_PASSWORD".property | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_USER.name | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_USER.property | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| global.database.mongo.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | global.database.mongo.userKey | string | `""` |  |
 | global.database.postgres.extraArgs | string | `""` |  |
 | global.database.postgres.hosts[0] | string | `"postgres:5432"` |  |
@@ -120,6 +131,21 @@ A Helm chart for Kubernetes
 | global.database.redis.passwordKey | string | `"redis-password"` |  |
 | global.database.redis.protocol | string | `"redis"` |  |
 | global.database.redis.secretName | string | `"redis-secret"` |  |
+| global.database.redis.secrets.kubernetesSecrets[0].keys.EVENTS_FRAMEWORK_REDIS_PASSWORD | string | `""` |  |
+| global.database.redis.secrets.kubernetesSecrets[0].keys.EVENTS_FRAMEWORK_REDIS_USERNAME | string | `""` |  |
+| global.database.redis.secrets.kubernetesSecrets[0].keys.REDIS_PASSWORD | string | `""` |  |
+| global.database.redis.secrets.kubernetesSecrets[0].keys.REDIS_USERNAME | string | `""` |  |
+| global.database.redis.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.EVENTS_FRAMEWORK_REDIS_PASSWORD.name | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.EVENTS_FRAMEWORK_REDIS_PASSWORD.property | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.EVENTS_FRAMEWORK_REDIS_USERNAME.name | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.EVENTS_FRAMEWORK_REDIS_USERNAME.property | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_PASSWORD.name | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_PASSWORD.property | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_USERNAME.name | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_USERNAME.property | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| global.database.redis.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | global.database.redis.userKey | string | `"redis-user"` |  |
 | global.database.timescaledb.certKey | string | `""` |  |
 | global.database.timescaledb.certName | string | `""` |  |
@@ -129,6 +155,18 @@ A Helm chart for Kubernetes
 | global.database.timescaledb.passwordKey | string | `""` |  |
 | global.database.timescaledb.protocol | string | `"jdbc:postgresql"` |  |
 | global.database.timescaledb.secretName | string | `""` |  |
+| global.database.timescaledb.secrets.kubernetesSecrets[0].keys.TIMESCALEDB_PASSWORD | string | `""` |  |
+| global.database.timescaledb.secrets.kubernetesSecrets[0].keys.TIMESCALEDB_SSL_ROOT_CERT | string | `""` |  |
+| global.database.timescaledb.secrets.kubernetesSecrets[0].keys.TIMESCALEDB_USERNAME | string | `""` |  |
+| global.database.timescaledb.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| global.database.timescaledb.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.TIMESCALEDB_PASSWORD.name | string | `""` |  |
+| global.database.timescaledb.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.TIMESCALEDB_PASSWORD.property | string | `""` |  |
+| global.database.timescaledb.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.TIMESCALEDB_SSL_ROOT_CERT.name | string | `""` |  |
+| global.database.timescaledb.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.TIMESCALEDB_SSL_ROOT_CERT.property | string | `""` |  |
+| global.database.timescaledb.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.TIMESCALEDB_USERNAME.name | string | `""` |  |
+| global.database.timescaledb.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.TIMESCALEDB_USERNAME.property | string | `""` |  |
+| global.database.timescaledb.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| global.database.timescaledb.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | global.database.timescaledb.userKey | string | `""` |  |
 | global.ff.enabled | bool | `false` |  |
 | global.gitops.enabled | bool | `false` |  |
@@ -151,12 +189,6 @@ A Helm chart for Kubernetes
 | global.ngcustomdashboard.enabled | bool | `false` |  |
 | global.opa.enabled | bool | `false` |  |
 | global.saml.autoaccept | bool | `false` |  |
-| global.secrets.app.external.enabled | bool | `false` |  |
-| global.secrets.app.external.kind.csiSecretDriver | bool | `false` |  |
-| global.secrets.app.external.kind.externalSecrets | bool | `false` |  |
-| global.secrets.database.external.enabled | bool | `false` |  |
-| global.secrets.database.external.kind.csiSecretDriver | bool | `false` |  |
-| global.secrets.database.external.kind.externalSecrets | bool | `false` |  |
 | global.smtpCreateSecret.SMTP_HOST | string | `""` |  |
 | global.smtpCreateSecret.SMTP_PASSWORD | string | `""` |  |
 | global.smtpCreateSecret.SMTP_PORT | string | `"465"` |  |
@@ -171,11 +203,12 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/migrator-signed"` |  |
-| image.tag | string | `"100534-000"` |  |
+| image.tag | string | `"100578-000"` |  |
 | immutable_delegate_docker_image.image.digest | string | `""` |  |
 | immutable_delegate_docker_image.image.registry | string | `"docker.io"` |  |
 | immutable_delegate_docker_image.image.repository | string | `"harness/delegate"` |  |
 | immutable_delegate_docker_image.image.tag | string | `"22.12.77617"` |  |
+| ingress.annotations | object | `{}` |  |
 | initContainer.image.digest | string | `""` |  |
 | initContainer.image.pullPolicy | string | `"IfNotPresent"` |  |
 | initContainer.image.registry | string | `"docker.io"` |  |
@@ -397,6 +430,7 @@ A Helm chart for Kubernetes
 | iteratorConfig.workflowExecutionMonitor.threadPoolIntervalInSeconds | int | `10` |  |
 | iteratorConfig.workflowExecutionMonitor.threadPoolSize | int | `5` |  |
 | iteratorConfig.workflowExecutionMonitor.throttleIntervalInSeconds | int | `0` |  |
+| java17flags | string | `""` |  |
 | maxSurge | int | `1` |  |
 | maxUnavailable | int | `0` |  |
 | migrator.mongodb.extraArgs | string | `""` |  |
@@ -406,6 +440,21 @@ A Helm chart for Kubernetes
 | migrator.mongodb.protocol | string | `"mongodb"` |  |
 | migrator.mongodb.secretName | string | `""` |  |
 | migrator.mongodb.userKey | string | `""` |  |
+| mongo.extraArgs | string | `""` |  |
+| mongo.hosts | list | `[]` |  |
+| mongo.passwordKey | string | `""` |  |
+| mongo.protocol | string | `"mongodb"` |  |
+| mongo.secretName | string | `""` |  |
+| mongo.secrets.kubernetesSecrets[0].keys.MONGO_PASSWORD" | string | `""` |  |
+| mongo.secrets.kubernetesSecrets[0].keys.MONGO_USER | string | `""` |  |
+| mongo.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_PASSWORD".name | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_PASSWORD".property | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_USER.name | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.MONGO_USER.property | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| mongo.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
+| mongo.userKey | string | `""` |  |
 | mongoSecrets.password.key | string | `"mongodb-root-password"` |  |
 | mongoSecrets.password.name | string | `"mongodb-replicaset-chart"` |  |
 | mongoSecrets.userName.key | string | `"mongodbUsername"` |  |
@@ -414,16 +463,47 @@ A Helm chart for Kubernetes
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext | object | `{}` |  |
+| redis.extraArgs | string | `""` |  |
+| redis.hosts | list | `[]` |  |
+| redis.passwordKey | string | `""` |  |
+| redis.protocol | string | `""` |  |
+| redis.secretName | string | `""` |  |
+| redis.secrets.kubernetesSecrets[0].keys.EVENTS_FRAMEWORK_REDIS_PASSWORD | string | `""` |  |
+| redis.secrets.kubernetesSecrets[0].keys.EVENTS_FRAMEWORK_REDIS_USERNAME | string | `""` |  |
+| redis.secrets.kubernetesSecrets[0].keys.REDIS_PASSWORD" | string | `""` |  |
+| redis.secrets.kubernetesSecrets[0].keys.REDIS_USERNAME | string | `""` |  |
+| redis.secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.EVENTS_FRAMEWORK_REDIS_USERNAME".name | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.EVENTS_FRAMEWORK_REDIS_USERNAME".property | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.EVENTS_FRAMEWORK_REDIS_USERNAME.name | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.EVENTS_FRAMEWORK_REDIS_USERNAME.property | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_PASSWORD".name | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_PASSWORD".property | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_USERNAME.name | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].remoteKeys.REDIS_USERNAME.property | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| redis.secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
+| redis.userKey | string | `""` |  |
 | replicaCount | int | `1` |  |
 | resources.limits.memory | string | `"8192Mi"` |  |
 | resources.requests.cpu | int | `2` |  |
 | resources.requests.memory | string | `"3000Mi"` |  |
-| secrets.LOG_STREAMING_SERVICE_TOKEN | string | `"c76e567a-b341-404d-a8dd-d9738714eb82"` |  |
-| secrets.MONGO_SSL_CA_TRUST_STORE_PASSWORD | string | `"password"` |  |
-| secrets.MONGO_SSL_CA_TRUST_STORE_PATH | string | `"/opt/harness/keystore.jks"` |  |
-| secrets.VERIFICATION_SERVICE_SECRET | string | `"59MR5RlVARcdH7zb7pNx6GzqiglBmXR8"` |  |
+| secrets.default.LOG_STREAMING_SERVICE_TOKEN | string | `"c76e567a-b341-404d-a8dd-d9738714eb82"` |  |
+| secrets.default.MONGO_SSL_CA_TRUST_STORE_PASSWORD | string | `"password"` |  |
+| secrets.default.MONGO_SSL_CA_TRUST_STORE_PATH | string | `"/opt/harness/keystore.jks"` |  |
+| secrets.default.VERIFICATION_SERVICE_SECRET | string | `"59MR5RlVARcdH7zb7pNx6GzqiglBmXR8"` |  |
+| secrets.kubernetesSecrets[0].keys.LOG_STREAMING_SERVICE_TOKEN | string | `""` |  |
+| secrets.kubernetesSecrets[0].keys.VERIFICATION_SERVICE_SECRET | string | `""` |  |
+| secrets.kubernetesSecrets[0].secretName | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.LOG_STREAMING_SERVICE_TOKEN.name | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.LOG_STREAMING_SERVICE_TOKEN.property | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.VERIFICATION_SERVICE_SECRET.name | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].remoteKeys.VERIFICATION_SERVICE_SECRET.property | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].secretStore.kind | string | `""` |  |
+| secrets.secretManagement.externalSecretsOperator[0].secretStore.name | string | `""` |  |
 | securityContext.runAsNonRoot | bool | `true` |  |
 | securityContext.runAsUser | int | `65534` |  |
+| service.annotations | object | `{}` |  |
 | service.grpcport | int | `9879` |  |
 | service.port | int | `9080` |  |
 | service.type | string | `"ClusterIP"` |  |
@@ -432,11 +512,14 @@ A Helm chart for Kubernetes
 | serviceAccount.name | string | `"harness-default"` |  |
 | timescaleSecret.password.key | string | `"timescaledbPostgresPassword"` |  |
 | timescaleSecret.password.name | string | `"harness-secrets"` |  |
+| timescaledb.hosts | list | `[]` | TimescaleDB host names |
+| timescaledb.secrets | object | `{"kubernetesSecrets":[{"keys":{"TIMESCALEDB_PASSWORD":"","TIMESCALEDB_SSL_ROOT_CERT":"","TIMESCALEDB_USERNAME":""},"secretName":""}],"secretManagement":{"externalSecretsOperator":[{"remoteKeys":{"TIMESCALEDB_PASSWORD":{"name":"","property":""},"TIMESCALEDB_SSL_ROOT_CERT":{"name":"","property":""},"TIMESCALEDB_USERNAME":{"name":"","property":""}},"secretStore":{"kind":"","name":""}}]}}` | TimescaleDB secrets |
 | tolerations | list | `[]` |  |
 | upgrader_docker_image.image.digest | string | `""` |  |
 | upgrader_docker_image.image.registry | string | `"docker.io"` |  |
 | upgrader_docker_image.image.repository | string | `"harness/upgrader"` |  |
 | upgrader_docker_image.image.tag | string | `"latest"` |  |
+| virtualService.annotations | object | `{}` |  |
 | waitForInitContainer.image.digest | string | `""` |  |
 | waitForInitContainer.image.imagePullSecrets | list | `[]` |  |
 | waitForInitContainer.image.pullPolicy | string | `"IfNotPresent"` |  |
