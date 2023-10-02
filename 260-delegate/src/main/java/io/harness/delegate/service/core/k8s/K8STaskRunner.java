@@ -139,10 +139,10 @@ public class K8STaskRunner {
       final var secretFilename = UUID.randomUUID().toString();
       if (secret.getConfig().hasBinaryData()) {
         k8sSecret.putDataItem(secretFilename + ".config", secret.getConfig().getBinaryData().toByteArray())
-            .putDataItem(secretFilename + ".bin", secret.getSecrets().getBinaryData().toByteArray());
+            .putDataItem(secretFilename + ".bin", secret.getEncryptedRecord().getBinaryData().toByteArray());
       } else {
         k8sSecret.putDataItem(secretFilename + ".config", secret.getConfig().getProtoData().toByteArray())
-            .putDataItem(secretFilename + ".bin", secret.getSecrets().getProtoData().toByteArray());
+            .putDataItem(secretFilename + ".bin", secret.getEncryptedRecord().getProtoData().toByteArray());
       }
     }
     return k8sSecret.create(coreApi);
