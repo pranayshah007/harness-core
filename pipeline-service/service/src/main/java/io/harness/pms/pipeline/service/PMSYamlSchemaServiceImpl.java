@@ -30,6 +30,7 @@ import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.PipelineVersionConstants;
 import io.harness.yaml.individualschema.PipelineSchemaMetadata;
 import io.harness.yaml.individualschema.PipelineSchemaParserFactory;
 import io.harness.yaml.individualschema.PipelineSchemaRequest;
@@ -192,19 +193,21 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   private SchemaParserInterface getStaticSchemaParser(YamlConfig yamlConfig) {
     if (yamlConfig.getYamlMap().get("pipeline") != null) {
-      return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V0);
+      return pipelineSchemaParserFactory.getPipelineSchemaParser(
+          PipelineVersionConstants.PIPELINE_VERSION_V0.getValue());
     }
 
     JsonNode versionNode = yamlConfig.getYamlMap().get("version");
     if (versionNode != null) {
       switch (versionNode.asText()) {
         case "1":
-          return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V1);
+          return pipelineSchemaParserFactory.getPipelineSchemaParser(
+              PipelineVersionConstants.PIPELINE_VERSION_V1.getValue());
         default:
-          throw new InvalidRequestException("");
+          throw new InvalidRequestException("Invalid version found in yaml : " + versionNode.asText());
       }
     } else {
-      throw new InvalidRequestException("");
+      throw new InvalidRequestException("No version field found in yaml");
     }
   }
 }
